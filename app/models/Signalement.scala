@@ -5,7 +5,7 @@ import java.util.UUID
 import play.api.libs.json.{Json, OFormat}
 
 case class Signalement (
-                         id: Option[UUID],
+                         id: UUID,
                          typeEtablissement: String,
                          categorieAnomalie: String,
                          precisionAnomalie: String,
@@ -15,7 +15,7 @@ case class Signalement (
                          prenom: String,
                          nom: String,
                          email: String,
-                         photo: Option[String]
+                         photoOID: Option[Long]
                        )
 object Signalement {
 
