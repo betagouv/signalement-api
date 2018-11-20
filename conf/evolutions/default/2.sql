@@ -1,0 +1,8 @@
+# --- !Ups
+
+ALTER TABLE SIGNALEMENT ADD COLUMN date_creation TIMESTAMP;
+ALTER TABLE SIGNALEMENT ALTER COLUMN date_creation SET DEFAULT now();
+
+# --- !Downs
+
+ALTER TABLE SIGNALEMENT DROP date_creation;
