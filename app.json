@@ -1,0 +1,32 @@
+{
+  "name": "signalement-api",
+  "scripts": {
+  },
+  "env": {
+    "APPLICATION_HOST": {
+      "required": true
+    },
+    "APPLICATION_SECRET": {
+      "required": true
+    },
+    "EVOLUTIONS_AUTO_APPLY": {
+      "required": true
+    },
+    "MAX_CONNECTIONS": {
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "addons": [
+    "heroku-postgresql"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/scala"
+    }
+  ]
+}
