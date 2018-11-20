@@ -1,5 +1,7 @@
 package repositories
 
+import java.sql.Date
+import java.time.LocalDate
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -25,16 +27,33 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def precisionAnomalie = column[String]("precision_anomalie")
     def nomEtablissement = column[String]("nom_etablissement")
     def adresseEtablissement = column[String]("adresse_etablissement")
+    def dateConstat= column[Date]("date_constat")
+    def heureConstat = column[Option[Int]]("heure_constat")
     def description = column[Option[String]]("description")
     def prenom = column[String]("prenom")
     def nom = column[String]("nom")
     def email = column[String]("email")
     def photoOID = column[Option[Long]]("photo")
 
+    type SignalementData = (UUID, String, String, String, String, String, Date, Option[Int], Option[String], String, String, String, Option[Long])
+
+    def constructSignalemet: SignalementData => Signalement = {
+      case (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+      dateConstat, heureConstat, description, prenom, nom, email, photoOID) =>
+        Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+          dateConstat.toLocalDate, heureConstat, description, prenom, nom, email, photoOID)
+    }
+
+    def extractSignalement: PartialFunction[Signalement, SignalementData] = {
+      case Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+      dateConstat, heureConstat, description, prenom, nom, email, photoOID) =>
+        (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+          Date.valueOf(dateConstat), heureConstat, description, prenom, nom, email, photoOID)
+    }
+
     def * =
-      (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, description, prenom, nom, email, photoOID) <> (
-        (Signalement.apply _).tupled, Signalement.unapply
-      )
+      (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+        dateConstat, heureConstat, description, prenom, nom, email, photoOID) <> (constructSignalemet, extractSignalement.lift)
   }
 
   private val signalementTableQuery = TableQuery[SignalementTable]
