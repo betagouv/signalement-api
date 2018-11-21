@@ -44,10 +44,12 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
               form.prenom,
               form.nom,
               form.email,
+              None,
               None)
             )
-          oid <- addFile(request.body.file("file"))
-          signalement <- signalementRepository.update(signalement.copy(photoOID = oid))
+          ticketFileId <- addFile(request.body.file("ticketFile"))
+          anomalieFileId <- addFile(request.body.file("anomalieFile"))
+          signalement <- signalementRepository.update(signalement.copy(ticketFileId = ticketFileId, anomalieFileId = anomalieFileId))
         } yield {
           Ok(Json.toJson(signalement))
         }
