@@ -44,6 +44,7 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
               form.prenom,
               form.nom,
               form.email,
+              form.accordContact,
               None,
               None)
             )
@@ -88,7 +89,8 @@ object SignalementForms {
                               description: Option[String],
                               prenom: String,
                               nom: String,
-                              email: String
+                              email: String,
+                              accordContact: Boolean
                             )
 
   val createSignalementForm = Form(mapping(
@@ -102,7 +104,8 @@ object SignalementForms {
     "description" -> optional(text),
     "prenom" -> nonEmptyText,
     "nom" -> nonEmptyText,
-    "email" -> email
+    "email" -> email,
+    "accordContact" -> boolean
   )(CreateSignalementForm.apply)(CreateSignalementForm.unapply))
 
 }

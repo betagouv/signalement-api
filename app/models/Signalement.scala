@@ -18,6 +18,7 @@ case class Signalement (
                          prenom: String,
                          nom: String,
                          email: String,
+                         accordContact: Boolean,
                          ticketFileId: Option[Long],
                          anomalieFileId: Option[Long]
                        )
