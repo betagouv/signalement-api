@@ -1,6 +1,7 @@
 package controllers
 
 import java.io.FileInputStream
+import java.time.LocalDate
 import java.util.UUID
 
 import javax.inject.Inject
@@ -37,14 +38,19 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
               form.precisionAnomalie,
               form.nomEtablissement,
               form.adresseEtablissement,
+              form.dateConstat,
+              form.heureConstat,
               form.description,
               form.prenom,
               form.nom,
               form.email,
+              form.accordContact,
+              None,
               None)
             )
-          oid <- addFile(request.body.file("file"))
-          signalement <- signalementRepository.update(signalement.copy(photoOID = oid))
+          ticketFileId <- addFile(request.body.file("ticketFile"))
+          anomalieFileId <- addFile(request.body.file("anomalieFile"))
+          signalement <- signalementRepository.update(signalement.copy(ticketFileId = ticketFileId, anomalieFileId = anomalieFileId))
         } yield {
           Ok(Json.toJson(signalement))
         }
@@ -68,11 +74,7 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
       case None => Future(None)
     }
   }
-
-
 }
-
-
 
 object SignalementForms {
 
@@ -82,10 +84,13 @@ object SignalementForms {
                               precisionAnomalie: String,
                               nomEtablissement: String,
                               adresseEtablissement: String,
+                              dateConstat: LocalDate,
+                              heureConstat: Option[Int],
                               description: Option[String],
                               prenom: String,
                               nom: String,
-                              email: String
+                              email: String,
+                              accordContact: Boolean
                             )
 
   val createSignalementForm = Form(mapping(
@@ -94,10 +99,13 @@ object SignalementForms {
     "precisionAnomalie" -> nonEmptyText,
     "nomEtablissement" -> nonEmptyText,
     "adresseEtablissement" -> nonEmptyText,
+    "dateConstat" -> localDate("yyyy-MM-dd"),
+    "heureConstat" -> optional(number),
     "description" -> optional(text),
     "prenom" -> nonEmptyText,
     "nom" -> nonEmptyText,
-    "email" -> email
+    "email" -> email,
+    "accordContact" -> boolean
   )(CreateSignalementForm.apply)(CreateSignalementForm.unapply))
 
 }

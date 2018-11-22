@@ -1,5 +1,6 @@
 package models
 
+import java.time.LocalDate
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
@@ -11,11 +12,15 @@ case class Signalement (
                          precisionAnomalie: String,
                          nomEtablissement: String,
                          adresseEtablissement: String,
+                         dateConstat: LocalDate,
+                         heureConstat: Option[Int],
                          description: Option[String],
                          prenom: String,
                          nom: String,
                          email: String,
-                         photoOID: Option[Long]
+                         accordContact: Boolean,
+                         ticketFileId: Option[Long],
+                         anomalieFileId: Option[Long]
                        )
 object Signalement {
 
