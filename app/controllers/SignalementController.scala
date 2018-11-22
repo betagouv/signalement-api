@@ -44,10 +44,13 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
               form.prenom,
               form.nom,
               form.email,
+              form.accordContact,
+              None,
               None)
             )
-          oid <- addFile(request.body.file("file"))
-          signalement <- signalementRepository.update(signalement.copy(photoOID = oid))
+          ticketFileId <- addFile(request.body.file("ticketFile"))
+          anomalieFileId <- addFile(request.body.file("anomalieFile"))
+          signalement <- signalementRepository.update(signalement.copy(ticketFileId = ticketFileId, anomalieFileId = anomalieFileId))
         } yield {
           Ok(Json.toJson(signalement))
         }
@@ -86,7 +89,8 @@ object SignalementForms {
                               description: Option[String],
                               prenom: String,
                               nom: String,
-                              email: String
+                              email: String,
+                              accordContact: Boolean
                             )
 
   val createSignalementForm = Form(mapping(
@@ -100,7 +104,8 @@ object SignalementForms {
     "description" -> optional(text),
     "prenom" -> nonEmptyText,
     "nom" -> nonEmptyText,
-    "email" -> email
+    "email" -> email,
+    "accordContact" -> boolean
   )(CreateSignalementForm.apply)(CreateSignalementForm.unapply))
 
 }

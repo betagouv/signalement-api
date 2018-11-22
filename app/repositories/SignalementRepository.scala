@@ -33,27 +33,29 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def prenom = column[String]("prenom")
     def nom = column[String]("nom")
     def email = column[String]("email")
-    def photoOID = column[Option[Long]]("photo")
+    def accordContact = column[Boolean]("accord_contact")
+    def ticketFileId = column[Option[Long]]("ticket_file_id")
+    def anomalieFileId = column[Option[Long]]("anomalie_file_id")
 
-    type SignalementData = (UUID, String, String, String, String, String, Date, Option[Int], Option[String], String, String, String, Option[Long])
+    type SignalementData = (UUID, String, String, String, String, String, Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
 
-    def constructSignalemet: SignalementData => Signalement = {
+    def constructSignalement: SignalementData => Signalement = {
       case (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
-      dateConstat, heureConstat, description, prenom, nom, email, photoOID) =>
+      dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) =>
         Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
-          dateConstat.toLocalDate, heureConstat, description, prenom, nom, email, photoOID)
+          dateConstat.toLocalDate, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId)
     }
 
     def extractSignalement: PartialFunction[Signalement, SignalementData] = {
       case Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
-      dateConstat, heureConstat, description, prenom, nom, email, photoOID) =>
+      dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) =>
         (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
-          Date.valueOf(dateConstat), heureConstat, description, prenom, nom, email, photoOID)
+          Date.valueOf(dateConstat), heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId)
     }
 
     def * =
       (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
-        dateConstat, heureConstat, description, prenom, nom, email, photoOID) <> (constructSignalemet, extractSignalement.lift)
+        dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) <> (constructSignalement, extractSignalement.lift)
   }
 
   private val signalementTableQuery = TableQuery[SignalementTable]

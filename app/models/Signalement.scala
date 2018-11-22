@@ -18,7 +18,9 @@ case class Signalement (
                          prenom: String,
                          nom: String,
                          email: String,
-                         photoOID: Option[Long]
+                         accordContact: Boolean,
+                         ticketFileId: Option[Long],
+                         anomalieFileId: Option[Long]
                        )
 object Signalement {
 
