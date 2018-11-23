@@ -81,7 +81,7 @@ object SignalementForms {
   case class CreateSignalementForm(
                               typeEtablissement: String,
                               categorieAnomalie: String,
-                              precisionAnomalie: String,
+                              precisionAnomalie: Option[String],
                               nomEtablissement: String,
                               adresseEtablissement: String,
                               dateConstat: LocalDate,
@@ -96,7 +96,7 @@ object SignalementForms {
   val createSignalementForm = Form(mapping(
     "typeEtablissement" -> nonEmptyText,
     "categorieAnomalie" -> nonEmptyText,
-    "precisionAnomalie" -> nonEmptyText,
+    "precisionAnomalie" -> optional(text),
     "nomEtablissement" -> nonEmptyText,
     "adresseEtablissement" -> nonEmptyText,
     "dateConstat" -> localDate("yyyy-MM-dd"),

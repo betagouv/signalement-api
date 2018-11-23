@@ -9,7 +9,7 @@ case class Signalement (
                          id: UUID,
                          typeEtablissement: String,
                          categorieAnomalie: String,
-                         precisionAnomalie: String,
+                         precisionAnomalie: Option[String],
                          nomEtablissement: String,
                          adresseEtablissement: String,
                          dateConstat: LocalDate,

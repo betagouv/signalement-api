@@ -24,7 +24,7 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def id = column[UUID]("id", O.PrimaryKey)
     def typeEtablissement = column[String]("type_etablissement")
     def categorieAnomalie = column[String]("categorie_anomalie")
-    def precisionAnomalie = column[String]("precision_anomalie")
+    def precisionAnomalie = column[Option[String]]("precision_anomalie")
     def nomEtablissement = column[String]("nom_etablissement")
     def adresseEtablissement = column[String]("adresse_etablissement")
     def dateConstat= column[Date]("date_constat")
@@ -37,7 +37,7 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def ticketFileId = column[Option[Long]]("ticket_file_id")
     def anomalieFileId = column[Option[Long]]("anomalie_file_id")
 
-    type SignalementData = (UUID, String, String, String, String, String, Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
+    type SignalementData = (UUID, String, String, Option[String], String, String, Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
 
     def constructSignalement: SignalementData => Signalement = {
       case (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
