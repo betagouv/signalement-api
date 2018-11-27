@@ -1,0 +1,48 @@
+@(signalement: Signalement)
+
+@import java.time.format.DateTimeFormatter
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Nouveau signalement</title>
+    </head>
+    <body>
+        <p>
+            <span style="color: #aaaaaa;">Type d'établissement :</span> <b>@signalement.typeEtablissement</b>
+            <br />
+            <span style="color:#aaaaaa">Type d'anomalie :</span> <b>@signalement.categorieAnomalie</b>
+            <br />
+            <span style="color:#aaaaaa">Précision :</span> <b>@signalement.precisionAnomalie</b>
+        </p>
+
+        <p>
+            <span style="color:#aaaaaa">Nom de l'établissement :</span> <b>@signalement.nomEtablissement</b>
+            <br />
+            <span style="color:#aaaaaa">Adresse de l'établissement :</span> <b>@signalement.adresseEtablissement</b>
+        </p>
+
+        <p>
+            <span style="color:#aaaaaa">Date du constat :</span> <b>@signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b>
+            <br />
+            <span style="color:#aaaaaa">Plage horaire :</span> <b>@signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")</b>
+            <br />
+            <span style="color:#aaaaaa">Précision du problème :</span> <b>@signalement.description</b>
+        </p>
+
+        <p>
+            <span style="color:#aaaaaa">Nom :</span> <b>@signalement.nom</b>
+            <br />
+            <span style="color:#aaaaaa">Prénom :</span> <b>@signalement.prenom</b>
+            <br />
+            <span style="color:#aaaaaa">Email :</span> <b>@signalement.email</b>
+            <br />
+            <span style="color:#aaaaaa">Accord pour être contacté par un professionnel :</span> <b>@if(signalement.accordContact) {oui} else {non}</b>
+        </p>
+
+        <p>
+            <span style="color:#aaaaaa">Identifiant technique :</span> <b>@signalement.id</b>
+        </p>
+    </body>
+</html>
