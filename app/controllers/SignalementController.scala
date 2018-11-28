@@ -6,18 +6,22 @@ import java.util.UUID
 
 import javax.inject.Inject
 import models.Signalement
-import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.Files
 import play.api.libs.json.Json
+import play.api.libs.mailer.AttachmentFile
 import play.api.mvc.MultipartFormData
+import play.api.{Configuration, Logger}
 import repositories.{FileRepository, SignalementRepository}
+import services.MailerService
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class SignalementController @Inject()(signalementRepository: SignalementRepository,
-                                      fileRepository: FileRepository)
+                                      fileRepository: FileRepository,
+                                      mailerService: MailerService,
+                                      configuration: Configuration)
                                      (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
@@ -51,6 +55,7 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
           ticketFileId <- addFile(request.body.file("ticketFile"))
           anomalieFileId <- addFile(request.body.file("anomalieFile"))
           signalement <- signalementRepository.update(signalement.copy(ticketFileId = ticketFileId, anomalieFileId = anomalieFileId))
+          mail <- sendSignalementByMail(signalement, request.body.file("ticketFile"), request.body.file("anomalieFile"))
         } yield {
           Ok(Json.toJson(signalement))
         }
@@ -68,13 +73,24 @@ class SignalementController @Inject()(signalementRepository: SignalementReposito
   }
 
   def addFile(fileToAdd: Option[MultipartFormData.FilePart[Files.TemporaryFile]]) = {
-    logger.debug(s"file $fileToAdd")
+    logger.debug(s"file ${fileToAdd.map(_.filename)}")
     fileToAdd match {
       case Some(file) => fileRepository.uploadFile(new FileInputStream(file.ref))
       case None => Future(None)
     }
   }
+
+  def sendSignalementByMail(signalement: Signalement, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = configuration.get[String]("play.mail.contactRecipient"))(
+      subject = "Nouveau signalement",
+      bodyHtml = views.html.mails.signalementNotification(signalement).toString,
+      attachments = files.filter(fileOption => fileOption.isDefined).map(file => AttachmentFile(file.get.filename, file.get.ref))
+    ))
+  }
 }
+
 
 object SignalementForms {
 

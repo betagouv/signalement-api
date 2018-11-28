@@ -26,11 +26,9 @@ class FileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   val bufferSize: Int = 4096
 
   def uploadFile(inputStream: InputStream): Future[Option[Long]] = {
-    logger.debug("upload")
+
     db.run {
-      logger.debug("run")
       SimpleDBIO { khan =>
-        logger.debug("khan")
         khan.connection.setAutoCommit(false)
         val largeObjectApi = khan.connection.unwrap(classOf[PGConnection]).getLargeObjectAPI
         val largeObjectId = largeObjectApi.createLO()
@@ -51,8 +49,6 @@ class FileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
           } else {
             bytes
           }
-
-          logger.debug(s"$bytesToWrite")
           largeObject.write(bytesToWrite)
           bytesRead
         }.takeWhile {

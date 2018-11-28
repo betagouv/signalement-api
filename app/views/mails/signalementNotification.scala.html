@@ -1,0 +1,62 @@
+@(signalement: Signalement)
+
+@import java.time.format.DateTimeFormatter
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Nouveau signalement</title>
+    </head>
+    <body>
+        <ul>
+            <li>
+                Type d'établissement : @signalement.typeEtablissement
+            </li>
+            <li>
+                Type d'anomalie : @signalement.categorieAnomalie
+            </li>
+            <li>
+                Précision : @signalement.precisionAnomalie
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom de l'établissement : @signalement.nomEtablissement
+            </li>
+            <li>
+                Adresse de l'établissement : @signalement.adresseEtablissement
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Date du constat : @signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            </li>
+            <li>
+                Plage horaire : @signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")
+            </li>
+            <li>
+                Précision du problème : @signalement.description
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom : @signalement.nom
+            </li>
+            <li>
+                Prénom : @signalement.prenom
+            </li>
+            <li>
+                Email : @signalement.email
+            </li>
+            <li>
+                Accord pour contact : @if(signalement.accordContact) {oui} else {non}
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Identifiant technique : @signalement.id
+            </li>
+        </ul>
+    </body>
+</html>
