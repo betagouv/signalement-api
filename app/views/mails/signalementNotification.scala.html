@@ -9,87 +9,54 @@
         <title>Nouveau signalement</title>
     </head>
     <body>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Type d'établissement
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.typeEtablissement
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Type d'anomalie
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.categorieAnomalie
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Précision
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.precisionAnomalie
-        </div>
-
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Nom de l'établissement
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.nomEtablissement
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Adresse de l'établissement
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.adresseEtablissement
-        </div>
-        <br />
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Date du constat
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Plage horaire
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Précision du problème
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.description
-        </div>
-        <br />
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Nom
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.nom
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Prénom
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.prenom
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Email
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.email
-        </div>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Accord pour contact
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@if(signalement.accordContact) {oui} else {non}
-        </div>
-        <br/>
-        <div style="color:#777; width: 24%; text-align: right; float: left">
-            Identifiant technique
-        </div>
-        <div style="margin-left: 25%; text-align: left;">
-                &nbsp;@signalement.id
-        </div>
+        <ul>
+            <li>
+                Type d'établissement : @signalement.typeEtablissement
+            </li>
+            <li>
+                Type d'anomalie : @signalement.categorieAnomalie
+            </li>
+            <li>
+                Précision : @signalement.precisionAnomalie
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom de l'établissement : @signalement.nomEtablissement
+            </li>
+            <li>
+                Adresse de l'établissement : @signalement.adresseEtablissement
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Date du constat : @signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            </li>
+            <li>
+                Plage horaire : @signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")
+            </li>
+            <li>
+                Précision du problème : @signalement.description
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom : @signalement.nom
+            </li>
+            <li>
+                Prénom : @signalement.prenom
+            </li>
+            <li>
+                Email : @signalement.email
+            </li>
+            <li>
+                Accord pour contact : @if(signalement.accordContact) {oui} else {non}
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Identifiant technique : @signalement.id
+            </li>
+        </ul>
     </body>
 </html>
