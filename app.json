@@ -4,7 +4,7 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "required": true
+      "value": "signalement-api-pr-5.herokuapp.com"
     },
     "APPLICATION_SECRET": {
       "required": true
@@ -13,6 +13,24 @@
       "required": true
     },
     "MAX_CONNECTIONS": {
+      "required": true
+    },
+    "MAIL_FROM": {
+      "required": true
+    },
+    "MAIL_CONTACT_RECIPIENT": {
+      "required": true
+    },
+    "MAILER_HOST": {
+      "required": true
+    },
+    "MAILER_PORT": {
+      "required": true
+    },
+    "MAILER_USER": {
+      "required": true
+    },
+    "MAILER_PASSWORD": {
       "required": true
     }
   },
