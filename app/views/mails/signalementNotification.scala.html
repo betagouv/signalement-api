@@ -9,40 +9,87 @@
         <title>Nouveau signalement</title>
     </head>
     <body>
-        <p>
-            <span style="color: #aaaaaa;">Type d'établissement :</span> <b>@signalement.typeEtablissement</b>
-            <br />
-            <span style="color:#aaaaaa">Type d'anomalie :</span> <b>@signalement.categorieAnomalie</b>
-            <br />
-            <span style="color:#aaaaaa">Précision :</span> <b>@signalement.precisionAnomalie</b>
-        </p>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Type d'établissement
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.typeEtablissement
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Type d'anomalie
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.categorieAnomalie
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Précision
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.precisionAnomalie
+        </div>
 
-        <p>
-            <span style="color:#aaaaaa">Nom de l'établissement :</span> <b>@signalement.nomEtablissement</b>
-            <br />
-            <span style="color:#aaaaaa">Adresse de l'établissement :</span> <b>@signalement.adresseEtablissement</b>
-        </p>
-
-        <p>
-            <span style="color:#aaaaaa">Date du constat :</span> <b>@signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b>
-            <br />
-            <span style="color:#aaaaaa">Plage horaire :</span> <b>@signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")</b>
-            <br />
-            <span style="color:#aaaaaa">Précision du problème :</span> <b>@signalement.description</b>
-        </p>
-
-        <p>
-            <span style="color:#aaaaaa">Nom :</span> <b>@signalement.nom</b>
-            <br />
-            <span style="color:#aaaaaa">Prénom :</span> <b>@signalement.prenom</b>
-            <br />
-            <span style="color:#aaaaaa">Email :</span> <b>@signalement.email</b>
-            <br />
-            <span style="color:#aaaaaa">Accord pour être contacté par un professionnel :</span> <b>@if(signalement.accordContact) {oui} else {non}</b>
-        </p>
-
-        <p>
-            <span style="color:#aaaaaa">Identifiant technique :</span> <b>@signalement.id</b>
-        </p>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Nom de l'établissement
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.nomEtablissement
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Adresse de l'établissement
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.adresseEtablissement
+        </div>
+        <br />
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Date du constat
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.dateConstat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Plage horaire
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.heureConstat.map(hour => s"de ${hour}h à ${hour + 1}h")
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Précision du problème
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.description
+        </div>
+        <br />
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Nom
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.nom
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Prénom
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.prenom
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Email
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.email
+        </div>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Accord pour contact
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@if(signalement.accordContact) {oui} else {non}
+        </div>
+        <br/>
+        <div style="color:#777; width: 24%; text-align: right; float: left">
+            Identifiant technique
+        </div>
+        <div style="margin-left: 25%; text-align: left;">
+                &nbsp;@signalement.id
+        </div>
     </body>
 </html>
