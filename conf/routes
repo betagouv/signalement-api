@@ -4,3 +4,5 @@
 
 # Signalement API
 POST         /api/signalement               controllers.SignalementController.createSignalement()
+
+GET         /test                           controllers.EntrepriseController.test()
