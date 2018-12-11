@@ -4,12 +4,15 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-7.herokuapp.com"
+      "value": "signalement-api-pr-9.herokuapp.com"
     },
     "APPLICATION_SECRET": {
       "required": true
     },
     "EVOLUTIONS_AUTO_APPLY": {
+      "required": true
+    },
+    "EVOLUTIONS_AUTO_APPLY_DOWNS": {
       "required": true
     },
     "MAX_CONNECTIONS": {

@@ -12,6 +12,7 @@ case class Signalement (
                          precisionAnomalie: Option[String],
                          nomEtablissement: String,
                          adresseEtablissement: String,
+                         siretEtablissement: Option[String],
                          dateConstat: LocalDate,
                          heureConstat: Option[Int],
                          description: Option[String],

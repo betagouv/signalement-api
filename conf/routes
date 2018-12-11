@@ -3,4 +3,6 @@
 # ~~~~
 
 # Signalement API
-POST         /api/signalement               controllers.SignalementController.createSignalement()
+POST         /api/signalement                           controllers.SignalementController.createSignalement()
+
+GET         /api/companies/:name/:city/:maxCount        controllers.EntrepriseController.getCompanies(name, city, maxCount: Int)

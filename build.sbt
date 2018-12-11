@@ -10,6 +10,8 @@ lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 libraryDependencies ++= Seq(
   guice,
   evolutions,
+  ws,
+  ehcache,
 
   "org.postgresql" % "postgresql" % "42.2.2",
   "com.typesafe.play" %% "play-slick" %  "3.0.2",
