@@ -27,6 +27,7 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def precisionAnomalie = column[Option[String]]("precision_anomalie")
     def nomEtablissement = column[String]("nom_etablissement")
     def adresseEtablissement = column[String]("adresse_etablissement")
+    def siretEtablissement = column[Option[String]]("siren_etablissement")
     def dateConstat= column[Date]("date_constat")
     def heureConstat = column[Option[Int]]("heure_constat")
     def description = column[Option[String]]("description")
@@ -37,24 +38,24 @@ class SignalementRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(
     def ticketFileId = column[Option[Long]]("ticket_file_id")
     def anomalieFileId = column[Option[Long]]("anomalie_file_id")
 
-    type SignalementData = (UUID, String, String, Option[String], String, String, Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
+    type SignalementData = (UUID, String, String, Option[String], String, String,Option[String], Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
 
     def constructSignalement: SignalementData => Signalement = {
-      case (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+      case (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, siretEtablissement,
       dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) =>
-        Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+        Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, siretEtablissement,
           dateConstat.toLocalDate, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId)
     }
 
     def extractSignalement: PartialFunction[Signalement, SignalementData] = {
-      case Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+      case Signalement(id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, siretEtablissement,
       dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) =>
-        (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+        (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, siretEtablissement,
           Date.valueOf(dateConstat), heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId)
     }
 
     def * =
-      (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement,
+      (id, typeEtablissement, categorieAnomalie, precisionAnomalie, nomEtablissement, adresseEtablissement, siretEtablissement,
         dateConstat, heureConstat, description, prenom, nom, email, accordContact, ticketFileId, anomalieFileId) <> (constructSignalement, extractSignalement.lift)
   }
 
