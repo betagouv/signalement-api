@@ -5,4 +5,4 @@
 # Signalement API
 POST         /api/signalement                           controllers.SignalementController.createSignalement()
 
-GET         /api/companies/:name/:city/:maxCount        controllers.EntrepriseController.getCompanies(name, city, maxCount: Int)
+GET         /api/companies/:name/:city                  controllers.EntrepriseController.getCompanies(name, city, maxCount: Int = 10, postcode: Option[String])
