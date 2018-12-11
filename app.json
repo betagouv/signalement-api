@@ -12,6 +12,9 @@
     "EVOLUTIONS_AUTO_APPLY": {
       "required": true
     },
+    "EVOLUTIONS_AUTO_APPLY_DOWNS": {
+      "required": true
+    },
     "MAX_CONNECTIONS": {
       "required": true
     },
