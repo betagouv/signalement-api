@@ -28,4 +28,21 @@ class EntrepriseController @Inject()(ws: WSClient)
     );
 
   }
+
+  def getSuggestions(search: String) = Action.async { implicit request =>
+
+    logger.debug(s"getCompanies [$search]")
+
+    val request = ws
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/suggest/$search")
+      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
+    request.get().flatMap(
+      response => response.status match {
+        case NOT_FOUND => Future(NotFound(response.json))
+        case _ => Future(Ok(response.json))
+      }
+    );
+
+  }
 }

@@ -5,4 +5,5 @@
 # Signalement API
 POST         /api/signalement                       controllers.SignalementController.createSignalement()
 
+GET         /api/companies/suggest/:search          controllers.EntrepriseController.getSuggestions(search)
 GET         /api/companies/:search                  controllers.EntrepriseController.getCompanies(search, maxCount: Int = 10)
