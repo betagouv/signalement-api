@@ -12,10 +12,29 @@ class EntrepriseController @Inject()(ws: WSClient)
 
   val logger: Logger = Logger(this.getClass)
 
-  def getCompanies(name: String, city: String, maxCount: Int) = Action.async { implicit request =>
+  def getCompanies(search: String, maxCount: Int) = Action.async { implicit request =>
+
+    logger.debug(s"getCompanies [$search]")
 
     val request = ws
-      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$name $city?per_page=$maxCount")
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$search?per_page=$maxCount")
+      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
+    request.get().flatMap(
+      response => response.status match {
+        case NOT_FOUND => Future(NotFound(response.json))
+        case _ => Future(Ok(response.json))
+      }
+    );
+
+  }
+
+  def getSuggestions(search: String) = Action.async { implicit request =>
+
+    logger.debug(s"getCompanies [$search]")
+
+    val request = ws
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/suggest/$search")
       .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
 
     request.get().flatMap(
