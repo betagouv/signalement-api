@@ -21,4 +21,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
 
   specs2 % Test,
+
+  "io.sentry" % "sentry-logback" % "1.7.14",
 )
