@@ -27,7 +27,7 @@ class ReportingControllerSpec(implicit ee: ExecutionEnv) extends Specification w
           badParts = Seq()
         )
 
-        val request = FakeRequest("POST", "/api/reporting").withMultipartFormDataBody(formData)
+        val request = FakeRequest("POST", "/api/reports").withMultipartFormDataBody(formData)
 
         val controller = new ReportingController(mock[ReportingRepository], mock[FileRepository], mock[MailerService], mock[Configuration]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
