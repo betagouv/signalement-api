@@ -1,0 +1,65 @@
+@(reporting: Reporting)
+
+@import java.time.format.DateTimeFormatter
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Nouveau reporting</title>
+    </head>
+    <body>
+        <ul>
+            <li>
+                Type d'établissement : @reporting.companyType
+            </li>
+            <li>
+                Type d'anomalie : @reporting.anomalyCategory
+            </li>
+            <li>
+                Précision : @reporting.anomalyPrecision
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom de l'établissement : @reporting.companyName
+            </li>
+            <li>
+                Adresse de l'établissement : @reporting.companyAddress
+            </li>
+            <li>
+                Siret : @reporting.companySiret
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Date du constat : @reporting.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            </li>
+            <li>
+                Plage horaire : @reporting.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
+            </li>
+            <li>
+                Précision du problème : @reporting.description
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom : @reporting.lastName
+            </li>
+            <li>
+                Prénom : @reporting.firstName
+            </li>
+            <li>
+                Email : @reporting.email
+            </li>
+            <li>
+                Accord pour contact : @if(reporting.contactAgreement) {oui} else {non}
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Identifiant technique : @reporting.id
+            </li>
+        </ul>
+    </body>
+</html>
