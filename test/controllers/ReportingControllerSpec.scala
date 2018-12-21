@@ -4,13 +4,12 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.Configuration
+import play.api.{Configuration, Environment}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc._
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers, Injecting, WithApplication}
-import play.api.libs.json.Json
+import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.{FileRepository, ReportingRepository}
 import services.MailerService
 
@@ -29,7 +28,7 @@ class ReportingControllerSpec(implicit ee: ExecutionEnv) extends Specification w
 
         val request = FakeRequest("POST", "/api/reports").withMultipartFormDataBody(formData)
 
-        val controller = new ReportingController(mock[ReportingRepository], mock[FileRepository], mock[MailerService], mock[Configuration]){
+        val controller = new ReportingController(mock[ReportingRepository], mock[FileRepository], mock[MailerService], mock[Configuration], mock[Environment]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 

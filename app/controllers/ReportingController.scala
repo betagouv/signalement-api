@@ -12,7 +12,7 @@ import play.api.libs.Files
 import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentFile
 import play.api.mvc.MultipartFormData
-import play.api.{Configuration, Logger}
+import play.api.{Configuration, Environment, Logger}
 import repositories.{FileRepository, ReportingRepository}
 import services.MailerService
 
@@ -21,7 +21,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ReportingController @Inject()(reportingRepository: ReportingRepository,
                                     fileRepository: FileRepository,
                                     mailerService: MailerService,
-                                    configuration: Configuration)
+                                    configuration: Configuration,
+                                    environment: Environment)
                                    (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
@@ -56,7 +57,8 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
           ticketFileId <- addFile(request.body.file("ticketFile"))
           anomalyFileId <- addFile(request.body.file("anomalyFile"))
           reporting <- reportingRepository.update(reporting.copy(ticketFileId = ticketFileId, anomalyFileId = anomalyFileId))
-          mail <- sendReportingByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
+          //mailNotification <- sendReportingNotificationByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
+          mailAcknowledgment <- sendReportingAcknowledgmentByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
         } yield {
           Ok(Json.toJson(reporting))
         }
@@ -81,13 +83,25 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
     }
   }
 
-  def sendReportingByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
+  def sendReportingNotificationByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
       subject = "Nouveau signalement",
       bodyHtml = views.html.mails.reportingNotification(reporting).toString,
       attachments = files.filter(fileOption => fileOption.isDefined).map(file => AttachmentFile(file.get.filename, file.get.ref))
+    ))
+  }
+
+  def sendReportingAcknowledgmentByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = reporting.email)(
+      subject = "Votre signalement",
+      bodyHtml = views.html.mails.reportingAcknowledgment(reporting).toString,
+      attachments = Seq(
+        AttachmentFile("logo-marianne.png", environment.getFile("/public/images/logo-marianne.png"), contentId = Some("logo"))
+      )
     ))
   }
 }
