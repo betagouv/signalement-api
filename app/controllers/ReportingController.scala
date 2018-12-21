@@ -100,7 +100,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
       subject = "Votre signalement",
       bodyHtml = views.html.mails.reportingAcknowledgment(reporting).toString,
       attachments = Seq(
-        AttachmentFile("logo-marianne.png", environment.getFile("/public/images/logo-marianne.png"), contentId = Some("logo"))
+        AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
       )
     ))
   }
