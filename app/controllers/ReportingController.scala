@@ -57,7 +57,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
           ticketFileId <- addFile(request.body.file("ticketFile"))
           anomalyFileId <- addFile(request.body.file("anomalyFile"))
           reporting <- reportingRepository.update(reporting.copy(ticketFileId = ticketFileId, anomalyFileId = anomalyFileId))
-          //mailNotification <- sendReportingNotificationByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
+          mailNotification <- sendReportingNotificationByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
           mailAcknowledgment <- sendReportingAcknowledgmentByMail(reporting, request.body.file("ticketFile"), request.body.file("anomalyFile"))
         } yield {
           Ok(Json.toJson(reporting))
