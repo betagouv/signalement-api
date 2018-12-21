@@ -24,3 +24,7 @@ libraryDependencies ++= Seq(
 
   "io.sentry" % "sentry-logback" % "1.7.14",
 )
+
+mappings in Universal ++=
+  (baseDirectory.value / "appfiles" * "*" get) map
+    (x => x -> ("appfiles/" + x.getName))

@@ -7,8 +7,8 @@ import play.api.mvc.{ResponseHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class EntrepriseController @Inject()(ws: WSClient)
-                                     (implicit val executionContext: ExecutionContext) extends BaseController {
+class CompanyController @Inject()(ws: WSClient)
+                                 (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
