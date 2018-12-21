@@ -94,15 +94,19 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
   }
 
   def sendReportingAcknowledgmentByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = reporting.email)(
-      subject = "Votre signalement",
-      bodyHtml = views.html.mails.reportingAcknowledgment(reporting).toString,
-      attachments = Seq(
-        AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
-      )
-    ))
+    reporting.anomalyCategory match {
+      case "Intoxication alimentaire" => Future()
+      case _ =>
+        Future(mailerService.sendEmail(
+          from = configuration.get[String]("play.mail.from"),
+          recipients = reporting.email)(
+          subject = "Votre signalement",
+          bodyHtml = views.html.mails.reportingAcknowledgment(reporting).toString,
+          attachments = Seq(
+            AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
+          )
+        ))
+    }
   }
 }
 
