@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.Signalement
+import models.Reporting
 import org.postgresql.PGConnection
 import org.postgresql.largeobject.LargeObjectManager
 import play.api.Logger

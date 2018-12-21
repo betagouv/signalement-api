@@ -2,8 +2,9 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Signalement API
-POST         /api/signalement                       controllers.SignalementController.createSignalement()
+# Reporting API
+POST         /api/reports                           controllers.ReportingController.createReporting()
 
-GET         /api/companies/suggest/:search          controllers.EntrepriseController.getSuggestions(search)
-GET         /api/companies/:search                  controllers.EntrepriseController.getCompanies(search, maxCount: Int = 10)
+# Company API
+GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
+GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, maxCount: Int = 10)
