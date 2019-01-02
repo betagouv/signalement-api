@@ -12,6 +12,7 @@ case class Reporting(
                       anomalyPrecision: Option[String],
                       companyName: String,
                       companyAddress: String,
+                      companyPostalCode: Option[String],
                       companySiret: Option[String],
                       anomalyDate: LocalDate,
                       anomalyTimeSlot: Option[Int],

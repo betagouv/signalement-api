@@ -43,6 +43,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
               form.anomalyPrecision,
               form.companyName,
               form.companyAddress,
+              form.companyPostalCode,
               form.companySiret,
               form.anomalyDate,
               form.anomalyTimeSlot,
@@ -95,7 +96,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
 
   def sendReportingAcknowledgmentByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
     reporting.anomalyCategory match {
-      case "Intoxication alimentaire" => Future()
+      case "Intoxication alimentaire" => Future(())
       case _ =>
         Future(mailerService.sendEmail(
           from = configuration.get[String]("play.mail.from"),
@@ -119,6 +120,7 @@ object ReportingForms {
                               anomalyPrecision: Option[String],
                               companyName: String,
                               companyAddress: String,
+                              companyPostalCode: Option[String],
                               companySiret: Option[String],
                               anomalyDate: LocalDate,
                               anomalyTimeSlot: Option[Int],
@@ -135,6 +137,7 @@ object ReportingForms {
     "anomalyPrecision" -> optional(text),
     "companyName" -> nonEmptyText,
     "companyAddress" -> nonEmptyText,
+    "companyPostalCode" -> optional(text),
     "companySiret" -> optional(text),
     "anomalyDate" -> localDate("yyyy-MM-dd"),
     "anomalyTimeSlot" -> optional(number),
