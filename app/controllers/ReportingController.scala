@@ -1,11 +1,11 @@
 package controllers
 
 import java.io.FileInputStream
-import java.time.LocalDate
+import java.time.{LocalDate, YearMonth}
 import java.util.UUID
 
 import javax.inject.Inject
-import models.Reporting
+import models.{Reporting, Statistics}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.Files
@@ -45,6 +45,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
               form.companyAddress,
               form.companyPostalCode,
               form.companySiret,
+              LocalDate.now(),
               form.anomalyDate,
               form.anomalyTimeSlot,
               form.description,
@@ -107,6 +108,21 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
             AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
           )
         ))
+    }
+  }
+
+  def getStatistics = Action.async { implicit request =>
+
+    for {
+      reportsCount <- reportingRepository.count
+      reportsPerMonth <- reportingRepository.countPerMonth
+    } yield {
+      Ok(Json.toJson(
+        Statistics(
+          reportsCount,
+          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1)))
+        )
+      ))
     }
   }
 }
