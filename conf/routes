@@ -2,6 +2,9 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+# Static pages
+GET         /api                                    controllers.StaticController.api
+
 # Reporting API
 POST         /api/reports                           controllers.ReportingController.createReporting()
 GET          /api/reports/stats                     controllers.ReportingController.getStatistics()
@@ -9,4 +12,3 @@ GET          /api/reports/stats                     controllers.ReportingControl
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, maxCount: Int = 10)
-
