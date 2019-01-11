@@ -4,7 +4,9 @@
 
 # Reporting API
 POST         /api/reports                           controllers.ReportingController.createReporting()
+GET          /api/reports/stats                     controllers.ReportingController.getStatistics()
 
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, maxCount: Int = 10)
+
