@@ -14,6 +14,7 @@ case class Reporting(
                       companyAddress: String,
                       companyPostalCode: Option[String],
                       companySiret: Option[String],
+                      creationDate: LocalDate,
                       anomalyDate: LocalDate,
                       anomalyTimeSlot: Option[Int],
                       description: Option[String],
