@@ -11,4 +11,4 @@ GET          /api/reports/stats                     controllers.ReportingControl
 
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
-GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, maxCount: Int = 10)
+GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
