@@ -12,13 +12,19 @@ class CompanyController @Inject()(ws: WSClient)
 
   val logger: Logger = Logger(this.getClass)
 
-  def getCompanies(search: String, maxCount: Int) = Action.async { implicit request =>
+  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = Action.async { implicit request =>
 
-    logger.debug(s"getCompanies [$search]")
+    logger.debug(s"getCompanies [$search, $postalCode, $maxCount]")
 
-    val request = ws
-      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$search?per_page=$maxCount")
+    var request = ws
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$search")
       .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
+    if (postalCode.isDefined) {
+      request = request.addQueryStringParameters("code_postal" -> postalCode.get)
+    }
+    
+    request = request.addQueryStringParameters("per_page" -> maxCount.toString)
 
     request.get().flatMap(
       response => response.status match {
@@ -31,7 +37,7 @@ class CompanyController @Inject()(ws: WSClient)
 
   def getSuggestions(search: String) = Action.async { implicit request =>
 
-    logger.debug(s"getCompanies [$search]")
+    logger.debug(s"getSuggestions [$search]")
 
     val request = ws
       .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/suggest/$search")
