@@ -1,4 +1,4 @@
-@(reporting: Reporting)
+@(reporting: Report)
 
 @import java.time.format.DateTimeFormatter
 
@@ -11,13 +11,13 @@
     <body>
         <ul>
             <li>
-                Type d'établissement : @reporting.companyType
+                Catégorie : @reporting.category
             </li>
             <li>
-                Type d'anomalie : @reporting.anomalyCategory
+                Sous-catégorie : @reporting.subcategory
             </li>
             <li>
-                Précision : @reporting.anomalyPrecision
+                Précision : @reporting.precision
             </li>
         </ul>
         <ul>
@@ -39,7 +39,7 @@
                 Plage horaire : @reporting.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
             </li>
             <li>
-                Précision du problème : @reporting.description
+                Description du problème : @reporting.description
             </li>
         </ul>
         <ul>

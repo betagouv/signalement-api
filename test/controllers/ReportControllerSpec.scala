@@ -10,10 +10,10 @@ import play.api.libs.Files.TemporaryFile
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
-import repositories.{FileRepository, ReportingRepository}
+import repositories.{FileRepository, ReportRepository}
 import services.MailerService
 
-class ReportingControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
+class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
   "ReportingController" should {
 
@@ -28,7 +28,7 @@ class ReportingControllerSpec(implicit ee: ExecutionEnv) extends Specification w
 
         val request = FakeRequest("POST", "/api/reports").withMultipartFormDataBody(formData)
 
-        val controller = new ReportingController(mock[ReportingRepository], mock[FileRepository], mock[MailerService], mock[Configuration], mock[Environment]){
+        val controller = new ReportingController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[Configuration], mock[Environment]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
