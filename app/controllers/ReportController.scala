@@ -5,7 +5,7 @@ import java.time.{LocalDate, YearMonth}
 import java.util.UUID
 
 import javax.inject.Inject
-import models.{Reporting, Statistics}
+import models.{Report, Statistics}
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.Files
@@ -13,12 +13,12 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentFile
 import play.api.mvc.MultipartFormData
 import play.api.{Configuration, Environment, Logger}
-import repositories.{FileRepository, ReportingRepository}
+import repositories.{FileRepository, ReportRepository}
 import services.MailerService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportingController @Inject()(reportingRepository: ReportingRepository,
+class ReportingController @Inject()(reportingRepository: ReportRepository,
                                     fileRepository: FileRepository,
                                     mailerService: MailerService,
                                     configuration: Configuration,
@@ -36,11 +36,11 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
       form => {
         for {
           reporting <- reportingRepository.create(
-            Reporting(
+            Report(
               UUID.randomUUID(),
-              form.companyType,
-              form.anomalyCategory,
-              form.anomalyPrecision,
+              form.category,
+              form.subcategory,
+              form.precision,
               form.companyName,
               form.companyAddress,
               form.companyPostalCode,
@@ -85,7 +85,7 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
     }
   }
 
-  def sendReportingNotificationByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
+  def sendReportingNotificationByMail(reporting: Report, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
@@ -95,8 +95,8 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
     ))
   }
 
-  def sendReportingAcknowledgmentByMail(reporting: Reporting, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
-    reporting.anomalyCategory match {
+  def sendReportingAcknowledgmentByMail(reporting: Report, files: Option[MultipartFormData.FilePart[Files.TemporaryFile]]*) = {
+    reporting.category match {
       case "Intoxication alimentaire" => Future(())
       case _ =>
         Future(mailerService.sendEmail(
@@ -131,26 +131,26 @@ class ReportingController @Inject()(reportingRepository: ReportingRepository,
 object ReportingForms {
 
   case class CreatReportingForm(
-                              companyType: String,
-                              anomalyCategory: String,
-                              anomalyPrecision: Option[String],
-                              companyName: String,
-                              companyAddress: String,
-                              companyPostalCode: Option[String],
-                              companySiret: Option[String],
-                              anomalyDate: LocalDate,
-                              anomalyTimeSlot: Option[Int],
-                              description: Option[String],
-                              firstName: String,
-                              lastName: String,
-                              email: String,
-                              contactAgreement: Boolean
+                                 category: String,
+                                 subcategory: Option[String],
+                                 precision: Option[String],
+                                 companyName: String,
+                                 companyAddress: String,
+                                 companyPostalCode: Option[String],
+                                 companySiret: Option[String],
+                                 anomalyDate: LocalDate,
+                                 anomalyTimeSlot: Option[Int],
+                                 description: Option[String],
+                                 firstName: String,
+                                 lastName: String,
+                                 email: String,
+                                 contactAgreement: Boolean
                             )
 
   val createReportingForm = Form(mapping(
-    "companyType" -> nonEmptyText,
-    "anomalyCategory" -> nonEmptyText,
-    "anomalyPrecision" -> optional(text),
+    "category" -> nonEmptyText,
+    "subcategory" -> optional(text),
+    "precision" -> optional(text),
     "companyName" -> nonEmptyText,
     "companyAddress" -> nonEmptyText,
     "companyPostalCode" -> optional(text),

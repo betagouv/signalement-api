@@ -1,4 +1,4 @@
-@(reporting: Reporting)
+@(reporting: Report)
 
 @import java.time.format.DateTimeFormatter
 
@@ -23,14 +23,16 @@
                 <hr>
                 <ul>
                     <li>
-                        Type d'établissement : @reporting.companyType
+                        Problème : @reporting.category @reporting.subcategory.map(subcategory => s"(${subcategory})")
                     </li>
-                    <li>
-                        Type d'anomalie : @reporting.anomalyCategory
-                    </li>
-                    <li>
-                        Précision : @reporting.anomalyPrecision
-                    </li>
+                    @reporting.precision match {
+                        case Some(precision) => {
+                            <li>
+                                Précision : @precision
+                            </li>
+                        }
+                        case _ => {}
+                    }
                 </ul>
                 <ul>
                     <li>
@@ -45,7 +47,7 @@
                         Plage horaire : @reporting.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
                     </li>
                     <li>
-                        Précision du problème : @reporting.description
+                        Description du problème : @reporting.description
                     </li>
                 </ul>
                 <ul>

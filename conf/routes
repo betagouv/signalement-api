@@ -5,7 +5,7 @@
 # Static pages
 GET         /api                                    controllers.StaticController.api
 
-# Reporting API
+# Report API
 POST         /api/reports                           controllers.ReportingController.createReporting()
 GET          /api/reports/stats                     controllers.ReportingController.getStatistics()
 
