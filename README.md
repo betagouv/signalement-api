@@ -8,7 +8,7 @@ Plus d'information ici : https://beta.gouv.fr/startup/signalement.html
 
 L'API nécessite une base PostgreSQL pour la persistence des données (versions supportées : 9.5, 9.6, 10.x).
 
-Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) version >= 1.6
+Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) version >= 1.2.6
 
 ## Développement
 
@@ -58,8 +58,8 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |<a name="APPLICATION_HOST">EVOLUTIONS_AUTO_APPLY</a>|Exécution automatique des scripts `upgrade` de la base de données|false|
 |<a name="APPLICATION_HOST">EVOLUTIONS_AUTO_APPLY_DOWNS</a>|Exécution automatique des scripts `downgrade` de la base de données|false|
 |<a name="APPLICATION_HOST">MAX_CONNECTIONS</a>|Nombre maximum de connexions ouvertes vers la base de données||
-|<a name="APPLICATION_HOST">MAIL_FROM</a>|Expéditeur des mails|dev-noreply@signalement.beta.gouv.fr|
-|<a name="APPLICATION_HOST">MAIL_CONTACT_RECIPIENT</a>|Boite mail destinataire des mails génériques|contact@signalement.beta.gouv.fr|
+|<a name="APPLICATION_HOST">MAIL_FROM</a>|Expéditeur des mails|dev-noreply@signalconso.beta.gouv.fr|
+|<a name="APPLICATION_HOST">MAIL_CONTACT_RECIPIENT</a>|Boite mail destinataire des mails génériques|contact@signalconso.beta.gouv.fr|
 |<a name="APPLICATION_HOST">MAILER_HOST</a>|Hôte du serveur de mails||
 |<a name="APPLICATION_HOST">MAILER_PORT</a>|Port du serveur de mails||
 |<a name="APPLICATION_HOST">MAILER_USER</a>|Nom d'utilisateur du serveur de mails||
