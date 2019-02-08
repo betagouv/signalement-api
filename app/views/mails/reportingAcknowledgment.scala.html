@@ -1,4 +1,4 @@
-@(reporting: Report)
+@(reporting: Report, contactRecipientMail: String)
 
 @import java.time.format.DateTimeFormatter
 
@@ -68,10 +68,10 @@
                 <hr/>
             </div>
             <p>
-                Pour améliorer encore le droit des consommateurs, continuez à vous informer et signaler les anomalies constatées sur <a href="https://signalement.beta.gouv.fr">https://signalement.beta.gouv.fr</a>.
+                Pour améliorer encore le droit des consommateurs, continuez à vous informer et signaler les anomalies constatées sur <a href="https://signalconso.beta.gouv.fr">https://signalconso.beta.gouv.fr</a>.
             </p>
             <p>
-                Vous avez une question ? Vous constatez un dysfonctionnement ? <a href="mailto:contact@@signalement.beta.gouv.fr" title="Nous écrire un mail">Contactez-nous</a>
+                Vous avez une question ? Vous constatez un dysfonctionnement ? <a href="mailto:@contactRecipientMail" title="Nous écrire un mail">Contactez-nous</a>
             </p>
             <p>
                 <i>L'équipe signalement</i>

@@ -103,7 +103,7 @@ class ReportingController @Inject()(reportingRepository: ReportRepository,
           from = configuration.get[String]("play.mail.from"),
           recipients = reporting.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.reportingAcknowledgment(reporting).toString,
+          bodyHtml = views.html.mails.reportingAcknowledgment(reporting, configuration.get[String]("play.mail.contactRecipient")).toString,
           attachments = Seq(
             AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
           )
