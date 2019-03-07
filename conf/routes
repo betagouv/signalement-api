@@ -11,5 +11,5 @@ GET          /api/reports/stats                     controllers.ReportingControl
 
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
-GET         /api/companies/nearby/                  controllers.CompanyController.getNearbyCompanies(lat, long, radius: Double ?= 5, maxCount: Int ?= 10)
+GET         /api/companies/nearby/                  controllers.CompanyController.getAllNearbyCompanies(lat, long, radius: Double ?= 0.2, maxCount: Int ?= 10)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
