@@ -20,6 +20,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
 
+  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.20",
+
   specs2 % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.14",

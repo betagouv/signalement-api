@@ -11,7 +11,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.{FileRepository, ReportRepository}
-import services.MailerService
+import services.{S3Service, MailerService}
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -28,7 +28,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withMultipartFormDataBody(formData)
 
-        val controller = new ReportingController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[Configuration], mock[Environment]){
+        val controller = new ReportingController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[S3Service], mock[Configuration], mock[Environment]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 

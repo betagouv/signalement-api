@@ -7,6 +7,7 @@ GET         /api                                    controllers.StaticController
 
 # Report API
 POST         /api/reports                           controllers.ReportingController.createReporting()
+POST         /api/reports/files                     controllers.ReportingController.upload()
 GET          /api/reports/stats                     controllers.ReportingController.getStatistics()
 
 # Company API

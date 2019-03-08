@@ -34,6 +34,7 @@
   <logger name="application" level="DEBUG" />
   <logger name="controllers" level="DEBUG" />
   <logger name="repositories" level="DEBUG" />
+  <logger name="services" level="DEBUG" />
   <logger name="utils" level="DEBUG" />
 
   <root level="WARN">
