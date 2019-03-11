@@ -76,6 +76,12 @@ class CompanyController @Inject()(ws: WSClient)
 
     val MAX_COUNT = 100
     val MAX_PAGE = 10
+    val ACTIVITY_DIVISIONS_WHITELIST = List(
+      "01", "02", "03", // Section A : Agriculture, sylviculture et pêche
+      "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", // Section C : Industrie manufacturière
+      "45", "46", "47", // Section G : Commerce ; réparation d'automobiles et de motocycles
+      "55", "56" // Section I : Hébergement et restauration
+    )
 
     getNearbyCompanies(lat, long, radius, MAX_COUNT, 1).flatMap(
       firstPage => {
@@ -108,14 +114,19 @@ class CompanyController @Inject()(ws: WSClient)
                 })
                 var companiesWithDistance = new ListBuffer[JsObject]()
                 allCompanies.foreach(company => {
-                  val companyLat = (company("latitude")).as[String]
-                  val companyLong = (company("longitude")).as[String]
-                  val distance = haversineDistance(lat.toDouble, long.toDouble, companyLat.toDouble, companyLong.toDouble)
-                  val companyWithDistance = company ++ Json.obj("distance" -> distance)
-                  companiesWithDistance += companyWithDistance
+                  val mainActivity = (company("activite_principale")).as[String]
+                  val mainActivityDivision = mainActivity.substring(0, 2);
+                  if (ACTIVITY_DIVISIONS_WHITELIST.contains(mainActivityDivision)) {
+                    val companyLat = (company("latitude")).as[String]
+                    val companyLong = (company("longitude")).as[String]
+                    val distance = haversineDistance(lat.toDouble, long.toDouble, companyLat.toDouble, companyLong.toDouble)
+                    val companyWithDistance = company ++ Json.obj("distance" -> distance)
+                    companiesWithDistance += companyWithDistance
+                  }
                 })
                 val sortedCompanies = companiesWithDistance.sortWith((d1, d2) => d1("distance").as[Double] < d2("distance").as[Double])
                 val numberOfCompanies = sortedCompanies.length;
+                logger.debug(s"numberOfCompanies $numberOfCompanies")
                 val numberOfResults = Math.min(numberOfCompanies, maxCount)
                 logger.debug(s"numberOfResults $numberOfResults")
                 val nearbyCompanies = sortedCompanies.take(numberOfResults)
