@@ -1,4 +1,4 @@
-@(reporting: Report)
+@(report: Report, files: List[File])
 
 @import java.time.format.DateTimeFormatter
 
@@ -11,54 +11,71 @@
     <body>
         <ul>
             <li>
-                Catégorie : @reporting.category
+                Catégorie : @report.category
             </li>
             <li>
-                Sous-catégorie : @reporting.subcategory
+                Sous-catégorie : @report.subcategory
             </li>
             <li>
-                Précision : @reporting.precision
-            </li>
-        </ul>
-        <ul>
-            <li>
-                Nom de l'établissement : @reporting.companyName
-            </li>
-            <li>
-                Adresse de l'établissement : @reporting.companyAddress
-            </li>
-            <li>
-                Siret : @reporting.companySiret
+                Précision : @report.precision
             </li>
         </ul>
         <ul>
             <li>
-                Date du constat : @reporting.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                Nom de l'établissement : @report.companyName
             </li>
             <li>
-                Plage horaire : @reporting.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
+                Adresse de l'établissement : @report.companyAddress
             </li>
             <li>
-                Description du problème : @reporting.description
-            </li>
-        </ul>
-        <ul>
-            <li>
-                Nom : @reporting.lastName
-            </li>
-            <li>
-                Prénom : @reporting.firstName
-            </li>
-            <li>
-                Email : @reporting.email
-            </li>
-            <li>
-                Accord pour contact : @if(reporting.contactAgreement) {oui} else {non}
+                Siret : @report.companySiret
             </li>
         </ul>
         <ul>
             <li>
-                Identifiant technique : @reporting.id
+                Date du constat : @report.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            </li>
+            <li>
+                Plage horaire : @report.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
+            </li>
+            <li>
+                Description du problème : @report.description
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom : @report.lastName
+            </li>
+            <li>
+                Prénom : @report.firstName
+            </li>
+            <li>
+                Email : @report.email
+            </li>
+            <li>
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Identifiant technique : @report.id
+            </li>
+        </ul>
+        <ul>
+            <li>
+                @files match {
+                    case List() => { Aucune pièce jointe }
+                    case files => {
+                        Pièces jointes :
+                        <ul>
+                            @files.map { file =>
+                                <li>
+                                    @file.filename (@file.id)
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
             </li>
         </ul>
     </body>

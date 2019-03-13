@@ -1,10 +1,9 @@
 package repositories
 
 import java.sql.Date
-import java.time.YearMonth
+import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
-import akka.http.scaladsl.model.DateTime
 import javax.inject.{Inject, Singleton}
 import models.{Report, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
@@ -17,8 +16,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
+  import PostgresProfile.api._
   import dbConfig._
-  import profile.api._
 
   private class ReportingTable(tag: Tag) extends Table[Report](tag, "signalement") {
 
@@ -31,7 +30,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def companyAddress = column[String]("adresse_etablissement")
     def companyPostalCode = column[Option[String]]("code_postal")
     def companySiret = column[Option[String]]("siret_etablissement")
-    def creationDate= column[Date]("date_creation")
+    def creationDate= column[LocalDateTime]("date_creation")
     def anomalyDate= column[Date]("date_constat")
     def anomalyTimeSlot = column[Option[Int]]("heure_constat")
     def description = column[Option[String]]("description")
@@ -39,33 +38,32 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def lastName = column[String]("nom")
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
-    def ticketFileId = column[Option[Long]]("ticket_file_id")
-    def anomalyFileId = column[Option[Long]]("anomalie_file_id")
+    def fileIds = column[List[UUID]]("piece_jointe_ids")
 
-    type ReportData = (UUID, Option[String], String, Option[String], Option[String], String, String, Option[String], Option[String], Date, Date, Option[Int], Option[String], String, String, String, Boolean, Option[Long], Option[Long])
+    type ReportData = (UUID, Option[String], String, Option[String], Option[String], String, String, Option[String], Option[String], LocalDateTime, Date, Option[Int], Option[String], String, String, String, Boolean, List[UUID])
 
     def constructReport: ReportData => Report = {
       case (id, companyType, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, ticketFileId, anomalyFileId) =>
-        Report(id, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.toLocalDate, anomalyDate.toLocalDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, ticketFileId, anomalyFileId)
+      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) =>
+        Report(Some(id), category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
+          Some(creationDate), anomalyDate.toLocalDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, ticketFileId, anomalyFileId) =>
-        (id, None, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
-          Date.valueOf(creationDate), Date.valueOf(anomalyDate), anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, ticketFileId, anomalyFileId)
+      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) =>
+        (id.get, None, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
+          creationDate.get, Date.valueOf(anomalyDate), anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds)
     }
 
     def * =
       (id, companyType, category, subcategory, precision, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, ticketFileId, anomalyFileId) <> (constructReport, extractReport.lift)
+        creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) <> (constructReport, extractReport.lift)
   }
 
   private val reportingTableQuery = TableQuery[ReportingTable]
 
-  private val date_part = SimpleFunction.binary[String, Date, Int]("date_part")
+  private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
   def create(reporting: Report): Future[Report] = db
     .run(reportingTableQuery += reporting)
