@@ -33,6 +33,9 @@ sbt "run -Dconfig.file=[chemin vers le fichier de configuration local]"
 
 Ex:
 sbt "run -Dconfig.file=./conf/local.conf"
+
+# alternative
+sbt "run -Dconfig.file=./conf/local.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
 ```
 
 Remarques:
