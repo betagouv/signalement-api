@@ -1,4 +1,4 @@
-# SignalementApi
+# SignalConso API
 
 API de l'outil SignalConso (ex signalement).
 
