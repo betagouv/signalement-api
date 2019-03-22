@@ -78,7 +78,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  def sendReportingNotificationByMail(reporting: Report, files: List[File]) = {
+  def sendReportingNotificationByMail(reporting: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(

@@ -1,4 +1,4 @@
-@(report: Report, files: List[File])
+@(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any])
 
 @import java.time.format.DateTimeFormatter
 
@@ -70,9 +70,8 @@
                         <ul>
                             @files.map { file =>
                                 <li>
-                                    <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename)">
-                                        @file.filename (@file.id)
-                                    </a>
+                                    <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL()">@file.filename</a>
+                                    &nbsp;(@file.id)
                                 </li>
                             }
                         </ul>
