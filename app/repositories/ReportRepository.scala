@@ -19,7 +19,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   import PostgresProfile.api._
   import dbConfig._
 
-  private class ReportingTable(tag: Tag) extends Table[Report](tag, "signalement") {
+  private class ReportTable(tag: Tag) extends Table[Report](tag, "signalement") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def companyType = column[Option[String]]("type_etablissement")
@@ -61,29 +61,29 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) <> (constructReport, extractReport.lift)
   }
 
-  private val reportingTableQuery = TableQuery[ReportingTable]
+  private val reportTableQuery = TableQuery[ReportTable]
 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
-  def create(reporting: Report): Future[Report] = db
-    .run(reportingTableQuery += reporting)
-    .map(_ => reporting)
+  def create(report: Report): Future[Report] = db
+    .run(reportTableQuery += report)
+    .map(_ => report)
 
 
-  def update(reporting: Report): Future[Report] = {
-    val queryReporting = for (refReporting <- reportingTableQuery if refReporting.id === reporting.id)
-      yield refReporting
-    db.run(queryReporting.update(reporting))
-      .map(_ => reporting)
+  def update(report: Report): Future[Report] = {
+    val queryReport = for (refReport <- reportTableQuery if refReport.id === report.id)
+      yield refReport
+    db.run(queryReport.update(report))
+      .map(_ => report)
   }
 
   def count: Future[Int] = db
-    .run(reportingTableQuery.length.result)
+    .run(reportTableQuery.length.result)
 
   def countPerMonth: Future[List[ReportsPerMonth]] = db
     .run(
-      reportingTableQuery
-        .groupBy(reporting => (date_part("month", reporting.creationDate), date_part("year", reporting.creationDate)))
+      reportTableQuery
+        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
         .map{
           case ((month, year), group) => (month, year, group.length)
         }

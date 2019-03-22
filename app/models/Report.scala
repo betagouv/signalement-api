@@ -25,6 +25,6 @@ case class Report(
                    fileIds: List[UUID]
                  )
 object Report {
-  implicit val reportingFormat: OFormat[Report] = Json.format[Report]
+  implicit val reportFormat: OFormat[Report] = Json.format[Report]
 
 }

@@ -45,8 +45,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           )
           attachFilesToReport <- fileRepository.attachFilesToReport(report.fileIds, report.id.get)
           files <- fileRepository.retrieveReportFiles(report.id.get)
-          mailNotification <- sendReportingNotificationByMail(report, files)
-          mailAcknowledgment <- sendReportingAcknowledgmentByMail(report, files)
+          mailNotification <- sendReportNotificationByMail(report, files)
+          mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
         } yield {
           Ok(Json.toJson(report))
         }
@@ -78,24 +78,24 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  def sendReportingNotificationByMail(reporting: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
+  def sendReportNotificationByMail(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
       subject = "Nouveau signalement",
-      bodyHtml = views.html.mails.reportingNotification(reporting, files).toString
+      bodyHtml = views.html.mails.reportNotification(report, files).toString
     ))
   }
 
-  def sendReportingAcknowledgmentByMail(reporting: Report, files: List[File]) = {
-    reporting.category match {
+  def sendReportAcknowledgmentByMail(report: Report, files: List[File]) = {
+    report.category match {
       case "Intoxication alimentaire" => Future(())
       case _ =>
         Future(mailerService.sendEmail(
           from = configuration.get[String]("play.mail.from"),
-          recipients = reporting.email)(
+          recipients = report.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.reportingAcknowledgment(reporting, configuration.get[String]("play.mail.contactRecipient"), files).toString
+          bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString
         ))
     }
   }
