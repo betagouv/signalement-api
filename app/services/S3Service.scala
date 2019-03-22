@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.alpakka.s3.scaladsl.S3Client
 import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.ExecutionContext
@@ -17,7 +18,8 @@ class S3Service @Inject()(implicit val system: ActorSystem, val materializer: Ma
     s3Client.multipartUpload(bucketName, bucketKey)
 
   def download(bucketName: String, bucketKey: String) =
-    s3Client.download(bucketName, bucketKey)._1.runWith(Sink.head).map(_.asByteBuffer)
+    s3Client.download(bucketName, bucketKey)._1.runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b))
+
 
   def delete(bucketName: String, bucketKey: String)=
     s3Client.deleteObject(bucketName, bucketKey)

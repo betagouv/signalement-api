@@ -105,8 +105,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Some(file) if file.filename == filename =>
         s3Service.download(BucketName, uuid).flatMap(
           file => {
-            val dest: Array[Byte] = new Array[Byte](file.capacity())
-            file.get(dest)
+            val dest: Array[Byte] = new Array[Byte](file.asByteBuffer.capacity())
+            file.asByteBuffer.get(dest)
             Future(Ok(dest))
           }
         )
