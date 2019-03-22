@@ -1,13 +1,11 @@
 package controllers
 
-import java.time.{LocalDate, LocalDateTime, YearMonth}
+import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import javax.inject.Inject
 import models.{File, Report, Statistics}
-import play.api.data.Form
-import play.api.data.Forms._
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
@@ -29,9 +27,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val logger: Logger = Logger(this.getClass)
 
+  val BucketName = configuration.get[String]("play.buckets.report")
+
   def createReport = Action.async(parse.json) { implicit request =>
 
-    logger.debug("createReporting")
+    logger.debug("createReport")
 
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -71,7 +71,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
     case FileInfo(partName, filename, contentType) =>
-      val accumulator = Accumulator(s3Service.upload(configuration.get[String]("play.buckets.report"), UUID.randomUUID.toString))
+      val accumulator = Accumulator(s3Service.upload(BucketName, UUID.randomUUID.toString))
 
       accumulator map { multipartUploadResult =>
         FilePart(partName, filename, contentType, multipartUploadResult)
@@ -98,6 +98,31 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           bodyHtml = views.html.mails.reportingAcknowledgment(reporting, configuration.get[String]("play.mail.contactRecipient"), files).toString
         ))
     }
+  }
+
+  def downloadReportFile(uuid: String, filename: String) = Action.async { implicit request =>
+    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+      case Some(file) if file.filename == filename =>
+        s3Service.download(BucketName, uuid).flatMap(
+          file => {
+            val dest: Array[Byte] = new Array[Byte](file.capacity())
+            file.get(dest)
+            Future(Ok(dest))
+          }
+        )
+      case _ => Future(NotFound)
+    })
+  }
+
+  def deleteReportFile(uuid: String, filename: String) = Action.async { implicit request =>
+    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+      case Some(file) if file.filename == filename =>
+        for {
+          repositoryDelete <- fileRepository.delete(UUID.fromString(uuid))
+          s3Delete <- s3Service.delete(BucketName, uuid)
+        } yield Ok
+      case _ => Future(NotFound)
+    })
   }
 
   def getStatistics = Action.async { implicit request =>

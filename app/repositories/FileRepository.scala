@@ -55,10 +55,25 @@ class FileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
     db.run(queryFile.update(Some(reportId)))
   }
 
+  def get(uuid: UUID): Future[Option[File]] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .to[List].result
+        .headOption
+    )
+
   def retrieveReportFiles(reportId: UUID): Future[List[File]] = db
     .run(
       fileTableQuery
         .filter(_.reportId === reportId)
         .to[List].result
+    )
+
+  def delete(uuid: UUID): Future[Int] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .delete
     )
 }

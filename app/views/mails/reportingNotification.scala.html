@@ -70,7 +70,9 @@
                         <ul>
                             @files.map { file =>
                                 <li>
-                                    @file.filename (@file.id)
+                                    <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename)">
+                                        @file.filename (@file.id)
+                                    </a>
                                 </li>
                             }
                         </ul>

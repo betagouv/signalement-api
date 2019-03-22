@@ -9,6 +9,8 @@ GET         /api                                    controllers.StaticController
 POST         /api/reports                           controllers.ReportController.createReport()
 POST         /api/reports/files                     controllers.ReportController.uploadReportFile()
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
+GET          /api/reports/files/:uuid/:filename     controllers.ReportController.downloadReportFile(uuid, filename)
+DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)
 
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
