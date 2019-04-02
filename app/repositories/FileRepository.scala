@@ -1,15 +1,14 @@
 package repositories
 
-import java.io.InputStream
+import java.sql.Date
+import java.time.LocalDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.Report
-import org.postgresql.PGConnection
-import org.postgresql.largeobject.LargeObjectManager
+import models.File
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.{JdbcProfile, SetParameter}
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,42 +20,60 @@ class FileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
-  import profile.api._
+  import PostgresProfile.api._
 
-  val bufferSize: Int = 4096
+  private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
 
-  def uploadFile(inputStream: InputStream): Future[Option[Long]] = {
+    def id = column[UUID]("id", O.PrimaryKey)
+    def reportId = column[Option[UUID]]("signalement_id")
+    def creationDate = column[LocalDateTime]("date_creation")
+    def filename = column[String]("nom")
 
-    db.run {
-      SimpleDBIO { khan =>
-        khan.connection.setAutoCommit(false)
-        val largeObjectApi = khan.connection.unwrap(classOf[PGConnection]).getLargeObjectAPI
-        val largeObjectId = largeObjectApi.createLO()
-        val largeObject = largeObjectApi.open(largeObjectId, LargeObjectManager.WRITE)
+    type FileData = (UUID, Option[UUID], LocalDateTime, String)
 
-        val bytes = new Array[Byte](bufferSize)
-
-        Iterator.continually {
-          val bytesRead = inputStream.read(bytes)
-          val bytesToWrite = if (bytesRead <= 0) {
-            //nothing was read, so just return an empty byte array
-            new Array[Byte](0)
-          } else if (bytesRead < bufferSize) {
-            //the read operation hit the end of the stream, so remove the unneeded cells
-            val actualBytes = new Array[Byte](bytesRead)
-            bytes.copyToArray(actualBytes)
-            actualBytes
-          } else {
-            bytes
-          }
-          largeObject.write(bytesToWrite)
-          bytesRead
-        }.takeWhile {
-          _ > 0
-        }.length //call .length to force evaluation
-        largeObject.close()
-        Some(largeObjectId)
-      }
+    def constructFile: FileData => File = {
+      case (id, reportId, creationDate, filename) => File(id, reportId, creationDate, filename)
     }
+
+    def extractFile: PartialFunction[File, FileData] = {
+      case File(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+    }
+
+    def * =
+      (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
   }
+
+  private val fileTableQuery = TableQuery[FileTable]
+
+  def create(file: File): Future[File] = db
+    .run(fileTableQuery += file)
+    .map(_ => file)
+
+  def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
+    val queryFile = for (refFile <- fileTableQuery.filter(_.id.inSet(fileIds)))
+      yield refFile.reportId
+    db.run(queryFile.update(Some(reportId)))
+  }
+
+  def get(uuid: UUID): Future[Option[File]] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .to[List].result
+        .headOption
+    )
+
+  def retrieveReportFiles(reportId: UUID): Future[List[File]] = db
+    .run(
+      fileTableQuery
+        .filter(_.reportId === reportId)
+        .to[List].result
+    )
+
+  def delete(uuid: UUID): Future[Int] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .delete
+    )
 }
