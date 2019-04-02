@@ -6,7 +6,7 @@ import java.util.UUID
 import play.api.libs.json.{Json, OFormat}
 
 case class Report(
-                   id: UUID,
+                   id: Option[UUID],
                    category: String,
                    subcategory: Option[String],
                    precision: Option[String],
@@ -14,7 +14,7 @@ case class Report(
                    companyAddress: String,
                    companyPostalCode: Option[String],
                    companySiret: Option[String],
-                   creationDate: LocalDate,
+                   creationDate: Option[LocalDateTime],
                    anomalyDate: LocalDate,
                    anomalyTimeSlot: Option[Int],
                    description: Option[String],
@@ -22,11 +22,9 @@ case class Report(
                    lastName: String,
                    email: String,
                    contactAgreement: Boolean,
-                   ticketFileId: Option[Long],
-                   anomalyFileId: Option[Long]
+                   fileIds: List[UUID]
                  )
 object Report {
-
-  implicit val reportingFormat: OFormat[Report] = Json.format[Report]
+  implicit val reportFormat: OFormat[Report] = Json.format[Report]
 
 }
