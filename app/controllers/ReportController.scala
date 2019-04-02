@@ -7,6 +7,7 @@ import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import javax.inject.Inject
 import models.{File, Report, Statistics}
 import play.api.libs.json.{JsError, Json}
+import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
@@ -95,7 +96,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           from = configuration.get[String]("play.mail.from"),
           recipients = report.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString
+          bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
+          attachments = Seq(
+            AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
+          )
         ))
     }
   }
