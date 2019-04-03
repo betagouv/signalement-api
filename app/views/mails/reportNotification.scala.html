@@ -1,0 +1,83 @@
+@(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any])
+
+@import java.time.format.DateTimeFormatter
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Nouveau signalement</title>
+    </head>
+    <body>
+        <ul>
+            <li>
+                Catégorie : @report.category
+            </li>
+            <li>
+                Sous-catégorie : @report.subcategory
+            </li>
+            <li>
+                Précision : @report.precision
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom de l'établissement : @report.companyName
+            </li>
+            <li>
+                Adresse de l'établissement : @report.companyAddress
+            </li>
+            <li>
+                Siret : @report.companySiret
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Date du constat : @report.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            </li>
+            <li>
+                Plage horaire : @report.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
+            </li>
+            <li>
+                Description du problème : @report.description
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Nom : @report.lastName
+            </li>
+            <li>
+                Prénom : @report.firstName
+            </li>
+            <li>
+                Email : @report.email
+            </li>
+            <li>
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            </li>
+        </ul>
+        <ul>
+            <li>
+                Identifiant technique : @report.id
+            </li>
+        </ul>
+        <ul>
+            <li>
+                @files match {
+                    case List() => { Aucune pièce jointe }
+                    case files => {
+                        Pièces jointes :
+                        <ul>
+                            @files.map { file =>
+                                <li>
+                                    <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL()">@file.filename</a>
+                                    &nbsp;(@file.id)
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+            </li>
+        </ul>
+    </body>
+</html>

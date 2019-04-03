@@ -16,9 +16,12 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.2.2",
   "com.typesafe.play" %% "play-slick" %  "3.0.2",
   "com.typesafe.play" %% "play-slick-evolutions" % "3.0.2",
+  "com.github.tminglei" %% "slick-pg" % "0.17.2",
 
   "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
+
+  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.20",
 
   specs2 % Test,
 

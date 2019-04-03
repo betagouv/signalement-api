@@ -1,4 +1,4 @@
-@(reporting: Report, contactRecipientMail: String)
+@(report: Report, contactRecipientMail: String, files: List[File])
 
 @import java.time.format.DateTimeFormatter
 
@@ -15,7 +15,7 @@
                 <br>
             </div>
             <p style="font-size: 16px">
-                Merci <b>@reporting.firstName</b>, votre signalement a bien été enregistré.
+                Merci <b>@report.firstName</b>, votre signalement a bien été enregistré.
             </p>
             <div style="padding-bottom: 0.5em">
                 <hr/>
@@ -23,9 +23,9 @@
                 <hr>
                 <ul>
                     <li>
-                        Problème : @reporting.category @reporting.subcategory.map(subcategory => s"(${subcategory})")
+                        Problème : @report.category @report.subcategory.map(subcategory => s"(${subcategory})")
                     </li>
-                    @reporting.precision match {
+                    @report.precision match {
                         case Some(precision) => {
                             <li>
                                 Précision : @precision
@@ -36,32 +36,49 @@
                 </ul>
                 <ul>
                     <li>
-                        Etablissement : @reporting.companyAddress
+                        Etablissement : @report.companyAddress
                     </li>
                 </ul>
                 <ul>
                     <li>
-                        Date du constat : @reporting.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        Date du constat : @report.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                     </li>
                     <li>
-                        Plage horaire : @reporting.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
+                        Plage horaire : @report.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
                     </li>
                     <li>
-                        Description du problème : @reporting.description
+                        Description du problème : @report.description
                     </li>
                 </ul>
                 <ul>
                     <li>
-                        Nom : @reporting.lastName
+                        Nom : @report.lastName
                     </li>
                     <li>
-                        Prénom : @reporting.firstName
+                        Prénom : @report.firstName
                     </li>
                     <li>
-                        Email : @reporting.email
+                        Email : @report.email
                     </li>
                     <li>
-                        Accord pour contact : @if(reporting.contactAgreement) {oui} else {non}
+                        Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+                    </li>
+                </ul>
+                <ul>
+                    <li>
+                    @files match {
+                        case List() => { Aucune pièce jointe }
+                        case files => {
+                            Pièces jointes :
+                            <ul>
+                            @files.map { file =>
+                                <li>
+                                    @file.filename
+                                </li>
+                            }
+                            </ul>
+                        }
+                    }
                     </li>
                 </ul>
 
