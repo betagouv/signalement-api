@@ -20,67 +20,67 @@
             <div style="padding-bottom: 0.5em">
                 <hr/>
                 <div style="font-weight: bold; text-align: center">Détail du signalement</div>
-                <hr>
-                <ul>
-                    <li>
-                        Problème : @report.category @report.subcategory.map(subcategory => s"(${subcategory})")
-                    </li>
-                    @report.precision match {
-                        case Some(precision) => {
-                            <li>
-                                Précision : @precision
-                            </li>
-                        }
-                        case _ => {}
+                <hr />
+                <b>Problème</b>
+                <br/>
+                @report.category
+                <br />
+                @report.subcategories.map {subcategory =>
+                    @subcategory
+                    <br />
+                }
+
+                <br />
+                <b>Description</b>
+                <br/>
+                @report.details.map { detailInputValue =>
+                    @detailInputValue.label @Html(detailInputValue.value)
+                    <br/>
+                }
+
+                @report.anomalyDate.map { anomalyDate =>
+                    Date du constat : @anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    <br />
+                }
+                @report.anomalyTimeSlot.map { hour =>
+                    Plage horaire : @(s"de ${hour}h à ${hour + 1}h"))
+                    <br />
+                }
+                @report.description.map { description =>
+                    Description du problème : @Html(description)
+                    <br />
+                }
+
+                @if(files.length > 0) {
+                    <br/>
+                    Pièces jointes :
+                    <ul>
+                    @files.map { file =>
+                        <li>
+                            @file.filename
+                        </li>
                     }
-                </ul>
-                <ul>
-                    <li>
-                        Etablissement : @report.companyAddress
-                    </li>
-                </ul>
-                <ul>
-                    <li>
-                        Date du constat : @report.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                    </li>
-                    <li>
-                        Plage horaire : @report.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
-                    </li>
-                    <li>
-                        Description du problème : @report.description
-                    </li>
-                </ul>
-                <ul>
-                    <li>
-                        Nom : @report.lastName
-                    </li>
-                    <li>
-                        Prénom : @report.firstName
-                    </li>
-                    <li>
-                        Email : @report.email
-                    </li>
-                    <li>
-                        Accord pour contact : @if(report.contactAgreement) {oui} else {non}
-                    </li>
-                </ul>
-                <ul>
-                    <li>
-                    @files match {
-                        case List() => { Aucune pièce jointe }
-                        case files => {
-                            Pièces jointes :
-                            <ul>
-                            @files.map { file =>
-                                <li>
-                                    @file.filename
-                                </li>
-                            }
-                            </ul>
-                        }
-                    }
-                    </li>
-                </ul>
+                    </ul>
+                } else {
+                    <br />
+                }
+
+                <b>Etablissement</b>
+                <br/>
+                @report.companyAddress
+                <br/>
+
+                <br />
+                <b>Consommateur</b>
+                <br/>
+                Nom : @report.lastName
+                <br />
+                Prénom : @report.firstName
+                <br />
+                Email : @report.email
+                <br/>
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+                <br/>
 
                 <hr/>
             </div>
