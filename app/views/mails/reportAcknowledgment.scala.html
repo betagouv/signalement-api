@@ -39,7 +39,7 @@
                 }
 
                 @report.anomalyDate.map { anomalyDate =>
-                    Date du constat : @anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    Date du constat : @anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")
                     <br />
                 }
                 @report.anomalyTimeSlot.map { hour =>
