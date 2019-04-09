@@ -143,4 +143,45 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       ))
     }
   }
+ 
+  def getReports(numPage: String, sizePage: String) = Action.async { implicit request => 
+
+    // valeurs par défaut
+    var num = 0
+    var size = 10
+    var offset = 0
+
+    // normalisation des entrées
+    try {
+      if (numPage.toInt > 0) num = numPage.toInt - 1
+    } catch {
+      case ignore: Exception => None
+    }
+    
+    // 1 <= size <= 100
+    try {
+      if (sizePage.toInt > 0 && sizePage.toInt < 100) size = sizePage.toInt
+    } catch {
+      case ignore: Exception => None
+    }
+    
+    reportRepository.count.flatMap( count => {
+      val maxPages = if (count == 0) 1 else ((count - 1) / size) + 1
+
+      // Règle : 0 <= num < maxPages
+      if (num >= maxPages) num = maxPages - 1
+      offset = num * size
+  
+      logger.debug(s">>> getReports $num $size $offset")
+
+      reportRepository.getReports(offset, limit = size).flatMap( reports => {
+
+        // logger.debug(Json.toJson(reports).toString)
+
+        Future(Ok(Json.toJson(reports)))
+      })
+    })
+
+
+  }
 }

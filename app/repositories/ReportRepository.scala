@@ -90,5 +90,15 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .to[List].result
     )
     .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
+
+  def getReports(offset: Int, limit: Int): Future[List[Report]] = db
+    .run(
+        reportTableQuery
+        .drop(offset)
+        .take(limit)
+        .to[List]
+        .result
+    )
+
 }
 
