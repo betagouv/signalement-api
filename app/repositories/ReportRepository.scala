@@ -10,6 +10,18 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.json.{Json, OFormat}
+
+
+case class PaginatedResult[T](
+  totalCount: Int, 
+  hasNextPage: Boolean,
+  entities: List[T]
+)
+
+object PaginatedResult {
+  implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
+}
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -91,7 +103,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
     .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
 
-  def getReports(offset: Int, limit: Int): Future[List[Report]] = db
+  def getReportsSimple(offset: Int, limit: Int): Future[List[Report]] = db
     .run(
         reportTableQuery
         .drop(offset)
@@ -100,5 +112,20 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .result
     )
 
+  def getReports(offset: Int, limit: Int): Future[PaginatedResult[Report]] = db.run {
+      for {
+        reports <- reportTableQuery
+          .sortBy(_.creationDate)
+          .drop(offset)
+          .take(limit)
+          .result
+        count <- reportTableQuery.length.result
+      } yield PaginatedResult(
+        totalCount = count,
+        entities = reports.toList,
+        hasNextPage = count - ( offset + limit ) >0
+      )
+    }
+    
 }
 

@@ -168,7 +168,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     reportRepository.count.flatMap( count => {
       val maxPages = if (count == 0) 1 else ((count - 1) / size) + 1
 
-      // Règle : 0 <= num < maxPages
+      // 0 <= num < maxPages
       if (num >= maxPages) num = maxPages - 1
       offset = num * size
   
