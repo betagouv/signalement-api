@@ -45,6 +45,16 @@ Remarques:
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
 
+## Installation Postgres
+
+Après intallation de Postgres, il faut créer la database api.
+
+```sh
+CREATE DATABASE api;
+```
+
+Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas.
+
 ## Tests
 
 Pour exécuter les tests :
