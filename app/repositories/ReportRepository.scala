@@ -30,34 +30,31 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def companyPostalCode = column[Option[String]]("code_postal")
     def companySiret = column[Option[String]]("siret_etablissement")
     def creationDate= column[LocalDateTime]("date_creation")
-    def anomalyDate= column[Option[Date]]("date_constat")
-    def anomalyTimeSlot = column[Option[Int]]("heure_constat")
-    def description = column[Option[String]]("description")
     def firstName = column[String]("prenom")
     def lastName = column[String]("nom")
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
     def fileIds = column[List[UUID]]("piece_jointe_ids")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, Option[Date], Option[Int], Option[String], String, String, String, Boolean, List[UUID])
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, List[UUID])
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) =>
+      creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
         Report(Some(id), category, subcategories, details.map(detail => DetailInputValue(detail.split(':')(0), detail.split(':')(1))), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), anomalyDate.map(_.toLocalDate), anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds)
+          Some(creationDate), firstName, lastName, email, contactAgreement, fileIds)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) =>
+      creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, anomalyDate.map(Date.valueOf(_)), anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds)
+          creationDate.get, firstName, lastName, email, contactAgreement, fileIds)
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, anomalyDate, anomalyTimeSlot, description, firstName, lastName, email, contactAgreement, fileIds) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement, fileIds) <> (constructReport, extractReport.lift)
   }
 
   private val reportTableQuery = TableQuery[ReportTable]

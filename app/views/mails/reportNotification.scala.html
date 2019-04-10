@@ -19,7 +19,7 @@
 
             @report.details.map { detailInputValue =>
                 <li>
-                    @detailInputValue.label @detailInputValue.value
+                    @Html(detailInputValue.label) @Html(detailInputValue.value)
                 </li>
             }
         </ul>
@@ -33,23 +33,6 @@
             <li>
                 Siret : @report.companySiret
             </li>
-        </ul>
-        <ul>
-            @report.anomalyDate.map { anomalyDate =>
-                <li>
-                    Date du constat : @anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                </li>
-            }
-            @report.anomalyTimeSlot.map { hour =>
-                <li>
-                    Plage horaire : @(s"de ${hour}h à ${hour + 1}h")
-                </li>
-            }
-            @report.description.map { description =>
-                <li>
-                    Description du problème : @description
-                </li>
-            }
         </ul>
         <ul>
             <li>

@@ -34,21 +34,8 @@
                 <b>Description</b>
                 <br/>
                 @report.details.map { detailInputValue =>
-                    @detailInputValue.label @Html(detailInputValue.value)
+                    @Html(detailInputValue.label) @Html(detailInputValue.value)
                     <br/>
-                }
-
-                @report.anomalyDate.map { anomalyDate =>
-                    Date du constat : @anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                    <br />
-                }
-                @report.anomalyTimeSlot.map { hour =>
-                    Plage horaire : @(s"de ${hour}h à ${hour + 1}h")
-                    <br />
-                }
-                @report.description.map { description =>
-                    Description du problème : @Html(description)
-                    <br />
                 }
 
                 @if(files.length > 0) {
