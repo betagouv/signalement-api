@@ -112,7 +112,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .result
     )
 
-  def getReports(offset: Int, limit: Int): Future[PaginatedResult[Report]] = db.run {
+  def getReports(offset: Long, limit: Int): Future[PaginatedResult[Report]] = db.run {
       for {
         reports <- reportTableQuery
           .sortBy(_.creationDate)
