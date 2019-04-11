@@ -58,7 +58,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def uploadReportFile = Action.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     val maybeUploadResult =
       request.body.file("reportFile").map {
-        case FilePart(key, filename, contentType, multipartUploadResult) =>
+        case FilePart(key, filename, contentType, multipartUploadResult, _, _) =>
           (multipartUploadResult, filename)
       }
 
@@ -71,7 +71,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
-    case FileInfo(partName, filename, contentType) =>
+    case FileInfo(partName, filename, contentType, _) =>
       val accumulator = Accumulator(s3Service.upload(BucketName, UUID.randomUUID.toString))
 
       accumulator map { multipartUploadResult =>
