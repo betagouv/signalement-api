@@ -4,6 +4,7 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.{File, Report, Statistics}
 import play.api.libs.json.{JsError, Json}
@@ -15,6 +16,7 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories.{FileRepository, ReportRepository}
 import services.{MailerService, S3Service}
+import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,6 +24,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                                  fileRepository: FileRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
+                                 val silhouette: Silhouette[AuthEnv],
                                  configuration: Configuration,
                                  environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
@@ -30,7 +33,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
-  def createReport = Action.async(parse.json) { implicit request =>
+  def createReport = UserAwareAction.async(parse.json) { implicit request =>
 
     logger.debug("createReport")
 
@@ -55,7 +58,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  def uploadReportFile = Action.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+  def uploadReportFile = UserAwareAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     val maybeUploadResult =
       request.body.file("reportFile").map {
         case FilePart(key, filename, contentType, multipartUploadResult) =>
@@ -104,7 +107,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def downloadReportFile(uuid: String, filename: String) = Action.async { implicit request =>
+  def downloadReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
     fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         s3Service.download(BucketName, uuid).flatMap(
@@ -118,7 +121,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def deleteReportFile(uuid: String, filename: String) = Action.async { implicit request =>
+  def deleteReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
     fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         for {
@@ -129,7 +132,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def getStatistics = Action.async { implicit request =>
+  def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
       reportsCount <- reportRepository.count

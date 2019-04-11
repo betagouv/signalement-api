@@ -16,3 +16,6 @@ DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/nearby/                  controllers.CompanyController.getAllNearbyCompanies(lat, long, radius: Double ?= 0.2, maxCount: Int ?= 10)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
+
+# Authentication API
+POST	    /api/authenticate                          						controllers.AuthController.authenticate
