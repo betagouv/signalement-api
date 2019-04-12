@@ -22,6 +22,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
+//case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
 case class ReportFilter(codePostal: Option[String])
 
 @Singleton
@@ -112,11 +113,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     
+    //case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
+    
       // TODO : ne faire qu'une requête !
       for {
         reports <- reportTableQuery
           .filterOpt(filter.codePostal) {
-            case(table, codePostal) => table.companyPostalCode === codePostal
+            case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
           }
           .sortBy(_.creationDate.desc)
           .drop(offset)
@@ -124,7 +127,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .result
         count <- reportTableQuery
           .filterOpt(filter.codePostal) {
-            case(table, codePostal) => table.companyPostalCode === codePostal
+            case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
           }
           .length.result
       } yield PaginatedResult(
