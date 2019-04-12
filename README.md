@@ -97,9 +97,22 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |<a name="APPLICATION_HOST">MAILER_PASSWORD</a>|Mot de passe du serveur de mails||
 |<a name="APPLICATION_HOST">SENTRY_DSN</a>|Identifiant pour intégration avec [Sentry](https://sentry.io)||
 
-## Exemples d'appel de l'API
+## Exemples d'appel du WS getReports
 
-Dans les exemples suivants, remplacer le nom de domaine et le port le cas échéant.
+L'objet retour rendu est de la forme : 
+
+```js
+{
+"totalCount": 2,
+"hasNextPage": false,
+"entities": [ ... ]    
+}
+```
+
+- totalCount rend le nombre de résultats trouvés au total pour la requête GET envoyé à l'API, en dehors du système de pagination
+- hasNextPage indique s'il existe une page suivante de résultat. L'appelant doit calculer le nouvel offset pour avoir la page suivante
+- entities contient les données de signalement de la page courrante
+
 
 **Récupération de tous les signalements (250 par défaut sont rendus)**
 
@@ -115,3 +128,21 @@ http://localhost:9000/api/reports?offset=30&limit=10
 **Récupération des 10 signalements à partir du 30ème pour le code postal 49000**
 
 http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49000
+
+NB: Récupère toutes les entreprises commençant par le code postal. 
+http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49 récupèrera tous les signalements du département 49.
+
+**Récupération par email**
+
+http://localhost:9000/api/reports?offset=30&limit=10&email=john@gmail.com
+
+**Récupération par siret**
+
+http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
+
+**Récupération par nom d'entreprise**
+
+http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
+
+NB: Récupère toutes les entreprises commençant par Géant (Géant Casino est retrouvé).
+

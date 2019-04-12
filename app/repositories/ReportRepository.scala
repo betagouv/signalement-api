@@ -23,7 +23,7 @@ object PaginatedResult {
 }
 
 //case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
-case class ReportFilter(codePostal: Option[String])
+case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -114,6 +114,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     
     //case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
+
+    println(s"filter $filter")
     
       // TODO : ne faire qu'une requête !
       for {
@@ -121,49 +123,25 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.codePostal) {
             case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
           }
+          .filterOpt(filter.email) {
+            case(table, email) => table.email === email
+          }
+          .filterOpt(filter.siret) {
+            case(table, siret) => table.companySiret === siret
+          }
+          .filterOpt(filter.entreprise) {
+            case(table, entreprise) => table.companyName like s"${entreprise}%"
+          }
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
           .result
-        count <- reportTableQuery
-          .filterOpt(filter.codePostal) {
-            case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
-          }
-          .length.result
+        count <- reports.length.result
       } yield PaginatedResult(
         totalCount = count,
         entities = reports.toList,
         hasNextPage = count - ( offset + limit ) >0
       )
-    }
-
-    def getFieldsNames: Seq[String] = {
-      reportTableQuery.baseTableRow.create_*.map(_.name).toSeq
-    }
-
-    def getFieldsClassName = {
-
-      List(
-        "id",
-        "companyType",
-        "category",
-        "subcategory",
-        "precision",
-        "companyName",
-        "companyAddress",
-        "companyPostalCode",
-        "companySiret",
-        "creationDate",
-        "anomalyDate",
-        "anomalyTimeSlot",
-        "description",
-        "firstName",
-        "lastName",
-        "email",
-        "contactAgreement",
-        "fileIds"
-      )
-
     }
 
 }

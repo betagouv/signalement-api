@@ -148,44 +148,52 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  private def getSortList(input: Option[String]): List[String] = {
+  // private def getSortList(input: Option[String]): List[String] = {
 
-    val DIRECTIONS = List("asc", "desc")
+  //   val DIRECTIONS = List("asc", "desc")
 
-    var res = new ListBuffer[String]()
+  //   var res = new ListBuffer[String]()
   
-    if (input.isDefined) {
-      var fields = input.get.split(',').toList
+  //   if (input.isDefined) {
+  //     var fields = input.get.split(',').toList
 
-      for (elt <- fields) {
-        val parts = elt.split('.').toList
+  //     for (elt <- fields) {
+  //       val parts = elt.split('.').toList
 
-        if (parts.length > 0) {
+  //       if (parts.length > 0) {
           
-          val index = reportRepository.getFieldsClassName.map(_.toLowerCase).indexOf(parts(0).toLowerCase)
+  //         val index = reportRepository.getFieldsClassName.map(_.toLowerCase).indexOf(parts(0).toLowerCase)
 
-          if (index > 0) {
-            if (parts.length > 1) {
-              if (DIRECTIONS.contains(parts(1))) {
-                res += reportRepository.getFieldsClassName(index) + '.' + parts(1)
-              } else {
-                res += reportRepository.getFieldsClassName(index)
-              }
-            } else {
-              res += reportRepository.getFieldsClassName(index)
-            }
-          }
+  //         if (index > 0) {
+  //           if (parts.length > 1) {
+  //             if (DIRECTIONS.contains(parts(1))) {
+  //               res += reportRepository.getFieldsClassName(index) + '.' + parts(1)
+  //             } else {
+  //               res += reportRepository.getFieldsClassName(index)
+  //             }
+  //           } else {
+  //             res += reportRepository.getFieldsClassName(index)
+  //           }
+  //         }
           
-        }
-      }
-    }
+  //       }
+  //     }
+  //   }
 
-    //res.toList.map(println)
+  //   //res.toList.map(println)
 
-    return res.toList
-  }
+  //   return res.toList
+  // }
  
-  def getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], codePostal: Option[String]) = UserAwareAction.async { implicit request => 
+  def getReports(
+    offset: Option[Long], 
+    limit: Option[Int], 
+    sort: Option[String], 
+    codePostal: Option[String],
+    email: Option[String],
+    siret: Option[String],
+    entreprise: Option[String]
+  ) = UserAwareAction.async { implicit request => 
 
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
@@ -199,7 +207,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     // println(">>>res") 
     // sortList.map(println)
 
-    val filter = ReportFilter(codePostal = codePostal)
+    val filter = ReportFilter(codePostal = codePostal, email = email, siret = siret, entreprise = entreprise)
     
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
