@@ -41,7 +41,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
-        Report(Some(id), category, subcategories, details.map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
+        Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
           Some(creationDate), firstName, lastName, email, contactAgreement, fileIds)
     }
 
