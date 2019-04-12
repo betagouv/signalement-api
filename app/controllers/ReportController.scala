@@ -13,8 +13,9 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{FileRepository, ReportRepository}
+import repositories.{FileRepository, ReportRepository, ReportFilter}
 import services.{MailerService, S3Service}
+import scala.collection.mutable.ListBuffer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -143,33 +144,62 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       ))
     }
   }
- 
-  def getReports(offset: Option[Long], limit: Option[Int]) = Action.async { implicit request => 
 
-    logger.debug("dans getReports")
+  private def getSortList(input: Option[String]): List[String] = {
+
+    val DIRECTIONS = List("asc", "desc")
+
+    var res = new ListBuffer[String]()
+  
+    if (input.isDefined) {
+      var fields = input.get.split(',').toList
+
+      for (elt <- fields) {
+        val parts = elt.split('.').toList
+
+        if (parts.length > 0) {
+          
+          val index = reportRepository.getFieldsClassName.map(_.toLowerCase).indexOf(parts(0).toLowerCase)
+
+          if (index > 0) {
+            if (parts.length > 1) {
+              if (DIRECTIONS.contains(parts(1))) {
+                res += reportRepository.getFieldsClassName(index) + '.' + parts(1)
+              } else {
+                res += reportRepository.getFieldsClassName(index)
+              }
+            } else {
+              res += reportRepository.getFieldsClassName(index)
+            }
+          }
+          
+        }
+      }
+    }
+
+    //res.toList.map(println)
+
+    return res.toList
+  }
+ 
+  def getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], codePostal: Option[String]) = Action.async { implicit request => 
 
     // valeurs par défaut
     val OFFSET_DEFAULT = 0
     val LIMIT_DEFAULT = 25
-
-    var offsetNormalized: Long = OFFSET_DEFAULT
-    var limitNormalized = LIMIT_DEFAULT
+    val LIMIT_MAX = 250
 
     // normalisation des entrées
-    try {
-      if (offset.isDefined && offset.get > 0) offsetNormalized = offset.get
-    } catch {
-      case ignore: Exception => None
-    }
+    var offsetNormalized: Long = offset.map(Math.max(_, OFFSET_DEFAULT)).getOrElse(OFFSET_DEFAULT)
+    var limitNormalized = limit.map(limit => Math.min(Math.max(limit, LIMIT_DEFAULT), LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
+
+    // var sortList: List[String] = getSortList(sort)
+    // println(">>>res") 
+    // sortList.map(println)
+
+    val filter = ReportFilter(codePostal = codePostal)
     
-    // 1 <= limitNormalized <= 250
-    try {
-      if (limit.isDefined && limit.get > 0 && limit.get < 250) limitNormalized = limit.get
-    } catch {
-      case ignore: Exception => None
-    }
-    
-    reportRepository.getReports(offsetNormalized, limitNormalized).flatMap( reports => {
+    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
       Future(Ok(Json.toJson(reports)))
     })

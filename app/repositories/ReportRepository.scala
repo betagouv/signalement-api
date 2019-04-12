@@ -23,6 +23,8 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
+case class ReportFilter(codePostal: Option[String])
+
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
@@ -112,20 +114,51 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .result
     )
 
-  def getReports(offset: Long, limit: Int): Future[PaginatedResult[Report]] = db.run {
+  def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
       for {
         reports <- reportTableQuery
-          .sortBy(_.creationDate)
+          .filterOpt(filter.codePostal) {
+            case(table, codePostal) => table.companyPostalCode === codePostal
+          }
+          .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
           .result
-        count <- reportTableQuery.length.result
       } yield PaginatedResult(
-        totalCount = count,
+        totalCount = reports.toList.length,
         entities = reports.toList,
-        hasNextPage = count - ( offset + limit ) >0
+        hasNextPage = reports.toList.length - ( offset + limit ) >0
       )
     }
-    
+
+    def getFieldsNames: Seq[String] = {
+      reportTableQuery.baseTableRow.create_*.map(_.name).toSeq
+    }
+
+    def getFieldsClassName = {
+
+      List(
+        "id",
+        "companyType",
+        "category",
+        "subcategory",
+        "precision",
+        "companyName",
+        "companyAddress",
+        "companyPostalCode",
+        "companySiret",
+        "creationDate",
+        "anomalyDate",
+        "anomalyTimeSlot",
+        "description",
+        "firstName",
+        "lastName",
+        "email",
+        "contactAgreement",
+        "fileIds"
+      )
+
+    }
+
 }
 
