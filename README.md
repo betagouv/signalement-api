@@ -52,9 +52,10 @@ Le nom de cette base de données doit correspondre à la configuration utilisée
 
 Si l'on utilise un fichier spécifique `local.conf` contenant :
 
-````
+```
 slick.dbs.default.db.properties.url = "postgres://randomUser@localhost:5432/api"
 ```
+
 Il faudra alors créer une base api :
 
 ```sh
@@ -95,3 +96,22 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |<a name="APPLICATION_HOST">MAILER_USER</a>|Nom d'utilisateur du serveur de mails||
 |<a name="APPLICATION_HOST">MAILER_PASSWORD</a>|Mot de passe du serveur de mails||
 |<a name="APPLICATION_HOST">SENTRY_DSN</a>|Identifiant pour intégration avec [Sentry](https://sentry.io)||
+
+## Exemples d'appel de l'API
+
+Dans les exemples suivants, remplacer le nom de domaine et le port le cas échéant.
+
+**Récupération de tous les signalements (250 par défaut sont rendus)**
+
+http://localhost:9000/api/reports
+
+**Récupération des 10 signalements à partir du 30ème**
+
+http://localhost:9000/api/reports?offset=30&limit=10
+
+- offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
+- limit est ignoré s'il est négatif. Sa valeur maximum est 250
+
+**Récupération des 10 signalements à partir du 30ème pour le code postal 49000**
+
+http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49000
