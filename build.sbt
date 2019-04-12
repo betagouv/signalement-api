@@ -23,10 +23,20 @@ libraryDependencies ++= Seq(
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.20",
 
+  "com.mohiva" %% "play-silhouette" % "5.0.7",
+  "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.7",
+  "com.mohiva" %% "play-silhouette-persistence" % "5.0.7",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.7",
+  "com.mohiva" %% "play-silhouette-testkit" % "5.0.7" % "test",
+  "net.codingwell" %% "scala-guice" % "4.1.1",
+  "com.iheart" %% "ficus" % "1.4.3",
+
   specs2 % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.14",
 )
+
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 mappings in Universal ++=
   (baseDirectory.value / "appfiles" * "*" get) map

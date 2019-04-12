@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Silhouette
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -13,6 +14,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.{FileRepository, ReportRepository}
 import services.{MailerService, S3Service}
+import utils.silhouette.AuthEnv
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -25,7 +27,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[S3Service], mock[Configuration], mock[Environment]){
+        val controller = new ReportController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
