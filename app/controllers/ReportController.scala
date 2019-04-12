@@ -185,13 +185,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], codePostal: Option[String]) = Action.async { implicit request => 
 
     // valeurs par défaut
-    val OFFSET_DEFAULT = 0
     val LIMIT_DEFAULT = 25
     val LIMIT_MAX = 250
 
     // normalisation des entrées
-    var offsetNormalized: Long = offset.map(Math.max(_, OFFSET_DEFAULT)).getOrElse(OFFSET_DEFAULT)
-    var limitNormalized = limit.map(limit => Math.min(Math.max(limit, LIMIT_DEFAULT), LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
+    var offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
+    var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_DEFAULT)).getOrElse(LIMIT_DEFAULT)
 
     // var sortList: List[String] = getSortList(sort)
     // println(">>>res") 
