@@ -1,6 +1,5 @@
 package repositories
 
-import java.sql.Date
 import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
@@ -18,6 +17,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   import PostgresProfile.api._
   import dbConfig._
+  import models.DetailInputValue._
 
   private class ReportTable(tag: Tag) extends Table[Report](tag, "signalement") {
 
@@ -41,7 +41,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
-        Report(Some(id), category, subcategories, details.map(detail => DetailInputValue(detail.split(':')(0), detail.split(':')(1))), companyName, companyAddress, companyPostalCode, companySiret,
+        Report(Some(id), category, subcategories, details.map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
           Some(creationDate), firstName, lastName, email, contactAgreement, fileIds)
     }
 
