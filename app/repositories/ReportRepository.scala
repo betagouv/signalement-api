@@ -112,12 +112,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-    
-    //case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
-
-    println(s"filter $filter")
-    
-      // TODO : ne faire qu'une requête !
+        
       for {
         reports <- reportTableQuery
           .filterOpt(filter.codePostal) {
