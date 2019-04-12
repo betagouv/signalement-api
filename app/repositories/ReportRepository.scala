@@ -115,6 +115,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
+    
+      // TODO : ne faire qu'une requête !
       for {
         reports <- reportTableQuery
           .filterOpt(filter.codePostal) {
@@ -124,10 +126,15 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .drop(offset)
           .take(limit)
           .result
+        count <- reportTableQuery
+          .filterOpt(filter.codePostal) {
+            case(table, codePostal) => table.companyPostalCode === codePostal
+          }
+          .length.result
       } yield PaginatedResult(
-        totalCount = reports.toList.length,
+        totalCount = count,
         entities = reports.toList,
-        hasNextPage = reports.toList.length - ( offset + limit ) >0
+        hasNextPage = count - ( offset + limit ) >0
       )
     }
 
