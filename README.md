@@ -47,7 +47,15 @@ L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement 
 
 ## Installation Postgres
 
-Après intallation de Postgres, il faut créer la database api.
+Après intallation de Postgres, il faut créer la database nécessaire pour l'application. 
+Le nom de cette base de données doit correspondre à la configuration utilisée. 
+
+Si l'on utilise un fichier spécifique `local.conf` contenant :
+
+````
+slick.dbs.default.db.properties.url = "postgres://randomUser@localhost:5432/api"
+```
+Il faudra alors créer une base api :
 
 ```sh
 CREATE DATABASE api;
