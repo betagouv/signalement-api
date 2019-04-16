@@ -20,7 +20,7 @@ case class Report(
                    lastName: String,
                    email: String,
                    contactAgreement: Boolean,
-                   fileIds: List[UUID]
+                   files: List[File]
                  )
 object Report {
   implicit val reportFormat: OFormat[Report] = Json.format[Report]

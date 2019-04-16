@@ -12,7 +12,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
-import repositories.{FileRepository, ReportRepository}
+import repositories.ReportRepository
 import services.{MailerService, S3Service}
 import utils.silhouette.AuthEnv
 
@@ -27,7 +27,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportRepository], mock[FileRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]){
+        val controller = new ReportController(mock[ReportRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]){
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 

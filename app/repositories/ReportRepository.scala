@@ -25,9 +25,7 @@ object PaginatedResult {
 case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
-                                 fileRepository: FileRepository
-                                )(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -50,33 +48,53 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def lastName = column[String]("nom")
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
-    def fileIds = column[List[UUID]]("piece_jointe_ids")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, List[UUID])
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean)
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
+      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, fileIds)
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, fileIds) =>
+      creationDate, firstName, lastName, email, contactAgreement, files) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, fileIds)
+          creationDate.get, firstName, lastName, email, contactAgreement)
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, firstName, lastName, email, contactAgreement, fileIds) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement) <> (constructReport, extractReport.lift)
+  }
+
+  private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
+
+    def id = column[UUID]("id", O.PrimaryKey)
+    def reportId = column[Option[UUID]]("signalement_id")
+    def creationDate = column[LocalDateTime]("date_creation")
+    def filename = column[String]("nom")
+    def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
+
+    type FileData = (UUID, Option[UUID], LocalDateTime, String)
+
+    def constructFile: FileData => File = {
+      case (id, reportId, creationDate, filename) => File(id, reportId, creationDate, filename)
+    }
+
+    def extractFile: PartialFunction[File, FileData] = {
+      case File(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+    }
+
+    def * =
+      (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
   }
 
   private val reportTableQuery = TableQuery[ReportTable]
   
-  private val filesTableQuery = TableQuery[fileRepository.FileTable]
- 
+  private val fileTableQuery = TableQuery[FileTable]
+
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
   def create(report: Report): Future[Report] = db
@@ -105,14 +123,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
     .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
 
-  def getReportsSimple(offset: Int, limit: Int): Future[List[Report]] = db
-    .run(
-        reportTableQuery
-        .drop(offset)
-        .take(limit)
-        .to[List]
-        .result
-    )
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
             
@@ -135,14 +145,53 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
+          .joinLeft(fileTableQuery).on(_.id === _.reportId)
+          .sortBy(_._1.creationDate.desc)
+          .to[List]
           .result
+          .map(result =>
+            result.map(_._1).distinct
+              .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
+          )
         count <- query.length.result
       } yield PaginatedResult(
         totalCount = count,
-        entities = reports.toList,
+        entities = reports,
         hasNextPage = count - ( offset + limit ) > 0
       )
     }
+
+  def createFile(file: File): Future[File] = db
+    .run(fileTableQuery += file)
+    .map(_ => file)
+
+  def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
+    val queryFile = for (refFile <- fileTableQuery.filter(_.id.inSet(fileIds)))
+      yield refFile.reportId
+    db.run(queryFile.update(Some(reportId)))
+  }
+
+  def getFile(uuid: UUID): Future[Option[File]] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .to[List].result
+        .headOption
+    )
+
+  def retrieveReportFiles(reportId: UUID): Future[List[File]] = db
+    .run(
+      fileTableQuery
+        .filter(_.reportId === reportId)
+        .to[List].result
+    )
+
+  def deleteFile(uuid: UUID): Future[Int] = db
+    .run(
+      fileTableQuery
+        .filter(_.id === uuid)
+        .delete
+    )
 
 }
 

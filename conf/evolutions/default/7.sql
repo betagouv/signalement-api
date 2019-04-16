@@ -18,7 +18,9 @@ CREATE TABLE USERS
     ROLE VARCHAR NOT NULL
 );
 
-INSERT INTO USERS VALUES ('e6de6b48-1c53-4d3e-a7ff-dd9b643073cf', 'jerome.rivals@gmail.com', '$2a$10$z5OdWpY05I9tvCJt0EplWOqLWLi6TFCyzZA4DoVlvCWbjmgCsQzwC', 'Jérôme', 'RIVALS', 'Admin')
+INSERT INTO USERS VALUES ('e6de6b48-1c53-4d3e-a7ff-dd9b643073cf', 'jerome.rivals@gmail.com', '$2a$10$z5OdWpY05I9tvCJt0EplWOqLWLi6TFCyzZA4DoVlvCWbjmgCsQzwC', 'Jérôme', 'RIVALS', 'Admin');
+
+ALTER TABLE PIECE_JOINTE ADD CONSTRAINT fk_report_files FOREIGN KEY (signalement_id) REFERENCES signalement(id);
 
 # --- !Downs
 
@@ -29,3 +31,5 @@ ALTER TABLE SIGNALEMENT RENAME COLUMN sous_categories TO sous_categorie;
 ALTER TABLE SIGNALEMENT ALTER COLUMN sous_categorie TYPE VARCHAR USING sous_categorie[1];
 
 DROP TABLE USERS;
+
+ALTER TABLE PIECE_JOINTE DROP CONSTRAINT fk_report_files;

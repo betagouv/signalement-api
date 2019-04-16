@@ -14,15 +14,13 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{FileRepository, ReportRepository, ReportFilter}
+import repositories.{ReportFilter, ReportRepository}
 import services.{MailerService, S3Service}
-import scala.collection.mutable.ListBuffer
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
-                                 fileRepository: FileRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
@@ -48,8 +46,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               creationDate = Some(LocalDateTime.now())
             )
           )
-          attachFilesToReport <- fileRepository.attachFilesToReport(report.fileIds, report.id.get)
-          files <- fileRepository.retrieveReportFiles(report.id.get)
+          attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
+          files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
         } yield {
@@ -68,7 +66,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
-        fileRepository.create(
+        reportRepository.createFile(
           File(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
         ).map(file => Ok(Json.toJson(file)))
     }
@@ -109,7 +107,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def downloadReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
-    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+    reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         s3Service.download(BucketName, uuid).flatMap(
           file => {
@@ -123,10 +121,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def deleteReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
-    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+    reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         for {
-          repositoryDelete <- fileRepository.delete(UUID.fromString(uuid))
+          repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
           s3Delete <- s3Service.delete(BucketName, uuid)
         } yield Ok
       case _ => Future(NotFound)
@@ -201,11 +199,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     // normalisation des entrées
     var offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
-    var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_DEFAULT)).getOrElse(LIMIT_DEFAULT)
-
-    // var sortList: List[String] = getSortList(sort)
-    // println(">>>res") 
-    // sortList.map(println)
+    var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
     val filter = ReportFilter(codePostal = codePostal, email = email, siret = siret, entreprise = entreprise)
     
