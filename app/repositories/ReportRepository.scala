@@ -4,13 +4,12 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{DetailInputValue, Report, ReportsPerMonth}
+import models.{DetailInputValue, Report, ReportsPerMonth, File}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.{Json, OFormat}
-
 
 case class PaginatedResult[T](
   totalCount: Int, 
@@ -26,7 +25,9 @@ object PaginatedResult {
 case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+                                 fileRepository: FileRepository
+                                )(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -73,7 +74,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   }
 
   private val reportTableQuery = TableQuery[ReportTable]
-
+  
+  private val filesTableQuery = TableQuery[fileRepository.FileTable]
+ 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
   def create(report: Report): Future[Report] = db
@@ -112,9 +115,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-        
-      for {
-        reports <- reportTableQuery
+            
+      val query = reportTableQuery
           .filterOpt(filter.codePostal) {
             case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
           }
@@ -127,15 +129,18 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.entreprise) {
             case(table, entreprise) => table.companyName like s"${entreprise}%"
           }
+    
+      for {
+        reports <- query
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
           .result
-        count <- reports.length.result
+        count <- query.length.result
       } yield PaginatedResult(
         totalCount = count,
         entities = reports.toList,
-        hasNextPage = count - ( offset + limit ) >0
+        hasNextPage = count - ( offset + limit ) > 0
       )
     }
 

@@ -22,7 +22,7 @@ class FileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   import dbConfig._
   import PostgresProfile.api._
 
-  private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
+  class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[Option[UUID]]("signalement_id")
