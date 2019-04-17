@@ -4,7 +4,7 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{DetailInputValue, Report, ReportsPerMonth, File}
+import models.{DetailInputValue, Report, ReportsPerMonth, File, Event}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -91,9 +91,39 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
   }
 
+  private class EventTable(tag: Tag) extends Table[Event](tag, "events") {
+
+    def id = column[UUID]("id", O.PrimaryKey)
+    def reportId = column[Option[UUID]]("report_id")
+    def userId = column[Option[UUID]]("user_id")
+    def creationDate = column[LocalDateTime]("creation_date")
+    def eventType = column[String]("event_type")
+    def action = column[String]("action")
+    def resultAction = column[Option[Boolean]]("result_action")
+    def detail = column[Option[String]]("detail")
+    def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id.?)
+    //def user = foreignKey("fk_events_users", userId, userTableQuery)(_.id.?)
+
+    type EventData = (UUID, Option[UUID], Option[UUID], LocalDateTime, String, String, Option[Boolean], Option[String])
+
+    def constructEvent: EventData => Event = {
+      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail)
+    }
+
+    def extractEvent: PartialFunction[Event, EventData] = {
+      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType, action, resultAction, detail)
+    }
+
+    def * =
+      (id, reportId, userId, creationDate, eventType, action, resultAction, detail) <> (constructEvent, extractEvent.lift)
+  }
+
+  
   private val reportTableQuery = TableQuery[ReportTable]
   
   private val fileTableQuery = TableQuery[FileTable]
+  
+  private val eventTableQuery = TableQuery[EventTable]
 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
