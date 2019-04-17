@@ -183,7 +183,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   //   return res.toList
   // }
 
-  def getReport(uuid: String) = UserAwareAction.async { implicit request =>
+  def getReport(uuid: String) = SecuredAction.async { implicit request =>
 
     reportRepository.getReport(UUID.fromString(uuid)).flatMap(report => {
 
@@ -200,7 +200,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     email: Option[String],
     siret: Option[String],
     entreprise: Option[String]
-  ) = UserAwareAction.async { implicit request => 
+  ) = SecuredAction.async { implicit request =>
 
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
