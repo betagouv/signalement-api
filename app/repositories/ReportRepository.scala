@@ -154,11 +154,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
     .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
 
-  def getReport(uuid: UUID) = db.run {
+  def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
-      .filter(_.id === uuid)
+      .filter(_.id === id)
+      .joinLeft(fileTableQuery).on(_.id === _.reportId)
+      .to[List]
       .result
-      .headOption
+      .map(result =>
+        result.map(_._1).distinct
+          .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
+          .headOption
+      )
   }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
