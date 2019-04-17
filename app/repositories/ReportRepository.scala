@@ -196,6 +196,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
             result.map(_._1).distinct
               .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
           )
+          //.map(result =>
+          //  result.map(_._1)
+          //    .map(report => report.copy(files = result.flatMap(_._2).filter(_.reportId == report.id)))
+          //)
         count <- query.length.result
       } yield PaginatedResult(
         totalCount = count,
