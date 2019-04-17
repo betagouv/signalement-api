@@ -20,4 +20,4 @@ GET         /api/companies/nearby/                  controllers.CompanyControlle
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
 
 # Authentication API
-POST	    /api/authenticate                          						controllers.AuthController.authenticate
+POST	    /api/authenticate                       controllers.AuthController.authenticate

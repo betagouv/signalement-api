@@ -32,6 +32,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
+
+  val departmentsAuthorized = List(
+    "01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74", // AURA
+    "18", "28", "36", "37", "41", "45" // CVDL
+  )
+
+  def determineStatusPro(report: Report): Option[String] = {
+    if (departmentsAuthorized.contains(report.companyPostalCode.slice(0, 2))) Option("A-CONTACTER") else Option("HORS-PERIMETRE")
+  }
+
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
 
     logger.debug("createReport")
@@ -43,7 +53,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report <- reportRepository.create(
             report.copy(
               id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now())
+              creationDate = Some(LocalDateTime.now()),
+              statusPro = determineStatusPro(report)
             )
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
