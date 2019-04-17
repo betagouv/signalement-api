@@ -6,6 +6,7 @@
 GET         /api                                    controllers.StaticController.api
 
 # Report API
+GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
 GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], codePostal: Option[String], email: Option[String], siret: Option[String], entreprise: Option[String])
 POST         /api/reports                           controllers.ReportController.createReport()
 POST         /api/reports/files                     controllers.ReportController.uploadReportFile()

@@ -48,25 +48,26 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def lastName = column[String]("nom")
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
+    def statusPro = column[Option[String]]("status_pro")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean)
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, Option[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement) =>
+      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty)
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, files) =>
+      creationDate, firstName, lastName, email, contactAgreement, files, statusPro) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement)
+          creationDate.get, firstName, lastName, email, contactAgreement, statusPro)
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, firstName, lastName, email, contactAgreement) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement, statusPro) <> (constructReport, extractReport.lift)
   }
 
   private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
@@ -153,6 +154,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
     .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
 
+  def getReport(uuid: UUID) = db.run {
+    reportTableQuery
+      .filter(_.id === uuid)
+      .result
+      .headOption
+  }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
             

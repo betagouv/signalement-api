@@ -182,6 +182,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   //   return res.toList
   // }
+
+  def getReport(uuid: String) = UserAwareAction.async { implicit request =>
+
+    reportRepository.getReport(UUID.fromString(uuid)).flatMap(report => {
+
+      Future(Ok(Json.toJson(report)))
+    })
+
+  }
  
   def getReports(
     offset: Option[Long], 
