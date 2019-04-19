@@ -1,6 +1,10 @@
 package controllers
 
+import java.time.LocalDateTime
+
 import com.mohiva.play.silhouette.api.Silhouette
+import models.{DetailInputValue, File, Report}
+import models.DetailInputValue.string2detailInputValue
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -35,6 +39,19 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         status(result) must beEqualTo(BAD_REQUEST)
         //contentAsJson(result) must beEqualTo(Json.obj("errors" -> ""))
+      }
+    }
+
+    "determineStatusPro" in new Context {
+      new WithApplication(application) {
+
+        val controller = new ReportController(mock[ReportRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
+          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
+        }
+        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None)
+
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(Some("A-CONTACTER"))
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(Some("HORS-PERIMETRE"))
       }
     }
 

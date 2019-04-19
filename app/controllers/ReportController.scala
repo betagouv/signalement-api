@@ -40,7 +40,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   def determineStatusPro(report: Report): Option[String] = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Option("A-CONTACTER") else Option("HORS-PERIMETRE")
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some("A-CONTACTER") else Some("HORS-PERIMETRE")
   }
 
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
