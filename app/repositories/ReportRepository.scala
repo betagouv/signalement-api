@@ -4,12 +4,13 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{DetailInputValue, Report, ReportsPerMonth, File, Event}
+import models.{DetailInputValue, Event, File, Report, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.{Json, OFormat}
+import utils.Constants.Event.EventTypeValues
 
 case class PaginatedResult[T](
   totalCount: Int, 
@@ -23,6 +24,8 @@ object PaginatedResult {
 
 //case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
 case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
+
+//case class EventFilter(eventType: Option[EventTypeValues])
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -95,17 +98,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   private class EventTable(tag: Tag) extends Table[Event](tag, "events") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[Option[UUID]]("report_id")
-    def userId = column[Option[UUID]]("user_id")
+    def reportId = column[UUID]("report_id")
+    def userId = column[UUID]("user_id")
     def creationDate = column[LocalDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
-    def resultAction = column[Option[Boolean]]("result_action")
+    def resultAction = column[Option[String]]("result_action")
     def detail = column[Option[String]]("detail")
-    def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id.?)
+    def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
     //def user = foreignKey("fk_events_users", userId, userTableQuery)(_.id.?)
 
-    type EventData = (UUID, Option[UUID], Option[UUID], LocalDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[String], Option[String])
 
     def constructEvent: EventData => Event = {
       case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail)
@@ -206,7 +209,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         entities = reports,
         hasNextPage = count - ( offset + limit ) > 0
       )
-    }
+  }
+
+  def getEvents(uuidReport: UUID, eventType: Option[String]): Future[List[Event]] = db.run {
+    eventTableQuery
+      .filter(_.reportId === uuidReport)
+//      .filterOpt(filter.eventType) {
+//        case (table, eventType) => table.eventType === eventType
+//      }
+      .to[List]
+      .result
+  }
 
   def createFile(file: File): Future[File] = db
     .run(fileTableQuery += file)

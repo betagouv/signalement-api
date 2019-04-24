@@ -230,4 +230,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
 
   }
+
+  def getEvents(uuidReport: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
+
+    println(">>> Dans getEvents")
+
+    // TODO tester si type appartient à Constants.EventPro.EventTypeValues
+
+    reportRepository.getEvents(UUID.fromString(uuidReport), eventType).flatMap( events => {
+
+      Future(Ok(Json.toJson(events)))
+
+  })
+
+  }
 }

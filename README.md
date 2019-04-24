@@ -146,3 +146,17 @@ http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
 
 NB: Récupère toutes les entreprises commençant par Géant (Géant Casino est retrouvé).
 
+## WS getEvents
+
+Récupère la liste des évènements d'un signalement.
+
+http://localhost:9000/api/events/:uuidReport?eventType=:eventType
+
+- uuidReport: identifiant du signalement
+- eventType: (optionnel) Type de l'évènement parmi : PRO, CONSO, DGCCRF
+
+
+Ex: 
+
+http://localhost:9000/api/events/7d20dbab-9983-4ded-8c38-20ceba449b06?eventType=PRO
+

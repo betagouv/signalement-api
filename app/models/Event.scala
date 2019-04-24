@@ -7,12 +7,12 @@ import play.api.libs.json.{Json, OFormat}
 
 case class Event(
                  id: UUID,
-                 reportId: Option[UUID],
-                 userId: Option[UUID],
+                 reportId: UUID,
+                 userId: UUID,
                  creationDate: LocalDateTime,
                  eventType: String,
                  action: String,
-                 resultAction: Option[Boolean],
+                 resultAction: Option[String],
                  detail: Option[String]
                  )
                  
