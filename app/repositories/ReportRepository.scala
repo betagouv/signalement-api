@@ -4,12 +4,13 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{DetailInputValue, Event, File, Report, ReportsPerMonth}
+import models.{Event, File, Report, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.{Json, OFormat}
+import utils.Constants
 import utils.Constants.Event.EventTypeValues
 
 case class PaginatedResult[T](
@@ -22,10 +23,9 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-//case class ReportFilter(codePostal: Option[String], categorie: Option[String], nomEntreprise: Option[String], siret: Option[String], nomConso: Option[String], email: Option[String])
 case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
-//case class EventFilter(eventType: Option[EventTypeValues])
+case class EventFilter(eventType: Option[EventTypeValues])
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -111,17 +111,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[String], Option[String])
 
     def constructEvent: EventData => Event = {
-      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail)
+
+      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => models.Event(id, reportId, userId, creationDate, Constants.Event.fromString(eventType).get, action, resultAction, detail)
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType, action, resultAction, detail)
+      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType.value, action, resultAction, detail)
     }
 
     def * =
       (id, reportId, userId, creationDate, eventType, action, resultAction, detail) <> (constructEvent, extractEvent.lift)
   }
-
   
   private val reportTableQuery = TableQuery[ReportTable]
   
@@ -211,12 +211,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       )
   }
 
-  def getEvents(uuidReport: UUID, eventType: Option[String]): Future[List[Event]] = db.run {
+  def getEvents(uuidReport: UUID, filter: EventFilter): Future[List[Event]] = db.run {
     eventTableQuery
       .filter(_.reportId === uuidReport)
-//      .filterOpt(filter.eventType) {
-//        case (table, eventType) => table.eventType === eventType
-//      }
+      .filterOpt(filter.eventType) {
+        case (table, eventType) => table.eventType === eventType.value
+      }
       .to[List]
       .result
   }

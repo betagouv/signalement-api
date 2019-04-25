@@ -14,8 +14,9 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{ReportFilter, ReportRepository}
+import repositories.{EventFilter, ReportFilter, ReportRepository}
 import services.{MailerService, S3Service}
+import utils.Constants.Event
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -233,15 +234,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   def getEvents(uuidReport: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
 
-    println(">>> Dans getEvents")
+    val filter = eventType match {
+      case Some(_) => EventFilter(eventType = Event.fromString(eventType.get))
+      case None => EventFilter(eventType = None)
+    }
 
-    // TODO tester si type appartient à Constants.EventPro.EventTypeValues
-
-    reportRepository.getEvents(UUID.fromString(uuidReport), eventType).flatMap( events => {
+    reportRepository.getEvents(UUID.fromString(uuidReport), filter).flatMap( events => {
 
       Future(Ok(Json.toJson(events)))
 
-  })
+    })
 
   }
 }

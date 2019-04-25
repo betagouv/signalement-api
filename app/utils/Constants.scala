@@ -29,11 +29,20 @@ object Constants extends App {
     object CONSO extends EventTypeValues("CONSO")
     object DGCCRF extends EventTypeValues("DGCCRF")
 
+
     // Valeurs possibles de result_action de la table Event
     sealed case class ResultActionProValues(value: String)
 
     object OK extends ResultActionProValues("OK")
     object KO extends ResultActionProValues("KO")
+
+    def fromString(value: String) = value match {
+      case "PRO" => Some(PRO)
+      case "CONSO" => Some(CONSO)
+      case "DGCCRF" => Some(DGCCRF)
+      case _ => None
+
+    }
 
   }
 
@@ -56,4 +65,11 @@ object Constants extends App {
 
   println("Status pro " + Constants.StatusPro.A_ENVOYER_COURRIER.value)
   println("Event " + Constants.EventPro.ENVOI_SIGNALEMENT)
+
+  val value1: Option[String] = Some("toto")
+  val value2: Option[String] = None
+
+  println(s"value1 $value1")
+  println(s"value2 $value2")
+
 }
