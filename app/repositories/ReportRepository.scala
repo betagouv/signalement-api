@@ -224,6 +224,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       .filterOpt(filter.eventType) {
         case (table, eventType) => table.eventType === eventType.value
       }
+      .sortBy(_.creationDate.desc)
       .to[List]
       .result
   }
