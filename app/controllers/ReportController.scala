@@ -16,7 +16,8 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories.{EventFilter, ReportFilter, ReportRepository}
 import services.{MailerService, S3Service}
-import utils.Constants.EventType
+import utils.Constants.EventPro._
+import utils.Constants.{EventType, StatusPro}
 import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValues}
 import utils.silhouette.AuthEnv
 
@@ -45,25 +46,43 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
   }
 
+  def determineStatusPro(event: Event): StatusProValues = {
 
-/*
-def createEvent = UserAwareAction.async(parse.json) { implicit request =>
+    (event.action, event.resultAction) match {
+      case (A_CONTACTER, _)                      => StatusPro.A_TRAITER
+      case (HORS_PERIMETRE, _)                   => StatusPro.NA
+      case (CONTACT_TEL, _)                      => StatusPro.TRAITEMENT_EN_COURS
+      case (CONTACT_EMAIL, _)                    => StatusPro.TRAITEMENT_EN_COURS
+      case (CONTACT_COURRIER, _)                 => StatusPro.TRAITEMENT_EN_COURS
+      case (REPONSE_PRO_CONTACT, _)              => StatusPro.A_TRANSFERER_SIGNALEMENT
+      case (ENVOI_SIGNALEMENT, _)                => StatusPro.SIGNALEMENT_TRANSMIS
+      case (REPONSE_PRO_SIGNALEMENT, Some("OK")) => StatusPro.PROMESSE_ACTION
+      case (REPONSE_PRO_SIGNALEMENT, _)          => StatusPro.SIGNALEMENT_REFUSE
+      case (_, _)                                => StatusPro.NA // cas impossible...
 
-    logger.debug("createEvent")
+    }
 
-    request.body.validate[Event].fold(
-      errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      event => {
-        for {
-          //event <- reportRepository.createEvent()
-          event <- "toto"
-        } yield {
-          Ok(Json.toJson(event))
-        }
-      }
-    )
   }
-*/
+
+
+  /*
+  def createEvent = UserAwareAction.async(parse.json) { implicit request =>
+
+      logger.debug("createEvent")
+
+      request.body.validate[Event].fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        event => {
+          for {
+            //event <- reportRepository.createEvent()
+            event <- "toto"
+          } yield {
+            Ok(Json.toJson(event))
+          }
+        }
+      )
+    }
+  */
 
 
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
