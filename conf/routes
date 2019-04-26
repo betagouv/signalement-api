@@ -19,6 +19,8 @@ GET          /api/reports/stats                     controllers.ReportController
 # Events API ---------------------------------------------
 
 GET         /api/events/:uuidReport                 controllers.ReportController.getEvents(uuidReport, eventType: Option[String])
+# POST        /api/events                             controllers.ReportController.createEvent()
+
 
 # Company API ---------------------------------------------
 

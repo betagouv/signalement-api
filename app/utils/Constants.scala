@@ -59,7 +59,9 @@ object Constants extends App {
   object EventType {
 
     // Valeurs possibles de event_type
-    sealed case class EventTypeValues(value: String)
+    sealed case class EventTypeValues(value: String) {
+      def apply(value: String): Option[EventTypeValues] = fromString(value)
+    }
 
     object PRO extends EventTypeValues("PRO")
     object CONSO extends EventTypeValues("CONSO")
