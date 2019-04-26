@@ -6,7 +6,7 @@ import java.util.UUID
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import models.{File, Report, Statistics}
+import models.{Event, File, Report, Statistics}
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
@@ -44,6 +44,27 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
   }
+
+
+/*
+def createEvent = UserAwareAction.async(parse.json) { implicit request =>
+
+    logger.debug("createEvent")
+
+    request.body.validate[Event].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      event => {
+        for {
+          //event <- reportRepository.createEvent()
+          event <- "toto"
+        } yield {
+          Ok(Json.toJson(event))
+        }
+      }
+    )
+  }
+*/
+
 
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
 

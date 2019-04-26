@@ -18,6 +18,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.ReportRepository
 import services.{MailerService, S3Service}
+import utils.Constants.StatusPro.{A_TRAITER, NA}
 import utils.silhouette.AuthEnv
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
@@ -50,8 +51,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
         val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None)
 
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(Some("A-CONTACTER"))
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(Some("HORS-PERIMETRE"))
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(Some(A_TRAITER))
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(Some(NA))
       }
     }
 
