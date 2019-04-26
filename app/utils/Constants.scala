@@ -82,7 +82,7 @@ object Constants extends App {
 
   }
 
-  case class ActionEvent(value: String)
+  class ActionEvent(val value: String)
 
   object EventPro {
 
