@@ -1,10 +1,12 @@
 package models
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDateTime}
 import java.util.UUID
 
-import play.api.libs.json.{JsString, Json, OFormat, Writes}
-import utils.Constants.Event.EventTypeValues
+import play.api.libs.json.{JsString, Json, Writes}
+import utils.Constants.{ActionEvent}
+import utils.Constants.EventType.EventTypeValues
+
 
 case class Event(
                  id: UUID,
@@ -12,30 +14,25 @@ case class Event(
                  userId: UUID,
                  creationDate: LocalDateTime,
                  eventType: EventTypeValues,
-                 action: String,
+                 action: ActionEvent,
                  resultAction: Option[String],
                  detail: Option[String]
-                 )
+                )
                  
 object Event {
 
   implicit val eventWrites = new Writes[Event] {
-    implicit val eventTypeValuesWrites = new Writes[EventTypeValues] {
-      def writes(eventType: EventTypeValues) = JsString(eventType.value)
-    }
 
     def writes(event: Event) = Json.obj(
       "id" -> event.id,
       "reportId" -> event.reportId,
       "userId" -> event.userId,
       "creationDate" -> event.creationDate,
-      "eventType" -> event.eventType,
-      "action" -> event.action,
+      "eventType" -> event.eventType.value,
+      "action" -> event.action.value,
       "resultAction" -> event.resultAction,
       "detail" -> event.detail
     )
   }
-
-  //implicit val eventFormat: OFormat[Event] = Json.format[Event]
 
 }

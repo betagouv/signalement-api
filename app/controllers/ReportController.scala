@@ -16,7 +16,8 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories.{EventFilter, ReportFilter, ReportRepository}
 import services.{MailerService, S3Service}
-import utils.Constants.Event
+import utils.Constants.EventType
+import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValues}
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -39,9 +40,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     "18", "28", "36", "37", "41", "45" // CVDL
   )
 
-  def determineStatusPro(report: Report): Option[String] = {
+  def determineStatusPro(report: Report): Option[StatusProValues] = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some("A-CONTACTER") else Some("HORS-PERIMETRE")
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
   }
 
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
@@ -56,7 +57,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(LocalDateTime.now()),
-              statusPro = determineStatusPro(report)
+              statusPro = determineStatusPro(report).map(s => s.value)
             )
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -235,7 +236,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getEvents(uuidReport: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
 
     val filter = eventType match {
-      case Some(_) => EventFilter(eventType = Event.fromString(eventType.get))
+      case Some(_) => EventFilter(eventType = EventType.fromString(eventType.get))
       case None => EventFilter(eventType = None)
     }
 

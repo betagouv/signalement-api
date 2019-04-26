@@ -11,7 +11,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.{Json, OFormat}
 import utils.Constants
-import utils.Constants.Event.EventTypeValues
+import utils.Constants.EventType.EventTypeValues
 
 case class PaginatedResult[T](
   totalCount: Int, 
@@ -112,11 +112,18 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
     def constructEvent: EventData => Event = {
 
-      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => models.Event(id, reportId, userId, creationDate, Constants.Event.fromString(eventType).get, action, resultAction, detail)
+      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
+        val objAction = eventType match {
+          case "PRO"  => Constants.EventPro.fromString(action)
+          case _ => Constants.EventConso.fromString(action)
+        }
+
+        models.Event(id, reportId, userId, creationDate, Constants.EventType.fromString(eventType).get, objAction.get, resultAction, detail)
+      }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType.value, action, resultAction, detail)
+      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType.value, action.value, resultAction, detail)
     }
 
     def * =
