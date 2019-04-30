@@ -1,24 +1,27 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.ws._
 import play.api.mvc.{ResponseHeader, Result}
 import play.api.libs.json._
+import utils.silhouette.AuthEnv
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 case class Location(lat: Double, lon: Double)
 
-class CompanyController @Inject()(ws: WSClient)
+class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthEnv])
                                  (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = Action.async { implicit request =>
+  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UserAwareAction.async { implicit request =>
 
     logger.debug(s"getCompanies [$search, $postalCode, $maxCount]")
 
@@ -69,7 +72,7 @@ class CompanyController @Inject()(ws: WSClient)
     request.get()
   }
 
-  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = Action.async { implicit request =>
+  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = UserAwareAction.async { implicit request =>
 
     logger.debug(s"getAllNearbyCompanies [$lat, $long, $radius, $maxCount]")
     val startTime = System.currentTimeMillis
@@ -143,7 +146,7 @@ class CompanyController @Inject()(ws: WSClient)
 
   }
 
-  def getSuggestions(search: String) = Action.async { implicit request =>
+  def getSuggestions(search: String) = UserAwareAction.async { implicit request =>
 
     logger.debug(s"getSuggestions [$search]")
 

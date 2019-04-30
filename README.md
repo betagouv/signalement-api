@@ -45,6 +45,25 @@ Remarques:
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
 
+## Installation Postgres
+
+Après intallation de Postgres, il faut créer la database nécessaire pour l'application. 
+Le nom de cette base de données doit correspondre à la configuration utilisée. 
+
+Si l'on utilise un fichier spécifique `local.conf` contenant :
+
+```
+slick.dbs.default.db.properties.url = "postgres://randomUser@localhost:5432/api"
+```
+
+Il faudra alors créer une base api :
+
+```sh
+CREATE DATABASE api;
+```
+
+Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas.
+
 ## Tests
 
 Pour exécuter les tests :
@@ -77,3 +96,67 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |<a name="APPLICATION_HOST">MAILER_USER</a>|Nom d'utilisateur du serveur de mails||
 |<a name="APPLICATION_HOST">MAILER_PASSWORD</a>|Mot de passe du serveur de mails||
 |<a name="APPLICATION_HOST">SENTRY_DSN</a>|Identifiant pour intégration avec [Sentry](https://sentry.io)||
+
+## Exemples d'appel du WS getReports
+
+L'objet retour rendu est de la forme : 
+
+```js
+{
+"totalCount": 2,
+"hasNextPage": false,
+"entities": [ ... ]    
+}
+```
+
+- totalCount rend le nombre de résultats trouvés au total pour la requête GET envoyé à l'API, en dehors du système de pagination
+- hasNextPage indique s'il existe une page suivante de résultat. L'appelant doit calculer le nouvel offset pour avoir la page suivante
+- entities contient les données de signalement de la page courrante
+
+
+**Récupération de tous les signalements (250 par défaut sont rendus)**
+
+http://localhost:9000/api/reports
+
+**Récupération des 10 signalements à partir du 30ème**
+
+http://localhost:9000/api/reports?offset=30&limit=10
+
+- offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
+- limit est ignoré s'il est négatif. Sa valeur maximum est 250
+
+**Récupération des 10 signalements à partir du 30ème pour le code postal 49000**
+
+http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49000
+
+NB: Récupère toutes les entreprises commençant par le code postal. 
+http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49 récupèrera tous les signalements du département 49.
+
+**Récupération par email**
+
+http://localhost:9000/api/reports?offset=30&limit=10&email=john@gmail.com
+
+**Récupération par siret**
+
+http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
+
+**Récupération par nom d'entreprise**
+
+http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
+
+NB: Récupère toutes les entreprises commençant par Géant (Géant Casino est retrouvé).
+
+## WS getEvents
+
+Récupère la liste des évènements d'un signalement.
+
+http://localhost:9000/api/events/:uuidReport?eventType=:eventType
+
+- uuidReport: identifiant du signalement
+- eventType: (optionnel) Type de l'évènement parmi : PRO, CONSO, DGCCRF
+
+
+Ex: 
+
+http://localhost:9000/api/events/7d20dbab-9983-4ded-8c38-20ceba449b06?eventType=PRO
+

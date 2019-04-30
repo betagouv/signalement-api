@@ -4,8 +4,9 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import models.{File, Report, Statistics}
+import models.{Event, File, Report, Statistics}
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
@@ -13,15 +14,19 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{FileRepository, ReportRepository}
+import repositories.{EventFilter, ReportFilter, ReportRepository}
 import services.{MailerService, S3Service}
+import utils.Constants.ActionEvent._
+import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
+import utils.Constants.{EventType, StatusPro}
+import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
-                                 fileRepository: FileRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
+                                 val silhouette: Silhouette[AuthEnv],
                                  configuration: Configuration,
                                  environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
@@ -30,7 +35,50 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
-  def createReport = Action.async(parse.json) { implicit request =>
+
+  val departmentsAuthorized = List(
+    "01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74", // AURA
+    "18", "28", "36", "37", "41", "45" // CVDL
+  )
+
+  def determineStatusPro(report: Report): Option[StatusProValue] = {
+
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
+  }
+
+  def determineStatusPro(event: Event): StatusProValue = (event.action, event.resultAction) match {
+    case (A_CONTACTER, _)                      => StatusPro.A_TRAITER
+    case (HORS_PERIMETRE, _)                   => StatusPro.NA
+    case (CONTACT_TEL, _)                      => StatusPro.TRAITEMENT_EN_COURS
+    case (CONTACT_EMAIL, _)                    => StatusPro.TRAITEMENT_EN_COURS
+    case (CONTACT_COURRIER, _)                 => StatusPro.TRAITEMENT_EN_COURS
+    case (REPONSE_PRO_CONTACT, _)              => StatusPro.A_TRANSFERER_SIGNALEMENT
+    case (ENVOI_SIGNALEMENT, _)                => StatusPro.SIGNALEMENT_TRANSMIS
+    case (REPONSE_PRO_SIGNALEMENT, Some("OK")) => StatusPro.PROMESSE_ACTION
+    case (REPONSE_PRO_SIGNALEMENT, _)          => StatusPro.SIGNALEMENT_REFUSE
+    case (_, _)                                => StatusPro.NA // cas impossible...
+
+  }
+
+
+
+  def createEvent = SecuredAction.async(parse.json) { implicit request =>
+
+      logger.debug("createEvent")
+
+      request.body.validate[Event].fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        event => reportRepository.createEvent(
+          event.copy(
+            id = Some(UUID.randomUUID()),
+            creationDate = Some(LocalDateTime.now())
+          )
+        ).flatMap(event => Future.successful(Ok(Json.toJson(event))))
+      )
+    }
+
+
+  def createReport = UserAwareAction.async(parse.json) { implicit request =>
 
     logger.debug("createReport")
 
@@ -41,11 +89,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report <- reportRepository.create(
             report.copy(
               id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now())
+              creationDate = Some(LocalDateTime.now()),
+              statusPro = determineStatusPro(report).map(s => s.value)
             )
           )
-          attachFilesToReport <- fileRepository.attachFilesToReport(report.fileIds, report.id.get)
-          files <- fileRepository.retrieveReportFiles(report.id.get)
+          attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
+          files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
         } yield {
@@ -55,7 +104,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  def uploadReportFile = Action.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+  def uploadReportFile = UserAwareAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     val maybeUploadResult =
       request.body.file("reportFile").map {
         case FilePart(key, filename, contentType, multipartUploadResult) =>
@@ -64,7 +113,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
-        fileRepository.create(
+        reportRepository.createFile(
           File(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
         ).map(file => Ok(Json.toJson(file)))
     }
@@ -104,8 +153,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def downloadReportFile(uuid: String, filename: String) = Action.async { implicit request =>
-    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+  def downloadReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
+    reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         s3Service.download(BucketName, uuid).flatMap(
           file => {
@@ -118,18 +167,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def deleteReportFile(uuid: String, filename: String) = Action.async { implicit request =>
-    fileRepository.get(UUID.fromString(uuid)).flatMap(_ match {
+  def deleteReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
+    reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         for {
-          repositoryDelete <- fileRepository.delete(UUID.fromString(uuid))
+          repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
           s3Delete <- s3Service.delete(BucketName, uuid)
         } yield Ok
       case _ => Future(NotFound)
     })
   }
 
-  def getStatistics = Action.async { implicit request =>
+  def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
       reportsCount <- reportRepository.count
@@ -142,5 +191,93 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         )
       ))
     }
+  }
+
+  // private def getSortList(input: Option[String]): List[String] = {
+
+  //   val DIRECTIONS = List("asc", "desc")
+
+  //   var res = new ListBuffer[String]()
+  
+  //   if (input.isDefined) {
+  //     var fields = input.get.split(',').toList
+
+  //     for (elt <- fields) {
+  //       val parts = elt.split('.').toList
+
+  //       if (parts.length > 0) {
+          
+  //         val index = reportRepository.getFieldsClassName.map(_.toLowerCase).indexOf(parts(0).toLowerCase)
+
+  //         if (index > 0) {
+  //           if (parts.length > 1) {
+  //             if (DIRECTIONS.contains(parts(1))) {
+  //               res += reportRepository.getFieldsClassName(index) + '.' + parts(1)
+  //             } else {
+  //               res += reportRepository.getFieldsClassName(index)
+  //             }
+  //           } else {
+  //             res += reportRepository.getFieldsClassName(index)
+  //           }
+  //         }
+          
+  //       }
+  //     }
+  //   }
+
+  //   //res.toList.map(println)
+
+  //   return res.toList
+  // }
+
+  def getReport(uuid: String) = SecuredAction.async { implicit request =>
+
+    reportRepository.getReport(UUID.fromString(uuid)).flatMap(report => {
+
+      Future(Ok(Json.toJson(report)))
+    })
+
+  }
+ 
+  def getReports(
+    offset: Option[Long], 
+    limit: Option[Int], 
+    sort: Option[String], 
+    codePostal: Option[String],
+    email: Option[String],
+    siret: Option[String],
+    entreprise: Option[String]
+  ) = SecuredAction.async { implicit request =>
+
+    // valeurs par défaut
+    val LIMIT_DEFAULT = 25
+    val LIMIT_MAX = 250
+
+    // normalisation des entrées
+    var offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
+    var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
+
+    val filter = ReportFilter(codePostal = codePostal, email = email, siret = siret, entreprise = entreprise)
+    
+    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
+
+      Future(Ok(Json.toJson(reports)))
+    })
+
+  }
+
+  def getEvents(uuidReport: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
+
+    val filter = eventType match {
+      case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
+      case None => EventFilter(eventType = None)
+    }
+
+    reportRepository.getEvents(UUID.fromString(uuidReport), filter).flatMap( events => {
+
+      Future(Ok(Json.toJson(events)))
+
+    })
+
   }
 }
