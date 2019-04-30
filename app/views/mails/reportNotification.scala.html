@@ -14,7 +14,10 @@
                 Catégorie : @report.category
             </li>
             <li>
-                Sous-catégories : @report.subcategories
+                Sous-catégories : @report.subcategories.map { subcategory =>
+                    <br />
+                    @subcategory
+                }
             </li>
 
             @report.details.map { detailInputValue =>
