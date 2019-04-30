@@ -3,7 +3,7 @@ package utils
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
-object Constants extends App {
+object Constants {
 
   object StatusPro {
 
