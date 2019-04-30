@@ -52,11 +52,6 @@
       "required": true
     }
   },
-  "formation": {
-    "web": {
-      "quantity": 1
-    }
-  },
   "addons": [
     "heroku-postgresql"
   ],
