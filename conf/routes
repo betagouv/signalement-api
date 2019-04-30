@@ -2,12 +2,10 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Static pages -------------------------------------------
-
+# Static pages
 GET          /api                                    controllers.StaticController.api
 
-# Report API ---------------------------------------------
-
+# Report API
 GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
 GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], codePostal: Option[String], email: Option[String], siret: Option[String], entreprise: Option[String])
 POST         /api/reports                           controllers.ReportController.createReport()
@@ -16,18 +14,15 @@ GET          /api/reports/files/:uuid/:filename     controllers.ReportController
 DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
 
-# Events API ---------------------------------------------
-
+# Events API
 GET         /api/events/:uuidReport                 controllers.ReportController.getEvents(uuidReport, eventType: Option[String])
 # POST        /api/events                             controllers.ReportController.createEvent()
 
 
-# Company API ---------------------------------------------
-
+# Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/nearby/                  controllers.CompanyController.getAllNearbyCompanies(lat, long, radius: Double ?= 0.2, maxCount: Int ?= 10)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
 
-# Authentication API -------------------------------------
-
+# Authentication API
 POST	    /api/authenticate                       controllers.AuthController.authenticate
