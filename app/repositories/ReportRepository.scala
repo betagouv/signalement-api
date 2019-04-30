@@ -11,7 +11,7 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.{Json, OFormat}
 import utils.Constants
-import utils.Constants.EventType.EventTypeValues
+import utils.Constants.EventType.EventTypeValue
 
 case class PaginatedResult[T](
   totalCount: Int, 
@@ -25,7 +25,7 @@ object PaginatedResult {
 
 case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
-case class EventFilter(eventType: Option[EventTypeValues])
+case class EventFilter(eventType: Option[EventTypeValue])
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
@@ -113,17 +113,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructEvent: EventData => Event = {
 
       case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
-        val objAction = eventType match {
-          case "PRO"  => Constants.EventPro.fromString(action)
-          case _ => Constants.EventConso.fromString(action)
-        }
-
-        models.Event(id, reportId, userId, creationDate, Constants.EventType.fromString(eventType).get, objAction.get, resultAction, detail)
+        Event(Some(id), reportId, userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
+          Constants.ActionEvent.fromValue(action).get, resultAction, detail)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) => (id, reportId, userId, creationDate, eventType.value, action.value, resultAction, detail)
+      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) =>
+        (id.get, reportId, userId, creationDate.get, eventType.value, action.value, resultAction, detail)
     }
 
     def * =
@@ -217,6 +214,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         hasNextPage = count - ( offset + limit ) > 0
       )
   }
+
+  def createEvent(event: Event): Future[Event] = db
+    .run(eventTableQuery += event)
+    .map(_ => event)
 
   def getEvents(uuidReport: UUID, filter: EventFilter): Future[List[Event]] = db.run {
     eventTableQuery

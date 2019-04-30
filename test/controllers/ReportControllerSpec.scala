@@ -18,7 +18,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.ReportRepository
 import services.{MailerService, S3Service}
-import utils.Constants.EventPro._
+import utils.Constants.ActionEvent._
 import utils.Constants.EventType.PRO
 import utils.Constants.StatusPro._
 import utils.silhouette.AuthEnv
@@ -40,7 +40,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val result = route(application, request).get
 
-        status(result) must beEqualTo(BAD_REQUEST)
+        Helpers.status(result) must beEqualTo(BAD_REQUEST)
         //contentAsJson(result) must beEqualTo(Json.obj("errors" -> ""))
       }
     }
@@ -69,7 +69,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = LocalDateTime.now()
 
-        val eventFixture = Event(fakeUUID, fakeUUID, fakeUUID, fakeTime, PRO, A_CONTACTER, Some("OK"), None)
+        val eventFixture = Event(Some(fakeUUID), fakeUUID, fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some("OK"), None)
         controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER)) must equalTo(A_TRAITER)
         controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE)) must equalTo(NA)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL)) must equalTo(TRAITEMENT_EN_COURS)

@@ -1,147 +1,148 @@
 package utils
 
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+
 object Constants extends App {
 
   object StatusPro {
 
     // Valeurs possibles de status_pro
-    sealed case class StatusProValues(val value: String)
+    case class StatusProValue(val value: String)
 
-    object A_TRAITER extends StatusProValues("A TRAITER")
-    object NA extends StatusProValues("NA")
-    object TRAITEMENT_EN_COURS extends StatusProValues("TRAITEMENT EN COURS")
-    object A_RAPPELER extends StatusProValues("A RAPPELER")
-    object A_ENVOYER_EMAIL extends StatusProValues("A ENVOYER EMAIL")
-    object A_ENVOYER_COURRIER extends StatusProValues("A ENVOYER COURRIER")
-    object ATTENTE_REPONSE extends StatusProValues("ATTENTE REPONSE")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValues("A TRANSFERER SIGNALEMENT")
-    object SIGNALEMENT_TRANSMIS extends StatusProValues("SIGNALEMENT TRANSMIS")
-    object SIGNALEMENT_REFUSE extends StatusProValues("SIGNALEMENT REFUSE")
-    object PROMESSE_ACTION extends StatusProValues("PROMESSE ACTION")
+    object A_TRAITER extends StatusProValue("A TRAITER")
+    object NA extends StatusProValue("NA")
+    object TRAITEMENT_EN_COURS extends StatusProValue("TRAITEMENT EN COURS")
+    object A_RAPPELER extends StatusProValue("A RAPPELER")
+    object A_ENVOYER_EMAIL extends StatusProValue("A ENVOYER EMAIL")
+    object A_ENVOYER_COURRIER extends StatusProValue("A ENVOYER COURRIER")
+    object ATTENTE_REPONSE extends StatusProValue("ATTENTE REPONSE")
+    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("A TRANSFERER SIGNALEMENT")
+    object SIGNALEMENT_TRANSMIS extends StatusProValue("SIGNALEMENT TRANSMIS")
+    object SIGNALEMENT_REFUSE extends StatusProValue("SIGNALEMENT REFUSE")
+    object PROMESSE_ACTION extends StatusProValue("PROMESSE ACTION")
 
-    def fromString(value: String) = value match {
-      case "A_TRAITER" => Some(A_TRAITER)
-      case "NA" => Some(NA)
-      case "TRAITEMENT EN COURS" => Some(TRAITEMENT_EN_COURS)
-      case "A RAPPELER" => Some(A_RAPPELER)
-      case "A ENVOYER EMAIL" => Some(A_ENVOYER_EMAIL)
-      case "A ENVOYER COURRIER" => Some(A_ENVOYER_COURRIER)
-      case "ATTENTE REPONSE" => Some(ATTENTE_REPONSE)
-      case "A TRANSFERER SIGNALEMENT" => Some(A_TRANSFERER_SIGNALEMENT)
-      case "SIGNALEMENT TRANSMIS" => Some(SIGNALEMENT_TRANSMIS)
-      case "SIGNALEMENT REFUSE" => Some(SIGNALEMENT_REFUSE)
-      case "PROMESSE ACTION" => Some(PROMESSE_ACTION)
-    }
+    val status = Seq(
+      A_TRAITER,
+      NA,
+      TRAITEMENT_EN_COURS,
+      A_RAPPELER,
+      A_ENVOYER_EMAIL,
+      A_ENVOYER_COURRIER,
+      ATTENTE_REPONSE,
+      A_TRANSFERER_SIGNALEMENT,
+      SIGNALEMENT_TRANSMIS,
+      SIGNALEMENT_REFUSE,
+      PROMESSE_ACTION
+    )
+
+    def fromValue(value: String) = status.find(_.value == value)
 
   }
-
 
   object StatusConso {
 
     // Valeurs possibles de action de la table Event
-    sealed case class StatusConsoValues(value: String)
+    case class StatusConso(value: String)
 
-    object VIDE extends StatusConsoValues("")
-    object A_RECONTACTER extends StatusConsoValues("A RECONTACTER")
-    object A_INFORMER_TRANSMISSION extends StatusConsoValues("A INFORMER TRANSMISSION")
-    object A_INFORMER_REPONSE_PRO extends StatusConsoValues("A INFORMER REPONSE PRO")
+    object VIDE extends StatusConso("")
+    object A_RECONTACTER extends StatusConso("A RECONTACTER")
+    object A_INFORMER_TRANSMISSION extends StatusConso("A INFORMER TRANSMISSION")
+    object A_INFORMER_REPONSE_PRO extends StatusConso("A INFORMER REPONSE PRO")
 
-    def fromString(value: String) = value match {
-      case "" => Some(VIDE)
-      case "A RECONTACTER" => Some(A_RECONTACTER)
-      case "A INFORMER TRANSMISSION" => Some(A_INFORMER_TRANSMISSION)
-      case "A INFORMER REPONSE PRO" => Some(A_INFORMER_REPONSE_PRO)
+    val status = Seq(
+      A_RECONTACTER,
+      A_INFORMER_TRANSMISSION,
+      A_INFORMER_REPONSE_PRO
+    )
 
-    }
+    def fromValue(value: String) = status.find(_.value == value)
   }
 
 
   object EventType {
 
     // Valeurs possibles de event_type
-    sealed case class EventTypeValues(value: String) {
-      def apply(value: String): Option[EventTypeValues] = fromString(value)
+    case class EventTypeValue(value: String)
+
+    object EventTypeValue {
+      implicit val eventTypeValueWrites = new Writes[EventTypeValue] {
+        def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
+      }
+      implicit val eventTypeValueReads: Reads[EventTypeValue] =
+        JsPath.read[String].map(fromValue(_).get)
     }
 
-    object PRO extends EventTypeValues("PRO")
-    object CONSO extends EventTypeValues("CONSO")
-    object DGCCRF extends EventTypeValues("DGCCRF")
+    object PRO extends EventTypeValue("PRO")
+    object CONSO extends EventTypeValue("CONSO")
+    object DGCCRF extends EventTypeValue("DGCCRF")
 
+    val eventTypes = Seq(
+      PRO,
+      CONSO,
+      DGCCRF
+    )
+
+    def fromValue(value: String) = eventTypes.find(_.value == value)
 
     // Valeurs possibles de result_action de la table Event
-    sealed case class ResultActionProValues(value: String)
+    case class ResultActionProValue(value: String)
 
-    object OK extends ResultActionProValues("OK")
-    object KO extends ResultActionProValues("KO")
+    object OK extends ResultActionProValue("OK")
+    object KO extends ResultActionProValue("KO")
 
-    def fromString(value: String) = value match {
-      case "PRO" => Some(PRO)
-      case "CONSO" => Some(CONSO)
-      case "DGCCRF" => Some(DGCCRF)
-      case _ => None
-
-    }
+    val resultActions = Seq(
+      OK,
+      KO
+    )
 
   }
 
-  class ActionEvent(val value: String)
+  object ActionEvent {
 
-  object EventPro {
+    case class ActionEventValue(val value: String)
 
-    // Valeurs possibles de action de la table Event
-    sealed case class ActionProValues(override val value: String) extends ActionEvent(value)
-
-    object A_CONTACTER extends ActionProValues("A CONTACTER")
-    object HORS_PERIMETRE extends ActionProValues("HORS PERIMETRE")
-    object CONTACT_TEL extends ActionProValues("CONTACT TEL")
-    object CONTACT_EMAIL extends ActionProValues("CONTACT EMAIL")
-    object CONTACT_COURRIER extends ActionProValues("CONTACT COURRIER")
-    object REPONSE_PRO_CONTACT extends ActionProValues("REPONSE PRO CONTACT")
-    object ENVOI_SIGNALEMENT extends ActionProValues("ENVOI SIGNALEMENT")
-    object REPONSE_PRO_SIGNALEMENT extends ActionProValues("REPONSE PRO SIGNALEMENT")
-
-    def fromString(value: String) = value match {
-      case "A CONTACTER" => Some(A_CONTACTER)
-      case "HORS PERIMETRE" => Some(HORS_PERIMETRE)
-      case "CONTACT TEL" => Some(CONTACT_TEL)
-      case "CONTACT EMAIL" => Some(CONTACT_EMAIL)
-      case "CONTACT COURRIER" => Some(CONTACT_COURRIER)
-      case "REPONSE PRO CONTACT" => Some(REPONSE_PRO_CONTACT)
-      case "ENVOI SIGNALEMENT" => Some(ENVOI_SIGNALEMENT)
-      case "REPONSE PRO SIGNALEMENT" => Some(REPONSE_PRO_SIGNALEMENT)
-
+    object ActionEventValue {
+      implicit val actionEventValueWrites = new Writes[ActionEventValue] {
+        def writes(actionEventValue: ActionEventValue) = Json.toJson(actionEventValue.value)
+      }
+      implicit val actionEventValueReads: Reads[ActionEventValue] =
+        JsPath.read[String].map(fromValue(_).get)
     }
+
+    object A_CONTACTER extends ActionEventValue("A contacter")
+    object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
+    object CONTACT_TEL extends ActionEventValue("Appel téléphonique")
+    object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
+    object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
+    object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
+    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
+
+    object VIDE extends ActionEventValue("")
+    object CONSO_CONTACTE extends ActionEventValue("CONSO CONTACTE")
+    object CONSO_INFORME_TRANSMISSION extends ActionEventValue("CONSO INFORME TRANSMISSION")
+    object CONSO_INFORME_REPONSE_PRO extends ActionEventValue("CONSO INFORME REPONSE PRO")
+
+    val actionPros = Seq(
+      A_CONTACTER,
+      HORS_PERIMETRE,
+      CONTACT_TEL,
+      CONTACT_EMAIL,
+      CONTACT_COURRIER,
+      REPONSE_PRO_CONTACT,
+      ENVOI_SIGNALEMENT,
+      REPONSE_PRO_SIGNALEMENT
+    )
+
+    val actionConsos = Seq(
+      VIDE,
+      CONSO_CONTACTE,
+      CONSO_INFORME_TRANSMISSION,
+      CONSO_INFORME_REPONSE_PRO
+    )
+
+    def fromValue(value: String) = (actionPros++actionConsos).find(_.value == value)
   }
-
-  object EventConso {
-
-    // Valeurs possibles de action de la table Event
-    sealed case class ActionConsoValues(override val value: String) extends ActionEvent(value)
-
-    object VIDE extends ActionConsoValues("")
-    object CONSO_CONTACTE extends ActionConsoValues("CONSO CONTACTE")
-    object CONSO_INFORME_TRANSMISSION extends ActionConsoValues("CONSO INFORME TRANSMISSION")
-    object CONSO_INFORME_REPONSE_PRO extends ActionConsoValues("CONSO INFORME REPONSE PRO")
-
-    def fromString(value: String) = value match {
-      case "" => Some(VIDE)
-      case "CONSO CONTACTE" => Some(CONSO_CONTACTE)
-      case "CONSO INFORME TRANSMISSION" => Some(CONSO_INFORME_TRANSMISSION)
-      case "CONSO INFORME REPONSE PRO" => Some(CONSO_INFORME_REPONSE_PRO)
-
-    }
-  }
-
-
-
-
-  println("Status pro " + Constants.StatusPro.A_ENVOYER_COURRIER.value)
-  println("Event " + Constants.EventPro.ENVOI_SIGNALEMENT)
-
-  val value1: Option[String] = Some("toto")
-  val value2: Option[String] = None
-
-  println(s"value1 $value1")
-  println(s"value2 $value2")
 
 }
