@@ -14,11 +14,14 @@
                 Catégorie : @report.category
             </li>
             <li>
-                Sous-catégorie : @report.subcategory
+                Sous-catégories : @report.subcategories
             </li>
-            <li>
-                Précision : @report.precision
-            </li>
+
+            @report.details.map { detailInputValue =>
+                <li>
+                    @Html(detailInputValue.label) @Html(detailInputValue.value)
+                </li>
+            }
         </ul>
         <ul>
             <li>
@@ -29,17 +32,6 @@
             </li>
             <li>
                 Siret : @report.companySiret
-            </li>
-        </ul>
-        <ul>
-            <li>
-                Date du constat : @report.anomalyDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-            </li>
-            <li>
-                Plage horaire : @report.anomalyTimeSlot.map(hour => s"de ${hour}h à ${hour + 1}h")
-            </li>
-            <li>
-                Description du problème : @report.description
             </li>
         </ul>
         <ul>
