@@ -60,22 +60,29 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-
-
   def createEvent = SecuredAction.async(parse.json) { implicit request =>
 
-      logger.debug("createEvent")
+    logger.debug("createEvent")
 
-      request.body.validate[Event].fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        event => reportRepository.createEvent(
-          event.copy(
-            id = Some(UUID.randomUUID()),
-            creationDate = Some(LocalDateTime.now())
-          )
-        ).flatMap(event => Future.successful(Ok(Json.toJson(event))))
-      )
-    }
+    request.body.validate[Event].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      event => {
+        for {
+          event <- reportRepository.createEvent(
+            event.copy(
+              id = Some(UUID.randomUUID()),
+              creationDate = Some(LocalDateTime.now())
+            ))
+          report <- reportRepository.getReport(event.reportId)
+          _ <- reportRepository.update(report.get.copy(
+            statusPro = Some(determineStatusPro(event).value)
+          ))
+        } yield {
+          Ok(Json.toJson(event))
+        }
+      }
+    )
+  }
 
 
   def createReport = UserAwareAction.async(parse.json) { implicit request =>
