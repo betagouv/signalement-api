@@ -13,11 +13,11 @@ POST         /api/reports/files                     controllers.ReportController
 GET          /api/reports/files/:uuid/:filename     controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
+GET          /api/reports/:uuid/events              controllers.ReportController.getEvents(uuid, eventType: Option[String])
 
 # Events API
-GET         /api/events/:uuidReport                 controllers.ReportController.getEvents(uuidReport, eventType: Option[String])
-POST        /api/events                             controllers.ReportController.createEvent()
 
+POST        /api/events                             controllers.ReportController.createEvent()
 
 # Constants API
 GET         /api/constants/actionPros               controllers.ConstantController.getActionPros()
