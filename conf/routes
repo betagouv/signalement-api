@@ -19,6 +19,12 @@ GET         /api/events/:uuidReport                 controllers.ReportController
 POST        /api/events                             controllers.ReportController.createEvent()
 
 
+# Constants API
+GET         /api/constants/actionPros               controllers.ConstantController.getActionPros()
+GET         /api/constants/actionConsos             controllers.ConstantController.getActionConsos()
+GET         /api/constants/statusPros               controllers.ConstantController.getStatusPros()
+GET         /api/constants/statusConsos             controllers.ConstantController.getStatusConsos()
+
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/nearby/                  controllers.CompanyController.getAllNearbyCompanies(lat, long, radius: Double ?= 0.2, maxCount: Int ?= 10)
