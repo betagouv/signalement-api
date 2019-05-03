@@ -155,7 +155,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           subject = "Votre signalement",
           bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
           attachments = Seq(
-            AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo"))
+            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo")),
+            AttachmentFile("questionnaire.png", environment.getFile("/appfiles/questionnaire.png"), contentId = Some("questionnaire"))
           )
         ))
     }
