@@ -69,7 +69,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = LocalDateTime.now()
 
-        val eventFixture = Event(Some(fakeUUID), fakeUUID, fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some("OK"), None)
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some("OK"), None)
         controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER)) must equalTo(A_TRAITER)
         controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE)) must equalTo(NA)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL)) must equalTo(TRAITEMENT_EN_COURS)
