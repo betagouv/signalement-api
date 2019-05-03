@@ -16,9 +16,9 @@ DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
 
 # Events API
-GET         /api/events/:uuidReport                 controllers.ReportController.getEvents(uuidReport, eventType: Option[String])
-POST        /api/events                             controllers.ReportController.createEvent()
 
+GET         /api/reports/:uuid/events               controllers.ReportController.getEvents(uuid, eventType: Option[String])
+POST        /api/reports/:uuid/events               controllers.ReportController.createEvent(uuid)
 
 # Constants API
 GET         /api/constants/actionPros               controllers.ConstantController.getActionPros()

@@ -64,7 +64,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def createEvent = SecuredAction.async(parse.json) { implicit request =>
+  def createEvent(uuid: String) = SecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
 
@@ -75,9 +75,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           event <- reportRepository.createEvent(
             event.copy(
               id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now())
+              creationDate = Some(LocalDateTime.now()),
+              reportId = Some(UUID.fromString(uuid))
             ))
-          report <- reportRepository.getReport(event.reportId)
+          report <- reportRepository.getReport(UUID.fromString(uuid))
           _ <- reportRepository.update(report.get.copy(
             statusPro = Some(determineStatusPro(event).value)
           ))
@@ -277,14 +278,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def getEvents(uuidReport: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
+  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
 
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
       case None => EventFilter(eventType = None)
     }
 
-    reportRepository.getEvents(UUID.fromString(uuidReport), filter).flatMap( events => {
+    reportRepository.getEvents(UUID.fromString(uuid), filter).flatMap( events => {
 
       Future(Ok(Json.toJson(events)))
 
