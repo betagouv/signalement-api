@@ -10,17 +10,26 @@ object Constants {
     // Valeurs possibles de status_pro
     case class StatusProValue(val value: String)
 
-    object A_TRAITER extends StatusProValue("A TRAITER")
+    object StatusProValue {
+      implicit val statusProValueWrites = new Writes[StatusProValue] {
+        def writes(statusProValue: StatusProValue) = Json.toJson(statusProValue.value)
+      }
+      implicit val statusProValueReads: Reads[StatusProValue] =
+        JsPath.read[String].map(fromValue(_).get)
+
+    }
+
+    object A_TRAITER extends StatusProValue("À traiter")
     object NA extends StatusProValue("NA")
-    object TRAITEMENT_EN_COURS extends StatusProValue("TRAITEMENT EN COURS")
-    object A_RAPPELER extends StatusProValue("A RAPPELER")
-    object A_ENVOYER_EMAIL extends StatusProValue("A ENVOYER EMAIL")
-    object A_ENVOYER_COURRIER extends StatusProValue("A ENVOYER COURRIER")
-    object ATTENTE_REPONSE extends StatusProValue("ATTENTE REPONSE")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("A TRANSFERER SIGNALEMENT")
-    object SIGNALEMENT_TRANSMIS extends StatusProValue("SIGNALEMENT TRANSMIS")
-    object SIGNALEMENT_REFUSE extends StatusProValue("SIGNALEMENT REFUSE")
-    object PROMESSE_ACTION extends StatusProValue("PROMESSE ACTION")
+    object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
+    object A_RAPPELER extends StatusProValue("À rappeler")
+    object A_ENVOYER_EMAIL extends StatusProValue("À envoyer email")
+    object A_ENVOYER_COURRIER extends StatusProValue("À envoyer courrier")
+    object ATTENTE_REPONSE extends StatusProValue("Attente réponse")
+    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement")
+    object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
+    object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
+    object PROMESSE_ACTION extends StatusProValue("Promesse action")
 
     val status = Seq(
       A_TRAITER,
@@ -43,12 +52,20 @@ object Constants {
   object StatusConso {
 
     // Valeurs possibles de action de la table Event
-    case class StatusConso(value: String)
+    case class StatusConsoValue(value: String)
 
-    object VIDE extends StatusConso("")
-    object A_RECONTACTER extends StatusConso("A RECONTACTER")
-    object A_INFORMER_TRANSMISSION extends StatusConso("A INFORMER TRANSMISSION")
-    object A_INFORMER_REPONSE_PRO extends StatusConso("A INFORMER REPONSE PRO")
+    object StatusConsoValue {
+      implicit val statusConsoValueWrites = new Writes[StatusConsoValue] {
+        def writes(statusConsoValue: StatusConsoValue) = Json.toJson(statusConsoValue.value)
+      }
+      implicit val statusConsoValueReads: Reads[StatusConsoValue] =
+        JsPath.read[String].map(fromValue(_).get)
+    }
+
+    object VIDE extends StatusConsoValue("")
+    object A_RECONTACTER extends StatusConsoValue("À recontacter")
+    object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
+    object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
 
     val status = Seq(
       A_RECONTACTER,
@@ -110,7 +127,7 @@ object Constants {
         JsPath.read[String].map(fromValue(_).get)
     }
 
-    object A_CONTACTER extends ActionEventValue("A contacter")
+    object A_CONTACTER extends ActionEventValue("À contacter")
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
     object CONTACT_TEL extends ActionEventValue("Appel téléphonique")
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
@@ -120,9 +137,9 @@ object Constants {
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
 
     object VIDE extends ActionEventValue("")
-    object CONSO_CONTACTE extends ActionEventValue("CONSO CONTACTE")
-    object CONSO_INFORME_TRANSMISSION extends ActionEventValue("CONSO INFORME TRANSMISSION")
-    object CONSO_INFORME_REPONSE_PRO extends ActionEventValue("CONSO INFORME REPONSE PRO")
+    object CONSO_CONTACTE extends ActionEventValue("Consommateur contacté")
+    object CONSO_INFORME_TRANSMISSION extends ActionEventValue("Consommateur informé de transmission")
+    object CONSO_INFORME_REPONSE_PRO extends ActionEventValue("Consommateur informé de la réponse pro")
 
     val actionPros = Seq(
       A_CONTACTER,
