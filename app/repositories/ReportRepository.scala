@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(codePostal: Option[String] = None, email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -175,10 +175,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-            
+
       val query = reportTableQuery
-          .filterOpt(filter.codePostal) {
-            case(table, codePostal) => table.companyPostalCode like s"${codePostal}%"
+          .filterIf(filter.departments.length > 0) {
+            case table => table.companyPostalCode.map(cp => cp.substring(0, 2).inSet(filter.departments)).getOrElse(false)
           }
           .filterOpt(filter.email) {
             case(table, email) => table.email === email
