@@ -113,14 +113,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructEvent: EventData => Event = {
 
       case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
-        Event(Some(id), reportId, userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
+        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
           Constants.ActionEvent.fromValue(action).get, resultAction, detail)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
       case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) =>
-        (id.get, reportId, userId, creationDate.get, eventType.value, action.value, resultAction, detail)
+        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, resultAction, detail)
     }
 
     def * =

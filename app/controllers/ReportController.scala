@@ -60,7 +60,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def createEvent = SecuredAction.async(parse.json) { implicit request =>
+  def createEvent(uuid: String) = SecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
 
@@ -71,9 +71,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           event <- reportRepository.createEvent(
             event.copy(
               id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now())
+              creationDate = Some(LocalDateTime.now()),
+              reportId = Some(UUID.fromString(uuid))
             ))
-          report <- reportRepository.getReport(event.reportId)
+          report <- reportRepository.getReport(UUID.fromString(uuid))
           _ <- reportRepository.update(report.get.copy(
             statusPro = Some(determineStatusPro(event).value)
           ))
