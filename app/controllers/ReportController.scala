@@ -254,8 +254,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getReports(
     offset: Option[Long], 
     limit: Option[Int], 
-    sort: Option[String], 
-    codePostal: Option[String],
+    sort: Option[String],
+    departments: Option[String],
     email: Option[String],
     siret: Option[String],
     entreprise: Option[String]
@@ -269,8 +269,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     var offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
     var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
-    val filter = ReportFilter(codePostal = codePostal, email = email, siret = siret, entreprise = entreprise)
-    
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,entreprise)
+    logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
       Future(Ok(Json.toJson(reports)))
@@ -293,9 +293,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departements: List[String]) = UnsecuredAction.async { implicit request =>
+  def extractReports(departments: Option[String]) = UnsecuredAction.async { implicit request =>
 
-    reportRepository.getReports(0, 10000, new ReportFilter).flatMap( reports => {
+    reportRepository.getReports(0, 10000, ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()))).flatMap( reports => {
 
       val csvFields = Array(
         "Date de création",
@@ -336,7 +336,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
           report.id.map(_.toString).getOrElse("")
-        ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").concat("\"")))
+        ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
           .reduce((s1, s2) => s"$s1;$s2")
       ).reduce((s1, s2) => s"$s1\n$s2")
 
