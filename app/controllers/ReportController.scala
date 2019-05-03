@@ -1,16 +1,20 @@
 package controllers
 
+import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.{Event, File, Report, Statistics}
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.{ResponseHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
@@ -287,4 +291,61 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
 
   }
+
+  def extractReports(departements: List[String]) = UnsecuredAction.async { implicit request =>
+
+    reportRepository.getReports(0, 10000, new ReportFilter).flatMap( reports => {
+
+      val csvFields = Array(
+        "Date de création",
+        "Département",
+        "Nom de l'établissement",
+        "Adresse de l'établissement",
+        "Catégorie",
+        "Sous-catégories",
+        "Détails",
+        "Prénom",
+        "Nom",
+        "Email",
+        "Accord pour contact",
+        "Pièces jointes",
+        "Identifiant"
+      ).reduce((s1, s2) => s"$s1;$s2")
+
+      val csvData = reports.entities.map(report =>
+        Array(
+          report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
+          report.companyPostalCode match {
+            case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
+            case _ => ""
+          },
+          report.companyName,
+          report.companyAddress,
+          report.category,
+          report.subcategories.reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+          report.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+          report.lastName,
+          report.firstName,
+          report.email,
+          report.contactAgreement match {
+            case true => "Oui"
+            case _ => "Non"
+          },
+          report.files
+            .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
+            .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+          report.id.map(_.toString).getOrElse("")
+        ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").concat("\"")))
+          .reduce((s1, s2) => s"$s1;$s2")
+      ).reduce((s1, s2) => s"$s1\n$s2")
+
+      Future(
+        Result(
+        header = ResponseHeader(200, Map.empty),
+        body = HttpEntity.Strict(ByteString(s"$csvFields\n$csvData"), Some("text/csv"))
+      ))
+    })
+
+  }
+
 }
