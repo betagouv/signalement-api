@@ -253,10 +253,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def deleteReport(uuid: String) = SecuredAction.async {
-    reportRepository.delete(UUID.fromString(uuid)).flatMap(_ match {
-      case 0 => Future(NotFound)
-      case 1 => Future(NoContent)
+
+    reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
+      case None => Future(NotFound)
+      case Some(report) => report.files.isEmpty match {
+        case true => reportRepository.delete(UUID.fromString(uuid)).flatMap(_ match {
+          case 0 => Future(NotFound)
+          case 1 => Future(NoContent)
+        })
+        case false => Future(PreconditionFailed)
+      }
     })
+
   }
  
   def getReports(
