@@ -193,8 +193,30 @@ http://localhost:9000/api/reports/:uuid (DELETE)
 
 Statuts :
 - 204 No Content : dans le cas où la suppression fonctionne
-- 404 Not Found : dans le cas où le document n'existe pas
+- 404 Not Found : dans le cas où le signalement n'existe pas
 - 412 Precondition Failed : statut renvoyé si des fichiers sont liés à ce signalement. Si l'on souhaite malgré cela supprimer le signalement, il faudra préalablement supprimer ces fichiers
+
+*Modification d'un signalement*
+
+http://localhost:9000/api/reports (PUT)
+
+Le body envoyé doit correspondre à un signalement (de la forme renvoyée par le WS getReport.
+
+Seul les champs suivants sont modifiables :
+- firstName
+- lastName
+- email
+- contactAgreement
+- companyName
+- companyAddress
+- companyPostalCode
+- companySiret
+- statusPro
+
+Statuts :
+- 204 No Content : dans le cas où la modification fonctionne
+- 404 Not Found : dans le cas où le signalement n'existe pas
+
 
 ### 3. API Files
 
