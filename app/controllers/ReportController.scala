@@ -116,7 +116,47 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
+  def updateReport = UserAwareAction.async(parse.json) { implicit request =>
+
+    logger.debug("updateReport")
+
+    request.body.validate[Report].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      report => {
+
+        report.id match {
+          case None => Future(BadRequest)
+          case Some(id) => {
+            for {
+              existingReport <- reportRepository.getReport(id)
+              report <- reportRepository.update(existingReport.get.copy(
+                  firstName = report.firstName,
+                  lastName = report.lastName,
+                  email= report.email,
+                  contactAgreement = report.contactAgreement,
+                  companyName = report.companyName,
+                  companyAddress = report.companyAddress,
+                  companyPostalCode = report.companyPostalCode,
+                  companySiret = report.companySiret,
+                  statusPro = determineStatusPro(report).map(s => s.value)
+                )
+              )
+            } yield {
+              existingReport match {
+                case Some(_) => Ok
+                case None => NotFound
+              }
+            }
+          }
+        }
+
+    })
+
+  }
+
   def uploadReportFile = UserAwareAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+    logger.debug("uploadReportFile")
+
     val maybeUploadResult =
       request.body.file("reportFile").map {
         case FilePart(key, filename, contentType, multipartUploadResult) =>
@@ -181,6 +221,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def deleteReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
+    logger.debug("deleteReportFile")
+
     reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         for {
@@ -206,43 +248,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  // private def getSortList(input: Option[String]): List[String] = {
-
-  //   val DIRECTIONS = List("asc", "desc")
-
-  //   var res = new ListBuffer[String]()
-  
-  //   if (input.isDefined) {
-  //     var fields = input.get.split(',').toList
-
-  //     for (elt <- fields) {
-  //       val parts = elt.split('.').toList
-
-  //       if (parts.length > 0) {
-          
-  //         val index = reportRepository.getFieldsClassName.map(_.toLowerCase).indexOf(parts(0).toLowerCase)
-
-  //         if (index > 0) {
-  //           if (parts.length > 1) {
-  //             if (DIRECTIONS.contains(parts(1))) {
-  //               res += reportRepository.getFieldsClassName(index) + '.' + parts(1)
-  //             } else {
-  //               res += reportRepository.getFieldsClassName(index)
-  //             }
-  //           } else {
-  //             res += reportRepository.getFieldsClassName(index)
-  //           }
-  //         }
-          
-  //       }
-  //     }
-  //   }
-
-  //   //res.toList.map(println)
-
-  //   return res.toList
-  // }
-
   def getReport(uuid: String) = SecuredAction.async { implicit request =>
 
     reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
@@ -253,6 +258,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def deleteReport(uuid: String) = SecuredAction.async {
+    logger.debug("deleteReport")
 
     reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
       case None => Future(NotFound)
