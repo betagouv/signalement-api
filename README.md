@@ -148,35 +148,71 @@ Les signalements sont rendus par parge. Le retour JSON est de la forme :
 
 *Exemple : Récupération des 10 signalements à partir du 30ème*
 
+```
 http://localhost:9000/api/reports?offset=30&limit=10
+```
 
 - offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
 - limit est ignoré s'il est négatif. Sa valeur maximum est 250
 
-*Exemple : Récupération des 10 signalements à partir du 30ème pour le code postal 49000*
+*Exemple : Récupération des 10 signalements à partir du 30ème pour le département 49*
 
-http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49000
+```
+http://localhost:9000/api/reports?offset=30&limit=10&departments=49
+```
 
-NB: Récupère toutes les entreprises commençant par le code postal.
+Le champ departments peut contenir une liste de département séparé par `,`.
 
-> Exemple : récupèration de tous les signalements du département 49
-http://localhost:9000/api/reports?offset=30&limit=10&codePostal=49
+*Exemple : récupèration de tous les signalements du département 49 et 94*
+
+```
+http://localhost:9000/api/reports?offset=10&limit=10&departments=49,94
+```
 
 *Exemple : Récupération par email*
 
+```
 http://localhost:9000/api/reports?offset=30&limit=10&email=john@gmail.com
+```
 
 *Exemple : Récupération par siret*
 
+```
 http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
+```
 
-*Exemple : Récupération par nom d'entreprise*
+*Exemple : Récupération de toutes les entreprises commençant par Géant*
 
+```
 http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
+```
 
-NB: Récupère toutes les entreprises commençant par Géant
+*Suppression d'un signalement*
 
-### 3. API Events
+http://localhost:9000/api/reports/:uuid (DELETE)
+
+Statuts :
+- 204 No Content : dans le cas où la suppression fonctionne
+- 404 Not Found : dans le cas où le document n'existe pas
+- 412 Precondition Failed : statut renvoyé si des fichiers sont liés à ce signalement. Si l'on souhaite malgré cela supprimer le signalement, il faudra préalablement supprimer ces fichiers
+
+### 3. API Files
+
+*Suppression d'un fichier*
+
+http://localhost:9000/api/reports/files/:uuid/:filename (DELETE)
+
+```
+Ex: http://localhost:9000/api/reports/files/38702d6a-907f-4ade-8e93-c4b00e668e8a/logo.png
+```
+
+Les champs `uuid` et `filename` sont obligatoires.
+
+Statuts :
+- 204 No Content : dans le cas où la suppression fonctionne
+- 404 Not Found : dans le cas où le fichier n'existe pas
+
+### 4. API Events
 
 *Récupère la liste des évènements d'un signalement*
 
@@ -202,7 +238,7 @@ Exemple body de la request (JSON):
 
 - action: ce champ doit contenir le libellé d'une action pro disponible via le ws actionPros (cf. infra)
 
-### 4. API Constantes
+### 5. API Constantes
 
 *La liste des actions professionnels possibles*
 
