@@ -186,7 +186,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         for {
           repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
           s3Delete <- s3Service.delete(BucketName, uuid)
-        } yield Ok
+        } yield NoContent
       case _ => Future(NotFound)
     })
   }
@@ -245,11 +245,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   def getReport(uuid: String) = SecuredAction.async { implicit request =>
 
-    reportRepository.getReport(UUID.fromString(uuid)).flatMap(report => {
+    reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
+        case Some(report) => Future(Ok(Json.toJson(report)))
+        case None => Future(NotFound)
 
-      Future(Ok(Json.toJson(report)))
     })
+  }
 
+  def deleteReport(uuid: String) = SecuredAction.async {
+    reportRepository.delete(UUID.fromString(uuid)).flatMap(_ match {
+      case 0 => Future(NotFound)
+      case 1 => Future(NoContent)
+    })
   }
  
   def getReports(

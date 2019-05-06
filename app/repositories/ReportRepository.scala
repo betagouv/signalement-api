@@ -174,6 +174,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       )
   }
 
+  def delete(id: UUID): Future[Int] = db.run {
+    reportTableQuery
+      .filter(_.id === id)
+      .delete
+  }
+
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
 
       val query = reportTableQuery

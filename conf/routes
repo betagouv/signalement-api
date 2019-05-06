@@ -10,6 +10,7 @@ GET          /api/reports/extract                   controllers.ReportController
 GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
 GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], departments: Option[String], email: Option[String], siret: Option[String], entreprise: Option[String])
 POST         /api/reports                           controllers.ReportController.createReport()
+DELETE       /api/reports/:uuid                     controllers.ReportController.deleteReport(uuid)
 POST         /api/reports/files                     controllers.ReportController.uploadReportFile()
 GET          /api/reports/files/:uuid/:filename     controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)
