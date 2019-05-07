@@ -116,7 +116,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  def updateReport = UserAwareAction.async(parse.json) { implicit request =>
+  def updateReport = SecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
 
@@ -315,7 +315,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departments: Option[String]) = UnsecuredAction.async { implicit request =>
+  def extractReports(departments: Option[String]) = SecuredAction.async { implicit request =>
 
     reportRepository.getReports(0, 10000, ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()))).flatMap( reports => {
 
