@@ -1,8 +1,8 @@
 package controllers
 
-import java.time.format.{DateTimeFormatter}
+import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, YearMonth}
-import java.util.{UUID}
+import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.util.ByteString
@@ -27,6 +27,7 @@ import utils.DateUtils
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
                                  userRepository: UserRepository,
@@ -70,29 +71,32 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug("createEvent")
 
-    val id = UUID.fromString(uuid)
-
     request.body.validate[Event].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       event => {
-        for {
-          report <- reportRepository.getReport(id)
-          user <- userRepository.get(event.userId)
-          _ <- report.flatMap(r => user.flatMap(u => u.id.map(id => reportRepository.createEvent(
-            event.copy(
-              id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now()),
-              reportId = r.id,
-              userId = id
-            ))))).getOrElse(Future(None))
-          _ <- report.map(r => reportRepository.update(r.copy(
-            statusPro = Some(determineStatusPro(event).value)
-          ))).getOrElse(Future(None))
-        } yield {
-          (report, user) match {
-            case (_, None) => BadRequest
-            case (Some(_), _) => Ok(Json.toJson(event))
-            case (None, _) => NotFound
+        Try(UUID.fromString(uuid)) match {
+          case Failure(_) => Future.successful(PreconditionFailed)
+          case Success(id) => {
+            for {
+              report <- reportRepository.getReport(id)
+              user <- userRepository.get(event.userId)
+              _ <- report.flatMap(r => user.flatMap(u => u.id.map(id => reportRepository.createEvent(
+                event.copy(
+                  id = Some(UUID.randomUUID()),
+                  creationDate = Some(LocalDateTime.now()),
+                  reportId = r.id,
+                  userId = id
+                ))))).getOrElse(Future(None))
+              _ <- report.map(r => reportRepository.update(r.copy(
+                statusPro = Some(determineStatusPro(event).value)
+              ))).getOrElse(Future(None))
+            } yield {
+              (report, user) match {
+                case (_, None) => BadRequest
+                case (Some(_), _) => Ok(Json.toJson(event))
+                case (None, _) => NotFound
+              }
+            }
           }
         }
       }
@@ -217,6 +221,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def downloadReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
+
     reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
         s3Service.download(BucketName, uuid).flatMap(
@@ -258,34 +263,43 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def getReport(uuid: String) = SecuredAction.async { implicit request =>
+  def getReport(uuid: String) = SecuredAction.async {
 
-    reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
-        case Some(report) => Future.successful(Ok(Json.toJson(report)))
-        case None => Future.successful(NotFound)
+    logger.debug("getReport")
 
-    })
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => {
+        reportRepository.getReport(id).flatMap(_ match {
+          case Some(report) => Future.successful(Ok(Json.toJson(report)))
+          case None => Future.successful(NotFound)
+        })
+      }
+    }
   }
 
   def deleteReport(uuid: String) = SecuredAction.async {
 
     logger.debug("deleteReport")
 
-    val id = UUID.fromString(uuid)
-
-    for {
-      report <- reportRepository.getReport(id)
-      _ <- reportRepository.deleteEvents(id)
-      _ <- reportRepository.delete(id)
-    } yield {
-      report match {
-        case None => NotFound
-        case _ => NoContent
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => {
+        for {
+          report <- reportRepository.getReport(id)
+          _ <- reportRepository.deleteEvents(id)
+          _ <- reportRepository.delete(id)
+        } yield {
+          report match {
+            case None => NotFound
+            case _ => NoContent
+          }
+        }
       }
     }
 
   }
- 
+
   def getReports(
     offset: Option[Long], 
     limit: Option[Int], 
@@ -319,24 +333,26 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
-
-    val id = UUID.fromString(uuid)
+  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction.async {
 
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
       case None => EventFilter(eventType = None)
     }
 
-    for {
-      report <- reportRepository.getReport(id)
-      events <- reportRepository.getEvents(id, filter)
-    } yield {
-      report match {
-        case Some(_) => Ok(Json.toJson(events))
-        case None => NotFound
-      }
-    }
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => {
+        for {
+          report <- reportRepository.getReport(id)
+          events <- reportRepository.getEvents(id, filter)
+        } yield {
+          report match {
+            case Some(_) => Ok(Json.toJson(events))
+            case None => NotFound
+          }
+        }
+      }}
 
   }
 
