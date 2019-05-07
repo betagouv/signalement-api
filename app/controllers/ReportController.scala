@@ -18,7 +18,7 @@ import play.api.mvc.{ResponseHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{EventFilter, ReportFilter, ReportRepository}
+import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
@@ -28,6 +28,7 @@ import utils.silhouette.AuthEnv
 import scala.concurrent.{ExecutionContext, Future}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
+                                 userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
@@ -68,22 +69,30 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug("createEvent")
 
+    val id = UUID.fromString(uuid)
+
     request.body.validate[Event].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       event => {
         for {
-          event <- reportRepository.createEvent(
+          report <- reportRepository.getReport(id)
+          user <- userRepository.get(event.userId)
+          _ <- report.flatMap(r => user.flatMap(u => u.id.map(id => reportRepository.createEvent(
             event.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(LocalDateTime.now()),
-              reportId = Some(UUID.fromString(uuid))
-            ))
-          report <- reportRepository.getReport(UUID.fromString(uuid))
-          _ <- reportRepository.update(report.get.copy(
+              reportId = r.id,
+              userId = id
+            ))))).getOrElse(Future(None))
+          _ <- report.map(r => reportRepository.update(r.copy(
             statusPro = Some(determineStatusPro(event).value)
-          ))
+          ))).getOrElse(Future(None))
         } yield {
-          Ok(Json.toJson(event))
+          (report, user) match {
+            case (_, None) => BadRequest
+            case (Some(_), _) => Ok(Json.toJson(event))
+            case (None, _) => NotFound
+          }
         }
       }
     )
@@ -258,18 +267,21 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def deleteReport(uuid: String) = SecuredAction.async {
+
     logger.debug("deleteReport")
 
-    reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
-      case None => Future.successful(NotFound)
-      case Some(report) => report.files.isEmpty match {
-        case true => reportRepository.delete(UUID.fromString(uuid)).flatMap(_ match {
-          case 0 => Future.successful(NotFound)
-          case 1 => Future.successful(NoContent)
-        })
-        case false => Future.successful(PreconditionFailed)
+    val id = UUID.fromString(uuid)
+
+    for {
+      report <- reportRepository.getReport(id)
+      _ <- reportRepository.deleteEvents(id)
+      nb <- reportRepository.delete(id)
+    } yield {
+      (report, nb) match {
+        case (report, _) if !report.isDefined => NotFound
+        case (_, _) => NoContent
       }
-    })
+    }
 
   }
  
@@ -302,16 +314,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction.async { implicit request =>
 
+    val id = UUID.fromString(uuid)
+
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
       case None => EventFilter(eventType = None)
     }
 
-    reportRepository.getEvents(UUID.fromString(uuid), filter).flatMap( events => {
-
-      Future.successful(Ok(Json.toJson(events)))
-
-    })
+    for {
+      report <- reportRepository.getReport(id)
+      events <- reportRepository.getEvents(id, filter)
+    } yield {
+      report match {
+        case Some(_) => Ok(Json.toJson(events))
+        case None => NotFound
+      }
+    }
 
   }
 
