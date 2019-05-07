@@ -1,7 +1,7 @@
 package repositories
 
 import java.time.{LocalDateTime, YearMonth}
-import java.util.UUID
+import java.util.{UUID}
 
 import javax.inject.{Inject, Singleton}
 import models.{Event, File, Report, ReportsPerMonth}
@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -195,8 +195,15 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.entreprise) {
             case(table, entreprise) => table.companyName like s"${entreprise}%"
           }
-    
-      for {
+          .filterOpt(filter.start) {
+            case(table, start) => table.creationDate >= start
+          }
+          .filterOpt(filter.end) {
+            case(table, end) => table.creationDate <= end
+          }
+
+
+    for {
         reports <- query
           .sortBy(_.creationDate.desc)
           .drop(offset)

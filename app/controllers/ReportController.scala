@@ -1,8 +1,8 @@
 package controllers
 
-import java.time.format.DateTimeFormatter
+import java.time.format.{DateTimeFormatter}
 import java.time.{LocalDateTime, YearMonth}
-import java.util.UUID
+import java.util.{UUID}
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.util.ByteString
@@ -23,6 +23,7 @@ import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
 import utils.Constants.{EventType, StatusPro}
+import utils.DateUtils
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -292,7 +293,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     departments: Option[String],
     email: Option[String],
     siret: Option[String],
-    entreprise: Option[String]
+    entreprise: Option[String],
+    start: Option[String],
+    end: Option[String]
+
   ) = SecuredAction.async { implicit request =>
 
     // valeurs par défaut
@@ -300,10 +304,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val LIMIT_MAX = 250
 
     // normalisation des entrées
-    var offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
-    var limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
+    val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
+    val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,entreprise)
+    val startDate = DateUtils.parseDate(start)
+    val endDate = DateUtils.parseDate(end)
+
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,entreprise, startDate, endDate)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
