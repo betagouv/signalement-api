@@ -225,6 +225,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     .run(eventTableQuery += event)
     .map(_ => event)
 
+  def deleteEvents(uuidReport: UUID): Future[Int] = db
+    .run(
+      eventTableQuery
+        .filter(_.reportId === uuidReport)
+        .delete
+    )
+
+
   def getEvents(uuidReport: UUID, filter: EventFilter): Future[List[Event]] = db.run {
     eventTableQuery
       .filter(_.reportId === uuidReport)
