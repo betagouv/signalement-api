@@ -31,9 +31,6 @@ class AuthController @Inject()(
     request.body.validate[UserLogin].fold(
       err => Future(BadRequest),
       data => {
-        logger.debug(s"${data.password}")
-        logger.debug(s"${passwordHasherRegistry.current.hash("test").password}")
-
         credentialsProvider.authenticate(Credentials(data.email, data.password)).flatMap { loginInfo =>
           logger.debug("loginInfo");
           userService.retrieve(loginInfo).flatMap {

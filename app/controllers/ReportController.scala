@@ -340,9 +340,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departments: Option[String]) = SecuredAction.async { implicit request =>
+  def extractReports(departments: Option[String], start: Option[String], end: Option[String]) = SecuredAction.async { implicit request =>
 
-    reportRepository.getReports(0, 10000, ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()))).flatMap( reports => {
+    val startDate = DateUtils.parseDate(start)
+    val endDate = DateUtils.parseDate(end)
+
+    reportRepository.getReports(
+      0,
+      10000,
+      ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
+    ).flatMap( reports => {
 
       val csvFields = Array(
         "Date de création",

@@ -6,7 +6,7 @@
 GET          /api                                    controllers.StaticController.api
 
 # Report API
-GET          /api/reports/extract                   controllers.ReportController.extractReports(departments: Option[String])
+GET          /api/reports/extract                   controllers.ReportController.extractReports(departments: Option[String], start: Option[String], end: Option[String])
 GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
 GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], departments: Option[String], email: Option[String], siret: Option[String], entreprise: Option[String], start: Option[String], end: Option[String])
 POST         /api/reports                           controllers.ReportController.createReport()
