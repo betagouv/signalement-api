@@ -360,12 +360,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report.id.map(_.toString).getOrElse("")
         ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
           .reduce((s1, s2) => s"$s1;$s2")
-      ).reduce((s1, s2) => s"$s1\n$s2")
+      ).reduceOption((s1, s2) => s"$s1\n$s2")
 
       Future(
         Result(
         header = ResponseHeader(200, Map.empty),
-        body = HttpEntity.Strict(ByteString(s"$csvFields\n$csvData"), Some("text/csv"))
+        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}"), Some("text/csv"))
       ))
     })
 
