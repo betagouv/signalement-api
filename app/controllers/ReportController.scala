@@ -125,11 +125,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       report => {
 
         report.id match {
-          case None => Future(BadRequest)
+          case None => Future.successful(BadRequest)
           case Some(id) => {
             for {
               existingReport <- reportRepository.getReport(id)
-              report <- reportRepository.update(existingReport.get.copy(
+              _ <- existingReport.map(r => reportRepository.update(r.copy(
                   firstName = report.firstName,
                   lastName = report.lastName,
                   email= report.email,
@@ -139,8 +139,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret,
                   statusPro = determineStatusPro(report).map(s => s.value)
-                )
-              )
+                ))
+              ).getOrElse(Future.successful(None))
             } yield {
               existingReport match {
                 case Some(_) => Ok
@@ -251,8 +251,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getReport(uuid: String) = SecuredAction.async { implicit request =>
 
     reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
-        case Some(report) => Future(Ok(Json.toJson(report)))
-        case None => Future(NotFound)
+        case Some(report) => Future.successful(Ok(Json.toJson(report)))
+        case None => Future.successful(NotFound)
 
     })
   }
@@ -261,13 +261,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     logger.debug("deleteReport")
 
     reportRepository.getReport(UUID.fromString(uuid)).flatMap(_ match {
-      case None => Future(NotFound)
+      case None => Future.successful(NotFound)
       case Some(report) => report.files.isEmpty match {
         case true => reportRepository.delete(UUID.fromString(uuid)).flatMap(_ match {
-          case 0 => Future(NotFound)
-          case 1 => Future(NoContent)
+          case 0 => Future.successful(NotFound)
+          case 1 => Future.successful(NoContent)
         })
-        case false => Future(PreconditionFailed)
+        case false => Future.successful(PreconditionFailed)
       }
     })
 
@@ -295,7 +295,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
-      Future(Ok(Json.toJson(reports)))
+      Future.successful(Ok(Json.toJson(reports)))
     })
 
   }
@@ -309,7 +309,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     reportRepository.getEvents(UUID.fromString(uuid), filter).flatMap( events => {
 
-      Future(Ok(Json.toJson(events)))
+      Future.successful(Ok(Json.toJson(events)))
 
     })
 
