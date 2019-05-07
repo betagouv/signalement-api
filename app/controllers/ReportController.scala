@@ -275,11 +275,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     for {
       report <- reportRepository.getReport(id)
       _ <- reportRepository.deleteEvents(id)
-      nb <- reportRepository.delete(id)
+      _ <- reportRepository.delete(id)
     } yield {
-      (report, nb) match {
-        case (report, _) if !report.isDefined => NotFound
-        case (_, _) => NoContent
+      report match {
+        case None => NotFound
+        case _ => NoContent
       }
     }
 
