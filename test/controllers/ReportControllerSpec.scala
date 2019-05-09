@@ -51,7 +51,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
-        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None)
+        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
 
         controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(Some(A_TRAITER))
         controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(Some(NA))
