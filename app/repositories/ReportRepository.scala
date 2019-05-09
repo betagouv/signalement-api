@@ -104,12 +104,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def creationDate = column[LocalDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
-    def resultAction = column[Option[String]]("result_action")
+    def resultAction = column[Option[Boolean]]("result_action")
     def detail = column[Option[String]]("detail")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
     //def user = foreignKey("fk_events_users", userId, userTableQuery)(_.id.?)
 
-    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[String], Option[String])
+    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[Boolean], Option[String])
 
     def constructEvent: EventData => Event = {
 

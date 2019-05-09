@@ -63,7 +63,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_COURRIER, _)                 => StatusPro.TRAITEMENT_EN_COURS
     case (REPONSE_PRO_CONTACT, _)              => StatusPro.A_TRANSFERER_SIGNALEMENT
     case (ENVOI_SIGNALEMENT, _)                => StatusPro.SIGNALEMENT_TRANSMIS
-    case (REPONSE_PRO_SIGNALEMENT, Some("OK")) => StatusPro.PROMESSE_ACTION
+    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => StatusPro.PROMESSE_ACTION
     case (REPONSE_PRO_SIGNALEMENT, _)          => StatusPro.SIGNALEMENT_REFUSE
     case (_, _)                                => StatusPro.NA // cas impossible...
 

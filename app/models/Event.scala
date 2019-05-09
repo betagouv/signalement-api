@@ -15,7 +15,7 @@ case class Event(
                   creationDate: Option[LocalDateTime],
                   eventType: EventTypeValue,
                   action: ActionEventValue,
-                  resultAction: Option[String],
+                  resultAction: Option[Boolean],
                   detail: Option[String]
                 )
                  

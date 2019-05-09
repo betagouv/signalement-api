@@ -104,17 +104,6 @@ object Constants {
 
     def fromValue(value: String) = eventTypes.find(_.value == value)
 
-    // Valeurs possibles de result_action de la table Event
-    case class ResultActionProValue(value: String)
-
-    object OK extends ResultActionProValue("OK")
-    object KO extends ResultActionProValue("KO")
-
-    val resultActions = Seq(
-      OK,
-      KO
-    )
-
   }
 
   object ActionEvent {
