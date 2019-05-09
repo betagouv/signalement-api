@@ -4,8 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.{DetailInputValue, Event, File, Report}
-import models.DetailInputValue.string2detailInputValue
+import models.{Event, Report}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
