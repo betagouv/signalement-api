@@ -66,11 +66,13 @@ object Constants {
     object A_RECONTACTER extends StatusConsoValue("À recontacter")
     object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
     object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
+    object FAIT extends StatusConsoValue("Fait")
 
     val status = Seq(
       A_RECONTACTER,
       A_INFORMER_TRANSMISSION,
-      A_INFORMER_REPONSE_PRO
+      A_INFORMER_REPONSE_PRO,
+      FAIT
     )
 
     def fromValue(value: String) = status.find(_.value == value)
@@ -136,10 +138,9 @@ object Constants {
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
 
-    object VIDE extends ActionEventValue("")
-    object CONSO_CONTACTE extends ActionEventValue("Consommateur contacté")
-    object CONSO_INFORME_TRANSMISSION extends ActionEventValue("Consommateur informé de transmission")
-    object CONSO_INFORME_REPONSE_PRO extends ActionEventValue("Consommateur informé de la réponse pro")
+    object EMAIL_AR extends ActionEventValue("Envoi email de prise en compte")
+    object EMAIL_TRANSMISSION extends ActionEventValue("Envoi email d'information de transmission")
+    object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
     val actionPros = Seq(
       A_CONTACTER,
@@ -153,10 +154,9 @@ object Constants {
     )
 
     val actionConsos = Seq(
-      VIDE,
-      CONSO_CONTACTE,
-      CONSO_INFORME_TRANSMISSION,
-      CONSO_INFORME_REPONSE_PRO
+      EMAIL_AR,
+      EMAIL_TRANSMISSION,
+      EMAIL_REPONSE_PRO
     )
 
     def fromValue(value: String) = (actionPros++actionConsos).find(_.value == value)

@@ -52,25 +52,26 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
     def statusPro = column[Option[String]]("status_pro")
+    def statusConso = column[Option[String]]("status_conso")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, Option[String])
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, Option[String], Option[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro) =>
+      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro)
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro, statusConso)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, files, statusPro) =>
+      creationDate, firstName, lastName, email, contactAgreement, files, statusPro, statusConso) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, statusPro)
+          creationDate.get, firstName, lastName, email, contactAgreement, statusPro, statusConso)
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, firstName, lastName, email, contactAgreement, statusPro) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) <> (constructReport, extractReport.lift)
   }
 
   private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {

@@ -21,8 +21,10 @@ import play.core.parsers.Multipart.FileInfo
 import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
+import utils.Constants.EventType.{CONSO, PRO}
+import utils.Constants.StatusConso.StatusConsoValue
 import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
-import utils.Constants.{EventType, StatusPro}
+import utils.Constants.{EventType, StatusConso, StatusPro}
 import utils.DateUtils
 import utils.silhouette.AuthEnv
 
@@ -67,6 +69,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
+  def determineStatusConso(event: Event): StatusConsoValue = (event.action) match {
+    case (EMAIL_AR)            => println("EMAIL_AR"); StatusConso.A_INFORMER_TRANSMISSION
+    case (EMAIL_TRANSMISSION)  => println("EMAIL_TRANSMISSION"); StatusConso.A_INFORMER_REPONSE_PRO
+    case (EMAIL_REPONSE_PRO)   => println("EMAIL_REPONSE_PRO"); StatusConso.FAIT
+    case (_)                   => println("VIDE"); StatusConso.VIDE
+  }
+
   def createEvent(uuid: String) = SecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
@@ -87,9 +96,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   reportId = r.id,
                   userId = id
                 ))))).getOrElse(Future(None))
-              _ <- report.map(r => reportRepository.update(r.copy(
-                statusPro = Some(determineStatusPro(event).value)
-              ))).getOrElse(Future(None))
+              _ <- report.map(r => reportRepository.update{
+                event.eventType match {
+                  case PRO => r.copy(statusPro = Some(determineStatusPro(event).value))
+                  case CONSO => r.copy(statusConso = Some(determineStatusPro(event).value))
+                }
+              }).getOrElse(Future(None))
             } yield {
               (report, user) match {
                 case (_, None) => BadRequest

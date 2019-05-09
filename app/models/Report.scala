@@ -21,7 +21,8 @@ case class Report(
                    email: String,
                    contactAgreement: Boolean,
                    files: List[File],
-                   statusPro: Option[String]
+                   statusPro: Option[String],
+                   statusConso: Option[String]
                  )
 object Report {
   implicit val reportFormat: OFormat[Report] = Json.format[Report]
