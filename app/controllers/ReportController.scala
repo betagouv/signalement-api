@@ -50,14 +50,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     "18", "28", "36", "37", "41", "45" // CVDL
   )
 
-  def determineStatusPro(report: Report): Option[StatusProValue] = {
+  def determineStatusPro(report: Report): StatusProValue = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) A_TRAITER else NA
   }
 
-  def determineStatusConso(report: Report): Option[StatusConsoValue] = {
+  def determineStatusConso(report: Report): StatusConsoValue = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(EN_ATTENTE) else Some(A_RECONTACTER)
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) EN_ATTENTE else A_RECONTACTER
   }
 
 
@@ -76,7 +76,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
-    case (REPONSE_PRO_CONTACT)                 => StatusConso.A_INFORMER_TRANSMISSION
+    case (ENVOI_SIGNALEMENT)                   => StatusConso.A_INFORMER_TRANSMISSION
     case (REPONSE_PRO_SIGNALEMENT)             => StatusConso.A_INFORMER_REPONSE_PRO
     case (EMAIL_NON_PRISE_EN_COMPTE)           => StatusConso.FAIT
     case (EMAIL_TRANSMISSION)                  => StatusConso.EN_ATTENTE
@@ -105,8 +105,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   userId = id
                 ))))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
-                  r.copy(statusPro = Some(determineStatusPro(event).value))
-                  r.copy(statusConso = Some(determineStatusConso(event, r.statusConso).value))
+                  r.copy(
+                    statusPro = Some(determineStatusPro(event).value),
+                    statusConso = Some(determineStatusConso(event, r.statusConso).value))
               }).getOrElse(Future(None))
             } yield {
               (report, user) match {
@@ -134,8 +135,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(LocalDateTime.now()),
-              statusPro = determineStatusPro(report).map(s => s.value),
-              statusConso = determineStatusConso(report).map(s => s.value)
+              statusPro = Some(determineStatusPro(report).value),
+              statusConso = Some(determineStatusConso(report).value)
             )
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -171,7 +172,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyAddress = report.companyAddress,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret,
-                  statusPro = determineStatusPro(report).map(s => s.value)
+                  statusPro = Some(determineStatusPro(report).value)
                 ))
               ).getOrElse(Future.successful(None))
             } yield {

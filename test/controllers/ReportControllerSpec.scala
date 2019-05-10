@@ -53,8 +53,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
         val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
 
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(Some(A_TRAITER))
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(Some(NA))
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(A_TRAITER)
+        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(NA)
 
       }
     }
@@ -94,8 +94,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_TRANSMISSION)
-        controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_TRANSMISSION)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_TRANSMISSION), Some(A_INFORMER_TRANSMISSION.value)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_REPONSE_PRO)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO.value)) must equalTo(FAIT)
