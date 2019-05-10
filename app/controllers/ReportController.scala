@@ -22,7 +22,7 @@ import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, PRO}
-import utils.Constants.StatusConso.StatusConsoValue
+import utils.Constants.StatusConso.{A_RECONTACTER, EN_ATTENTE, StatusConsoValue}
 import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
 import utils.Constants.{EventType, StatusConso, StatusPro}
 import utils.DateUtils
@@ -55,6 +55,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(A_TRAITER) else Some(NA)
   }
 
+  def determineStatusConso(report: Report): Option[StatusConsoValue] = {
+
+    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) Some(EN_ATTENTE) else Some(A_RECONTACTER)
+  }
+
+
   def determineStatusPro(event: Event): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => StatusPro.A_TRAITER
     case (HORS_PERIMETRE, _)                   => StatusPro.NA
@@ -69,11 +75,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def determineStatusConso(event: Event): StatusConsoValue = (event.action) match {
-    case (EMAIL_AR)            => println("EMAIL_AR"); StatusConso.A_INFORMER_TRANSMISSION
-    case (EMAIL_TRANSMISSION)  => println("EMAIL_TRANSMISSION"); StatusConso.A_INFORMER_REPONSE_PRO
-    case (EMAIL_REPONSE_PRO)   => println("EMAIL_REPONSE_PRO"); StatusConso.FAIT
-    case (_)                   => println("VIDE"); StatusConso.VIDE
+  def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
+    case (REPONSE_PRO_CONTACT)                 => StatusConso.A_INFORMER_TRANSMISSION
+    case (REPONSE_PRO_SIGNALEMENT)             => StatusConso.A_INFORMER_REPONSE_PRO
+    case (EMAIL_NON_PRISE_EN_COMPTE)           => StatusConso.FAIT
+    case (EMAIL_TRANSMISSION)                  => StatusConso.EN_ATTENTE
+    case (EMAIL_REPONSE_PRO)                   => StatusConso.FAIT
+    case (_)                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
   }
 
   def createEvent(uuid: String) = SecuredAction.async(parse.json) { implicit request =>
@@ -97,10 +105,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   userId = id
                 ))))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
-                event.eventType match {
-                  case PRO => r.copy(statusPro = Some(determineStatusPro(event).value))
-                  case CONSO => r.copy(statusConso = Some(determineStatusConso(event).value))
-                }
+                  r.copy(statusPro = Some(determineStatusPro(event).value))
+                  r.copy(statusConso = Some(determineStatusConso(event, r.statusConso).value))
               }).getOrElse(Future(None))
             } yield {
               (report, user) match {
@@ -128,7 +134,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(LocalDateTime.now()),
-              statusPro = determineStatusPro(report).map(s => s.value)
+              statusPro = determineStatusPro(report).map(s => s.value),
+              statusConso = determineStatusConso(report).map(s => s.value)
             )
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)

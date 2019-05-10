@@ -18,7 +18,8 @@ import play.api.test.{FakeRequest, Helpers, WithApplication}
 import repositories.{ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType.PRO
+import utils.Constants.EventType.{CONSO, PRO}
+import utils.Constants.StatusConso.{A_INFORMER_REPONSE_PRO, A_INFORMER_TRANSMISSION, A_RECONTACTER, EN_ATTENTE, FAIT}
 import utils.Constants.StatusPro._
 import utils.silhouette.AuthEnv
 
@@ -79,15 +80,37 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-  }
+    "determineStatusConso with event" in new Context {
+      new WithApplication(application) {
 
-    trait Context extends Scope {
+        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
+          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
+        }
 
-      lazy val application = new GuiceApplicationBuilder()
-        .configure(Configuration("play.evolutions.enabled" -> false))
-        .build()
+        val fakeUUID = UUID.randomUUID()
+        val fakeTime = LocalDateTime.now()
 
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
+        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_TRANSMISSION)
+        controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = EMAIL_TRANSMISSION), Some(A_INFORMER_TRANSMISSION.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_REPONSE_PRO)
+        controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO.value)) must equalTo(FAIT)
+        controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER.value)) must equalTo(FAIT)
+
+      }
     }
+  }
+
+  trait Context extends Scope {
+
+    lazy val application = new GuiceApplicationBuilder()
+      .configure(Configuration("play.evolutions.enabled" -> false))
+      .build()
 
   }
 
+}

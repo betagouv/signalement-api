@@ -62,7 +62,7 @@ object Constants {
         JsPath.read[String].map(fromValue(_).get)
     }
 
-    object VIDE extends StatusConsoValue("")
+    object EN_ATTENTE extends StatusConsoValue("En attente")
     object A_RECONTACTER extends StatusConsoValue("À recontacter")
     object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
     object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
@@ -127,7 +127,8 @@ object Constants {
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
 
-    object EMAIL_AR extends ActionEventValue("Envoi email de prise en compte")
+    object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
+    object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
     object EMAIL_TRANSMISSION extends ActionEventValue("Envoi email d'information de transmission")
     object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
