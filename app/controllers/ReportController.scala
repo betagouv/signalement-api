@@ -22,8 +22,8 @@ import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, PRO}
-import utils.Constants.StatusConso.{A_RECONTACTER, EN_ATTENTE, StatusConsoValue}
-import utils.Constants.StatusPro.{A_TRAITER, NA, StatusProValue}
+import utils.Constants.StatusConso.{A_INFORMER_REPONSE_PRO, A_INFORMER_TRANSMISSION, A_RECONTACTER, EN_ATTENTE, FAIT, StatusConsoValue}
+import utils.Constants.StatusPro.{A_TRAITER, A_TRANSFERER_SIGNALEMENT, NA, PROMESSE_ACTION, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, StatusProValue, TRAITEMENT_EN_COURS}
 import utils.Constants.{EventType, StatusConso, StatusPro}
 import utils.DateUtils
 import utils.silhouette.AuthEnv
@@ -61,26 +61,26 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
 
-  def determineStatusPro(event: Event): StatusProValue = (event.action, event.resultAction) match {
-    case (A_CONTACTER, _)                      => StatusPro.A_TRAITER
-    case (HORS_PERIMETRE, _)                   => StatusPro.NA
-    case (CONTACT_TEL, _)                      => StatusPro.TRAITEMENT_EN_COURS
-    case (CONTACT_EMAIL, _)                    => StatusPro.TRAITEMENT_EN_COURS
-    case (CONTACT_COURRIER, _)                 => StatusPro.TRAITEMENT_EN_COURS
-    case (REPONSE_PRO_CONTACT, _)              => StatusPro.A_TRANSFERER_SIGNALEMENT
-    case (ENVOI_SIGNALEMENT, _)                => StatusPro.SIGNALEMENT_TRANSMIS
-    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => StatusPro.PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => StatusPro.SIGNALEMENT_REFUSE
-    case (_, _)                                => StatusPro.NA // cas impossible...
+  def determineStatusPro(event: Event, previousStatus: Option[String]): StatusProValue = (event.action, event.resultAction) match {
+    case (A_CONTACTER, _)                      => A_TRAITER
+    case (HORS_PERIMETRE, _)                   => NA
+    case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
+    case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
+    case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
+    case (REPONSE_PRO_CONTACT, _)              => A_TRANSFERER_SIGNALEMENT
+    case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
+    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
+    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_REFUSE
+    case (_, _)                                => StatusPro.fromValue(previousStatus.getOrElse("")).getOrElse(NA)
 
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
-    case (ENVOI_SIGNALEMENT)                   => StatusConso.A_INFORMER_TRANSMISSION
-    case (REPONSE_PRO_SIGNALEMENT)             => StatusConso.A_INFORMER_REPONSE_PRO
-    case (EMAIL_NON_PRISE_EN_COMPTE)           => StatusConso.FAIT
-    case (EMAIL_TRANSMISSION)                  => StatusConso.EN_ATTENTE
-    case (EMAIL_REPONSE_PRO)                   => StatusConso.FAIT
+    case (ENVOI_SIGNALEMENT)                   => A_INFORMER_TRANSMISSION
+    case (REPONSE_PRO_SIGNALEMENT)             => A_INFORMER_REPONSE_PRO
+    case (EMAIL_NON_PRISE_EN_COMPTE)           => FAIT
+    case (EMAIL_TRANSMISSION)                  => EN_ATTENTE
+    case (EMAIL_REPONSE_PRO)                   => FAIT
     case (_)                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
   }
 
@@ -106,7 +106,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 ))))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = Some(determineStatusPro(event).value),
+                    statusPro = Some(determineStatusPro(event, r.statusPro).value),
                     statusConso = Some(determineStatusConso(event, r.statusConso).value))
               }).getOrElse(Future(None))
             } yield {

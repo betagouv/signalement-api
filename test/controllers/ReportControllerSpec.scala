@@ -70,12 +70,13 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeTime = LocalDateTime.now()
 
         val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some(true), None)
-        controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER)) must equalTo(A_TRAITER)
-        controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE)) must equalTo(NA)
-        controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = CONTACT_COURRIER)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true))) must equalTo(PROMESSE_ACTION)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false))) must equalTo(SIGNALEMENT_REFUSE)
+        controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER), Some(NA.value)) must equalTo(A_TRAITER)
+        controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE), Some(NA.value)) must equalTo(NA)
+        controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL), Some(NA.value)) must equalTo(TRAITEMENT_EN_COURS)
+        controller.determineStatusPro(eventFixture.copy(action = CONTACT_COURRIER), Some(NA.value)) must equalTo(TRAITEMENT_EN_COURS)
+        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true)), Some(NA.value)) must equalTo(PROMESSE_ACTION)
+        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA.value)) must equalTo(SIGNALEMENT_REFUSE)
+        controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS.value)) must equalTo(TRAITEMENT_EN_COURS)
 
       }
     }
