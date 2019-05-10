@@ -399,6 +399,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         "Email",
         "Accord pour contact",
         "Pièces jointes",
+        "Statut pro",
+        "Statut conso",
         "Identifiant"
       ).reduce((s1, s2) => s"$s1;$s2")
 
@@ -424,6 +426,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report.files
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+          report.statusPro.getOrElse(""),
+          report.statusConso.getOrElse(""),
           report.id.map(_.toString).getOrElse("")
         ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
           .reduce((s1, s2) => s"$s1;$s2")
