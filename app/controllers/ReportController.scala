@@ -99,7 +99,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               _ <- report.map(r => reportRepository.update{
                 event.eventType match {
                   case PRO => r.copy(statusPro = Some(determineStatusPro(event).value))
-                  case CONSO => r.copy(statusConso = Some(determineStatusPro(event).value))
+                  case CONSO => r.copy(statusConso = Some(determineStatusConso(event).value))
                 }
               }).getOrElse(Future(None))
             } yield {
