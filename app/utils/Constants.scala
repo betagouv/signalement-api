@@ -30,6 +30,7 @@ object Constants {
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
     object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
+    object PROMESSE_ACTION_REFUSEE extends StatusProValue("Pas de promesse d'action")
 
     val status = Seq(
       A_TRAITER,
@@ -42,7 +43,8 @@ object Constants {
       A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
       SIGNALEMENT_REFUSE,
-      PROMESSE_ACTION
+      PROMESSE_ACTION,
+      PROMESSE_ACTION_REFUSEE
     )
 
     def fromValue(value: String) = status.find(_.value == value)
@@ -125,7 +127,7 @@ object Constants {
     object CONTACT_TEL extends ActionEventValue("Appel téléphonique", true)
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
 
@@ -149,6 +151,7 @@ object Constants {
 
     val actionConsos = Seq(
       EMAIL_AR,
+      EMAIL_NON_PRISE_EN_COMPTE,
       EMAIL_TRANSMISSION,
       EMAIL_REPONSE_PRO
     )

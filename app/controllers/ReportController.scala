@@ -67,10 +67,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
     case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
     case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
-    case (REPONSE_PRO_CONTACT, _)              => A_TRANSFERER_SIGNALEMENT
+    case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
+    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_REFUSE
+    case (REPONSE_PRO_SIGNALEMENT, _)          => PROMESSE_ACTION_REFUSEE
     case (_, _)                                => StatusPro.fromValue(previousStatus.getOrElse("")).getOrElse(NA)
 
   }
