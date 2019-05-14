@@ -446,7 +446,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       Future(
         Result(
         header = ResponseHeader(200, Map.empty),
-        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}"), Some("text/csv"))
+        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}"), Some("text/csv; charset=iso-8859-1"))
       ))
     })
 
