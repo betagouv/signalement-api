@@ -21,7 +21,7 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
 
   val logger: Logger = Logger(this.getClass)
 
-  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UserAwareAction.async { implicit request =>
+  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getCompanies [$search, $postalCode, $maxCount]")
 
@@ -33,6 +33,25 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
       request = request.addQueryStringParameters("code_postal" -> postalCode.get)
     }
     
+    request = request.addQueryStringParameters("per_page" -> maxCount.toString)
+
+    request.get().flatMap(
+      response => response.status match {
+        case NOT_FOUND => Future(NotFound(response.json))
+        case _ => Future(Ok(response.json))
+      }
+    );
+
+  }
+
+  def getCompaniesBySiret(siret: String, maxCount: Int) = UnsecuredAction.async { implicit request =>
+
+    logger.debug(s"getCompaniesBySiret [$siret]")
+
+    var request = ws
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/siret/$siret")
+      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
     request = request.addQueryStringParameters("per_page" -> maxCount.toString)
 
     request.get().flatMap(
@@ -72,7 +91,7 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
     request.get()
   }
 
-  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = UserAwareAction.async { implicit request =>
+  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getAllNearbyCompanies [$lat, $long, $radius, $maxCount]")
     val startTime = System.currentTimeMillis
@@ -146,7 +165,7 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
 
   }
 
-  def getSuggestions(search: String) = UserAwareAction.async { implicit request =>
+  def getSuggestions(search: String) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getSuggestions [$search]")
 
