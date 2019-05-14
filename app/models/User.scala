@@ -28,7 +28,10 @@ object UserLogin {
 
 object UserPermission extends Enumeration {
   val listReports,
-      editReport = Value
+      updateReport,
+      deleteReport,
+      deleteFile,
+      createEvent = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 

@@ -97,11 +97,13 @@ object Constants {
     object PRO extends EventTypeValue("PRO")
     object CONSO extends EventTypeValue("CONSO")
     object DGCCRF extends EventTypeValue("DGCCRF")
+    object RECTIF extends EventTypeValue("RECTIF")
 
     val eventTypes = Seq(
       PRO,
       CONSO,
-      DGCCRF
+      DGCCRF,
+      RECTIF
     )
 
     def fromValue(value: String) = eventTypes.find(_.value == value)
@@ -134,6 +136,8 @@ object Constants {
     object EMAIL_TRANSMISSION extends ActionEventValue("Envoi email d'information de transmission")
     object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
+    object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
+
     val actionPros = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -152,7 +156,11 @@ object Constants {
       EMAIL_REPONSE_PRO
     )
 
-    def fromValue(value: String) = (actionPros++actionConsos).find(_.value == value)
+    val actionRectifs = Seq(
+      MODIFICATION_COMMERCANT
+    )
+
+    def fromValue(value: String) = (actionPros++actionConsos++actionRectifs).find(_.value == value)
   }
 
 }
