@@ -74,8 +74,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE), Some(NA.value)) must equalTo(NA)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL), Some(NA.value)) must equalTo(TRAITEMENT_EN_COURS)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_COURRIER), Some(NA.value)) must equalTo(TRAITEMENT_EN_COURS)
+        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_CONTACT, resultAction = Some(true)), Some(NA.value)) must equalTo(A_TRANSFERER_SIGNALEMENT)
+        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_CONTACT, resultAction = Some(false)), Some(NA.value)) must equalTo(SIGNALEMENT_REFUSE)
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true)), Some(NA.value)) must equalTo(PROMESSE_ACTION)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA.value)) must equalTo(SIGNALEMENT_REFUSE)
+        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA.value)) must equalTo(PROMESSE_ACTION_REFUSEE)
         controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS.value)) must equalTo(TRAITEMENT_EN_COURS)
 
       }

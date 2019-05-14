@@ -23,7 +23,7 @@ import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, PRO}
 import utils.Constants.StatusConso.{A_INFORMER_REPONSE_PRO, A_INFORMER_TRANSMISSION, A_RECONTACTER, EN_ATTENTE, FAIT, StatusConsoValue}
-import utils.Constants.StatusPro.{A_TRAITER, A_TRANSFERER_SIGNALEMENT, NA, PROMESSE_ACTION, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, StatusProValue, TRAITEMENT_EN_COURS}
+import utils.Constants.StatusPro.{A_TRAITER, A_TRANSFERER_SIGNALEMENT, NA, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, StatusProValue, TRAITEMENT_EN_COURS}
 import utils.Constants.{EventType, StatusConso, StatusPro}
 import utils.DateUtils
 import utils.silhouette.AuthEnv
@@ -68,10 +68,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
     case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
     case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
-    case (REPONSE_PRO_CONTACT, _)              => A_TRANSFERER_SIGNALEMENT
+    case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
+    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_REFUSE
+    case (REPONSE_PRO_SIGNALEMENT, _)          => PROMESSE_ACTION_REFUSEE
     case (_, _)                                => StatusPro.fromValue(previousStatus.getOrElse("")).getOrElse(NA)
 
   }
