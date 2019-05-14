@@ -8,7 +8,7 @@ import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import models.{Event, File, Report, Statistics}
+import models._
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
@@ -21,12 +21,11 @@ import play.core.parsers.Multipart.FileInfo
 import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType.{CONSO, PRO}
-import utils.Constants.StatusConso.{A_INFORMER_REPONSE_PRO, A_INFORMER_TRANSMISSION, A_RECONTACTER, EN_ATTENTE, FAIT, StatusConsoValue}
-import utils.Constants.StatusPro.{A_TRAITER, A_TRANSFERER_SIGNALEMENT, NA, PROMESSE_ACTION, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, StatusProValue, TRAITEMENT_EN_COURS}
+import utils.Constants.StatusConso._
+import utils.Constants.StatusPro._
 import utils.Constants.{EventType, StatusConso, StatusPro}
 import utils.DateUtils
-import utils.silhouette.AuthEnv
+import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -85,7 +84,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (_)                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
   }
 
-  def createEvent(uuid: String) = SecuredAction.async(parse.json) { implicit request =>
+  def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
 
@@ -124,7 +123,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
 
-  def createReport = UserAwareAction.async(parse.json) { implicit request =>
+  def createReport = UnsecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("createReport")
 
@@ -151,7 +150,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  def updateReport = SecuredAction.async(parse.json) { implicit request =>
+  def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
 
@@ -189,7 +188,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def uploadReportFile = UserAwareAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     logger.debug("uploadReportFile")
 
     val maybeUploadResult =
@@ -215,7 +214,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  def sendReportNotificationByMail(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
+  private def sendReportNotificationByMail(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
@@ -224,7 +223,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  def sendReportAcknowledgmentByMail(report: Report, files: List[File]) = {
+  private def sendReportAcknowledgmentByMail(report: Report, files: List[File]) = {
     report.category match {
       case "Intoxication alimentaire" => Future(())
       case _ =>
@@ -241,7 +240,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def downloadReportFile(uuid: String, filename: String) = UserAwareAction.async { implicit request =>
+  def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
 
     reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
@@ -261,15 +260,24 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
-        for {
-          repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
-          s3Delete <- s3Service.delete(BucketName, uuid)
-        } yield NoContent
+        (file.reportId, request.identity) match {
+          case (None, _) =>
+            for {
+              repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
+              s3Delete <- s3Service.delete(BucketName, uuid)
+            } yield NoContent
+          case (Some(reportId), Some(identity)) if identity.userRole.permissions.contains(UserPermission.deleteFile) =>
+            for {
+              repositoryDelete <- reportRepository.deleteFile(UUID.fromString(uuid))
+              s3Delete <- s3Service.delete(BucketName, uuid)
+            } yield NoContent
+          case (_, _) => Future(Forbidden)
+        }
       case _ => Future(NotFound)
     })
   }
 
-  def getStatistics = UserAwareAction.async { implicit request =>
+  def getStatistics = UnsecuredAction.async { implicit request =>
 
     for {
       reportsCount <- reportRepository.count
@@ -284,7 +292,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def getReport(uuid: String) = SecuredAction.async {
+  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
     logger.debug("getReport")
 
@@ -299,7 +307,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def deleteReport(uuid: String) = SecuredAction.async {
+  def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
 
     logger.debug("deleteReport")
 
@@ -354,7 +362,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction.async {
+  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
@@ -377,7 +385,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departments: Option[String], start: Option[String], end: Option[String]) = SecuredAction.async { implicit request =>
+  def extractReports(departments: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
