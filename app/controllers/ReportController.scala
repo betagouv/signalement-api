@@ -47,7 +47,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val departmentsAuthorized = List(
     "01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74", // AURA
-    "18", "28", "36", "37", "41", "45" // CVDL
+    "18", "28", "36", "37", "41", "45", // CVDL
+    "09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82" // OCC
   )
 
   def determineStatusPro(report: Report): StatusProValue = {
