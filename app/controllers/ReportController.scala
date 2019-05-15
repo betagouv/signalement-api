@@ -391,11 +391,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
 
-    reportRepository.getReports(
-      0,
-      10000,
-      ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
-    ).flatMap( reports => {
+    for {
+      result <- reportRepository.getReports(
+        0,
+        10000,
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
+      )
+      reports <- Future(result.entities)
+      reportsData <- Future.sequence(reports.map(extractCsvDataFromReport(_)))
+    } yield {
 
       val csvFields = Array(
         "Date de création",
@@ -412,19 +416,32 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         "Accord pour contact",
         "Pièces jointes",
         "Statut pro",
-        //"Détail promesse d'action",
+        "Détail promesse d'action",
         "Statut conso",
         "Identifiant"
       ).reduce((s1, s2) => s"$s1;$s2")
 
-      val csvData = reports.entities.map(report =>
+      val csvData = reportsData.reduceOption((s1, s2) => s"$s1\n$s2")
+
+      Result(
+        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
+        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
+      )
+    }
+
+  }
+
+  private def extractCsvDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
+
+    reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO))).flatMap(events => {
+      Future(
         Array(
           report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
           report.companyPostalCode match {
             case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
             case _ => ""
           },
-          report.companySiret,
+          report.companySiret.getOrElse(""),
           report.companyName,
           report.companyAddress,
           report.category,
@@ -441,19 +458,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
           report.statusPro.getOrElse(""),
-          //report.statusPro.filter(StatusPro.fromValue(_) == StatusPro.PROMESSE_ACTION),
+          report.statusPro
+            .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
+            .filter(_ => events.length > 0)
+            .flatMap(_ => events.head.detail).getOrElse(""),
           report.statusConso.getOrElse(""),
           report.id.map(_.toString).getOrElse("")
-        ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
+        )
+          .map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
           .reduce((s1, s2) => s"$s1;$s2")
-      ).reduceOption((s1, s2) => s"$s1\n$s2")
-
-      Future(
-        Result(
-        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
-        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
-      ))
+      )
     })
+
 
   }
 
