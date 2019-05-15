@@ -14,10 +14,31 @@
             <th>Description</th>
         </tr>
         <tr>
+            <td>/api/authenticate</td>
+            <td>POST</td>
+            <td>Authentification de l'utilisateur</td>
+        </tr>
+        <tr>
+            <td>/api/reports/:uuid</td>
+            <td>GET</td>
+            <td>Récupération d'un signalement par son identifiant</td>
+        </tr>
+        <tr>
+            <td>/api/reports</td>
+            <td>GET</td>
+            <td>Récupération des signalements par page</td>
+        </tr>
+        <tr>
             <td>/api/reports</td>
             <td>POST</td>
             <td>Création d'un signalement</td>
         </tr>
+        <tr>
+            <td>/api/events/:uuidReport</td>
+            <td>GET</td>
+            <td>Récupération des évènements d'un signalement</td>
+        </tr>
+
         <tr>
             <td>/api/reports/stats</td>
             <td>GET</td>

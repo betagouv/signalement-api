@@ -3,16 +3,36 @@
 # ~~~~
 
 # Static pages
-GET         /api                                    controllers.StaticController.api
+GET          /api                                    controllers.StaticController.api
 
 # Report API
-POST         /api/reports                           controllers.ReportController.createReport()
-POST         /api/reports/files                     controllers.ReportController.uploadReportFile()
+GET          /api/reports/extract                   controllers.ReportController.extractReports(departments: Option[String], start: Option[String], end: Option[String])
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
 GET          /api/reports/files/:uuid/:filename     controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)
+POST         /api/reports/files                     controllers.ReportController.uploadReportFile()
+GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
+DELETE       /api/reports/:uuid                     controllers.ReportController.deleteReport(uuid)
+GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], departments: Option[String], email: Option[String], siret: Option[String], entreprise: Option[String], start: Option[String], end: Option[String])
+POST         /api/reports                           controllers.ReportController.createReport()
+PUT          /api/reports                           controllers.ReportController.updateReport()
+
+# Events API
+
+GET         /api/reports/:uuid/events               controllers.ReportController.getEvents(uuid, eventType: Option[String])
+POST        /api/reports/:uuid/events               controllers.ReportController.createEvent(uuid)
+
+# Constants API
+GET         /api/constants/actionPros               controllers.ConstantController.getActionPros()
+GET         /api/constants/actionConsos             controllers.ConstantController.getActionConsos()
+GET         /api/constants/statusPros               controllers.ConstantController.getStatusPros()
+GET         /api/constants/statusConsos             controllers.ConstantController.getStatusConsos()
 
 # Company API
 GET         /api/companies/suggest/:search          controllers.CompanyController.getSuggestions(search)
 GET         /api/companies/nearby/                  controllers.CompanyController.getAllNearbyCompanies(lat, long, radius: Double ?= 0.2, maxCount: Int ?= 10)
+GET         /api/companies/siret/:siret             controllers.CompanyController.getCompaniesBySiret(siret, maxCount: Int ?= 10)
 GET         /api/companies/:search                  controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
+
+# Authentication API
+POST	    /api/authenticate                       controllers.AuthController.authenticate
