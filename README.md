@@ -22,7 +22,7 @@ play.mailer.mock = yes
 ```
 
 Note :
-*La propriété `play.mailer.mock` désactive uniquement l'envoi des mails. 
+*La propriété `play.mailer.mock` désactive uniquement l'envoi des mails.
 Si elle est active, la constitution du mail est bien effective et le contenu du mail est uniquement loggué dans la console.
 Si elle n'est pas active, il faut configurer un serveur de mails à travers les variables définies dans le fichier /conf/slick.conf*
 
@@ -44,6 +44,25 @@ Remarques:
 - on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.file=chemin-vers-fichier.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
+
+## Installation Postgres
+
+Après intallation de Postgres, il faut créer la database nécessaire pour l'application.
+Le nom de cette base de données doit correspondre à la configuration utilisée.
+
+Si l'on utilise un fichier spécifique `local.conf` contenant :
+
+```
+slick.dbs.default.db.properties.url = "postgres://randomUser@localhost:5432/api"
+```
+
+Il faudra alors créer une base api :
+
+```sh
+CREATE DATABASE api;
+```
+
+Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas.
 
 ## Tests
 
@@ -77,3 +96,184 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |<a name="APPLICATION_HOST">MAILER_USER</a>|Nom d'utilisateur du serveur de mails||
 |<a name="APPLICATION_HOST">MAILER_PASSWORD</a>|Mot de passe du serveur de mails||
 |<a name="APPLICATION_HOST">SENTRY_DSN</a>|Identifiant pour intégration avec [Sentry](https://sentry.io)||
+
+---
+
+## Liste des API
+
+Le retour de tous les WS (web services) est au format JSON.
+Sauf mention contraire, les appels se font en GET.
+
+Pour la plupart des WS, une authentification est nécessaire.
+Il faut donc que l'appel contienne le header HTTP `X-Auth-Token`, qui doit contenir un token délivré lors de l'appel au WS authenticate (cf. infra).
+
+### 1. API d'authentification
+
+http://localhost:9000/api/authenticate (POST)
+
+Headers :
+
+- Content-Type:application/json
+
+Exemple body de la request (JSON):
+
+```json
+{
+    "email":"prenom.nom@ovh.fr",
+    "password":"mon-mot-de-passe"
+}
+```
+
+### 2. API Signalement
+
+*Récupération de tous les signalements*
+
+http://localhost:9000/api/reports
+
+Les signalements sont rendus par parge. Le retour JSON est de la forme :
+
+```json
+{
+    "totalCount": 2,
+    "hasNextPage": false,
+    "entities": [ ... ]
+}
+```
+
+- totalCount rend le nombre de résultats trouvés au total pour la requête GET envoyé à l'API, en dehors du système de pagination
+- hasNextPage indique s'il existe une page suivante de résultat. L'appelant doit calculer le nouvel offset pour avoir la page suivante
+- entities contient les données de signalement de la page courrante
+- 250 signalements par défaut sont renvoyés
+
+
+*Exemple : Récupération des 10 signalements à partir du 30ème*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10
+```
+
+- offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
+- limit est ignoré s'il est négatif. Sa valeur maximum est 250
+
+*Exemple : Récupération des 10 signalements à partir du 30ème pour le département 49*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&departments=49
+```
+
+Le champ departments peut contenir une liste de département séparé par `,`.
+
+*Exemple : récupèration de tous les signalements du département 49 et 94*
+
+```
+http://localhost:9000/api/reports?offset=10&limit=10&departments=49,94
+```
+
+*Exemple : Récupération par email*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&email=john@gmail.com
+```
+
+*Exemple : Récupération par siret*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
+```
+
+*Exemple : Récupération de toutes les entreprises commençant par Géant*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
+```
+
+*Suppression d'un signalement*
+
+http://localhost:9000/api/reports/:uuid (DELETE)
+
+Statuts :
+- 204 No Content : dans le cas où la suppression fonctionne
+- 404 Not Found : dans le cas où le signalement n'existe pas
+- 412 Precondition Failed : statut renvoyé si des fichiers sont liés à ce signalement. Si l'on souhaite malgré cela supprimer le signalement, il faudra préalablement supprimer ces fichiers
+
+*Modification d'un signalement*
+
+http://localhost:9000/api/reports (PUT)
+
+Le body envoyé doit correspondre à un signalement (de la forme renvoyée par le WS getReport.
+
+Seul les champs suivants sont modifiables :
+- firstName
+- lastName
+- email
+- contactAgreement
+- companyName
+- companyAddress
+- companyPostalCode
+- companySiret
+- statusPro
+
+Statuts :
+- 204 No Content : dans le cas où la modification fonctionne
+- 404 Not Found : dans le cas où le signalement n'existe pas
+
+
+### 3. API Files
+
+*Suppression d'un fichier*
+
+http://localhost:9000/api/reports/files/:uuid/:filename (DELETE)
+
+```
+Ex: http://localhost:9000/api/reports/files/38702d6a-907f-4ade-8e93-c4b00e668e8a/logo.png
+```
+
+Les champs `uuid` et `filename` sont obligatoires.
+
+Statuts :
+- 204 No Content : dans le cas où la suppression fonctionne
+- 404 Not Found : dans le cas où le fichier n'existe pas
+
+### 4. API Events
+
+*Récupère la liste des évènements d'un signalement*
+
+http://localhost:9000/api/reports/:uuidReport/events
+
+- uuidReport: identifiant du signalement
+- eventType: (optionnel) Type de l'évènement parmi : PRO, CONSO, DGCCRF
+
+*Création d'un évènement (i. e. une action à une date)*
+
+http://localhost:9000/api/reports/:uuidReport/events (POST)
+
+Exemple body de la request (JSON):
+
+```json
+ {
+    "userId": "e6de6b48-1c53-4d3e-a7ff-dd9b643073cf",
+    "creationDate": "2019-04-14T00:00:00",
+    "eventType": "PRO",
+    "action": "Envoi du signalement"
+}
+```
+
+- action: ce champ doit contenir le libellé d'une action pro disponible via le ws actionPros (cf. infra)
+
+### 5. API Constantes
+
+*La liste des actions professionnels possibles*
+
+http://localhost:9000/api/constants/actionPros
+
+*La liste des actions consommateurs possibles*
+
+http://localhost:9000/api/constants/actionConsos
+
+*La liste des statuts professionnels possibles*
+
+http://localhost:9000/api/constants/statusPros
+
+*La liste des statuts consommateurs possibles*
+
+http://localhost:9000/api/constants/statusConsos

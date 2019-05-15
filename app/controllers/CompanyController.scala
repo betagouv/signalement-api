@@ -1,24 +1,27 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.ws._
 import play.api.mvc.{ResponseHeader, Result}
 import play.api.libs.json._
+import utils.silhouette.AuthEnv
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 case class Location(lat: Double, lon: Double)
 
-class CompanyController @Inject()(ws: WSClient)
+class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthEnv])
                                  (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = Action.async { implicit request =>
+  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getCompanies [$search, $postalCode, $maxCount]")
 
@@ -30,6 +33,25 @@ class CompanyController @Inject()(ws: WSClient)
       request = request.addQueryStringParameters("code_postal" -> postalCode.get)
     }
     
+    request = request.addQueryStringParameters("per_page" -> maxCount.toString)
+
+    request.get().flatMap(
+      response => response.status match {
+        case NOT_FOUND => Future(NotFound(response.json))
+        case _ => Future(Ok(response.json))
+      }
+    );
+
+  }
+
+  def getCompaniesBySiret(siret: String, maxCount: Int) = UnsecuredAction.async { implicit request =>
+
+    logger.debug(s"getCompaniesBySiret [$siret]")
+
+    var request = ws
+      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/siret/$siret")
+      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
     request = request.addQueryStringParameters("per_page" -> maxCount.toString)
 
     request.get().flatMap(
@@ -69,7 +91,7 @@ class CompanyController @Inject()(ws: WSClient)
     request.get()
   }
 
-  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = Action.async { implicit request =>
+  def getAllNearbyCompanies(lat: String, long: String, radius: Double, maxCount: Int) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getAllNearbyCompanies [$lat, $long, $radius, $maxCount]")
     val startTime = System.currentTimeMillis
@@ -143,7 +165,7 @@ class CompanyController @Inject()(ws: WSClient)
 
   }
 
-  def getSuggestions(search: String) = Action.async { implicit request =>
+  def getSuggestions(search: String) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getSuggestions [$search]")
 

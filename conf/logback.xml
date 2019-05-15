@@ -37,6 +37,10 @@
   <logger name="services" level="DEBUG" />
   <logger name="utils" level="DEBUG" />
 
+  <!--
+  <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>
+  -->
+
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
   </root>
