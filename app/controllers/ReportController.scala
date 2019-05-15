@@ -400,6 +400,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       val csvFields = Array(
         "Date de création",
         "Département",
+        "Siret",
         "Nom de l'établissement",
         "Adresse de l'établissement",
         "Catégorie",
@@ -411,6 +412,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         "Accord pour contact",
         "Pièces jointes",
         "Statut pro",
+        //"Détail promesse d'action",
         "Statut conso",
         "Identifiant"
       ).reduce((s1, s2) => s"$s1;$s2")
@@ -422,6 +424,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
             case _ => ""
           },
+          report.companySiret,
           report.companyName,
           report.companyAddress,
           report.category,
@@ -438,6 +441,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
           report.statusPro.getOrElse(""),
+          //report.statusPro.filter(StatusPro.fromValue(_) == StatusPro.PROMESSE_ACTION),
           report.statusConso.getOrElse(""),
           report.id.map(_.toString).getOrElse("")
         ).map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
@@ -446,7 +450,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
       Future(
         Result(
-        header = ResponseHeader(200, Map.empty),
+        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
         body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
       ))
     })
