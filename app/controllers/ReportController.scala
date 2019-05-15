@@ -1,7 +1,7 @@
 package controllers
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, YearMonth}
+import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
@@ -390,6 +390,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     for {
       result <- reportRepository.getReports(
@@ -400,6 +401,17 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       reports <- Future(result.entities)
       reportsData <- Future.sequence(reports.map(extractCsvDataFromReport(_)))
     } yield {
+
+      val csvInfos = Array(
+        s"Extraction du ${LocalDate.now().format(formatter)}",
+        ((startDate, endDate) match {
+          case (Some(startDate), Some(endDate)) => s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)} "
+          case (Some(startDate), _) => s"Depuis le ${startDate.format(formatter)} "
+          case (_, Some(endDate)) => s"Jusqu'au ${endDate.format(formatter)} "
+          case(_) => ""
+        }).concat(";").concat(departments.getOrElse("")
+        )
+      ).reduce((s1, s2) => s"$s1\n$s2")
 
       val csvFields = Array(
         "Date de création",
@@ -425,7 +437,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
       Result(
         header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
-        body = HttpEntity.Strict(ByteString(s"$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
+        body = HttpEntity.Strict(ByteString(s"$csvInfos\n$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
       )
     }
 
