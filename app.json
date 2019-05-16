@@ -1,11 +1,11 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL ./test/scripts/insert_users.sql"
+    "postdeploy": "pg:psql $DATABASE_URL ./test/scripts/insert_users.sql"
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-34.herokuapp.com"
+      "value": "signalement-api-pr-41.herokuapp.com"
     },
     "APPLICATION_SECRET": {
       "required": true
