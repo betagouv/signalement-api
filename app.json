@@ -1,7 +1,7 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "pg:psql $DATABASE_URL ./test/scripts/insert_users.sql"
+    "postdeploy": "psql $DATABASE_URL ./test/scripts/insert_users_.sql"
   },
   "env": {
     "APPLICATION_HOST": {
