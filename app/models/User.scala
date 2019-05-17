@@ -58,7 +58,8 @@ object User {
       "email" -> user.email,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
-      "role" -> user.userRole.name
+      "role" -> user.userRole.name,
+      "permissions" -> user.userRole.permissions
     )
   }
 
@@ -79,7 +80,12 @@ object UserRoles {
     UserPermission.values.toSeq
   )
 
-  val userRoles = Seq(Admin)
+  object DGCCRF extends UserRole(
+    "DGCCRF",
+    Seq(UserPermission.listReports)
+  )
+
+  val userRoles = Seq(Admin, DGCCRF)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head
