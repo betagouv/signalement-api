@@ -184,8 +184,21 @@ http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
 *Exemple : Récupération de toutes les entreprises commençant par Géant*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&entreprise=Géant
+http://localhost:9000/api/reports?offset=30&limit=10&companyName=Géant
 ```
+
+*Exemple : Récupération par catégorie*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&category=Nourriture / Boissons
+```
+
+*Exemple : Récupération par statusPro*
+
+```
+http://localhost:9000/api/reports?offset=30&limit=10&statusPro=À traite
+```
+
 
 *Suppression d'un signalement*
 

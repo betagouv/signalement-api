@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -193,14 +193,20 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.siret) {
             case(table, siret) => table.companySiret === siret
           }
-          .filterOpt(filter.entreprise) {
-            case(table, entreprise) => table.companyName like s"${entreprise}%"
+          .filterOpt(filter.companyName) {
+            case(table, companyName) => table.companyName like s"${companyName}%"
           }
           .filterOpt(filter.start) {
             case(table, start) => table.creationDate >= start
           }
           .filterOpt(filter.end) {
             case(table, end) => table.creationDate <= end
+          }
+          .filterOpt(filter.category) {
+            case(table, category) => table.category === category
+          }
+          .filterOpt(filter.statusPro) {
+            case(table, statusPro) => table.statusPro === statusPro
           }
 
 

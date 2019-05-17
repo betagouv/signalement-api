@@ -337,9 +337,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     departments: Option[String],
     email: Option[String],
     siret: Option[String],
-    entreprise: Option[String],
+    companyName: Option[String],
     start: Option[String],
-    end: Option[String]
+    end: Option[String],
+    category: Option[String],
+    statusPro: Option[String]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -354,7 +356,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,entreprise, startDate, endDate)
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
