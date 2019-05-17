@@ -4,7 +4,7 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.{UUID}
 
 import javax.inject.{Inject, Singleton}
-import models.{Event, File, Report, ReportsPerMonth}
+import models.{Event, ReportFile, Report, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -74,7 +74,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) <> (constructReport, extractReport.lift)
   }
 
-  private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
+  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[Option[UUID]]("signalement_id")
@@ -84,12 +84,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
     type FileData = (UUID, Option[UUID], LocalDateTime, String)
 
-    def constructFile: FileData => File = {
-      case (id, reportId, creationDate, filename) => File(id, reportId, creationDate, filename)
+    def constructFile: FileData => ReportFile = {
+      case (id, reportId, creationDate, filename) => ReportFile(id, reportId, creationDate, filename)
     }
 
-    def extractFile: PartialFunction[File, FileData] = {
-      case File(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+    def extractFile: PartialFunction[ReportFile, FileData] = {
+      case ReportFile(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
     }
 
     def * =
@@ -258,7 +258,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       .result
   }
 
-  def createFile(file: File): Future[File] = db
+  def createFile(file: ReportFile): Future[ReportFile] = db
     .run(fileTableQuery += file)
     .map(_ => file)
 
@@ -268,7 +268,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     db.run(queryFile.update(Some(reportId)))
   }
 
-  def getFile(uuid: UUID): Future[Option[File]] = db
+  def getFile(uuid: UUID): Future[Option[ReportFile]] = db
     .run(
       fileTableQuery
         .filter(_.id === uuid)
@@ -276,7 +276,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .headOption
     )
 
-  def retrieveReportFiles(reportId: UUID): Future[List[File]] = db
+  def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] = db
     .run(
       fileTableQuery
         .filter(_.reportId === reportId)

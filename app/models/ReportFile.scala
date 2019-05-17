@@ -5,14 +5,14 @@ import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
 
-case class File(
+case class ReportFile(
                  id: UUID,
                  reportId: Option[UUID],
                  creationDate: LocalDateTime,
                  filename: String
                  )
-object File {
+object ReportFile {
 
-  implicit val fileFormat: OFormat[File] = Json.format[File]
+  implicit val fileFormat: OFormat[ReportFile] = Json.format[ReportFile]
 
 }
