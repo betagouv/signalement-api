@@ -130,7 +130,7 @@ Exemple body de la request (JSON):
 
 http://localhost:9000/api/reports
 
-Les signalements sont rendus par parge. Le retour JSON est de la forme :
+Les signalements sont rendus par page. Le retour JSON est de la forme :
 
 ```json
 {
