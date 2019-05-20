@@ -13,7 +13,7 @@ DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController
 POST         /api/reports/files                     controllers.ReportController.uploadReportFile()
 GET          /api/reports/:uuid                     controllers.ReportController.getReport(uuid)
 DELETE       /api/reports/:uuid                     controllers.ReportController.deleteReport(uuid)
-GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], sort: Option[String], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String])
+GET          /api/reports                           controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String])
 POST         /api/reports                           controllers.ReportController.createReport()
 PUT          /api/reports                           controllers.ReportController.updateReport()
 

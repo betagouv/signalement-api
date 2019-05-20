@@ -333,7 +333,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getReports(
     offset: Option[Long], 
     limit: Option[Int], 
-    sort: Option[String],
     departments: Option[String],
     email: Option[String],
     siret: Option[String],
