@@ -20,7 +20,7 @@ case class Report(
                    lastName: String,
                    email: String,
                    contactAgreement: Boolean,
-                   files: List[File],
+                   files: List[ReportFile],
                    statusPro: Option[String],
                    statusConso: Option[String]
                  )

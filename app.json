@@ -10,6 +10,9 @@
     "APPLICATION_SECRET": {
       "required": true
     },
+    "BUCKETS_REPORT": {
+      "required": true
+    },
     "EVOLUTIONS_AUTO_APPLY": {
       "required": true
     },
@@ -49,7 +52,7 @@
     "S3_ENDPOINT_URL": {
       "required": true
     },
-    "BUCKETS_REPORT": {
+    "TMP_DIR": {
       "required": true
     }
   },

@@ -1,5 +1,6 @@
 package controllers
 
+import java.io.File
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.UUID
@@ -7,6 +8,9 @@ import java.util.UUID
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
+import com.norbitltd.spoiwo.model._
+import com.norbitltd.spoiwo.model.enums.CellFill
+import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import play.api.http.HttpEntity
@@ -201,7 +205,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
         reportRepository.createFile(
-          File(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
+          ReportFile(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
         ).map(file => Ok(Json.toJson(file)))
     }
   }
@@ -215,7 +219,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendReportNotificationByMail(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
+  private def sendReportNotificationByMail(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
@@ -224,7 +228,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendReportAcknowledgmentByMail(report: Report, files: List[File]) = {
+  private def sendReportAcknowledgmentByMail(report: Report, files: List[ReportFile]) = {
     report.category match {
       case "Intoxication alimentaire" => Future(())
       case _ =>
@@ -403,6 +407,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       reportsData <- Future.sequence(reports.map(extractCsvDataFromReport(_)))
     } yield {
 
+      val headerStyle =
+        CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.AquaMarine, font = Font(bold = true))
+
+
+
       val csvInfos = Array(
         s"Extraction du ${LocalDate.now().format(formatter)}",
         ((startDate, endDate) match {
@@ -414,7 +423,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         )
       ).reduce((s1, s2) => s"$s1\n$s2")
 
-      val csvFields = Array(
+
+
+      val headerFields = List(
         "Date de création",
         "Département",
         "Siret",
@@ -432,14 +443,29 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         "Détail promesse d'action",
         "Statut conso",
         "Identifiant"
-      ).reduce((s1, s2) => s"$s1;$s2")
+      )
 
       val csvData = reportsData.reduceOption((s1, s2) => s"$s1\n$s2")
 
-      Result(
-        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
+
+      val tmpFileName = s"${configuration.get[String]("tmpDirectory")}/signalements.xlsx";
+      val reportsSheet = Sheet(name = "Signalements")
+        .withRows(
+          Row(style = headerStyle).withCellValues(headerFields),
+          Row().withCellValues("Marie Curie", LocalDate.now(), 66, true)
+        )
+        .withColumns(
+          Column(index = 0, style = CellStyle(font = Font(bold = true)), autoSized = true)
+        )
+
+      reportsSheet.saveAsXlsx(tmpFileName)
+
+      Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+
+     /* Result(
+        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.xls\"")),
         body = HttpEntity.Strict(ByteString(s"$csvInfos\n$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
-      )
+      )*/
     }
 
   }
