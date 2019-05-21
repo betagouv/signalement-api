@@ -6,19 +6,16 @@ import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
-import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.CellFill
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc.{ResponseHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
@@ -344,7 +341,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     start: Option[String],
     end: Option[String],
     category: Option[String],
-    statusPro: Option[String]
+    statusPro: Option[String],
+    details: Option[String]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -359,7 +357,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro)
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, details)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 

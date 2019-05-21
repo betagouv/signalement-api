@@ -149,7 +149,7 @@ Les signalements sont rendus par page. Le retour JSON est de la forme :
 *Exemple : Récupération des 10 signalements à partir du 30ème*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10
+http://localhost:9000/api/reports?offset=0&limit=10
 ```
 
 - offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
@@ -158,7 +158,7 @@ http://localhost:9000/api/reports?offset=30&limit=10
 *Exemple : Récupération des 10 signalements à partir du 30ème pour le département 49*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&departments=49
+http://localhost:9000/api/reports?offset=0&limit=10&departments=49
 ```
 
 Le champ departments peut contenir une liste de département séparé par `,`.
@@ -166,39 +166,44 @@ Le champ departments peut contenir une liste de département séparé par `,`.
 *Exemple : récupèration de tous les signalements du département 49 et 94*
 
 ```
-http://localhost:9000/api/reports?offset=10&limit=10&departments=49,94
+http://localhost:9000/api/reports?offset=0&limit=10&departments=49,94
 ```
 
 *Exemple : Récupération par email*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&email=john@gmail.com
+http://localhost:9000/api/reports?offset=0&limit=10&email=john@gmail.com
 ```
 
 *Exemple : Récupération par siret*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&siret=40305211101436
+http://localhost:9000/api/reports?offset=0&limit=10&siret=40305211101436
 ```
 
 *Exemple : Récupération de toutes les entreprises commençant par Géant*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&companyName=Géant
+http://localhost:9000/api/reports?offset=0&limit=10&companyName=Géant
 ```
 
 *Exemple : Récupération par catégorie*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&category=Nourriture / Boissons
+http://localhost:9000/api/reports?offset=0&limit=10&category=Nourriture / Boissons
 ```
 
 *Exemple : Récupération par statusPro*
 
 ```
-http://localhost:9000/api/reports?offset=30&limit=10&statusPro=À traite
+http://localhost:9000/api/reports?offset=0&limit=10&statusPro=À traiter
 ```
 
+*Exemple : Récupération par détails (recherche plein texte sur les colonnes sous-categories et details)*
+
+```
+http://localhost:9000/api/reports?offset=0&limit=10&details=Huwavei
+```
 
 *Suppression d'un signalement*
 
