@@ -6,7 +6,7 @@
 GET          /api                                    controllers.StaticController.api
 
 # Report API
-GET          /api/reports/extract                   controllers.ReportController.extractReports(departments: Option[String], start: Option[String], end: Option[String])
+GET          /api/reports/extract                   controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String])
 GET          /api/reports/stats                     controllers.ReportController.getStatistics()
 GET          /api/reports/files/:uuid/:filename     controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename     controllers.ReportController.deleteReportFile(uuid, filename)

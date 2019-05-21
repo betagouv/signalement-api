@@ -392,7 +392,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departments: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def extractReports(departments: Option[String],
+                     siret: Option[String],
+                     start: Option[String],
+                     end: Option[String],
+                     category: Option[String],
+                     statusPro: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
@@ -404,7 +409,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       result <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro)
       )
       reports <- Future(result.entities)
       reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
