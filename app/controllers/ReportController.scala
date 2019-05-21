@@ -9,7 +9,7 @@ import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.CellFill
+import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
@@ -398,6 +398,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val endDate = DateUtils.parseDate(end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
+    logger.debug(s"role ${request.identity.userRole}")
+
     for {
       result <- reportRepository.getReports(
         0,
@@ -405,76 +407,57 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
       )
       reports <- Future(result.entities)
-      reportsData <- Future.sequence(reports.map(extractCsvDataFromReport(_)))
+      reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
     } yield {
 
-      val headerStyle =
-        CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true))
-
-
-      val csvInfos = Array(
-        s"Extraction du ${LocalDate.now().format(formatter)}",
-        ((startDate, endDate) match {
-          case (Some(startDate), Some(endDate)) => s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)} "
-          case (Some(startDate), _) => s"Depuis le ${startDate.format(formatter)} "
-          case (_, Some(endDate)) => s"Jusqu'au ${endDate.format(formatter)} "
-          case(_) => ""
-        }).concat(";").concat(departments.getOrElse("")
-        )
-      ).reduce((s1, s2) => s"$s1\n$s2")
-
-
-
-      val headerFields = List(
-        "Date de création",
-        "Département",
-        "Siret",
-        "Nom de l'établissement",
-        "Adresse de l'établissement",
-        "Catégorie",
-        "Sous-catégories",
-        "Détails",
-        "Prénom",
-        "Nom",
-        "Email",
-        "Accord pour contact",
-        "Pièces jointes",
-        "Statut pro",
-        "Détail promesse d'action",
-        "Statut conso",
-        "Identifiant"
+      val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
+      val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+      val leftAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Left, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+      
+      val fields = List(
+        ("Date de création", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Département", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Siret", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Nom de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Catégorie", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Sous-catégories", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle)),
+        ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Pièces jointes", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Statut pro", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Détail promesse d'action", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Statut conso", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Identifiant", Column(autoSized = true, style = centerAlignmentStyle))
       )
-
-      val csvData = reportsData.reduceOption((s1, s2) => s"$s1\n$s2")
-
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
-          Row(style = headerStyle).withCellValues(headerFields),
-          Row().withCellValues("Marie Curie", LocalDate.now(), 66, true)
+          Row(style = headerStyle).withCellValues(fields.map(_._1)) ::
+          reportsData.map(reportData => {
+            Row().withCellValues(reportData)
+          })
         )
         .withColumns(
-          Column(index = 0, style = CellStyle(font = Font(bold = true)), autoSized = true)
+          fields.map(_._2)
         )
 
       reportsSheet.saveAsXlsx(tmpFileName)
 
       Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
-
-     /* Result(
-        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.xls\"")),
-        body = HttpEntity.Strict(ByteString(s"$csvInfos\n$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
-      )*/
     }
 
   }
 
-  private def extractCsvDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
+  private def extractDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
 
     reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO))).flatMap(events => {
       Future(
-        Array(
+        List(
           report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
           report.companyPostalCode match {
             case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
@@ -484,8 +467,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report.companyName,
           report.companyAddress,
           report.category,
-          report.subcategories.reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+          report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
+          report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
           report.lastName,
           report.firstName,
           report.email,
@@ -504,8 +487,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report.statusConso.getOrElse(""),
           report.id.map(_.toString).getOrElse("")
         )
-          .map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
-          .reduce((s1, s2) => s"$s1;$s2")
       )
     })
 
