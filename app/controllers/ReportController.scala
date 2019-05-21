@@ -408,8 +408,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     } yield {
 
       val headerStyle =
-        CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.AquaMarine, font = Font(bold = true))
-
+        CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true))
 
 
       val csvInfos = Array(
@@ -448,7 +447,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       val csvData = reportsData.reduceOption((s1, s2) => s"$s1\n$s2")
 
 
-      val tmpFileName = s"${configuration.get[String]("tmpDirectory")}/signalements.xlsx";
+      val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(headerFields),
