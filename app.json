@@ -40,6 +40,9 @@
     "MAILER_PASSWORD": {
       "required": true
     },
+    "NUM_THREADS": {
+      "required": true
+    },
     "SENTRY_DSN": {
       "required": false
     },
