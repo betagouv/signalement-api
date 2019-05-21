@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None, details: Option[String] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -136,6 +136,19 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
+  private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
+
+  implicit class RegexLikeOps(s: Rep[String]) {
+    def regexLike(p: Rep[String]): Rep[Boolean] = {
+      val expr = SimpleExpression.binary[String,String,Boolean] { (s, p, qb) =>
+        qb.expr(s)
+        qb.sqlBuilder += " ~* "
+        qb.expr(p)
+      }
+      expr.apply(s,p)
+    }
+  }
+
   def create(report: Report): Future[Report] = db
     .run(reportTableQuery += report)
     .map(_ => report)
@@ -207,6 +220,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           }
           .filterOpt(filter.statusPro) {
             case(table, statusPro) => table.statusPro === statusPro
+          }
+          .filterOpt(filter.details) {
+            case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
           }
 
 
