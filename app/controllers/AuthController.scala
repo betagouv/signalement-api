@@ -61,11 +61,18 @@ class AuthController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      passwordChange =>
+      passwordChange => {
         for {
-          _ <- credentialsProvider.authenticate(Credentials(request.identity.email, passwordChange.oldPassword))
+          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email, passwordChange.oldPassword))
           _ <- userRepository.updatePassword(request.identity.id.get, passwordHasherRegistry.current.hash(passwordChange.newPassword).password)
-        } yield NoContent
+        } yield {
+          NoContent
+        }
+      }.recover {
+        case e => {
+          Unauthorized
+        }
+      }
     )
   }
 
