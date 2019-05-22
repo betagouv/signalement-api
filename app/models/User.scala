@@ -91,3 +91,15 @@ object UserRoles {
     userRoles.filter(_.name == name).head
   }
 }
+
+case class PasswordChange(
+                           password1: String,
+                           password2: String
+                         )
+
+object PasswordChange {
+  implicit val userReads: Reads[PasswordChange] = (
+    (JsPath \ "password1").read[String] and
+      (JsPath \ "password2").read[String]
+    )(PasswordChange.apply _).filter(JsonValidationError("Passwords must be equals"))(passwordChange => passwordChange.password1 ==  passwordChange.password2)
+}

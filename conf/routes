@@ -36,3 +36,4 @@ GET         /api/companies/:search                  controllers.CompanyControlle
 
 # Authentication API
 POST	    /api/authenticate                       controllers.AuthController.authenticate
+POST        /api/password                           controllers.AuthController.changePassword

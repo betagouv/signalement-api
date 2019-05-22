@@ -4,15 +4,13 @@ import com.mohiva.play.silhouette.api.util.{Credentials, PasswordHasherRegistry}
 import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
-import models.{User, UserLogin}
+import models.{PasswordChange, UserLogin}
 import play.api._
-import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsError, Json, Writes}
+import play.api.libs.json.{JsError, Json}
 import repositories.UserRepository
 import utils.silhouette.{AuthEnv, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 @Singleton
 class AuthController @Inject()(
@@ -52,6 +50,20 @@ class AuthController @Inject()(
           Unauthorized
         }
       }
+    )
+  }
+
+  def changePassword = SecuredAction.async(parse.json) { implicit request =>
+
+    logger.debug("changePassword")
+
+    request.body.validate[PasswordChange].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      passwordChange =>
+        userRepository.updatePassword(request.identity.id.get, passwordHasherRegistry.current.hash(passwordChange.password1).password)
+          .flatMap(_ => Future.successful(NoContent))
     )
   }
 
