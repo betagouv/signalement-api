@@ -93,13 +93,13 @@ object UserRoles {
 }
 
 case class PasswordChange(
-                           password1: String,
-                           password2: String
+                           newPassword: String,
+                           oldPassword: String
                          )
 
 object PasswordChange {
   implicit val userReads: Reads[PasswordChange] = (
-    (JsPath \ "password1").read[String] and
-      (JsPath \ "password2").read[String]
-    )(PasswordChange.apply _).filter(JsonValidationError("Passwords must be equals"))(passwordChange => passwordChange.password1 ==  passwordChange.password2)
+    (JsPath \ "newPassword").read[String] and
+      (JsPath \ "oldPassword").read[String]
+    )(PasswordChange.apply _).filter(JsonValidationError("Passwords must not be equals"))(passwordChange => passwordChange.newPassword != passwordChange.oldPassword)
 }

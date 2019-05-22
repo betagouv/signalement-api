@@ -28,14 +28,14 @@ class AuthControllerSpec(implicit ee: ExecutionEnv) extends Specification with R
 
     "changePassword" should {
 
-      "return a BadRequest with errors if passwords are not equals" in new Context {
+      "return a BadRequest with errors if passwords are equals" in new Context {
         new WithApplication(application) {
 
           val controller = new AuthController(mock[Silhouette[AuthEnv]], mock[UserService], mock[UserRepository], mock[CredentialsProvider], mock[PasswordHasherRegistry]) {
             override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
           }
 
-          val jsonBody = Json.obj("password1" -> "password1", "password2" -> "password2")
+          val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
           val request = FakeRequest(POST, routes.AuthController.changePassword().toString)
             .withAuthenticator[AuthEnv](identLoginInfo)
@@ -48,7 +48,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv) extends Specification with R
           contentAsJson(result) must beEqualTo(
             Json.obj(
               "obj" -> Seq(
-                Json.obj("msg" -> Seq("Passwords must be equals"), "args" -> Json.toJson(Seq.empty))
+                Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.toJson(Seq.empty))
               )
             )
           )

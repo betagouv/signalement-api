@@ -62,8 +62,10 @@ class AuthController @Inject()(
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       passwordChange =>
-        userRepository.updatePassword(request.identity.id.get, passwordHasherRegistry.current.hash(passwordChange.password1).password)
-          .flatMap(_ => Future.successful(NoContent))
+        for {
+          _ <- credentialsProvider.authenticate(Credentials(request.identity.email, passwordChange.oldPassword))
+          _ <- userRepository.updatePassword(request.identity.id.get, passwordHasherRegistry.current.hash(passwordChange.newPassword).password)
+        } yield NoContent
     )
   }
 
