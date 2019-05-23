@@ -420,21 +420,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       val fields = List(
         ("Date de création", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Département", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Code postal", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Siret", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Nom de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Catégorie", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Sous-catégories", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle)),
-        ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Pièces jointes", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Statut pro", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Détail promesse d'action", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Statut conso", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Identifiant", Column(autoSized = true, style = centerAlignmentStyle))
+        ("Identifiant", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle))
       )
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
@@ -466,19 +467,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
             case _ => ""
           },
+          report.companyPostalCode.getOrElse(""),
           report.companySiret.getOrElse(""),
           report.companyName,
           report.companyAddress,
           report.category,
           report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
           report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.lastName,
-          report.firstName,
-          report.email,
-          report.contactAgreement match {
-            case true => "Oui"
-            case _ => "Non"
-          },
           report.files
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
@@ -488,7 +483,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             .filter(_ => events.length > 0)
             .flatMap(_ => events.head.detail).getOrElse(""),
           report.statusConso.getOrElse(""),
-          report.id.map(_.toString).getOrElse("")
+          report.id.map(_.toString).getOrElse(""),
+          report.lastName,
+          report.firstName,
+          report.email,
+          report.contactAgreement match {
+            case true => "Oui"
+            case _ => "Non"
+          }
         )
       )
     })
