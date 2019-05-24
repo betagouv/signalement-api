@@ -22,7 +22,6 @@ object Constants {
     object A_TRAITER extends StatusProValue("À traiter")
     object NA extends StatusProValue("NA")
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object ATTENTE_REPONSE extends StatusProValue("Attente réponse")
     object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement")
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
     object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
@@ -33,7 +32,6 @@ object Constants {
       A_TRAITER,
       NA,
       TRAITEMENT_EN_COURS,
-      ATTENTE_REPONSE,
       A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
       SIGNALEMENT_REFUSE,
