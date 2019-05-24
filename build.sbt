@@ -31,6 +31,8 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.1.1",
   "com.iheart" %% "ficus" % "1.4.3",
 
+  "com.norbitltd" %% "spoiwo" % "1.4.1",
+
   specs2 % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.14",

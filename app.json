@@ -1,12 +1,16 @@
 {
   "name": "signalement-api",
   "scripts": {
+    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql"
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-34.herokuapp.com"
+      "value": "signalement-api-pr-41.herokuapp.com"
     },
     "APPLICATION_SECRET": {
+      "required": true
+    },
+    "BUCKETS_REPORT": {
       "required": true
     },
     "EVOLUTIONS_AUTO_APPLY": {
@@ -36,6 +40,9 @@
     "MAILER_PASSWORD": {
       "required": true
     },
+    "NUM_THREADS": {
+      "required": true
+    },
     "SENTRY_DSN": {
       "required": false
     },
@@ -48,7 +55,7 @@
     "S3_ENDPOINT_URL": {
       "required": true
     },
-    "BUCKETS_REPORT": {
+    "TMP_DIR": {
       "required": true
     }
   },
