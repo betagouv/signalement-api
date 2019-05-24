@@ -4,7 +4,7 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.{UUID}
 
 import javax.inject.{Inject, Singleton}
-import models.{Event, File, Report, ReportsPerMonth}
+import models.{Event, ReportFile, Report, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, entreprise: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None, details: Option[String] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -74,7 +74,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) <> (constructReport, extractReport.lift)
   }
 
-  private class FileTable(tag: Tag) extends Table[File](tag, "piece_jointe") {
+  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[Option[UUID]]("signalement_id")
@@ -84,12 +84,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
     type FileData = (UUID, Option[UUID], LocalDateTime, String)
 
-    def constructFile: FileData => File = {
-      case (id, reportId, creationDate, filename) => File(id, reportId, creationDate, filename)
+    def constructFile: FileData => ReportFile = {
+      case (id, reportId, creationDate, filename) => ReportFile(id, reportId, creationDate, filename)
     }
 
-    def extractFile: PartialFunction[File, FileData] = {
-      case File(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+    def extractFile: PartialFunction[ReportFile, FileData] = {
+      case ReportFile(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
     }
 
     def * =
@@ -135,6 +135,19 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   private val eventTableQuery = TableQuery[EventTable]
 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
+
+  private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
+
+  implicit class RegexLikeOps(s: Rep[String]) {
+    def regexLike(p: Rep[String]): Rep[Boolean] = {
+      val expr = SimpleExpression.binary[String,String,Boolean] { (s, p, qb) =>
+        qb.expr(s)
+        qb.sqlBuilder += " ~* "
+        qb.expr(p)
+      }
+      expr.apply(s,p)
+    }
+  }
 
   def create(report: Report): Future[Report] = db
     .run(reportTableQuery += report)
@@ -193,14 +206,23 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.siret) {
             case(table, siret) => table.companySiret === siret
           }
-          .filterOpt(filter.entreprise) {
-            case(table, entreprise) => table.companyName like s"${entreprise}%"
+          .filterOpt(filter.companyName) {
+            case(table, companyName) => table.companyName like s"${companyName}%"
           }
           .filterOpt(filter.start) {
             case(table, start) => table.creationDate >= start
           }
           .filterOpt(filter.end) {
             case(table, end) => table.creationDate <= end
+          }
+          .filterOpt(filter.category) {
+            case(table, category) => table.category === category
+          }
+          .filterOpt(filter.statusPro) {
+            case(table, statusPro) => table.statusPro === statusPro
+          }
+          .filterOpt(filter.details) {
+            case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
           }
 
 
@@ -252,7 +274,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       .result
   }
 
-  def createFile(file: File): Future[File] = db
+  def createFile(file: ReportFile): Future[ReportFile] = db
     .run(fileTableQuery += file)
     .map(_ => file)
 
@@ -262,7 +284,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     db.run(queryFile.update(Some(reportId)))
   }
 
-  def getFile(uuid: UUID): Future[Option[File]] = db
+  def getFile(uuid: UUID): Future[Option[ReportFile]] = db
     .run(
       fileTableQuery
         .filter(_.id === uuid)
@@ -270,7 +292,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .headOption
     )
 
-  def retrieveReportFiles(reportId: UUID): Future[List[File]] = db
+  def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] = db
     .run(
       fileTableQuery
         .filter(_.reportId === reportId)

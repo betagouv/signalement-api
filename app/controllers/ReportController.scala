@@ -1,20 +1,21 @@
 package controllers
 
+import java.io.File
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
-import akka.util.ByteString
 import com.mohiva.play.silhouette.api.Silhouette
+import com.norbitltd.spoiwo.model._
+import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
+import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import play.api.http.HttpEntity
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc.{ResponseHeader, Result}
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
@@ -201,7 +202,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
         reportRepository.createFile(
-          File(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
+          ReportFile(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
         ).map(file => Ok(Json.toJson(file)))
     }
   }
@@ -215,7 +216,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendReportNotificationByMail(report: Report, files: List[File])(implicit request: play.api.mvc.Request[Any]) = {
+  private def sendReportNotificationByMail(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
@@ -224,7 +225,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendReportAcknowledgmentByMail(report: Report, files: List[File]) = {
+  private def sendReportAcknowledgmentByMail(report: Report, files: List[ReportFile]) = {
     report.category match {
       case "Intoxication alimentaire" => Future(())
       case _ =>
@@ -333,13 +334,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getReports(
     offset: Option[Long], 
     limit: Option[Int], 
-    sort: Option[String],
     departments: Option[String],
     email: Option[String],
     siret: Option[String],
-    entreprise: Option[String],
+    companyName: Option[String],
     start: Option[String],
-    end: Option[String]
+    end: Option[String],
+    category: Option[String],
+    statusPro: Option[String],
+    details: Option[String]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -354,7 +357,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,entreprise, startDate, endDate)
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, details)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
@@ -386,86 +389,91 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  def extractReports(departments: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def extractReports(departments: Option[String],
+                     siret: Option[String],
+                     start: Option[String],
+                     end: Option[String],
+                     category: Option[String],
+                     statusPro: Option[String],
+                     details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
+    logger.debug(s"role ${request.identity.userRole}")
+
     for {
       result <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), start = startDate, end = endDate)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, details)
       )
       reports <- Future(result.entities)
-      reportsData <- Future.sequence(reports.map(extractCsvDataFromReport(_)))
+      reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
     } yield {
 
-      val csvInfos = Array(
-        s"Extraction du ${LocalDate.now().format(formatter)}",
-        ((startDate, endDate) match {
-          case (Some(startDate), Some(endDate)) => s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)} "
-          case (Some(startDate), _) => s"Depuis le ${startDate.format(formatter)} "
-          case (_, Some(endDate)) => s"Jusqu'au ${endDate.format(formatter)} "
-          case(_) => ""
-        }).concat(";").concat(departments.getOrElse("")
-        )
-      ).reduce((s1, s2) => s"$s1\n$s2")
-
-      val csvFields = Array(
-        "Date de création",
-        "Département",
-        "Siret",
-        "Nom de l'établissement",
-        "Adresse de l'établissement",
-        "Catégorie",
-        "Sous-catégories",
-        "Détails",
-        "Prénom",
-        "Nom",
-        "Email",
-        "Accord pour contact",
-        "Pièces jointes",
-        "Statut pro",
-        "Détail promesse d'action",
-        "Statut conso",
-        "Identifiant"
-      ).reduce((s1, s2) => s"$s1;$s2")
-
-      val csvData = reportsData.reduceOption((s1, s2) => s"$s1\n$s2")
-
-      Result(
-        header = ResponseHeader(200, Map("Content-Disposition" -> "attachment; filename=\"signalements.csv\"")),
-        body = HttpEntity.Strict(ByteString(s"$csvInfos\n$csvFields${csvData.map(data => s"\n$data").getOrElse("")}", "iso-8859-1"), Some("text/csv; charset=iso-8859-1"))
+      val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
+      val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+      val leftAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Left, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+      
+      val fields = List(
+        ("Date de création", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Département", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Code postal", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Siret", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Nom de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Catégorie", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Sous-catégories", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle)),
+        ("Pièces jointes", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Statut pro", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Détail promesse d'action", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Statut conso", Column(autoSized = true, style = leftAlignmentStyle, hidden = (request.identity.userRole == UserRoles.DGCCRF))),
+        ("Identifiant", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle))
       )
+
+      val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
+      val reportsSheet = Sheet(name = "Signalements")
+        .withRows(
+          Row(style = headerStyle).withCellValues(fields.map(_._1)) ::
+          reportsData.map(reportData => {
+            Row().withCellValues(reportData)
+          })
+        )
+        .withColumns(
+          fields.map(_._2)
+        )
+
+      reportsSheet.saveAsXlsx(tmpFileName)
+
+      Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
     }
 
   }
 
-  private def extractCsvDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
+  private def extractDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
 
     reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO))).flatMap(events => {
       Future(
-        Array(
+        List(
           report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
           report.companyPostalCode match {
             case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
             case _ => ""
           },
+          report.companyPostalCode.getOrElse(""),
           report.companySiret.getOrElse(""),
           report.companyName,
           report.companyAddress,
           report.category,
-          report.subcategories.reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.lastName,
-          report.firstName,
-          report.email,
-          report.contactAgreement match {
-            case true => "Oui"
-            case _ => "Non"
-          },
+          report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
+          report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
           report.files
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
@@ -475,10 +483,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             .filter(_ => events.length > 0)
             .flatMap(_ => events.head.detail).getOrElse(""),
           report.statusConso.getOrElse(""),
-          report.id.map(_.toString).getOrElse("")
+          report.id.map(_.toString).getOrElse(""),
+          report.lastName,
+          report.firstName,
+          report.email,
+          report.contactAgreement match {
+            case true => "Oui"
+            case _ => "Non"
+          }
         )
-          .map(s => ("\"").concat(s"$s".replace("\"","\"\"").replace("&#160;", " ").concat("\"")))
-          .reduce((s1, s2) => s"$s1;$s2")
       )
     })
 
