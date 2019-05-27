@@ -23,7 +23,7 @@ object PaginatedResult {
   implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
 }
 
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None, details: Option[String] = None)
+case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None, statusConso: Option[String] = None, details: Option[String] = None)
 
 case class EventFilter(eventType: Option[EventTypeValue])
 
@@ -220,6 +220,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           }
           .filterOpt(filter.statusPro) {
             case(table, statusPro) => table.statusPro === statusPro
+          }
+          .filterOpt(filter.statusConso) {
+            case(table, statusConso) => table.statusConso === statusConso
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"

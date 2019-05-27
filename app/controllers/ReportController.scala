@@ -78,12 +78,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
-    case (ENVOI_SIGNALEMENT)                   => A_INFORMER_TRANSMISSION
-    case (REPONSE_PRO_SIGNALEMENT)             => A_INFORMER_REPONSE_PRO
-    case (EMAIL_NON_PRISE_EN_COMPTE)           => FAIT
-    case (EMAIL_TRANSMISSION)                  => EN_ATTENTE
-    case (EMAIL_REPONSE_PRO)                   => FAIT
-    case (_)                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
+    case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
+    case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
+    case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
+    case EMAIL_TRANSMISSION                  => EN_ATTENTE
+    case EMAIL_REPONSE_PRO                   => FAIT
+    case CONTACT_TEL                         => EN_ATTENTE
+    case CONTACT_EMAIL                       => EN_ATTENTE
+    case CONTACT_COURRIER                    => EN_ATTENTE
+    case HORS_PERIMETRE                      => A_RECONTACTER
+    case _                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
   }
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
@@ -342,6 +346,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     end: Option[String],
     category: Option[String],
     statusPro: Option[String],
+    statusConso: Option[String],
     details: Option[String]
 
   ) = SecuredAction.async { implicit request =>
@@ -357,7 +362,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, details)
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, statusConso, details)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
