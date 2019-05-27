@@ -63,6 +63,7 @@ object Constants {
     object FAIT extends StatusConsoValue("Fait")
 
     val status = Seq(
+      EN_ATTENTE,
       A_RECONTACTER,
       A_INFORMER_TRANSMISSION,
       A_INFORMER_REPONSE_PRO,
