@@ -2,7 +2,7 @@ package controllers
 
 import java.io.File
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, YearMonth}
+import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
@@ -360,7 +360,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseDate(end)
+    val endDate = DateUtils.parseEndDate(end)
 
     val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, statusConso, details)
     logger.debug(s"ReportFilter $filter")

@@ -213,7 +213,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
             case(table, start) => table.creationDate >= start
           }
           .filterOpt(filter.end) {
-            case(table, end) => table.creationDate <= end
+            case(table, end) => table.creationDate < end
           }
           .filterOpt(filter.category) {
             case(table, category) => table.category === category
