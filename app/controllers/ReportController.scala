@@ -404,7 +404,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseDate(end)
+    val endDate = DateUtils.parseEndDate(end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     logger.debug(s"role ${request.identity.userRole}")
