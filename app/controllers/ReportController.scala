@@ -456,7 +456,30 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           fields.map(_._2)
         )
 
-      reportsSheet.saveAsXlsx(tmpFileName)
+      val filtersSheet = Sheet(name = "Filtres")
+        .withRows(
+          List(
+            Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
+            departments.map(departments => Row().withCellValues("Départment(s)", departments)),
+            (startDate, DateUtils.parseDate(end)) match {
+              case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
+              case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
+              case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
+              case(_) => None
+            },
+            siret.map(siret => Row().withCellValues("Siret", siret)),
+            statusPro.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
+            statusConso.map(statusConso => Row().withCellValues("Statut conso", statusConso)),
+            category.map(category => Row().withCellValues("Catégorie", category)),
+            details.map(details => Row().withCellValues("Mots clés", details)),
+          ).filter(_.isDefined).map(_.get)
+        )
+        .withColumns(
+          Column(autoSized = true, style = headerStyle),
+          Column(autoSized = true, style = leftAlignmentStyle)
+        )
+
+      Workbook(reportsSheet, filtersSheet).saveAsXlsx(tmpFileName)
 
       Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
     }
