@@ -95,7 +95,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
+        controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE.value)) must equalTo(A_RECONTACTER)
         controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE.value)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_TRANSMISSION)
@@ -103,6 +103,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_REPONSE_PRO)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO.value)) must equalTo(FAIT)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER.value)) must equalTo(FAIT)
+
+        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(A_RECONTACTER.value)) must equalTo(A_RECONTACTER)
+
 
       }
     }
