@@ -2,7 +2,7 @@ package controllers
 
 import java.io.File
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, YearMonth}
+import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
@@ -78,12 +78,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
-    case (ENVOI_SIGNALEMENT)                   => A_INFORMER_TRANSMISSION
-    case (REPONSE_PRO_SIGNALEMENT)             => A_INFORMER_REPONSE_PRO
-    case (EMAIL_NON_PRISE_EN_COMPTE)           => FAIT
-    case (EMAIL_TRANSMISSION)                  => EN_ATTENTE
-    case (EMAIL_REPONSE_PRO)                   => FAIT
-    case (_)                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
+    case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
+    case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
+    case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
+    case EMAIL_TRANSMISSION                  => EN_ATTENTE
+    case EMAIL_REPONSE_PRO                   => FAIT
+    case CONTACT_TEL                         => EN_ATTENTE
+    case CONTACT_EMAIL                       => EN_ATTENTE
+    case CONTACT_COURRIER                    => EN_ATTENTE
+    case HORS_PERIMETRE                      => A_RECONTACTER
+    case _                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
   }
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
@@ -342,6 +346,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     end: Option[String],
     category: Option[String],
     statusPro: Option[String],
+    statusConso: Option[String],
     details: Option[String]
 
   ) = SecuredAction.async { implicit request =>
@@ -355,9 +360,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseDate(end)
+    val endDate = DateUtils.parseEndDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, details)
+    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, statusConso, details)
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
@@ -395,10 +400,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                      end: Option[String],
                      category: Option[String],
                      statusPro: Option[String],
+                     statusConso: Option[String],
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseDate(end)
+    val endDate = DateUtils.parseEndDate(end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     logger.debug(s"role ${request.identity.userRole}")
@@ -407,7 +413,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       result <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, details)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, statusConso, details)
       )
       reports <- Future(result.entities)
       reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
@@ -450,7 +456,30 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           fields.map(_._2)
         )
 
-      reportsSheet.saveAsXlsx(tmpFileName)
+      val filtersSheet = Sheet(name = "Filtres")
+        .withRows(
+          List(
+            Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
+            departments.map(departments => Row().withCellValues("Départment(s)", departments)),
+            (startDate, DateUtils.parseDate(end)) match {
+              case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
+              case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
+              case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
+              case(_) => None
+            },
+            siret.map(siret => Row().withCellValues("Siret", siret)),
+            statusPro.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
+            statusConso.map(statusConso => Row().withCellValues("Statut conso", statusConso)),
+            category.map(category => Row().withCellValues("Catégorie", category)),
+            details.map(details => Row().withCellValues("Mots clés", details)),
+          ).filter(_.isDefined).map(_.get)
+        )
+        .withColumns(
+          Column(autoSized = true, style = headerStyle),
+          Column(autoSized = true, style = leftAlignmentStyle)
+        )
+
+      Workbook(reportsSheet, filtersSheet).saveAsXlsx(tmpFileName)
 
       Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
     }
