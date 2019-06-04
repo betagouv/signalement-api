@@ -54,7 +54,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   )
 
   def departmentAuthorized(report: Report) = {
-    departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))
+    report.companyPostalCode.map(postalCode => departmentsAuthorized.contains(postalCode.slice(0, 2))).getOrElse(false);
   }
 
   def determineStatusPro(report: Report): StatusProValue = {
@@ -438,7 +438,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, statusConso, details)
       )
       reports <- Future(result.entities)
-      reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
+      reportsData <- Future.sequence(reports.map(extractDataFromReport(_, request.identity.userRole)))
     } yield {
 
       val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
@@ -464,7 +464,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle))
-      )
+      ) ::: (request.identity.userRole match {
+        case UserRoles.Admin => List(
+          ("Code d'activation", Column(autoSized = true, style = centerAlignmentStyle))
+        )
+        case _ => List()
+      })
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -508,45 +513,53 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  private def extractDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
+  private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
-    reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO))).flatMap(events => {
-      Future(
-        List(
-          report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
-          report.companyPostalCode match {
-            case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
-            case _ => ""
-          },
-          report.companyPostalCode.getOrElse(""),
-          report.companySiret.getOrElse(""),
-          report.companyName,
-          report.companyAddress,
-          report.category,
-          report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
-          report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.files
-            .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
-            .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.statusPro.getOrElse(""),
-          report.statusPro
-            .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
-            .filter(_ => events.length > 0)
-            .flatMap(_ => events.head.detail).getOrElse(""),
-          report.statusConso.getOrElse(""),
-          report.id.map(_.toString).getOrElse(""),
-          report.lastName,
-          report.firstName,
-          report.email,
-          report.contactAgreement match {
-            case true => "Oui"
-            case _ => "Non"
-          }
+    for {
+      events <- reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
+      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.activationKey).getOrElse(None))
+        case _ => Future(None)
+      }
+    }
+    yield (
+      List(
+        report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
+        report.companyPostalCode match {
+          case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
+          case _ => ""
+        },
+        report.companyPostalCode.getOrElse(""),
+        report.companySiret.getOrElse(""),
+        report.companyName,
+        report.companyAddress,
+        report.category,
+        report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
+        report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+        report.files
+          .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
+          .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+        report.statusPro.getOrElse(""),
+        report.statusPro
+          .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
+          .filter(_ => events.length > 0)
+          .flatMap(_ => events.head.detail).getOrElse(""),
+        report.statusConso.getOrElse(""),
+        report.id.map(_.toString).getOrElse(""),
+        report.firstName,
+        report.lastName,
+        report.email,
+        report.contactAgreement match {
+          case true => "Oui"
+          case _ => "Non"
+        }
+      ) ::: {userRole match {
+        case UserRoles.Admin => List(
+          activationKey.getOrElse("")
         )
-      )
-    })
-
-
+        case _ => List()
+      }}
+    )
   }
 
 }
