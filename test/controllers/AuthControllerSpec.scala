@@ -59,8 +59,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv) extends Specification with R
 
   trait Context extends Scope {
 
-    val identity = User(Some(UUID.randomUUID()),"test@signalconso.beta.gouv.fr", "password", "Prénom", "Nom", UserRoles.Admin)
-    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email)
+    val identity = User(UUID.randomUUID(),"test@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("email"), UserRoles.Admin)
+    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.login)
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
     class FakeModule extends AbstractModule with ScalaModule {
