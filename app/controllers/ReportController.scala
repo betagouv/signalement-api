@@ -7,6 +7,7 @@ import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -29,13 +30,14 @@ import utils.DateUtils
 import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
+                                 passwordHasherRegistry: PasswordHasherRegistry,
                                  configuration: Configuration,
                                  environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
@@ -51,14 +53,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     "09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82" // OCC
   )
 
+  def departmentAuthorized(report: Report) = {
+    departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))
+  }
+
   def determineStatusPro(report: Report): StatusProValue = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) A_TRAITER else NA
+    if (departmentAuthorized(report)) A_TRAITER else NA
   }
 
   def determineStatusConso(report: Report): StatusConsoValue = {
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) EN_ATTENTE else A_RECONTACTER
+    if (departmentAuthorized(report)) EN_ATTENTE else A_RECONTACTER
   }
 
 
@@ -103,13 +109,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             for {
               report <- reportRepository.getReport(id)
               user <- userRepository.get(event.userId)
-              _ <- report.flatMap(r => user.flatMap(u => u.id.map(id => reportRepository.createEvent(
+              _ <- report.flatMap(r => user.map(u => reportRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
                   creationDate = Some(LocalDateTime.now()),
                   reportId = r.id,
-                  userId = id
-                ))))).getOrElse(Future(None))
+                  userId = u.id
+                )))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
                   r.copy(
                     statusPro = Some(determineStatusPro(event, r.statusPro).value),
@@ -149,6 +155,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
+          activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+            case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
+            case _ => Future(None)
+          }
+          user <- activationKey.map(activationKey => userRepository.create(
+            User(
+              UUID.randomUUID(),
+              report.companySiret.get,
+              passwordHasherRegistry.current.hash(activationKey).password,
+              Some(activationKey),
+              None,
+              None,
+              None,
+              UserRoles.Pro
+            )
+          )).getOrElse(Future(None))
         } yield {
           Ok(Json.toJson(report))
         }

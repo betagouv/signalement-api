@@ -29,7 +29,7 @@ class AuthController @Inject()(
     request.body.validate[UserLogin].fold(
       err => Future(BadRequest),
       data => {
-        credentialsProvider.authenticate(Credentials(data.email, data.password)).flatMap { loginInfo =>
+        credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
           logger.debug("loginInfo");
           userService.retrieve(loginInfo).flatMap {
             case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
@@ -63,8 +63,8 @@ class AuthController @Inject()(
       },
       passwordChange => {
         for {
-          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email, passwordChange.oldPassword))
-          _ <- userRepository.updatePassword(request.identity.id.get, passwordHasherRegistry.current.hash(passwordChange.newPassword).password)
+          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.login, passwordChange.oldPassword))
+          _ <- userRepository.updatePassword(request.identity.id, passwordHasherRegistry.current.hash(passwordChange.newPassword).password)
         } yield {
           NoContent
         }

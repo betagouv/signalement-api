@@ -8,17 +8,19 @@ import play.api.libs.json._
 import utils.EnumUtils
 
 case class User (
-                 id: Option[UUID],
-                 email: String,
+                 id: UUID,
+                 login: String,
                  password: String,
-                 firstName: String,
-                 lastName: String,
+                 activationKey: Option[String],
+                 email: Option[String],
+                 firstName: Option[String],
+                 lastName: Option[String],
                  userRole: UserRole
                ) extends Identity
 
 
 case class UserLogin(
-                      email: String,
+                      login: String,
                       password: String
                     )
 
@@ -55,6 +57,7 @@ object User {
   implicit val userWrites = new Writes[User] {
     def writes(user: User) = Json.obj(
       "id" -> user.id,
+      "login" -> user.login,
       "email" -> user.email,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
@@ -64,11 +67,13 @@ object User {
   }
 
   implicit val userReads: Reads[User] = (
-    (JsPath \ "id").readNullable[UUID] and
-      (JsPath \ "email").read[String] and
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "login").read[String] and
       (JsPath \ "password").read[String] and
-      (JsPath \ "firstName").read[String] and
-      (JsPath \ "lastName").read[String] and
+      (JsPath \ "activationKey").readNullable[String] and
+      (JsPath \ "email").readNullable[String] and
+      (JsPath \ "firstName").readNullable[String] and
+      (JsPath \ "lastName").readNullable[String] and
       ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
     )(User.apply _)
 }
@@ -85,7 +90,12 @@ object UserRoles {
     Seq(UserPermission.listReports)
   )
 
-  val userRoles = Seq(Admin, DGCCRF)
+  object Pro extends UserRole(
+    "PRO",
+    Seq(UserPermission.listReports)
+  )
+
+  val userRoles = Seq(Admin, DGCCRF, Pro)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head
