@@ -384,7 +384,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseEndDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, statusConso, details)
+    val filter = ReportFilter(
+      departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      email,
+      request.identity.userRole match {
+        case UserRoles.Pro => Some(request.identity.login)
+        case _ => siret
+      },
+      companyName,
+      startDate,
+      endDate,
+      category,
+      statusPro,
+      statusConso,
+      details
+    )
+
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
 
