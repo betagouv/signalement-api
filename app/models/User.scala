@@ -33,7 +33,8 @@ object UserPermission extends Enumeration {
       updateReport,
       deleteReport,
       deleteFile,
-      createEvent = Value
+      createEvent,
+      activateAccount = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 
@@ -90,12 +91,17 @@ object UserRoles {
     Seq(UserPermission.listReports)
   )
 
+  object ToActivate extends UserRole(
+    "ToActivate",
+    Seq(UserPermission.activateAccount)
+  )
+
   object Pro extends UserRole(
-    "PRO",
+    "Professionnel",
     Seq(UserPermission.listReports)
   )
 
-  val userRoles = Seq(Admin, DGCCRF, Pro)
+  val userRoles = Seq(Admin, DGCCRF, Pro, ToActivate)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head

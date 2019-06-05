@@ -2,8 +2,9 @@ package repositories
 
 import java.util.UUID
 
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import javax.inject.{Inject, Singleton}
-import models.{User, UserRoles}
+import models.{User, UserRole, UserRoles}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -15,7 +16,8 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
  */
 @Singleton
-class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+                               passwordHasherRegistry: PasswordHasherRegistry)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -53,7 +55,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
   def create(user: User): Future[User] = db
-    .run(userTableQuery += user)
+    .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
 
   def get(userId: UUID): Future[Option[User]] = db
@@ -64,8 +66,18 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
       yield refUser
     db.run(
       queryUser
-        .map(u => (u.firstName, u.lastName, u.email, u.role))
-        .update(user.firstName, user.lastName, user.email,  user.userRole.name)
+        .map(u => (u.firstName, u.lastName, u.email))
+        .update(user.firstName, user.lastName, user.email)
+    )
+  }
+
+  def updateAccountActivation(userId: UUID, activationKey: Option[String], userRole: UserRole): Future[Int] = {
+    val queryUser = for (refUser <- userTableQuery if refUser.id === userId)
+      yield refUser
+    db.run(
+      queryUser
+        .map(u => (u.activationKey, u.role))
+        .update(activationKey, userRole.name)
     )
   }
 
@@ -75,7 +87,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
     db.run(
       queryUser
         .map(u => (u.password))
-        .update(password)
+        .update(passwordHasherRegistry.current.hash(password).password)
     )
   }
 

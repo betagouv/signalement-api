@@ -17,8 +17,7 @@ class AuthController @Inject()(
                                 val silhouette: Silhouette[AuthEnv],
                                 userService: UserService,
                                 userRepository: UserRepository,
-                                credentialsProvider: CredentialsProvider,
-                                passwordHasherRegistry: PasswordHasherRegistry
+                                credentialsProvider: CredentialsProvider
                               )(implicit ec: ExecutionContext)
  extends BaseController {
 
@@ -47,29 +46,6 @@ class AuthController @Inject()(
       }.recover {
         case e => {
           e.printStackTrace()
-          Unauthorized
-        }
-      }
-    )
-  }
-
-  def changePassword = SecuredAction.async(parse.json) { implicit request =>
-
-    logger.debug("changePassword")
-
-    request.body.validate[PasswordChange].fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      passwordChange => {
-        for {
-          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.login, passwordChange.oldPassword))
-          _ <- userRepository.updatePassword(request.identity.id, passwordHasherRegistry.current.hash(passwordChange.newPassword).password)
-        } yield {
-          NoContent
-        }
-      }.recover {
-        case e => {
           Unauthorized
         }
       }

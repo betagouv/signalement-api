@@ -168,7 +168,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               None,
               None,
               None,
-              UserRoles.Pro
+              UserRoles.ToActivate
             )
           )).getOrElse(Future(None))
         } yield {

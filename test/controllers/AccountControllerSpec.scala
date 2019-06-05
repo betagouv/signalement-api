@@ -3,7 +3,6 @@ package controllers
 import java.util.UUID
 
 import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
@@ -15,29 +14,29 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsString, Json, JsonValidationError}
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.UserRepository
 import utils.silhouette.{AuthEnv, UserService}
 
-class AuthControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
+class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
-  "AuthController" should {
+  "AccountController" should {
 
     "changePassword" should {
 
       "return a BadRequest with errors if passwords are equals" in new Context {
         new WithApplication(application) {
 
-          val controller = new AuthController(mock[Silhouette[AuthEnv]], mock[UserService], mock[UserRepository], mock[CredentialsProvider], mock[PasswordHasherRegistry]) {
+          val controller = new AccountController(mock[Silhouette[AuthEnv]], mock[UserRepository], mock[CredentialsProvider]) {
             override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
           }
 
           val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
-          val request = FakeRequest(POST, routes.AuthController.changePassword().toString)
+          val request = FakeRequest(POST, routes.AccountController.changePassword().toString)
             .withAuthenticator[AuthEnv](identLoginInfo)
             .withJsonBody(jsonBody)
 

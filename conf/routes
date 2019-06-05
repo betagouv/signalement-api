@@ -18,7 +18,6 @@ POST         /api/reports                           controllers.ReportController
 PUT          /api/reports                           controllers.ReportController.updateReport()
 
 # Events API
-
 GET         /api/reports/:uuid/events               controllers.ReportController.getEvents(uuid, eventType: Option[String])
 POST        /api/reports/:uuid/events               controllers.ReportController.createEvent(uuid)
 
@@ -36,4 +35,7 @@ GET         /api/companies/:search                  controllers.CompanyControlle
 
 # Authentication API
 POST	    /api/authenticate                       controllers.AuthController.authenticate
-POST        /api/password                           controllers.AuthController.changePassword
+
+# Account API
+POST        /api/account/password                   controllers.AccountController.changePassword
+PUT         /api/account/activation                 controllers.AccountController.activateAccount
