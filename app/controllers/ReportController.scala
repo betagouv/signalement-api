@@ -318,16 +318,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async {
+  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     logger.debug("getReport")
+
+    implicit val paginatedReportWriter = request.identity.userRole match {
+      case UserRoles.Pro => Report.reportProWriter
+      case _ => Report.reportWriter
+    }
 
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => {
-        reportRepository.getReport(id).flatMap(_ match {
-          case Some(report) => Future.successful(Ok(Json.toJson(report)))
-          case None => Future.successful(NotFound)
+        reportRepository.getReport(id).flatMap(report => (report, request.identity.userRole) match {
+          case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
+          case (Some(report), _) => Future.successful(Ok(Json.toJson(report)))
+          case (None, _) => Future.successful(NotFound)
         })
       }
     }
@@ -371,6 +377,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   ) = SecuredAction.async { implicit request =>
 
+    implicit val paginatedReportWriter = request.identity.userRole match {
+      case UserRoles.Pro => PaginatedResult.paginatedReportProWriter
+      case _ => PaginatedResult.paginatedReportWriter
+    }
+
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
     val LIMIT_MAX = 250
@@ -399,9 +410,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
 
     logger.debug(s"ReportFilter $filter")
-    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
-
-      Future.successful(Ok(Json.toJson(reports)))
+    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
+      Future.successful(Ok(Json.toJson(paginatedReports)))
     })
 
   }
