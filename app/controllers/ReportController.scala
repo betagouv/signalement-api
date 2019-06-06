@@ -7,7 +7,6 @@ import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -37,7 +36,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
-                                 passwordHasherRegistry: PasswordHasherRegistry,
                                  configuration: Configuration,
                                  environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
@@ -163,7 +161,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             User(
               UUID.randomUUID(),
               report.companySiret.get,
-              passwordHasherRegistry.current.hash(activationKey).password,
+              activationKey,
               Some(activationKey),
               None,
               None,

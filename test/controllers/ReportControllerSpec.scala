@@ -4,23 +4,22 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import models.{Event, Report}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.{Configuration, Environment}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers, WithApplication}
+import play.api.{Configuration, Environment}
 import repositories.{ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, PRO}
-import utils.Constants.StatusConso.{A_INFORMER_REPONSE_PRO, A_INFORMER_TRANSMISSION, A_RECONTACTER, EN_ATTENTE, FAIT}
+import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.silhouette.AuthEnv
 
@@ -35,7 +34,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[PasswordHasherRegistry], mock[Configuration], mock[Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -49,7 +48,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "determineStatusPro" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[PasswordHasherRegistry], mock[Configuration], mock[Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
         val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
@@ -63,7 +62,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "determineStatusPro with event" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[PasswordHasherRegistry], mock[Configuration], mock[Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -87,7 +86,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "determineStatusConso with event" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[PasswordHasherRegistry], mock[Configuration], mock[Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
