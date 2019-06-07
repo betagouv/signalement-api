@@ -56,15 +56,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusPro(report: Report): StatusProValue = {
-
     if (departmentAuthorized(report)) A_TRAITER else NA
   }
 
   def determineStatusConso(report: Report): StatusConsoValue = {
-
     if (departmentAuthorized(report)) EN_ATTENTE else A_RECONTACTER
   }
-
 
   def determineStatusPro(event: Event, previousStatus: Option[String]): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => A_TRAITER
@@ -197,8 +194,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyName = report.companyName,
                   companyAddress = report.companyAddress,
                   companyPostalCode = report.companyPostalCode,
-                  companySiret = report.companySiret,
-                  statusPro = Some(determineStatusPro(report).value)
+                  companySiret = report.companySiret
                 ))
               ).getOrElse(Future.successful(None))
             } yield {
