@@ -1,5 +1,6 @@
 package models
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Identity
@@ -18,6 +19,30 @@ case class User (
                  userRole: UserRole
                ) extends Identity
 
+object User {
+  implicit val userWrites = new Writes[User] {
+    def writes(user: User) = Json.obj(
+      "id" -> user.id,
+      "login" -> user.login,
+      "email" -> user.email,
+      "firstName" -> user.firstName,
+      "lastName" -> user.lastName,
+      "role" -> user.userRole.name,
+      "permissions" -> user.userRole.permissions
+    )
+  }
+
+  implicit val userReads: Reads[User] = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "login").read[String] and
+      (JsPath \ "password").read[String] and
+      (JsPath \ "activationKey").readNullable[String] and
+      (JsPath \ "email").readNullable[String] and
+      (JsPath \ "firstName").readNullable[String] and
+      (JsPath \ "lastName").readNullable[String] and
+      ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
+    )(User.apply _)
+}
 
 case class UserLogin(
                       login: String,
@@ -52,31 +77,6 @@ object UserRole {
   implicit val userRoleWrites = Json.writes[UserRole]
 
   implicit val userRoleReads: Reads[UserRole] =  ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
-}
-
-object User {
-  implicit val userWrites = new Writes[User] {
-    def writes(user: User) = Json.obj(
-      "id" -> user.id,
-      "login" -> user.login,
-      "email" -> user.email,
-      "firstName" -> user.firstName,
-      "lastName" -> user.lastName,
-      "role" -> user.userRole.name,
-      "permissions" -> user.userRole.permissions
-    )
-  }
-
-  implicit val userReads: Reads[User] = (
-    (JsPath \ "id").read[UUID] and
-      (JsPath \ "login").read[String] and
-      (JsPath \ "password").read[String] and
-      (JsPath \ "activationKey").readNullable[String] and
-      (JsPath \ "email").readNullable[String] and
-      (JsPath \ "firstName").readNullable[String] and
-      (JsPath \ "lastName").readNullable[String] and
-      ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
-    )(User.apply _)
 }
 
 object UserRoles {
@@ -119,3 +119,9 @@ object PasswordChange {
       (JsPath \ "oldPassword").read[String]
     )(PasswordChange.apply _).filter(JsonValidationError("Passwords must not be equals"))(passwordChange => passwordChange.newPassword != passwordChange.oldPassword)
 }
+
+case class AuthToken(
+                      id: UUID,
+                      userID: UUID,
+                      expiry: LocalDateTime
+                    )

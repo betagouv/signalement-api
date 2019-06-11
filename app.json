@@ -57,6 +57,9 @@
     },
     "TMP_DIR": {
       "required": true
+    },
+    "WEBSITE_URL": {
+      "required": true
     }
   },
   "formation": {
