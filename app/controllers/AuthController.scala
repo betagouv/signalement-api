@@ -10,6 +10,7 @@ import javax.inject.{Inject, Singleton}
 import models.{AuthToken, User, UserLogin}
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
+import play.api.libs.mailer.AttachmentFile
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.{AuthEnv, UserService}
@@ -24,6 +25,7 @@ class AuthController @Inject()(
                                 userService: UserService,
                                 mailerService: MailerService,
                                 configuration: Configuration,
+                                environment: Environment,
                                 credentialsProvider: CredentialsProvider
                               )(implicit ec: ExecutionContext)
  extends BaseController {
@@ -83,11 +85,15 @@ class AuthController @Inject()(
 
 
   private def sendResetPasswordMail(user: User, url: String) = {
+    logger.debug(s"email ${user.email.get}")
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = user.email.get)(
       subject = "Votre mot de passe SignalConso",
-      bodyHtml = views.html.mails.resetPassword(user, url).toString
+      bodyHtml = views.html.mails.resetPassword(user, url).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
     ))
   }
 
