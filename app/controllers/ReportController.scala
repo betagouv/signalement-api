@@ -25,7 +25,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{EventType, StatusConso, StatusPro}
-import utils.DateUtils
+import utils.{Constants, DateUtils}
 import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -318,7 +318,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug("getReport")
 
-    implicit val paginatedReportWriter = request.identity.userRole match {
+    implicit val reportWriter = request.identity.userRole match {
       case UserRoles.Pro => Report.reportProWriter
       case _ => Report.reportWriter
     }
@@ -328,6 +328,31 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         reportRepository.getReport(id).flatMap(report => (report, request.identity.userRole) match {
           case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
+          case (Some(report), UserRoles.Pro) =>
+            for {
+              events <- reportRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
+              eventToCreate <- events.find(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT).map(_ => Future(None)).getOrElse(
+                Future(Some(Event(
+                  Some(UUID.randomUUID()),
+                  report.id,
+                  request.identity.id,
+                  Some(LocalDateTime.now()),
+                  Constants.EventType.CONSO,
+                  Constants.ActionEvent.ENVOI_SIGNALEMENT,
+                  None,
+                  Some("Première consultation du détail du signalement par le professionnel")
+                )))
+              )
+              _ <- eventToCreate.map(reportRepository.createEvent(_)).getOrElse(Future())
+              _ <- eventToCreate.map(event => reportRepository.update(
+                report.copy(
+                  statusPro = Some(determineStatusPro(event, report.statusPro).value),
+                  statusConso = Some(determineStatusConso(event, report.statusConso).value)
+                )
+              )).getOrElse(Future())
+            } yield {
+              Ok(Json.toJson(report))
+            }
           case (Some(report), _) => Future.successful(Ok(Json.toJson(report)))
           case (None, _) => Future.successful(NotFound)
         })
