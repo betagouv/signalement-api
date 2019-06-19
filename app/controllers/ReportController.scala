@@ -25,11 +25,11 @@ import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{EventType, StatusConso, StatusPro}
-import utils.DateUtils
+import utils.{Constants, DateUtils}
 import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
                                  userRepository: UserRepository,
@@ -51,16 +51,17 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     "09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82" // OCC
   )
 
-  def determineStatusPro(report: Report): StatusProValue = {
+  def departmentAuthorized(report: Report) = {
+    report.companyPostalCode.map(postalCode => departmentsAuthorized.contains(postalCode.slice(0, 2))).getOrElse(false);
+  }
 
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) A_TRAITER else NA
+  def determineStatusPro(report: Report): StatusProValue = {
+    if (departmentAuthorized(report)) A_TRAITER else NA
   }
 
   def determineStatusConso(report: Report): StatusConsoValue = {
-
-    if (departmentsAuthorized.contains(report.companyPostalCode.get.slice(0, 2))) EN_ATTENTE else A_RECONTACTER
+    if (departmentAuthorized(report)) EN_ATTENTE else A_RECONTACTER
   }
-
 
   def determineStatusPro(event: Event, previousStatus: Option[String]): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => A_TRAITER
@@ -103,13 +104,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             for {
               report <- reportRepository.getReport(id)
               user <- userRepository.get(event.userId)
-              _ <- report.flatMap(r => user.flatMap(u => u.id.map(id => reportRepository.createEvent(
+              _ <- report.flatMap(r => user.map(u => reportRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
                   creationDate = Some(LocalDateTime.now()),
                   reportId = r.id,
-                  userId = id
-                ))))).getOrElse(Future(None))
+                  userId = u.id
+                )))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
                   r.copy(
                     statusPro = Some(determineStatusPro(event, r.statusPro).value),
@@ -149,6 +150,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
+          activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+            case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
+            case _ => Future(None)
+          }
+          user <- activationKey.map(activationKey => userRepository.create(
+            User(
+              UUID.randomUUID(),
+              report.companySiret.get,
+              activationKey,
+              Some(activationKey),
+              None,
+              None,
+              None,
+              UserRoles.ToActivate
+            )
+          )).getOrElse(Future(None))
         } yield {
           Ok(Json.toJson(report))
         }
@@ -177,8 +194,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyName = report.companyName,
                   companyAddress = report.companyAddress,
                   companyPostalCode = report.companyPostalCode,
-                  companySiret = report.companySiret,
-                  statusPro = Some(determineStatusPro(report).value)
+                  companySiret = report.companySiret
                 ))
               ).getOrElse(Future.successful(None))
             } yield {
@@ -298,16 +314,47 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async {
+  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     logger.debug("getReport")
+
+    implicit val reportWriter = request.identity.userRole match {
+      case UserRoles.Pro => Report.reportProWriter
+      case _ => Report.reportWriter
+    }
 
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => {
-        reportRepository.getReport(id).flatMap(_ match {
-          case Some(report) => Future.successful(Ok(Json.toJson(report)))
-          case None => Future.successful(NotFound)
+        reportRepository.getReport(id).flatMap(report => (report, request.identity.userRole) match {
+          case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
+          case (Some(report), UserRoles.Pro) =>
+            for {
+              events <- reportRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
+              eventToCreate <- events.find(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT).map(_ => Future(None)).getOrElse(
+                Future(Some(Event(
+                  Some(UUID.randomUUID()),
+                  report.id,
+                  request.identity.id,
+                  Some(LocalDateTime.now()),
+                  Constants.EventType.CONSO,
+                  Constants.ActionEvent.ENVOI_SIGNALEMENT,
+                  None,
+                  Some("Première consultation du détail du signalement par le professionnel")
+                )))
+              )
+              _ <- eventToCreate.map(reportRepository.createEvent(_)).getOrElse(Future())
+              _ <- eventToCreate.map(event => reportRepository.update(
+                report.copy(
+                  statusPro = Some(determineStatusPro(event, report.statusPro).value),
+                  statusConso = Some(determineStatusConso(event, report.statusConso).value)
+                )
+              )).getOrElse(Future())
+            } yield {
+              Ok(Json.toJson(report))
+            }
+          case (Some(report), _) => Future.successful(Ok(Json.toJson(report)))
+          case (None, _) => Future.successful(NotFound)
         })
       }
     }
@@ -351,6 +398,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   ) = SecuredAction.async { implicit request =>
 
+    implicit val paginatedReportWriter = request.identity.userRole match {
+      case UserRoles.Pro => PaginatedResult.paginatedReportProWriter
+      case _ => PaginatedResult.paginatedReportWriter
+    }
+
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
     val LIMIT_MAX = 250
@@ -362,11 +414,25 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     val startDate = DateUtils.parseDate(start)
     val endDate = DateUtils.parseEndDate(end)
 
-    val filter = ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), email, siret,companyName, startDate, endDate, category, statusPro, statusConso, details)
-    logger.debug(s"ReportFilter $filter")
-    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( reports => {
+    val filter = ReportFilter(
+      departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      email,
+      request.identity.userRole match {
+        case UserRoles.Pro => Some(request.identity.login)
+        case _ => siret
+      },
+      companyName,
+      startDate,
+      endDate,
+      category,
+      statusPro,
+      statusConso,
+      details
+    )
 
-      Future.successful(Ok(Json.toJson(reports)))
+    logger.debug(s"ReportFilter $filter")
+    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
+      Future.successful(Ok(Json.toJson(paginatedReports)))
     })
 
   }
@@ -416,7 +482,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, statusConso, details)
       )
       reports <- Future(result.entities)
-      reportsData <- Future.sequence(reports.map(extractDataFromReport(_)))
+      reportsData <- Future.sequence(reports.map(extractDataFromReport(_, request.identity.userRole)))
     } yield {
 
       val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
@@ -442,7 +508,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle))
-      )
+      ) ::: (request.identity.userRole match {
+        case UserRoles.Admin => List(
+          ("Code d'activation", Column(autoSized = true, style = centerAlignmentStyle))
+        )
+        case _ => List()
+      })
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -486,45 +557,53 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  private def extractDataFromReport(report: Report)(implicit request: play.api.mvc.Request[Any]) = {
+  private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
-    reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO))).flatMap(events => {
-      Future(
-        List(
-          report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
-          report.companyPostalCode match {
-            case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
-            case _ => ""
-          },
-          report.companyPostalCode.getOrElse(""),
-          report.companySiret.getOrElse(""),
-          report.companyName,
-          report.companyAddress,
-          report.category,
-          report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
-          report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.files
-            .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
-            .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-          report.statusPro.getOrElse(""),
-          report.statusPro
-            .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
-            .filter(_ => events.length > 0)
-            .flatMap(_ => events.head.detail).getOrElse(""),
-          report.statusConso.getOrElse(""),
-          report.id.map(_.toString).getOrElse(""),
-          report.lastName,
-          report.firstName,
-          report.email,
-          report.contactAgreement match {
-            case true => "Oui"
-            case _ => "Non"
-          }
+    for {
+      events <- reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
+      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.activationKey).getOrElse(None))
+        case _ => Future(None)
+      }
+    }
+    yield (
+      List(
+        report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
+        report.companyPostalCode match {
+          case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
+          case _ => ""
+        },
+        report.companyPostalCode.getOrElse(""),
+        report.companySiret.getOrElse(""),
+        report.companyName,
+        report.companyAddress,
+        report.category,
+        report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
+        report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+        report.files
+          .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
+          .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
+        report.statusPro.getOrElse(""),
+        report.statusPro
+          .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
+          .filter(_ => events.length > 0)
+          .flatMap(_ => events.head.detail).getOrElse(""),
+        report.statusConso.getOrElse(""),
+        report.id.map(_.toString).getOrElse(""),
+        report.firstName,
+        report.lastName,
+        report.email,
+        report.contactAgreement match {
+          case true => "Oui"
+          case _ => "Non"
+        }
+      ) ::: {userRole match {
+        case UserRoles.Admin => List(
+          activationKey.getOrElse("")
         )
-      )
-    })
-
-
+        case _ => List()
+      }}
+    )
   }
 
 }

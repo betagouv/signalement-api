@@ -2,8 +2,9 @@ package repositories
 
 import java.util.UUID
 
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import javax.inject.{Inject, Singleton}
-import models.{User, UserRoles}
+import models.{User, UserRole, UserRoles}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -15,7 +16,8 @@ import scala.concurrent.{ExecutionContext, Future}
  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
  */
 @Singleton
-class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+                               passwordHasherRegistry: PasswordHasherRegistry)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -25,25 +27,27 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
 
   private class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
-    def id = column[UUID]("id", O.PrimaryKey, O.AutoInc)
+    def id = column[UUID]("id", O.PrimaryKey)
 
-    def email = column[String]("email")
+    def login = column[String]("login")
     def password = column[String]("password")
-    def firstName = column[String]("firstname")
-    def lastName = column[String]("lastname")
+    def activationKey = column[Option[String]]("activation_key")
+    def email = column[Option[String]]("email")
+    def firstName = column[Option[String]]("firstname")
+    def lastName = column[Option[String]]("lastname")
     def role = column[String]("role")
 
-    type UserData = (Option[UUID], String, String, String, String, String)
+    type UserData = (UUID, String, String, Option[String], Option[String], Option[String], Option[String], String)
 
     def constructUser: UserData => User = {
-      case (id, email, password, firstName, lastName, role) => User(id, email, password, firstName, lastName, UserRoles.withName(role))
+      case (id, login, password, activationKey, email, firstName, lastName, role) => User(id, login, password, activationKey, email, firstName, lastName, UserRoles.withName(role))
     }
 
     def extractUser: PartialFunction[User, UserData] = {
-      case User(id, email, password, firstName, lastName, role) => (id, email, password, firstName, lastName, role.name)
+      case User(id, login, password, activationKey, email, firstName, lastName, role) => (id, login, password, activationKey, email, firstName, lastName, role.name)
     }
 
-    def * = (id.?, email, password, firstName, lastName, role) <> (constructUser, extractUser.lift)
+    def * = (id, login, password, activationKey, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
   private val userTableQuery = TableQuery[UserTable]
@@ -51,8 +55,8 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
   def create(user: User): Future[User] = db
-    .run(userTableQuery returning userTableQuery.map(_.id) += user)
-    .map(id => user.copy(id = Some(id)))
+    .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
+    .map(_ => user)
 
   def get(userId: UUID): Future[Option[User]] = db
     .run(userTableQuery.filter(_.id === userId).to[List].result.headOption)
@@ -62,8 +66,18 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
       yield refUser
     db.run(
       queryUser
-        .map(u => (u.firstName, u.lastName, u.email, u.role))
-        .update(user.firstName, user.lastName, user.email,  user.userRole.name)
+        .map(u => (u.firstName, u.lastName, u.email))
+        .update(user.firstName, user.lastName, user.email)
+    )
+  }
+
+  def updateAccountActivation(userId: UUID, activationKey: Option[String], userRole: UserRole): Future[Int] = {
+    val queryUser = for (refUser <- userTableQuery if refUser.id === userId)
+      yield refUser
+    db.run(
+      queryUser
+        .map(u => (u.activationKey, u.role))
+        .update(activationKey, userRole.name)
     )
   }
 
@@ -73,7 +87,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
     db.run(
       queryUser
         .map(u => (u.password))
-        .update(password)
+        .update(passwordHasherRegistry.current.hash(password).password)
     )
   }
 
@@ -83,7 +97,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implici
   def delete(email: String): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
-  def findByEmail(email: String): Future[Option[User]] = db
-    .run(userTableQuery.filter(_.email === email).to[List].result.headOption)
+  def findByLogin(login: String): Future[Option[User]] = db
+    .run(userTableQuery.filter(_.login === login).to[List].result.headOption)
 
 }

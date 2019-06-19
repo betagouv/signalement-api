@@ -1,29 +1,29 @@
 package repositories
 
 import java.time.{LocalDateTime, YearMonth}
-import java.util.{UUID}
+import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{Event, ReportFile, Report, ReportsPerMonth}
+import models.{Event, PaginatedResult, Report, ReportFile, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.json.{Json, OFormat}
 import utils.Constants
 import utils.Constants.EventType.EventTypeValue
 
-case class PaginatedResult[T](
-  totalCount: Int, 
-  hasNextPage: Boolean,
-  entities: List[T]
-)
+import scala.concurrent.{ExecutionContext, Future}
 
-object PaginatedResult {
-  implicit val paginatedResultFormat: OFormat[PaginatedResult[Report]] = Json.format[PaginatedResult[Report]]
-}
-
-case class ReportFilter(departments: Seq[String] = List(), email: Option[String] = None, siret: Option[String] = None, companyName: Option[String] = None, start: Option[LocalDateTime] = None, end: Option[LocalDateTime] = None, category: Option[String] = None, statusPro: Option[String] = None, statusConso: Option[String] = None, details: Option[String] = None)
+case class ReportFilter(
+                         departments: Seq[String] = List(),
+                         email: Option[String] = None,
+                         siret: Option[String] = None,
+                         companyName: Option[String] = None,
+                         start: Option[LocalDateTime] = None,
+                         end: Option[LocalDateTime] = None,
+                         category: Option[String] = None,
+                         statusPro: Option[String] = None,
+                         statusConso: Option[String] = None,
+                         details: Option[String] = None
+                       )
 
 case class EventFilter(eventType: Option[EventTypeValue])
 

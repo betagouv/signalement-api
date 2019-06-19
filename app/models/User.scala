@@ -1,5 +1,6 @@
 package models
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Identity
@@ -8,17 +9,43 @@ import play.api.libs.json._
 import utils.EnumUtils
 
 case class User (
-                 id: Option[UUID],
-                 email: String,
+                 id: UUID,
+                 login: String,
                  password: String,
-                 firstName: String,
-                 lastName: String,
+                 activationKey: Option[String],
+                 email: Option[String],
+                 firstName: Option[String],
+                 lastName: Option[String],
                  userRole: UserRole
                ) extends Identity
 
+object User {
+  implicit val userWrites = new Writes[User] {
+    def writes(user: User) = Json.obj(
+      "id" -> user.id,
+      "login" -> user.login,
+      "email" -> user.email,
+      "firstName" -> user.firstName,
+      "lastName" -> user.lastName,
+      "role" -> user.userRole.name,
+      "permissions" -> user.userRole.permissions
+    )
+  }
+
+  implicit val userReads: Reads[User] = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "login").read[String] and
+      (JsPath \ "password").read[String] and
+      (JsPath \ "activationKey").readNullable[String] and
+      (JsPath \ "email").readNullable[String] and
+      (JsPath \ "firstName").readNullable[String] and
+      (JsPath \ "lastName").readNullable[String] and
+      ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
+    )(User.apply _)
+}
 
 case class UserLogin(
-                      email: String,
+                      login: String,
                       password: String
                     )
 
@@ -31,7 +58,8 @@ object UserPermission extends Enumeration {
       updateReport,
       deleteReport,
       deleteFile,
-      createEvent = Value
+      createEvent,
+      activateAccount = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 
@@ -51,28 +79,6 @@ object UserRole {
   implicit val userRoleReads: Reads[UserRole] =  ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
 }
 
-object User {
-  implicit val userWrites = new Writes[User] {
-    def writes(user: User) = Json.obj(
-      "id" -> user.id,
-      "email" -> user.email,
-      "firstName" -> user.firstName,
-      "lastName" -> user.lastName,
-      "role" -> user.userRole.name,
-      "permissions" -> user.userRole.permissions
-    )
-  }
-
-  implicit val userReads: Reads[User] = (
-    (JsPath \ "id").readNullable[UUID] and
-      (JsPath \ "email").read[String] and
-      (JsPath \ "password").read[String] and
-      (JsPath \ "firstName").read[String] and
-      (JsPath \ "lastName").read[String] and
-      ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
-    )(User.apply _)
-}
-
 object UserRoles {
 
   object Admin extends UserRole(
@@ -85,7 +91,17 @@ object UserRoles {
     Seq(UserPermission.listReports)
   )
 
-  val userRoles = Seq(Admin, DGCCRF)
+  object ToActivate extends UserRole(
+    "ToActivate",
+    Seq(UserPermission.activateAccount)
+  )
+
+  object Pro extends UserRole(
+    "Professionnel",
+    Seq(UserPermission.listReports)
+  )
+
+  val userRoles = Seq(Admin, DGCCRF, Pro, ToActivate)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head
@@ -103,3 +119,9 @@ object PasswordChange {
       (JsPath \ "oldPassword").read[String]
     )(PasswordChange.apply _).filter(JsonValidationError("Passwords must not be equals"))(passwordChange => passwordChange.newPassword != passwordChange.oldPassword)
 }
+
+case class AuthToken(
+                      id: UUID,
+                      userID: UUID,
+                      expiry: LocalDateTime
+                    )
