@@ -14,7 +14,7 @@ class UserService @Inject() (userRepository: UserRepository)
                             (implicit val executionContext: ExecutionContext)
   extends IdentityService[User] {
 
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByEmail(loginInfo)
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByLogin(loginInfo)
 
   def save(user: User): Future[User] = userRepository.update(user).map( _ => user)
 }

@@ -20,7 +20,7 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository) extends Delegab
 
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = {
     logger.debug(s"find $loginInfo")
-    userRepository.findByEmail(loginInfo).map {
+    userRepository.findByLogin(loginInfo).map {
       case Some(user) => Some(user.password)
       case _ => None
     }
@@ -35,7 +35,7 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository) extends Delegab
     }
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    userRepository.findByEmail(loginInfo).map {
+    userRepository.findByLogin(loginInfo).map {
       case Some(user) => {
         userRepository.update(user.copy(password = authInfo))
         authInfo

@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Json, OFormat, Writes}
 
 case class Report(
                    id: Option[UUID],
@@ -25,8 +25,33 @@ case class Report(
                    statusConso: Option[String]
                  )
 object Report {
-  implicit val reportFormat: OFormat[Report] = Json.format[Report]
 
+  implicit val reportWriter = Json.writes[Report]
+  implicit val reportReader = Json.reads[Report]
+
+  val reportProWriter = new Writes[Report] {
+    def writes(report: Report) =
+      Json.obj(
+      "id" -> report.id,
+      "category" -> report.category,
+      "subcategories" -> report.subcategories,
+      "details" -> report.details,
+      "creationDate" -> report.creationDate,
+      "companyName" -> report.companyName,
+      "companyAddress" -> report.companyAddress,
+      "companyPostalCode" -> report.companyPostalCode,
+      "companySiret" -> report.companySiret,
+      "files" -> report.files,
+      "contactAgreement" -> report.contactAgreement
+    ) ++ (report.contactAgreement match {
+        case true => Json.obj(
+          "firstName" -> report.firstName,
+          "lastName" -> report.lastName,
+          "email" -> report.email
+        )
+        case _ => Json.obj()
+      })
+  }
 }
 
 
