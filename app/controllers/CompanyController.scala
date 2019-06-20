@@ -44,6 +44,24 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
 
   }
 
+
+  def getCompaniesFromAddok(search: String) = UnsecuredAction.async { implicit request =>
+
+    logger.debug(s"getCompaniesFromAddok [$search]")
+
+    var request = ws
+      .url(s"http://poi.addok.xyz/search/?q=$search")
+      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
+
+    request.get().flatMap(
+      response => response.status match {
+        case NOT_FOUND => Future(NotFound(response.json))
+        case _ => Future(Ok(response.json))
+      }
+    );
+
+  }
+
   def getCompaniesBySiret(siret: String, maxCount: Int) = UnsecuredAction.async { implicit request =>
 
     logger.debug(s"getCompaniesBySiret [$siret]")
