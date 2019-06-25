@@ -4,11 +4,9 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{Event, PaginatedResult, Report, ReportFile, ReportsPerMonth}
+import models.{PaginatedResult, Report, ReportFile, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.Constants
-import utils.Constants.EventType.EventTypeValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,8 +23,6 @@ case class ReportFilter(
                          details: Option[String] = None
                        )
 
-case class EventFilter(eventType: Option[EventTypeValue])
-
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
@@ -36,7 +32,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   import dbConfig._
   import models.DetailInputValue._
 
-  private class ReportTable(tag: Tag) extends Table[Report](tag, "signalement") {
+  class ReportTable(tag: Tag) extends Table[Report](tag, "signalement") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def category = column[String]("categorie")
@@ -95,44 +91,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def * =
       (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
   }
-
-  private class EventTable(tag: Tag) extends Table[Event](tag, "events") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[UUID]("report_id")
-    def userId = column[UUID]("user_id")
-    def creationDate = column[LocalDateTime]("creation_date")
-    def eventType = column[String]("event_type")
-    def action = column[String]("action")
-    def resultAction = column[Option[Boolean]]("result_action")
-    def detail = column[Option[String]]("detail")
-    def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
-    //def user = foreignKey("fk_events_users", userId, userTableQuery)(_.id.?)
-
-    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[Boolean], Option[String])
-
-    def constructEvent: EventData => Event = {
-
-      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
-        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
-          Constants.ActionEvent.fromValue(action).get, resultAction, detail)
-      }
-    }
-
-    def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) =>
-        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, resultAction, detail)
-    }
-
-    def * =
-      (id, reportId, userId, creationDate, eventType, action, resultAction, detail) <> (constructEvent, extractEvent.lift)
-  }
   
   private val reportTableQuery = TableQuery[ReportTable]
   
   private val fileTableQuery = TableQuery[FileTable]
-  
-  private val eventTableQuery = TableQuery[EventTable]
 
   private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
@@ -242,39 +204,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
             result.map(_._1).distinct
               .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
           )
-          //.map(result =>
-          //  result.map(_._1)
-          //    .map(report => report.copy(files = result.flatMap(_._2).filter(_.reportId == report.id)))
-          //)
         count <- query.length.result
       } yield PaginatedResult(
         totalCount = count,
         entities = reports,
         hasNextPage = count - ( offset + limit ) > 0
       )
-  }
-
-  def createEvent(event: Event): Future[Event] = db
-    .run(eventTableQuery += event)
-    .map(_ => event)
-
-  def deleteEvents(uuidReport: UUID): Future[Int] = db
-    .run(
-      eventTableQuery
-        .filter(_.reportId === uuidReport)
-        .delete
-    )
-
-
-  def getEvents(uuidReport: UUID, filter: EventFilter): Future[List[Event]] = db.run {
-    eventTableQuery
-      .filter(_.reportId === uuidReport)
-      .filterOpt(filter.eventType) {
-        case (table, eventType) => table.eventType === eventType.value
-      }
-      .sortBy(_.creationDate.desc)
-      .to[List]
-      .result
   }
 
   def createFile(file: ReportFile): Future[ReportFile] = db
