@@ -151,27 +151,33 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
-          activationKey <- (report.companySiret, departmentAuthorized(report)) match {
-            case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
-            case _ => Future(None)
-          }
-          user <- activationKey.map(activationKey => userRepository.create(
-            User(
-              UUID.randomUUID(),
-              report.companySiret.get,
-              activationKey,
-              Some(activationKey),
-              None,
-              None,
-              None,
-              UserRoles.ToActivate
-            )
-          )).getOrElse(Future(None))
+          _ <- createUserToActivateForReport(report)
         } yield {
           Ok(Json.toJson(report))
         }
       }
     )
+  }
+
+  def createUserToActivateForReport(report: Report) = {
+    for {
+      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
+        case _ => Future(None)
+      }
+      user <- activationKey.map(activationKey => userRepository.create(
+        User(
+          UUID.randomUUID(),
+          report.companySiret.get,
+          activationKey,
+          Some(activationKey),
+          None,
+          None,
+          None,
+          UserRoles.ToActivate
+        )
+      )).getOrElse(Future(None))
+    } yield user
   }
 
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
@@ -197,7 +203,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret
                 ))
-              ).getOrElse(Future.successful(None))
+              ).getOrElse(Future(None))
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret) match {
+                case (someExistingSiret, Some(siret)) if (someExistingSiret != Some(siret)) => createUserToActivateForReport(report)
+                case _ => Future(None)
+              }
             } yield {
               existingReport match {
                 case Some(_) => Ok
