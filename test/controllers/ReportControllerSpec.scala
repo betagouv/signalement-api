@@ -79,7 +79,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true)), Some(NA.value)) must equalTo(PROMESSE_ACTION)
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA.value)) must equalTo(PROMESSE_ACTION_REFUSEE)
         controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS.value)) must equalTo(TRAITEMENT_EN_COURS)
-
+        controller.determineStatusPro(eventFixture.copy(action = RETOUR_COURRIER), Some(TRAITEMENT_EN_COURS.value)) must equalTo(ADRESSE_INCORRECTE)
       }
     }
 

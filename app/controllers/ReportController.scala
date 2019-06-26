@@ -70,6 +70,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
     case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
     case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
+    case (RETOUR_COURRIER, _)                  => ADRESSE_INCORRECTE
     case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
     case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
