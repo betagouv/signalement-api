@@ -19,7 +19,7 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{EventFilter, ReportFilter, ReportRepository, UserRepository}
+import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
@@ -32,6 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
+                                 eventRepository: EventRepository,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
@@ -105,7 +106,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             for {
               report <- reportRepository.getReport(id)
               user <- userRepository.get(event.userId)
-              _ <- report.flatMap(r => user.map(u => reportRepository.createEvent(
+              _ <- report.flatMap(r => user.map(u => eventRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
                   creationDate = Some(LocalDateTime.now()),
@@ -151,27 +152,33 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           files <- reportRepository.retrieveReportFiles(report.id.get)
           mailNotification <- sendReportNotificationByMail(report, files)
           mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
-          activationKey <- (report.companySiret, departmentAuthorized(report)) match {
-            case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
-            case _ => Future(None)
-          }
-          user <- activationKey.map(activationKey => userRepository.create(
-            User(
-              UUID.randomUUID(),
-              report.companySiret.get,
-              activationKey,
-              Some(activationKey),
-              None,
-              None,
-              None,
-              UserRoles.ToActivate
-            )
-          )).getOrElse(Future(None))
+          _ <- createUserToActivateForReport(report)
         } yield {
           Ok(Json.toJson(report))
         }
       }
     )
+  }
+
+  def createUserToActivateForReport(report: Report) = {
+    for {
+      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
+        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
+        case _ => Future(None)
+      }
+      user <- activationKey.map(activationKey => userRepository.create(
+        User(
+          UUID.randomUUID(),
+          report.companySiret.get,
+          activationKey,
+          Some(activationKey),
+          None,
+          None,
+          None,
+          UserRoles.ToActivate
+        )
+      )).getOrElse(Future(None))
+    } yield user
   }
 
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
@@ -197,7 +204,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret
                 ))
-              ).getOrElse(Future.successful(None))
+              ).getOrElse(Future(None))
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret) match {
+                case (someExistingSiret, Some(siret)) if (someExistingSiret != Some(siret)) => createUserToActivateForReport(report)
+                case _ => Future(None)
+              }
             } yield {
               existingReport match {
                 case Some(_) => Ok
@@ -331,7 +342,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
           case (Some(report), UserRoles.Pro) =>
             for {
-              events <- reportRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
+              events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
               eventToCreate <- events.find(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT).map(_ => Future(None)).getOrElse(
                 Future(Some(Event(
                   Some(UUID.randomUUID()),
@@ -344,7 +355,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   Some("Première consultation du détail du signalement par le professionnel")
                 )))
               )
-              _ <- eventToCreate.map(reportRepository.createEvent(_)).getOrElse(Future())
+              _ <- eventToCreate.map(eventRepository.createEvent(_)).getOrElse(Future())
               _ <- eventToCreate.map(event => reportRepository.update(
                 report.copy(
                   statusPro = Some(determineStatusPro(event, report.statusPro).value),
@@ -370,7 +381,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          _ <- reportRepository.deleteEvents(id)
+          _ <- eventRepository.deleteEvents(id)
           _ <- reportRepository.delete(id)
         } yield {
           report match {
@@ -450,7 +461,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- reportRepository.getEvents(id, filter)
+          events <- eventRepository.getEvents(id, filter)
         } yield {
           report match {
             case Some(_) => Ok(Json.toJson(events))
@@ -561,7 +572,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
     for {
-      events <- reportRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
+      events <- eventRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
       activationKey <- (report.companySiret, departmentAuthorized(report)) match {
         case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.activationKey).getOrElse(None))
         case _ => Future(None)

@@ -5,7 +5,7 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-49.herokuapp.com"
+      "value": "signalement-api.herokuapp.com"
     },
     "APPLICATION_SECRET": {
       "required": true

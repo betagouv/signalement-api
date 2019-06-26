@@ -134,6 +134,7 @@ object Constants {
     object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
+    object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
     val actionPros = Seq(
       A_CONTACTER,
@@ -155,7 +156,8 @@ object Constants {
     )
 
     val actionRectifs = Seq(
-      MODIFICATION_COMMERCANT
+      MODIFICATION_COMMERCANT,
+      MODIFICATION_CONSO
     )
 
     def fromValue(value: String) = (actionPros++actionConsos++actionRectifs).find(_.value == value)
