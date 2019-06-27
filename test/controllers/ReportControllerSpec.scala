@@ -103,6 +103,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE.value)) must equalTo(A_INFORMER_REPONSE_PRO)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO.value)) must equalTo(FAIT)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER.value)) must equalTo(FAIT)
+        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), None) must equalTo(EN_ATTENTE)
 
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(A_RECONTACTER.value)) must equalTo(A_RECONTACTER)
 
