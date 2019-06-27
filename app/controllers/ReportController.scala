@@ -81,6 +81,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
+    case A_CONTACTER                         => EN_ATTENTE
     case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
     case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
     case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
