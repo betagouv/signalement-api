@@ -12,7 +12,8 @@ case class Statistics(
                        reportsCount7DaysInRegion: Int,
                        reportsCount30DaysInRegion: Int,
                        reportsCountSendedToPro: Int,
-                       reportsCountPromise: Int
+                       reportsCountPromise: Int,
+                       reportsCountWithoutSiret: Int
                      )
 
 object Statistics {
@@ -27,7 +28,8 @@ object Statistics {
       "reportsCount7DaysInRegion" -> statistics.reportsCount7Days,
       "reportsCount30DaysInRegion" -> statistics.reportsCount30Days,
       "reportsCountSendedToPro" -> statistics.reportsCountSendedToPro,
-      "reportsCountPromise" -> statistics.reportsCountPromise
+      "reportsCountPromise" -> statistics.reportsCountPromise,
+      "reportsCountWithoutSiret" -> statistics.reportsCountWithoutSiret
     )
   }
 

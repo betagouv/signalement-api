@@ -7,7 +7,7 @@ import javax.inject.{Inject, Singleton}
 import models.{PaginatedResult, Report, ReportFile, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, REPONSE_PRO_SIGNALEMENT}
+import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
 import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -128,7 +128,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   def count: Future[Int] = db
     .run(reportTableQuery.length.result)
 
-  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None) = {
+  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None, withoutSiret: Boolean = false) = {
 
     val whereDepartments = departments match {
       case None => ""
@@ -142,6 +142,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       case _ => ""
     }
 
+    val whereSiret = withoutSiret match {
+      case true => s" and siret_etablissement is null or (siret_etablissement is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
+      case false => ""
+    }
+
     db.run(
       sql"""select count(distinct signalement.id)
          from signalement
@@ -151,6 +156,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
          #$whereEvents
+         #$whereSiret
       """.as[(Int)].headOption
     )
 
