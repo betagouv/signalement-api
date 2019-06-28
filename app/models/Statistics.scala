@@ -13,13 +13,16 @@ case class Statistics(
                        reportsCount30DaysInRegion: Int,
                        reportsCountSendedToPro: Int,
                        reportsCountPromise: Int,
-                       reportsCountWithoutSiret: Int
+                       reportsCountWithoutSiret: Int,
+                       reportsCountByCategoryList: Seq[ReportsByCategory]
                      )
 
 object Statistics {
 
   implicit val statisticsWrites = new Writes[Statistics] {
     implicit val reportsPerMonthWrites: Writes[ReportsPerMonth] = ReportsPerMonth.reportsPerMonthWrites
+    implicit val reportsByCategoryWrites: Writes[ReportsByCategory] = ReportsByCategory.reportsByCategoryWrites
+
     def writes(statistics: Statistics) = Json.obj(
       "reportsCount" -> statistics.reportsCount,
       "reportsPerMonthList" -> statistics.reportsPerMonthList,
@@ -29,7 +32,8 @@ object Statistics {
       "reportsCount30DaysInRegion" -> statistics.reportsCount30Days,
       "reportsCountSendedToPro" -> statistics.reportsCountSendedToPro,
       "reportsCountPromise" -> statistics.reportsCountPromise,
-      "reportsCountWithoutSiret" -> statistics.reportsCountWithoutSiret
+      "reportsCountWithoutSiret" -> statistics.reportsCountWithoutSiret,
+      "reportsCountByCategoryList" -> statistics.reportsCountByCategoryList
     )
   }
 
@@ -49,16 +53,19 @@ object ReportsPerMonth {
       "count" -> reportsPerMonth.count
     )
   }
-
 }
 
-case class NumberSignalement (count: Int)
+case class ReportsByCategory(category: String, count: Int)
 
-object NumberSignalement {
+object ReportsByCategory {
 
-  implicit val numberSignalementWrites = new Writes[NumberSignalement] {
-    def writes(numberSignalement: NumberSignalement) = Json.obj(
-      "count" -> numberSignalement.count
+  implicit val reportsByCategoryWrites = new Writes[ReportsByCategory] {
+    def writes(reportsByCategory: ReportsByCategory) = Json.obj(
+      "category" -> reportsByCategory.category,
+      "count" -> reportsByCategory.count
     )
   }
 }
+
+
+

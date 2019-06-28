@@ -4,9 +4,9 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.{Date, UUID}
 
 import javax.inject.{Inject, Singleton}
-import models.{PaginatedResult, Report, ReportFile, ReportsPerMonth}
+import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
+import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
 import utils.DateUtils
 
@@ -159,9 +159,44 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          #$whereSiret
       """.as[(Int)].headOption
     )
-
-
   }
+
+  def nbSignalementsByCategory(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None, withoutSiret: Boolean = false): Future[Vector[ReportsByCategory]] = {
+
+    val whereDepartments = departments match {
+      case None => ""
+      case Some(seq) => " and (" + seq.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+    }
+
+    val whereEvents = event match {
+      case Some(A_CONTACTER) => s" and events.action = '${A_CONTACTER.value}'"
+      case Some(ENVOI_SIGNALEMENT) => s" and events.action = '${ENVOI_SIGNALEMENT.value}'"
+      case Some(REPONSE_PRO_SIGNALEMENT) => s" and events.action = '${REPONSE_PRO_SIGNALEMENT.value}' and events.result_action = 'true'"
+      case _ => ""
+    }
+
+    val whereSiret = withoutSiret match {
+      case true => s" and siret_etablissement is null or (siret_etablissement is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
+      case false => ""
+    }
+
+    implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
+
+    db.run(
+      sql"""select categorie, count(*)
+         from signalement
+         left join events on signalement.id = events.report_id
+         where 1 = 1
+         and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         #$whereDepartments
+         #$whereEvents
+         #$whereSiret
+         group by categorie
+      """.as[(ReportsByCategory)]
+    )
+  }
+
 
   def countPerMonth: Future[List[ReportsPerMonth]] = db
     .run(

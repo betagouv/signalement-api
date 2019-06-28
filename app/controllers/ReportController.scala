@@ -325,6 +325,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(ENVOI_SIGNALEMENT))
       reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(REPONSE_PRO_SIGNALEMENT))
       reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
+      reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
     } yield {
       Ok(Json.toJson(
         Statistics(
@@ -336,7 +337,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           reportsCount30DaysInRegion.getOrElse(0),
           reportsCountSendedToPro.getOrElse(0),
           reportsCountPromise.getOrElse(0),
-          reportsCountWithoutSiret.getOrElse(0)
+          reportsCountWithoutSiret.getOrElse(0),
+          reportsCountByCategory.toList
         )
       ))
     }
