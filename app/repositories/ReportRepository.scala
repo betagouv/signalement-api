@@ -1,12 +1,13 @@
 package repositories
 
 import java.time.{LocalDateTime, YearMonth}
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import javax.inject.{Inject, Singleton}
 import models.{PaginatedResult, Report, ReportFile, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
+import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -125,6 +126,46 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   def count: Future[Int] = db
     .run(reportTableQuery.length.result)
+
+  def nbSignalementsBetweenDates(start: String, end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[String] = None) = {
+
+    val whereDepartments = departments match {
+      case None => ""
+      case Some(seq) => " and (" + seq.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+    }
+
+    val whereEvents = event match {
+      case Some("À contacter") => " and events.action = 'À contacter'"
+      case Some("Envoi du signalement") => " and events.action = 'Envoi du signalement'"
+      case Some("Réponse du professionnel au signalement") => " and events.action = 'Réponse du professionnel au signalement' and events.result_action = 'true'"
+      case _ => ""
+    }
+
+    /*
+    db.run(
+        sql"""select count(*)
+      from signalement
+      where date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+      and date_creation <= to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+      #$whereDepartments
+      """.as[(Int)].headOption
+      )
+    */
+
+    db.run(
+      sql"""select count(distinct signalement.id)
+         from signalement
+         left join events on signalement.id = events.report_id
+         where 1 = 1
+         and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         #$whereDepartments
+         #$whereEvents
+      """.as[(Int)].headOption
+    )
+
+
+  }
 
   def countPerMonth: Future[List[ReportsPerMonth]] = db
     .run(

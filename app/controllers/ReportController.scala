@@ -29,6 +29,7 @@ import utils.{Constants, DateUtils}
 import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 import scala.util.{Failure, Random, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
@@ -312,20 +313,72 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def getStatistics = UnsecuredAction.async { implicit request =>
+  def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
       reportsCount <- reportRepository.count
       reportsPerMonth <- reportRepository.countPerMonth
+      reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
+      reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))
+      reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)), DateUtils.formatTime(LocalDateTime.now), Some(departmentsAuthorized))
+      reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)), DateUtils.formatTime(LocalDateTime.now), Some(departmentsAuthorized))
     } yield {
       Ok(Json.toJson(
         Statistics(
           reportsCount,
-          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1)))
+          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1))),
+          reportsCount7Days.getOrElse(0),
+          reportsCount30Days.getOrElse(0),
+          reportsCount7DaysInRegion.getOrElse(0),
+          reportsCount30DaysInRegion.getOrElse(0)
         )
       ))
     }
   }
+
+  /*
+  def getNbSignalementBetweenDates(
+    start: String,
+    end: Option[String],
+    departments: Option[String],
+    event: Option[String]
+  ) = UserAwareAction.async { implicit request =>
+
+    val deps = departments.map(d => d.split(",").toSeq)
+
+    // vérification des codes départements pour éviter injection SQL
+    val departmentRegex = "[0-9][0-9]".r
+
+    val isValid = deps match {
+      case Some(value) => value.forall(d => d match {
+        case departmentRegex(_*) => true
+        case _ => false
+      })
+      case None => true
+    }
+
+    if (!isValid) Future.successful(BadRequest)
+    else {
+      val startDate = DateUtils.parseDate(Some(start))
+
+      startDate match {
+        case None => Future.successful(BadRequest)
+        case Some(startValue) => {
+          val endDate = DateUtils.parseEndDate(end)
+
+          for {
+            count <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(startValue), DateUtils.formatTime(endDate), deps, event)
+          } yield {
+            Ok(Json.toJson(
+              NumberSignalement(count.getOrElse(0))
+            ))
+          }
+        }
+      }
+    }
+
+  }
+   */
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 

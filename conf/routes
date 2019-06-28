@@ -41,3 +41,7 @@ POST	    /api/authenticate/password/reset            controllers.AuthController.
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
 PUT         /api/account/activation                     controllers.AccountController.activateAccount
+
+
+# GET         /api/stats/nbSignalementBetweenDates        controllers.ReportController.getNbSignalementBetweenDates(start: String, end: Option[String], departments: Option[String], event: Option[String])
+

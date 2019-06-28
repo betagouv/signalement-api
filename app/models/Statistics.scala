@@ -6,7 +6,11 @@ import play.api.libs.json.{JsPath, Json, Reads, Writes}
 
 case class Statistics(
                        reportsCount: Int,
-                       reportsPerMonthList: Seq[ReportsPerMonth]
+                       reportsPerMonthList: Seq[ReportsPerMonth],
+                       reportsCount7Days: Int,
+                       reportsCount30Days: Int,
+                       reportsCount7DaysInRegion: Int,
+                       reportsCount30DaysInRegion: Int
                      )
 
 object Statistics {
@@ -16,6 +20,10 @@ object Statistics {
     def writes(statistics: Statistics) = Json.obj(
       "reportsCount" -> statistics.reportsCount,
       "reportsPerMonthList" -> statistics.reportsPerMonthList,
+      "reportsCount7Days" -> statistics.reportsCount7Days,
+      "reportsCount30Days" -> statistics.reportsCount30Days,
+      "reportsCount7DaysInRegion" -> statistics.reportsCount7Days,
+      "reportsCount30DaysInRegion" -> statistics.reportsCount30Days
     )
   }
 
@@ -36,4 +44,15 @@ object ReportsPerMonth {
     )
   }
 
+}
+
+case class NumberSignalement (count: Int)
+
+object NumberSignalement {
+
+  implicit val numberSignalementWrites = new Writes[NumberSignalement] {
+    def writes(numberSignalement: NumberSignalement) = Json.obj(
+      "count" -> numberSignalement.count
+    )
+  }
 }
