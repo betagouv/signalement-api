@@ -320,8 +320,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       reportsPerMonth <- reportRepository.countPerMonth
       reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
       reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))
-      reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)), DateUtils.formatTime(LocalDateTime.now), Some(departmentsAuthorized))
-      reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)), DateUtils.formatTime(LocalDateTime.now), Some(departmentsAuthorized))
+      reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(7)), departments = Some(departmentsAuthorized))
+      reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(30)), departments = Some(departmentsAuthorized))
+      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(ENVOI_SIGNALEMENT))
+      reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(REPONSE_PRO_SIGNALEMENT))
     } yield {
       Ok(Json.toJson(
         Statistics(
@@ -330,7 +332,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           reportsCount7Days.getOrElse(0),
           reportsCount30Days.getOrElse(0),
           reportsCount7DaysInRegion.getOrElse(0),
-          reportsCount30DaysInRegion.getOrElse(0)
+          reportsCount30DaysInRegion.getOrElse(0),
+          reportsCountSendedToPro.getOrElse(0),
+          reportsCountPromise.getOrElse(0)
         )
       ))
     }

@@ -7,6 +7,7 @@ import javax.inject.{Inject, Singleton}
 import models.{PaginatedResult, Report, ReportFile, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, REPONSE_PRO_SIGNALEMENT}
 import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -127,7 +128,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   def count: Future[Int] = db
     .run(reportTableQuery.length.result)
 
-  def nbSignalementsBetweenDates(start: String, end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[String] = None) = {
+  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None) = {
 
     val whereDepartments = departments match {
       case None => ""
@@ -135,22 +136,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     }
 
     val whereEvents = event match {
-      case Some("À contacter") => " and events.action = 'À contacter'"
-      case Some("Envoi du signalement") => " and events.action = 'Envoi du signalement'"
-      case Some("Réponse du professionnel au signalement") => " and events.action = 'Réponse du professionnel au signalement' and events.result_action = 'true'"
+      case Some(A_CONTACTER) => s" and events.action = '${A_CONTACTER.value}'"
+      case Some(ENVOI_SIGNALEMENT) => s" and events.action = '${ENVOI_SIGNALEMENT.value}'"
+      case Some(REPONSE_PRO_SIGNALEMENT) => s" and events.action = '${REPONSE_PRO_SIGNALEMENT.value}' and events.result_action = 'true'"
       case _ => ""
     }
-
-    /*
-    db.run(
-        sql"""select count(*)
-      from signalement
-      where date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-      and date_creation <= to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
-      #$whereDepartments
-      """.as[(Int)].headOption
-      )
-    */
 
     db.run(
       sql"""select count(distinct signalement.id)
