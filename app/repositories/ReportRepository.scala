@@ -128,6 +128,18 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   def count: Future[Int] = db
     .run(reportTableQuery.length.result)
 
+  def avgDurationsForEvent(event: ActionEventValue) = {
+
+    db.run(
+      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, signalement.date_creation)))
+           from events e1
+           inner join signalement on e1.report_id = signalement.id
+           where action = 'Envoi du signalement'
+           and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
+         """.as[Int].headOption
+    )
+  }
+
   def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None, withoutSiret: Boolean = false) = {
 
     val whereDepartments = departments match {

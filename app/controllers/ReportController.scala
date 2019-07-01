@@ -29,7 +29,6 @@ import utils.{Constants, DateUtils}
 import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.matching.Regex
 import scala.util.{Failure, Random, Success, Try}
 
 class ReportController @Inject()(reportRepository: ReportRepository,
@@ -47,11 +46,23 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   val BucketName = configuration.get[String]("play.buckets.report")
 
 
+  val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+
+  val CDVL = List("18", "28", "36", "37", "41", "45")
+
+  val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
+
+/*
   val departmentsAuthorized = List(
     "01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74", // AURA
     "18", "28", "36", "37", "41", "45", // CVDL
     "09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82" // OCC
   )
+
+ */
+
+  val departmentsAuthorized = AURA ++ CDVL ++ OCC
+
 
   def departmentAuthorized(report: Report) = {
     report.companyPostalCode.map(postalCode => departmentsAuthorized.contains(postalCode.slice(0, 2))).getOrElse(false);
@@ -326,7 +337,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(REPONSE_PRO_SIGNALEMENT))
       reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
       reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
+      reportsCountAura <- reportRepository.nbSignalementsBetweenDates(departments = Some(AURA))
+      reportsCountCdvl <- reportRepository.nbSignalementsBetweenDates(departments = Some(CDVL))
+      reportsCountOcc <- reportRepository.nbSignalementsBetweenDates(departments = Some(OCC))
+      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForEvent(ENVOI_SIGNALEMENT)
+
     } yield {
+
+      val reportsCountByRegionList = Seq(
+        ReportsByRegion("AURA", reportsCountAura.getOrElse(0)),
+        ReportsByRegion("CDVL", reportsCountCdvl.getOrElse(0)),
+        ReportsByRegion("OCC", reportsCountOcc.getOrElse(0)))
+
       Ok(Json.toJson(
         Statistics(
           reportsCount,
@@ -338,7 +360,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           reportsCountSendedToPro.getOrElse(0),
           reportsCountPromise.getOrElse(0),
           reportsCountWithoutSiret.getOrElse(0),
-          reportsCountByCategory.toList
+          reportsCountByCategory.toList,
+          reportsCountByRegionList,
+          reportsDurationsForEnvoiSignalement.getOrElse(0)
         )
       ))
     }
