@@ -1,7 +1,7 @@
 package repositories
 
 import java.time.{LocalDateTime, YearMonth}
-import java.util.{Date, UUID}
+import java.util.{UUID}
 
 import javax.inject.{Inject, Singleton}
 import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
@@ -169,7 +169,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          #$whereDepartments
          #$whereEvents
          #$whereSiret
-      """.as[(Int)].headOption
+      """.as[Int].headOption
     )
   }
 
@@ -195,7 +195,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
 
     db.run(
-      sql"""select categorie, count(*)
+      sql"""select categorie, count(distinct signalement.id)
          from signalement
          left join events on signalement.id = events.report_id
          where 1 = 1

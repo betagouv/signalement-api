@@ -2,13 +2,14 @@ package models
 
 import java.time.YearMonth
 
-import play.api.libs.json.{JsPath, Json, Reads, Writes}
+import play.api.libs.json.{Json, Writes}
 
 case class Statistics(
                        reportsCount: Int,
                        reportsPerMonthList: Seq[ReportsPerMonth],
                        reportsCount7Days: Int,
                        reportsCount30Days: Int,
+                       reportsCountInRegion: Int,
                        reportsCount7DaysInRegion: Int,
                        reportsCount30DaysInRegion: Int,
                        reportsCountSendedToPro: Int,
@@ -31,8 +32,9 @@ object Statistics {
       "reportsPerMonthList" -> statistics.reportsPerMonthList,
       "reportsCount7Days" -> statistics.reportsCount7Days,
       "reportsCount30Days" -> statistics.reportsCount30Days,
-      "reportsCount7DaysInRegion" -> statistics.reportsCount7Days,
-      "reportsCount30DaysInRegion" -> statistics.reportsCount30Days,
+      "reportsCountInRegion" -> statistics.reportsCountInRegion,
+      "reportsCount7DaysInRegion" -> statistics.reportsCount7DaysInRegion,
+      "reportsCount30DaysInRegion" -> statistics.reportsCount30DaysInRegion,
       "reportsCountSendedToPro" -> statistics.reportsCountSendedToPro,
       "reportsCountPromise" -> statistics.reportsCountPromise,
       "reportsCountWithoutSiret" -> statistics.reportsCountWithoutSiret,
