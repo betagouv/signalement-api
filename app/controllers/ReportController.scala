@@ -61,7 +61,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def determineStatusConso(report: Report): StatusConsoValue = {
-    if (departmentAuthorized(report)) EN_ATTENTE else A_RECONTACTER
+    if (departmentAuthorized(report)) EN_ATTENTE else FAIT
   }
 
   def determineStatusPro(event: Event, previousStatus: Option[String]): StatusProValue = (event.action, event.resultAction) match {
