@@ -45,12 +45,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
+  val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+  val CDVL = List("18", "28", "36", "37", "41", "45")
+  val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
 
-  val departmentsAuthorized = List(
-    "01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74", // AURA
-    "18", "28", "36", "37", "41", "45", // CVDL
-    "09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82" // OCC
-  )
+  val departmentsAuthorized = AURA ++ CDVL ++ OCC
+
 
   def departmentAuthorized(report: Report) = {
     report.companyPostalCode.map(postalCode => departmentsAuthorized.contains(postalCode.slice(0, 2))).getOrElse(false);
@@ -312,16 +312,47 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def getStatistics = UnsecuredAction.async { implicit request =>
+  def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
       reportsCount <- reportRepository.count
       reportsPerMonth <- reportRepository.countPerMonth
+      reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
+      reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))
+      reportsCountInRegion <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized))
+      reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(7)), departments = Some(departmentsAuthorized))
+      reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(30)), departments = Some(departmentsAuthorized))
+      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(ENVOI_SIGNALEMENT))
+      reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(REPONSE_PRO_SIGNALEMENT))
+      reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
+      reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
+      reportsCountAura <- reportRepository.nbSignalementsBetweenDates(departments = Some(AURA))
+      reportsCountCdvl <- reportRepository.nbSignalementsBetweenDates(departments = Some(CDVL))
+      reportsCountOcc <- reportRepository.nbSignalementsBetweenDates(departments = Some(OCC))
+      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForEvent(ENVOI_SIGNALEMENT)
+
     } yield {
+
+      val reportsCountByRegionList = Seq(
+        ReportsByRegion("AURA", reportsCountAura.getOrElse(0)),
+        ReportsByRegion("CDVL", reportsCountCdvl.getOrElse(0)),
+        ReportsByRegion("OCC", reportsCountOcc.getOrElse(0)))
+
       Ok(Json.toJson(
         Statistics(
           reportsCount,
-          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1)))
+          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1))),
+          reportsCount7Days.getOrElse(0),
+          reportsCount30Days.getOrElse(0),
+          reportsCountInRegion.getOrElse(0),
+          reportsCount7DaysInRegion.getOrElse(0),
+          reportsCount30DaysInRegion.getOrElse(0),
+          reportsCountSendedToPro.getOrElse(0),
+          reportsCountPromise.getOrElse(0),
+          reportsCountWithoutSiret.getOrElse(0),
+          reportsCountByCategory.toList,
+          reportsCountByRegionList,
+          reportsDurationsForEnvoiSignalement.getOrElse(0)
         )
       ))
     }
