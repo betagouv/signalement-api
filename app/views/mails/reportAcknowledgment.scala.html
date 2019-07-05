@@ -1,6 +1,7 @@
 @(report: Report, contactRecipientMail: String, files: List[ReportFile])
 
 @import java.time.format.DateTimeFormatter
+@import utils.Constants.StatusPro._
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -17,19 +18,33 @@
             <p>
                 Bonjour @report.firstName @report.lastName,
             </p>
-            <p>
-                Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
-            </p>
-            <p>
-                Nous allons contacter le commerçant pour lui proposer d’en prendre connaissance. Il faut environ 6 jours pour que le commerçant prenne connaissance du signalement.
-            </p>
-            <p>
-                Si le commerçant accepte de connaître le signalement, vous recevrez un email.
-            </p>
-            <p>
-                Si le commerçant décide de mettre en place des actions pour corriger le problème, vous recevrez également un email.
-
-            </p>
+            @report.statusPro match {
+                case Some(NA.value) => {
+                    <p>
+                        Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
+                    </p>
+                    <p>
+                        Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données SignalConso.
+                    </p>
+                    <p>
+                        En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/courrier/80666">https://www.economie.gouv.fr/courrier/80666</a>
+                    </p>
+                }
+                case _ => {
+                    <p>
+                        Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
+                    </p>
+                    <p>
+                        Nous allons contacter le commerçant pour lui proposer d’en prendre connaissance. Il faut environ 6 jours pour que le commerçant prenne connaissance du signalement.
+                    </p>
+                    <p>
+                        Si le commerçant accepte de connaître le signalement, vous recevrez un email.
+                    </p>
+                    <p>
+                        Si le commerçant décide de mettre en place des actions pour corriger le problème, vous recevrez également un email.
+                    </p>
+                }
+            }
             <p>
                 Vous avez une question&nbsp;? Vous souhaitez modifier votre signalement&nbsp;? <a href="mailto:contact@@signalconso.beta.gouv.fr">Contactez-nous</a>
                 <br/>
