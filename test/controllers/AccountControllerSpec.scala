@@ -3,6 +3,7 @@ package controllers
 import java.util.UUID
 
 import com.google.inject.AbstractModule
+import com.hhandoko.play.pdf.PdfGenerator
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
@@ -18,7 +19,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.UserRepository
+import repositories.{ReportRepository, UserRepository}
 import utils.silhouette.{AuthEnv, UserService}
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
@@ -30,7 +31,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
       "return a BadRequest with errors if passwords are equals" in new Context {
         new WithApplication(application) {
 
-          val controller = new AccountController(mock[Silhouette[AuthEnv]], mock[UserRepository], mock[CredentialsProvider]) {
+          val controller = new AccountController(mock[Silhouette[AuthEnv]], mock[UserRepository], mock[ReportRepository], mock[CredentialsProvider], mock[Configuration], mock[PdfGenerator]) {
             override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
           }
 
