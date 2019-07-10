@@ -8,7 +8,7 @@
       "value": "signalement-api-pr-56.herokuapp.com"
     },
     "APPLICATION_PROTOCOL": {
-      "value": "https"
+      "value": "https://"
     },
     "APPLICATION_SECRET": {
       "required": true
