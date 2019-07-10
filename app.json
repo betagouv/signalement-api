@@ -7,6 +7,9 @@
     "APPLICATION_HOST": {
       "value": "signalement-api-pr-54.herokuapp.com"
     },
+    "APPLICATION_PROTOCOL": {
+      "value": "https"
+    },
     "APPLICATION_SECRET": {
       "required": true
     },

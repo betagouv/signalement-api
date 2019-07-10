@@ -1,0 +1,54 @@
+@font-face {
+    font-family: 'Open Sans';
+    src: url('../fonts/opensans/opensans-regular.eot');
+    src: url('../fonts/opensans/opensans-regular.eot?#iefix') format('embedded-opentype'),
+    url('../fonts/opensans/opensans-regular.woff2') format('woff2'),
+    url('../fonts/opensans/opensans-regular.woff') format('woff'),
+    url('../fonts/opensans/opensans-regular.ttf') format('truetype'),
+    url('../fonts/opensans/opensans-regular.svg#open_sans_regular') format('svg');
+    font-weight: 400;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Open Sans', 'Helvetica', 'Arial', sans-serif;
+    font-size: 12px;
+    height: 960px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-bold {
+    font-weight: 500;
+}
+
+.mt-3 {
+    margin-top: 16px;
+}
+
+.address {
+    float: right;
+    margin: 20px 0;
+}
+
+.content {
+    float: left;
+    text-align: justify;
+}
+
+.footer {
+    width: 100%;
+    float: left;
+    position: absolute;
+    bottom: -45px;
+}
+
+li > ul {
+    list-style: circle;
+}

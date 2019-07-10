@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
   "com.iheart" %% "ficus" % "1.4.3",
 
   "com.norbitltd" %% "spoiwo" % "1.4.1",
+  "com.hhandoko" %% "play26-scala-pdf" % "4.1.0",
 
   specs2 % Test,
 
