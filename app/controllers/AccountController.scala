@@ -90,10 +90,10 @@ class AccountController @Inject()(
             views.html.pdfs.accountActivation(
               report.companyAddress.split("-").filter(_.trim != "FRANCE").toList,
               report.creationDate.map(_.toLocalDate).get,
-              user.activationKey.get
+              "1232456"
             ), configuration.get[String]("play.application.url")
         )
-        case (Some(report), Some(user)) => NotFound("Il n'y a pas de code d'activation est associé à ce Siret")
+        case (Some(report), Some(user)) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
         case (Some(report), None) => NotFound("Il n'y a pas d'utilisateur associé à ce Siret")
         case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
       }
