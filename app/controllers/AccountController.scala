@@ -1,6 +1,10 @@
 package controllers
 
-import com.hhandoko.play.pdf.PdfGenerator
+import java.io.{ByteArrayInputStream, File}
+
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
+import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
+import com.itextpdf.kernel.pdf.{PdfDocument, PdfWriter}
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -20,8 +24,7 @@ class AccountController @Inject()(
                                 userRepository: UserRepository,
                                 reportRepository: ReportRepository,
                                 credentialsProvider: CredentialsProvider,
-                                configuration: Configuration,
-                                pdfGenerator: PdfGenerator
+                                configuration: Configuration
                               )(implicit ec: ExecutionContext)
  extends BaseController {
 
@@ -86,13 +89,24 @@ class AccountController @Inject()(
     } yield {
       (report, user) match {
         case (Some(report), Some(user)) if user.activationKey.isDefined =>
-          pdfGenerator.ok(
-            views.html.pdfs.accountActivation(
+
+          val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/activation_${siret}.pdf";
+          val pdf = new PdfDocument(new PdfWriter(tmpFileName))
+
+          val converterProperties = new ConverterProperties
+          val dfp = new DefaultFontProvider(true, true, true)
+          converterProperties.setFontProvider(dfp)
+          converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
+
+          HtmlConverter.convertToPdf(
+            new ByteArrayInputStream(views.html.pdfs.accountActivation(
               report.companyAddress.split("-").filter(_.trim != "FRANCE").toList,
               report.creationDate.map(_.toLocalDate).get,
-              "1232456"
-            ), configuration.get[String]("play.application.url")
-        )
+              user.activationKey.get
+            ).body.getBytes()), pdf, converterProperties)
+
+          Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+
         case (Some(report), Some(user)) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
         case (Some(report), None) => NotFound("Il n'y a pas d'utilisateur associé à ce Siret")
         case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
