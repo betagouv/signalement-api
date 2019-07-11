@@ -3,7 +3,6 @@ package controllers
 import java.util.UUID
 
 import com.google.inject.AbstractModule
-import com.hhandoko.play.pdf.PdfGenerator
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
@@ -20,7 +19,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.{ReportRepository, UserRepository}
-import utils.silhouette.{AuthEnv, UserService}
+import utils.silhouette.AuthEnv
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
