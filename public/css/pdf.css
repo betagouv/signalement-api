@@ -1,6 +1,6 @@
 @page {
-    margin-top: 20pt;
-    margin-bottom: 20pt;
+    margin-top: 1cm;
+    margin-bottom: 1cm;
 }
 
 body {
@@ -26,10 +26,15 @@ body {
 }
 
 .address {
-    float: right;
+    position: absolute;
+    top: 4cm;
+    left: 11cm;
+    width: 9cm;
 }
 
 .content {
+    position: absolute;
+    top: 8cm;
     float: left;
     text-align: justify;
 }
@@ -43,8 +48,4 @@ body {
 
 .footer > img {
     vertical-align: middle;
-}
-
-li > ul {
-    list-style: circle;
 }
