@@ -6,7 +6,6 @@
 GET          /api                                        controllers.StaticController.api
 
 # Statistics API
-GET          /api/reports/stats                         controllers.StatisticController.getStatistics()
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
 
 # Report API
