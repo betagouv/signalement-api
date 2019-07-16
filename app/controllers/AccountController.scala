@@ -100,7 +100,7 @@ class AccountController @Inject()(
 
           HtmlConverter.convertToPdf(
             new ByteArrayInputStream(views.html.pdfs.accountActivation(
-              report.companyAddress.split("-").filter(_.trim != "FRANCE").toList,
+              report.companyAddress,
               report.creationDate.map(_.toLocalDate).get,
               user.activationKey.get
             ).body.getBytes()), pdf, converterProperties)
