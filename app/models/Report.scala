@@ -5,6 +5,8 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
+import utils.Constants.StatusConso.StatusConsoValue
+import utils.Constants.StatusPro.StatusProValue
 
 case class Report(
                    id: Option[UUID],
@@ -21,9 +23,10 @@ case class Report(
                    email: String,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
-                   statusPro: Option[String],
-                   statusConso: Option[String]
+                   statusPro: Option[StatusProValue],
+                   statusConso: Option[StatusConsoValue]
                  )
+
 object Report {
 
   implicit val reportWriter = Json.writes[Report]

@@ -30,16 +30,11 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
       "return a BadRequest with errors if passwords are equals" in new Context {
         new WithApplication(application) {
 
-          val controller = new AccountController(mock[Silhouette[AuthEnv]], mock[UserRepository], mock[ReportRepository], mock[CredentialsProvider], mock[Configuration]) {
-            override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-          }
-
           val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
           val request = FakeRequest(POST, routes.AccountController.changePassword().toString)
             .withAuthenticator[AuthEnv](identLoginInfo)
             .withJsonBody(jsonBody)
-
 
           val result = route(application, request).get
 

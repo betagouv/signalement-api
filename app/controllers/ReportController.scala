@@ -1,8 +1,8 @@
 package controllers
 
 import java.io.File
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
@@ -19,14 +19,14 @@ import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
-import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
+import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
-import utils.Constants.{EventType, StatusConso, StatusPro}
-import utils.{Constants, DateUtils}
+import utils.Constants.{Departments, EventType, StatusPro}
 import utils.silhouette.{AuthEnv, WithPermission}
+import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
@@ -45,15 +45,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
-  val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
-  val CDVL = List("18", "28", "36", "37", "41", "45")
-  val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
-
-  val departmentsAuthorized = AURA ++ CDVL ++ OCC
-
-
   def departmentAuthorized(report: Report) = {
-    report.companyPostalCode.map(postalCode => departmentsAuthorized.contains(postalCode.slice(0, 2))).getOrElse(false);
+    report.companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
   }
 
   def determineStatusPro(report: Report): StatusProValue = {
@@ -64,7 +57,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     if (departmentAuthorized(report)) EN_ATTENTE else FAIT
   }
 
-  def determineStatusPro(event: Event, previousStatus: Option[String]): StatusProValue = (event.action, event.resultAction) match {
+  def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => A_TRAITER
     case (HORS_PERIMETRE, _)                   => NA
     case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
@@ -76,11 +69,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
     case (REPONSE_PRO_SIGNALEMENT, _)          => PROMESSE_ACTION_REFUSEE
-    case (_, _)                                => StatusPro.fromValue(previousStatus.getOrElse("")).getOrElse(NA)
+    case (_, _)                                => previousStatus.getOrElse(NA)
 
   }
 
-  def determineStatusConso(event: Event, previousStatus: Option[String]): StatusConsoValue = (event.action) match {
+  def determineStatusConso(event: Event, previousStatus: Option[StatusConsoValue]): StatusConsoValue = (event.action) match {
     case A_CONTACTER                         => EN_ATTENTE
     case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
     case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
@@ -91,7 +84,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case CONTACT_EMAIL                       => EN_ATTENTE
     case CONTACT_COURRIER                    => EN_ATTENTE
     case HORS_PERIMETRE                      => A_RECONTACTER
-    case _                                   => StatusConso.fromValue(previousStatus.getOrElse("")).getOrElse(EN_ATTENTE)
+    case _                                   => previousStatus.getOrElse(EN_ATTENTE)
   }
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
@@ -116,8 +109,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 )))).getOrElse(Future(None))
               _ <- report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = Some(determineStatusPro(event, r.statusPro).value),
-                    statusConso = Some(determineStatusConso(event, r.statusConso).value))
+                    statusPro = Some(determineStatusPro(event, r.statusPro)),
+                    statusConso = Some(determineStatusConso(event, r.statusConso)))
               }).getOrElse(Future(None))
             } yield {
               (report, user) match {
@@ -145,14 +138,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(LocalDateTime.now()),
-              statusPro = Some(determineStatusPro(report).value),
-              statusConso = Some(determineStatusConso(report).value)
+              statusPro = Some(determineStatusPro(report)),
+              statusConso = Some(determineStatusConso(report))
             )
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
           files <- reportRepository.retrieveReportFiles(report.id.get)
-          mailNotification <- sendReportNotificationByMail(report, files)
-          mailAcknowledgment <- sendReportAcknowledgmentByMail(report, files)
+          mailNotification <- sendMailReportNotification(report, files)
+          mailAcknowledgment <- sendMailReportAcknowledgment(report, files)
           _ <- createUserToActivateForReport(report)
         } yield {
           Ok(Json.toJson(report))
@@ -249,7 +242,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendReportNotificationByMail(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
+  private def sendMailReportNotification(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
@@ -258,21 +251,30 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendReportAcknowledgmentByMail(report: Report, files: List[ReportFile]) = {
-    report.category match {
-      case "Intoxication alimentaire" => Future(())
-      case _ =>
-        Future(mailerService.sendEmail(
-          from = configuration.get[String]("play.mail.from"),
-          recipients = report.email)(
-          subject = "Votre signalement",
-          bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo")),
-            AttachmentFile("questionnaire.png", environment.getFile("/appfiles/questionnaire.png"), contentId = Some("questionnaire"))
-          )
-        ))
-    }
+  private def sendMailReportAcknowledgment(report: Report, files: List[ReportFile]) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Votre signalement",
+      bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo")),
+        AttachmentFile("questionnaire.png", environment.getFile("/appfiles/questionnaire.png"), contentId = Some("questionnaire"))
+      )
+    ))
+  }
+
+  private def sendMailReportTransmission(report: Report) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Votre signalement",
+      bodyHtml = views.html.mails.reportTransmission(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo")),
+        AttachmentFile("questionnaire.png", environment.getFile("/appfiles/questionnaire.png"), contentId = Some("questionnaire"))
+      )
+    ))
   }
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
@@ -312,52 +314,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def getStatistics = UserAwareAction.async { implicit request =>
-
-    for {
-      reportsCount <- reportRepository.count
-      reportsPerMonth <- reportRepository.countPerMonth
-      reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
-      reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))
-      reportsCountInRegion <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized))
-      reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(7)), departments = Some(departmentsAuthorized))
-      reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(30)), departments = Some(departmentsAuthorized))
-      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(ENVOI_SIGNALEMENT))
-      reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(departmentsAuthorized), event = Some(REPONSE_PRO_SIGNALEMENT))
-      reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
-      reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
-      reportsCountAura <- reportRepository.nbSignalementsBetweenDates(departments = Some(AURA))
-      reportsCountCdvl <- reportRepository.nbSignalementsBetweenDates(departments = Some(CDVL))
-      reportsCountOcc <- reportRepository.nbSignalementsBetweenDates(departments = Some(OCC))
-      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForEvent(ENVOI_SIGNALEMENT)
-
-    } yield {
-
-      val reportsCountByRegionList = Seq(
-        ReportsByRegion("AURA", reportsCountAura.getOrElse(0)),
-        ReportsByRegion("CDVL", reportsCountCdvl.getOrElse(0)),
-        ReportsByRegion("OCC", reportsCountOcc.getOrElse(0)))
-
-      Ok(Json.toJson(
-        Statistics(
-          reportsCount,
-          reportsPerMonth.filter(stat => stat.yearMonth.isAfter(YearMonth.now().minusYears(1))),
-          reportsCount7Days.getOrElse(0),
-          reportsCount30Days.getOrElse(0),
-          reportsCountInRegion.getOrElse(0),
-          reportsCount7DaysInRegion.getOrElse(0),
-          reportsCount30DaysInRegion.getOrElse(0),
-          reportsCountSendedToPro.getOrElse(0),
-          reportsCountPromise.getOrElse(0),
-          reportsCountWithoutSiret.getOrElse(0),
-          reportsCountByCategory.toList,
-          reportsCountByRegionList,
-          reportsDurationsForEnvoiSignalement.getOrElse(0)
-        )
-      ))
-    }
-  }
-
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     logger.debug("getReport")
@@ -375,25 +331,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case (Some(report), UserRoles.Pro) =>
             for {
               events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
-              eventToCreate <- events.find(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT).map(_ => Future(None)).getOrElse(
-                Future(Some(Event(
-                  Some(UUID.randomUUID()),
-                  report.id,
-                  request.identity.id,
-                  Some(LocalDateTime.now()),
-                  Constants.EventType.CONSO,
-                  Constants.ActionEvent.ENVOI_SIGNALEMENT,
-                  None,
-                  Some("Première consultation du détail du signalement par le professionnel")
-                )))
-              )
-              _ <- eventToCreate.map(eventRepository.createEvent(_)).getOrElse(Future())
-              _ <- eventToCreate.map(event => reportRepository.update(
-                report.copy(
-                  statusPro = Some(determineStatusPro(event, report.statusPro).value),
-                  statusConso = Some(determineStatusConso(event, report.statusConso).value)
-                )
-              )).getOrElse(Future())
+              firstView <- Future(report.statusPro.getOrElse(Constants.StatusPro.A_TRAITER) == Constants.StatusPro.A_TRAITER && !events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
+              report <- firstView match {
+                case true => manageFirstViewOfReportByPro(report, request.identity.id)
+                case false =>
+                  Future(report)
+              }
             } yield {
               Ok(Json.toJson(report))
             }
@@ -402,6 +345,54 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         })
       }
     }
+  }
+
+  def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) = {
+    for {
+      event <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          userUUID,
+          Some(LocalDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.ENVOI_SIGNALEMENT,
+          None,
+          Some("Première consultation du détail du signalement par le professionnel")
+        )
+      )
+      report <- reportRepository.update(
+        report.copy(
+          statusPro = Some(determineStatusPro(event, report.statusPro)),
+          statusConso = Some(determineStatusConso(event, report.statusConso))
+        )
+      )
+      report <- informConsumerOfReportTransmission(report, userUUID)
+    } yield (report)
+  }
+
+  def informConsumerOfReportTransmission(report: Report, userUUID: UUID) = {
+    for {
+      _ <- sendMailReportTransmission(report)
+      event <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          userUUID,
+          Some(LocalDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_TRANSMISSION,
+          None,
+          Some("Envoi email au consommateur d'information de transmission")
+        )
+      )
+      report <- reportRepository.update(
+        report.copy(
+          statusPro = Some(determineStatusPro(event, report.statusPro)),
+          statusConso = Some(determineStatusConso(event, report.statusConso))
+        )
+      )
+    } yield (report)
   }
 
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
@@ -627,12 +618,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
           .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        report.statusPro.getOrElse(""),
+        report.statusPro.map(_.value).getOrElse(""),
         report.statusPro
-          .filter(StatusPro.fromValue(_) == Some(StatusPro.PROMESSE_ACTION))
+          .filter(_ == StatusPro.PROMESSE_ACTION)
           .filter(_ => events.length > 0)
           .flatMap(_ => events.head.detail).getOrElse(""),
-        report.statusConso.getOrElse(""),
+        report.statusConso.map(_.value).getOrElse(""),
         report.id.map(_.toString).getOrElse(""),
         report.firstName,
         report.lastName,
