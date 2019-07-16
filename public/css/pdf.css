@@ -25,6 +25,10 @@ body {
     margin-top: 16px;
 }
 
+.mr-5 {
+    margin-right: 24px;
+}
+
 .address {
     position: absolute;
     top: 4cm;
