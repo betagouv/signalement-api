@@ -99,7 +99,10 @@ object UserRoles {
 
   object Pro extends UserRole(
     "Professionnel",
-    Seq(UserPermission.listReports)
+    Seq(
+      UserPermission.listReports,
+      UserPermission.createEvent
+    )
   )
 
   val userRoles = Seq(Admin, DGCCRF, Pro, ToActivate)
