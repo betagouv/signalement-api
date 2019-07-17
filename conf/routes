@@ -26,6 +26,7 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 # Constants API
 GET         /api/constants/actionPros                   controllers.ConstantController.getActionPros()
 GET         /api/constants/actionConsos                 controllers.ConstantController.getActionConsos()
+GET         /api/constants/actionAgents                 controllers.ConstantController.getActionAgents()
 GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
 GET         /api/constants/statusConsos                 controllers.ConstantController.getStatusConsos()
 

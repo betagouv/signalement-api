@@ -89,7 +89,10 @@ object UserRoles {
 
   object DGCCRF extends UserRole(
     "DGCCRF",
-    Seq(UserPermission.listReports)
+    Seq(
+      UserPermission.listReports,
+      UserPermission.createEvent
+    )
   )
 
   object ToActivate extends UserRole(

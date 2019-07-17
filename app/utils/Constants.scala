@@ -136,6 +136,9 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object CONTROL extends ActionEventValue("Contrôle effectué")
+
     val actionPros = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -160,7 +163,12 @@ object Constants {
       MODIFICATION_CONSO
     )
 
-    def fromValue(value: String) = (actionPros++actionConsos++actionRectifs).find(_.value == value)
+    val actionAgents = Seq(
+      COMMENT,
+      CONTROL
+    )
+
+    def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
   }
 
   object Departments {
