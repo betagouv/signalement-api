@@ -18,8 +18,8 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.UserRepository
-import utils.silhouette.{AuthEnv, UserService}
+import repositories.{ReportRepository, UserRepository}
+import utils.silhouette.AuthEnv
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -30,16 +30,11 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
       "return a BadRequest with errors if passwords are equals" in new Context {
         new WithApplication(application) {
 
-          val controller = new AccountController(mock[Silhouette[AuthEnv]], mock[UserRepository], mock[CredentialsProvider]) {
-            override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-          }
-
           val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
           val request = FakeRequest(POST, routes.AccountController.changePassword().toString)
             .withAuthenticator[AuthEnv](identLoginInfo)
             .withJsonBody(jsonBody)
-
 
           val result = route(application, request).get
 

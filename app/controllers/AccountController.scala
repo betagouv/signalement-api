@@ -1,14 +1,20 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.util.{Credentials, PasswordHasherRegistry}
-import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
+import java.io.{ByteArrayInputStream, File}
+
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
+import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
+import com.itextpdf.kernel.pdf.{PdfDocument, PdfWriter}
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
-import models.{PasswordChange, User, UserLogin, UserPermission, UserRoles}
+import models.{PasswordChange, User, UserPermission, UserRoles}
 import play.api._
-import play.api.libs.json.{JsError, Json}
-import repositories.UserRepository
-import utils.silhouette.{AuthEnv, UserService, WithPermission}
+import play.api.libs.json.JsError
+import repositories.{ReportFilter, ReportRepository, UserRepository}
+import utils.Constants.StatusPro
+import utils.silhouette.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,7 +22,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountController @Inject()(
                                 val silhouette: Silhouette[AuthEnv],
                                 userRepository: UserRepository,
-                                credentialsProvider: CredentialsProvider
+                                reportRepository: ReportRepository,
+                                credentialsProvider: CredentialsProvider,
+                                configuration: Configuration
                               )(implicit ec: ExecutionContext)
  extends BaseController {
 
@@ -67,6 +75,43 @@ class AccountController @Inject()(
         }
       }
     )
+  }
+
+  def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
+
+    for {
+      user <- userRepository.findByLogin(siret)
+      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusPro = Some(StatusPro.A_TRAITER.value)))
+      report <- paginatedReports.entities match {
+        case report :: otherReports => Future(Some(report))
+        case Nil => Future(None)
+      }
+    } yield {
+      (report, user) match {
+        case (Some(report), Some(user)) if user.activationKey.isDefined =>
+
+          val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/activation_${siret}.pdf";
+          val pdf = new PdfDocument(new PdfWriter(tmpFileName))
+
+          val converterProperties = new ConverterProperties
+          val dfp = new DefaultFontProvider(true, true, true)
+          converterProperties.setFontProvider(dfp)
+          converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
+
+          HtmlConverter.convertToPdf(
+            new ByteArrayInputStream(views.html.pdfs.accountActivation(
+              report.companyAddress,
+              report.creationDate.map(_.toLocalDate).get,
+              user.activationKey.get
+            ).body.getBytes()), pdf, converterProperties)
+
+          Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+
+        case (Some(report), Some(user)) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
+        case (Some(report), None) => NotFound("Il n'y a pas d'utilisateur associé à ce Siret")
+        case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
+      }
+    }
   }
 
 }

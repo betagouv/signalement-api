@@ -136,6 +136,9 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
+    object CONTROL extends ActionEventValue("Contrôle effectué")
+
     val actionPros = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
@@ -160,7 +163,21 @@ object Constants {
       MODIFICATION_CONSO
     )
 
-    def fromValue(value: String) = (actionPros++actionConsos++actionRectifs).find(_.value == value)
+    val actionAgents = Seq(
+      COMMENT,
+      CONTROL
+    )
+
+    def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
+  }
+
+  object Departments {
+
+    val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+    val CDVL = List("18", "28", "36", "37", "41", "45")
+    val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
+
+    val AUTHORIZED = AURA ++ CDVL ++ OCC
   }
 
 }

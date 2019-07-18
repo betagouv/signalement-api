@@ -1,0 +1,46 @@
+@(report: Report)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Votre signalement</title>
+    </head>
+    <body>
+        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
+            <div style="text-align: center; margin: 30px auto 50px">
+                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
+                <br>
+            </div>
+
+            <p>
+                Bonjour @report.firstName @report.lastName,
+            </p>
+
+            <p>
+                Vous avez fait un signalement le @report.creationDate.get.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement :
+            </p>
+
+            <p style="text-align: center;">
+                @views.html.fragments.address(report.companyAddress)
+            </p>
+
+            <p>
+                Le commerçant a pris connaissance de votre signalement aujourd’hui. Si le commerçant nous indique avoir corrigé le problème, nous vous tiendrons au courant par email.
+            </p>
+
+            <p>
+                A bientôt sur SignalConso !
+            </p>
+
+            <p>
+                <i>L'équipe SignalConso</i>
+            </p>
+
+            <p style="text-align: center; margin: 30px">
+                <a href="https://docs.google.com/forms/d/e/1FAIpQLSezub625C5wOpnJY0rP4iXHYfr-s-MtEY84vFjY3ckeULjxbQ/viewform"><img src="cid:questionnaire" alt="Questionnaire" style="max-width: 250px"></a>
+            </p>
+
+        </div>
+    </body>
+</html>

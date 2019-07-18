@@ -8,7 +8,7 @@ import play.api.libs.json.Json
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
-import utils.Constants.ActionEvent.{actionConsos, actionPros}
+import utils.Constants.ActionEvent.{actionConsos, actionPros, actionAgents}
 import utils.Constants.StatusPro.{status => statusPros}
 import utils.Constants.StatusConso.{status => statusConsos}
 import utils.Constants.StatusPro
@@ -26,12 +26,15 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
     Future.successful(Ok(Json.toJson(actionConsos)))
   }
 
+  def getActionAgents = SecuredAction.async { implicit request =>
+    Future.successful(Ok(Json.toJson(actionAgents)))
+  }
+
   def getStatusPros = SecuredAction.async { implicit request =>
     request.identity.userRole match {
       case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(statusPros.filter(s => s != StatusPro.A_TRANSFERER_SIGNALEMENT))))
       case _ => Future.successful(Ok(Json.toJson(statusPros)))
     }
-
   }
 
   def getStatusConsos = SecuredAction.async { implicit request =>

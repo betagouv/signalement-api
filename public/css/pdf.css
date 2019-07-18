@@ -1,0 +1,55 @@
+@page {
+    margin-top: 1cm;
+    margin-bottom: 1cm;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    height: 960px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-bold {
+    font-weight: bold;
+}
+
+.mt-3 {
+    margin-top: 16px;
+}
+
+.mr-5 {
+    margin-right: 24px;
+}
+
+.address {
+    position: absolute;
+    top: 4cm;
+    left: 11cm;
+    width: 9cm;
+}
+
+.content {
+    position: absolute;
+    top: 8cm;
+    float: left;
+    text-align: justify;
+}
+
+.footer {
+    width: 100%;
+    float: left;
+    position: absolute;
+    bottom: 0px;
+}
+
+.footer > img {
+    vertical-align: middle;
+}

@@ -1,6 +1,5 @@
 @(report: Report, contactRecipientMail: String, files: List[ReportFile])
 
-@import java.time.format.DateTimeFormatter
 @import utils.Constants.StatusPro._
 
 <!doctype html>
@@ -19,7 +18,7 @@
                 Bonjour @report.firstName @report.lastName,
             </p>
             @report.statusPro match {
-                case Some(NA.value) => {
+                case Some(NA) => {
                     <p>
                         Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
                     </p>
