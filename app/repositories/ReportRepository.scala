@@ -1,13 +1,14 @@
 package repositories
 
 import java.time.{LocalDateTime, YearMonth}
-import java.util.{UUID}
+import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
+import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,14 +58,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro, statusConso)
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro.map(StatusPro.fromValue(_)).getOrElse(None), statusConso.map(StatusConso.fromValue(_)).getOrElse(None))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, files, statusPro, statusConso) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, statusPro, statusConso)
+          creationDate.get, firstName, lastName, email, contactAgreement, statusPro.map(_.value), statusConso.map(_.value))
     }
 
     def * =

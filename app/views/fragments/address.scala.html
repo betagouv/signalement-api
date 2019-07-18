@@ -1,0 +1,8 @@
+@(address: String)
+
+@address.split("-").filter(_.trim != "FRANCE").map { ligne =>
+    <span>
+        @ligne
+    </span>
+    <br/>
+}

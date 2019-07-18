@@ -5,9 +5,11 @@
 # Static pages
 GET          /api                                        controllers.StaticController.api
 
+# Statistics API
+GET          /api/stats                                 controllers.StatisticController.getStatistics()
+
 # Report API
 GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
-GET          /api/reports/stats                         controllers.ReportController.getStatistics()
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
@@ -24,6 +26,7 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 # Constants API
 GET         /api/constants/actionPros                   controllers.ConstantController.getActionPros()
 GET         /api/constants/actionConsos                 controllers.ConstantController.getActionConsos()
+GET         /api/constants/actionAgents                 controllers.ConstantController.getActionAgents()
 GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
 GET         /api/constants/statusConsos                 controllers.ConstantController.getStatusConsos()
 
@@ -41,7 +44,8 @@ POST	    /api/authenticate/password/reset            controllers.AuthController.
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
 PUT         /api/account/activation                     controllers.AccountController.activateAccount
+GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
+GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
 
-# GET         /api/stats/nbSignalementBetweenDates        controllers.ReportController.getNbSignalementBetweenDates(start: String, end: Option[String], departments: Option[String], event: Option[String])
 

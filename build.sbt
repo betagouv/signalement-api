@@ -33,6 +33,9 @@ libraryDependencies ++= Seq(
 
   "com.norbitltd" %% "spoiwo" % "1.4.1",
 
+  "com.itextpdf" % "itext7-core" % "7.1.6",
+  "com.itextpdf" % "html2pdf" % "2.1.3",
+
   specs2 % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.14",
