@@ -136,7 +136,7 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
-    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
     val actionPros = Seq(
