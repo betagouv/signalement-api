@@ -24,7 +24,7 @@ import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
-import utils.Constants.{Departments, EventType, StatusPro}
+import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.silhouette.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
@@ -594,6 +594,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
+
+
     for {
       events <- eventRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
       activationKey <- (report.companySiret, departmentAuthorized(report)) match {
@@ -601,11 +603,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         case _ => Future(None)
       }
     }
-    yield (
+    yield {
       List(
         report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
         report.companyPostalCode match {
-          case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0,2)
+          case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0, 2)
           case _ => ""
         },
         report.companyPostalCode.getOrElse(""),
@@ -621,8 +623,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.statusPro.map(_.value).getOrElse(""),
         report.statusPro
           .filter(_ == StatusPro.PROMESSE_ACTION)
-          .filter(_ => events.length > 0)
-          .flatMap(_ => events.head.detail).getOrElse(""),
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail)).getOrElse(""),
         report.statusConso.map(_.value).getOrElse(""),
         report.id.map(_.toString).getOrElse(""),
         report.firstName,
@@ -632,13 +633,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case true => "Oui"
           case _ => "Non"
         }
-      ) ::: {userRole match {
-        case UserRoles.Admin => List(
-          activationKey.getOrElse("")
-        )
-        case _ => List()
-      }}
-    )
+      ) ::: {
+        userRole match {
+          case UserRoles.Admin => List(
+            activationKey.getOrElse("")
+          )
+          case _ => List()
+        }
+      }
+    }
   }
 
 }
