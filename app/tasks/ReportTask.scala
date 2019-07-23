@@ -1,20 +1,19 @@
 package tasks
 
-import java.time.temporal.{ChronoUnit, TemporalUnit}
-import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, Period}
+import java.time.temporal.ChronoUnit
+import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime}
 
 import akka.actor.ActorSystem
 import javax.inject.Inject
-import models.{Report, ReportFile}
+import models.Report
 import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import repositories.{ReportFilter, ReportRepository}
 import services.MailerService
 import utils.Constants.Departments
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.Try
+import scala.concurrent.{ExecutionContext, Future}
 
 class ReportTask @Inject()(actorSystem: ActorSystem,
                            reportRepository: ReportRepository,
@@ -25,12 +24,12 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   val logger: Logger = Logger(this.getClass())
 
-  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), 20, 0)
+  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), 10, 0)
   val startDayOfWeek = DayOfWeek.valueOf(configuration.get[String]("play.tasks.report.start.dayOfWeek"))
   val interval = configuration.get[Int]("play.tasks.report.interval").days
 
   val startDate = LocalDate.now.atTime(startTime).plusDays(startDayOfWeek.getValue + 7 - LocalDate.now.getDayOfWeek.getValue)
-  val initialDelay = LocalDateTime.now.until(startDate, ChronoUnit.SECONDS).seconds
+  val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
   val mailsByDepartments = configuration.get[String]("play.tasks.report.mails")
     .split(";")

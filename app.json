@@ -53,7 +53,7 @@
       "required": false
     },
     "REPORT_TASK_START_HOUR": {
-      "value": "15"
+      "value": "16"
     },
     "REPORT_TASK_START_DAY_OF_WEEK": {
       "value": "TUESDAY"
