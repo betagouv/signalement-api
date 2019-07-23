@@ -52,8 +52,14 @@
     "SENTRY_DSN": {
       "required": false
     },
-    "S3_ACCESS_KEY_ID": {
-      "required": true
+    "REPORT_TASK_START_HOUR": {
+      "value": 17
+    },
+    "REPORT_TASK_START_DAY_OF_WEEK": {
+      "value": "TUESDAY"
+    },
+    "REPORT_TASK_INTERVAL": {
+      "required": 1
     },
     "S3_SECRET_ACCESS_KEY": {
       "required": true
