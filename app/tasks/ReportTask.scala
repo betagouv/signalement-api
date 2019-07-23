@@ -25,7 +25,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   val logger: Logger = Logger(this.getClass())
 
-  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), 10, 0)
+  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), 20, 0)
   val startDayOfWeek = DayOfWeek.valueOf(configuration.get[String]("play.tasks.report.start.dayOfWeek"))
   val interval = configuration.get[Int]("play.tasks.report.interval").days
 
@@ -42,6 +42,8 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
     val taskDate = LocalDateTime.now
 
     Logger.debug(s"taskDate - ${taskDate}");
+    Logger.debug(s"initialDelay - ${initialDelay}");
+    Logger.debug(s"interval - ${interval}");
 
     val departments = Departments.AUTHORIZED
 
