@@ -53,13 +53,13 @@
       "required": false
     },
     "REPORT_TASK_START_HOUR": {
-      "value": 17
+      "value": "17"
     },
     "REPORT_TASK_START_DAY_OF_WEEK": {
       "value": "TUESDAY"
     },
     "REPORT_TASK_INTERVAL": {
-      "required": 1
+      "value": "1"
     },
     "S3_SECRET_ACCESS_KEY": {
       "required": true
