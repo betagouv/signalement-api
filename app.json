@@ -55,6 +55,9 @@
     "REPORT_TASK_START_HOUR": {
       "value": "16"
     },
+    "REPORT_TASK_START_MINUTE": {
+      "value": "20"
+    },
     "REPORT_TASK_START_DAY_OF_WEEK": {
       "value": "TUESDAY"
     },
