@@ -1,0 +1,78 @@
+@import java.time.LocalDate
+@(reports: Seq[Report], department: String, startDate: LocalDate)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Signalements de la semaine</title>
+    </head>
+    <body>
+        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
+            <div style="text-align: center; margin: 30px auto 50px">
+                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
+                <br>
+            </div>
+            <p>
+                Depuis le @startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                @reports.length match {
+                    case 0 => { aucun nouveau signalement n'a été déposé }
+                    case 1 => { 1 nouveau signalement a été déposé }
+                    case n => {
+                        @n nouveaux signalements ont été déposés
+                    }
+                }
+                sur SignalConso pour le département @department.
+            </p>
+
+            @if(reports.length > 0) {
+                <div style="padding-bottom: 0.5em">
+                    <div style="font-weight: bold;
+                        text-align: center;
+                        border-bottom: 1px solid #D3D3D3;
+                        padding-bottom: 20px;
+                        margin-bottom: 20px">
+                    @reports.length match {
+                        case 1 => { Aperçu du signalement }
+                        case n => { Aperçu des signalements }
+                    }
+                    </div>
+
+                    @reports.map { report =>
+                        <div style="border-bottom: 1px solid #D3D3D3;
+                            padding-top: 20px;
+                            padding-bottom: 20px">
+                            <b>Problème</b>
+                            <br/>
+                            @report.category
+                            <br />
+                            @report.subcategories.map { subcategory =>
+                                @subcategory
+                                <br />
+                            }
+                            <br />
+                            <b>Description</b>
+                            <br/>
+                            @report.details.map { detailInputValue =>
+                                @Html(detailInputValue.label) @Html(detailInputValue.value)
+                                <br/>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <p>
+                Pour consulter l'intégralité des signalements :
+            </p>
+            <ul>
+                <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="https://signalconso.beta.gouv.fr/dgccrf">https://signalconso.beta.gouv.fr/dgccrf</a></li>
+                <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a></li>
+            </ul>
+
+            <p>
+                <i>L'équipe SignalConso</i>
+            </p>
+        </div>
+    </body>
+</html>

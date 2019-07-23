@@ -46,6 +46,9 @@
     "NUM_THREADS": {
       "required": true
     },
+    "REPORT_TASK_MAILS": {
+      "required": true
+    },
     "SENTRY_DSN": {
       "required": false
     },
