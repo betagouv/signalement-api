@@ -46,6 +46,9 @@ POST        /api/account/password                       controllers.AccountContr
 PUT         /api/account/activation                     controllers.AccountController.activateAccount
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
+# Rating API
+POST        /api/rating                                 controllers.RatingController.rate
+
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
 
 
