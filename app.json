@@ -5,7 +5,7 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-58.herokuapp.com"
+      "value": "signalement-api-pr-60.herokuapp.com"
     },
     "APPLICATION_PROTOCOL": {
       "value": "https://"
@@ -46,11 +46,23 @@
     "NUM_THREADS": {
       "required": true
     },
+    "REPORT_TASK_MAILS": {
+      "required": true
+    },
     "SENTRY_DSN": {
       "required": false
     },
-    "S3_ACCESS_KEY_ID": {
-      "required": true
+    "REPORT_TASK_START_HOUR": {
+      "value": "10"
+    },
+    "REPORT_TASK_START_MINUTE": {
+      "value": "0"
+    },
+    "REPORT_TASK_START_DAY_OF_WEEK": {
+      "value": "FRIDAY"
+    },
+    "REPORT_TASK_INTERVAL": {
+      "value": "1"
     },
     "S3_SECRET_ACCESS_KEY": {
       "required": true

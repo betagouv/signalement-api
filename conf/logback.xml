@@ -35,6 +35,7 @@
   <logger name="controllers" level="DEBUG" />
   <logger name="repositories" level="DEBUG" />
   <logger name="services" level="DEBUG" />
+  <logger name="tasks" level="DEBUG" />
   <logger name="utils" level="DEBUG" />
 
   <!--
