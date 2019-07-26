@@ -131,12 +131,16 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
   def avgDurationsForEvent(event: ActionEventValue) = {
 
+    // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
+    val ORIGIN_BO = "2019-05-20"
+
     db.run(
       sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, signalement.date_creation)))
            from events e1
            inner join signalement on e1.report_id = signalement.id
            where action = 'Envoi du signalement'
            and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
+           and date_creation > to_date($ORIGIN_BO, 'yyyy-mm-dd')
          """.as[Int].headOption
     )
   }
