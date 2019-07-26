@@ -53,13 +53,13 @@
       "required": false
     },
     "REPORT_TASK_START_HOUR": {
-      "value": "16"
+      "value": "10"
     },
     "REPORT_TASK_START_MINUTE": {
-      "value": "20"
+      "value": "0"
     },
     "REPORT_TASK_START_DAY_OF_WEEK": {
-      "value": "TUESDAY"
+      "value": "FRIDAY"
     },
     "REPORT_TASK_INTERVAL": {
       "value": "1"
