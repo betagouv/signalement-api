@@ -29,7 +29,7 @@
                 <div style="padding-bottom: 0.5em">
                     <div style="font-weight: bold;
                         text-align: center;
-                        border-bottom: 1px solid #D3D3D3;
+                        border-bottom: 2px solid #898989;
                         padding-bottom: 20px;
                         margin-bottom: 20px">
                     @reports.length match {
@@ -39,7 +39,7 @@
                     </div>
 
                     @reports.map { report =>
-                        <div style="border-bottom: 1px solid #D3D3D3;
+                        <div style="border-bottom: 2px solid #898989;
                             padding-top: 20px;
                             padding-bottom: 20px">
                             <b>Problème</b>
@@ -57,6 +57,13 @@
                                 @Html(detailInputValue.label) @Html(detailInputValue.value)
                                 <br/>
                             }
+
+                            <br />
+                            <b>Établissement</b>
+                            <p style="text-align: center;">
+                                @views.html.fragments.address(report.companyAddress)
+                            </p>
+
                         </div>
                     }
                 </div>
