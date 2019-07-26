@@ -26,7 +26,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), configuration.get[Int]("play.tasks.report.start.minute"), 0)
   val startDayOfWeek = DayOfWeek.valueOf(configuration.get[String]("play.tasks.report.start.dayOfWeek"))
-  val interval = configuration.get[Int]("play.tasks.report.interval").minutes
+  val interval = configuration.get[Int]("play.tasks.report.interval").days
 
   val startDate = LocalDate.now.atTime(startTime).plusDays(startDayOfWeek.getValue + 7 - LocalDate.now.getDayOfWeek.getValue)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
