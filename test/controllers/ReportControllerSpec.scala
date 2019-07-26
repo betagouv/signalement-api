@@ -22,6 +22,7 @@ import play.api.test._
 import play.api.libs.mailer.Attachment
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
+import tasks.TasksModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, EventTypeValue, PRO}
 import utils.Constants.StatusConso._
@@ -240,6 +241,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           "play.mailer.mock" -> true
         )
       )
+      .disable[TasksModule]
       .overrides(new FakeModule())
       .build()
 

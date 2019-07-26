@@ -19,6 +19,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.{ReportRepository, UserRepository}
+import tasks.TasksModule
 import utils.silhouette.AuthEnv
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
@@ -64,7 +65,12 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
     }
 
     lazy val application = new GuiceApplicationBuilder()
-      .configure(Configuration("play.evolutions.enabled" -> false))
+      .configure(
+        Configuration(
+          "play.evolutions.enabled" -> false
+        )
+      )
+      .disable[TasksModule]
       .overrides(new FakeModule())
       .build()
 
