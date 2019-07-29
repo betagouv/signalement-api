@@ -11,6 +11,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.Departments
+import utils.Constants.StatusPro.{A_TRAITER, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.DateUtils
 import utils.silhouette.AuthEnv
 
@@ -38,14 +39,16 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
       reportsCountInRegion <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED))
       reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(7)), departments = Some(Departments.AUTHORIZED))
       reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(30)), departments = Some(Departments.AUTHORIZED))
-      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), event = Some(ENVOI_SIGNALEMENT))
-      reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), event = Some(REPONSE_PRO_SIGNALEMENT))
+      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE)))
+      reportsCountSendedToProBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE, TRAITEMENT_EN_COURS, A_TRAITER)))
+      reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(PROMESSE_ACTION)))
+      reportsCountPromiseBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE)))
       reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
       reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
       reportsCountAura <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AURA))
       reportsCountCdvl <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.CDVL))
       reportsCountOcc <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.OCC))
-      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForEvent(ENVOI_SIGNALEMENT)
+      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForSendingReport()
 
     } yield {
 
@@ -53,6 +56,23 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
         ReportsByRegion("AURA", reportsCountAura.getOrElse(0)),
         ReportsByRegion("CDVL", reportsCountCdvl.getOrElse(0)),
         ReportsByRegion("OCC", reportsCountOcc.getOrElse(0)))
+
+      val sendedToProBase = reportsCountSendedToProBase match {
+        case None => 1
+        case Some(0) => 1
+        case Some(other) => other
+      }
+
+      val promiseBase: Int = reportsCountPromiseBase match {
+        case None => 1
+        case Some(0) => 1
+        case Some(other) => other
+      }
+
+      val reportsCountBase = reportsCount match {
+        case 0 => 1
+        case other => other
+      }
 
       Ok(Json.toJson(
         Statistics(
@@ -63,9 +83,9 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
           reportsCountInRegion.getOrElse(0),
           reportsCount7DaysInRegion.getOrElse(0),
           reportsCount30DaysInRegion.getOrElse(0),
-          reportsCountSendedToPro.getOrElse(0),
-          reportsCountPromise.getOrElse(0),
-          reportsCountWithoutSiret.getOrElse(0),
+          BigDecimal(reportsCountSendedToPro.getOrElse(0).asInstanceOf[Double] / sendedToProBase * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble,
+          BigDecimal(reportsCountPromise.getOrElse(0).asInstanceOf[Double] / promiseBase * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble,
+          BigDecimal(reportsCountWithoutSiret.getOrElse(0).asInstanceOf[Double] / reportsCountBase * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble,
           reportsCountByCategory.toList,
           reportsCountByRegionList,
           reportsDurationsForEnvoiSignalement.getOrElse(0)
