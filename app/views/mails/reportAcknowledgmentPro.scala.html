@@ -1,0 +1,84 @@
+@(report: Report, event: Event, user: User, contactRecipientMail: String)
+
+@import utils.Constants.StatusPro._
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Votre réponse au signalement</title>
+    </head>
+    <body>
+        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
+            <div style="text-align: center; margin: 30px auto 50px">
+                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
+                <br>
+            </div>
+            <p>
+                Bonjour @user.firstName @user.lastName,
+            </p>
+            @event.resultAction match {
+                case Some(true) => {
+                    <p>Vous venez de faire une promesse d’action et nous vous en félicitions !</p>
+
+                    <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
+
+                    <p>
+                        "@event.detail"
+                    </p>
+
+                    <p>
+                        Comme vous, environ 30% des professionnels ayant fait l’objet d’un signalement prennent des mesures.
+                        Notre objectif est de tendre rapidement vers les 100% et nous vous remercions d’y avoir contribué !
+                    </p>
+
+                    <p>
+                        Cette coopération donne sens à la relation de transparence, de confiance et d’efficacité entre
+                        les consommateurs, les professionnels et les services de la répression des fraudes promue par SignalConso.
+                    </p>
+
+                    <p>
+                        Seuls les constats effectués par les enquêteurs de la DGCCRF – lors d'un contrôle – peuvent donner suite
+                        à des poursuites.
+                    </p>
+
+                    <p>La plateforme est en expérimentation et grâce à vous, nous continuons à l'améliorer.</p>
+
+                }
+                case Some(false) => {
+                    <p>
+                        Vous estimez que le signalement du consommateur est infondé.
+                    </p>
+
+                    <p>
+                        Nous l’avons informé ; il visualisera votre réponse :
+                    </p>
+
+                    <p>
+                        "@event.detail"
+                    </p>
+
+                    <p>
+                        La coopération entre les consommateurs, les professionnels et les services de la répression des
+                        fraudes donne sens à la relation de transparence, de confiance et d’efficacité promue par SignalConso.
+                        Nous vous remercions donc d’avoir traité le signalement !
+                    </p>
+
+                    <p>
+                        Seuls les constats effectués par les enquêteurs de la DGCCRF – lors d'un contrôle – peuvent donner suite à des poursuites.
+                    </p>
+
+                }
+            }
+
+            <p>Cordialement,</p>
+
+            <p>
+                <i>L'équipe SignalConso</i>
+            </p>
+
+            <br />
+
+        </div>
+    </body>
+</html>

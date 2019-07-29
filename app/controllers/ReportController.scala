@@ -24,7 +24,7 @@ import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
+import utils.Constants.{Departments, EventType, StatusPro}
 import utils.silhouette.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
@@ -111,6 +111,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   r.copy(
                     statusPro = Some(determineStatusPro(event, r.statusPro)),
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
+              }).getOrElse(Future(None))
+              mailAcknowledgment <- report.flatMap(r => user match {
+                case Some(u) => Some(sendMailReportAcknowledgmentPro(r, event, u))
+                case None => None
               }).getOrElse(Future(None))
             } yield {
               (report, user) match {
@@ -257,6 +261,18 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       recipients = report.email)(
       subject = "Votre signalement",
       bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    ))
+  }
+
+  private def sendMailReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = user.email.getOrElse(configuration.get[String]("play.mail.from")))(
+      subject = "Votre réponse au signalement",
+      bodyHtml = views.html.mails.reportAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
