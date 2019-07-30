@@ -47,7 +47,7 @@
       "required": true
     },
     "REPORT_TASK_MAILS": {
-      "value": ""
+      "value": "45=contact@signalconso.beta.gouv.fr"
     },
     "SENTRY_DSN": {
       "required": false
