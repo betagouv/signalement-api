@@ -19,18 +19,19 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import play.api.libs.mailer.Attachment
+import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, EventTypeValue, PRO}
 import utils.Constants.StatusConso._
-import utils.Constants.{ActionEvent, EventType, StatusPro}
+import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.Constants.StatusPro._
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.Future
+import scala.util.Random
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
   val logger: Logger = Logger(this.getClass)
@@ -128,6 +129,84 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     }
   }
 
+  "createReport when the report concerns a professional in an authorized department" should {
+
+    val reportUUID = UUID.randomUUID()
+    val reportFixture = Report(
+      None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(LocalDateTime.now()),
+      "firstName", "lastName", "email", true, List(), None, None
+    )
+
+    "if the professional has no account :" +
+      "- create the report" +
+      "- send an acknowledgment mail to the consummer" +
+      "- create an account for the professional" +
+      "- return the report" should {
+
+      "ReportController" in new Context {
+
+        new WithApplication(application) {
+
+          mockReportRepository.create(any[Report]) returns Future(reportFixture.copy(id = Some(reportUUID)))
+
+          mockUserRepository.findByLogin(reportFixture.companySiret.get) returns Future(None)
+          mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
+
+          val controller = application.injector.instanceOf[ReportController]
+          val result = controller.createReport().apply(FakeRequest().withBody(Json.toJson(reportFixture)))
+
+          Helpers.status(result) must beEqualTo(OK)
+          contentAsJson(result) must equalTo(Json.toJson(reportFixture.copy(id = Some(reportUUID))))
+
+          there was one(mockReportRepository).create(any[Report])
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
+              "Votre signalement",
+              views.html.mails.consumer.reportAcknowledgment(reportFixture, application.configuration.get[String]("play.mail.contactRecipient"), Nil).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+          there was one(mockUserRepository).create(any[User])
+        }
+      }
+    }
+
+    "if the professional has already an account :" +
+      "- create the report" +
+      "- send an acknowledgment mail to the consummer" +
+      "- send a notification mail to the professional" +
+      "- return the report" should {
+
+      "ReportController" in new Context {
+
+        new WithApplication(application) {
+
+          mockReportRepository.create(any[Report]) returns Future(reportFixture.copy(id = Some(reportUUID)))
+
+          mockUserRepository.findByLogin(reportFixture.companySiret.get) returns Future(Some(proIdentity))
+
+          val controller = application.injector.instanceOf[ReportController]
+          val result = controller.createReport().apply(FakeRequest().withBody(Json.toJson(reportFixture)))
+
+          Helpers.status(result) must beEqualTo(OK)
+          contentAsJson(result) must equalTo(Json.toJson(reportFixture.copy(id = Some(reportUUID))))
+
+          there was no(mockUserRepository).create(any[User])
+          there was one(mockReportRepository).create(any[Report])
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
+              "Votre signalement",
+              views.html.mails.consumer.reportAcknowledgment(reportFixture, application.configuration.get[String]("play.mail.contactRecipient"), Nil).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
+              "Nouveau signalement",
+              views.html.mails.professional.reportNotification(reportFixture).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+        }
+      }
+    }
+
+  }
+
   "getReport" should {
 
     val reportUUID = UUID.randomUUID()
@@ -187,7 +266,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "return the report with modified status when the user is a professional who get it for the first time" should {
+    "when the user is a professional who get it for the first time :" +
+      "- notify the consumer by mail about the report consultation" +
+      "- return the report with modified status" should {
 
       "ReportController" in new Context {
         new WithApplication(application) {
@@ -204,6 +285,12 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           Helpers.status(result) must beEqualTo(OK)
           implicit val reportWriter = Report.reportProWriter
           contentAsJson(result) must equalTo(Json.toJson(reportFixture.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS))))
+
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
+              "Votre signalement",
+              views.html.mails.consumer.reportTransmission(reportFixture).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
         }
       }
 
@@ -222,13 +309,18 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     val mockReportRepository = mock[ReportRepository]
     val mockEventRepository = mock[EventRepository]
+    val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
+
+    mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
+    mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
 
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {
         bind[Environment[AuthEnv]].toInstance(env)
         bind[ReportRepository].toInstance(mockReportRepository)
         bind[EventRepository].toInstance(mockEventRepository)
+        bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
       }
     }

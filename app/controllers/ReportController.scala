@@ -148,9 +148,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           )
           attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
           files <- reportRepository.retrieveReportFiles(report.id.get)
-          mailNotification <- sendMailReportNotification(report, files)
+          mailNotification <- sendMailAdminReportNotification(report, files)
           mailAcknowledgment <- sendMailReportAcknowledgment(report, files)
-          _ <- createUserToActivateForReport(report)
+          _ <- (report.companySiret, departmentAuthorized(report)) match {
+            case (Some(siret), true) => notifyProfessionalOfNewReport(report)
+            case _ => Future(None)
+          }
         } yield {
           Ok(Json.toJson(report))
         }
@@ -158,25 +161,27 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  def createUserToActivateForReport(report: Report) = {
+  def notifyProfessionalOfNewReport(report: Report) = {
     for {
-      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
-        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_ => None).getOrElse(Some(f"${Random.nextInt(1000000)}%06d")))
-        case _ => Future(None)
+      eitherUserOrKey <- userRepository.findByLogin(report.companySiret.get).map(user => user.map(_ => Left(user.get)).getOrElse(Right(f"${Random.nextInt(1000000)}%06d")))
+      _ <- eitherUserOrKey match {
+        case Left(user) =>
+          sendMailProfessionalReportNotification(report, user)
+        case Right(activationKey) =>
+          userRepository.create(
+            User(
+              UUID.randomUUID(),
+              report.companySiret.get,
+              activationKey,
+              Some(activationKey),
+              None,
+              None,
+              None,
+              UserRoles.ToActivate
+            )
+          )
       }
-      user <- activationKey.map(activationKey => userRepository.create(
-        User(
-          UUID.randomUUID(),
-          report.companySiret.get,
-          activationKey,
-          Some(activationKey),
-          None,
-          None,
-          None,
-          UserRoles.ToActivate
-        )
-      )).getOrElse(Future(None))
-    } yield user
+    } yield ()
   }
 
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
@@ -203,8 +208,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companySiret = report.companySiret
                 ))
               ).getOrElse(Future(None))
-              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret) match {
-                case (someExistingSiret, Some(siret)) if (someExistingSiret != Some(siret)) => createUserToActivateForReport(report)
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, departmentAuthorized(report)) match {
+                case (someExistingSiret, Some(siret), true) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(report)
                 case _ => Future(None)
               }
             } yield {
@@ -246,12 +251,24 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendMailReportNotification(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
+  private def sendMailAdminReportNotification(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = configuration.get[String]("play.mail.contactRecipient"))(
       subject = "Nouveau signalement",
-      bodyHtml = views.html.mails.reportNotification(report, files).toString
+      bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
+    ))
+  }
+
+  private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = professionalUser.email.get)(
+      subject = "Nouveau signalement",
+      bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
     ))
   }
 
@@ -260,7 +277,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
       subject = "Votre signalement",
-      bodyHtml = views.html.mails.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
+      bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, configuration.get[String]("play.mail.contactRecipient"), files).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
@@ -313,7 +330,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
       subject = "Votre signalement",
-      bodyHtml = views.html.mails.reportTransmission(report).toString,
+      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
@@ -410,11 +427,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           statusConso = Some(determineStatusConso(event, report.statusConso))
         )
       )
-      report <- informConsumerOfReportTransmission(report, userUUID)
+      report <- notifyConsumerOfReportTransmission(report, userUUID)
     } yield (report)
   }
 
-  def informConsumerOfReportTransmission(report: Report, userUUID: UUID) = {
+  def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID) = {
     for {
       _ <- sendMailReportTransmission(report)
       event <- eventRepository.createEvent(
