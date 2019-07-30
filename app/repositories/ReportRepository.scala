@@ -8,6 +8,7 @@ import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPe
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
+import utils.Constants.StatusPro.{PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_TRANSMIS, StatusProValue}
 import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
@@ -129,7 +130,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   def count: Future[Int] = db
     .run(reportTableQuery.length.result)
 
-  def avgDurationsForEvent(event: ActionEventValue) = {
+  def avgDurationsForSendingReport() = {
 
     // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
     val ORIGIN_BO = "2019-05-20"
@@ -145,18 +146,20 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     )
   }
 
-  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None, withoutSiret: Boolean = false) = {
+  def protectString(str: String) = {
+    str.replace("'", "''")
+  }
+
+  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, statusList: Option[List[StatusProValue]] = None, withoutSiret: Boolean = false) = {
 
     val whereDepartments = departments match {
       case None => ""
-      case Some(seq) => " and (" + seq.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
     }
 
-    val whereEvents = event match {
-      case Some(A_CONTACTER) => s" and events.action = '${A_CONTACTER.value}'"
-      case Some(ENVOI_SIGNALEMENT) => s" and events.action = '${ENVOI_SIGNALEMENT.value}'"
-      case Some(REPONSE_PRO_SIGNALEMENT) => s" and events.action = '${REPONSE_PRO_SIGNALEMENT.value}' and events.result_action = 'true'"
-      case _ => ""
+    val whereStatusPro = statusList match {
+      case None => ""
+      case Some(list) => " and (" + list.map(status => s"status_pro = '${protectString(status.value)}'").mkString(" or ") + ")"
     }
 
     val whereSiret = withoutSiret match {
@@ -172,29 +175,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
-         #$whereEvents
+         #$whereStatusPro
          #$whereSiret
       """.as[Int].headOption
     )
   }
 
-  def nbSignalementsByCategory(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, event: Option[ActionEventValue] = None, withoutSiret: Boolean = false): Future[Vector[ReportsByCategory]] = {
+  def nbSignalementsByCategory(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None): Future[Vector[ReportsByCategory]] = {
 
     val whereDepartments = departments match {
       case None => ""
       case Some(seq) => " and (" + seq.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
-    }
-
-    val whereEvents = event match {
-      case Some(A_CONTACTER) => s" and events.action = '${A_CONTACTER.value}'"
-      case Some(ENVOI_SIGNALEMENT) => s" and events.action = '${ENVOI_SIGNALEMENT.value}'"
-      case Some(REPONSE_PRO_SIGNALEMENT) => s" and events.action = '${REPONSE_PRO_SIGNALEMENT.value}' and events.result_action = 'true'"
-      case _ => ""
-    }
-
-    val whereSiret = withoutSiret match {
-      case true => s" and siret_etablissement is null or (siret_etablissement is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
-      case false => ""
     }
 
     implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
@@ -207,8 +198,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
-         #$whereEvents
-         #$whereSiret
          group by categorie
       """.as[(ReportsByCategory)]
     )

@@ -52,10 +52,13 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
         ReportFilter(departments = departments, start = Some(taskDate.minusDays(7)), end = Some(taskDate))
     ).map(reports =>
       departments.foreach(department =>
-        sendMailReportsOfTheWeek(
-          reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
-          department,
-          taskDate.minusDays(7).toLocalDate)
+        reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)) match {
+          case Nil =>
+          case _ => sendMailReportsOfTheWeek(
+            reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
+            department,
+            taskDate.minusDays(7).toLocalDate)
+        }
       )
     )
 
