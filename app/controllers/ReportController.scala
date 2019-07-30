@@ -113,7 +113,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
               }).getOrElse(Future(None))
               mailAcknowledgment <- report.flatMap(r => user match {
-                case Some(u) => Some(sendMailReportAcknowledgmentPro(r, event, u))
+                case Some(u) => Some(sendMailsAfterProAcknowledgment(r, event, u))
                 case None => None
               }).getOrElse(Future(None))
             } yield {
@@ -267,7 +267,23 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendMailReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
+  private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
+    event.action match {
+      case REPONSE_PRO_SIGNALEMENT => {
+        for {
+          _ <- sendMailToProForAcknowledgmentPro(report, event, user)
+          _ <- sendMailToConsoForReportAcknowledgmentPro(report, event, user)
+        } yield {
+          println("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
+        }
+      }
+      case _ => {
+        Future(None)
+      }
+    }
+  }
+
+  private def sendMailToProForAcknowledgmentPro(report: Report, event: Event, user: User) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = user.email.getOrElse(configuration.get[String]("play.mail.from")))(
@@ -278,6 +294,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       )
     ))
   }
+
+  private def sendMailToConsoForReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = user.email.getOrElse(configuration.get[String]("play.mail.from")))(
+      subject = "Réponse du professionel à votre signalement",
+      bodyHtml = views.html.mails.reportToConsoAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    ))
+  }
+
 
   private def sendMailReportTransmission(report: Report) = {
     Future(mailerService.sendEmail(

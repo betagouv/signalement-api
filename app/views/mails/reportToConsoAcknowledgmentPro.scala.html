@@ -15,40 +15,47 @@
                 <br>
             </div>
             <p>
-                Bonjour @user.firstName @user.lastName,
+                Bonjour @report.firstName @report.lastName,
             </p>
             @event.resultAction match {
                 case Some(true) => {
-                    <p>Vous venez de faire une promesse d’action et nous vous en félicitions !</p>
+                    <p>
+                        Vous avez fait un signalement le @report.creationDate concernant l’établissement @report.companyName
+                        (SIRET : @report.companySiret) situé à l'adresse @report.companyAddress @report.companyPostalCode.
+                    </p>
 
-                    <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
+                    <p>Le professionnel a répondu à votre signalement !</p>
+
+                    <p>Voici sa réponse :</p>
 
                     <p>
                         "@event.detail"
                     </p>
 
                     <p>
-                        Comme vous, environ 30% des professionnels ayant fait l’objet d’un signalement prennent des mesures.
-                        Notre objectif est de tendre rapidement vers les 100% et nous vous remercions d’y avoir contribué !
+                        Nous vous remercions d'avoir fait un signalement sur SignalConso.
                     </p>
 
                     <p>
-                        Votre coopération est également visible par la DGCCRF et s’inscrit dans la relation de transparence
-                        et d’efficacité avec l’administration.
+                        Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites
+                        un nouveau signalement.
                     </p>
 
                 }
                 case Some(false) => {
                     <p>
-                        Vous estimez que le signalement est infondé.
+                        Votre signalement créé le @report.creationDate concernant l’établissement @report.companyName
+                        (SIRET : @report.companySiret) situé à l'adresse @report.companyAddress @report.companyPostalCode
+                        est considéré comme infondé par le professionnel.
                     </p>
 
                     <p>
-                        Nous avons informé le consommateur ; il visualisera votre réponse :
+                        Le commerçant ne pourra donc pas donner suite à votre signalement.
                     </p>
 
                     <p>
-                        "@event.detail"
+                        Nous vous précisons que seuls les constats effectués par les enquêteurs de la DGCCRF – lors d'un
+                        contrôle – peuvent donner suite à des poursuites.
                     </p>
 
                     <p>
@@ -58,14 +65,9 @@
                 }
             }
 
-            <p>
-                Par ailleurs, nous vous rappelons que seuls les constats effectués par les enquêteurs de la DGCCRF
-                peuvent donner suite à des poursuites.
-            </p>
-
             <p>La plateforme est en expérimentation et grâce à vous, nous continuons à l'améliorer.</p>
 
-            <p>Cordialement,</p>
+            <p>À bientôt sur SignalConso !</p>
 
             <p>
                 <i>L'équipe SignalConso</i>
