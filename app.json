@@ -47,7 +47,7 @@
       "required": true
     },
     "REPORT_TASK_MAILS": {
-      "required": true
+      "value": ""
     },
     "SENTRY_DSN": {
       "required": false
