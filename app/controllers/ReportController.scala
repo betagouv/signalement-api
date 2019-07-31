@@ -289,7 +289,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case REPONSE_PRO_SIGNALEMENT => {
         for {
           _ <- sendMailToProForAcknowledgmentPro(report, event, user)
-          _ <- sendMailToConsoForReportAcknowledgmentPro(report, event, user)
+          _ <- sendMailToConsumerForReportAcknowledgmentPro(report, event, user)
         } yield {
           println("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
         }
@@ -303,21 +303,21 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   private def sendMailToProForAcknowledgmentPro(report: Report, event: Event, user: User) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.getOrElse(configuration.get[String]("play.mail.from")))(
+      recipients = user.email.getOrElse(configuration.get[String]("play.mail.contactRecipient")))(
       subject = "Votre réponse au signalement",
-      bodyHtml = views.html.mails.reportAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
+      bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
     ))
   }
 
-  private def sendMailToConsoForReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
+  private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.getOrElse(configuration.get[String]("play.mail.from")))(
-      subject = "Réponse du professionel à votre signalement",
-      bodyHtml = views.html.mails.reportToConsoAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
+      recipients = user.email.getOrElse(configuration.get[String]("play.mail.contactRecipient")))(
+      subject = "Le professionnel a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsoAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )

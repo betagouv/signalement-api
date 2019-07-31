@@ -17,12 +17,17 @@
             <p>
                 Bonjour @report.firstName @report.lastName,
             </p>
+
+            <p>
+                Vous avez fait un signalement le @report.creationDate.get.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
+            </p>
+
+            <p style="text-align: center;">
+                @views.html.fragments.address(report.companyAddress)
+            </p>
+
             @event.resultAction match {
                 case Some(true) => {
-                    <p>
-                        Vous avez fait un signalement le @report.creationDate concernant l’établissement @report.companyName
-                        (SIRET : @report.companySiret) situé à l'adresse @report.companyAddress @report.companyPostalCode.
-                    </p>
 
                     <p>Le professionnel a répondu à votre signalement !</p>
 
@@ -43,19 +48,18 @@
 
                 }
                 case Some(false) => {
+
+                    <p>Ce signalement n’a pas été considéré comme légitime par le professionnel.</p>
+
+                    <p>Voici sa réponse :</p>
+
                     <p>
-                        Votre signalement créé le @report.creationDate concernant l’établissement @report.companyName
-                        (SIRET : @report.companySiret) situé à l'adresse @report.companyAddress @report.companyPostalCode
-                        est considéré comme infondé par le professionnel.
+                        "@event.detail"
                     </p>
 
                     <p>
-                        Le commerçant ne pourra donc pas donner suite à votre signalement.
-                    </p>
-
-                    <p>
-                        Nous vous précisons que seuls les constats effectués par les enquêteurs de la DGCCRF – lors d'un
-                        contrôle – peuvent donner suite à des poursuites.
+                        Néanmoins, nous vous précisons que les enquêteurs se réservent le droit d’effectuer un contrôle
+                        de l’établissement concerné.
                     </p>
 
                     <p>
@@ -65,12 +69,16 @@
                 }
             }
 
-            <p>La plateforme est en expérimentation et grâce à vous, nous continuons à l'améliorer.</p>
-
             <p>À bientôt sur SignalConso !</p>
 
             <p>
                 <i>L'équipe SignalConso</i>
+            </p>
+
+            <p style="text-align: center; margin: 30px">
+                <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
+                    <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
+                </a>
             </p>
 
             <br />
