@@ -157,7 +157,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           there was one(mockMailerService)
             .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
               "Votre signalement",
-              views.html.mails.consumer.reportAcknowledgment(reportFixture, application.configuration.get[String]("play.mail.contactRecipient"), Nil).toString,
+              views.html.mails.consumer.reportAcknowledgment(reportFixture, Nil).toString,
               Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
           there was one(mockUserRepository).create(any[User])
         }
@@ -187,7 +187,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           there was one(mockMailerService)
             .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
               "Votre signalement",
-              views.html.mails.consumer.reportAcknowledgment(reportFixture, application.configuration.get[String]("play.mail.contactRecipient"), Nil).toString,
+              views.html.mails.consumer.reportAcknowledgment(reportFixture, Nil).toString,
               Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
           there was one(mockMailerService)
             .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
@@ -284,6 +284,42 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
       }
 
+    }
+
+  }
+
+  "create a proAcknowledgment event" should {
+
+    val reportUUID = UUID.randomUUID()
+    val reportFixture = Report(
+      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(LocalDateTime.now()),
+      "firstName", "lastName", "email", true, List(), None, None
+    )
+
+    "ReportController" in new Context {
+      new WithApplication(application) {
+
+        val eventFixture = Event(None, Some(reportUUID), proIdentity.id, None, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT, Some(true), None)
+
+        mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
+
+        val controller = application.injector.instanceOf[ReportController]
+        val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](proLoginInfo))
+
+        Helpers.status(result) must beEqualTo(OK)
+
+        there was one(mockEventRepository).createEvent(any[Event])
+        there was one(mockMailerService)
+          .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
+            "Votre réponse au signalement",
+            views.html.mails.reportAcknowledgmentPro(eventFixture, proIdentity).toString,
+            Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+        there was one(mockMailerService)
+          .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
+            "Réponse du professionel à votre signalement",
+            views.html.mails.reportToConsoAcknowledgmentPro(reportFixture, eventFixture).toString,
+            Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+      }
     }
 
   }
