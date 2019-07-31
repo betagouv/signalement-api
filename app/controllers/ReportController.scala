@@ -112,9 +112,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                     statusPro = Some(determineStatusPro(event, r.statusPro)),
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
               }).getOrElse(Future(None))
-              mailAcknowledgment <- report.flatMap(r => user match {
-                case Some(u) => Some(sendMailsAfterProAcknowledgment(r, event, u))
-                case None => None
+              _ <- report.flatMap(r => (user, event.action) match {
+                case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
+                case _ => None
               }).getOrElse(Future(None))
             } yield {
               (report, user) match {
@@ -180,7 +180,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Some("Notification du professionnel par mail de la réception d'un nouveau signalement")
               )
             )
-            report <- reportRepository.update(
+            _ <- reportRepository.update(
               report.copy(
                 statusPro = Some(determineStatusPro(event, report.statusPro)),
                 statusConso = Some(determineStatusConso(event, report.statusConso))
@@ -305,39 +305,32 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
-    event.action match {
-      case REPONSE_PRO_SIGNALEMENT => {
-        for {
-          _ <- sendMailToProForAcknowledgmentPro(report, event, user)
-          _ <- sendMailToConsumerForReportAcknowledgmentPro(report, event, user)
-        } yield {
-          println("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
-        }
+      for {
+        _ <- sendMailToProForAcknowledgmentPro(event, user)
+        _ <- sendMailToConsumerForReportAcknowledgmentPro(report, event)
+      } yield {
+        logger.debug("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
       }
-      case _ => {
-        Future(None)
-      }
-    }
   }
 
-  private def sendMailToProForAcknowledgmentPro(report: Report, event: Event, user: User) = {
+  private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.getOrElse(configuration.get[String]("play.mail.contactRecipient")))(
+      recipients = user.email.get)(
       subject = "Votre réponse au signalement",
-      bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
+      bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
     ))
   }
 
-  private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event, user: User) = {
+  private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.getOrElse(configuration.get[String]("play.mail.contactRecipient")))(
+      recipients = report.email)(
       subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsoAcknowledgmentPro(report, event, user, configuration.get[String]("play.mail.contactRecipient")).toString,
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
