@@ -312,12 +312,12 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         there was one(mockMailerService)
           .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
             "Votre réponse au signalement",
-            views.html.mails.reportAcknowledgmentPro(eventFixture, proIdentity).toString,
+            views.html.mails.professional.reportAcknowledgmentPro(eventFixture, proIdentity).toString,
             Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
         there was one(mockMailerService)
           .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
             "Réponse du professionel à votre signalement",
-            views.html.mails.reportToConsoAcknowledgmentPro(reportFixture, eventFixture).toString,
+            views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, eventFixture).toString,
             Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
       }
     }
