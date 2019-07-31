@@ -15,7 +15,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.{Configuration, Logger}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json, OFormat, Writes}
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
@@ -288,7 +288,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   }
 
-  "create a proAcknowledgment event" should {
+  "create an event " should {
 
     val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
@@ -296,29 +296,64 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "firstName", "lastName", "email", true, List(), None, None
     )
 
-    "ReportController" in new Context {
-      new WithApplication(application) {
+    implicit val actionEventValueWrites = new Writes[ActionEventValue] {
+      def writes(actionEventValue: ActionEventValue) = Json.toJson(actionEventValue.value)
+    }
+    implicit val eventWriter = Json.writes[Event]
 
-        val eventFixture = Event(None, Some(reportUUID), proIdentity.id, None, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT, Some(true), None)
+    "for event action 'REPONSE_PRO_SIGNALEMENT' : " +
+      "- create an event" +
+      "- send an acknowledgment email to the consumer" +
+      "- send an acknowledgment email to the professional" should {
 
-        mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
+      "ReportController" in new Context {
+        new WithApplication(application) {
 
-        val controller = application.injector.instanceOf[ReportController]
-        val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](proLoginInfo))
+          val eventFixture = Event(None, Some(reportUUID), proIdentity.id, None, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT, Some(true), None)
 
-        Helpers.status(result) must beEqualTo(OK)
+          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
+          mockUserRepository.get(eventFixture.userId) returns Future(Some(proIdentity))
 
-        there was one(mockEventRepository).createEvent(any[Event])
-        there was one(mockMailerService)
-          .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
-            "Votre réponse au signalement",
-            views.html.mails.professional.reportAcknowledgmentPro(eventFixture, proIdentity).toString,
-            Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
-        there was one(mockMailerService)
-          .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
-            "Réponse du professionel à votre signalement",
-            views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, eventFixture).toString,
-            Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+          val controller = application.injector.instanceOf[ReportController]
+          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](proLoginInfo))
+
+          Helpers.status(result) must beEqualTo(OK)
+
+          there was one(mockEventRepository).createEvent(any[Event])
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), proIdentity.email.get)(
+              "Votre réponse au signalement",
+              views.html.mails.professional.reportAcknowledgmentPro(eventFixture, proIdentity).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+          there was one(mockMailerService)
+            .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
+              "Le professionnel a répondu à votre signalement",
+              views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, eventFixture).toString,
+              Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))
+        }
+      }
+    }
+
+    "for event action 'CONTACT_COURRIER' : " +
+      "- create an event" +
+      "- do not send any email" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val eventFixture = Event(None, Some(reportUUID), proIdentity.id, None, EventType.PRO, ActionEvent.CONTACT_COURRIER, Some(true), None)
+
+          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
+          mockUserRepository.get(eventFixture.userId) returns Future(Some(proIdentity))
+
+          val controller = application.injector.instanceOf[ReportController]
+          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](proLoginInfo))
+
+          Helpers.status(result) must beEqualTo(OK)
+
+          there was one(mockEventRepository).createEvent(any[Event])
+          there was no(mockMailerService).sendEmail(anyString, anyVarArg[String])(anyString, anyString, any[Seq[AttachmentFile]])
+        }
       }
     }
 
