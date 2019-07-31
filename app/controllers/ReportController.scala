@@ -166,7 +166,27 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       eitherUserOrKey <- userRepository.findByLogin(report.companySiret.get).map(user => user.map(_ => Left(user.get)).getOrElse(Right(f"${Random.nextInt(1000000)}%06d")))
       _ <- eitherUserOrKey match {
         case Left(user) =>
-          sendMailProfessionalReportNotification(report, user)
+          for {
+            _ <- sendMailProfessionalReportNotification(report, user)
+            event <- eventRepository.createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                report.id,
+                user.id,
+                Some(LocalDateTime.now()),
+                Constants.EventType.PRO,
+                Constants.ActionEvent.CONTACT_EMAIL,
+                None,
+                Some("Notification du professionnel par mail de la réception d'un nouveau signalement")
+              )
+            )
+            report <- reportRepository.update(
+              report.copy(
+                statusPro = Some(determineStatusPro(event, report.statusPro)),
+                statusConso = Some(determineStatusConso(event, report.statusConso))
+              )
+            )
+          } yield ()
         case Right(activationKey) =>
           userRepository.create(
             User(

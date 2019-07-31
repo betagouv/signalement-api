@@ -140,23 +140,18 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "if the professional has no account :" +
       "- create the report" +
       "- send an acknowledgment mail to the consummer" +
-      "- create an account for the professional" +
-      "- return the report" should {
+      "- create an account for the professional" should {
 
       "ReportController" in new Context {
 
         new WithApplication(application) {
 
-          mockReportRepository.create(any[Report]) returns Future(reportFixture.copy(id = Some(reportUUID)))
-
           mockUserRepository.findByLogin(reportFixture.companySiret.get) returns Future(None)
-          mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
 
           val controller = application.injector.instanceOf[ReportController]
           val result = controller.createReport().apply(FakeRequest().withBody(Json.toJson(reportFixture)))
 
           Helpers.status(result) must beEqualTo(OK)
-          contentAsJson(result) must equalTo(Json.toJson(reportFixture.copy(id = Some(reportUUID))))
 
           there was one(mockReportRepository).create(any[Report])
           there was one(mockMailerService)
@@ -172,14 +167,12 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "if the professional has already an account :" +
       "- create the report" +
       "- send an acknowledgment mail to the consummer" +
-      "- send a notification mail to the professional" +
-      "- return the report" should {
+      "- create an event 'CONTACT_MAIL'" +
+      "- send a notification mail to the professional" should {
 
       "ReportController" in new Context {
 
         new WithApplication(application) {
-
-          mockReportRepository.create(any[Report]) returns Future(reportFixture.copy(id = Some(reportUUID)))
 
           mockUserRepository.findByLogin(reportFixture.companySiret.get) returns Future(Some(proIdentity))
 
@@ -187,10 +180,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           val result = controller.createReport().apply(FakeRequest().withBody(Json.toJson(reportFixture)))
 
           Helpers.status(result) must beEqualTo(OK)
-          contentAsJson(result) must equalTo(Json.toJson(reportFixture.copy(id = Some(reportUUID))))
 
           there was no(mockUserRepository).create(any[User])
           there was one(mockReportRepository).create(any[Report])
+          there was one(mockEventRepository).createEvent(any[Event])
           there was one(mockMailerService)
             .sendEmail(application.configuration.get[String]("play.mail.from"), reportFixture.email)(
               "Votre signalement",
@@ -276,9 +269,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture.copy(statusPro = Some(StatusPro.A_TRAITER))))
           mockEventRepository.getEvents(reportUUID, EventFilter(None)) returns Future(List())
 
-          mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
-          mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-
           val controller = application.injector.instanceOf[ReportController]
           val result = controller.getReport(reportUUID.toString).apply(FakeRequest().withAuthenticator[AuthEnv](proLoginInfo))
 
@@ -312,8 +302,14 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
+    mockReportRepository.create(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
+    mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
+
+    mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
+
+    mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
 
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {
