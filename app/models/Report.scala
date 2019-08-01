@@ -6,7 +6,7 @@ import java.util.UUID
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.StatusConso.StatusConsoValue
-import utils.Constants.StatusPro.StatusProValue
+import utils.Constants.StatusPro.{PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, StatusProValue}
 
 case class Report(
                    id: Option[UUID],
@@ -32,6 +32,13 @@ object Report {
   implicit val reportWriter = Json.writes[Report]
   implicit val reportReader = Json.reads[Report]
 
+  private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
+    statusPro match {
+      case Some(PROMESSE_ACTION) | Some(PROMESSE_ACTION_REFUSEE) => statusPro.get.value
+      case _ => ""
+    }
+  }
+
   val reportProWriter = new Writes[Report] {
     def writes(report: Report) =
       Json.obj(
@@ -45,7 +52,8 @@ object Report {
       "companyPostalCode" -> report.companyPostalCode,
       "companySiret" -> report.companySiret,
       "files" -> report.files,
-      "contactAgreement" -> report.contactAgreement
+      "contactAgreement" -> report.contactAgreement,
+      "statusPro" -> getStatusProFiltered(report.statusPro)
     ) ++ (report.contactAgreement match {
         case true => Json.obj(
           "firstName" -> report.firstName,

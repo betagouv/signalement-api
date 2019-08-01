@@ -1,0 +1,55 @@
+@(report: Report)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Nouveau signalement</title>
+    </head>
+    <body>
+        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
+            <div style="text-align: center; margin: 30px auto 50px">
+                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
+                <br>
+            </div>
+
+            <p>
+                Bonjour,
+            </p>
+
+            <p>
+                Nous avons reçu un nouveau signalement le @report.creationDate.get.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant votre établissement :
+            </p>
+
+            <p style="text-align: center;">
+                @views.html.fragments.address(report.companyAddress)
+            </p>
+
+            <p>
+                SignalConso a pour objectif de faire baisser les anomalies en intégrant davantage de transparence dans le traitement des plaintes.
+                Vous avez la possibilité d’indiquer aux enquêteurs de la DGCCRF <b>les mesures que vous avez / allez mettre en place pour solutionner le problème.</b>
+                Dans la même logique de transparence, votre réponse sera également transmise au consommateur.
+            </p>
+
+            <p>
+                Si vous estimez que ce signalement est infondé, nous vous invitons à l’indiquer également.
+            </p>
+
+            <p>
+                Pour consulter vos signalements, il vous suffit de vous connecter sur votre <a href="https://signalconso.beta.gouv.fr/connexion">Espace Professionnel</a>
+                à l’aide de votre numéro SIRET et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
+            </p>
+
+            <p>
+                Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser directement depuis la page de connexion.
+            </p>
+
+            <p>Cordialement,</p>
+
+            <p>
+                <i>L'équipe SignalConso</i>
+            </p>
+
+        </div>
+    </body>
+</html>
