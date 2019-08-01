@@ -52,10 +52,13 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
         ReportFilter(departments = departments, start = Some(taskDate.minusDays(7)), end = Some(taskDate))
     ).map(reports =>
       departments.foreach(department =>
-        sendMailReportsOfTheWeek(
-          reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
-          department,
-          taskDate.minusDays(7).toLocalDate)
+        reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)) match {
+          case Nil =>
+          case _ => sendMailReportsOfTheWeek(
+            reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
+            department,
+            taskDate.minusDays(7).toLocalDate)
+        }
       )
     )
 
@@ -73,7 +76,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
         case 1 => "Un nouveau signalement"
         case n => s"${reports.length} nouveaux signalements"
       }} pour le département ${department}",
-      bodyHtml = views.html.mails.reportOfTheWeek(reports, department, startDate).toString,
+      bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
