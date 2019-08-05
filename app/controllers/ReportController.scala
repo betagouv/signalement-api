@@ -68,7 +68,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => PROMESSE_ACTION_REFUSEE
+    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
+    case (MAL_ATTRIBUE, _)                     => SIGNALEMENT_MAL_ATTRIBUE
+    case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
+    case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
     case (_, _)                                => previousStatus.getOrElse(NA)
 
   }

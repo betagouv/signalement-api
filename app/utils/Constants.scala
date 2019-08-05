@@ -27,8 +27,10 @@ object Constants {
     object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
     object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
-    object PROMESSE_ACTION_REFUSEE extends StatusProValue("Pas de promesse d'action")
-
+    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
+    object SIGNALEMENT_MAL_ATTRIBUE extends StatusProValue("Signalement mal attribué")
+    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté")
+    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré")
 
     val status = Seq(
       A_TRAITER,
@@ -39,7 +41,10 @@ object Constants {
       SIGNALEMENT_REFUSE,
       ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
-      PROMESSE_ACTION_REFUSEE
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
     )
 
     def fromValue(value: String) = status.find(_.value == value)
@@ -127,6 +132,9 @@ object Constants {
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object MAL_ATTRIBUE extends ActionEventValue("Signalement mal attribué")
+    object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
+    object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
@@ -148,7 +156,18 @@ object Constants {
       RETOUR_COURRIER,
       REPONSE_PRO_CONTACT,
       ENVOI_SIGNALEMENT,
-      REPONSE_PRO_SIGNALEMENT
+      REPONSE_PRO_SIGNALEMENT,
+      MAL_ATTRIBUE,
+      NON_CONSULTE,
+      CONSULTE_IGNORE
+    )
+
+    val actionProsFinals = Seq(
+      HORS_PERIMETRE,
+      REPONSE_PRO_SIGNALEMENT,
+      MAL_ATTRIBUE,
+      NON_CONSULTE,
+      CONSULTE_IGNORE
     )
 
     val actionConsos = Seq(

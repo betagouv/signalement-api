@@ -8,7 +8,7 @@ import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPe
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
-import utils.Constants.StatusPro.{PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_TRANSMIS, StatusProValue}
+import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_TRANSMIS, StatusProValue}
 import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
