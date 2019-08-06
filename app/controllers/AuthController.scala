@@ -78,7 +78,7 @@ class AuthController @Inject()(
             } yield {
               Ok
             }
-          case None => Future.successful(Ok)
+          case _ => Future.successful(Ok) // TODO: renvoyer une erreur? 424 FAILED_DEPENDENCY? 422 UNPROCESSABLE_ENTITY? 412 PRECONDITION_FAILED
         }
     )
   }
