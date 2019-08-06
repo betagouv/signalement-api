@@ -15,7 +15,7 @@ import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.{Configuration, Logger}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json, OFormat, Writes}
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
@@ -24,14 +24,14 @@ import repositories.{EventFilter, EventRepository, ReportRepository, UserReposit
 import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType.{CONSO, EventTypeValue, PRO}
+import utils.Constants.EventType.{CONSO, PRO}
 import utils.Constants.StatusConso._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.Constants.StatusPro._
 import utils.silhouette.AuthEnv
 
 import scala.concurrent.Future
-import scala.util.Random
+
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
   val logger: Logger = Logger(this.getClass)
@@ -96,6 +96,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA)) must equalTo(SIGNALEMENT_INFONDE)
         controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS)) must equalTo(TRAITEMENT_EN_COURS)
         controller.determineStatusPro(eventFixture.copy(action = RETOUR_COURRIER), Some(TRAITEMENT_EN_COURS)) must equalTo(ADRESSE_INCORRECTE)
+        controller.determineStatusPro(eventFixture.copy(action = MAL_ATTRIBUE), Some(TRAITEMENT_EN_COURS)) must equalTo(SIGNALEMENT_MAL_ATTRIBUE)
+        controller.determineStatusPro(eventFixture.copy(action = NON_CONSULTE), Some(SIGNALEMENT_TRANSMIS)) must equalTo(SIGNALEMENT_NON_CONSULTE)
+        controller.determineStatusPro(eventFixture.copy(action = CONSULTE_IGNORE), Some(A_TRAITER)) must equalTo(SIGNALEMENT_CONSULTE_IGNORE)
       }
     }
   }
@@ -123,7 +126,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO)) must equalTo(FAIT)
         controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER)) must equalTo(FAIT)
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), None) must equalTo(EN_ATTENTE)
-
         controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(A_RECONTACTER)) must equalTo(A_RECONTACTER)
       }
     }
@@ -131,7 +133,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   "createReport when the report concerns a professional in an authorized department" should {
 
-    val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
       None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(LocalDateTime.now()),
       "firstName", "lastName", "email", true, List(), None, None
@@ -356,6 +357,38 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
       }
     }
+
+    "for event action 'MAL ATTRIBUE' : " +
+      " - create event " +
+      " - send specific email " should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, PRO, MAL_ATTRIBUE, None, None)
+
+          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
+          mockUserRepository.get(adminIdentity.id) returns Future(Some(adminIdentity))
+
+          val controller = application.injector.instanceOf[ReportController]
+          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](adminLoginInfo))
+
+          Helpers.status(result) must beEqualTo(OK)
+
+          there was one(mockEventRepository).createEvent(any[Event])
+          there was one(mockUserRepository).get(any[UUID])
+
+          there was one(mockMailerService).sendEmail(application.configuration.get[String]("play.mail.from"), "email")(
+            subject = "Le professionnel a répondu à votre signalement",
+            bodyHtml = views.html.mails.consumer.reportWrongAssignment(reportFixture, eventFixture).toString,
+            attachments = Seq(
+              AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+            )
+          )
+        }
+      }
+    }
+
 
   }
 
