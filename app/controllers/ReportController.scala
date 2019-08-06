@@ -117,9 +117,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               }).getOrElse(Future(None))
               _ <- report.flatMap(r => (user, event.action) match {
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
-                case (Some(u), MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
-                case (Some(u), NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
-                case (Some(u), CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
+                case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
+                case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
+                case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
               }).getOrElse(Future(None))
             } yield {
