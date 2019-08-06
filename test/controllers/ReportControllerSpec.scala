@@ -376,7 +376,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           Helpers.status(result) must beEqualTo(OK)
 
           there was one(mockEventRepository).createEvent(any[Event])
-          there was one(mockUserRepository).get(any[UUID])
+          there was one(mockUserRepository).get(adminIdentity.id)
 
           there was one(mockMailerService).sendEmail(application.configuration.get[String]("play.mail.from"), "email")(
             subject = "Le professionnel a répondu à votre signalement",
