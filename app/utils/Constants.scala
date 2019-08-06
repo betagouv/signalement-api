@@ -162,7 +162,7 @@ object Constants {
       CONSULTE_IGNORE
     )
 
-    val actionProsFinals = Seq(
+    val actionProFinals = Seq(
       HORS_PERIMETRE,
       REPONSE_PRO_SIGNALEMENT,
       MAL_ATTRIBUE,
