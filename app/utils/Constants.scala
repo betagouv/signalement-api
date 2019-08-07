@@ -22,9 +22,8 @@ object Constants {
     object A_TRAITER extends StatusProValue("À traiter")
     object NA extends StatusProValue("NA")
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement")
+    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement") // TODO à supprimer probablement
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
     object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
     object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
@@ -38,7 +37,6 @@ object Constants {
       TRAITEMENT_EN_COURS,
       A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
-      SIGNALEMENT_REFUSE,
       ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
