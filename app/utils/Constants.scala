@@ -47,6 +47,15 @@ object Constants {
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
+    val statusFinals = Seq(
+      NA,
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
+    )
+
     def fromValue(value: String) = status.find(_.value == value)
 
   }
