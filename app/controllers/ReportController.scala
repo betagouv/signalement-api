@@ -65,7 +65,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
     case (RETOUR_COURRIER, _)                  => ADRESSE_INCORRECTE
     case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
-    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
+    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_NON_CONSULTE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
     case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
@@ -542,7 +542,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     start: Option[String],
     end: Option[String],
     category: Option[String],
-    statusPro: Option[String],
+    statusPros: Option[String],
     statusConso: Option[String],
     details: Option[String]
 
@@ -575,7 +575,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      statusPro,
+      statusPros.map(status => status.split(",").toSeq).getOrElse(Seq()),
       statusConso,
       details
     )
@@ -615,7 +615,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                      start: Option[String],
                      end: Option[String],
                      category: Option[String],
-                     statusPro: Option[String],
+                     statusPros: Option[String],
                      statusConso: Option[String],
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
@@ -625,11 +625,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
+    val statusProsSeq = statusPros.getOrElse("").split(",").toSeq
+
     for {
       result <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, statusConso, details)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
       )
       reports <- Future(result.entities)
       reportsData <- Future.sequence(reports.map(extractDataFromReport(_, request.identity.userRole)))
@@ -689,7 +691,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               case(_) => None
             },
             siret.map(siret => Row().withCellValues("Siret", siret)),
-            statusPro.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
+            statusPros.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
             statusConso.map(statusConso => Row().withCellValues("Statut conso", statusConso)),
             category.map(category => Row().withCellValues("Catégorie", category)),
             details.map(details => Row().withCellValues("Mots clés", details)),

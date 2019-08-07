@@ -22,7 +22,7 @@ case class ReportFilter(
                          start: Option[LocalDateTime] = None,
                          end: Option[LocalDateTime] = None,
                          category: Option[String] = None,
-                         statusPro: Option[String] = None,
+                         statusPros: Seq[String] = List(),
                          statusConso: Option[String] = None,
                          details: Option[String] = None
                        )
@@ -258,8 +258,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.category) {
             case(table, category) => table.category === category
           }
-          .filterOpt(filter.statusPro) {
-            case(table, statusPro) => table.statusPro === statusPro
+          .filterIf(filter.statusPros.length > 0) {
+            case table => table.statusPro.inSet(filter.statusPros).getOrElse(false)
           }
           .filterOpt(filter.statusConso) {
             case(table, statusConso) => table.statusConso === statusConso
