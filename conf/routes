@@ -9,7 +9,7 @@ GET          /api                                        controllers.StaticContr
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
 
 # Report API
-GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
+GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPros: Option[String], statusConso: Option[String], details: Option[String])
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
