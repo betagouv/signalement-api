@@ -11,6 +11,7 @@ import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
+import models.UserRoles.DGCCRF
 import models._
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
@@ -440,7 +441,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => {
-        reportRepository.getReport(id).flatMap(report => (report, request.identity.userRole) match {
+        reportRepository.getReport(id).map { rep =>
+          rep match {
+            case Some(r) => Some(r.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(r.statusPro, request.identity.userRole))))
+            case _ => None
+          }
+        }.flatMap(report => (report, request.identity.userRole) match {
           case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
           case (Some(report), UserRoles.Pro) =>
             for {
@@ -448,8 +454,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               firstView <- Future(report.statusPro.getOrElse(Constants.StatusPro.A_TRAITER) == Constants.StatusPro.A_TRAITER && !events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
               report <- firstView match {
                 case true => manageFirstViewOfReportByPro(report, request.identity.id)
-                case false =>
-                  Future(report)
+                case false => Future(report)
               }
             } yield {
               Ok(Json.toJson(report))
