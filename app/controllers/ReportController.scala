@@ -625,7 +625,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    val statusProsSeq = statusPros.getOrElse("").split(",").toSeq
+    val statusProsSeq = statusPros.map(status => status.split(",").toSeq).getOrElse(Seq())
 
     for {
       result <- reportRepository.getReports(
@@ -711,8 +711,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
-
-
     for {
       events <- eventRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
       activationKey <- (report.companySiret, departmentAuthorized(report)) match {
@@ -737,7 +735,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
           .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        report.statusPro.map(_.value).getOrElse(""),
+        getStatusProWithUserRole(report.statusPro, userRole),
         report.statusPro
           .filter(_ == StatusPro.PROMESSE_ACTION)
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail)).getOrElse(""),
@@ -759,6 +757,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         }
       }
     }
+  }
+
+  private def getStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
+
+    statusPro.map(status => (statusFinals.contains(status), userRole) match {
+      case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
+      case (_, _) => status.value
+    }).getOrElse("")
   }
 
 }
