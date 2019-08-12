@@ -1,5 +1,6 @@
 package utils
 
+import models.{UserRole, UserRoles}
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -55,6 +56,23 @@ object Constants {
     )
 
     def fromValue(value: String) = status.find(_.value == value)
+
+    def getGenericStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
+
+      statusPro.map(status => (statusFinals.contains(status), userRole) match {
+        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
+        case (_, _) => status.value
+      }).getOrElse("")
+    }
+
+    def getSpecificsStatusProWithUserRole(statusPro: Option[String], userRole: UserRole) = {
+
+      statusPro.map(status => (status, userRole) match {
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusFinals.contains(s)).map(_.value)
+        case (_, _) => List(status)
+      }).getOrElse(List())
+    }
+
 
   }
 

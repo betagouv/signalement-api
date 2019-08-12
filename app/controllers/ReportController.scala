@@ -135,7 +135,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     )
   }
 
-
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("createReport")
@@ -542,7 +541,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     start: Option[String],
     end: Option[String],
     category: Option[String],
-    statusPros: Option[String],
+    statusPro: Option[String],
     statusConso: Option[String],
     details: Option[String]
 
@@ -575,14 +574,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      statusPros.map(status => status.split(",").toSeq).getOrElse(Seq()),
+      getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole),
       statusConso,
       details
     )
 
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
-      Future.successful(Ok(Json.toJson(paginatedReports)))
+      val reports = paginatedReports.copy(
+        entities = paginatedReports.entities.map {
+          report => report.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)))
+        }
+      )
+      Future.successful(Ok(Json.toJson(reports)))
     })
 
   }
@@ -615,7 +619,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                      start: Option[String],
                      end: Option[String],
                      category: Option[String],
-                     statusPros: Option[String],
+                     statusPro: Option[String],
                      statusConso: Option[String],
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
@@ -625,7 +629,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    val statusProsSeq = statusPros.map(status => status.split(",").toSeq).getOrElse(Seq())
+    //val statusProsSeq = statusPros.map(status => status.split(",").toSeq).getOrElse(Seq())
+
+    val statusProsSeq = getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole)
 
     for {
       result <- reportRepository.getReports(
@@ -691,7 +697,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               case(_) => None
             },
             siret.map(siret => Row().withCellValues("Siret", siret)),
-            statusPros.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
+            statusPro.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
             statusConso.map(statusConso => Row().withCellValues("Statut conso", statusConso)),
             category.map(category => Row().withCellValues("Catégorie", category)),
             details.map(details => Row().withCellValues("Mots clés", details)),
@@ -735,7 +741,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
           .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        getStatusProWithUserRole(report.statusPro, userRole),
+        getGenericStatusProWithUserRole(report.statusPro, userRole),
         report.statusPro
           .filter(_ == StatusPro.PROMESSE_ACTION)
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail)).getOrElse(""),
@@ -759,12 +765,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  private def getStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
 
-    statusPro.map(status => (statusFinals.contains(status), userRole) match {
-      case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
-      case (_, _) => status.value
-    }).getOrElse("")
-  }
 
 }

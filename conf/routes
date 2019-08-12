@@ -9,13 +9,13 @@ GET          /api                                        controllers.StaticContr
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
 
 # Report API
-GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPros: Option[String], statusConso: Option[String], details: Option[String])
+GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
 GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
 DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
-GET          /api/reports                               controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPros: Option[String], statusConso: Option[String], details: Option[String])
+GET          /api/reports                               controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
 POST         /api/reports                               controllers.ReportController.createReport()
 PUT          /api/reports                               controllers.ReportController.updateReport()
 
@@ -25,7 +25,6 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 
 # Constants API
 GET         /api/constants/actionPros                   controllers.ConstantController.getActionPros()
-GET         /api/constants/actionProFinals              controllers.ConstantController.getActionProFinals()
 GET         /api/constants/actionConsos                 controllers.ConstantController.getActionConsos()
 GET         /api/constants/actionAgents                 controllers.ConstantController.getActionAgents()
 GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
