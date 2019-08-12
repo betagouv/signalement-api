@@ -25,10 +25,10 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 
 # Constants API
 GET         /api/constants/actionPros                   controllers.ConstantController.getActionPros()
+GET         /api/constants/actionProFinals              controllers.ConstantController.getActionProFinals()
 GET         /api/constants/actionConsos                 controllers.ConstantController.getActionConsos()
 GET         /api/constants/actionAgents                 controllers.ConstantController.getActionAgents()
 GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
-GET         /api/constants/statusProFinals              controllers.ConstantController.getStatusProFinals()
 GET         /api/constants/statusConsos                 controllers.ConstantController.getStatusConsos()
 
 # Company API

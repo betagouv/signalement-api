@@ -42,8 +42,8 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
     }
   }
 
-  def getStatusProFinals = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(StatusPro.statusFinals)))
+  def getActionProFinals = SecuredAction.async { implicit request =>
+    Future.successful(Ok(Json.toJson(actionProFinals)))
   }
 
   def getStatusConsos = SecuredAction.async { implicit request =>
