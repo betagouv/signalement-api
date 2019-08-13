@@ -451,7 +451,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case (Some(report), UserRoles.Pro) =>
             for {
               events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
-              firstView <- Future(report.statusPro.getOrElse(Constants.StatusPro.A_TRAITER) == Constants.StatusPro.A_TRAITER && !events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
+              firstView <- Future(!events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
               report <- firstView match {
                 case true => manageFirstViewOfReportByPro(report, request.identity.id)
                 case false => Future(report)

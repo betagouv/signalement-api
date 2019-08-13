@@ -6,7 +6,7 @@ import java.util.UUID
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.StatusConso.StatusConsoValue
-import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_INFONDE, StatusProValue}
+import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_TRANSMIS, StatusProValue}
 
 case class Report(
                    id: Option[UUID],
@@ -34,7 +34,7 @@ object Report {
 
   private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
     statusPro match {
-      case Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) => statusPro.get.value
+      case Some(SIGNALEMENT_TRANSMIS) | Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) | Some(SIGNALEMENT_CONSULTE_IGNORE) => statusPro.get.value
       case _ => ""
     }
   }
