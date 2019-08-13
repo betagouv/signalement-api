@@ -117,6 +117,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
               }).getOrElse(Future(None))
               _ <- report.flatMap(r => (user, event.action) match {
+                case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
                 case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
                 case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
