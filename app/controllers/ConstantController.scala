@@ -37,7 +37,7 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
   def getStatusPros = SecuredAction.async { implicit request =>
 
     request.identity.userRole match {
-      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(StatusPro.statusFinals :+ TRAITEMENT_EN_COURS)))
+      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(TRAITEMENT_EN_COURS +: StatusPro.statusFinals)))
       case _ => Future.successful(Ok(Json.toJson(statusPros)))
     }
   }
