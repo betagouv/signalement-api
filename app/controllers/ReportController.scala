@@ -184,7 +184,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Constants.EventType.PRO,
                 Constants.ActionEvent.CONTACT_EMAIL,
                 None,
-                Some("Notification du professionnel par mail de la réception d'un nouveau signalement")
+                Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse() } )")
               )
             )
             _ <- reportRepository.update(
@@ -211,6 +211,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     } yield ()
   }
 
+  // utility : swap Option[Future[X]] in Future[Option[X]]
+  // @see : https://stackoverflow.com/questions/38226203/scala-optionfuturet-to-futureoptiont
+  def swap[M](x: Option[Future[M]]): Future[Option[M]] =
+    Future.sequence(Option.option2Iterable(x)).map(_.headOption)
+
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
@@ -224,7 +229,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case Some(id) => {
             for {
               existingReport <- reportRepository.getReport(id)
-              _ <- existingReport.map(r => reportRepository.update(r.copy(
+              resultReport <- swap(existingReport.map(r => reportRepository.update(r.copy(
                   firstName = report.firstName,
                   lastName = report.lastName,
                   email= report.email,
@@ -234,9 +239,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret
                 ))
-              ).getOrElse(Future(None))
-              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, departmentAuthorized(report)) match {
-                case (someExistingSiret, Some(siret), true) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(report)
+              ))
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, departmentAuthorized(report), resultReport) match {
+                case (someExistingSiret, Some(siret), true, Some(newReport)) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(newReport)
                 case _ => Future(None)
               }
             } yield {
@@ -288,15 +293,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = professionalUser.email.get)(
-      subject = "Nouveau signalement",
-      bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
+
+    professionalUser.email match {
+      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = mail)(
+        subject = "Nouveau signalement",
+        bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      ))
+      case _ => Future(None)
+    }
   }
 
   private def sendMailReportAcknowledgment(report: Report, files: List[ReportFile]) = {
