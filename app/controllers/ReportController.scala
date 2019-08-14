@@ -357,15 +357,20 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.get)(
-      subject = "Votre réponse au signalement",
-      bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
+
+    user.email match {
+      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = mail)(
+        subject = "Votre réponse au signalement",
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      ))
+      case _ => Future(None)
+    }
+
   }
 
   private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event) = {
