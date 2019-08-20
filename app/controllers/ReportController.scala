@@ -11,6 +11,7 @@ import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
+import models.UserRoles.DGCCRF
 import models._
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
@@ -65,10 +66,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
     case (RETOUR_COURRIER, _)                  => ADRESSE_INCORRECTE
     case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
-    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_REFUSE
+    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_NON_CONSULTE
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => PROMESSE_ACTION_REFUSEE
+    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
+    case (MAL_ATTRIBUE, _)                     => SIGNALEMENT_MAL_ATTRIBUE
+    case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
+    case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
     case (_, _)                                => previousStatus.getOrElse(NA)
 
   }
@@ -113,7 +117,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
               }).getOrElse(Future(None))
               _ <- report.flatMap(r => (user, event.action) match {
+                case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
+                case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
+                case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
+                case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
               }).getOrElse(Future(None))
             } yield {
@@ -128,7 +136,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
     )
   }
-
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
 
@@ -177,7 +184,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Constants.EventType.PRO,
                 Constants.ActionEvent.CONTACT_EMAIL,
                 None,
-                Some("Notification du professionnel par mail de la réception d'un nouveau signalement")
+                Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse() } )")
               )
             )
             _ <- reportRepository.update(
@@ -204,6 +211,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     } yield ()
   }
 
+  // utility : swap Option[Future[X]] in Future[Option[X]]
+  // @see : https://stackoverflow.com/questions/38226203/scala-optionfuturet-to-futureoptiont
+  def swap[M](x: Option[Future[M]]): Future[Option[M]] =
+    Future.sequence(Option.option2Iterable(x)).map(_.headOption)
+
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
@@ -217,7 +229,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case Some(id) => {
             for {
               existingReport <- reportRepository.getReport(id)
-              _ <- existingReport.map(r => reportRepository.update(r.copy(
+              resultReport <- swap(existingReport.map(r => reportRepository.update(r.copy(
                   firstName = report.firstName,
                   lastName = report.lastName,
                   email= report.email,
@@ -227,9 +239,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companyPostalCode = report.companyPostalCode,
                   companySiret = report.companySiret
                 ))
-              ).getOrElse(Future(None))
-              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, departmentAuthorized(report)) match {
-                case (someExistingSiret, Some(siret), true) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(report)
+              ))
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, departmentAuthorized(report), resultReport) match {
+                case (someExistingSiret, Some(siret), true, Some(newReport)) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(newReport)
                 case _ => Future(None)
               }
             } yield {
@@ -281,15 +293,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = professionalUser.email.get)(
-      subject = "Nouveau signalement",
-      bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
+
+    professionalUser.email match {
+      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = mail)(
+        subject = "Nouveau signalement",
+        bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      ))
+      case _ => Future(None)
+    }
   }
 
   private def sendMailReportAcknowledgment(report: Report, files: List[ReportFile]) = {
@@ -313,16 +329,57 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
+  private def sendMailWrongAssignment(report: Report, event: Event) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
-      recipients = user.email.get)(
-      subject = "Votre réponse au signalement",
-      bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+      recipients = report.email)(
+      subject = "Le professionnel a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
     ))
+  }
+
+  private def sendMailClosedByNoReading(report: Report) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Le professionnel n’a pas souhaité consulter votre signalement",
+      bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    ))
+  }
+
+  private def sendMailClosedByNoAction(report: Report) = {
+    Future(mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Le professionnel n’a pas répondu au signalement",
+      bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    ))
+  }
+
+  private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
+
+    user.email match {
+      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = mail)(
+        subject = "Votre réponse au signalement",
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      ))
+      case _ => Future(None)
+    }
+
   }
 
   private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event) = {
@@ -399,16 +456,20 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => {
-        reportRepository.getReport(id).flatMap(report => (report, request.identity.userRole) match {
+        reportRepository.getReport(id).map { rep =>
+          rep match {
+            case Some(r) => Some(r.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(r.statusPro, request.identity.userRole))))
+            case _ => None
+          }
+        }.flatMap(report => (report, request.identity.userRole) match {
           case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
           case (Some(report), UserRoles.Pro) =>
             for {
               events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
-              firstView <- Future(report.statusPro.getOrElse(Constants.StatusPro.A_TRAITER) == Constants.StatusPro.A_TRAITER && !events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
+              firstView <- Future(!events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
               report <- firstView match {
                 case true => manageFirstViewOfReportByPro(report, request.identity.id)
-                case false =>
-                  Future(report)
+                case false => Future(report)
               }
             } yield {
               Ok(Json.toJson(report))
@@ -533,14 +594,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      statusPro,
+      getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole),
       statusConso,
       details
     )
 
     logger.debug(s"ReportFilter $filter")
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
-      Future.successful(Ok(Json.toJson(paginatedReports)))
+      val reports = paginatedReports.copy(
+        entities = paginatedReports.entities.map {
+          report => report.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)))
+        }
+      )
+      Future.successful(Ok(Json.toJson(reports)))
     })
 
   }
@@ -583,11 +649,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
+    //val statusProsSeq = statusPros.map(status => status.split(",").toSeq).getOrElse(Seq())
+
+    val statusProsSeq = getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole)
+
     for {
       result <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusPro, statusConso, details)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
       )
       reports <- Future(result.entities)
       reportsData <- Future.sequence(reports.map(extractDataFromReport(_, request.identity.userRole)))
@@ -667,8 +737,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
-
-
     for {
       events <- eventRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
       activationKey <- (report.companySiret, departmentAuthorized(report)) match {
@@ -693,7 +761,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
           .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        report.statusPro.map(_.value).getOrElse(""),
+        getGenericStatusProWithUserRole(report.statusPro, userRole),
         report.statusPro
           .filter(_ == StatusPro.PROMESSE_ACTION)
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail)).getOrElse(""),
@@ -716,5 +784,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
     }
   }
+
+
 
 }
