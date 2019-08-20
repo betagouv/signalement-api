@@ -8,7 +8,7 @@ import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPe
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
-import utils.Constants.StatusPro.{PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_TRANSMIS, StatusProValue}
+import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_TRANSMIS, StatusProValue}
 import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
@@ -22,7 +22,7 @@ case class ReportFilter(
                          start: Option[LocalDateTime] = None,
                          end: Option[LocalDateTime] = None,
                          category: Option[String] = None,
-                         statusPro: Option[String] = None,
+                         statusPros: Seq[String] = List(),
                          statusConso: Option[String] = None,
                          details: Option[String] = None
                        )
@@ -258,8 +258,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.category) {
             case(table, category) => table.category === category
           }
-          .filterOpt(filter.statusPro) {
-            case(table, statusPro) => table.statusPro === statusPro
+          .filterIf(filter.statusPros.length > 0) {
+            case table => table.statusPro.inSet(filter.statusPros).getOrElse(false)
           }
           .filterOpt(filter.statusConso) {
             case(table, statusConso) => table.statusConso === statusConso

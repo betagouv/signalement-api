@@ -81,7 +81,7 @@ class AccountController @Inject()(
 
     for {
       user <- userRepository.findByLogin(siret)
-      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusPro = Some(StatusPro.A_TRAITER.value)))
+      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusPros = Seq(StatusPro.A_TRAITER.value)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)

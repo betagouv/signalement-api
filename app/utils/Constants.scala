@@ -1,5 +1,6 @@
 package utils
 
+import models.{UserRole, UserRoles}
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -22,13 +23,14 @@ object Constants {
     object A_TRAITER extends StatusProValue("À traiter")
     object NA extends StatusProValue("NA")
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement")
+    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement") // TODO à supprimer probablement
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
     object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
-    object PROMESSE_ACTION_REFUSEE extends StatusProValue("Pas de promesse d'action")
-
+    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
+    object SIGNALEMENT_MAL_ATTRIBUE extends StatusProValue("Signalement mal attribué")
+    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté")
+    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré")
 
     val status = Seq(
       A_TRAITER,
@@ -36,13 +38,41 @@ object Constants {
       TRAITEMENT_EN_COURS,
       A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
-      SIGNALEMENT_REFUSE,
       ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
-      PROMESSE_ACTION_REFUSEE
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
+    )
+
+    val statusFinals = Seq(
+      NA,
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
     )
 
     def fromValue(value: String) = status.find(_.value == value)
+
+    def getGenericStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
+
+      statusPro.map(status => (statusFinals.contains(status), userRole) match {
+        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
+        case (_, _) => status.value
+      }).getOrElse("")
+    }
+
+    def getSpecificsStatusProWithUserRole(statusPro: Option[String], userRole: UserRole) = {
+
+      statusPro.map(status => (status, userRole) match {
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusFinals.contains(s)).map(_.value)
+        case (_, _) => List(status)
+      }).getOrElse(List())
+    }
+
 
   }
 
@@ -127,6 +157,9 @@ object Constants {
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object MAL_ATTRIBUE extends ActionEventValue("Signalement mal attribué")
+    object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
+    object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
@@ -148,7 +181,18 @@ object Constants {
       RETOUR_COURRIER,
       REPONSE_PRO_CONTACT,
       ENVOI_SIGNALEMENT,
-      REPONSE_PRO_SIGNALEMENT
+      REPONSE_PRO_SIGNALEMENT,
+      MAL_ATTRIBUE,
+      NON_CONSULTE,
+      CONSULTE_IGNORE
+    )
+
+    val actionProFinals = Seq(
+      HORS_PERIMETRE,
+      REPONSE_PRO_SIGNALEMENT,
+      MAL_ATTRIBUE,
+      NON_CONSULTE,
+      CONSULTE_IGNORE
     )
 
     val actionConsos = Seq(
