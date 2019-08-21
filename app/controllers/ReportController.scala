@@ -104,26 +104,26 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             for {
               report <- reportRepository.getReport(id)
               user <- userRepository.get(event.userId)
-              _ <- report.flatMap(r => user.map(u => eventRepository.createEvent(
+              _ <- swap(report.flatMap(r => user.map(u => eventRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
                   creationDate = Some(LocalDateTime.now()),
                   reportId = r.id,
                   userId = u.id
-                )))).getOrElse(Future(None))
-              _ <- report.map(r => reportRepository.update{
+                )))))
+              newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
                     statusPro = Some(determineStatusPro(event, r.statusPro)),
                     statusConso = Some(determineStatusConso(event, r.statusConso)))
-              }).getOrElse(Future(None))
-              _ <- report.flatMap(r => (user, event.action) match {
+              }))
+              _ <- swap(newReport.flatMap(r => (user, event.action) match {
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
                 case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
                 case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
                 case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
-              }).getOrElse(Future(None))
+              }))
             } yield {
               (report, user) match {
                 case (_, None) => BadRequest
@@ -520,13 +520,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Envoi email au consommateur d'information de transmission")
         )
       )
-      report <- reportRepository.update(
+      newReport <- reportRepository.update(
         report.copy(
           statusPro = Some(determineStatusPro(event, report.statusPro)),
           statusConso = Some(determineStatusConso(event, report.statusConso))
         )
       )
-    } yield (report)
+    } yield (newReport)
   }
 
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
