@@ -11,7 +11,6 @@ import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
-import models.UserRoles.DGCCRF
 import models._
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
@@ -153,12 +152,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               statusConso = Some(determineStatusConso(report))
             )
           )
-          attachFilesToReport <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
+          _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
           files <- reportRepository.retrieveReportFiles(report.id.get)
-          mailNotification <- sendMailAdminReportNotification(report, files)
-          mailAcknowledgment <- sendMailReportAcknowledgment(report, files)
+          _ <- sendMailAdminReportNotification(report, files)
+          _ <- sendMailReportAcknowledgment(report, files)
           _ <- (report.companySiret, departmentAuthorized(report)) match {
-            case (Some(siret), true) => notifyProfessionalOfNewReport(report)
+            case (Some(_), true) => notifyProfessionalOfNewReport(report)
             case _ => Future(None)
           }
         } yield {
