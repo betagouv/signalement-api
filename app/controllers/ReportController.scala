@@ -183,7 +183,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Constants.EventType.PRO,
                 Constants.ActionEvent.CONTACT_EMAIL,
                 None,
-                Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse() } )")
+                Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
               )
             )
             _ <- reportRepository.update(
