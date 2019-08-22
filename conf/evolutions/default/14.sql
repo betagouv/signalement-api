@@ -1,6 +1,6 @@
 # --- !Ups
 
-create index no_similar_report on signalement (email, details, date_trunc('day', date_creation), adresse_etablissement);
+create unique index no_similar_report on signalement (email, nom, prenom, details, date_trunc('day'::text, date_creation), adresse_etablissement);
 
 # --- !Downs
 

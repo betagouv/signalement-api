@@ -208,8 +208,8 @@ object Constants {
     )
 
     val actionAgents = Seq(
-      COMMENT,
-      CONTROL
+      CONTROL,
+      COMMENT
     )
 
     def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
