@@ -1,6 +1,5 @@
 package repositories
 
-import java.time.LocalDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -12,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -25,6 +24,7 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
     def userId = column[UUID]("user_id")
     def category = column[String]("category")
     def values = column[List[String]]("values")
+    def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
 
     type SubscriptionData = (UUID, UUID, String, List[String])
 
@@ -45,6 +45,8 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
 
+  private val userTableQuery = TableQuery[userRepository.UserTable]
+
   def create(subscription: Subscription): Future[Subscription] = db
     .run(subscriptionTableQuery += subscription)
     .map(_ => subscription)
@@ -62,5 +64,16 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
     db.run(querySubscription.update(subscription))
       .map(_ => subscription)
   }
+
+  def listSubscribeUserMailsForDepartment(code: String) = db
+    .run(
+      subscriptionTableQuery
+        .filter(subscription => code.bind === subscription.values.any)
+        .joinLeft(userTableQuery).on(_.userId === _.id)
+        .map(_._2)
+        .to[List]
+        .result
+        .map(result => result.flatMap(_.flatMap(_.email)))
+    )
 }
 

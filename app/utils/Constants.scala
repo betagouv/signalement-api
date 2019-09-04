@@ -218,8 +218,28 @@ object Constants {
   object Departments {
 
     val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+    val BretagneFrancheComte = List("21", "25", "39", "58", "70", "71", "89", "90")
+    val Bretagne = List("22", "29", "35", "56")
     val CDVL = List("18", "28", "36", "37", "41", "45")
+    val CollectivitesOutreMer = List("975", "977", "978", "984", "986", "987", "988", "989")
+    val Corse = List("2A", "2B")
+    val GrandEst = List("08", "10", "51", "52", "54", "55", "57", "67", "68", "88")
+    val Guadeloupe = List("971")
+    val Guyane = List("973")
+    val HautsDeFrance = List("02", "59", "60", "62", "80")
+    val IleDeFrance = List("75", "77", "78", "91", "92", "93", "94", "95")
+    val LaReunion = List("974")
+    val Martinique = List("972")
+    val Mayotte = List("976")
+    val Normandie = List("14", "27", "50", "61", "76")
+    val NouvelleAquitaine = List("16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87")
     val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
+    val PaysDeLaLoire = List("44", "49", "53", "72", "85")
+    val ProvenceAlpesCoteAzur = List("04", "05", "06", "13", "83", "84")
+
+    val ALL = AURA ++ BretagneFrancheComte ++ Bretagne ++ CDVL ++ CollectivitesOutreMer ++ Corse ++
+     GrandEst ++ Guadeloupe ++ Guyane ++ HautsDeFrance ++ IleDeFrance ++ LaReunion ++ Martinique ++ Mayotte ++
+      Normandie ++ NouvelleAquitaine ++ OCC ++ PaysDeLaLoire ++ ProvenceAlpesCoteAzur
 
     val AUTHORIZED = AURA ++ CDVL ++ OCC
   }
