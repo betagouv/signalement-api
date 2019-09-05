@@ -28,7 +28,7 @@ import utils.Constants.EventType.{CONSO, PRO}
 import utils.Constants.StatusConso._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.Constants.StatusPro._
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Future
 

@@ -20,7 +20,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.{ReportRepository, UserRepository}
 import tasks.TasksModule
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 

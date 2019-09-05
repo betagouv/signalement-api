@@ -1,4 +1,4 @@
-package utils.silhouette
+package utils.silhouette.auth
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator

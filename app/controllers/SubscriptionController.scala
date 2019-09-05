@@ -8,7 +8,7 @@ import models.{Subscription, UserPermission}
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import repositories.SubscriptionRepository
-import utils.silhouette.{AuthEnv, WithPermission}
+import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
 

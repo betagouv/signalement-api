@@ -13,7 +13,7 @@ import play.api.libs.json.{JsError, JsPath, Json}
 import play.api.libs.mailer.AttachmentFile
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
-import utils.silhouette.{AuthEnv, UserService}
+import utils.silhouette.auth.{AuthEnv, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
 

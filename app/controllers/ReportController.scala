@@ -25,7 +25,8 @@ import utils.Constants.ActionEvent._
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{Departments, EventType, StatusPro}
-import utils.silhouette.{AuthEnv, WithPermission}
+import utils.silhouette.api.APIKeyEnv
+import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,6 +38,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
+                                 val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration,
                                  environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
@@ -608,6 +610,10 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       Future.successful(Ok(Json.toJson(reports)))
     })
 
+  }
+
+  def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
+    reportRepository.count(Some(siret)).flatMap(count => Future(Ok(count.toString)))
   }
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
