@@ -171,7 +171,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     for {
       eitherUserOrKey <- userRepository.findByLogin(report.companySiret.get).map(user => user.map(_ => Left(user.get)).getOrElse(Right(f"${Random.nextInt(1000000)}%06d")))
       _ <- eitherUserOrKey match {
-        case Left(user) =>
+        case Left(user) if user.email.isDefined =>
           for {
             _ <- sendMailProfessionalReportNotification(report, user)
             event <- eventRepository.createEvent(
@@ -206,6 +206,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               UserRoles.ToActivate
             )
           )
+        case _ => Future(None)
       }
     } yield ()
   }
