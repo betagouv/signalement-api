@@ -13,6 +13,7 @@ GET          /api/reports/extract                       controllers.ReportContro
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
+GET          /api/reports/siret/:siret/count            controllers.ReportController.getReportCountBySiret(siret: String)
 GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
 DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
 GET          /api/reports                               controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
@@ -49,6 +50,10 @@ GET         /api/account/:siret/document/activation     controllers.AccountContr
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate
+
+# Subscription API
+GET         /api/subscriptions                          controllers.SubscriptionController.getSubscriptions
+POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
 
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
 

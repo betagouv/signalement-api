@@ -21,11 +21,10 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
- import dbConfig._
- import profile.api._
+  import dbConfig._
+  import PostgresProfile.api._
 
-
-  private class UserTable(tag: Tag) extends Table[User](tag, "users") {
+  class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     def id = column[UUID]("id", O.PrimaryKey)
 

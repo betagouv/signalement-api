@@ -127,8 +127,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
       .map(_ => report)
   }
 
-  def count: Future[Int] = db
-    .run(reportTableQuery.length.result)
+  def count(siret: Option[String] = None): Future[Int] = db
+    .run(reportTableQuery
+      .filterOpt(siret) {
+        case(table, siret) => table.companySiret === siret
+      }
+      .length.result)
 
   def avgDurationsForSendingReport() = {
 
