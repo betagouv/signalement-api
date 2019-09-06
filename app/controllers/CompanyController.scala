@@ -6,7 +6,7 @@ import play.api.Logger
 import play.api.libs.ws._
 import play.api.mvc.{ResponseHeader, Result}
 import play.api.libs.json._
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}

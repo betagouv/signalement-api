@@ -13,7 +13,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.Departments
 import utils.Constants.StatusPro.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.DateUtils
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.ExecutionContext
 
@@ -32,7 +32,7 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
-      reportsCount <- reportRepository.count
+      reportsCount <- reportRepository.count()
       reportsPerMonth <- reportRepository.countPerMonth
       reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
       reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))

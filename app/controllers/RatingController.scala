@@ -9,7 +9,7 @@ import models.Rating
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import repositories.RatingRepository
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 

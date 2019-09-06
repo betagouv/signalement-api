@@ -4,13 +4,11 @@ import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.api.actions.{SecuredRequest, UserAwareRequest}
 import play.api.i18n.I18nSupport
 import play.api.mvc.InjectedController
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 trait BaseController extends InjectedController {
 
   def silhouette: Silhouette[AuthEnv]
-
-  def env: Environment[AuthEnv] = silhouette.env
 
   def SecuredAction = silhouette.SecuredAction
 
