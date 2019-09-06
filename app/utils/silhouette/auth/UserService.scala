@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.services.IdentityService
 import javax.inject.Inject
 import models.User
 import repositories.UserRepository
-import Implicits._
+import utils.silhouette.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 

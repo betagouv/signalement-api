@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import javax.inject.Inject
 import play.api.Logger
 import repositories.UserRepository
-import utils.silhouette.auth.Implicits._
+import utils.silhouette.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

@@ -613,7 +613,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
-    reportRepository.count(Some(siret)).flatMap(count => Future(Ok(count.toString)))
+    reportRepository.count(Some(siret)).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
   }
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {

@@ -1,4 +1,4 @@
-package utils.silhouette.auth
+package utils.silhouette
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
