@@ -393,6 +393,60 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   }
 
+  "getReportCountBySiret" should {
+
+    val siretFixture = "01232456789"
+
+    "return unauthorized when there no X-Api-Key header" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+
+        }
+      }
+    }
+
+    "return unauthorized when X-Api-Key header is invalid" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+
+        }
+      }
+    }
+
+    "return report count when X-Api-Key header is valid" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          mockReportRepository.count(Some(siretFixture)) returns Future(5)
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(OK)
+          contentAsJson(result) must beEqualTo(Json.obj("siret" -> siretFixture, "count" -> 5))
+
+        }
+      }
+    }
+
+  }
+
   trait Context extends Scope {
 
     val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
@@ -431,7 +485,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Configuration(
           "play.evolutions.enabled" -> false,
           "slick.dbs.default.db.connectionPool" -> "disabled",
-          "play.mailer.mock" -> true
+          "play.mailer.mock" -> true,
+          "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret"
         )
       )
       .disable[TasksModule]
