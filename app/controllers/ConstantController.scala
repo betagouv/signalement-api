@@ -5,13 +5,13 @@ import javax.inject._
 import models.UserRoles
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.silhouette.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 import utils.Constants.ActionEvent.{actionAgents, actionConsos, actionProFinals, actionPros}
 import utils.Constants.StatusPro.{TRAITEMENT_EN_COURS, status => statusPros}
 import utils.Constants.StatusConso.{status => statusConsos}
 import utils.Constants.StatusPro
+import utils.silhouette.auth.AuthEnv
 
 
 @Singleton

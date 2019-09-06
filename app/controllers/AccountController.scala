@@ -14,7 +14,7 @@ import play.api._
 import play.api.libs.json.JsError
 import repositories.{ReportFilter, ReportRepository, UserRepository}
 import utils.Constants.StatusPro
-import utils.silhouette.{AuthEnv, WithPermission}
+import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -60,7 +60,8 @@ object UserPermission extends Enumeration {
       deleteFile,
       createEvent,
       activateAccount,
-      editDocuments = Value
+      editDocuments,
+      subscribeReports = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 
@@ -91,7 +92,8 @@ object UserRoles {
     "DGCCRF",
     Seq(
       UserPermission.listReports,
-      UserPermission.createEvent
+      UserPermission.createEvent,
+      UserPermission.subscribeReports
     )
   )
 
