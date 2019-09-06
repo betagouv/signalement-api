@@ -28,6 +28,7 @@ import utils.Constants.EventType.{CONSO, PRO}
 import utils.Constants.StatusConso._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.Constants.StatusPro._
+import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Future
@@ -45,7 +46,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -61,7 +62,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "ReportController" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
         val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
@@ -78,7 +79,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "ReportController" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -108,7 +109,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     "ReportController" in new Context {
       new WithApplication(application) {
 
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
