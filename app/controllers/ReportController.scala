@@ -655,8 +655,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    //val statusProsSeq = statusPros.map(status => status.split(",").toSeq).getOrElse(Seq())
-
     val statusProsSeq = getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole)
 
     for {
@@ -679,7 +677,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ("Code postal", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Siret", Column(autoSized = true, style = centerAlignmentStyle)),
         ("Nom de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
+        ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle))
+      ) ::: {
+        request.identity.userRole match {
+          case UserRoles.Admin => List(
+            ("Email de l'établissement", Column(autoSized = true, style = centerAlignmentStyle))
+          )
+          case _ => List()
+        }
+      } ::: List(
         ("Catégorie", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Sous-catégories", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle)),
@@ -691,13 +697,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle))
-      ) ::: (request.identity.userRole match {
-        case UserRoles.Admin => List(
-          ("Code d'activation", Column(autoSized = true, style = centerAlignmentStyle))
-        )
-        case _ => List()
-      })
+        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle)),
+        ("Actions DGCCRF", Column(autoSized = true, style = leftAlignmentStyle))
+      )
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -744,13 +746,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
 
     for {
-      events <- eventRepository.getEvents(report.id.get, EventFilter(Some(EventType.PRO)))
-      activationKey <- (report.companySiret, departmentAuthorized(report)) match {
-        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.activationKey).getOrElse(None))
+      events <- eventRepository.getEvents(report.id.get, EventFilter(None))
+      companyMail <- (report.companySiret, departmentAuthorized(report)) match {
+        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.email).getOrElse(None))
         case _ => Future(None)
       }
     }
     yield {
+      logger.debug(s"length events ${events.filter(event => event.eventType == Constants.EventType.DGCCRF).length}")
       List(
         report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
         report.companyPostalCode match {
@@ -760,7 +763,15 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.companyPostalCode.getOrElse(""),
         report.companySiret.getOrElse(""),
         report.companyName,
-        report.companyAddress,
+        report.companyAddress
+      ) ::: {
+        userRole match {
+          case UserRoles.Admin => List(
+            companyMail.getOrElse("")
+          )
+          case _ => List()
+        }
+      } ::: List(
         report.category,
         report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
         report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
@@ -779,15 +790,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.contactAgreement match {
           case true => "Oui"
           case _ => "Non"
-        }
-      ) ::: {
-        userRole match {
-          case UserRoles.Admin => List(
-            activationKey.getOrElse("")
-          )
-          case _ => List()
-        }
-      }
+        },
+        events.filter(event => event.eventType == Constants.EventType.DGCCRF)
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
+          .reduceLeftOption((eventDetail1, eventDetail2) => s"$eventDetail1\n$eventDetail2").getOrElse("")
+      )
     }
   }
 
