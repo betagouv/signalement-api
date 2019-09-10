@@ -810,6 +810,23 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     }
   }
 
+  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
+    logger.debug(s"getNbReportsGroupByCompany")
 
+    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReports
+
+    // valeurs par défaut
+    val LIMIT_DEFAULT = 25
+    val LIMIT_MAX = 250
+
+    // normalisation des entrées
+    val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
+    val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
+
+    reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).flatMap( paginatedReports => {
+      Future.successful(Ok(Json.toJson(paginatedReports)))
+    })
+
+  }
 
 }

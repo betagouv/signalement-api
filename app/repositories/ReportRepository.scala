@@ -4,7 +4,7 @@ import java.time.{LocalDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
+import models.{CompanyWithNbReports, PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
@@ -325,6 +325,29 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         .filter(_.id === uuid)
         .delete
     )
+
+  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
+
+    implicit val getCompanyWithNbReports = GetResult(r => CompanyWithNbReports(r.nextString, r.nextString, r.nextString, r.nextString, r.nextInt))
+
+    for {
+      res <- db.run(
+      sql"""select siret_etablissement, code_postal, nom_etablissement, adresse_etablissement, count(*)
+        from signalement
+        group by siret_etablissement, code_postal, nom_etablissement, adresse_etablissement
+        order by count(*) desc
+        """.as[(CompanyWithNbReports)]
+      )
+    } yield {
+      PaginatedResult(
+        totalCount = res.length,
+        entities = res.toList,
+        hasNextPage = res.length - ( offset + limit ) > 0
+      )
+    }
+
+  }
+
 
 }
 

@@ -82,3 +82,18 @@ object DetailInputValue {
     }
   }
 }
+
+case class CompanyWithNbReports(companyPostalCode: String, companySiret: String, companyName: String, companyAddress: String, count: Int)
+
+object CompanyWithNbReports {
+
+  implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
+    def writes(company: CompanyWithNbReports) = Json.obj(
+      "companyPostalCode" -> company.companyPostalCode,
+      "companySiret" -> company.companyPostalCode,
+      "companyName" -> company.companyName,
+      "companyAddress" -> company.companyAddress,
+      "count" -> company.count
+    )
+  }
+}
