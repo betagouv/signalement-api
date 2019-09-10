@@ -698,8 +698,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
         ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Actions DGCCRF", Column(autoSized = true, style = leftAlignmentStyle))
-      )
+      ) ::: {
+        request.identity.userRole match {
+          case UserRoles.DGCCRF => List(
+            ("Actions DGCCRF", Column(autoSized = true, style = leftAlignmentStyle))
+          )
+          case _ => List()
+        }
+      }
 
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -790,11 +796,17 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         report.contactAgreement match {
           case true => "Oui"
           case _ => "Non"
-        },
-        events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
-          .reduceLeftOption((eventDetail1, eventDetail2) => s"$eventDetail1\n$eventDetail2").getOrElse("")
-      )
+        }
+      ) ::: {
+        userRole match {
+          case UserRoles.DGCCRF => List(
+            events.filter(event => event.eventType == Constants.EventType.DGCCRF)
+              .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
+              .reduceLeftOption((eventDetail1, eventDetail2) => s"$eventDetail1\n$eventDetail2").getOrElse("")
+          )
+          case _ => List()
+        }
+      }
     }
   }
 
