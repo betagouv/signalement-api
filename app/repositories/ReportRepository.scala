@@ -1,14 +1,14 @@
 package repositories
 
-import java.time.{LocalDateTime, YearMonth}
+import java.time.{LocalDate, LocalDateTime, OffsetDateTime, YearMonth}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.{CompanyWithNbReports, PaginatedResult, Report, ReportFile, ReportsByCategory, ReportsPerMonth}
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
-import utils.Constants.ActionEvent.{A_CONTACTER, ActionEventValue, ENVOI_SIGNALEMENT, MODIFICATION_COMMERCANT, REPONSE_PRO_SIGNALEMENT}
-import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_TRANSMIS, StatusProValue}
+import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
+import utils.Constants.StatusPro.StatusProValue
 import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
@@ -19,8 +19,8 @@ case class ReportFilter(
                          email: Option[String] = None,
                          siret: Option[String] = None,
                          companyName: Option[String] = None,
-                         start: Option[LocalDateTime] = None,
-                         end: Option[LocalDateTime] = None,
+                         start: Option[LocalDate] = None,
+                         end: Option[LocalDate] = None,
                          category: Option[String] = None,
                          statusPros: Seq[String] = List(),
                          statusConso: Option[String] = None,
@@ -46,7 +46,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def companyAddress = column[String]("adresse_etablissement")
     def companyPostalCode = column[Option[String]]("code_postal")
     def companySiret = column[Option[String]]("siret_etablissement")
-    def creationDate= column[LocalDateTime]("date_creation")
+    def creationDate= column[OffsetDateTime]("date_creation")
     def firstName = column[String]("prenom")
     def lastName = column[String]("nom")
     def email = column[String]("email")
@@ -54,7 +54,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def statusPro = column[Option[String]]("status_pro")
     def statusConso = column[Option[String]]("status_conso")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], LocalDateTime, String, String, String, Boolean, Option[String], Option[String])
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String], Option[String])
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) =>
@@ -100,7 +100,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   
   private val fileTableQuery = TableQuery[FileTable]
 
-  private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
+  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
+
+  private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
@@ -254,10 +256,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
             case(table, companyName) => table.companyName like s"${companyName}%"
           }
           .filterOpt(filter.start) {
-            case(table, start) => table.creationDate >= start
+            case(table, start) => date(table.creationDate) >= start
           }
           .filterOpt(filter.end) {
-            case(table, end) => table.creationDate < end
+            case(table, end) => date(table.creationDate) < end
           }
           .filterOpt(filter.category) {
             case(table, category) => table.category === category

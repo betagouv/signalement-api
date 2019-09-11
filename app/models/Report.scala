@@ -1,6 +1,6 @@
 package models
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, OffsetDateTime}
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
@@ -17,7 +17,7 @@ case class Report(
                    companyAddress: String,
                    companyPostalCode: Option[String],
                    companySiret: Option[String],
-                   creationDate: Option[LocalDateTime],
+                   creationDate: Option[OffsetDateTime],
                    firstName: String,
                    lastName: String,
                    email: String,
