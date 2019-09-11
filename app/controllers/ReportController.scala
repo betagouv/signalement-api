@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.File
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, OffsetDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -149,7 +149,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           report <- reportRepository.create(
             report.copy(
               id = Some(UUID.randomUUID()),
-              creationDate = Some(LocalDateTime.now()),
+              creationDate = Some(OffsetDateTime.now()),
               statusPro = Some(determineStatusPro(report)),
               statusConso = Some(determineStatusConso(report))
             )
