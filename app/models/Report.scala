@@ -1,12 +1,12 @@
 package models
 
-import java.time.{LocalDateTime, OffsetDateTime}
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.StatusConso.StatusConsoValue
-import utils.Constants.StatusPro.{PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, StatusProValue}
+import utils.Constants.StatusPro._
 
 case class Report(
                    id: Option[UUID],

@@ -108,7 +108,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               _ <- swap(report.flatMap(r => user.map(u => eventRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
-                  creationDate = Some(LocalDateTime.now()),
+                  creationDate = Some(OffsetDateTime.now()),
                   reportId = r.id,
                   userId = u.id
                 )))))
@@ -181,7 +181,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Some(UUID.randomUUID()),
                 report.id,
                 user.id,
-                Some(LocalDateTime.now()),
+                Some(OffsetDateTime.now()),
                 Constants.EventType.PRO,
                 Constants.ActionEvent.CONTACT_EMAIL,
                 None,
@@ -271,7 +271,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
         reportRepository.createFile(
-          ReportFile(UUID.fromString(maybeUploadResult._1.key), None, LocalDateTime.now(), maybeUploadResult._2)
+          ReportFile(UUID.fromString(maybeUploadResult._1.key), None, OffsetDateTime.now(), maybeUploadResult._2)
         ).map(file => Ok(Json.toJson(file)))
     }
   }
@@ -490,7 +490,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some(UUID.randomUUID()),
           report.id,
           userUUID,
-          Some(LocalDateTime.now()),
+          Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
           None,
@@ -515,7 +515,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some(UUID.randomUUID()),
           report.id,
           userUUID,
-          Some(LocalDateTime.now()),
+          Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,
           None,
