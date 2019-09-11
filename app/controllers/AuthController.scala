@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.Credentials
@@ -73,7 +73,7 @@ class AuthController @Inject()(
           case Some(user) if user.email.isDefined =>
             for {
               _ <- authTokenRepository.deleteForUserId(user.id)
-              authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, LocalDateTime.now.plusDays(1)))
+              authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
               _ <- sendResetPasswordMail(user, s"${configuration.get[String]("play.website.url")}/connexion/nouveau-mot-de-passe/${authToken.id}")
             } yield {
               Ok

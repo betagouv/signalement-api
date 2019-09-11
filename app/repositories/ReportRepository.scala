@@ -78,11 +78,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[Option[UUID]]("signalement_id")
-    def creationDate = column[LocalDateTime]("date_creation")
+    def creationDate = column[OffsetDateTime]("date_creation")
     def filename = column[String]("nom")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], LocalDateTime, String)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String)
 
     def constructFile: FileData => ReportFile = {
       case (id, reportId, creationDate, filename) => ReportFile(id, reportId, creationDate, filename)

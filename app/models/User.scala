@@ -1,6 +1,6 @@
 package models
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Identity
@@ -132,5 +132,5 @@ object PasswordChange {
 case class AuthToken(
                       id: UUID,
                       userID: UUID,
-                      expiry: LocalDateTime
+                      expiry: OffsetDateTime
                     )

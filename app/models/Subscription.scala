@@ -1,6 +1,5 @@
 package models
 
-import java.time.LocalDateTime
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}

@@ -1,6 +1,6 @@
 package models
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
@@ -8,7 +8,7 @@ import play.api.libs.json.{Json, OFormat}
 case class ReportFile(
                  id: UUID,
                  reportId: Option[UUID],
-                 creationDate: LocalDateTime,
+                 creationDate: OffsetDateTime,
                  filename: String
                  )
 object ReportFile {

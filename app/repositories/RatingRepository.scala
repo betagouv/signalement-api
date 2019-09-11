@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -22,12 +22,12 @@ class RatingRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, repor
   private class RatingTable(tag: Tag) extends Table[Rating](tag, "ratings") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def creationDate = column[LocalDateTime]("creation_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def category = column[String]("category")
     def subcategories = column[List[String]]("subcategories")
     def positive = column[Boolean]("positive")
 
-    type RatingData = (UUID, LocalDateTime, String, List[String], Boolean)
+    type RatingData = (UUID, OffsetDateTime, String, List[String], Boolean)
 
     def constructRating: RatingData => Rating = {
 
