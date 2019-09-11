@@ -339,9 +339,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
         """.as[(CompanyWithNbReports)]
       )
     } yield {
+
       PaginatedResult(
         totalCount = res.length,
-        entities = res.toList,
+        entities = res.drop(offset.toInt).take(limit).toList,
         hasNextPage = res.length - ( offset + limit ) > 0
       )
     }

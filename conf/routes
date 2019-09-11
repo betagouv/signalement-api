@@ -22,7 +22,7 @@ GET          /api/reports                               controllers.ReportContro
 POST         /api/reports                               controllers.ReportController.createReport()
 PUT          /api/reports                               controllers.ReportController.updateReport()
 
-GET          /api/getNbReportsGroupByCompany            controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
+GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
 # Events API
 GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
