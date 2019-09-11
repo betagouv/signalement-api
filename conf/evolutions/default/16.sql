@@ -3,13 +3,10 @@
 drop index no_similar_report;
 
 CREATE OR REPLACE FUNCTION my_date_trunc(text, timestamp with time zone)
-  RETURNS timestamp with time zone
-AS
-$BODY$
-    select date_trunc($1, $2);
-$BODY$
-LANGUAGE sql
-IMMUTABLE;
+    RETURNS timestamp with time zone
+    AS $$ select date_trunc($1, $2) $$
+    LANGUAGE sql
+    IMMUTABLE;
 
 ALTER TABLE signalement ALTER date_creation TYPE timestamptz USING date_creation AT TIME ZONE 'UTC';
 
