@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
@@ -22,17 +22,16 @@ class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
- import dbConfig._
- import profile.api._
-
+  import PostgresProfile.api._
+  import dbConfig._
 
   private class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def userId = column[UUID]("user_id")
-    def expiry = column[LocalDateTime]("expiry")
+    def expiry = column[OffsetDateTime]("expiry")
 
-    type AuthTokenData = (UUID, UUID, LocalDateTime)
+    type AuthTokenData = (UUID, UUID, OffsetDateTime)
 
     def constructAuthToken: AuthTokenData => AuthToken = {
       case (id, userId, expiry) => AuthToken(id, userId, expiry)
@@ -54,7 +53,7 @@ class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findValid(id: UUID): Future[Option[AuthToken]] = db
     .run(authTokenTableQuery
       .filter(_.id === id)
-      .filter(_.expiry > LocalDateTime.now)
+      .filter(_.expiry > OffsetDateTime.now)
       .to[List].result.headOption)
 
   def deleteForUserId(userId: UUID): Future[Int] = db.run {
