@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -27,14 +27,14 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
     def userId = column[UUID]("user_id")
-    def creationDate = column[LocalDateTime]("creation_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
     def resultAction = column[Option[Boolean]]("result_action")
     def detail = column[Option[String]]("detail")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, UUID, OffsetDateTime, String, String, Option[Boolean], Option[String])
 
     def constructEvent: EventData => Event = {
 
@@ -56,8 +56,6 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
   private val reportTableQuery = TableQuery[reportRepository.ReportTable]
 
   private val eventTableQuery = TableQuery[EventTable]
-
-  private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
   def createEvent(event: Event): Future[Event] = db
     .run(eventTableQuery += event)

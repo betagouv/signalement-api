@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.google.inject.AbstractModule
@@ -13,21 +13,21 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.{Configuration, Logger}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, Writes}
+import play.api.libs.mailer.AttachmentFile
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import play.api.libs.mailer.{Attachment, AttachmentFile}
+import play.api.{Configuration, Logger}
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.{CONSO, PRO}
 import utils.Constants.StatusConso._
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.Constants.StatusPro._
+import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
@@ -84,7 +84,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
 
         val fakeUUID = UUID.randomUUID()
-        val fakeTime = LocalDateTime.now()
+        val fakeTime = OffsetDateTime.now()
 
         val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some(true), None)
         controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER), Some(NA)) must equalTo(A_TRAITER)
@@ -114,7 +114,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
 
         val fakeUUID = UUID.randomUUID()
-        val fakeTime = LocalDateTime.now()
+        val fakeTime = OffsetDateTime.now()
 
         val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
@@ -135,7 +135,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
   "createReport when the report concerns a professional in an authorized department" should {
 
     val reportFixture = Report(
-      None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(LocalDateTime.now()),
+      None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
       "firstName", "lastName", "email", true, List(), None, None
     )
 
@@ -206,7 +206,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
-      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(LocalDateTime.now()),
+      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(OffsetDateTime.now()),
       "firstName", "lastName", "email", true, List(), None, None
     )
 
@@ -248,7 +248,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
           mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS))))
           mockEventRepository.getEvents(reportUUID, EventFilter(None)) returns Future(
-            List(Event(Some(UUID.randomUUID()), Some(reportUUID), proIdentity.id, Some(LocalDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true), None))
+            List(Event(Some(UUID.randomUUID()), Some(reportUUID), proIdentity.id, Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true), None))
           )
 
           val controller = application.injector.instanceOf[ReportController]
@@ -294,7 +294,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
-      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(LocalDateTime.now()),
+      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(OffsetDateTime.now()),
       "firstName", "lastName", "email", true, List(), None, None
     )
 
@@ -393,6 +393,60 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   }
 
+  "getReportCountBySiret" should {
+
+    val siretFixture = "01232456789"
+
+    "return unauthorized when there no X-Api-Key header" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+
+        }
+      }
+    }
+
+    "return unauthorized when X-Api-Key header is invalid" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+
+        }
+      }
+    }
+
+    "return report count when X-Api-Key header is valid" should {
+
+      "ReportController" in new Context {
+        new WithApplication(application) {
+
+          mockReportRepository.count(Some(siretFixture)) returns Future(5)
+
+          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq")
+          val controller = application.injector.instanceOf[ReportController]
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(OK)
+          contentAsJson(result) must beEqualTo(Json.obj("siret" -> siretFixture, "count" -> 5))
+
+        }
+      }
+    }
+
+  }
+
   trait Context extends Scope {
 
     val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
@@ -431,7 +485,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Configuration(
           "play.evolutions.enabled" -> false,
           "slick.dbs.default.db.connectionPool" -> "disabled",
-          "play.mailer.mock" -> true
+          "play.mailer.mock" -> true,
+          "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret"
         )
       )
       .disable[TasksModule]

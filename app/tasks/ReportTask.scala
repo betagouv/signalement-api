@@ -39,7 +39,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
 
-    val taskDate = LocalDateTime.now
+    val taskDate = LocalDate.now
 
     Logger.debug(s"taskDate - ${taskDate}");
     Logger.debug(s"initialDelay - ${initialDelay}");
@@ -58,7 +58,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
           case _ => sendMailReportsOfTheWeek(
             reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
             department,
-            taskDate.minusDays(7).toLocalDate)
+            taskDate.minusDays(7))
         }
       )
     )
