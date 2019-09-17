@@ -45,7 +45,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
   val logger: Logger = Logger(this.getClass)
 
-
   def getReports(
     offset: Option[Long], 
     limit: Option[Int], 
@@ -123,13 +122,13 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     val statusProsSeq = getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole)
 
     for {
-      result <- reportRepository.getReports(
+      paginatedReports <- reportRepository.getReports(
         0,
         10000,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
       )
-      reports <- Future(result.entities)
-      reportsData <- Future.sequence(reports.map(extractDataFromReport(_, request.identity.userRole)))
+      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
+      reportsData <- Future.sequence(paginatedReports.entities.map(extractDataFromReport(_, request.identity.userRole, reportEventsMap)))
     } yield {
 
       val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
@@ -214,10 +213,9 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  private def extractDataFromReport(report: Report, userRole: UserRole)(implicit request: play.api.mvc.Request[Any]) = {
-
+  private def extractDataFromReport(report: Report, userRole: UserRole, reportEventsMap: Map[UUID, List[Event]])(implicit request: play.api.mvc.Request[Any]) = {
+    val events = reportEventsMap.getOrElse(report.id.get, Nil)
     for {
-      events <- eventRepository.getEvents(report.id.get, EventFilter(None))
       companyMail <- (report.companySiret, report.departmentAuthorized) match {
         case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.email).getOrElse(None))
         case _ => Future(None)
