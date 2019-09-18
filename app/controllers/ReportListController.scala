@@ -121,6 +121,112 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     val statusProsSeq = getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole)
 
+    val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
+    val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+    val leftAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Left, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
+    val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
+    val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+
+    case class ReportColumn(
+      name: String, column: Column,
+      extract: (Report, List[Event], Option[String]) => String, available: Boolean = true
+    )
+
+    val reportColumns = List(
+      ReportColumn(
+        "Date de création", centerAlignmentColumn,
+        (report, _, _) => report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse("")
+      ),
+      ReportColumn(
+        "Département", centerAlignmentColumn,
+       (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse("")
+      ),
+      ReportColumn(
+        "Code postal", centerAlignmentColumn,
+       (report, _, _) => report.companyPostalCode.getOrElse("")
+      ),
+      ReportColumn(
+        "Siret", centerAlignmentColumn,
+       (report, _, _) => report.companySiret.getOrElse("")
+      ),
+      ReportColumn(
+        "Nom de l'établissement", leftAlignmentColumn,
+       (report, _, _) => report.companyName
+      ),
+      ReportColumn(
+        "Adresse de l'établissement", leftAlignmentColumn,
+       (report, _, _) => report.companyAddress
+      ),
+      ReportColumn(
+        "Email de l'établissement", centerAlignmentColumn,
+       (report, _, email) => email.filter(_ => report.departmentAuthorized).getOrElse(""),
+        available=request.identity.userRole == UserRoles.Admin
+      ),
+      ReportColumn(
+        "Catégorie", leftAlignmentColumn,
+       (report, _, _) => report.category
+      ),
+      ReportColumn(
+        "Sous-catégories", leftAlignmentColumn,
+       (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+      ),
+      ReportColumn(
+        "Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle),
+       (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+      ),
+      ReportColumn(
+        "Pièces jointes", leftAlignmentColumn,
+       (report, _, _) =>
+          report.files
+          .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
+          .mkString("\n")
+      ),
+      ReportColumn(
+        "Statut pro", leftAlignmentColumn,
+       (report, _, _) => getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)
+      ),
+      ReportColumn(
+        "Détail promesse d'action", leftAlignmentColumn,
+        (report, events, _) =>
+          report.statusPro
+          .filter(_ == StatusPro.PROMESSE_ACTION)
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail))
+          .getOrElse("")
+      ),
+      ReportColumn(
+        "Statut conso", Column(autoSized = true, style = leftAlignmentStyle, hidden = (request.identity.userRole == UserRoles.DGCCRF)),
+       (report, _, _) => report.statusConso.map(_.value).getOrElse("")
+      ),
+      ReportColumn(
+        "Identifiant", centerAlignmentColumn,
+       (report, _, _) => report.id.map(_.toString).getOrElse("")
+      ),
+      ReportColumn(
+        "Prénom", leftAlignmentColumn,
+       (report, _, _) => report.firstName
+      ),
+      ReportColumn(
+        "Nom", leftAlignmentColumn,
+       (report, _, _) => report.lastName
+      ),
+      ReportColumn(
+        "Email", leftAlignmentColumn,
+       (report, _, _) => report.email
+      ),
+      ReportColumn(
+        "Accord pour contact", centerAlignmentColumn,
+       (report, _, _) => if (report.contactAgreement) "Oui" else "Non"
+      ),
+      ReportColumn(
+        "Actions DGCCRF", leftAlignmentColumn,
+        (report, events, _) =>
+          events.filter(event => event.eventType == Constants.EventType.DGCCRF)
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
+          .mkString("\n"),
+        available=request.identity.userRole == UserRoles.DGCCRF
+      )
+    ).filter(_.available)
+
     for {
       paginatedReports <- reportRepository.getReports(
         0,
@@ -128,60 +234,19 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      reportsData <- Future.sequence(paginatedReports.entities.map(extractDataFromReport(_, request.identity.userRole, reportEventsMap)))
+      companyEmailMap <- userRepository.prefetchLoginsEmail(paginatedReports.entities.flatMap(_.companySiret))
     } yield {
-
-      val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
-      val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
-      val leftAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Left, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
-      
-      val fields = List(
-        ("Date de création", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Département", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Code postal", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Siret", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Nom de l'établissement", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Adresse de l'établissement", Column(autoSized = true, style = leftAlignmentStyle))
-      ) ::: {
-        request.identity.userRole match {
-          case UserRoles.Admin => List(
-            ("Email de l'établissement", Column(autoSized = true, style = centerAlignmentStyle))
-          )
-          case _ => List()
-        }
-      } ::: List(
-        ("Catégorie", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Sous-catégories", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle)),
-        ("Pièces jointes", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Statut pro", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Détail promesse d'action", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Statut conso", Column(autoSized = true, style = leftAlignmentStyle, hidden = (request.identity.userRole == UserRoles.DGCCRF))),
-        ("Identifiant", Column(autoSized = true, style = centerAlignmentStyle)),
-        ("Prénom", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Nom", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Email", Column(autoSized = true, style = leftAlignmentStyle)),
-        ("Accord pour contact", Column(autoSized = true, style = centerAlignmentStyle)),
-      ) ::: {
-        request.identity.userRole match {
-          case UserRoles.DGCCRF => List(
-            ("Actions DGCCRF", Column(autoSized = true, style = leftAlignmentStyle))
-          )
-          case _ => List()
-        }
-      }
-
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
-          Row(style = headerStyle).withCellValues(fields.map(_._1)) ::
-          reportsData.map(reportData => {
-            Row().withCellValues(reportData)
-          })
+          Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
+          paginatedReports.entities.map(report =>
+            Row().withCellValues(reportColumns.map(
+              _.extract(report, reportEventsMap.getOrElse(report.id.get, Nil), report.companySiret.flatMap(companyEmailMap.get(_)))
+            ))
+          )
         )
-        .withColumns(
-          fields.map(_._2)
-        )
+        .withColumns(reportColumns.map(_.column))
 
       val filtersSheet = Sheet(name = "Filtres")
         .withRows(
@@ -203,7 +268,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),
-          Column(autoSized = true, style = leftAlignmentStyle)
+          leftAlignmentColumn
         )
 
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(tmpFileName)
@@ -214,67 +279,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         inline = false,
         onClose = () => new File(tmpFileName).delete
       )
-    }
-
-  }
-
-  private def extractDataFromReport(report: Report, userRole: UserRole, reportEventsMap: Map[UUID, List[Event]]) = {
-    val events = reportEventsMap.getOrElse(report.id.get, Nil)
-    for {
-      companyMail <- (report.companySiret, report.departmentAuthorized) match {
-        case (Some(siret), true) => userRepository.findByLogin(siret).map(user => user.map(_.email).getOrElse(None))
-        case _ => Future(None)
-      }
-    }
-    yield {
-      logger.debug(s"length events ${events.filter(event => event.eventType == Constants.EventType.DGCCRF).length}")
-      List(
-        report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse(""),
-        report.companyPostalCode match {
-          case Some(codePostal) if codePostal.length >= 2 => codePostal.substring(0, 2)
-          case _ => ""
-        },
-        report.companyPostalCode.getOrElse(""),
-        report.companySiret.getOrElse(""),
-        report.companyName,
-        report.companyAddress
-      ) ::: {
-        userRole match {
-          case UserRoles.Admin => List(
-            companyMail.getOrElse("")
-          )
-          case _ => List()
-        }
-      } ::: List(
-        report.category,
-        report.subcategories.filter(s => s != null).reduceOption((s1, s2) => s"$s1\n$s2").getOrElse("").replace("&#160;", " "),
-        report.details.map(detailInputValue => s"${detailInputValue.label.replace("&#160;", " ")} ${detailInputValue.value}").reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        report.files
-          .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
-          .reduceOption((s1, s2) => s"$s1\n$s2").getOrElse(""),
-        getGenericStatusProWithUserRole(report.statusPro, userRole),
-        report.statusPro
-          .filter(_ == StatusPro.PROMESSE_ACTION)
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail)).getOrElse(""),
-        report.statusConso.map(_.value).getOrElse(""),
-        report.id.map(_.toString).getOrElse(""),
-        report.firstName,
-        report.lastName,
-        report.email,
-        report.contactAgreement match {
-          case true => "Oui"
-          case _ => "Non"
-        }
-      ) ::: {
-        userRole match {
-          case UserRoles.DGCCRF => List(
-            events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-              .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
-              .reduceLeftOption((eventDetail1, eventDetail2) => s"$eventDetail1\n$eventDetail2").getOrElse("")
-          )
-          case _ => List()
-        }
-      }
     }
   }
 }

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import javax.inject.{Inject, Singleton}
-import models.{User, UserRole, UserRoles}
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -99,4 +99,13 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findByLogin(login: String): Future[Option[User]] = db
     .run(userTableQuery.filter(_.login === login).to[List].result.headOption)
 
+  def prefetchLoginsEmail(logins: List[String]): Future[Map[String, String]] = db
+    .run(
+      userTableQuery
+        .filter(_.login inSetBind logins)
+        .filter(_.email.isDefined)
+        .map(u => (u.login, u.email.get))
+        .to[List]
+        .result
+    ).map(_.toMap)
 }
