@@ -171,7 +171,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         }
       }
 
-      val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements.xlsx";
+      val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(fields.map(_._1)) ::
