@@ -218,7 +218,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
   }
 
-  private def extractDataFromReport(report: Report, userRole: UserRole, reportEventsMap: Map[UUID, List[Event]])(implicit request: play.api.mvc.Request[Any]) = {
+  private def extractDataFromReport(report: Report, userRole: UserRole, reportEventsMap: Map[UUID, List[Event]]) = {
     val events = reportEventsMap.getOrElse(report.id.get, Nil)
     for {
       companyMail <- (report.companySiret, report.departmentAuthorized) match {
