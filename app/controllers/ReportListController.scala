@@ -208,7 +208,12 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(tmpFileName)
 
-      Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+      Ok.sendFile(
+        new File(tmpFileName),
+        fileName = _ => "signalements.xlsx",
+        inline = false,
+        onClose = () => new File(tmpFileName).delete
+      )
     }
 
   }
