@@ -27,7 +27,7 @@ case class Report(
                    statusPro: Option[StatusProValue],
                    statusConso: Option[StatusConsoValue]
                  ) {
-  def departmentAuthorized = {
+  def isEligible = {
     companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
   }
 }

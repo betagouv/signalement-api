@@ -159,7 +159,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-       (report, _, email) => email.filter(_ => report.departmentAuthorized).getOrElse(""),
+       (report, _, email) => email.filter(_ => report.isEligible).getOrElse(""),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(

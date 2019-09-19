@@ -48,11 +48,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   val BucketName = configuration.get[String]("play.buckets.report")
 
   def determineStatusPro(report: Report): StatusProValue = {
-    if (report.departmentAuthorized) A_TRAITER else NA
+    if (report.isEligible) A_TRAITER else NA
   }
 
   def determineStatusConso(report: Report): StatusConsoValue = {
-    if (report.departmentAuthorized) EN_ATTENTE else FAIT
+    if (report.isEligible) EN_ATTENTE else FAIT
   }
 
   def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
@@ -154,7 +154,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           files <- reportRepository.retrieveReportFiles(report.id.get)
           _ <- sendMailAdminReportNotification(report, files)
           _ <- sendMailReportAcknowledgment(report, files)
-          _ <- (report.companySiret, report.departmentAuthorized) match {
+          _ <- (report.companySiret, report.isEligible) match {
             case (Some(_), true) => notifyProfessionalOfNewReport(report)
             case _ => Future(None)
           }
@@ -238,7 +238,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                   companySiret = report.companySiret
                 ))
               ))
-              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, report.departmentAuthorized, resultReport) match {
+              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, report.isEligible, resultReport) match {
                 case (someExistingSiret, Some(siret), true, Some(newReport)) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(newReport)
                 case _ => Future(None)
               }
