@@ -20,11 +20,11 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
-import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
+import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository, ReportFilter}
 import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType.{CONSO, PRO}
+import utils.Constants.EventType
 import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
@@ -86,7 +86,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = OffsetDateTime.now()
 
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), PRO, A_CONTACTER, Some(true), None)
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.PRO, A_CONTACTER, Some(true), None)
         controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER), Some(NA)) must equalTo(A_TRAITER)
         controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE), Some(NA)) must equalTo(NA)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL), Some(NA)) must equalTo(TRAITEMENT_EN_COURS)
@@ -116,7 +116,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = OffsetDateTime.now()
 
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE)) must equalTo(A_RECONTACTER)
         controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
@@ -366,7 +366,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, PRO, MAL_ATTRIBUE, None, None)
+          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, EventType.PRO, MAL_ATTRIBUE, None, None)
 
           mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
           mockUserRepository.get(adminIdentity.id) returns Future(Some(adminIdentity))
@@ -445,6 +445,39 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
+    "ReportListController" should {
+
+      "generate an export" in new Context {
+        new WithApplication(application) {
+          val reportId = Some(UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b"))
+          val reportsList = List(
+            Report(
+              reportId, "foo", List("bar"), List(), "myCompany", "18 rue des Champs",
+              None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", "jdoe@example.com",
+              true, List(), None, None
+            )
+          )
+          mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(
+            PaginatedResult(1, false, reportsList)
+          )
+          mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
+            Map(reportId.get -> List(
+              Event(reportId, reportId, UUID.randomUUID, Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
+            ))
+          )
+          mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
+            Map("00000000000000" -> proIdentity)
+          )
+
+          val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)
+          val result = route(application, request).get
+
+          Helpers.status(result) must beEqualTo(OK)
+          Helpers.header(Helpers.CONTENT_DISPOSITION, result) must beEqualTo(Some("attachment; filename=\"signalements.xlsx\""))
+        }
+      }
+    }
+
   }
 
   trait Context extends Scope {
@@ -486,7 +519,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           "play.evolutions.enabled" -> false,
           "slick.dbs.default.db.connectionPool" -> "disabled",
           "play.mailer.mock" -> true,
-          "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret"
+          "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
+          "play.tmpDirectory" -> "/tmp/signalconso"
         )
       )
       .disable[TasksModule]
