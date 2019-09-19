@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.Event
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants
@@ -77,6 +77,15 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
       .sortBy(_.creationDate.desc)
       .to[List]
       .result
+  }
+  def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
+    val reportsIds = reports.map(_.id.get)
+    db.run(eventTableQuery.filter(
+      _.reportId inSetBind reportsIds
+    ).to[List].result)
+    .map(events =>
+      events.groupBy(_.reportId.get)
+    )
   }
 
 }

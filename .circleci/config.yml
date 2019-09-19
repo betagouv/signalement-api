@@ -45,4 +45,6 @@ jobs:
         key: v2-dependencies--{{ checksum "build.sbt" }}
 
     # run tests!
-    - run: cat /dev/null | sbt test
+    - run: |
+        mkdir -p /tmp/signalconso
+        cat /dev/null | sbt test
