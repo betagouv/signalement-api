@@ -463,7 +463,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case (Some(report), UserRoles.Pro) if report.companySiret != Some(request.identity.login)  => Future.successful(Unauthorized)
           case (Some(report), UserRoles.Pro) =>
             for {
-              events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter(None))
+              events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
               firstView <- Future(!events.exists(event => event.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
               report <- firstView match {
                 case true => manageFirstViewOfReportByPro(report, request.identity.id)
@@ -555,9 +555,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
+    logger.debug("getEvents")
+
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
-      case None => EventFilter(eventType = None)
+      case None => EventFilter()
     }
 
     Try(UUID.fromString(uuid)) match {
