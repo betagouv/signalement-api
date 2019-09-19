@@ -465,8 +465,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               Event(reportId, reportId, UUID.randomUUID, Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
             ))
           )
-          mockUserRepository.prefetchLoginsEmail(List("00000000000000")) returns Future(
-            Map("00000000000000" -> "mapetiteentreprise@example.com")
+          mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
+            Map("00000000000000" -> proIdentity)
           )
 
           val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)

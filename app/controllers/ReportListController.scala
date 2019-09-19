@@ -129,7 +129,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     case class ReportColumn(
       name: String, column: Column,
-      extract: (Report, List[Event], Option[String]) => String, available: Boolean = true
+      extract: (Report, List[Event], Option[User]) => String, available: Boolean = true
     )
 
     val reportColumns = List(
@@ -139,51 +139,51 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-       (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse("")
+        (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse("")
       ),
       ReportColumn(
         "Code postal", centerAlignmentColumn,
-       (report, _, _) => report.companyPostalCode.getOrElse("")
+        (report, _, _) => report.companyPostalCode.getOrElse("")
       ),
       ReportColumn(
         "Siret", centerAlignmentColumn,
-       (report, _, _) => report.companySiret.getOrElse("")
+        (report, _, _) => report.companySiret.getOrElse("")
       ),
       ReportColumn(
         "Nom de l'établissement", leftAlignmentColumn,
-       (report, _, _) => report.companyName
+        (report, _, _) => report.companyName
       ),
       ReportColumn(
         "Adresse de l'établissement", leftAlignmentColumn,
-       (report, _, _) => report.companyAddress
+        (report, _, _) => report.companyAddress
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-       (report, _, email) => email.filter(_ => report.isEligible).getOrElse(""),
+        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.email).getOrElse(""),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
         "Catégorie", leftAlignmentColumn,
-       (report, _, _) => report.category
+        (report, _, _) => report.category
       ),
       ReportColumn(
         "Sous-catégories", leftAlignmentColumn,
-       (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+        (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle),
-       (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+        (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Pièces jointes", leftAlignmentColumn,
-       (report, _, _) =>
+        (report, _, _) =>
           report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
           .mkString("\n")
       ),
       ReportColumn(
         "Statut pro", leftAlignmentColumn,
-       (report, _, _) => getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)
+        (report, _, _) => getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)
       ),
       ReportColumn(
         "Détail promesse d'action", leftAlignmentColumn,
@@ -195,27 +195,32 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Statut conso", Column(autoSized = true, style = leftAlignmentStyle, hidden = (request.identity.userRole == UserRoles.DGCCRF)),
-       (report, _, _) => report.statusConso.map(_.value).getOrElse("")
+        (report, _, _) => report.statusConso.map(_.value).getOrElse("")
       ),
       ReportColumn(
         "Identifiant", centerAlignmentColumn,
-       (report, _, _) => report.id.map(_.toString).getOrElse("")
+        (report, _, _) => report.id.map(_.toString).getOrElse("")
       ),
       ReportColumn(
         "Prénom", leftAlignmentColumn,
-       (report, _, _) => report.firstName
+        (report, _, _) => report.firstName
       ),
       ReportColumn(
         "Nom", leftAlignmentColumn,
-       (report, _, _) => report.lastName
+        (report, _, _) => report.lastName
       ),
       ReportColumn(
         "Email", leftAlignmentColumn,
-       (report, _, _) => report.email
+        (report, _, _) => report.email
+      ),
+      ReportColumn(
+        "Code d'activation", centerAlignmentColumn,
+        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.activationKey).getOrElse(""),
+        available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
         "Accord pour contact", centerAlignmentColumn,
-       (report, _, _) => if (report.contactAgreement) "Oui" else "Non"
+        (report, _, _) => if (report.contactAgreement) "Oui" else "Non"
       ),
       ReportColumn(
         "Actions DGCCRF", leftAlignmentColumn,
@@ -234,7 +239,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyEmailMap <- userRepository.prefetchLoginsEmail(paginatedReports.entities.flatMap(_.companySiret))
+      companyUsersMap <- userRepository.prefetchLogins(paginatedReports.entities.flatMap(_.companySiret))
     } yield {
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -242,7 +247,11 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
           paginatedReports.entities.map(report =>
             Row().withCellValues(reportColumns.map(
-              _.extract(report, reportEventsMap.getOrElse(report.id.get, Nil), report.companySiret.flatMap(companyEmailMap.get(_)))
+              _.extract(
+                report,
+                reportEventsMap.getOrElse(report.id.get, Nil),
+                report.companySiret.flatMap(companyUsersMap.get(_))
+              )
             ))
           )
         )

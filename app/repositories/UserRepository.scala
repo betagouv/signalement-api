@@ -99,12 +99,11 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findByLogin(login: String): Future[Option[User]] = db
     .run(userTableQuery.filter(_.login === login).to[List].result.headOption)
 
-  def prefetchLoginsEmail(logins: List[String]): Future[Map[String, String]] = db
+  def prefetchLogins(logins: List[String]): Future[Map[String, User]] = db
     .run(
       userTableQuery
         .filter(_.login inSetBind logins)
-        .filter(_.email.isDefined)
-        .map(u => (u.login, u.email.get))
+        .map(u => (u.login, u))
         .to[List]
         .result
     ).map(_.toMap)
