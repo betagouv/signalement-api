@@ -161,6 +161,7 @@ object Constants {
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
     object RELANCE extends ActionEventValue("Relance")
+    object RELANCE_COURRIER extends ActionEventValue("Relance courrier")
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
@@ -186,7 +187,8 @@ object Constants {
       MAL_ATTRIBUE,
       NON_CONSULTE,
       CONSULTE_IGNORE,
-      RELANCE
+      RELANCE,
+      RELANCE_COURRIER
     )
 
     val actionProFinals = Seq(

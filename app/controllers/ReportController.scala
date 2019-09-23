@@ -88,6 +88,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case _                                   => previousStatus.getOrElse(EN_ATTENTE)
   }
 
+
+
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
@@ -290,19 +292,22 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
+  def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
 
     professionalUser.email match {
-      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
-        recipients = mail)(
-        subject = "Nouveau signalement",
-        bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      case Some(mail) if mail != "" => {
+        mailerService.sendEmail(
+          from = configuration.get[String]("play.mail.from"),
+          recipients = mail)(
+          subject = "Nouveau signalement",
+          bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+          attachments = Seq(
+            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+          )
         )
-      ))
-      case _ => Future(None)
+        Future("Envoi mail professional.reportNotification")
+      }
+      case _ => Future("")
     }
   }
 
@@ -339,8 +344,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  private def sendMailClosedByNoReading(report: Report) = {
-    Future(mailerService.sendEmail(
+  def sendMailClosedByNoReading(report: Report) = {
+    mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
       subject = "Le professionnel n’a pas souhaité consulter votre signalement",
@@ -348,11 +353,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
-    ))
+    )
+
+    Future("Envoi mail consumer.reportClosedByNoReading")
   }
 
-  private def sendMailClosedByNoAction(report: Report) = {
-    Future(mailerService.sendEmail(
+  def sendMailClosedByNoAction(report: Report) = {
+    mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
       subject = "Le professionnel n’a pas répondu au signalement",
@@ -360,7 +367,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
-    ))
+    )
+
+    Future("Envoi mail consumer.reportClosedByNoAction")
   }
 
   private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
@@ -393,8 +402,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
 
-  private def sendMailReportTransmission(report: Report) = {
-    Future(mailerService.sendEmail(
+  def sendMailReportTransmission(report: Report) = {
+    mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
       subject = "Votre signalement",
@@ -402,7 +411,9 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
-    ))
+    )
+
+    Future("Envoi mail consumer.reportTransmission")
   }
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>

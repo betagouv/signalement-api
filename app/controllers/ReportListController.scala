@@ -12,6 +12,7 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
+import orchestrator.EventOrchestrator
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
@@ -40,7 +41,8 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration,
-                                 environment: Environment)
+                                 environment: Environment,
+                                 eventOrchestrator: EventOrchestrator)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
@@ -297,7 +299,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     // val filter = new ReportFilter(statusPros = List(TRAITEMENT_EN_COURS.value, SIGNALEMENT_TRANSMIS.value))
     //val now = LocalDate.now.atTime(startTime).plusDays(startDayOfWeek.getValue + 7 - LocalDate.now.getDayOfWeek.getValue)
 
-
+    // user système pour la relance
     val ziggyUuid = "8157c986-de0d-11e9-9d36-2a2ae2dbcce4"
 
     val now = LocalDate.now.atStartOfDay()
@@ -333,7 +335,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                 logger.debug(s"- création évènement ${event}")
                 logger.debug(s"- statusPro Signalement consulté ignoré (${report.id})")
 
-                // TODO Faire create event + status pro
+                eventOrchestrator.orchestrateEvent(event)
               }
               Future(None)
             }
@@ -354,7 +356,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                 logger.debug(s"- création évènement ${event}")
                 logger.debug(s"- envoi mail pro Nouveau signalement (${report.id})")
 
-                // TODO Faire create event + envoi mail pro
+                eventOrchestrator.orchestrateEvent(event)
               }
               Future(None)
             }
@@ -375,7 +377,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                 logger.debug(s"- création évènement ${event}")
                 logger.debug(s"- envoi mail pro Nouveau signalement (${report.id})")
 
-                // TODO Faire create event + envoi mail pro
+                eventOrchestrator.orchestrateEvent(event)
               }
               Future(None)
             })
