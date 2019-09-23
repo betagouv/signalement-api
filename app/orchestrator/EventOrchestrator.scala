@@ -15,7 +15,7 @@ import utils.Constants.StatusPro._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class EventOrchestrator @Inject()(reportRepository: ReportRepository,
                                   eventRepository: EventRepository,
@@ -38,27 +38,16 @@ class EventOrchestrator @Inject()(reportRepository: ReportRepository,
     }
 
     for {
-      report <- reportRepository.getReport(event.reportId.get)
+      report <- reportRepository.getReport(event.reportId.get) if report.isDefined
+      userPro <- userRepository.findByLogin(report.get.companySiret.getOrElse("")) if userPro.isDefined
     } yield {
-      report match {
-        case None => throw new Exception("Pas de report associé à l'évènement")
-        case Some(nonEmptyReport) => for {
-          userPro <- userRepository.findByLogin(nonEmptyReport.companySiret.getOrElse(""))
-        } yield {
-          userPro match {
-            case None => throw new Exception("Pas d'utilisateur valide pour l'évènement")
-            case Some(nonEmptyUser) => {
-              event.action match {
-                case CONSULTE_IGNORE => manageConsulteIgnore(event, nonEmptyReport)
-                case NON_CONSULTE => manageNonConsulte(event, nonEmptyReport)
-                case RELANCE => manageRelance(event, nonEmptyReport, nonEmptyUser)
-              }
-            }
-          }
+        event.action match {
+          case CONSULTE_IGNORE => manageConsulteIgnore(event, report.get)
+          case NON_CONSULTE => manageNonConsulte(event, report.get)
+          case RELANCE => manageRelance(event, report.get, userPro.get)
+          case _ => Future(None)
         }
       }
-    }
-
 
   }
 
@@ -129,7 +118,7 @@ class EventOrchestrator @Inject()(reportRepository: ReportRepository,
           )
         }
       } yield {
-        logger.debug("Changment du status pro à À traiter")
+        logger.debug("Changement du status pro à À traiter")
         (newReport.statusPro.map(s => s.value).getOrElse(""), List(newEvent.action.value), List.empty)
       }
     }
