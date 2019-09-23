@@ -7,7 +7,8 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
-import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
+import utils.Constants.ActionEvent.{ActionEventValue, MODIFICATION_COMMERCANT}
+import utils.Constants.StatusConso.StatusConsoValue
 import utils.Constants.StatusPro.StatusProValue
 import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
@@ -28,7 +29,7 @@ case class ReportFilter(
                        )
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -99,6 +100,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   private val reportTableQuery = TableQuery[ReportTable]
   
   private val fileTableQuery = TableQuery[FileTable]
+
+  private val userTableQuery = TableQuery[userRepository.UserTable]
 
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
 
@@ -350,6 +353,16 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     }
 
   }
+
+  def getReportsForStatusWithUser(status: StatusProValue): Future[List[(Report, Option[User])]] = db.run {
+    reportTableQuery
+      .filter(_.statusPro === status.value)
+      .joinLeft(userTableQuery).on(_.companySiret === _.login)
+      .to[List]
+      .result
+  }
+
+
 
 
 }
