@@ -25,8 +25,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    s3Service: S3Service,
                                    configuration: Configuration,
                                    environment: Environment)
-                                   (implicit val executionContext: ExecutionContext,
-                                   implicit val request: play.api.mvc.Request[Any]) {
+                                   (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
@@ -96,7 +95,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           )
         )
       }
-      case None => {
+      case _ => {
         val activationKey = f"${Random.nextInt(1000000)}%06d"
         userRepository.create(
           User(
@@ -114,7 +113,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def newReport(draftReport: Report) = 
+  def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]) =
     for {
       report <- reportRepository.create(
         draftReport.copy(
@@ -160,7 +159,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           companyPostalCode = report.companyPostalCode,
           companySiret = report.companySiret
         )).map(Some(_))
-        case None => Future(None)
+        case _ => Future(None)
       }
     } yield {
       updatedReport
@@ -169,5 +168,129 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         .flatMap(r => existingReport.filter(_.companySiret != r.companySiret))
         .foreach(notifyProfessionalOfNewReport)
       updatedReport
+    }
+
+  private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Unit] = {
+    mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Votre signalement",
+      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    )
+    for {
+      event <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          userUUID,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_TRANSMISSION,
+          None,
+          Some("Envoi email au consommateur d'information de transmission")
+        )
+      )
+      newReport <- reportRepository.update(
+        report.copy(
+          statusPro = Some(determineStatusPro(event, report.statusPro)),
+          statusConso = Some(determineStatusConso(event, report.statusConso))
+        )
+      )
+    } yield ()
+  }
+
+  private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
+    user.email.filter(_ != "").foreach(email =>
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = email)(
+        subject = "Votre réponse au signalement",
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
+    )
+    mailerService.sendEmail(
+      from = mailFrom,
+      recipients = report.email)(
+      subject = "Le professionnel a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    )
+  }
+
+  private def sendMailWrongAssignment(report: Report, event: Event) = {
+    mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Le professionnel a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    )
+  }
+
+  private def sendMailClosedByNoReading(report: Report) = {
+    mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Le professionnel n’a pas souhaité consulter votre signalement",
+      bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    )
+  }
+
+  private def sendMailClosedByNoAction(report: Report) = {
+    mailerService.sendEmail(
+      from = configuration.get[String]("play.mail.from"),
+      recipients = report.email)(
+      subject = "Le professionnel n’a pas répondu au signalement",
+      bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
+      attachments = Seq(
+        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      )
+    )
+  }
+
+  def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
+    for {
+      report <- reportRepository.getReport(reportId)
+      newEvent <- report match {
+          case Some(r) => eventRepository.createEvent(
+            draftEvent.copy(
+              id = Some(UUID.randomUUID()),
+              creationDate = Some(OffsetDateTime.now()),
+              reportId = r.id,
+              userId = user.id
+            )).map(Some(_))
+          case _ => Future(None)
+      }
+      updatedReport: Option[Report] <- (report, newEvent) match {
+        case (Some(r), Some(event)) => reportRepository.update(
+          r.copy(
+            statusPro = Some(determineStatusPro(event, r.statusPro)),
+            statusConso = Some(determineStatusConso(event, r.statusConso)))
+        ).map(Some(_))
+        case _ => Future(None)
+      }
+    } yield {
+      newEvent.foreach(event => event.action match {
+        case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
+        case REPONSE_PRO_SIGNALEMENT => sendMailsAfterProAcknowledgment(report.get, event, user)
+        case MAL_ATTRIBUE => sendMailWrongAssignment(report.get, event)
+        case NON_CONSULTE => sendMailClosedByNoReading(report.get)
+        case CONSULTE_IGNORE => sendMailClosedByNoAction(report.get)
+        case _ => ()
+      })
+      newEvent
     }
 }

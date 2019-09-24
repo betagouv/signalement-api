@@ -90,38 +90,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       event => {
         Try(UUID.fromString(uuid)) match {
           case Failure(_) => Future.successful(PreconditionFailed)
-          case Success(id) => {
-            for {
-              report <- reportRepository.getReport(id)
-              user <- userRepository.get(event.userId)
-              _ <- swap(report.flatMap(r => user.map(u => eventRepository.createEvent(
-                event.copy(
-                  id = Some(UUID.randomUUID()),
-                  creationDate = Some(OffsetDateTime.now()),
-                  reportId = r.id,
-                  userId = u.id
-                )))))
-              newReport <- swap(report.map(r => reportRepository.update{
-                  r.copy(
-                    statusPro = Some(determineStatusPro(event, r.statusPro)),
-                    statusConso = Some(determineStatusConso(event, r.statusConso)))
-              }))
-              _ <- swap(newReport.flatMap(r => (user, event.action) match {
-                case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
-                case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
-                case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
-                case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
-                case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
-                case _ => None
-              }))
-            } yield {
-              (report, user) match {
-                case (_, None) => BadRequest
-                case (Some(_), _) => Ok(Json.toJson(event))
-                case (None, _) => NotFound
-              }
-            }
-          }
+          case Success(id) => reportOrchestrator
+                                .newEvent(id, event, request.identity)
+                                .map(_.map(event => Ok(Json.toJson(event))).getOrElse(NotFound))
         }
       }
     )
@@ -135,11 +106,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
     )
   }
-
-  // utility : swap Option[Future[X]] in Future[Option[X]]
-  // @see : https://stackoverflow.com/questions/38226203/scala-optionfuturet-to-futureoptiont
-  def swap[M](x: Option[Future[M]]): Future[Option[M]] =
-    Future.sequence(Option.option2Iterable(x)).map(_.headOption)
 
   def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
@@ -182,117 +148,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       accumulator map { multipartUploadResult =>
         FilePart(partName, filename, contentType, multipartUploadResult)
       }
-  }
-
-  private def sendMailAdminReportNotification(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any]) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = configuration.get[String]("play.mail.contactRecipient"))(
-      subject = "Nouveau signalement",
-      bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
-    ))
-  }
-
-  private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
-
-    professionalUser.email match {
-      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
-        recipients = mail)(
-        subject = "Nouveau signalement",
-        bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
-      ))
-      case _ => Future(None)
-    }
-  }
-
-  private def sendMailReportAcknowledgment(report: Report, files: List[ReportFile]) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Votre signalement",
-      bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
-  }
-
-  private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
-      for {
-        _ <- sendMailToProForAcknowledgmentPro(event, user)
-        _ <- sendMailToConsumerForReportAcknowledgmentPro(report, event)
-      } yield {
-        logger.debug("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
-      }
-  }
-
-  private def sendMailWrongAssignment(report: Report, event: Event) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
-  }
-
-  private def sendMailClosedByNoReading(report: Report) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas souhaité consulter votre signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
-  }
-
-  private def sendMailClosedByNoAction(report: Report) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas répondu au signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
-  }
-
-  private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {
-
-    user.email match {
-      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
-        recipients = mail)(
-        subject = "Votre réponse au signalement",
-        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
-      ))
-      case _ => Future(None)
-    }
-
-  }
-
-  private def sendMailToConsumerForReportAcknowledgmentPro(report: Report, event: Event) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
   }
 
 
