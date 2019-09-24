@@ -12,7 +12,6 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import orchestrator.EventOrchestrator
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
@@ -41,8 +40,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration,
-                                 environment: Environment,
-                                 eventOrchestrator: EventOrchestrator)
+                                 environment: Environment)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
