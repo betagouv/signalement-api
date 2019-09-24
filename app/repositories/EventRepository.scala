@@ -87,6 +87,5 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
       events.groupBy(_.reportId.get)
     )
   }
-
 }
 

@@ -12,6 +12,7 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
+import orchestrators.ReportOrchestrator
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.mailer.AttachmentFile
 import play.api.libs.streams.Accumulator
@@ -32,7 +33,8 @@ import utils.{Constants, DateUtils}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
 
-class ReportController @Inject()(reportRepository: ReportRepository,
+class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
+                                 reportRepository: ReportRepository,
                                  eventRepository: EventRepository,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
@@ -46,14 +48,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-
-  def determineStatusPro(report: Report): StatusProValue = {
-    if (report.isEligible) A_TRAITER else NA
-  }
-
-  def determineStatusConso(report: Report): StatusConsoValue = {
-    if (report.isEligible) EN_ATTENTE else FAIT
-  }
 
   def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => A_TRAITER
@@ -71,7 +65,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
     case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
     case (_, _)                                => previousStatus.getOrElse(NA)
-
   }
 
   def determineStatusConso(event: Event, previousStatus: Option[StatusConsoValue]): StatusConsoValue = (event.action) match {
@@ -135,78 +128,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
-
     logger.debug("createReport")
 
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      report => {
-        for {
-          report <- reportRepository.create(
-            report.copy(
-              id = Some(UUID.randomUUID()),
-              creationDate = Some(OffsetDateTime.now()),
-              statusPro = Some(determineStatusPro(report)),
-              statusConso = Some(determineStatusConso(report))
-            )
-          )
-          _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
-          files <- reportRepository.retrieveReportFiles(report.id.get)
-          _ <- sendMailAdminReportNotification(report, files)
-          _ <- sendMailReportAcknowledgment(report, files)
-          _ <- (report.companySiret, report.isEligible) match {
-            case (Some(_), true) => notifyProfessionalOfNewReport(report)
-            case _ => Future(None)
-          }
-        } yield {
-          Ok(Json.toJson(report))
-        }
-      }
+      report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
     )
-  }
-
-  def notifyProfessionalOfNewReport(report: Report) = {
-    for {
-      eitherUserOrKey <- userRepository.findByLogin(report.companySiret.get).map(user => user.map(_ => Left(user.get)).getOrElse(Right(f"${Random.nextInt(1000000)}%06d")))
-      _ <- eitherUserOrKey match {
-        case Left(user) if user.email.isDefined =>
-          for {
-            _ <- sendMailProfessionalReportNotification(report, user)
-            event <- eventRepository.createEvent(
-              Event(
-                Some(UUID.randomUUID()),
-                report.id,
-                user.id,
-                Some(OffsetDateTime.now()),
-                Constants.EventType.PRO,
-                Constants.ActionEvent.CONTACT_EMAIL,
-                None,
-                Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
-              )
-            )
-            _ <- reportRepository.update(
-              report.copy(
-                statusPro = Some(determineStatusPro(event, report.statusPro)),
-                statusConso = Some(determineStatusConso(event, report.statusConso))
-              )
-            )
-          } yield ()
-        case Right(activationKey) =>
-          userRepository.create(
-            User(
-              UUID.randomUUID(),
-              report.companySiret.get,
-              activationKey,
-              Some(activationKey),
-              None,
-              None,
-              None,
-              UserRoles.ToActivate
-            )
-          )
-        case _ => Future(None)
-      }
-    } yield ()
   }
 
   // utility : swap Option[Future[X]] in Future[Option[X]]
@@ -221,38 +148,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       report => {
-
         report.id match {
           case None => Future.successful(BadRequest)
-          case Some(id) => {
-            for {
-              existingReport <- reportRepository.getReport(id)
-              resultReport <- swap(existingReport.map(r => reportRepository.update(r.copy(
-                  firstName = report.firstName,
-                  lastName = report.lastName,
-                  email= report.email,
-                  contactAgreement = report.contactAgreement,
-                  companyName = report.companyName,
-                  companyAddress = report.companyAddress,
-                  companyPostalCode = report.companyPostalCode,
-                  companySiret = report.companySiret
-                ))
-              ))
-              _ <- (existingReport.map(_.companySiret).getOrElse(None), report.companySiret, report.isEligible, resultReport) match {
-                case (someExistingSiret, Some(siret), true, Some(newReport)) if (someExistingSiret != Some(siret)) => notifyProfessionalOfNewReport(newReport)
-                case _ => Future(None)
-              }
-            } yield {
-              existingReport match {
-                case Some(_) => Ok
-                case None => NotFound
-              }
-            }
+          case Some(id) => reportOrchestrator.updateReport(id, report).map{
+            case Some(_) => Ok
+            case None => NotFound
           }
         }
-
     })
-
   }
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
