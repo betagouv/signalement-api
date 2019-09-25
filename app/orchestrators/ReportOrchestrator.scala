@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import play.api.{Configuration, Environment, Logger}
 import play.api.libs.mailer.AttachmentFile
-import play.mvc.Http.RequestBuilder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -168,6 +167,56 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         .flatMap(r => existingReport.filter(_.companySiret != r.companySiret))
         .foreach(notifyProfessionalOfNewReport)
       updatedReport
+    }
+
+  def handleReportView(report: Report, user: User) = {
+    if (user.userRole == UserRoles.Pro)
+      eventRepository.getEvents(report.id.get, EventFilter(None)).map(events =>
+        if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
+          manageFirstViewOfReportByPro(report, user.id)
+      )
+  }
+
+  def addReportFile(id: UUID, filename: String) =
+    reportRepository.createFile(ReportFile(id, None, OffsetDateTime.now(), filename))
+
+  def removeReportFile(id: UUID) =
+    for {
+      repositoryDelete <- reportRepository.deleteFile(id)
+      s3Delete <- s3Service.delete(bucketName, id.toString)
+    } yield ()
+
+  def deleteReport(id: UUID) =
+    for {
+      report <- reportRepository.getReport(id)
+      _ <- eventRepository.deleteEvents(id)
+      _ <- reportRepository.delete(id)
+    } yield {
+      report.isDefined
+    }
+
+    private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) = {
+      for {
+        event <- eventRepository.createEvent(
+          Event(
+            Some(UUID.randomUUID()),
+            report.id,
+            userUUID,
+            Some(OffsetDateTime.now()),
+            Constants.EventType.PRO,
+            Constants.ActionEvent.ENVOI_SIGNALEMENT,
+            None,
+            Some("Première consultation du détail du signalement par le professionnel")
+          )
+        )
+        report <- reportRepository.update(
+          report.copy(
+            statusPro = Some(determineStatusPro(event, report.statusPro)),
+            statusConso = Some(determineStatusConso(event, report.statusConso))
+          )
+        )
+        report <- notifyConsumerOfReportTransmission(report, userUUID)
+      } yield ()
     }
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Unit] = {
