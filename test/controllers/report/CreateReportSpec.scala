@@ -21,8 +21,9 @@ import play.api.test._
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.MailerService
 import tasks.TasksModule
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.StatusPro._
-import utils.Constants.{Departments, StatusPro}
+import utils.Constants.{ActionEvent, Departments, StatusPro}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.Duration
@@ -38,7 +39,7 @@ object CreateReportFromNotEligibleDepartment extends Specification with CreateRe
          For a report which concerns
           an outside experimentation department                     ${step(report = report.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
          when create the report                                     ${step(createReport(report))}
-          create the report with status 'NA'                        ${reportMustHaveBeenCreatedWithStatus(StatusPro.NA)}
+          create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(StatusPro.NA)}
           send a mail to admins                                     ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
           send an acknowledgment mail to the consumer               ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(statusPro = Some(StatusPro.NA)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
           do no create an account                                   ${accountMustNotHaveBeenCreated}
@@ -55,7 +56,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment  extends Specifica
           a professional who has no account                         ${step(report = report.copy(companySiret = Some(siretForCompanyWithoutAccount)))}
           an experimentation department                             ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          when create the report                                     ${step(createReport(report))}
-          create the report with status 'A traiter'                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
+          create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
           send a mail to admins                                     ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
           send an acknowledgment mail to the consumer               ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
           create an account for the professional                    ${accountToActivateMustHaveBeenCreated}
@@ -72,7 +73,7 @@ object CreateReportForProWithNotActivatedAccountFromEligibleDepartment extends S
           a professional who has a not activated account            ${step(report = report.copy(companySiret = Some(siretForCompanyWithNotActivatedAccount)))}
           an experimentation department                             ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          when create the report                                     ${step(createReport(report))}
-          create the report with status 'A traiter'                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
+          create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
           send a mail to admins                                     ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
           send an acknowledgment mail to the consumer               ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
           do no create an account                                   ${accountMustNotHaveBeenCreated}
@@ -89,11 +90,13 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Spec
           a professional who has an activated account               ${step(report = report.copy(companySiret = Some(siretForCompanyWithActivatedAccount)))}
           an experimentation department                             ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          when create the report                                     ${step(createReport(report))}
-          create the report with status 'A traiter'                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
+          create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
           send a mail to admins                                     ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
           send an acknowledgment mail to the consumer               ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-          send a mail to the pro                                    ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
           do no create an account                                   ${accountMustNotHaveBeenCreated}
+          create an event "CONTACT_EMAIL"                           ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_EMAIL)}
+          send a mail to the pro                                    ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+          update report status to "TRAITEMENT_EN_COURS"             ${reportMustHaveBeenUpdatedWithStatus(StatusPro.TRAITEMENT_EN_COURS)}
     """
 }
 
@@ -122,8 +125,20 @@ trait CreateReportSpec extends Context {
     there was one(mockReportRepository).create(argThat(reportStatusProMatcher(Some(status))))
   }
 
+  def reportMustHaveBeenUpdatedWithStatus(status: StatusProValue) = {
+    there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
+  }
+
   def reportStatusProMatcher(status: Option[StatusProValue]): Matcher[Report] = { report: Report =>
     (status == report.statusPro, s"status doesn't match ${status}")
+  }
+
+  def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
+    there was one(mockEventRepository).createEvent(argThat(eventActionMatcher(action)))
+  }
+
+  def eventActionMatcher(action: ActionEventValue): Matcher[Event] = { event: Event =>
+    (action == event.action, s"action doesn't match ${action}")
   }
 
   def accountToActivateMustHaveBeenCreated = {
