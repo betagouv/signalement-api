@@ -92,7 +92,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Spec
           create the report with status 'A traiter'                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
           send a mail to admins                                     ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
           send an acknowledgment mail to the consumer               ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-          send a mail to the pro                                    ${mailMustHaveBeenSent(proIdentity.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+          send a mail to the pro                                    ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
           do no create an account                                   ${accountMustNotHaveBeenCreated}
     """
 }
@@ -158,13 +158,16 @@ trait Context extends Mockito {
     "firstName", "lastName", "email", true, List(), None, None
   )
 
-  val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.login)
+  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
+  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
-  val proIdentity = User(UUID.randomUUID(),siretForCompanyWithActivatedAccount, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
-  val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
+  val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "code_activation", None, None, None, None, UserRoles.ToActivate)
+  val toActivateLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
+  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+  val proLoginInfo = LoginInfo(CredentialsProvider.ID, proUser.login)
+
+  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, proLoginInfo -> proUser))
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
@@ -178,6 +181,8 @@ trait Context extends Mockito {
 
   mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
   mockUserRepository.findByLogin(siretForCompanyWithoutAccount) returns Future(None)
+  mockUserRepository.findByLogin(siretForCompanyWithNotActivatedAccount) returns Future(Some(toActivateUser))
+  mockUserRepository.findByLogin(siretForCompanyWithActivatedAccount) returns Future(Some(proUser))
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
 
