@@ -520,7 +520,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           "slick.dbs.default.db.connectionPool" -> "disabled",
           "play.mailer.mock" -> true,
           "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-          "play.tmpDirectory" -> "/tmp/signalconso"
+          "play.tmpDirectory" -> "./target"
         )
       )
       .disable[TasksModule]
