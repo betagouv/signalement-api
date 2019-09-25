@@ -100,7 +100,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Spec
     """
 }
 
-trait CreateReportSpec extends Context {
+trait CreateReportSpec extends CreateReportContext {
 
   import org.specs2.matcher.MatchersImplicits._
   import org.mockito.Matchers.{eq => eqTo, _}
@@ -156,7 +156,7 @@ trait CreateReportSpec extends Context {
 
 }
 
-trait Context extends Mockito {
+trait CreateReportContext extends Mockito {
 
   implicit val ec = ExecutionContext.global
 
@@ -173,16 +173,8 @@ trait Context extends Mockito {
     "firstName", "lastName", "email", true, List(), None, None
   )
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
-
   val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "code_activation", None, None, None, None, UserRoles.ToActivate)
-  val toActivateLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
-
   val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
-  val proLoginInfo = LoginInfo(CredentialsProvider.ID, proUser.login)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, proLoginInfo -> proUser))
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
@@ -203,7 +195,6 @@ trait Context extends Mockito {
 
   class FakeModule extends AbstractModule with ScalaModule {
     override def configure() = {
-      bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
       bind[UserRepository].toInstance(mockUserRepository)
@@ -217,9 +208,7 @@ trait Context extends Mockito {
         "play.evolutions.enabled" -> false,
         "slick.dbs.default.db.connectionPool" -> "disabled",
         "play.mailer.mock" -> true,
-        "play.mail.contactRecipient" -> contactEmail,
-        "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-        "play.tmpDirectory" -> "/tmp/signalconso"
+        "play.mail.contactRecipient" -> contactEmail
       )
     )
     .disable[TasksModule]
