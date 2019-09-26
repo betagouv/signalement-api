@@ -94,7 +94,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           )
         )
       }
-      case _ => {
+      case None => {
         val activationKey = f"${Random.nextInt(1000000)}%06d"
         userRepository.create(
           User(
@@ -109,6 +109,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           )
         )
       }
+      case _ => Future(Unit)
     }
   }
 
