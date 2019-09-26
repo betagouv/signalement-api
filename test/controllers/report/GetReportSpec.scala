@@ -57,7 +57,7 @@ object GetReportByNotConcernedProUser extends GetReportSpec  {
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step(someLoginInfo = Some(notConcernedProLoginInfo))}
          When getting the report                                                ${step(someResult = Some(getReport(neverRequestedReportUUID, someLoginInfo)))}
-         Then user is not authorized                                            ${userMustBeUnauthorized}
+         Then the report is not found                                           ${reportMustBeNotFound}
     """
 }
 
@@ -108,6 +108,10 @@ trait GetReportSpec extends Spec with GetReportContext {
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
   }
 
+  def reportMustBeNotFound() = {
+    someResult must beSome and someResult.get.header.status === Status.NOT_FOUND
+  }
+
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
 
     implicit val reportWriter = userRole match {
@@ -136,7 +140,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: StatusProValue) = {
-    there was two(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status)))) //TODO Must be only one time
+    there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
   }
 
   def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
