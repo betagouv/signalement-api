@@ -35,30 +35,27 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
                             val silhouetteAPIKey: Silhouette[APIKeyEnv],
                             configuration: Configuration,
                             environment: Environment,
-                            reportController: ReportController) // TODO: À supprimer
+                            reportController: ReportController) // TODO: À supprimer quand les méthodes sendMail seront déplacées
                            (implicit val executionContext: ExecutionContext) {
 
 
   val logger: Logger = Logger(this.getClass)
 
-  // user système pour la relance (à mettre en variable d'environnement)
-  val systemUuid = "8157c986-de0d-11e9-9d36-2a2ae2dbcce4"
-
+  val systemUuid = configuration.get[String]("play.systemUuid")
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.relance.start.hour"), configuration.get[Int]("play.tasks.relance.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.relance.interval").minutes
 
   // val initialDelay = (LocalDateTime.now.until(startTime, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
-
   val initialDelay = 30.seconds
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
 
     logger.debug("Tâche de relance automatique")
 
-    Logger.debug(s"taskDate - ${LocalDate.now}");
-    Logger.debug(s"initialDelay - ${initialDelay}");
-    Logger.debug(s"interval - ${interval}");
+    logger.debug(s"taskDate - ${LocalDate.now}");
+    logger.debug(s"initialDelay - ${initialDelay}");
+    logger.debug(s"interval - ${interval}");
 
     runTask
 
@@ -70,36 +67,98 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
     val lastWeek = now.minusDays(7)
     val last21Days = now.minusDays(21)
 
-    reportRepository.getReportsForStatusWithUser(SIGNALEMENT_TRANSMIS).map(reportsWithUser => {
+    reportRepository.getReportsForStatusWithUser(TRAITEMENT_EN_COURS).map(reportsWithUser => {
       reportsWithUser.map(tuple => {
         val report = tuple._1
-        val user = tuple._2
+        val userPro = tuple._2
+        val userProMail = tuple._2.flatMap(user => user.email)
 
         eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).flatMap(events => {
 
           events.length match {
-            case aux if aux > 2 => {
-              if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+            case length if length == 0 => {
+              userProMail match {
+                case None => {
+                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_COURRIER))).flatMap(events => {
+                    if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
+                      runEvent(report, RELANCE, userPro)
+                    } else {
+                      logger.debug(s"Cas non prévu de relance reportId ${report.id.get} : pas d'évènement Envoi d'un courrier positionné")
+                    }
 
-                runEvent(report, CONSULTE_IGNORE, user)
+                    Future(None)
+                  })
+                }
+                case Some(_) => {
+                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).flatMap(events => {
+                    if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+                      runEvent(report, RELANCE, userPro)
+                    }
+                    Future(None)
+                  })
+                }
+              }
+            }
+            case length if length == 1 => {
+              userProMail match {
+                case None => {
+                  if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
+                    runEvent(report, NON_CONSULTE, userPro)
+                  }
+                  Future(None)
+                }
+
+                case Some(_) => {
+                  if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+                    runEvent(report, RELANCE, userPro)
+                  }
+                  Future(None)
+                }
+              }
+            }
+
+            case length if length >= 2 => {
+              if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+                runEvent(report, NON_CONSULTE, userPro)
               }
               Future(None)
             }
-            case aux if aux == 1 => {
-              if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
-                runEvent(report, RELANCE, user)
-              }
-              Future(None)
-            }
-            case _ => eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).flatMap(emailEvents => {
-              if (emailEvents.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-
-                runEvent(report, RELANCE, user)
-              }
-              Future(None)
-            })
           }
+        })
+      })
+
+      reportRepository.getReportsForStatusWithUser(SIGNALEMENT_TRANSMIS).map(reportsWithUser => {
+        reportsWithUser.map(tuple => {
+          val report = tuple._1
+          val user = tuple._2
+
+          eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).flatMap(events => {
+
+            events.length match {
+              case aux if aux > 2 => {
+                if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+
+                  runEvent(report, CONSULTE_IGNORE, user)
+                }
+                Future(None)
+              }
+              case aux if aux == 1 => {
+                if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+
+                  runEvent(report, RELANCE, user)
+                }
+                Future(None)
+              }
+              case _ => eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).flatMap(emailEvents => {
+                if (emailEvents.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
+
+                  runEvent(report, RELANCE, user)
+                }
+                Future(None)
+              })
+            }
+          })
         })
       })
     })
@@ -113,7 +172,6 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
       case RELANCE => manageRelance(report, userPro.get)
       case _ => Future(None)
     }
-
   }
 
   def manageConsulteIgnore(report: Report) = {
@@ -173,34 +231,37 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
 
   def manageRelance(report: Report, proUser: User) = {
 
-    if (proUser.email.isDefined) {
-      for {
-        newEvent <- eventRepository.createEvent(
-          createRelanceEvent(report)
-        )
-        _ <- reportController.sendMailProfessionalReportNotification(report, proUser)
-      } yield {
-
-        val debug = (report.id, report.companySiret, List(newEvent.action.value), List("professional.reportNotification"))
-        logger.debug(s"Résumé de la tâche : ${debug}")
-
-      }
-    } else {
-      for {
-        newEvent <- eventRepository.createEvent(
-          createRelanceEvent(report)
-        )
-
-        newReport <- reportRepository.update {
-          report.copy(
-            statusPro = Some(A_TRAITER)
+    proUser.email match {
+      case Some(_) => {
+        for {
+          newEvent <- eventRepository.createEvent(
+            createRelanceEvent(report)
           )
+          _ <- reportController.sendMailProfessionalReportNotification(report, proUser)
+        } yield {
+
+          val debug = (report.id, report.companySiret, List(newEvent.action.value), List("professional.reportNotification"))
+          logger.debug(s"Résumé de la tâche : ${debug}")
+
         }
-      } yield {
+      }
+      case None => {
+        for {
+          newEvent <- eventRepository.createEvent(
+            createRelanceEvent(report)
+          )
 
-        val debug = (report.id, report.companySiret, List(newEvent.action.value), List(""))
-        logger.debug(s"Résumé de la tâche : ${debug}")
+          _ <- reportRepository.update {
+            report.copy(
+              statusPro = Some(A_TRAITER)
+            )
+          }
+        } yield {
 
+          val debug = (report.id, report.companySiret, List(newEvent.action.value), List(""))
+          logger.debug(s"Résumé de la tâche : ${debug}")
+
+        }
       }
     }
   }
