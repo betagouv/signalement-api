@@ -2,6 +2,9 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+# Injecteur pour test (temporaire, avant test en base de données mémoire)
+GET          /api/injectTest/prepareBeforeTest          controllers.InjectTestController.prepareBeforeTest
+
 # Static pages
 GET          /api                                       controllers.StaticController.api
 

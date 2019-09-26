@@ -25,26 +25,26 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class RelanceTask @Inject()(actorSystem: ActorSystem,
-                            reportRepository: ReportRepository,
-                            eventRepository: EventRepository,
-                            userRepository: UserRepository,
-                            mailerService: MailerService,
-                            s3Service: S3Service,
-                            val silhouette: Silhouette[AuthEnv],
-                            val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                            configuration: Configuration,
-                            environment: Environment,
-                            reportController: ReportController) // TODO: À supprimer quand les méthodes sendMail seront déplacées
-                           (implicit val executionContext: ExecutionContext) {
+class ReminderTask @Inject()(actorSystem: ActorSystem,
+                             reportRepository: ReportRepository,
+                             eventRepository: EventRepository,
+                             userRepository: UserRepository,
+                             mailerService: MailerService,
+                             s3Service: S3Service,
+                             val silhouette: Silhouette[AuthEnv],
+                             val silhouetteAPIKey: Silhouette[APIKeyEnv],
+                             configuration: Configuration,
+                             environment: Environment,
+                             reportController: ReportController) // TODO: À supprimer quand les méthodes sendMail seront déplacées
+                            (implicit val executionContext: ExecutionContext) {
 
 
   val logger: Logger = Logger(this.getClass)
 
   val systemUuid = configuration.get[String]("play.systemUuid")
 
-  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.relance.start.hour"), configuration.get[Int]("play.tasks.relance.start.minute"), 0)
-  val interval = configuration.get[Int]("play.tasks.relance.interval").minutes
+  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
+  val interval = configuration.get[Int]("play.tasks.reminder.interval").minutes
 
   // val initialDelay = (LocalDateTime.now.until(startTime, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
   val initialDelay = 30.seconds
@@ -73,28 +73,26 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
         val userPro = tuple._2
         val userProMail = tuple._2.flatMap(user => user.email)
 
-        eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).flatMap(events => {
+        eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).map(events => {
 
           events.length match {
             case length if length == 0 => {
               userProMail match {
                 case None => {
-                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_COURRIER))).flatMap(events => {
+                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_COURRIER))).map(events => {
                     if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
                       runEvent(report, RELANCE, userPro)
                     } else {
                       logger.debug(s"Cas non prévu de relance reportId ${report.id.get} : pas d'évènement Envoi d'un courrier positionné")
                     }
 
-                    Future(None)
                   })
                 }
                 case Some(_) => {
-                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).flatMap(events => {
+                  eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).map(events => {
                     if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
                       runEvent(report, RELANCE, userPro)
                     }
-                    Future(None)
                   })
                 }
               }
@@ -105,14 +103,12 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
                   if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
                     runEvent(report, NON_CONSULTE, userPro)
                   }
-                  Future(None)
                 }
 
                 case Some(_) => {
                   if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
                     runEvent(report, RELANCE, userPro)
                   }
-                  Future(None)
                 }
               }
             }
@@ -121,7 +117,6 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
               if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
                 runEvent(report, NON_CONSULTE, userPro)
               }
-              Future(None)
             }
 
           }
@@ -133,7 +128,7 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
           val report = tuple._1
           val user = tuple._2
 
-          eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).flatMap(events => {
+          eventRepository.getEvents(report.id.get, EventFilter(None, Some(RELANCE))).map(events => {
 
             events.length match {
               case aux if aux > 2 => {
@@ -141,21 +136,18 @@ class RelanceTask @Inject()(actorSystem: ActorSystem,
 
                   runEvent(report, CONSULTE_IGNORE, user)
                 }
-                Future(None)
               }
               case aux if aux == 1 => {
                 if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
                   runEvent(report, RELANCE, user)
                 }
-                Future(None)
               }
-              case _ => eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).flatMap(emailEvents => {
+              case _ => eventRepository.getEvents(report.id.get, EventFilter(None, Some(CONTACT_EMAIL))).map(emailEvents => {
                 if (emailEvents.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
                   runEvent(report, RELANCE, user)
                 }
-                Future(None)
               })
             }
           })
