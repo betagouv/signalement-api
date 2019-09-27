@@ -165,8 +165,6 @@ trait GetReportContext extends Mockito {
 
   implicit val ec = ExecutionContext.global
 
-  val contactEmail = "mail@test.fr"
-
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
 
@@ -195,13 +193,11 @@ trait GetReportContext extends Mockito {
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
-  val mockUserRepository = mock[UserRepository]
   val mockMailerService = mock[MailerService]
 
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(alreadyRequestedReportUUID) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
@@ -214,7 +210,6 @@ trait GetReportContext extends Mockito {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
-      bind[UserRepository].toInstance(mockUserRepository)
       bind[MailerService].toInstance(mockMailerService)
     }
   }
@@ -224,10 +219,7 @@ trait GetReportContext extends Mockito {
       Configuration(
         "play.evolutions.enabled" -> false,
         "slick.dbs.default.db.connectionPool" -> "disabled",
-        "play.mailer.mock" -> true,
-        "play.mail.contactRecipient" -> contactEmail,
-        "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-        "play.tmpDirectory" -> "/tmp/signalconso"
+        "play.mailer.mock" -> true
       )
     )
     .disable[TasksModule]
