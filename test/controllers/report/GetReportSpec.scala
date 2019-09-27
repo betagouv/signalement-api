@@ -38,7 +38,7 @@ object GetReportByUnauthenticatedUser extends GetReportSpec  {
   override def is =
     s2"""
          Given an unauthenticated user                                ${step(someLoginInfo = None)}
-         When retrieving the report                                   ${step(someResult = Some(getReport(neverRequestedReportUUID, someLoginInfo)))}
+         When retrieving the report                                   ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then user is not authorized                                  ${userMustBeUnauthorized}
     """
 }
@@ -47,7 +47,7 @@ object GetReportByAdminUser extends GetReportSpec  {
   override def is =
     s2"""
          Given an authenticated admin user                            ${step(someLoginInfo = Some(adminLoginInfo))}
-         When retrieving the report                                   ${step(someResult = Some(getReport(neverRequestedReportUUID, someLoginInfo)))}
+         When retrieving the report                                   ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then the report is rendered to the user as an Admin          ${reportMustBeRenderedForUserRole(neverRequestedReport, UserRoles.Admin)}
     """
 }
@@ -56,7 +56,7 @@ object GetReportByNotConcernedProUser extends GetReportSpec  {
   override def is =
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step(someLoginInfo = Some(notConcernedProLoginInfo))}
-         When getting the report                                                ${step(someResult = Some(getReport(neverRequestedReportUUID, someLoginInfo)))}
+         When getting the report                                                ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then the report is not found                                           ${reportMustBeNotFound}
     """
 }
@@ -65,7 +65,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
-         When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID, someLoginInfo)))}
+         When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
          And the report status is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_TRANSMIS)}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
@@ -77,7 +77,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec  {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
-         When retrieving the report not for the first time                      ${step(someResult = Some(getReport(alreadyRequestedReportUUID, someLoginInfo)))}
+         When retrieving the report not for the first time                      ${step(someResult = Some(getReport(alreadyRequestedReportUUID)))}
          Then no event is created                                               ${eventMustNotHaveBeenCreated}
          And the report status is not updated                                   ${reportMustNotHaveBeenUpdated}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent}
@@ -96,10 +96,10 @@ trait GetReportSpec extends Spec with GetReportContext {
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
 
-  def getReport(reportUUID: UUID, loginInfo: Option[LoginInfo]) =  {
+  def getReport(reportUUID: UUID) =  {
     Await.result(
       application.injector.instanceOf[ReportController].getReport(reportUUID.toString)
-        .apply(loginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
+        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf
     )
   }
@@ -169,8 +169,6 @@ trait GetReportContext extends Mockito {
 
   implicit val ec = ExecutionContext.global
 
-  val contactEmail = "mail@test.fr"
-
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
 
@@ -199,13 +197,11 @@ trait GetReportContext extends Mockito {
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
-  val mockUserRepository = mock[UserRepository]
   val mockMailerService = mock[MailerService]
 
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(alreadyRequestedReportUUID) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
@@ -218,7 +214,6 @@ trait GetReportContext extends Mockito {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
-      bind[UserRepository].toInstance(mockUserRepository)
       bind[MailerService].toInstance(mockMailerService)
     }
   }
@@ -228,10 +223,7 @@ trait GetReportContext extends Mockito {
       Configuration(
         "play.evolutions.enabled" -> false,
         "slick.dbs.default.db.connectionPool" -> "disabled",
-        "play.mailer.mock" -> true,
-        "play.mail.contactRecipient" -> contactEmail,
-        "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-        "play.tmpDirectory" -> "/tmp/signalconso"
+        "play.mailer.mock" -> true
       )
     )
     .disable[TasksModule]
