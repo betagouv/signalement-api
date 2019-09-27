@@ -20,12 +20,10 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
-import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository, ReportFilter}
+import repositories._
 import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType
-import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.silhouette.api.APIKeyEnv
@@ -65,7 +63,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
-        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
+        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None)
 
         controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(A_TRAITER)
         controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(NA)
@@ -104,39 +102,11 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     }
   }
 
-  "determineStatusConso with event" should {
-
-    "ReportController" in new Context {
-      new WithApplication(application) {
-
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
-          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-        }
-
-        val fakeUUID = UUID.randomUUID()
-        val fakeTime = OffsetDateTime.now()
-
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
-        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE)) must equalTo(A_RECONTACTER)
-        controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE)) must equalTo(A_INFORMER_TRANSMISSION)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_TRANSMISSION), Some(A_INFORMER_TRANSMISSION)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE)) must equalTo(A_INFORMER_REPONSE_PRO)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO)) must equalTo(FAIT)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER)) must equalTo(FAIT)
-        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), None) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(A_RECONTACTER)) must equalTo(A_RECONTACTER)
-      }
-    }
-  }
-
   "createReport when the report concerns a professional in an authorized department" should {
 
     val reportFixture = Report(
       None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-      "firstName", "lastName", "email", true, List(), None, None
+      "firstName", "lastName", "email", true, List(), None
     )
 
     "if the professional has no account :" +
@@ -207,7 +177,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
       Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(OffsetDateTime.now()),
-      "firstName", "lastName", "email", true, List(), None, None
+      "firstName", "lastName", "email", true, List(), None
     )
 
     "return the report when the user is an admin" should {
@@ -295,7 +265,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val reportUUID = UUID.randomUUID()
     val reportFixture = Report(
       Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(OffsetDateTime.now()),
-      "firstName", "lastName", "email", true, List(), None, None
+      "firstName", "lastName", "email", true, List(), None
     )
 
     implicit val actionEventValueWrites = new Writes[ActionEventValue] {
@@ -454,7 +424,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             Report(
               reportId, "foo", List("bar"), List(), "myCompany", "18 rue des Champs",
               None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", "jdoe@example.com",
-              true, List(), None, None
+              true, List(), None
             )
           )
           mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(
