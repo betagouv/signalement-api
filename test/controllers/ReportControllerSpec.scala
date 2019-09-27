@@ -146,29 +146,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     }
     implicit val eventWriter = Json.writes[Event]
 
-    "for event action 'CONTACT_COURRIER' : " +
-      "- create an event" +
-      "- do not send any email" should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          val eventFixture = Event(None, Some(reportUUID), proIdentity.id, None, EventType.PRO, ActionEvent.CONTACT_COURRIER, Some(true), None)
-
-          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
-          mockUserRepository.get(eventFixture.userId) returns Future(Some(proIdentity))
-
-          val controller = application.injector.instanceOf[ReportController]
-          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](proLoginInfo))
-
-          Helpers.status(result) must beEqualTo(OK)
-
-          there was one(mockEventRepository).createEvent(any[Event])
-          there was no(mockMailerService).sendEmail(anyString, anyVarArg[String])(anyString, anyString, any[Seq[AttachmentFile]])
-        }
-      }
-    }
-
     "for event action 'MAL ATTRIBUE' : " +
       " - create event " +
       " - send specific email " should {
