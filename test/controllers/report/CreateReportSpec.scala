@@ -35,7 +35,7 @@ object CreateReportFromNotEligibleDepartment extends CreateReportSpec {
     s2"""
          Given a report which concerns
           an outside experimentation department                         ${step(report = report.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
-         When create the report                                         ${step(createReport(report))}
+         When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(StatusPro.NA)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(statusPro = Some(StatusPro.NA)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
@@ -49,7 +49,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateRepo
          Given a report which concerns
           a professional who has no account                             ${step(report = report.copy(companySiret = Some(siretForCompanyWithoutAccount)))}
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
-         When create the report                                         ${step(createReport(report))}
+         When create the report                                         ${step(createReport())}
          Then create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
@@ -63,7 +63,7 @@ object CreateReportForProWithNotActivatedAccountFromEligibleDepartment extends C
          Given a report which concerns
           a professional who has a not activated account                ${step(report = report.copy(companySiret = Some(siretForCompanyWithNotActivatedAccount)))}
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
-         When create the report                                         ${step(createReport(report))}
+         When create the report                                         ${step(createReport())}
          Then create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
@@ -77,7 +77,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
          Given a report which concerns
           a professional who has an activated account                   ${step(report = report.copy(companySiret = Some(siretForCompanyWithActivatedAccount)))}
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
-         When create the report                                         ${step(createReport(report))}
+         When create the report                                         ${step(createReport())}
          Then create the report with status "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(StatusPro.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
@@ -95,7 +95,7 @@ trait CreateReportSpec extends Spec with CreateReportContext {
 
   var report = reportFixture
 
-  def createReport(report: Report) =  {
+  def createReport() =  {
     Await.result(application.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(report))), Duration.Inf)
   }
 
