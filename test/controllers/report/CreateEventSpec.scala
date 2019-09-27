@@ -52,6 +52,18 @@ object CreateEventByNotConcernedProUser extends CreateEventSpec  {
     """
 }
 
+object CreateEventAdminPostalMail extends CreateEventSpec {
+  override def is =
+    s2"""
+        Given an authenticated admin user                                        ${step(someLoginInfo = Some(adminLoginInfo))}
+        Given an action of sending postal letter                                 ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.CONTACT_COURRIER)))}
+        When create the associated event                                         ${step(someResult = Some(createEvent()))}
+        Then an event "CONTACT_COURRIER" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_COURRIER)}
+        And the report status is updated to "TRAITEMENT_EN_COURS"                ${reportMustHaveBeenUpdatedWithStatus(StatusPro.TRAITEMENT_EN_COURS)}
+        no email is sent                                                         ${mailMustNotHaveBeenSent}
+    """
+}
+
 object CreateEventProAnswer extends CreateEventSpec {
   override def is =
     s2"""
@@ -144,6 +156,10 @@ trait CreateEventContext extends Mockito {
         bodyHtml,
         attachments
       )
+  }
+
+  def mailMustNotHaveBeenSent() = {
+    there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue, withResult: Boolean = true) =
