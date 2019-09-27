@@ -1,15 +1,10 @@
 package controllers
 
-import java.io.File
-import java.time.{LocalDateTime, OffsetDateTime}
-import java.time.format.DateTimeFormatter
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
-import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
-import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import play.api.libs.json.{JsError, Json}
@@ -21,13 +16,12 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
+import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
-import utils.Constants.{Departments, EventType, StatusPro}
+import utils.Constants.{EventType, StatusPro}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
@@ -51,10 +45,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     if (report.isEligible) A_TRAITER else NA
   }
 
-  def determineStatusConso(report: Report): StatusConsoValue = {
-    if (report.isEligible) EN_ATTENTE else FAIT
-  }
-
   def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
     case (A_CONTACTER, _)                      => A_TRAITER
     case (HORS_PERIMETRE, _)                   => NA
@@ -72,20 +62,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
     case (_, _)                                => previousStatus.getOrElse(NA)
 
-  }
-
-  def determineStatusConso(event: Event, previousStatus: Option[StatusConsoValue]): StatusConsoValue = (event.action) match {
-    case A_CONTACTER                         => EN_ATTENTE
-    case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
-    case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
-    case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
-    case EMAIL_TRANSMISSION                  => EN_ATTENTE
-    case EMAIL_REPONSE_PRO                   => FAIT
-    case CONTACT_TEL                         => EN_ATTENTE
-    case CONTACT_EMAIL                       => EN_ATTENTE
-    case CONTACT_COURRIER                    => EN_ATTENTE
-    case HORS_PERIMETRE                      => A_RECONTACTER
-    case _                                   => previousStatus.getOrElse(EN_ATTENTE)
   }
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
@@ -110,8 +86,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 )))))
               newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = Some(determineStatusPro(event, r.statusPro)),
-                    statusConso = Some(determineStatusConso(event, r.statusConso)))
+                    statusPro = Some(determineStatusPro(event, r.statusPro))
+                  )
               }))
               _ <- swap(newReport.flatMap(r => (user, event.action) match {
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
@@ -146,8 +122,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
-              statusPro = Some(determineStatusPro(report)),
-              statusConso = Some(determineStatusConso(report))
+              statusPro = Some(determineStatusPro(report))
             )
           )
           _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -186,8 +161,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             )
             _ <- reportRepository.update(
               report.copy(
-                statusPro = Some(determineStatusPro(event, report.statusPro)),
-                statusConso = Some(determineStatusConso(event, report.statusConso))
+                statusPro = Some(determineStatusPro(event, report.statusPro))
               )
             )
           } yield ()
@@ -495,8 +469,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       )
       report <- reportRepository.update(
         report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro)),
-          statusConso = Some(determineStatusConso(event, report.statusConso))
+          statusPro = Some(determineStatusPro(event, report.statusPro))
         )
       )
       report <- notifyConsumerOfReportTransmission(report, userUUID)
@@ -520,8 +493,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       )
       newReport <- reportRepository.update(
         report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro)),
-          statusConso = Some(determineStatusConso(event, report.statusConso))
+          statusPro = Some(determineStatusPro(event, report.statusPro))
         )
       )
     } yield (newReport)

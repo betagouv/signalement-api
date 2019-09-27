@@ -5,7 +5,6 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.StatusConso.StatusConsoValue
 import utils.Constants.StatusPro._
 import utils.Constants.Departments
 
@@ -24,8 +23,7 @@ case class Report(
                    email: String,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
-                   statusPro: Option[StatusProValue],
-                   statusConso: Option[StatusConsoValue]
+                   statusPro: Option[StatusProValue]
                  ) {
   def isEligible = {
     companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);

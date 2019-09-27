@@ -76,37 +76,6 @@ object Constants {
 
   }
 
-  object StatusConso {
-
-    // Valeurs possibles de action de la table Event
-    case class StatusConsoValue(value: String)
-
-    object StatusConsoValue {
-      implicit val statusConsoValueWrites = new Writes[StatusConsoValue] {
-        def writes(statusConsoValue: StatusConsoValue) = Json.toJson(statusConsoValue.value)
-      }
-      implicit val statusConsoValueReads: Reads[StatusConsoValue] =
-        JsPath.read[String].map(fromValue(_).get)
-    }
-
-    object EN_ATTENTE extends StatusConsoValue("En attente")
-    object A_RECONTACTER extends StatusConsoValue("À recontacter")
-    object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
-    object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
-    object FAIT extends StatusConsoValue("Fait")
-
-    val status = Seq(
-      EN_ATTENTE,
-      A_RECONTACTER,
-      A_INFORMER_TRANSMISSION,
-      A_INFORMER_REPONSE_PRO,
-      FAIT
-    )
-
-    def fromValue(value: String) = status.find(_.value == value)
-  }
-
-
   object EventType {
 
     // Valeurs possibles de event_type
