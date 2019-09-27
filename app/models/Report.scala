@@ -37,7 +37,7 @@ object Report {
 
   private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
     statusPro match {
-      case Some(SIGNALEMENT_TRANSMIS) | Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) | Some(SIGNALEMENT_MAL_ATTRIBUE) |
+      case Some(SIGNALEMENT_TRANSMIS) | Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) |
            Some(SIGNALEMENT_NON_CONSULTE) | Some(SIGNALEMENT_CONSULTE_IGNORE) => statusPro.get.value
       case _ => ""
     }

@@ -26,7 +26,6 @@ object Constants {
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
     object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
-    object SIGNALEMENT_MAL_ATTRIBUE extends StatusProValue("Signalement mal attribué")
     object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté")
     object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré")
 
@@ -37,7 +36,6 @@ object Constants {
       SIGNALEMENT_TRANSMIS,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
-      SIGNALEMENT_MAL_ATTRIBUE,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE
     )
@@ -46,7 +44,6 @@ object Constants {
       NA,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
-      SIGNALEMENT_MAL_ATTRIBUE,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE
     )
@@ -120,7 +117,6 @@ object Constants {
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
-    object MAL_ATTRIBUE extends ActionEventValue("Signalement mal attribué")
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
 
@@ -139,7 +135,6 @@ object Constants {
       CONTACT_COURRIER,
       ENVOI_SIGNALEMENT,
       REPONSE_PRO_SIGNALEMENT,
-      MAL_ATTRIBUE,
       NON_CONSULTE,
       CONSULTE_IGNORE
     )
@@ -147,7 +142,6 @@ object Constants {
     val actionProFinals = Seq(
       HORS_PERIMETRE,
       REPONSE_PRO_SIGNALEMENT,
-      MAL_ATTRIBUE,
       NON_CONSULTE,
       CONSULTE_IGNORE
     )

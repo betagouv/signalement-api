@@ -92,7 +92,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true)), Some(NA)) must equalTo(PROMESSE_ACTION)
         controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA)) must equalTo(SIGNALEMENT_INFONDE)
         controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = MAL_ATTRIBUE), Some(TRAITEMENT_EN_COURS)) must equalTo(SIGNALEMENT_MAL_ATTRIBUE)
         controller.determineStatusPro(eventFixture.copy(action = NON_CONSULTE), Some(SIGNALEMENT_TRANSMIS)) must equalTo(SIGNALEMENT_NON_CONSULTE)
         controller.determineStatusPro(eventFixture.copy(action = CONSULTE_IGNORE), Some(A_TRAITER)) must equalTo(SIGNALEMENT_CONSULTE_IGNORE)
       }
@@ -322,37 +321,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
           there was one(mockEventRepository).createEvent(any[Event])
           there was no(mockMailerService).sendEmail(anyString, anyVarArg[String])(anyString, anyString, any[Seq[AttachmentFile]])
-        }
-      }
-    }
-
-    "for event action 'MAL ATTRIBUE' : " +
-      " - create event " +
-      " - send specific email " should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, EventType.PRO, MAL_ATTRIBUE, None, None)
-
-          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
-          mockUserRepository.get(adminIdentity.id) returns Future(Some(adminIdentity))
-
-          val controller = application.injector.instanceOf[ReportController]
-          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](adminLoginInfo))
-
-          Helpers.status(result) must beEqualTo(OK)
-
-          there was one(mockEventRepository).createEvent(any[Event])
-          there was one(mockUserRepository).get(adminIdentity.id)
-
-          there was one(mockMailerService).sendEmail(application.configuration.get[String]("play.mail.from"), "email")(
-            subject = "Le professionnel a répondu à votre signalement",
-            bodyHtml = views.html.mails.consumer.reportWrongAssignment(reportFixture, eventFixture).toString,
-            attachments = Seq(
-              AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-            )
-          )
         }
       }
     }

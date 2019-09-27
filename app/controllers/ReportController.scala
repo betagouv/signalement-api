@@ -53,7 +53,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
     case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
     case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
-    case (MAL_ATTRIBUE, _)                     => SIGNALEMENT_MAL_ATTRIBUE
     case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
     case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
     case (_, _)                                => previousStatus.getOrElse(NA)
@@ -88,7 +87,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               _ <- swap(newReport.flatMap(r => (user, event.action) match {
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
-                case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
                 case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
                 case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
@@ -295,18 +293,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       } yield {
         logger.debug("Envoi d'email au professionnel et au consommateur suite à réponse du professionnel")
       }
-  }
-
-  private def sendMailWrongAssignment(report: Report, event: Event) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
   }
 
   private def sendMailClosedByNoReading(report: Report) = {
