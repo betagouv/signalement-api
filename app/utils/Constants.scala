@@ -23,9 +23,7 @@ object Constants {
     object A_TRAITER extends StatusProValue("À traiter")
     object NA extends StatusProValue("NA")
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement") // TODO à supprimer probablement
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
     object PROMESSE_ACTION extends StatusProValue("Promesse action")
     object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
     object SIGNALEMENT_MAL_ATTRIBUE extends StatusProValue("Signalement mal attribué")
@@ -36,9 +34,7 @@ object Constants {
       A_TRAITER,
       NA,
       TRAITEMENT_EN_COURS,
-      A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
-      ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
       SIGNALEMENT_MAL_ATTRIBUE,
@@ -119,11 +115,9 @@ object Constants {
 
     object A_CONTACTER extends ActionEventValue("À contacter")
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
-    object CONTACT_TEL extends ActionEventValue("Appel téléphonique", true)
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
+
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
     object MAL_ATTRIBUE extends ActionEventValue("Signalement mal attribué")
@@ -142,13 +136,7 @@ object Constants {
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
     val actionPros = Seq(
-      A_CONTACTER,
-      HORS_PERIMETRE,
-      CONTACT_TEL,
-      CONTACT_EMAIL,
       CONTACT_COURRIER,
-      RETOUR_COURRIER,
-      REPONSE_PRO_CONTACT,
       ENVOI_SIGNALEMENT,
       REPONSE_PRO_SIGNALEMENT,
       MAL_ATTRIBUE,
