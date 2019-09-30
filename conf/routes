@@ -3,8 +3,8 @@
 # ~~~~
 
 # Injecteur pour test (temporaire, avant test en base de données mémoire)
-GET          /api/injectTest/prepareBeforeTest          controllers.InjectTestController.prepareBeforeTest
-
+GET          /api/reminderTest/prepareBeforeTest        controllers.ReminderTestController.prepareBeforeTest
+GET          /api/reminderTest/runManuallyReminderTask  controllers.ReminderTestController.runManuallyReminderTask
 # Static pages
 GET          /api                                       controllers.StaticController.api
 
