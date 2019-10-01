@@ -117,6 +117,8 @@ object Constants {
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
 
