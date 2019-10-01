@@ -153,18 +153,19 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
-      case Success(id) =>
-        reportRepository.getReport(id).map(_
-          .filterNot(
-               request.identity.userRole == UserRoles.Pro
-            && _.companySiret != Some(request.identity.login))
-          .map(r => {
-            reportOrchestrator.handleReportView(r, request.identity)
-            r.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(r.statusPro, request.identity.userRole)))
-          })
-          .map(r => Ok(Json.toJson(r)))
-          .getOrElse(NotFound)
-        )
+      case Success(id) => for {
+        report        <- reportRepository.getReport(id)
+        updatedReport <-  report
+                          .filterNot(
+                                request.identity.userRole == UserRoles.Pro
+                            &&  _.companySiret != Some(request.identity.login))
+                          match {
+                            case Some(r) => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))
+                            case _ => Future(None)
+                          }
+      } yield updatedReport
+              .map(r => Ok(Json.toJson(r)))
+              .getOrElse(NotFound)
     }
   }
 

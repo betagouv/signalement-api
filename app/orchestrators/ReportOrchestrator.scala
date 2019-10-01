@@ -170,12 +170,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       updatedReport
     }
 
-  def handleReportView(report: Report, user: User) = {
-    if (user.userRole == UserRoles.Pro)
+  def handleReportView(report: Report, user: User): Future[Report] = {
+    if (user.userRole == UserRoles.Pro) {
       eventRepository.getEvents(report.id.get, EventFilter(None)).map(events =>
         if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
-          manageFirstViewOfReportByPro(report, user.id)
+        {
+          return manageFirstViewOfReportByPro(report, user.id)
+        }
       )
+    }
+    Future(report)
   }
 
   def addReportFile(id: UUID, filename: String) =
@@ -210,17 +214,18 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some("Première consultation du détail du signalement par le professionnel")
           )
         )
-        report <- reportRepository.update(
+        updatedReport <- notifyConsumerOfReportTransmission(
           report.copy(
             statusPro = Some(determineStatusPro(event, report.statusPro)),
             statusConso = Some(determineStatusConso(event, report.statusConso))
-          )
+          ),
+          userUUID
         )
-        report <- notifyConsumerOfReportTransmission(report, userUUID)
-      } yield ()
+      } yield updatedReport
     }
 
-  private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Unit] = {
+  private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
+    logger.debug(report.statusPro.get.toString)
     mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(
@@ -249,7 +254,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           statusConso = Some(determineStatusConso(event, report.statusConso))
         )
       )
-    } yield ()
+    } yield newReport
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
