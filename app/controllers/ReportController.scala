@@ -41,24 +41,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
 
   val BucketName = configuration.get[String]("play.buckets.report")
 
-  def determineStatusPro(report: Report): StatusProValue = {
-    if (report.isEligible) A_TRAITER else NA
-  }
-
-  def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
-    case (A_CONTACTER, _)                      => A_TRAITER
-    case (HORS_PERIMETRE, _)                   => NA
-    case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
-    case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
-    case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
-    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
-    case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
-    case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
-    case (_, _)                                => previousStatus.getOrElse(NA)
-
-  }
-
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
     logger.debug("createEvent")
@@ -81,8 +63,12 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 )))))
               newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = Some(determineStatusPro(event, r.statusPro))
-                  )
+                    statusPro = (event.action, event.resultAction) match {
+                      case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
+                      case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
+                      case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
+                      case (_, _)                                => r.statusPro
+                    })
               }))
               _ <- swap(newReport.flatMap(r => (user, event.action) match {
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
@@ -116,7 +102,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
-              statusPro = Some(determineStatusPro(report))
+              statusPro = Some(if (report.isEligible) A_TRAITER else NA)
             )
           )
           _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -153,11 +139,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
               )
             )
-            _ <- reportRepository.update(
-              report.copy(
-                statusPro = Some(determineStatusPro(event, report.statusPro))
-              )
-            )
+            _ <- reportRepository.update(report.copy(statusPro = Some(TRAITEMENT_EN_COURS)))
           } yield ()
         case Right(activationKey) =>
           userRepository.create(
@@ -449,12 +431,8 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Première consultation du détail du signalement par le professionnel")
         )
       )
-      report <- reportRepository.update(
-        report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro))
-        )
-      )
-      report <- notifyConsumerOfReportTransmission(report, userUUID)
+      _ <- notifyConsumerOfReportTransmission(report, userUUID)
+      report <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
     } yield (report)
   }
 
@@ -473,12 +451,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Envoi email au consommateur d'information de transmission")
         )
       )
-      newReport <- reportRepository.update(
-        report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro))
-        )
-      )
-    } yield (newReport)
+    } yield ()
   }
 
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
