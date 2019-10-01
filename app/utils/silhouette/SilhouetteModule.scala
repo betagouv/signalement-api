@@ -34,7 +34,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
     * Configures the module.
     */
-  def configure() {
+  override def configure() {
     bind[Silhouette[AuthEnv]].to[SilhouetteProvider[AuthEnv]]
     bind[Silhouette[APIKeyEnv]].to[SilhouetteProvider[APIKeyEnv]]
     bind[SecuredErrorHandler].to[ErrorHandler]
