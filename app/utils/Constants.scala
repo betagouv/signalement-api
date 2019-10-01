@@ -8,7 +8,7 @@ object Constants {
 
   object StatusPro {
 
-    case class StatusProValue(val value: String)
+    case class StatusProValue(val value: String, isFinal: Boolean = false)
 
     object StatusProValue {
       implicit val statusProValueWrites = new Writes[StatusProValue] {
@@ -20,13 +20,13 @@ object Constants {
     }
 
     object A_TRAITER extends StatusProValue("À traiter")
-    object NA extends StatusProValue("NA")
+    object NA extends StatusProValue("NA", true)
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object PROMESSE_ACTION extends StatusProValue("Promesse action")
-    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
-    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté")
-    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré")
+    object PROMESSE_ACTION extends StatusProValue("Promesse action", true)
+    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé", true)
+    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté", true)
+    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré", true)
 
     val status = Seq(
       A_TRAITER,

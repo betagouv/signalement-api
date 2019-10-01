@@ -431,8 +431,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Première consultation du détail du signalement par le professionnel")
         )
       )
-      _ <- notifyConsumerOfReportTransmission(report, userUUID)
-      report <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
+      _ <- report.statusPro match {
+        case Some(status) if status.isFinal => Future(None)
+        case _ => notifyConsumerOfReportTransmission(report, userUUID)
+      }
+      report <- report.statusPro match {
+        case Some(status) if status.isFinal => Future(report)
+        case _ => reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
+      }
     } yield (report)
   }
 
