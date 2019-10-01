@@ -86,7 +86,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
       val reports = paginatedReports.copy(
         entities = paginatedReports.entities.map {
-          report => report.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)))
+          report => report.copy(statusPro = getStatusProWithUserRole(report.statusPro, request.identity.userRole))
         }
       )
       Future.successful(Ok(Json.toJson(reports)))
@@ -171,7 +171,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Statut pro", leftAlignmentColumn,
-        (report, _, _) => getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)
+        (report, _, _) => getStatusProWithUserRole(report.statusPro, request.identity.userRole).map(_.value).getOrElse("")
       ),
       ReportColumn(
         "Détail promesse d'action", leftAlignmentColumn,

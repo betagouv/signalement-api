@@ -412,7 +412,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         reportRepository.getReport(id).map { rep =>
           rep match {
-            case Some(r) => Some(r.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(r.statusPro, request.identity.userRole))))
+            case Some(r) => Some(r.copy(statusPro = getStatusProWithUserRole(r.statusPro, request.identity.userRole)))
             case _ => None
           }
         }.flatMap(report => (report, request.identity.userRole) match {

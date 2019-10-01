@@ -35,14 +35,6 @@ object Report {
   implicit val reportWriter = Json.writes[Report]
   implicit val reportReader = Json.reads[Report]
 
-  private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
-    statusPro match {
-      case Some(SIGNALEMENT_TRANSMIS) | Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) |
-           Some(SIGNALEMENT_NON_CONSULTE) | Some(SIGNALEMENT_CONSULTE_IGNORE) => statusPro.get.value
-      case _ => ""
-    }
-  }
-
   val reportProWriter = new Writes[Report] {
     def writes(report: Report) =
       Json.obj(
@@ -57,7 +49,7 @@ object Report {
       "companySiret" -> report.companySiret,
       "files" -> report.files,
       "contactAgreement" -> report.contactAgreement,
-      "statusPro" -> getStatusProFiltered(report.statusPro)
+      "statusPro" -> report.statusPro
     ) ++ (report.contactAgreement match {
         case true => Json.obj(
           "firstName" -> report.firstName,

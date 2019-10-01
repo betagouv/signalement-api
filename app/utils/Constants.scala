@@ -8,7 +8,6 @@ object Constants {
 
   object StatusPro {
 
-    // Valeurs possibles de status_pro
     case class StatusProValue(val value: String)
 
     object StatusProValue {
@@ -40,8 +39,9 @@ object Constants {
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    val statusFinals = Seq(
+    val statusDGCCRF = Seq(
       NA,
+      TRAITEMENT_EN_COURS,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
       SIGNALEMENT_NON_CONSULTE,
@@ -50,18 +50,18 @@ object Constants {
 
     def fromValue(value: String) = status.find(_.value == value)
 
-    def getGenericStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
+    def getStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
 
-      statusPro.map(status => (statusFinals.contains(status), userRole) match {
-        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
-        case (_, _) => status.value
-      }).getOrElse("")
+      statusPro.map(status => (statusDGCCRF.contains(status), userRole) match {
+        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS
+        case (_, _) => status
+      })
     }
 
     def getSpecificsStatusProWithUserRole(statusPro: Option[String], userRole: UserRole) = {
 
       statusPro.map(status => (status, userRole) match {
-        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusFinals.contains(s)).map(_.value)
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusDGCCRF.contains(s)).map(_.value)
         case (_, _) => List(status)
       }).getOrElse(List())
     }
@@ -128,42 +128,41 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
-    object COMMENT extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object COMMENT_DGCCRF extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
-    val actionPros = Seq(
+    val actionEvents = Seq(
+      A_CONTACTER,
+      HORS_PERIMETRE,
+      CONTACT_EMAIL,
       CONTACT_COURRIER,
       ENVOI_SIGNALEMENT,
       REPONSE_PRO_SIGNALEMENT,
       NON_CONSULTE,
-      CONSULTE_IGNORE
-    )
-
-    val actionProFinals = Seq(
-      HORS_PERIMETRE,
-      REPONSE_PRO_SIGNALEMENT,
-      NON_CONSULTE,
-      CONSULTE_IGNORE
-    )
-
-    val actionConsos = Seq(
+      CONSULTE_IGNORE,
       EMAIL_AR,
       EMAIL_NON_PRISE_EN_COMPTE,
       EMAIL_TRANSMISSION,
-      EMAIL_REPONSE_PRO
-    )
-
-    val actionRectifs = Seq(
+      EMAIL_REPONSE_PRO,
       MODIFICATION_COMMERCANT,
-      MODIFICATION_CONSO
+      MODIFICATION_CONSO,
+      COMMENT,
+      COMMENT_DGCCRF,
+      CONTROL
     )
 
-    val actionAgents = Seq(
-      CONTROL,
+    val actionsAdmin = Seq(
+      CONTACT_COURRIER,
       COMMENT
     )
 
-    def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
+    val actionsDGCCRF = Seq(
+      CONTROL,
+      COMMENT_DGCCRF
+    )
+
+    def fromValue(value: String) = actionEvents.find(_.value == value)
   }
 
   object Departments {
