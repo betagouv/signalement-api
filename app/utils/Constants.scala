@@ -60,7 +60,7 @@ object Constants {
     def getSpecificsReportStatusWithUserRole(reportStatus: Option[String], userRole: UserRole) = {
 
       reportStatus.map(status => (status, userRole) match {
-        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value)
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value) :+ TRAITEMENT_EN_COURS.value
         case (_, _) => List(status)
       }).getOrElse(List())
     }
