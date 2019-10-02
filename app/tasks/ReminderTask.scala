@@ -59,9 +59,8 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     * Appelé par le scheduler ou manuellement par les tests
     *
     * @param now date qui représente la date actuelle (now pour le cas nominal, une date fixée pour les tests)
-    * @param test flag qui mis à true n'envoie pas les mails
     */
-  def runTask(now: LocalDateTime, test: Boolean = false) = {
+  def runTask(now: LocalDateTime) = {
 
     logger.debug("Traitement de relance automatique")
 
@@ -89,7 +88,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                       logger.debug(s"Cas non prévu de relance reportId ${report.id.get} : pas d'évènement Envoi d'un courrier positionné pour un signalement en Traitement en cours")
                     } else {
                       if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
-                        runEvent(report, RELANCE, userPro, test)
+                        runEvent(report, RELANCE, userPro)
                       }
                     }
 
@@ -101,7 +100,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                       logger.debug(s"Cas non prévu de relance reportId ${report.id.get} : pas d'évènement Envoi d'un email positionné pour un signalement en Traitement en cours")
                     } else {
                       if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-                        runEvent(report, RELANCE, userPro, test)
+                        runEvent(report, RELANCE, userPro)
                       }
                     }
                   })
@@ -112,13 +111,13 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
               userProMail match {
                 case None => {
                   if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
-                    runEvent(report, NON_CONSULTE, userPro, test)
+                    runEvent(report, NON_CONSULTE, userPro)
                   }
                 }
 
                 case Some(_) => {
                   if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-                    runEvent(report, RELANCE, userPro, test)
+                    runEvent(report, RELANCE, userPro)
                   }
                 }
               }
@@ -126,7 +125,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
 
             case length if length >= 2 => {
               if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-                runEvent(report, NON_CONSULTE, userPro, test)
+                runEvent(report, NON_CONSULTE, userPro)
               }
             }
 
@@ -149,20 +148,20 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                 } else {
                   if (emailEvents.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
-                    runEvent(report, RELANCE, user, test)
+                    runEvent(report, RELANCE, user)
                   }
                 }
               })
               case length if length == 1 => {
                 if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
-                  runEvent(report, RELANCE, user, test)
+                  runEvent(report, RELANCE, user)
                 }
               }
               case length if length >= 2 => {
                 if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
 
-                  runEvent(report, CONSULTE_IGNORE, user, test)
+                  runEvent(report, CONSULTE_IGNORE, user)
                 }
               }
             }
@@ -172,17 +171,17 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     })
   }
 
-  def runEvent(report: Report, event: ActionEventValue, userPro: Option[User], test: Boolean) = {
+  def runEvent(report: Report, event: ActionEventValue, userPro: Option[User]) = {
 
     event match {
-      case CONSULTE_IGNORE => manageConsulteIgnore(report, test)
-      case NON_CONSULTE => manageNonConsulte(report, test)
-      case RELANCE => manageRelance(report, userPro.get, test)
+      case CONSULTE_IGNORE => manageConsulteIgnore(report)
+      case NON_CONSULTE => manageNonConsulte(report)
+      case RELANCE => manageRelance(report, userPro.get)
       case _ => Future(None)
     }
   }
 
-  def manageConsulteIgnore(report: Report, test: Boolean) = {
+  def manageConsulteIgnore(report: Report) = {
 
     for {
       newEvent <- eventRepository.createEvent(Event(
@@ -201,7 +200,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         )
       }
 
-      _ <- if (!test) reportController.sendMailClosedByNoAction(newReport) else Future(None)
+      _ <- reportController.sendMailClosedByNoAction(newReport)
 
     } yield {
 
@@ -211,7 +210,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def manageNonConsulte(report: Report, test: Boolean) = {
+  def manageNonConsulte(report: Report) = {
 
     for {
       newEvent <- eventRepository.createEvent(Event(
@@ -229,7 +228,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           statusPro = Some(SIGNALEMENT_NON_CONSULTE)
         )
       }
-      _ <- if (!test) reportController.sendMailClosedByNoReading(newReport) else Future(None)
+      _ <- reportController.sendMailClosedByNoReading(newReport)
 
     } yield {
 
@@ -239,7 +238,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def manageRelance(report: Report, proUser: User, test: Boolean) = {
+  def manageRelance(report: Report, proUser: User) = {
 
     proUser.email match {
       case Some(_) => {
@@ -247,7 +246,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           newEvent <- eventRepository.createEvent(
             createRelanceEvent(report)
           )
-          _ <- if (!test) reportController.sendMailProfessionalReportNotification(report, proUser) else Future(None)
+          _ <- reportController.sendMailProfessionalReportNotification(report, proUser)
 
         } yield {
 
