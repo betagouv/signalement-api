@@ -1,36 +1,27 @@
 package controllers
 
 import java.io.File
-import java.time.{LocalDateTime, OffsetDateTime}
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.UUID
 
-import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import play.api.libs.json.{JsError, Json}
-import play.api.libs.mailer.AttachmentFile
-import play.api.libs.streams.Accumulator
-import play.api.mvc.MultipartFormData.FilePart
+import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
-import play.core.parsers.Multipart
-import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.ActionEvent._
-import utils.Constants.StatusConso._
+import utils.Constants.StatusPro
 import utils.Constants.StatusPro._
-import utils.Constants.{Departments, EventType, StatusPro}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.Random
 
 class ReportListController @Inject()(reportRepository: ReportRepository,
                                  eventRepository: EventRepository,
@@ -56,7 +47,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     end: Option[String],
     category: Option[String],
     statusPro: Option[String],
-    statusConso: Option[String],
     details: Option[String]
 
   ) = SecuredAction.async { implicit request =>
@@ -89,7 +79,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       endDate,
       category,
       getSpecificsStatusProWithUserRole(statusPro, request.identity.userRole),
-      statusConso,
       details
     )
 
@@ -97,7 +86,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
       val reports = paginatedReports.copy(
         entities = paginatedReports.entities.map {
-          report => report.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)))
+          report => report.copy(statusPro = getStatusProWithUserRole(report.statusPro, request.identity.userRole))
         }
       )
       Future.successful(Ok(Json.toJson(reports)))
@@ -110,7 +99,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
                      end: Option[String],
                      category: Option[String],
                      statusPro: Option[String],
-                     statusConso: Option[String],
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     val startDate = DateUtils.parseDate(start)
@@ -183,7 +171,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Statut pro", leftAlignmentColumn,
-        (report, _, _) => getGenericStatusProWithUserRole(report.statusPro, request.identity.userRole)
+        (report, _, _) => getStatusProWithUserRole(report.statusPro, request.identity.userRole).map(_.value).getOrElse("")
       ),
       ReportColumn(
         "Détail promesse d'action", leftAlignmentColumn,
@@ -192,10 +180,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
           .filter(_ == StatusPro.PROMESSE_ACTION)
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail))
           .getOrElse("")
-      ),
-      ReportColumn(
-        "Statut conso", Column(autoSized = true, style = leftAlignmentStyle, hidden = (request.identity.userRole == UserRoles.DGCCRF)),
-        (report, _, _) => report.statusConso.map(_.value).getOrElse("")
       ),
       ReportColumn(
         "Identifiant", centerAlignmentColumn,
@@ -236,7 +220,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       paginatedReports <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, statusConso, details)
+        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusProsSeq, details)
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyUsersMap <- userRepository.prefetchLogins(paginatedReports.entities.flatMap(_.companySiret))
@@ -270,7 +254,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
             },
             siret.map(siret => Row().withCellValues("Siret", siret)),
             statusPro.map(statusPro => Row().withCellValues("Statut pro", statusPro)),
-            statusConso.map(statusConso => Row().withCellValues("Statut conso", statusConso)),
             category.map(category => Row().withCellValues("Catégorie", category)),
             details.map(details => Row().withCellValues("Mots clés", details)),
           ).filter(_.isDefined).map(_.get)

@@ -8,8 +8,7 @@ object Constants {
 
   object StatusPro {
 
-    // Valeurs possibles de status_pro
-    case class StatusProValue(val value: String)
+    case class StatusProValue(val value: String, isFinal: Boolean = false)
 
     object StatusProValue {
       implicit val statusProValueWrites = new Writes[StatusProValue] {
@@ -21,91 +20,54 @@ object Constants {
     }
 
     object A_TRAITER extends StatusProValue("À traiter")
-    object NA extends StatusProValue("NA")
+    object NA extends StatusProValue("NA", true)
     object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement") // TODO à supprimer probablement
     object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
-    object PROMESSE_ACTION extends StatusProValue("Promesse action")
-    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé")
-    object SIGNALEMENT_MAL_ATTRIBUE extends StatusProValue("Signalement mal attribué")
-    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté")
-    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré")
+    object PROMESSE_ACTION extends StatusProValue("Promesse action", true)
+    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé", true)
+    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté", true)
+    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré", true)
 
     val status = Seq(
       A_TRAITER,
       NA,
       TRAITEMENT_EN_COURS,
-      A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
-      ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
-      SIGNALEMENT_MAL_ATTRIBUE,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    val statusFinals = Seq(
+    val statusDGCCRF = Seq(
       NA,
+      TRAITEMENT_EN_COURS,
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
-      SIGNALEMENT_MAL_ATTRIBUE,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
     def fromValue(value: String) = status.find(_.value == value)
 
-    def getGenericStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
+    def getStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
 
-      statusPro.map(status => (statusFinals.contains(status), userRole) match {
-        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS.value
-        case (_, _) => status.value
-      }).getOrElse("")
+      statusPro.map(status => (statusDGCCRF.contains(status), userRole) match {
+        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS
+        case (_, _) => status
+      })
     }
 
     def getSpecificsStatusProWithUserRole(statusPro: Option[String], userRole: UserRole) = {
 
       statusPro.map(status => (status, userRole) match {
-        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusFinals.contains(s)).map(_.value)
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusDGCCRF.contains(s)).map(_.value)
         case (_, _) => List(status)
       }).getOrElse(List())
     }
 
 
   }
-
-  object StatusConso {
-
-    // Valeurs possibles de action de la table Event
-    case class StatusConsoValue(value: String)
-
-    object StatusConsoValue {
-      implicit val statusConsoValueWrites = new Writes[StatusConsoValue] {
-        def writes(statusConsoValue: StatusConsoValue) = Json.toJson(statusConsoValue.value)
-      }
-      implicit val statusConsoValueReads: Reads[StatusConsoValue] =
-        JsPath.read[String].map(fromValue(_).get)
-    }
-
-    object EN_ATTENTE extends StatusConsoValue("En attente")
-    object A_RECONTACTER extends StatusConsoValue("À recontacter")
-    object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
-    object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
-    object FAIT extends StatusConsoValue("Fait")
-
-    val status = Seq(
-      EN_ATTENTE,
-      A_RECONTACTER,
-      A_INFORMER_TRANSMISSION,
-      A_INFORMER_REPONSE_PRO,
-      FAIT
-    )
-
-    def fromValue(value: String) = status.find(_.value == value)
-  }
-
 
   object EventType {
 
@@ -150,14 +112,13 @@ object Constants {
 
     object A_CONTACTER extends ActionEventValue("À contacter")
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
-    object CONTACT_TEL extends ActionEventValue("Appel téléphonique", true)
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
+
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
-    object MAL_ATTRIBUE extends ActionEventValue("Signalement mal attribué")
+    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
 
@@ -169,50 +130,41 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
-    object COMMENT extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object COMMENT_DGCCRF extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
-    val actionPros = Seq(
+    val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
-      CONTACT_TEL,
       CONTACT_EMAIL,
       CONTACT_COURRIER,
-      RETOUR_COURRIER,
-      REPONSE_PRO_CONTACT,
       ENVOI_SIGNALEMENT,
       REPONSE_PRO_SIGNALEMENT,
-      MAL_ATTRIBUE,
       NON_CONSULTE,
-      CONSULTE_IGNORE
-    )
-
-    val actionProFinals = Seq(
-      HORS_PERIMETRE,
-      REPONSE_PRO_SIGNALEMENT,
-      MAL_ATTRIBUE,
-      NON_CONSULTE,
-      CONSULTE_IGNORE
-    )
-
-    val actionConsos = Seq(
+      CONSULTE_IGNORE,
       EMAIL_AR,
       EMAIL_NON_PRISE_EN_COMPTE,
       EMAIL_TRANSMISSION,
-      EMAIL_REPONSE_PRO
-    )
-
-    val actionRectifs = Seq(
+      EMAIL_REPONSE_PRO,
       MODIFICATION_COMMERCANT,
-      MODIFICATION_CONSO
+      MODIFICATION_CONSO,
+      COMMENT,
+      COMMENT_DGCCRF,
+      CONTROL
     )
 
-    val actionAgents = Seq(
-      CONTROL,
+    val actionsAdmin = Seq(
+      CONTACT_COURRIER,
       COMMENT
     )
 
-    def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
+    val actionsDGCCRF = Seq(
+      CONTROL,
+      COMMENT_DGCCRF
+    )
+
+    def fromValue(value: String) = actionEvents.find(_.value == value)
   }
 
   object Departments {

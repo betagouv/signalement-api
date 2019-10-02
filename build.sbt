@@ -1,7 +1,7 @@
 name := "signalement-api"
 organization := "fr.gouv.beta"
 
-version := "0.1"
+version := "1.3"
 
 scalaVersion := "2.12.8"
 

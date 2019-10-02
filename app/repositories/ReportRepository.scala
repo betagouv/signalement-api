@@ -8,8 +8,8 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
+import utils.Constants.StatusPro
 import utils.Constants.StatusPro.StatusProValue
-import utils.Constants.{StatusConso, StatusPro}
 import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -23,7 +23,6 @@ case class ReportFilter(
                          end: Option[LocalDate] = None,
                          category: Option[String] = None,
                          statusPros: Seq[String] = List(),
-                         statusConso: Option[String] = None,
                          details: Option[String] = None
                        )
 
@@ -52,26 +51,25 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
     def statusPro = column[Option[String]]("status_pro")
-    def statusConso = column[Option[String]]("status_conso")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String], Option[String])
+    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) =>
+      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro.map(StatusPro.fromValue(_)).getOrElse(None), statusConso.map(StatusConso.fromValue(_)).getOrElse(None))
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro.map(StatusPro.fromValue(_)).getOrElse(None))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, files, statusPro, statusConso) =>
+      creationDate, firstName, lastName, email, contactAgreement, files, statusPro) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, statusPro.map(_.value), statusConso.map(_.value))
+          creationDate.get, firstName, lastName, email, contactAgreement, statusPro.map(_.value))
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, firstName, lastName, email, contactAgreement, statusPro, statusConso) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement, statusPro) <> (constructReport, extractReport.lift)
   }
 
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
@@ -266,9 +264,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           }
           .filterIf(filter.statusPros.length > 0) {
             case table => table.statusPro.inSet(filter.statusPros).getOrElse(false)
-          }
-          .filterOpt(filter.statusConso) {
-            case(table, statusConso) => table.statusConso === statusConso
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"

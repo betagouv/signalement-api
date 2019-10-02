@@ -91,7 +91,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
 trait CreateReportSpec extends Spec with CreateReportContext {
 
   import org.specs2.matcher.MatchersImplicits._
-  import org.mockito.Matchers.{eq => eqTo, _}
+  import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 
   var report = reportFixture
 
@@ -160,7 +160,7 @@ trait CreateReportContext extends Mockito {
 
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None, None
+    "firstName", "lastName", "email", true, List(), None
   )
 
   val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "code_activation", None, None, None, None, UserRoles.ToActivate)

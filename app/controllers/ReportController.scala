@@ -1,8 +1,6 @@
 package controllers
 
-import java.io.File
-import java.time.{LocalDateTime, OffsetDateTime}
-import java.time.format.DateTimeFormatter
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
@@ -90,7 +88,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     val maybeUploadResult =
       request.body.file("reportFile").map {
-        case FilePart(key, filename, contentType, multipartUploadResult) =>
+        case FilePart(key, filename, contentType, multipartUploadResult, _, _) =>
           (multipartUploadResult, filename)
       }
 
@@ -103,7 +101,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
-    case FileInfo(partName, filename, contentType) =>
+    case FileInfo(partName, filename, contentType, dispositionType) =>
       val accumulator = Accumulator(s3Service.upload(BucketName, UUID.randomUUID.toString))
 
       accumulator map { multipartUploadResult =>
@@ -168,6 +166,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
               .getOrElse(NotFound)
     }
   }
+
 
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     Try(UUID.fromString(uuid)) match {

@@ -5,7 +5,6 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.StatusConso.StatusConsoValue
 import utils.Constants.StatusPro._
 import utils.Constants.Departments
 
@@ -24,8 +23,7 @@ case class Report(
                    email: String,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
-                   statusPro: Option[StatusProValue],
-                   statusConso: Option[StatusConsoValue]
+                   statusPro: Option[StatusProValue]
                  ) {
   def isEligible = {
     companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
@@ -36,14 +34,6 @@ object Report {
 
   implicit val reportWriter = Json.writes[Report]
   implicit val reportReader = Json.reads[Report]
-
-  private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
-    statusPro match {
-      case Some(SIGNALEMENT_TRANSMIS) | Some(PROMESSE_ACTION) | Some(SIGNALEMENT_INFONDE) | Some(SIGNALEMENT_MAL_ATTRIBUE) |
-           Some(SIGNALEMENT_NON_CONSULTE) | Some(SIGNALEMENT_CONSULTE_IGNORE) => statusPro.get.value
-      case _ => ""
-    }
-  }
 
   val reportProWriter = new Writes[Report] {
     def writes(report: Report) =
@@ -59,7 +49,7 @@ object Report {
       "companySiret" -> report.companySiret,
       "files" -> report.files,
       "contactAgreement" -> report.contactAgreement,
-      "statusPro" -> getStatusProFiltered(report.statusPro)
+      "statusPro" -> report.statusPro
     ) ++ (report.contactAgreement match {
         case true => Json.obj(
           "firstName" -> report.firstName,

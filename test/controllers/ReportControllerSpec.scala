@@ -25,7 +25,6 @@ import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
-import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
 import utils.silhouette.api.APIKeyEnv
@@ -55,129 +54,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Helpers.status(result) must beEqualTo(BAD_REQUEST)
       }
     }
-  }
-
-  "determineStatusPro" should {
-
-    "ReportController" in new Context {
-      new WithApplication(application) {
-
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
-          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-        }
-        val reportFixture = Report(None, "category", List.empty, List.empty, "companyName", "companyAddress", None, None, None, "firsName", "lastName", "email", true, List.empty, None, None)
-
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("45500"))) must equalTo(A_TRAITER)
-        controller.determineStatusPro(reportFixture.copy(companyPostalCode = Some("51500"))) must equalTo(NA)
-
-      }
-    }
-  }
-
-  "determineStatusPro with event" should {
-
-    "ReportController" in new Context {
-      new WithApplication(application) {
-
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
-          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-        }
-
-        val fakeUUID = UUID.randomUUID()
-        val fakeTime = OffsetDateTime.now()
-
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.PRO, A_CONTACTER, Some(true), None)
-        controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER), Some(NA)) must equalTo(A_TRAITER)
-        controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE), Some(NA)) must equalTo(NA)
-        controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL), Some(NA)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = CONTACT_COURRIER), Some(NA)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_CONTACT, resultAction = Some(true)), Some(NA)) must equalTo(A_TRANSFERER_SIGNALEMENT)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_CONTACT, resultAction = Some(false)), Some(NA)) must equalTo(SIGNALEMENT_NON_CONSULTE)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(true)), Some(NA)) must equalTo(PROMESSE_ACTION)
-        controller.determineStatusPro(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT, resultAction = Some(false)), Some(NA)) must equalTo(SIGNALEMENT_INFONDE)
-        controller.determineStatusPro(eventFixture.copy(action = EMAIL_TRANSMISSION, resultAction = Some(false)), Some(TRAITEMENT_EN_COURS)) must equalTo(TRAITEMENT_EN_COURS)
-        controller.determineStatusPro(eventFixture.copy(action = RETOUR_COURRIER), Some(TRAITEMENT_EN_COURS)) must equalTo(ADRESSE_INCORRECTE)
-        controller.determineStatusPro(eventFixture.copy(action = MAL_ATTRIBUE), Some(TRAITEMENT_EN_COURS)) must equalTo(SIGNALEMENT_MAL_ATTRIBUE)
-        controller.determineStatusPro(eventFixture.copy(action = NON_CONSULTE), Some(SIGNALEMENT_TRANSMIS)) must equalTo(SIGNALEMENT_NON_CONSULTE)
-        controller.determineStatusPro(eventFixture.copy(action = CONSULTE_IGNORE), Some(A_TRAITER)) must equalTo(SIGNALEMENT_CONSULTE_IGNORE)
-      }
-    }
-  }
-
-  "determineStatusConso with event" should {
-
-    "ReportController" in new Context {
-      new WithApplication(application) {
-
-        val controller = new ReportController(mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
-          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-        }
-
-        val fakeUUID = UUID.randomUUID()
-        val fakeTime = OffsetDateTime.now()
-
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
-        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE)) must equalTo(A_RECONTACTER)
-        controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = ENVOI_SIGNALEMENT), Some(EN_ATTENTE)) must equalTo(A_INFORMER_TRANSMISSION)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_TRANSMISSION), Some(A_INFORMER_TRANSMISSION)) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_SIGNALEMENT), Some(EN_ATTENTE)) must equalTo(A_INFORMER_REPONSE_PRO)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_REPONSE_PRO), Some(A_INFORMER_REPONSE_PRO)) must equalTo(FAIT)
-        controller.determineStatusConso(eventFixture.copy(action = EMAIL_NON_PRISE_EN_COMPTE), Some(A_RECONTACTER)) must equalTo(FAIT)
-        controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), None) must equalTo(EN_ATTENTE)
-        controller.determineStatusConso(eventFixture.copy(action = REPONSE_PRO_CONTACT), Some(A_RECONTACTER)) must equalTo(A_RECONTACTER)
-      }
-    }
-  }
-
-
-  "create an event " should {
-
-    val reportUUID = UUID.randomUUID()
-    val reportFixture = Report(
-      Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", None, Some("00000000000000"), Some(OffsetDateTime.now()),
-      "firstName", "lastName", "email", true, List(), None, None
-    )
-
-    implicit val actionEventValueWrites = new Writes[ActionEventValue] {
-      def writes(actionEventValue: ActionEventValue) = Json.toJson(actionEventValue.value)
-    }
-    implicit val eventWriter = Json.writes[Event]
-
-    "for event action 'MAL ATTRIBUE' : " +
-      " - create event " +
-      " - send specific email " should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, EventType.PRO, MAL_ATTRIBUE, None, None)
-
-          mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
-          mockUserRepository.get(adminIdentity.id) returns Future(Some(adminIdentity))
-
-          val controller = application.injector.instanceOf[ReportController]
-          val result = controller.createEvent(reportUUID.toString).apply(FakeRequest().withBody(Json.toJson(eventFixture)).withAuthenticator[AuthEnv](adminLoginInfo))
-
-          Helpers.status(result) must beEqualTo(OK)
-
-          there was one(mockEventRepository).createEvent(any[Event])
-          there was one(mockUserRepository).get(adminIdentity.id)
-
-          there was one(mockMailerService).sendEmail(application.configuration.get[String]("play.mail.from"), "email")(
-            subject = "Le professionnel a répondu à votre signalement",
-            bodyHtml = views.html.mails.consumer.reportWrongAssignment(reportFixture, eventFixture).toString,
-            attachments = Seq(
-              AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-            )
-          )
-        }
-      }
-    }
-
-
   }
 
   "getReportCountBySiret" should {
@@ -241,7 +117,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             Report(
               reportId, "foo", List("bar"), List(), "myCompany", "18 rue des Champs",
               None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", "jdoe@example.com",
-              true, List(), None, None
+              true, List(), None
             )
           )
           mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(

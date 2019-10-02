@@ -13,7 +13,6 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.StatusConso._
 import utils.Constants.StatusPro._
 
 
@@ -29,38 +28,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
   val mailFrom = configuration.get[String]("play.mail.from")
-
-  def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
-    case (A_CONTACTER, _)                      => A_TRAITER
-    case (HORS_PERIMETRE, _)                   => NA
-    case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
-    case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
-    case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
-    case (RETOUR_COURRIER, _)                  => ADRESSE_INCORRECTE
-    case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
-    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_NON_CONSULTE
-    case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
-    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
-    case (MAL_ATTRIBUE, _)                     => SIGNALEMENT_MAL_ATTRIBUE
-    case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
-    case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
-    case (_, _)                                => previousStatus.getOrElse(NA)
-  }
-
-  def determineStatusConso(event: Event, previousStatus: Option[StatusConsoValue]): StatusConsoValue = (event.action) match {
-    case A_CONTACTER                         => EN_ATTENTE
-    case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
-    case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
-    case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
-    case EMAIL_TRANSMISSION                  => EN_ATTENTE
-    case EMAIL_REPONSE_PRO                   => FAIT
-    case CONTACT_TEL                         => EN_ATTENTE
-    case CONTACT_EMAIL                       => EN_ATTENTE
-    case CONTACT_COURRIER                    => EN_ATTENTE
-    case HORS_PERIMETRE                      => A_RECONTACTER
-    case _                                   => previousStatus.getOrElse(EN_ATTENTE)
-  }
 
   private def notifyProfessionalOfNewReport(report: Report): Future[_] = {
     userRepository.findByLogin(report.companySiret.get).flatMap{
@@ -86,12 +53,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
           )
         ).map(event =>
-          reportRepository.update(
-            report.copy(
-              statusPro = Some(determineStatusPro(event, report.statusPro)),
-              statusConso = Some(determineStatusConso(event, report.statusConso))
-            )
-          )
+          reportRepository.update(report.copy(statusPro = Some(TRAITEMENT_EN_COURS)))
         )
       }
       case None => {
@@ -119,8 +81,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         draftReport.copy(
           id = Some(UUID.randomUUID()),
           creationDate = Some(OffsetDateTime.now()),
-          statusPro = Some(if (draftReport.isEligible) Constants.StatusPro.A_TRAITER else Constants.StatusPro.NA),
-          statusConso = Some(if (draftReport.isEligible) Constants.StatusConso.EN_ATTENTE else Constants.StatusConso.FAIT)
+          statusPro = Some(if (draftReport.isEligible) Constants.StatusPro.A_TRAITER else Constants.StatusPro.NA)
         )
       )
       _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -200,29 +161,26 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report.isDefined
     }
 
-    private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) = {
-      for {
-        event <- eventRepository.createEvent(
-          Event(
-            Some(UUID.randomUUID()),
-            report.id,
-            userUUID,
-            Some(OffsetDateTime.now()),
-            Constants.EventType.PRO,
-            Constants.ActionEvent.ENVOI_SIGNALEMENT,
-            None,
-            Some("Première consultation du détail du signalement par le professionnel")
-          )
+  private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) = {
+    for {
+      event <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          userUUID,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.ENVOI_SIGNALEMENT,
+          None,
+          Some("Première consultation du détail du signalement par le professionnel")
         )
-        updatedReport <- notifyConsumerOfReportTransmission(
-          report.copy(
-            statusPro = Some(determineStatusPro(event, report.statusPro)),
-            statusConso = Some(determineStatusConso(event, report.statusConso))
-          ),
-          userUUID
-        )
-      } yield updatedReport
-    }
+      )
+      updatedReport <- report.statusPro match {
+        case Some(status) if status.isFinal => Future(report)
+        case _ => notifyConsumerOfReportTransmission(report, userUUID)
+      }
+    } yield updatedReport
+  }
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
     logger.debug(report.statusPro.get.toString)
@@ -248,12 +206,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some("Envoi email au consommateur d'information de transmission")
         )
       )
-      newReport <- reportRepository.update(
-        report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro)),
-          statusConso = Some(determineStatusConso(event, report.statusConso))
-        )
-      )
+      newReport <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
     } yield newReport
   }
 
@@ -274,18 +227,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       recipients = report.email)(
       subject = "Le professionnel a répondu à votre signalement",
       bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    )
-  }
-
-  private def sendMailWrongAssignment(report: Report, event: Event) = {
-    mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
@@ -332,8 +273,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       updatedReport: Option[Report] <- (report, newEvent) match {
         case (Some(r), Some(event)) => reportRepository.update(
           r.copy(
-            statusPro = Some(determineStatusPro(event, r.statusPro)),
-            statusConso = Some(determineStatusConso(event, r.statusConso)))
+            statusPro = (event.action, event.resultAction) match {
+              case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
+              case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
+              case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
+              case (_, _)                                => r.statusPro
+            })
         ).map(Some(_))
         case _ => Future(None)
       }
@@ -341,11 +286,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       newEvent.foreach(event => event.action match {
         case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
         case REPONSE_PRO_SIGNALEMENT => sendMailsAfterProAcknowledgment(report.get, event, user)
-        case MAL_ATTRIBUE => sendMailWrongAssignment(report.get, event)
         case NON_CONSULTE => sendMailClosedByNoReading(report.get)
         case CONSULTE_IGNORE => sendMailClosedByNoAction(report.get)
         case _ => ()
       })
       newEvent
     }
+
 }
