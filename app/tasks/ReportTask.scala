@@ -41,9 +41,8 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
     val taskDate = LocalDate.now
 
-    Logger.debug(s"taskDate - ${taskDate}");
-    Logger.debug(s"initialDelay - ${initialDelay}");
-    Logger.debug(s"interval - ${interval}");
+    logger.debug("Traitement de notification hebdomdaire des signalements")
+    logger.debug(s"taskDate - ${taskDate}");
 
     val departments = Departments.ALL
 

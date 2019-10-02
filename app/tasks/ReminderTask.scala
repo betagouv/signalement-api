@@ -2,26 +2,22 @@ package tasks
 
 
 import java.time.temporal.ChronoUnit
+import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.ReportController
-import models.{Event, User}
+import javax.inject.Inject
+import models.{Event, Report, User}
+import play.api.libs.mailer.AttachmentFile
+import play.api.{Configuration, Environment, Logger}
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
-import services.S3Service
+import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
+import utils.Constants.EventType.PRO
 import utils.Constants.StatusPro._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
-
-import akka.actor.ActorSystem
-import javax.inject.Inject
-import models.Report
-import play.api.libs.mailer.AttachmentFile
-import play.api.{Configuration, Environment, Logger}
-import services.MailerService
-import utils.Constants.EventType.PRO
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -45,7 +41,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours
 
-  val startDate = LocalDate.now.atTime(startTime)
+  val startDate = if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime) else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
   // scheduler
@@ -63,10 +59,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def runTask(now: LocalDateTime) = {
 
     logger.debug("Traitement de relance automatique")
-
     logger.debug(s"taskDate - ${now}");
-    logger.debug(s"initialDelay - ${initialDelay}");
-    logger.debug(s"interval - ${interval}");
 
     val lastWeek = now.minusDays(7)
     val last21Days = now.minusDays(21)
