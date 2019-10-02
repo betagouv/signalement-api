@@ -86,7 +86,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = OffsetDateTime.now()
 
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.PRO, A_CONTACTER, Some(true), None)
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), Some(fakeUUID), Some(fakeTime), EventType.PRO, A_CONTACTER, Some(true), None)
         controller.determineStatusPro(eventFixture.copy(action = A_CONTACTER), Some(NA)) must equalTo(A_TRAITER)
         controller.determineStatusPro(eventFixture.copy(action = HORS_PERIMETRE), Some(NA)) must equalTo(NA)
         controller.determineStatusPro(eventFixture.copy(action = CONTACT_EMAIL), Some(NA)) must equalTo(TRAITEMENT_EN_COURS)
@@ -116,7 +116,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val fakeUUID = UUID.randomUUID()
         val fakeTime = OffsetDateTime.now()
 
-        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), fakeUUID, Some(fakeTime), EventType.CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
+        val eventFixture = Event(Some(fakeUUID), Some(fakeUUID), Some(fakeUUID), Some(fakeTime), EventType.CONSO, EMAIL_AR, Some(true), Some(EN_ATTENTE.value))
         controller.determineStatusConso(eventFixture.copy(action = A_CONTACTER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
         controller.determineStatusConso(eventFixture.copy(action = HORS_PERIMETRE), Some(EN_ATTENTE)) must equalTo(A_RECONTACTER)
         controller.determineStatusConso(eventFixture.copy(action = CONTACT_COURRIER), Some(EN_ATTENTE)) must equalTo(EN_ATTENTE)
@@ -153,7 +153,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val eventFixture = Event(None, reportFixture.id, adminIdentity.id, None, EventType.PRO, MAL_ATTRIBUE, None, None)
+          val eventFixture = Event(None, reportFixture.id, Some(adminIdentity.id), None, EventType.PRO, MAL_ATTRIBUE, None, None)
 
           mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
           mockUserRepository.get(adminIdentity.id) returns Future(Some(adminIdentity))
@@ -249,7 +249,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           )
           mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
             Map(reportId.get -> List(
-              Event(reportId, reportId, UUID.randomUUID, Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
+              Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
             ))
           )
           mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(

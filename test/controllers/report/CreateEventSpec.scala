@@ -163,7 +163,7 @@ trait CreateEventContext extends Mockito {
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue, withResult: Boolean = true) =
-    Event(None, Some(reportUUID), concernedProUser.id, None, eventType, action, Some(withResult), None)
+    Event(None, Some(reportUUID), Some(concernedProUser.id), None, eventType, action, Some(withResult), None)
 
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
@@ -188,6 +188,7 @@ trait CreateEventContext extends Mockito {
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
 
   mockUserRepository.get(concernedProUser.id) returns Future(Some(concernedProUser))
+  mockUserRepository.get(adminUser.id) returns Future(Some(adminUser))
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
 
