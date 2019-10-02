@@ -119,8 +119,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
                 case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
-                case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
-                case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
               }))
             } yield {
@@ -292,22 +290,19 @@ class ReportController @Inject()(reportRepository: ReportRepository,
     ))
   }
 
-  def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
-logger.debug(s"sendMail ${professionalUser.email}")
+  private def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
+
     professionalUser.email match {
-      case Some(mail) if mail != "" => {
-        mailerService.sendEmail(
-          from = configuration.get[String]("play.mail.from"),
-          recipients = mail)(
-          subject = "Nouveau signalement",
-          bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-          )
+      case Some(mail) if mail != "" => Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = mail)(
+        subject = "Nouveau signalement",
+        bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
-        Future("Envoi mail professional.reportNotification")
-      }
-      case _ => Future("")
+      ))
+      case _ => Future(None)
     }
   }
 
@@ -342,34 +337,6 @@ logger.debug(s"sendMail ${professionalUser.email}")
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
     ))
-  }
-
-  def sendMailClosedByNoReading(report: Report) = {
-    mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas souhaité consulter votre signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    )
-
-    Future("Envoi mail consumer.reportClosedByNoReading")
-  }
-
-  def sendMailClosedByNoAction(report: Report) = {
-    mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas répondu au signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    )
-
-    Future("Envoi mail consumer.reportClosedByNoAction")
   }
 
   private def sendMailToProForAcknowledgmentPro(event: Event, user: User) = {

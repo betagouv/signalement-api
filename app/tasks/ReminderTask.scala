@@ -18,6 +18,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
 import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.Report
+import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import services.MailerService
 import utils.Constants.EventType.PRO
@@ -35,8 +36,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                              val silhouette: Silhouette[AuthEnv],
                              val silhouetteAPIKey: Silhouette[APIKeyEnv],
                              configuration: Configuration,
-                             environment: Environment,
-                             reportController: ReportController) // TODO: À supprimer quand les méthodes sendMail seront déplacées
+                             environment: Environment)
                             (implicit val executionContext: ExecutionContext) {
 
 
@@ -184,25 +184,29 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def manageConsulteIgnore(report: Report) = {
 
     for {
-      newEvent <- eventRepository.createEvent(Event(
-        Some(UUID.randomUUID()),
-        report.id,
-        None,
-        Some(OffsetDateTime.now()),
-        PRO,
-        CONSULTE_IGNORE,
-        None,
-        Some("Clôture automatique : signalement consulté ignoré"))
-      )
-      newReport <- reportRepository.update {
-        report.copy(
-          statusPro = Some(SIGNALEMENT_CONSULTE_IGNORE)
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          None,
+          Some(OffsetDateTime.now()),
+          PRO,
+          CONSULTE_IGNORE,
+          None,
+          Some("Clôture automatique : signalement consulté ignoré")
         )
-      }
-
-      _ <- reportController.sendMailClosedByNoAction(newReport)
-
+      )
+      newReport <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_CONSULTE_IGNORE)))
     } yield {
+
+      mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = report.email)(subject = "Le professionnel n’a pas répondu au signalement",
+        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
 
       val debug = (report.firstName, newReport.statusPro.map(s => s.value).getOrElse(""), List(newEvent.action.value), List("consumer.reportClosedByNoAction"))
       logger.debug(s"Résumé de la tâche : ${debug}")
@@ -213,24 +217,30 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def manageNonConsulte(report: Report) = {
 
     for {
-      newEvent <- eventRepository.createEvent(Event(
-        Some(UUID.randomUUID()),
-        report.id,
-        None,
-        Some(OffsetDateTime.now()),
-        PRO,
-        NON_CONSULTE,
-        None,
-        Some("Clôture automatique : signalement non consulté"))
-      )
-      newReport <- reportRepository.update {
-        report.copy(
-          statusPro = Some(SIGNALEMENT_NON_CONSULTE)
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          None,
+          Some(OffsetDateTime.now()),
+          PRO,
+          NON_CONSULTE,
+          None,
+          Some("Clôture automatique : signalement non consulté")
         )
-      }
-      _ <- reportController.sendMailClosedByNoReading(newReport)
-
+      )
+      newReport <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
+
+      mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = report.email)(
+        subject = "Le professionnel n’a pas souhaité consulter votre signalement",
+        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
 
       val debug = (report.firstName, newReport.statusPro.map(s => s.value).getOrElse(""), List(newEvent.action.value), List("consumer.reportClosedByNoReading"))
       logger.debug(s"Résumé de la tâche : ${debug}")
@@ -241,31 +251,27 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def manageRelance(report: Report, proUser: User) = {
 
     proUser.email match {
-      case Some(_) => {
-        for {
-          newEvent <- eventRepository.createEvent(
-            createRelanceEvent(report)
-          )
-          _ <- reportController.sendMailProfessionalReportNotification(report, proUser)
+      case Some(mail) if mail != "" =>
+        eventRepository.createEvent(generateRelanceEvent(report)).map { newEvent =>
 
-        } yield {
+          mailerService.sendEmail(
+            from = configuration.get[String]("play.mail.from"),
+            recipients = mail)(
+            subject = "Nouveau signalement",
+            bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+            attachments = Seq(
+              AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+            )
+          )
 
           val debug = (report.firstName, report.statusPro.map(s => s.value).getOrElse(""), List(newEvent.action.value), List("professional.reportNotification"))
           logger.debug(s"Résumé de la tâche : ${debug}")
-
         }
-      }
+
       case None => {
         for {
-          newEvent <- eventRepository.createEvent(
-            createRelanceEvent(report)
-          )
-
-          newReport <- reportRepository.update {
-            report.copy(
-              statusPro = Some(A_TRAITER)
-            )
-          }
+          newEvent <- eventRepository.createEvent(generateRelanceEvent(report))
+          newReport <- reportRepository.update(report.copy(statusPro = Some(A_TRAITER)))
         } yield {
 
           val debug = (report.firstName, newReport.statusPro.map(s => s.value).getOrElse(""), List(newEvent.action.value), List(""))
@@ -276,7 +282,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  private def createRelanceEvent(report: Report): Event = Event(
+  private def generateRelanceEvent(report: Report): Event = Event(
     Some(UUID.randomUUID()),
     report.id,
     None,
