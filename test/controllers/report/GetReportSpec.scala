@@ -148,10 +148,10 @@ trait GetReportSpec extends Spec with GetReportContext {
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
   }
 
-  def reportStatusProMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 

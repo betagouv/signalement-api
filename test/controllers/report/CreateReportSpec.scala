@@ -112,14 +112,14 @@ trait CreateReportSpec extends Spec with CreateReportContext {
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).create(argThat(reportStatusProMatcher(Some(status))))
+    there was one(mockReportRepository).create(argThat(reportStatusMatcher(Some(status))))
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
   }
 
-  def reportStatusProMatcher(status: Option[ReportStatusValue]): Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: Option[ReportStatusValue]): Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
