@@ -11,7 +11,7 @@ import utils.Constants.EventType.EventTypeValue
 case class Event(
                   id: Option[UUID],
                   reportId: Option[UUID],
-                  userId: UUID,
+                  userId: Option[UUID],
                   creationDate: Option[OffsetDateTime],
                   eventType: EventTypeValue,
                   action: ActionEventValue,

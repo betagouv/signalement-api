@@ -102,14 +102,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           case Success(id) => {
             for {
               report <- reportRepository.getReport(id)
-              user <- userRepository.get(event.userId)
-              _ <- swap(report.flatMap(r => user.map(u => eventRepository.createEvent(
+              user <- userRepository.get(request.identity.id)
+              _ <- swap(report.map(r => eventRepository.createEvent(
                 event.copy(
                   id = Some(UUID.randomUUID()),
                   creationDate = Some(OffsetDateTime.now()),
                   reportId = r.id,
-                  userId = u.id
-                )))))
+                  userId = Some(request.identity.id)
+                ))))
               newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
                     statusPro = Some(determineStatusPro(event, r.statusPro)),
@@ -178,7 +178,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
               Event(
                 Some(UUID.randomUUID()),
                 report.id,
-                user.id,
+                Some(user.id),
                 Some(OffsetDateTime.now()),
                 Constants.EventType.PRO,
                 Constants.ActionEvent.CONTACT_EMAIL,
@@ -293,7 +293,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   }
 
   def sendMailProfessionalReportNotification(report: Report, professionalUser: User) = {
-
+logger.debug(s"sendMail ${professionalUser.email}")
     professionalUser.email match {
       case Some(mail) if mail != "" => {
         mailerService.sendEmail(
@@ -496,7 +496,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           report.id,
-          userUUID,
+          Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
@@ -521,7 +521,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           report.id,
-          userUUID,
+          Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,

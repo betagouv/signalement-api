@@ -42,9 +42,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
 
   val logger: Logger = Logger(this.getClass)
 
-  // user système qui ajoute les évènements automatiques
-  val systemUuid = configuration.get[String]("play.systemUuid")
-
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours
 
@@ -191,7 +188,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(Event(
         Some(UUID.randomUUID()),
         report.id,
-        UUID.fromString(systemUuid),
+        None,
         Some(OffsetDateTime.now()),
         PRO,
         CONSULTE_IGNORE,
@@ -220,7 +217,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(Event(
         Some(UUID.randomUUID()),
         report.id,
-        UUID.fromString(systemUuid),
+        None,
         Some(OffsetDateTime.now()),
         PRO,
         NON_CONSULTE,
@@ -283,7 +280,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   private def createRelanceEvent(report: Report): Event = Event(
     Some(UUID.randomUUID()),
     report.id,
-    UUID.fromString(systemUuid),
+    None,
     Some(OffsetDateTime.now()),
     PRO,
     RELANCE,

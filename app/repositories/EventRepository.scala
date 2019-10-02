@@ -27,7 +27,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
-    def userId = column[UUID]("user_id")
+    def userId = column[Option[UUID]]("user_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
@@ -35,7 +35,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def detail = column[Option[String]]("detail")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, UUID, OffsetDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], Option[String])
 
     def constructEvent: EventData => Event = {
 
