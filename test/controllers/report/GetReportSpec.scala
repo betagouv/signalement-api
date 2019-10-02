@@ -26,8 +26,8 @@ import repositories.{EventFilter, EventRepository, ReportRepository, UserReposit
 import services.MailerService
 import tasks.TasksModule
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.StatusPro._
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
+import utils.Constants.ReportStatus._
+import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.{Duration, _}
@@ -67,9 +67,9 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
-         And the report status is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_TRANSMIS)}
+         And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_TRANSMIS)}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(status = Some(ReportStatus.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
     """
 }
 
@@ -79,7 +79,7 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec  {
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving a final report for the first time                     ${step(someResult = Some(getReport(neverRequestedFinalReportUUID)))}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
-         And the report status is not updated                                   ${reportMustNotHaveBeenUpdated}
+         And the report reportStatusList is not updated                                   ${reportMustNotHaveBeenUpdated}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedFinalReport, UserRoles.Pro)}
     """
@@ -91,7 +91,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec  {
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving the report not for the first time                      ${step(someResult = Some(getReport(alreadyRequestedReportUUID)))}
          Then no event is created                                               ${eventMustNotHaveBeenCreated}
-         And the report status is not updated                                   ${reportMustNotHaveBeenUpdated}
+         And the report reportStatusList is not updated                                   ${reportMustNotHaveBeenUpdated}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(alreadyRequestedReport, UserRoles.Pro)}
 
@@ -147,12 +147,12 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: StatusProValue) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
     there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
   }
 
-  def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.statusPro, s"status doesn't match ${status}")
+  def reportStatusProMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+    (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
   def reportMustNotHaveBeenUpdated() = {

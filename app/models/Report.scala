@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.StatusPro._
+import utils.Constants.ReportStatus._
 import utils.Constants.Departments
 
 case class Report(
@@ -23,7 +23,7 @@ case class Report(
                    email: String,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
-                   statusPro: Option[StatusProValue]
+                   status: Option[ReportStatusValue]
                  ) {
   def isEligible = {
     companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
@@ -49,7 +49,7 @@ object Report {
       "companySiret" -> report.companySiret,
       "files" -> report.files,
       "contactAgreement" -> report.contactAgreement,
-      "statusPro" -> report.statusPro
+      "status" -> report.status
     ) ++ (report.contactAgreement match {
         case true => Json.obj(
           "firstName" -> report.firstName,

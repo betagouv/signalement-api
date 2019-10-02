@@ -11,7 +11,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.Departments
-import utils.Constants.StatusPro.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
+import utils.Constants.ReportStatus.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 

@@ -18,8 +18,8 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.StatusPro._
-import utils.Constants.{EventType, StatusPro}
+import utils.Constants.ReportStatus._
+import utils.Constants.{EventType, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
@@ -63,11 +63,11 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 )))))
               newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = (event.action, event.resultAction) match {
+                    status = (event.action, event.resultAction) match {
                       case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
                       case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
                       case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
-                      case (_, _)                                => r.statusPro
+                      case (_, _)                                => r.status
                     })
               }))
               _ <- swap(newReport.flatMap(r => (user, event.action) match {
@@ -102,7 +102,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
-              statusPro = Some(if (report.isEligible) A_TRAITER else NA)
+              status = Some(if (report.isEligible) A_TRAITER else NA)
             )
           )
           _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -139,7 +139,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
               )
             )
-            _ <- reportRepository.update(report.copy(statusPro = Some(TRAITEMENT_EN_COURS)))
+            _ <- reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
           } yield ()
         case Right(activationKey) =>
           userRepository.create(
@@ -394,7 +394,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         reportRepository.getReport(id).map { rep =>
           rep match {
-            case Some(r) => Some(r.copy(statusPro = getStatusProWithUserRole(r.statusPro, request.identity.userRole)))
+            case Some(r) => Some(r.copy(status = getReportStatusWithUserRole(r.status, request.identity.userRole)))
             case _ => None
           }
         }.flatMap(report => (report, request.identity.userRole) match {
@@ -431,13 +431,13 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Première consultation du détail du signalement par le professionnel")
         )
       )
-      _ <- report.statusPro match {
+      _ <- report.status match {
         case Some(status) if status.isFinal => Future(None)
         case _ => notifyConsumerOfReportTransmission(report, userUUID)
       }
-      report <- report.statusPro match {
+      report <- report.status match {
         case Some(status) if status.isFinal => Future(report)
-        case _ => reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
+        case _ => reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))
       }
     } yield (report)
   }

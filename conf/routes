@@ -32,7 +32,7 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 
 # Constants API
 GET         /api/constants/actions                      controllers.ConstantController.getActions()
-GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
+GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
 
 # Company API
 GET         /api/companies/suggest/:search              controllers.CompanyController.getSuggestions(search)

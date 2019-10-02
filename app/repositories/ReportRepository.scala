@@ -8,8 +8,8 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
-import utils.Constants.StatusPro
-import utils.Constants.StatusPro.StatusProValue
+import utils.Constants.ReportStatus
+import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,7 +22,7 @@ case class ReportFilter(
                          start: Option[LocalDate] = None,
                          end: Option[LocalDate] = None,
                          category: Option[String] = None,
-                         statusPros: Seq[String] = List(),
+                         statusList: Seq[String] = List(),
                          details: Option[String] = None
                        )
 
@@ -50,26 +50,26 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def lastName = column[String]("nom")
     def email = column[String]("email")
     def contactAgreement = column[Boolean]("accord_contact")
-    def statusPro = column[Option[String]]("status_pro")
+    def status = column[Option[String]]("status")
 
     type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, statusPro) =>
+      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, statusPro.map(StatusPro.fromValue(_)).getOrElse(None))
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)).getOrElse(None))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, files, statusPro) =>
+      creationDate, firstName, lastName, email, contactAgreement, files, status) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, statusPro.map(_.value))
+          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.value))
     }
 
     def * =
       (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
-        creationDate, firstName, lastName, email, contactAgreement, statusPro) <> (constructReport, extractReport.lift)
+        creationDate, firstName, lastName, email, contactAgreement, status) <> (constructReport, extractReport.lift)
   }
 
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
@@ -93,9 +93,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def * =
       (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
   }
-  
+
   private val reportTableQuery = TableQuery[ReportTable]
-  
+
   private val fileTableQuery = TableQuery[FileTable]
 
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
@@ -154,16 +154,16 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     str.replace("'", "''")
   }
 
-  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, statusList: Option[List[StatusProValue]] = None, withoutSiret: Boolean = false) = {
+  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, statusList: Option[List[ReportStatusValue]] = None, withoutSiret: Boolean = false) = {
 
     val whereDepartments = departments match {
       case None => ""
       case Some(list) => " and (" + list.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
     }
 
-    val whereStatusPro = statusList match {
+    val whereStatus = statusList match {
       case None => ""
-      case Some(list) => " and (" + list.map(status => s"status_pro = '${protectString(status.value)}'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.value)}'").mkString(" or ") + ")"
     }
 
     val whereSiret = withoutSiret match {
@@ -179,7 +179,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
          and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
-         #$whereStatusPro
+         #$whereStatus
          #$whereSiret
       """.as[Int].headOption
     )
@@ -262,8 +262,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
           .filterOpt(filter.category) {
             case(table, category) => table.category === category
           }
-          .filterIf(filter.statusPros.length > 0) {
-            case table => table.statusPro.inSet(filter.statusPros).getOrElse(false)
+          .filterIf(filter.statusList.length > 0) {
+            case table => table.status.inSet(filter.statusList).getOrElse(false)
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
