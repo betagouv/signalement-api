@@ -133,14 +133,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
-      eventRepository.getEvents(report.id.get, EventFilter(None)).map(events =>
-        if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT))
-        {
-          return manageFirstViewOfReportByPro(report, user.id)
+      eventRepository.getEvents(report.id.get, EventFilter(None)).flatMap(events =>
+        if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
+          manageFirstViewOfReportByPro(report, user.id)
+        } else {
+          Future(report)
         }
       )
+    } else {
+      Future(report)
     }
-    Future(report)
   }
 
   def addReportFile(id: UUID, filename: String) =
@@ -183,7 +185,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
-    logger.debug(report.statusPro.get.toString)
     mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
       recipients = report.email)(

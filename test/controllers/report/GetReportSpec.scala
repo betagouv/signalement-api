@@ -69,9 +69,8 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
          And the report status is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_TRANSMIS)}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-    """
-    // Commented out until orchestrator / status refactoring is stable
-    //  And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+      """
 }
 
 object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec  {
@@ -221,7 +220,7 @@ trait GetReportContext extends Mockito {
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReportUUID) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReportUUID) returns Future(Some(alreadyRequestedReport))
-  mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
+  mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report])}
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
