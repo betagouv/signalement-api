@@ -91,7 +91,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
 trait CreateReportSpec extends Spec with CreateReportContext {
 
   import org.specs2.matcher.MatchersImplicits._
-  import org.mockito.Matchers.{eq => eqTo, _}
+  import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 
   var report = reportFixture
 
