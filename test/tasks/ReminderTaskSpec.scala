@@ -16,17 +16,20 @@ import utils.Constants.EventType.PRO
 import utils.Constants.StatusPro.{StatusProValue, TRAITEMENT_EN_COURS}
 import utils.Constants.{ActionEvent, StatusPro}
 
+import scala.concurrent.duration._
+import scala.concurrent.Await
+
 
 class RemindOngoingReport(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
 
   import org.specs2.matcher.MatchersImplicits._
 
   override def is =
-    s2"""
+    sequential ^ s2"""
          Given a pro without email                                                    ${step(setupUser(userWithoutEmail))}
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(r1))}
          Given an event "CREATION_COURRIER" created more than 21 days                 ${step(setupEvent(r1_e1))}
-         When remind task run                                                         ${step(reminderTask.runTask(runningDateTime))}
+         When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), 5.seconds))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
          And the report status is updated to "SIGNALEMENT_INFONDE"                    ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_INFONDE)}
     """
@@ -36,7 +39,6 @@ class RemindOngoingReport(implicit ee: ExecutionEnv) extends Specification with 
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val fakeUserUuid = UUID.randomUUID()
   val userEmailUuid = UUID.randomUUID()
   val userWithoutEmailUuid = UUID.randomUUID()
 
@@ -52,7 +54,7 @@ class RemindOngoingReport(implicit ee: ExecutionEnv) extends Specification with 
   // CONTACT_COURRIER plus vieux de 21j
   val r1_e1_uuid = UUID.randomUUID()
   val r1_e1_date = OffsetDateTime.of(2019, 9, 1, 0, 0, 0, 0, ZoneOffset.UTC)
-  val r1_e1 = Event(Some(r1_e1_uuid), Some(r1_uuid), Some(fakeUserUuid), Some(r1_e1_date), PRO, CONTACT_COURRIER,
+  val r1_e1 = Event(Some(r1_e1_uuid), Some(r1_uuid), Some(userWithoutEmailUuid), Some(r1_e1_date), PRO, CONTACT_COURRIER,
     None, Some("test"))
 
 
@@ -78,13 +80,13 @@ class RemindOngoingReport(implicit ee: ExecutionEnv) extends Specification with 
   lazy val reminderTask = injector.instanceOf[ReminderTask]
 
   def setupUser(user: User) = {
-    userRepository.create(user)
+    Await.result(userRepository.create(user), 1.seconds)
   }
   def setupReport(report: Report) = {
-    reportRepository.create(report)
+    Await.result(reportRepository.create(report), 1.seconds)
   }
   def setupEvent(event: Event) = {
-    eventRepository.createEvent(event)
+    Await.result(eventRepository.createEvent(event), 1.seconds)
   }
   override def setupData() {
   }
