@@ -84,18 +84,18 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 
 |Nom|Description|Valeur par défaut|
 |:---|:---|:---|
-|<a name="APPLICATION_HOST">APPLICATION_HOST</a>|Hôte du serveur hébergeant l'application||
-|<a name="APPLICATION_HOST">APPLICATION_SECRET</a>|Clé secrète de l'application||
-|<a name="APPLICATION_HOST">EVOLUTIONS_AUTO_APPLY</a>|Exécution automatique des scripts `upgrade` de la base de données|false|
-|<a name="APPLICATION_HOST">EVOLUTIONS_AUTO_APPLY_DOWNS</a>|Exécution automatique des scripts `downgrade` de la base de données|false|
-|<a name="APPLICATION_HOST">MAX_CONNECTIONS</a>|Nombre maximum de connexions ouvertes vers la base de données||
-|<a name="APPLICATION_HOST">MAIL_FROM</a>|Expéditeur des mails|dev-noreply@signalconso.beta.gouv.fr|
-|<a name="APPLICATION_HOST">MAIL_CONTACT_RECIPIENT</a>|Boite mail destinataire des mails génériques|contact@signalconso.beta.gouv.fr|
-|<a name="APPLICATION_HOST">MAILER_HOST</a>|Hôte du serveur de mails||
-|<a name="APPLICATION_HOST">MAILER_PORT</a>|Port du serveur de mails||
-|<a name="APPLICATION_HOST">MAILER_USER</a>|Nom d'utilisateur du serveur de mails||
-|<a name="APPLICATION_HOST">MAILER_PASSWORD</a>|Mot de passe du serveur de mails||
-|<a name="APPLICATION_HOST">SENTRY_DSN</a>|Identifiant pour intégration avec [Sentry](https://sentry.io)||
+|APPLICATION_HOST|Hôte du serveur hébergeant l'application||
+|APPLICATION_SECRET|Clé secrète de l'application||
+|EVOLUTIONS_AUTO_APPLY|Exécution automatique des scripts `upgrade` de la base de données|false|
+|EVOLUTIONS_AUTO_APPLY_DOWNS|Exécution automatique des scripts `downgrade` de la base de données|false|
+|MAX_CONNECTIONS|Nombre maximum de connexions ouvertes vers la base de données||
+|MAIL_FROM|Expéditeur des mails|dev-noreply@signalconso.beta.gouv.fr|
+|MAIL_CONTACT_RECIPIENT|Boite mail destinataire des mails génériques|contact@signalconso.beta.gouv.fr|
+|MAILER_HOST|Hôte du serveur de mails||
+|MAILER_PORT|Port du serveur de mails||
+|MAILER_USER|Nom d'utilisateur du serveur de mails||
+|MAILER_PASSWORD|Mot de passe du serveur de mails||
+|SENTRY_DSN|Identifiant pour intégration avec [Sentry](https://sentry.io)||
 |TMP_DIR|Répertoire temporaire pour création des fichiers xlsx||
 ---
 
