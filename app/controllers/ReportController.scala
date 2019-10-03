@@ -1,15 +1,10 @@
 package controllers
 
-import java.io.File
-import java.time.{LocalDateTime, OffsetDateTime}
-import java.time.format.DateTimeFormatter
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
-import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
-import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import play.api.libs.json.{JsError, Json}
@@ -21,13 +16,12 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
+import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.StatusConso._
-import utils.Constants.StatusPro._
-import utils.Constants.{Departments, EventType, StatusPro}
+import utils.Constants.ReportStatus._
+import utils.Constants.{EventType, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
@@ -46,47 +40,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-
-  def determineStatusPro(report: Report): StatusProValue = {
-    if (report.isEligible) A_TRAITER else NA
-  }
-
-  def determineStatusConso(report: Report): StatusConsoValue = {
-    if (report.isEligible) EN_ATTENTE else FAIT
-  }
-
-  def determineStatusPro(event: Event, previousStatus: Option[StatusProValue]): StatusProValue = (event.action, event.resultAction) match {
-    case (A_CONTACTER, _)                      => A_TRAITER
-    case (HORS_PERIMETRE, _)                   => NA
-    case (CONTACT_TEL, _)                      => TRAITEMENT_EN_COURS
-    case (CONTACT_EMAIL, _)                    => TRAITEMENT_EN_COURS
-    case (CONTACT_COURRIER, _)                 => TRAITEMENT_EN_COURS
-    case (RETOUR_COURRIER, _)                  => ADRESSE_INCORRECTE
-    case (REPONSE_PRO_CONTACT, Some(true))     => A_TRANSFERER_SIGNALEMENT
-    case (REPONSE_PRO_CONTACT, Some(false))    => SIGNALEMENT_NON_CONSULTE
-    case (ENVOI_SIGNALEMENT, _)                => SIGNALEMENT_TRANSMIS
-    case (REPONSE_PRO_SIGNALEMENT, Some(true)) => PROMESSE_ACTION
-    case (REPONSE_PRO_SIGNALEMENT, _)          => SIGNALEMENT_INFONDE
-    case (MAL_ATTRIBUE, _)                     => SIGNALEMENT_MAL_ATTRIBUE
-    case (NON_CONSULTE, _)                     => SIGNALEMENT_NON_CONSULTE
-    case (CONSULTE_IGNORE, _)                  => SIGNALEMENT_CONSULTE_IGNORE
-    case (_, _)                                => previousStatus.getOrElse(NA)
-
-  }
-
-  def determineStatusConso(event: Event, previousStatus: Option[StatusConsoValue]): StatusConsoValue = (event.action) match {
-    case A_CONTACTER                         => EN_ATTENTE
-    case ENVOI_SIGNALEMENT                   => A_INFORMER_TRANSMISSION
-    case REPONSE_PRO_SIGNALEMENT             => A_INFORMER_REPONSE_PRO
-    case EMAIL_NON_PRISE_EN_COMPTE           => FAIT
-    case EMAIL_TRANSMISSION                  => EN_ATTENTE
-    case EMAIL_REPONSE_PRO                   => FAIT
-    case CONTACT_TEL                         => EN_ATTENTE
-    case CONTACT_EMAIL                       => EN_ATTENTE
-    case CONTACT_COURRIER                    => EN_ATTENTE
-    case HORS_PERIMETRE                      => A_RECONTACTER
-    case _                                   => previousStatus.getOrElse(EN_ATTENTE)
-  }
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
@@ -110,13 +63,16 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 )))))
               newReport <- swap(report.map(r => reportRepository.update{
                   r.copy(
-                    statusPro = Some(determineStatusPro(event, r.statusPro)),
-                    statusConso = Some(determineStatusConso(event, r.statusConso)))
+                    status = (event.action, event.resultAction) match {
+                      case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
+                      case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
+                      case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
+                      case (_, _)                                => r.status
+                    })
               }))
               _ <- swap(newReport.flatMap(r => (user, event.action) match {
                 case (_, ENVOI_SIGNALEMENT) => Some(notifyConsumerOfReportTransmission(r, request.identity.id))
                 case (Some(u), REPONSE_PRO_SIGNALEMENT) => Some(sendMailsAfterProAcknowledgment(r, event, u))
-                case (_, MAL_ATTRIBUE) => Some(sendMailWrongAssignment(r, event))
                 case (_, NON_CONSULTE) => Some(sendMailClosedByNoReading(r))
                 case (_, CONSULTE_IGNORE) => Some(sendMailClosedByNoAction(r))
                 case _ => None
@@ -146,8 +102,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
             report.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
-              statusPro = Some(determineStatusPro(report)),
-              statusConso = Some(determineStatusConso(report))
+              status = Some(if (report.isEligible) A_TRAITER else NA)
             )
           )
           _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -184,12 +139,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
                 Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
               )
             )
-            _ <- reportRepository.update(
-              report.copy(
-                statusPro = Some(determineStatusPro(event, report.statusPro)),
-                statusConso = Some(determineStatusConso(event, report.statusConso))
-              )
-            )
+            _ <- reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
           } yield ()
         case Right(activationKey) =>
           userRepository.create(
@@ -327,18 +277,6 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       }
   }
 
-  private def sendMailWrongAssignment(report: Report, event: Event) = {
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportWrongAssignment(report, event).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
-  }
-
   private def sendMailClosedByNoReading(report: Report) = {
     Future(mailerService.sendEmail(
       from = configuration.get[String]("play.mail.from"),
@@ -456,7 +394,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
       case Success(id) => {
         reportRepository.getReport(id).map { rep =>
           rep match {
-            case Some(r) => Some(r.copy(statusPro = StatusPro.fromValue(getGenericStatusProWithUserRole(r.statusPro, request.identity.userRole))))
+            case Some(r) => Some(r.copy(status = getReportStatusWithUserRole(r.status, request.identity.userRole)))
             case _ => None
           }
         }.flatMap(report => (report, request.identity.userRole) match {
@@ -493,13 +431,14 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Première consultation du détail du signalement par le professionnel")
         )
       )
-      report <- reportRepository.update(
-        report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro)),
-          statusConso = Some(determineStatusConso(event, report.statusConso))
-        )
-      )
-      report <- notifyConsumerOfReportTransmission(report, userUUID)
+      _ <- report.status match {
+        case Some(status) if status.isFinal => Future(None)
+        case _ => notifyConsumerOfReportTransmission(report, userUUID)
+      }
+      report <- report.status match {
+        case Some(status) if status.isFinal => Future(report)
+        case _ => reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))
+      }
     } yield (report)
   }
 
@@ -518,13 +457,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
           Some("Envoi email au consommateur d'information de transmission")
         )
       )
-      newReport <- reportRepository.update(
-        report.copy(
-          statusPro = Some(determineStatusPro(event, report.statusPro)),
-          statusConso = Some(determineStatusConso(event, report.statusConso))
-        )
-      )
-    } yield (newReport)
+    } yield ()
   }
 
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
