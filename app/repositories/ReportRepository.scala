@@ -57,7 +57,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)).getOrElse(None))
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
