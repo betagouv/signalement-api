@@ -489,7 +489,7 @@ class ReportController @Inject()(reportRepository: ReportRepository,
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
     val filter = eventType match {
-      case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
+      case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
       case None => EventFilter(eventType = None)
     }
 

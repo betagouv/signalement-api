@@ -15,8 +15,7 @@ object Constants {
         def writes(reportStatusValue: ReportStatusValue) = Json.toJson(reportStatusValue.value)
       }
       implicit val reportStatusValueReads: Reads[ReportStatusValue] =
-        JsPath.read[String].map(fromValue(_).get)
-
+        JsPath.read[String].map(fromValue(_))
     }
 
     object A_TRAITER extends ReportStatusValue("À traiter")
@@ -48,7 +47,7 @@ object Constants {
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    def fromValue(value: String) = reportStatusList.find(_.value == value)
+    def fromValue(value: String) = reportStatusList.find(_.value == value).getOrElse(ReportStatusValue(""))
 
     def getReportStatusWithUserRole(reportStatus: Option[ReportStatusValue], userRole: UserRole) = {
       reportStatus.map(status => (reportStatusDGCCRFList.contains(status), userRole) match {
@@ -78,7 +77,7 @@ object Constants {
         def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
       }
       implicit val eventTypeValueReads: Reads[EventTypeValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object PRO extends EventTypeValue("PRO")
@@ -93,7 +92,7 @@ object Constants {
       RECTIF
     )
 
-    def fromValue(value: String) = eventTypes.find(_.value == value)
+    def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
 
   }
 
@@ -106,7 +105,7 @@ object Constants {
         def writes(actionEventValue: ActionEventValue) = Json.obj("name" -> actionEventValue.value, "withResult" -> actionEventValue.withResult)
       }
       implicit val actionEventValueReads: Reads[ActionEventValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")
@@ -163,7 +162,7 @@ object Constants {
       COMMENT_DGCCRF
     )
 
-    def fromValue(value: String) = actionEvents.find(_.value == value)
+    def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
 
   object Departments {
