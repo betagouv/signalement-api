@@ -13,7 +13,7 @@ import models.{PasswordChange, User, UserPermission, UserRoles}
 import play.api._
 import play.api.libs.json.JsError
 import repositories.{ReportFilter, ReportRepository, UserRepository}
-import utils.Constants.StatusPro
+import utils.Constants.ReportStatus
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -81,7 +81,7 @@ class AccountController @Inject()(
 
     for {
       user <- userRepository.findByLogin(siret)
-      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusPros = Seq(StatusPro.A_TRAITER.value)))
+      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER.value)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)

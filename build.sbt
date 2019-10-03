@@ -1,7 +1,7 @@
 name := "signalement-api"
 organization := "fr.gouv.beta"
 
-version := "0.1"
+version := "1.3"
 
 scalaVersion := "2.12.8"
 
@@ -46,3 +46,5 @@ resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 mappings in Universal ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
+
+javaOptions in Test += "-Dconfig.file=conf/test.conf"
