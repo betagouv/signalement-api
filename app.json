@@ -1,12 +1,9 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql"
+    "postdeploy": "heroku-postdeploy.sh"
   },
   "env": {
-    "APPLICATION_HOST": {
-      "value": "signalement-api-pr-85.herokuapp.com"
-    },
     "APPLICATION_PROTOCOL": {
       "value": "https://"
     },
@@ -20,6 +17,9 @@
       "required": true
     },
     "EVOLUTIONS_AUTO_APPLY_DOWNS": {
+      "required": true
+    },
+    "HEROKU_APP_NAME": {
       "required": true
     },
     "MAX_CONNECTIONS": {
