@@ -3,7 +3,7 @@ package controllers
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import akka.stream.alpakka.s3.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
