@@ -52,11 +52,24 @@ class RemindTwiceOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEn
     s2"""
          Given a pro with email                                                       ${step(setupUser(userWithEmail))}
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(onGoingReport))}
-         Given a previous remind made more than 21 days                               ${step(setupEvent(outOfTimeReminderEvent))}
+         Given a previous remind made more than 7 days                               ${step(setupEvent(outOfTimeReminderEvent))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+    """
+}
+
+class DontRemindTwiceOngoingReportOnTimeForUserWithEmail(implicit ee: ExecutionEnv) extends OnGoingReportForUserWithEmailReminderTaskSpec {
+  override def is =
+    s2"""
+         Given a pro with email                                                       ${step(setupUser(userWithEmail))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(onGoingReport))}
+         Given a previous remind made more than 7 days                                ${step(setupEvent(onTimeReminderEvent))}
+         When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
+         Then no event is created                                                     ${eventMustNotHaveBeenCreated(reportUUID, List(onTimeReminderEvent))}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
     """
 }
 
