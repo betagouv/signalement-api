@@ -354,10 +354,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
   }
 
-  def getReportsForStatusWithUser(status: StatusProValue): Future[List[(Report, Option[User])]] = db.run {
+  def getReportsForStatusWithUser(status: StatusProValue): Future[List[(Report, User)]] = db.run {
     reportTableQuery
       .filter(_.statusPro === status.value)
-      .joinLeft(userTableQuery).on(_.companySiret === _.login)
+      .join(userTableQuery).on(_.companySiret === _.login)
       .to[List]
       .result
   }
