@@ -23,7 +23,7 @@ import play.api.test._
 import play.mvc.Http.Status
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.MailerService
-import tasks.TasksModule
+import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 import utils.Constants.StatusPro.StatusProValue
@@ -210,7 +210,6 @@ trait CreateEventContext extends Mockito {
         "play.mailer.mock" -> true
       )
     )
-    .disable[TasksModule]
     .overrides(new FakeModule())
     .build()
 

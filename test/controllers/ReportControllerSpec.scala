@@ -22,7 +22,7 @@ import play.api.test._
 import play.api.{Configuration, Logger}
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository, ReportFilter}
 import services.{MailerService, S3Service}
-import tasks.TasksModule
+import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.Constants.StatusConso._
@@ -310,7 +310,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           "play.tmpDirectory" -> "./target"
         )
       )
-      .disable[TasksModule]
       .overrides(new FakeModule())
       .build()
 
