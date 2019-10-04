@@ -47,7 +47,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
   /**
     * Préparation du jeu de test en base de données, afin de lancer le test manuel
     */
-  def prepareBeforeTest() = SecuredAction(WithPermission(UserPermission.createEvent)).async { implicit request =>
+  def prepareBeforeTest() = UnsecuredAction.async { implicit request =>
 
     // now considéré pour le jeu de test: 26/09/2019
 
@@ -56,7 +56,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     val userWithoutEmailUuid = UUID.randomUUID()
 
     val userWithoutEmail = User(userWithoutEmailUuid, "11111111111111", "", Some("123123"), None, None, Some("test"), Pro)
-    val userEmail = User(userEmailUuid, "22222222222222", "", None, Some("user-test@gmail.com"), None, Some("test"), Pro)
+    val userEmail = User(userEmailUuid, "22222222222222", "", None, Some("jerome.rivals@gmail.com"), None, Some("test"), Pro)
 
     // 1. TRAITEMENT EN COURS  ____________________________________________________________________________________________________
 
@@ -69,7 +69,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // CONTACT_COURRIER plus vieux de 21j
     val r1_e1_uuid = UUID.randomUUID()
     val r1_e1_date = createDate("2019-09-01");
-    val r1_e1 = Event(Some(r1_e1_uuid), Some(r1_uuid), fakeUserUuid, Some(r1_e1_date), PRO, CONTACT_COURRIER,
+    val r1_e1 = Event(Some(r1_e1_uuid), Some(r1_uuid), Some(fakeUserUuid), Some(r1_e1_date), PRO, CONTACT_COURRIER,
       None, Some("test"))
 
     // report 2 avec un user sans email -------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // CONTACT_COURRIER moins vieux que 21j
     val r2_e1_uuid = UUID.randomUUID()
     val r2_e1_date = createDate("2019-09-24");
-    val r2_e1 = Event(Some(r2_e1_uuid), Some(r2_uuid), fakeUserUuid, Some(r2_e1_date), PRO, CONTACT_COURRIER,
+    val r2_e1 = Event(Some(r2_e1_uuid), Some(r2_uuid), Some(fakeUserUuid), Some(r2_e1_date), PRO, CONTACT_COURRIER,
       None, Some("test"))
 
     // report 3 avec un user avec email -------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // CONTACT_EMAIL plus vieux de 7j
     val r3_e1_uuid = UUID.randomUUID()
     val r3_e1_date = createDate("2019-09-01")
-    val r3_e1 = Event(Some(r3_e1_uuid), Some(r3_uuid), fakeUserUuid, Some(r3_e1_date), PRO, CONTACT_EMAIL,
+    val r3_e1 = Event(Some(r3_e1_uuid), Some(r3_uuid), Some(fakeUserUuid), Some(r3_e1_date), PRO, CONTACT_EMAIL,
       None, Some("test"))
 
     // report 4 avec un user avec email -------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // CONTACT_EMAIL moins vieux de 7j
     val r4_e1_uuid = UUID.randomUUID()
     val r4_e1_date = createDate("2019-09-24");
-    val r4_e1 = Event(Some(r4_e1_uuid), Some(r4_uuid), fakeUserUuid, Some(r4_e1_date), PRO, CONTACT_EMAIL,
+    val r4_e1 = Event(Some(r4_e1_uuid), Some(r4_uuid), Some(fakeUserUuid), Some(r4_e1_date), PRO, CONTACT_EMAIL,
       None, Some("test"))
 
     // report 5 avec un user sans email -------------------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE plus vieux de 21j
     val r5_e1_uuid = UUID.randomUUID()
     val r5_e1_date = createDate("2019-09-01");
-    val r5_e1 = Event(Some(r5_e1_uuid), Some(r5_uuid), fakeUserUuid, Some(r5_e1_date), PRO, RELANCE,
+    val r5_e1 = Event(Some(r5_e1_uuid), Some(r5_uuid), Some(fakeUserUuid), Some(r5_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 6 avec un user sans email -------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE moins vieux que 21j
     val r6_e1_uuid = UUID.randomUUID()
     val r6_e1_date = createDate("2019-09-24");
-    val r6_e1 = Event(Some(r6_e1_uuid), Some(r6_uuid), fakeUserUuid, Some(r6_e1_date), PRO, RELANCE,
+    val r6_e1 = Event(Some(r6_e1_uuid), Some(r6_uuid), Some(fakeUserUuid), Some(r6_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 7 avec un user avec email -------------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE plus vieux de 7j
     val r7_e1_uuid = UUID.randomUUID()
     val r7_e1_date = createDate("2019-09-01");
-    val r7_e1 = Event(Some(r7_e1_uuid), Some(r7_uuid), fakeUserUuid, Some(r7_e1_date), PRO, RELANCE,
+    val r7_e1 = Event(Some(r7_e1_uuid), Some(r7_uuid), Some(fakeUserUuid), Some(r7_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 8 avec un user avec email -------------------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE moins vieux que 7j
     val r8_e1_uuid = UUID.randomUUID()
     val r8_e1_date = createDate("2019-09-24");
-    val r8_e1 = Event(Some(r8_e1_uuid), Some(r8_uuid), fakeUserUuid, Some(r8_e1_date), PRO, RELANCE,
+    val r8_e1 = Event(Some(r8_e1_uuid), Some(r8_uuid), Some(fakeUserUuid), Some(r8_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 9 avec un user avec email -------------------------------------------------------------------------------------------
@@ -165,13 +165,13 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // Dernièree RELANCE plus vieux que 7j
     val r9_e1_uuid = UUID.randomUUID()
     val r9_e1_date = createDate("2019-09-01");
-    val r9_e1 = Event(Some(r9_e1_uuid), Some(r9_uuid), fakeUserUuid, Some(r9_e1_date), PRO, RELANCE,
+    val r9_e1 = Event(Some(r9_e1_uuid), Some(r9_uuid), Some(fakeUserUuid), Some(r9_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // 1ère RELANCE 1 semaine avant
     val r9_e2_uuid = UUID.randomUUID()
     val r9_e2_date = createDate("2019-08-24");
-    val r9_e2 = Event(Some(r9_e2_uuid), Some(r9_uuid), fakeUserUuid, Some(r9_e2_date), PRO, RELANCE,
+    val r9_e2 = Event(Some(r9_e2_uuid), Some(r9_uuid), Some(fakeUserUuid), Some(r9_e2_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 10 avec un user avec email -------------------------------------------------------------------------------------------
@@ -183,13 +183,13 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // Dernière RELANCE moins vieux que 7j
     val r10_e1_uuid = UUID.randomUUID()
     val r10_e1_date = createDate("2019-09-24");
-    val r10_e1 = Event(Some(r10_e1_uuid), Some(r10_uuid), fakeUserUuid, Some(r10_e1_date), PRO, RELANCE,
+    val r10_e1 = Event(Some(r10_e1_uuid), Some(r10_uuid), Some(fakeUserUuid), Some(r10_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // 1ère RELANCE 1 semaine avant
     val r10_e2_uuid = UUID.randomUUID()
     val r10_e2_date = createDate("2019-09-17");
-    val r10_e2 = Event(Some(r10_e2_uuid), Some(r10_uuid), fakeUserUuid, Some(r10_e2_date), PRO, RELANCE,
+    val r10_e2 = Event(Some(r10_e2_uuid), Some(r10_uuid), Some(fakeUserUuid), Some(r10_e2_date), PRO, RELANCE,
       None, Some("test"))
 
     // 2. SIGNALEMENT TRANSMIS  ____________________________________________________________________________________________________
@@ -203,7 +203,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // ENVOI EMAIL plus vieux que 7j
     val r11_e1_uuid = UUID.randomUUID()
     val r11_e1_date = createDate("2019-09-01")
-    val r11_e1 = Event(Some(r11_e1_uuid), Some(r11_uuid), fakeUserUuid, Some(r11_e1_date), PRO, CONTACT_EMAIL,
+    val r11_e1 = Event(Some(r11_e1_uuid), Some(r11_uuid), Some(fakeUserUuid), Some(r11_e1_date), PRO, CONTACT_EMAIL,
       None, Some("test"))
 
     // report 12 avec un user avec email -------------------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // ENVOI EMAIL plus vieux que 7j
     val r12_e1_uuid = UUID.randomUUID()
     val r12_e1_date = createDate("2019-09-24")
-    val r12_e1 = Event(Some(r12_e1_uuid), Some(r12_uuid), fakeUserUuid, Some(r12_e1_date), PRO, CONTACT_EMAIL,
+    val r12_e1 = Event(Some(r12_e1_uuid), Some(r12_uuid), Some(fakeUserUuid), Some(r12_e1_date), PRO, CONTACT_EMAIL,
       None, Some("test"))
 
     // report 13 avec un user avec email -------------------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE plus vieux que 7j
     val r13_e1_uuid = UUID.randomUUID()
     val r13_e1_date = createDate("2019-09-01");
-    val r13_e1 = Event(Some(r13_e1_uuid), Some(r13_uuid), fakeUserUuid, Some(r13_e1_date), PRO, RELANCE,
+    val r13_e1 = Event(Some(r13_e1_uuid), Some(r13_uuid), Some(fakeUserUuid), Some(r13_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 14 avec un user avec email -------------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // RELANCE moins vieux que 7j
     val r14_e1_uuid = UUID.randomUUID()
     val r14_e1_date = createDate("2019-09-24");
-    val r14_e1 = Event(Some(r14_e1_uuid), Some(r14_uuid), fakeUserUuid, Some(r14_e1_date), PRO, RELANCE,
+    val r14_e1 = Event(Some(r14_e1_uuid), Some(r14_uuid), Some(fakeUserUuid), Some(r14_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 15 avec un user avec email -------------------------------------------------------------------------------------------
@@ -251,13 +251,13 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // Dernière RELANCE plus vieux que 7j
     val r15_e1_uuid = UUID.randomUUID()
     val r15_e1_date = createDate("2019-09-01");
-    val r15_e1 = Event(Some(r15_e1_uuid), Some(r15_uuid), fakeUserUuid, Some(r15_e1_date), PRO, RELANCE,
+    val r15_e1 = Event(Some(r15_e1_uuid), Some(r15_uuid), Some(fakeUserUuid), Some(r15_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // Première RELANCE
     val r15_e2_uuid = UUID.randomUUID()
     val r15_e2_date = createDate("2019-08-24");
-    val r15_e2 = Event(Some(r15_e2_uuid), Some(r15_uuid), fakeUserUuid, Some(r15_e2_date), PRO, RELANCE,
+    val r15_e2 = Event(Some(r15_e2_uuid), Some(r15_uuid), Some(fakeUserUuid), Some(r15_e2_date), PRO, RELANCE,
       None, Some("test"))
 
     // report 16 avec un user avec email -------------------------------------------------------------------------------------------
@@ -269,13 +269,13 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
     // Dernière RELANCE moins vieux que 7j
     val r16_e1_uuid = UUID.randomUUID()
     val r16_e1_date = createDate("2019-09-24");
-    val r16_e1 = Event(Some(r16_e1_uuid), Some(r16_uuid), fakeUserUuid, Some(r16_e1_date), PRO, RELANCE,
+    val r16_e1 = Event(Some(r16_e1_uuid), Some(r16_uuid), Some(fakeUserUuid), Some(r16_e1_date), PRO, RELANCE,
       None, Some("test"))
 
     // Première RELANCE
     val r16_e2_uuid = UUID.randomUUID()
     val r16_e2_date = createDate("2019-08-17");
-    val r16_e2 = Event(Some(r16_e2_uuid), Some(r16_uuid), fakeUserUuid, Some(r16_e2_date), PRO, RELANCE,
+    val r16_e2 = Event(Some(r16_e2_uuid), Some(r16_uuid), Some(fakeUserUuid), Some(r16_e2_date), PRO, RELANCE,
       None, Some("test"))
 
     for {
@@ -284,11 +284,11 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
       _ <- userRepository.create(userEmail)
       _ <- reportRepository.create(r1)
       _ <- eventRepository.createEvent(r1_e1)
-      _ <- reportRepository.create(r2)
-      _ <- eventRepository.createEvent(r2_e1)
+      // _ <- reportRepository.create(r2)
+      // _ <- eventRepository.createEvent(r2_e1)
       _ <- reportRepository.create(r3)
       _ <- eventRepository.createEvent(r3_e1)
-      _ <- reportRepository.create(r4)
+      /*_ <- reportRepository.create(r4)
       _ <- eventRepository.createEvent(r4_e1)
       _ <- reportRepository.create(r5)
       _ <- eventRepository.createEvent(r5_e1)
@@ -317,7 +317,7 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
       _ <- eventRepository.createEvent(r15_e2)
       _ <- reportRepository.create(r16)
       _ <- eventRepository.createEvent(r16_e1)
-      _ <- eventRepository.createEvent(r16_e2)
+      _ <- eventRepository.createEvent(r16_e2)*/
 
     } yield {
       Ok("Insertion jeu de test")
@@ -346,9 +346,9 @@ class ReminderTestController @Inject()(reportRepository: ReportRepository,
   /**
     * Lancement de la tâche de relance manuellement
     */
-  def runManuallyReminderTask() = SecuredAction(WithPermission(UserPermission.createEvent)).async { implicit request =>
+  def runManuallyReminderTask() = UnsecuredAction.async { implicit request =>
     val now = LocalDate.parse("2019-09-26", DateTimeFormatter.ofPattern("yyyy-MM-d")).atStartOfDay()
-    reminderTask.runTask(now, test = true)
+    reminderTask.runTask(now)
     Future(Ok("runManuallyReminderTask"))
   }
 
