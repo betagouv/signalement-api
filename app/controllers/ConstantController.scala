@@ -4,9 +4,8 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
 import models.UserRoles
 import play.api.Logger
-import play.api.libs.json.{Json, Writes}
-import utils.Constants.{ActionEvent, StatusPro}
-import utils.Constants.StatusPro.{StatusProValue, TRAITEMENT_EN_COURS, status => statusPros}
+import play.api.libs.json.Json
+import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,11 +23,11 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
     }
   }
 
-  def getStatusPros = SecuredAction.async { implicit request =>
+  def getReportStatus = SecuredAction.async { implicit request =>
 
     request.identity.userRole match {
-      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(StatusPro.statusDGCCRF)))
-      case _ => Future.successful(Ok(Json.toJson(statusPros)))
+      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(ReportStatus.reportStatusDGCCRFList)))
+      case _ => Future.successful(Ok(Json.toJson(ReportStatus.reportStatusList)))
     }
   }
 

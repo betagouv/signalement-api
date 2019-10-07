@@ -13,7 +13,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants
 import utils.Constants.ActionEvent._
-import utils.Constants.StatusPro._
+import utils.Constants.ReportStatus._
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
@@ -53,7 +53,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
           )
         ).map(event =>
-          reportRepository.update(report.copy(statusPro = Some(TRAITEMENT_EN_COURS)))
+          reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
       }
       case None => {
@@ -81,7 +81,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         draftReport.copy(
           id = Some(UUID.randomUUID()),
           creationDate = Some(OffsetDateTime.now()),
-          statusPro = Some(if (draftReport.isEligible) Constants.StatusPro.A_TRAITER else Constants.StatusPro.NA)
+          status = Some(if (draftReport.isEligible) Constants.ReportStatus.A_TRAITER else Constants.ReportStatus.NA)
         )
       )
       _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
@@ -177,7 +177,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some("Première consultation du détail du signalement par le professionnel")
         )
       )
-      updatedReport <- report.statusPro match {
+      updatedReport <- report.status match {
         case Some(status) if status.isFinal => Future(report)
         case _ => notifyConsumerOfReportTransmission(report, userUUID)
       }
@@ -207,7 +207,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some("Envoi email au consommateur d'information de transmission")
         )
       )
-      newReport <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_TRANSMIS)))
+      newReport <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))
     } yield newReport
   }
 
@@ -274,11 +274,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       updatedReport: Option[Report] <- (report, newEvent) match {
         case (Some(r), Some(event)) => reportRepository.update(
           r.copy(
-            statusPro = (event.action, event.resultAction) match {
+            status = (event.action, event.resultAction) match {
               case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
               case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
               case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
-              case (_, _)                                => r.statusPro
+              case (_, _)                                => r.status
             })
         ).map(Some(_))
         case _ => Future(None)

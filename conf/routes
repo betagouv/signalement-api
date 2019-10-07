@@ -9,8 +9,8 @@ GET          /api                                        controllers.StaticContr
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
 
 # Reports list API
-GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], details: Option[String])
-GET          /api/reports/extract                       controllers.ReportListController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], details: Option[String])
+GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
+GET          /api/reports/extract                       controllers.ReportListController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
 
 # Report API
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
@@ -32,7 +32,7 @@ POST        /api/reports/:uuid/events                   controllers.ReportContro
 
 # Constants API
 GET         /api/constants/actions                      controllers.ConstantController.getActions()
-GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
+GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
 
 # Company API
 GET         /api/companies/suggest/:search              controllers.CompanyController.getSuggestions(search)

@@ -1,9 +1,8 @@
 package controllers
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
-import akka.stream.alpakka.s3.scaladsl.MultipartUploadResult
+import akka.stream.alpakka.s3.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
@@ -16,13 +15,12 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.StatusPro._
-import utils.Constants.{EventType, StatusPro}
+import utils.Constants.EventType
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Failure, Success, Try}
 
 class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  reportRepository: ReportRepository,
@@ -167,7 +165,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
-
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
@@ -182,7 +179,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
     val filter = eventType match {
-      case Some(_) => EventFilter(eventType = EventType.fromValue(eventType.get))
+      case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
       case None => EventFilter(eventType = None)
     }
 

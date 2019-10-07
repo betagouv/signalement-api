@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer" % "6.0.1",
   "com.typesafe.play" %% "play-mailer-guice" % "6.0.1",
 
-  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "0.20",
+  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "1.1.1",
 
   "com.mohiva" %% "play-silhouette" % "5.0.7",
   "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.7",
@@ -46,3 +46,5 @@ resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 mappings in Universal ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
+
+javaOptions in Test += "-Dconfig.file=conf/test.conf"

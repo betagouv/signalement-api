@@ -25,8 +25,8 @@ import services.{MailerService, S3Service}
 import tasks.TasksModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
-import utils.Constants.StatusPro._
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
+import utils.Constants.ReportStatus._
+import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 

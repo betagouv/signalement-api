@@ -6,29 +6,28 @@ import play.api.libs.json._
 
 object Constants {
 
-  object StatusPro {
+  object ReportStatus {
 
-    case class StatusProValue(val value: String, isFinal: Boolean = false)
+    case class ReportStatusValue(val value: String, isFinal: Boolean = false)
 
-    object StatusProValue {
-      implicit val statusProValueWrites = new Writes[StatusProValue] {
-        def writes(statusProValue: StatusProValue) = Json.toJson(statusProValue.value)
+    object ReportStatusValue {
+      implicit val reportStatusValueWrites = new Writes[ReportStatusValue] {
+        def writes(reportStatusValue: ReportStatusValue) = Json.toJson(reportStatusValue.value)
       }
-      implicit val statusProValueReads: Reads[StatusProValue] =
-        JsPath.read[String].map(fromValue(_).get)
-
+      implicit val reportStatusValueReads: Reads[ReportStatusValue] =
+        JsPath.read[String].map(fromValue(_))
     }
 
-    object A_TRAITER extends StatusProValue("À traiter")
-    object NA extends StatusProValue("NA", true)
-    object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object PROMESSE_ACTION extends StatusProValue("Promesse action", true)
-    object SIGNALEMENT_INFONDE extends StatusProValue("Signalement infondé", true)
-    object SIGNALEMENT_NON_CONSULTE extends StatusProValue("Signalement non consulté", true)
-    object SIGNALEMENT_CONSULTE_IGNORE extends StatusProValue("Signalement consulté ignoré", true)
+    object A_TRAITER extends ReportStatusValue("À traiter")
+    object NA extends ReportStatusValue("NA", true)
+    object TRAITEMENT_EN_COURS extends ReportStatusValue("Traitement en cours")
+    object SIGNALEMENT_TRANSMIS extends ReportStatusValue("Signalement transmis")
+    object PROMESSE_ACTION extends ReportStatusValue("Promesse action", true)
+    object SIGNALEMENT_INFONDE extends ReportStatusValue("Signalement infondé", true)
+    object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue("Signalement non consulté", true)
+    object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue("Signalement consulté ignoré", true)
 
-    val status = Seq(
+    val reportStatusList = Seq(
       A_TRAITER,
       NA,
       TRAITEMENT_EN_COURS,
@@ -39,7 +38,7 @@ object Constants {
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    val statusDGCCRF = Seq(
+    val reportStatusDGCCRFList = Seq(
       NA,
       TRAITEMENT_EN_COURS,
       PROMESSE_ACTION,
@@ -48,20 +47,19 @@ object Constants {
       SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    def fromValue(value: String) = status.find(_.value == value)
+    def fromValue(value: String) = reportStatusList.find(_.value == value).getOrElse(ReportStatusValue(""))
 
-    def getStatusProWithUserRole(statusPro: Option[StatusProValue], userRole: UserRole) = {
-
-      statusPro.map(status => (statusDGCCRF.contains(status), userRole) match {
+    def getReportStatusWithUserRole(reportStatus: Option[ReportStatusValue], userRole: UserRole) = {
+      reportStatus.map(status => (reportStatusDGCCRFList.contains(status), userRole) match {
         case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS
         case (_, _) => status
       })
     }
 
-    def getSpecificsStatusProWithUserRole(statusPro: Option[String], userRole: UserRole) = {
+    def getSpecificsReportStatusWithUserRole(reportStatus: Option[String], userRole: UserRole) = {
 
-      statusPro.map(status => (status, userRole) match {
-        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => StatusPro.status.filter(s => !statusDGCCRF.contains(s)).map(_.value)
+      reportStatus.map(status => (status, userRole) match {
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value) :+ TRAITEMENT_EN_COURS.value
         case (_, _) => List(status)
       }).getOrElse(List())
     }
@@ -79,7 +77,7 @@ object Constants {
         def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
       }
       implicit val eventTypeValueReads: Reads[EventTypeValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object PRO extends EventTypeValue("PRO")
@@ -94,7 +92,7 @@ object Constants {
       RECTIF
     )
 
-    def fromValue(value: String) = eventTypes.find(_.value == value)
+    def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
 
   }
 
@@ -107,7 +105,7 @@ object Constants {
         def writes(actionEventValue: ActionEventValue) = Json.obj("name" -> actionEventValue.value, "withResult" -> actionEventValue.withResult)
       }
       implicit val actionEventValueReads: Reads[ActionEventValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")
@@ -164,7 +162,7 @@ object Constants {
       COMMENT_DGCCRF
     )
 
-    def fromValue(value: String) = actionEvents.find(_.value == value)
+    def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
 
   object Departments {
