@@ -58,7 +58,7 @@ class CloseOngoingReportOutOfTimeForUserWithoutEmail(implicit ee: ExecutionEnv) 
     """
 }
 
-class DontCloseOngoingReportOutOfTimeForUserWithoutEmail(implicit ee: ExecutionEnv) extends OnGoingReportForUserWithoutEmailReminderTaskSpec {
+class DontCloseOngoingReportOnTimeForUserWithoutEmail(implicit ee: ExecutionEnv) extends OnGoingReportForUserWithoutEmailReminderTaskSpec {
   override def is =
     s2"""
          Given a pro without email                                                    ${step(setupUser(userWithoutEmail))}

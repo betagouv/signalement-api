@@ -32,5 +32,6 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   }
   def afterAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
+    database.shutdown
   }
 }

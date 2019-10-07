@@ -62,16 +62,20 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         extractOnGoingReportsToRemindByPost(reportsWithUser, reportEventsMap, now)
           .map(reportWithUser => remindByPost(reportWithUser._1))
       )
+      closedByNoReadingForUserWithoutEmail <- Future.sequence(
+        extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithUser, reportEventsMap, now)
+          .map(reportWithUser => closeReportByNoReadingForUserWithoutEmail(reportWithUser._1))
+      )
       mailReminders <- Future.sequence(
         extractOnGoingReportsToRemindByMail(reportsWithUser, reportEventsMap, now)
           .map(reportWithUser => remindByMail(reportWithUser._1, reportWithUser._2.email.get))
       )
-      closedByNoReadingReminders <- Future.sequence(
-        extractOnGoingReportsToCloseByNoReading(reportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => closeReportByNoReading(reportWithUser._1))
+      closedByNoReadingForUserWithEmail <- Future.sequence(
+        extractOnGoingReportsToCloseByNoReadingForUserWithEmail(reportsWithUser, reportEventsMap, now)
+          .map(reportWithUser => closeReportByNoReadingForUserWithEmail(reportWithUser._1))
       )
     } yield {
-      postReminders :: mailReminders :: closedByNoReadingReminders
+      postReminders :: closedByNoReadingForUserWithEmail :: mailReminders :: closedByNoReadingForUserWithoutEmail
     }
   }
 
@@ -97,17 +101,33 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
+  def extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithUser
+      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
+        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(21))).getOrElse(false))
+      .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
+  }
+
+  def closeReportByNoReadingForUserWithoutEmail(report: Report) = {
+    for {
+      _ <- eventRepository.createEvent(generateNoReadingEvent(report))
+      newEvent <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_NON_CONSULTE)))
+    } yield {
+      Reminder(report.id, newEvent.id)
+    }
+  }
+
   def extractOnGoingReportsToRemindByMail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
     reportsWithUser
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 0)
       .filter(reportWithUser => reportWithUser._2.email.isDefined)
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, CONTACT_EMAIL)
         .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)) :::
-    reportsWithUser
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 1)
-      .filter(reportWithUser => reportWithUser._2.email.isDefined)
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
-        .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
+      reportsWithUser
+        .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 1)
+        .filter(reportWithUser => reportWithUser._2.email.isDefined)
+        .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
+          .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
   }
 
   def remindByMail(report: Report, userMail: String) = {
@@ -125,49 +145,32 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def extractOnGoingReportsToCloseByNoReading(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+  def extractOnGoingReportsToCloseByNoReadingForUserWithEmail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
     reportsWithUser
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
-        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(21))).getOrElse(false))
-      .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
+        .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)).length == 2)
+      .filter(reportWithUser => reportWithUser._2.email.isDefined)
   }
 
-  def closeReportByNoReading(report: Report) = {
+  def closeReportByNoReadingForUserWithEmail(report: Report) = {
     for {
       _ <- eventRepository.createEvent(generateNoReadingEvent(report))
       newEvent <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
+      mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = report.email)(
+        subject = "Le professionnel n’a pas souhaité consulter votre signalement",
+        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
       Reminder(report.id, newEvent.id)
     }
   }
 
-
-
-            /*case length if length == 1 => {
-              userProMail match {
-                case None => {
-                  if (events.head.creationDate.get.toLocalDateTime.isBefore(last21Days)) {
-                    runEvent(report, NON_CONSULTE, userPro)
-                  }
-                }
-
-                case Some(_) => {
-                  if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-                    runEvent(report, RELANCE, userPro)
-                  }
-                }
-              }
-            }
-
-            case length if length >= 2 => {
-              if (events.head.creationDate.get.toLocalDateTime.isBefore(lastWeek)) {
-                runEvent(report, NON_CONSULTE, userPro)
-              }
-            }
-
-          }
-        }
-      })
+/*
 
       reportRepository.getReportsForStatusWithUser(SIGNALEMENT_TRANSMIS).map(reportsWithUser => {
         reportsWithUser.map(tuple => {

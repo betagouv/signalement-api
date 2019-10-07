@@ -52,7 +52,7 @@ class RemindTwiceOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEn
     s2"""
          Given a pro with email                                                       ${step(setupUser(userWithEmail))}
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(onGoingReport))}
-         Given a previous remind made more than 7 days                               ${step(setupEvent(outOfTimeReminderEvent))}
+         Given a previous remind made more than 7 days                                ${step(setupEvent(outOfTimeReminderEvent))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
@@ -73,6 +73,34 @@ class DontRemindTwiceOngoingReportOnTimeForUserWithEmail(implicit ee: ExecutionE
     """
 }
 
+class CloseOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) extends OnGoingReportForUserWithEmailReminderTaskSpec {
+  override def is =
+    s2"""
+         Given a pro with email                                                       ${step(setupUser(userWithEmail))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(onGoingReport))}
+         Given twice previous remind made more than 7 days                            ${step(setupEvent(outOfTimeReminderEvent))}
+                                                                                      ${step(setupEvent(outOfTimeReminderEvent.copy(id = Some(UUID.randomUUID))))}
+         When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
+         Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.NON_CONSULTE)}
+         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, StatusPro.SIGNALEMENT_NON_CONSULTE)}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"Le professionnel n’a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+   """
+}
+
+class DontCloseOngoingReportOnTimeForUserWithEmail(implicit ee: ExecutionEnv) extends OnGoingReportForUserWithEmailReminderTaskSpec {
+  override def is =
+    s2"""
+         Given a pro with email                                                       ${step(setupUser(userWithEmail))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(onGoingReport))}
+         Given a first remind made more than 7 days                                   ${step(setupEvent(outOfTimeReminderEvent))}
+         Given a second remind made less than 7 days                                  ${step(setupEvent(onTimeReminderEvent))}
+         When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
+         Then no event is created                                                     ${eventMustNotHaveBeenCreated(reportUUID, List(outOfTimeReminderEvent, onTimeReminderEvent))}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+   """
+}
+
 abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
 
   implicit val ec = ee.executionContext
@@ -87,19 +115,19 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
     Some(userWithEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
     Some(TRAITEMENT_EN_COURS), None)
-  val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_EMAIL, None, Some("test"))
-  val onTimeContactByMailEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val onTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_EMAIL, None, Some("test"))
-  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, None, Some("test"))
-  val onTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, None, Some("test"))
