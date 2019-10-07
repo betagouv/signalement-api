@@ -26,8 +26,8 @@ import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-import utils.Constants.StatusPro.StatusProValue
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
+import utils.Constants.ReportStatus.ReportStatusValue
+import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.{Duration, _}
@@ -59,7 +59,7 @@ object CreateEventAdminPostalMail extends CreateEventSpec {
         Given an action of sending postal letter                                 ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.CONTACT_COURRIER)))}
         When create the associated event                                         ${step(someResult = Some(createEvent()))}
         Then an event "CONTACT_COURRIER" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_COURRIER)}
-        And the report status is updated to "TRAITEMENT_EN_COURS"                ${reportMustHaveBeenUpdatedWithStatus(StatusPro.TRAITEMENT_EN_COURS)}
+        And the report reportStatusList is updated to "TRAITEMENT_EN_COURS"                ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
         no email is sent                                                         ${mailMustNotHaveBeenSent}
     """
 }
@@ -71,7 +71,7 @@ object CreateEventProAnswer extends CreateEventSpec {
         Given a pro answer                                                       ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT)))}
         When create the associated event                                         ${step(someResult = Some(createEvent()))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
-        And the report status is updated to "PROMESSE_ACTION"                    ${reportMustHaveBeenUpdatedWithStatus(StatusPro.PROMESSE_ACTION)}
+        And the report reportStatusList is updated to "PROMESSE_ACTION"                    ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, someEvent.get).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(someEvent.get, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
@@ -84,7 +84,7 @@ object CreateEventProDeclinedAnswer extends CreateEventSpec {
         Given a pro answer who declines the report                               ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT, false)))}
         When create the associated event                                         ${step(someResult = Some(createEvent()))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
-        And the report status is updated to "SIGNALEMENT_INFONDE"                ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_INFONDE)}
+        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"                ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_INFONDE)}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, someEvent.get).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(someEvent.get, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
@@ -125,12 +125,12 @@ trait CreateEventSpec extends Spec with CreateEventContext {
     (action == event.action, s"action doesn't match ${action}")
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: StatusProValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status))))
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
   }
 
-  def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.statusPro, s"status doesn't match ${status}")
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+    (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
 }
@@ -143,7 +143,7 @@ trait CreateEventContext extends Mockito {
 
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None, None
+    "firstName", "lastName", "email", true, List(), None
   )
 
   def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {

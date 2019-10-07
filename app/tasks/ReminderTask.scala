@@ -15,7 +15,7 @@ import repositories.{EventFilter, EventRepository, ReportRepository, UserReposit
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.PRO
-import utils.Constants.StatusPro._
+import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
@@ -106,7 +106,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def remindOnGoingReportByPost(report: Report) = {
     for {
       newEvent <- eventRepository.createEvent(generateReminderEvent(report))
-      _ <- reportRepository.update(report.copy(statusPro = Some(A_TRAITER)))
+      _ <- reportRepository.update(report.copy(status = Some(A_TRAITER)))
     } yield {
       Reminder(report.id, newEvent.id)
     }
@@ -122,7 +122,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def closeOnGoingReportByNoReadingForUserWithoutEmail(report: Report) = {
     for {
       newEvent <- eventRepository.createEvent(generateNoReadingEvent(report))
-      _ <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_NON_CONSULTE)))
+      _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
       Reminder(report.id, newEvent.id)
     }
@@ -166,7 +166,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def closeOnGoingReportByNoReadingForUserWithEmail(report: Report) = {
     for {
       newEvent <- eventRepository.createEvent(generateNoReadingEvent(report))
-      _ <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_NON_CONSULTE)))
+      _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
       mailerService.sendEmail(
         from = configuration.get[String]("play.mail.from"),
@@ -184,7 +184,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def closeTransmittedReportByNoAnswer(report: Report) = {
     for {
       newEvent <- eventRepository.createEvent(generateReadingNoAnswerEvent(report))
-      _ <- reportRepository.update(report.copy(statusPro = Some(SIGNALEMENT_CONSULTE_IGNORE)))
+      _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_CONSULTE_IGNORE)))
     } yield {
       mailerService.sendEmail(
         from = configuration.get[String]("play.mail.from"),

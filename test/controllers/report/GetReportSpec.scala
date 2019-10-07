@@ -26,8 +26,8 @@ import repositories.{EventFilter, EventRepository, ReportRepository, UserReposit
 import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.StatusPro._
-import utils.Constants.{ActionEvent, Departments, EventType, StatusPro}
+import utils.Constants.ReportStatus._
+import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.{Duration, _}
@@ -67,9 +67,21 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
-         And the report status is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(StatusPro.SIGNALEMENT_TRANSMIS)}
+         And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"             ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_TRANSMIS)}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(statusPro = Some(StatusPro.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(status = Some(ReportStatus.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+    """
+}
+
+object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec  {
+  override def is =
+    s2"""
+         Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
+         When retrieving a final report for the first time                     ${step(someResult = Some(getReport(neverRequestedFinalReportUUID)))}
+         Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
+         And the report reportStatusList is not updated                                   ${reportMustNotHaveBeenUpdated}
+         And no mail is sent                                                    ${mailMustNotHaveBeenSent}
+         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedFinalReport, UserRoles.Pro)}
     """
 }
 
@@ -79,7 +91,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec  {
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving the report not for the first time                      ${step(someResult = Some(getReport(alreadyRequestedReportUUID)))}
          Then no event is created                                               ${eventMustNotHaveBeenCreated}
-         And the report status is not updated                                   ${reportMustNotHaveBeenUpdated}
+         And the report reportStatusList is not updated                                   ${reportMustNotHaveBeenUpdated}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(alreadyRequestedReport, UserRoles.Pro)}
 
@@ -135,12 +147,12 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: StatusProValue) = {
-    there was two(mockReportRepository).update(argThat(reportStatusProMatcher(Some(status)))) //TODO Must be only one time
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
   }
 
-  def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.statusPro, s"status doesn't match ${status}")
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+    (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
   def reportMustNotHaveBeenUpdated() = {
@@ -171,13 +183,19 @@ trait GetReportContext extends Mockito {
   val neverRequestedReportUUID = UUID.randomUUID();
   val neverRequestedReport = Report(
     Some(neverRequestedReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None, None
+    "firstName", "lastName", "email", true, List(), None
+  )
+
+  val neverRequestedFinalReportUUID = UUID.randomUUID();
+  val neverRequestedFinalReport = Report(
+    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    "firstName", "lastName", "email", true, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
     Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None, None
+    "firstName", "lastName", "email", true, List(), None
   )
 
   val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
@@ -196,11 +214,13 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
 
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
+  mockReportRepository.getReport(neverRequestedFinalReportUUID) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReportUUID) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
+  mockEventRepository.getEvents(neverRequestedFinalReportUUID, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReportUUID, EventFilter(None)) returns Future(
     List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReportUUID), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true), None))
   )

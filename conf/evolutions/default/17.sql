@@ -1,5 +1,7 @@
 # --- !Ups
 
-ALTER TABLE events ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE SIGNALEMENT RENAME COLUMN status_pro TO status;
 
 # --- !Downs
+
+ALTER TABLE SIGNALEMENT RENAME COLUMN status TO status_pro;

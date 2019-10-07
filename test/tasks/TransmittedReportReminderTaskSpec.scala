@@ -15,8 +15,8 @@ import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, ENVOI_SIGNALEMENT, RELANCE}
 import utils.Constants.EventType.PRO
-import utils.Constants.StatusPro.{SIGNALEMENT_TRANSMIS, StatusProValue, TRAITEMENT_EN_COURS}
-import utils.Constants.{ActionEvent, StatusPro}
+import utils.Constants.ReportStatus.{SIGNALEMENT_TRANSMIS, ReportStatusValue, TRAITEMENT_EN_COURS}
+import utils.Constants.{ActionEvent, ReportStatus}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -82,7 +82,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
                                                                                       ${step(setupEvent(outOfTimeReminderEvent.copy(id = Some(UUID.randomUUID))))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.CONSULTE_IGNORE)}
-         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, StatusPro.SIGNALEMENT_CONSULTE_IGNORE)}
+         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_CONSULTE_IGNORE)}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"Le professionnel n’a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
    """
 }
@@ -114,7 +114,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val transmittedReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
-    Some(SIGNALEMENT_TRANSMIS), None)
+    Some(SIGNALEMENT_TRANSMIS))
   val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
@@ -163,16 +163,16 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: StatusProValue) = {
-    reportRepository.getReport(reportUUID) must reportStatusProMatcher(Some(status)).await
+  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
+    reportRepository.getReport(reportUUID) must reportStatusMatcher(Some(status)).await
   }
 
-  def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
-    (report.map(report => status == report.statusPro).getOrElse(false), s"status doesn't match ${status}")
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
+    (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) = {
-    reportRepository.getReport(report.id.get).map(_.get.statusPro) must beEqualTo(report.statusPro).await
+    reportRepository.getReport(report.id.get).map(_.get.status) must beEqualTo(report.status).await
   }
 
   lazy val userRepository = injector.instanceOf[UserRepository]

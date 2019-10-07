@@ -13,10 +13,10 @@ import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
 import utils.AppSpec
-import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_COURRIER, CONTACT_EMAIL, RELANCE}
+import utils.Constants.{ActionEvent, ReportStatus}
+import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, RELANCE}
 import utils.Constants.EventType.PRO
-import utils.Constants.StatusPro.{StatusProValue, TRAITEMENT_EN_COURS}
-import utils.Constants.{ActionEvent, StatusPro}
+import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -82,7 +82,7 @@ class CloseOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) ext
                                                                                       ${step(setupEvent(outOfTimeReminderEvent.copy(id = Some(UUID.randomUUID))))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.NON_CONSULTE)}
-         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, StatusPro.SIGNALEMENT_NON_CONSULTE)}
+         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"Le professionnel n’a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
    """
 }
@@ -114,7 +114,7 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
-    Some(TRAITEMENT_EN_COURS), None)
+    Some(TRAITEMENT_EN_COURS))
   val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
@@ -163,16 +163,16 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: StatusProValue) = {
-    reportRepository.getReport(reportUUID) must reportStatusProMatcher(Some(status)).await
+  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
+    reportRepository.getReport(reportUUID) must reportStatusMatcher(Some(status)).await
   }
 
-  def reportStatusProMatcher(status: Option[StatusProValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
-    (report.map(report => status == report.statusPro).getOrElse(false), s"status doesn't match ${status}")
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
+    (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) = {
-    reportRepository.getReport(report.id.get).map(_.get.statusPro) must beEqualTo(report.statusPro).await
+    reportRepository.getReport(report.id.get).map(_.get.status) must beEqualTo(report.status).await
   }
 
   lazy val userRepository = injector.instanceOf[UserRepository]

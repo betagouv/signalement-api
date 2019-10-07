@@ -40,8 +40,8 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def constructEvent: EventData => Event = {
 
       case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
-        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
-          Constants.ActionEvent.fromValue(action).get, resultAction, detail)
+        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
+          Constants.ActionEvent.fromValue(action), resultAction, detail)
       }
     }
 
