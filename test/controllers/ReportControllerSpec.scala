@@ -169,7 +169,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {
         bind[Environment[AuthEnv]].toInstance(env)
-        //bind[ReportRepository].toInstance(mockReportRepository)
+        bind[ReportRepository].toInstance(mockReportRepository)
         bind[EventRepository].toInstance(mockEventRepository)
         bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
