@@ -1,4 +1,4 @@
-@(companyAddress: String, creationDate: java.time.LocalDate, code: String)
+@(companyAddress: String, code: String)
 
 
 <!doctype html>
@@ -39,25 +39,24 @@
                 La Direction générale de la Concurrence, de la Consommation et de la Répression des fraudes (DGCCRF),
                 en partenariat avec la Direction Interministérielle du Numérique,
                 lance un nouveau service public en ligne : <i>SignalConso</i> (https://signalconso.beta.gouv.fr).
-            </p>
-
-            <p>
                 Cette plateforme en ligne permet aux consommateurs de signaler des manquements relatifs au Code de la Consommation.
-                Dans l’esprit de la loi pour un État au service d'une société de confiance (loi ESSOC), la DGCCRF souhaite intégrer les professionnels de bonne foi dans ce projet.
-                Ainsi, à l’inverse du système de réclamation actuel, ce service propose aux professionnels qui le souhaitent de consulter les signalements concernant leurs entreprises.
-                Il s’agit d’une opportunité de pouvoir remédier directement aux anomalies et ainsi d’alléger la pression de contrôle.
             </p>
 
             <p>
-                A travers <i>SignalConso</i>, notre objectif est d’établir un rapport de confiance et de transparence entre les consommateurs, les professionnels et les services de la DGCCRF.
-            </p>
-
-            <p class="text-bold">
-                Nous avons reçu un signalement le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour l’établissement :
+                Nous vous avons adressé un courrier vous indiquant que nous avions reçu un signalement sur votre établissement
             </p>
 
             <p class="text-center text-bold">
                 @views.html.fragments.address(companyAddress)
+            </p>
+
+            <p class="text-bold">
+                Vous n’avez pas encore activé votre espace professionnel et vous n’avez pas consulté ce signalement.
+            </p>
+
+            <p>
+                Si vous n’activez pas votre espace professionnel et ne consultez pas le signalement,
+                les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
             </p>
 
             <p class="mt-3">
@@ -75,6 +74,10 @@
                 <li>Prendre des mesures correctives ou préventives suite au signalement</li>
                 <li>Contacter le consommateur si ce dernier a souhaité vous laisser ses coordonnées</li>
             </ul>
+
+            <p>
+                Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse contact@@signalconso.beta.gouv.fr
+            </p>
 
             <p>
                 Nous restons à votre disposition pour tout renseignement complémentaire,
