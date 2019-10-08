@@ -34,7 +34,7 @@ import scala.concurrent.Future
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
-  val logger: Logger = Logger(this.getClass)
+  /*val logger: Logger = Logger(this.getClass)
 
   "return a BadRequest with errors if report is invalid" should {
 
@@ -191,5 +191,5 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       .build()
 
   }
-
+*/
 }
