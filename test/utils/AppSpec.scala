@@ -6,10 +6,8 @@ import org.specs2.mock.Mockito
 import org.specs2.specification._
 import play.api.db.DBApi
 import play.api.db.evolutions._
-import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MailerService
-import slick.jdbc.JdbcProfile
 
 trait AppSpec extends BeforeAfterAll with Mockito {
 
@@ -34,6 +32,6 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   }
   def afterAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
-    injector.instanceOf[DatabaseConfigProvider].get[JdbcProfile].db.close()
+    app.stop
   }
 }
