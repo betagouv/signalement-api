@@ -79,14 +79,16 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         extractReportsToRemindByMail(transmittedReportsWithUser, reportEventsMap, now, ENVOI_SIGNALEMENT)
           .map(reportWithUser => remindReportByMail(reportWithUser._1, reportWithUser._2.email.get))
       )
-      closedByNoAnswer <- Future.sequence(
+      closedByNoAction <- Future.sequence(
         extractReportsToCloseForUserWithEmail(transmittedReportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => closeTransmittedReportByNoAnswer(reportWithUser._1))
+          .map(reportWithUser => closeTransmittedReportByNoAction(reportWithUser._1))
       )
     } yield {
-      onGoingReportsPostReminders :: closedByNoReadingForUserWithEmail ::
-        onGoingReportsMailReminders :: closedByNoReadingForUserWithoutEmail ::
-        transmittedReportsMailReminders :: closedByNoAnswer
+      (onGoingReportsPostReminders ::: closedByNoReadingForUserWithEmail :::
+        onGoingReportsMailReminders ::: closedByNoReadingForUserWithoutEmail :::
+        transmittedReportsMailReminders ::: closedByNoAction).map(
+        reminder => logger.debug(s"Relance [${reminder.reportId} - ${reminder.value}]")
+      )
     }
   }
 
@@ -108,7 +110,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(generateReminderEvent(report))
       _ <- reportRepository.update(report.copy(status = Some(A_TRAITER)))
     } yield {
-      Reminder(report.id, newEvent.id)
+      Reminder(report.id.get, ReminderValue.RemindOnGoingReportByPost)
     }
   }
 
@@ -124,7 +126,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(generateNoReadingEvent(report))
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
-      Reminder(report.id, newEvent.id)
+      Reminder(report.id.get, ReminderValue.CloseOnGoingReportByNoReadingForUserWithoutEmail)
     }
   }
 
@@ -152,7 +154,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
       )
-      Reminder(report.id, newEvent.id)
+      Reminder(report.id.get, ReminderValue.RemindReportByMail)
     }
   }
 
@@ -177,13 +179,13 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
       )
-      Reminder(report.id, newEvent.id)
+      Reminder(report.id.get, ReminderValue.CloseOnGoingReportByNoReadingForUserWithEmail)
     }
   }
 
-  def closeTransmittedReportByNoAnswer(report: Report) = {
+  def closeTransmittedReportByNoAction(report: Report) = {
     for {
-      newEvent <- eventRepository.createEvent(generateReadingNoAnswerEvent(report))
+      newEvent <- eventRepository.createEvent(generateReadingNoActionEvent(report))
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_CONSULTE_IGNORE)))
     } yield {
       mailerService.sendEmail(
@@ -194,7 +196,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
       )
-      Reminder(report.id, newEvent.id)
+      Reminder(report.id.get, ReminderValue.CloseTransmittedReportByNoAction)
     }
   }
 
@@ -221,7 +223,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     Some("Clôture automatique : signalement non consulté")
   )
 
-  private def generateReadingNoAnswerEvent(report: Report): Event = Event(
+  private def generateReadingNoActionEvent(report: Report): Event = Event(
     Some(UUID.randomUUID()),
     report.id,
     None,
@@ -233,9 +235,15 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   )
 
   case class Reminder(
-                     reportId: Option[UUID],
-                     eventId: Option[UUID]
+                     reportId: UUID,
+                     value: ReminderValue.Value
                      )
 
-
+  object ReminderValue extends Enumeration {
+    val RemindOnGoingReportByPost,
+    CloseOnGoingReportByNoReadingForUserWithoutEmail,
+    RemindReportByMail,
+    CloseOnGoingReportByNoReadingForUserWithEmail,
+    CloseTransmittedReportByNoAction= Value
+  }
 }
