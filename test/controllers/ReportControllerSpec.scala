@@ -105,7 +105,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           contentAsJson(result) must beEqualTo(Json.obj("siret" -> siretFixture, "count" -> 5))
 
         }
-      }.pendingUntilFixed("failed since mockReportRepository injection activate tasks ...")
+      }
     }
 
     "ReportListController" should {
@@ -138,7 +138,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           Helpers.status(result) must beEqualTo(OK)
           Helpers.header(Helpers.CONTENT_DISPOSITION, result) must beEqualTo(Some("attachment; filename=\"signalements.xlsx\""))
         }
-      }.pendingUntilFixed("failed since mockReportRepository injection activate tasks ...")
+      }
     }
 
   }
