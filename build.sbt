@@ -47,4 +47,4 @@ mappings in Universal ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
 
-javaOptions in Test += "-Dconfig.file=conf/test.conf"
+javaOptions in Test += "-Dconfig.resource=test.application.conf"

@@ -20,7 +20,7 @@ import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.test._
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.MailerService
-import tasks.TasksModule
+import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
@@ -201,7 +201,6 @@ trait CreateReportContext extends Mockito {
         "play.mail.contactRecipient" -> contactEmail
       )
     )
-    .disable[TasksModule]
     .overrides(new FakeModule())
     .build()
 

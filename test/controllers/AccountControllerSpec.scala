@@ -3,7 +3,7 @@ package controllers
 import java.util.UUID
 
 import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{Environment, LoginInfo, Silhouette}
+import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import models._
@@ -18,8 +18,6 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.{ReportRepository, UserRepository}
-import tasks.TasksModule
 import utils.silhouette.auth.AuthEnv
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
@@ -70,7 +68,6 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
           "play.evolutions.enabled" -> false
         )
       )
-      .disable[TasksModule]
       .overrides(new FakeModule())
       .build()
 

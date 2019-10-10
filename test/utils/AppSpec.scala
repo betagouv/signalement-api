@@ -1,15 +1,27 @@
 package utils
 
-import play.Application
+import com.google.inject.AbstractModule
+import net.codingwell.scalaguice.ScalaModule
+import org.specs2.mock.Mockito
+import org.specs2.specification._
 import play.api.db.DBApi
 import play.api.db.evolutions._
-import play.inject.guice.GuiceApplicationBuilder
+import play.api.inject.guice.GuiceApplicationBuilder
+import services.MailerService
 
-import org.specs2.specification._
+trait AppSpec extends BeforeAfterAll with Mockito {
 
-trait AppSpec extends BeforeAfterAll {
-  lazy val app = new GuiceApplicationBuilder().build()
-  def injector = app.asScala.injector
+  class FakeModule extends AbstractModule with ScalaModule {
+    override def configure() = {
+      bind[MailerService].toInstance(mock[MailerService])
+    }
+  }
+
+  lazy val app = new GuiceApplicationBuilder()
+    .overrides(new FakeModule())
+    .build()
+
+  def injector = app.injector
   private lazy val database = injector.instanceOf[DBApi].database("default")
 
   def setupData() {}
@@ -20,5 +32,6 @@ trait AppSpec extends BeforeAfterAll {
   }
   def afterAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
+    app.stop
   }
 }

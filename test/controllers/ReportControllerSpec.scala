@@ -23,7 +23,7 @@ import play.api.test._
 import play.api.{Configuration, Logger}
 import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
-import tasks.TasksModule
+import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.Constants.ReportStatus._
@@ -126,7 +126,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           )
           mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
             Map(reportId.get -> List(
-              Event(reportId, reportId, UUID.randomUUID, Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
+              Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true), None)
             ))
           )
           mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
@@ -187,7 +187,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           "play.tmpDirectory" -> "./target"
         )
       )
-      .disable[TasksModule]
       .overrides(new FakeModule())
       .build()
 

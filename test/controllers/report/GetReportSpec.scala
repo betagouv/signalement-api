@@ -24,7 +24,7 @@ import play.api.test._
 import play.mvc.Http.Status
 import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
 import services.MailerService
-import tasks.TasksModule
+import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
@@ -226,7 +226,7 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(neverRequestedFinalReportUUID, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReportUUID, EventFilter(None)) returns Future(
-    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReportUUID), concernedProUser.id, Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true), None))
+    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReportUUID), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true), None))
   )
 
   class FakeModule extends AbstractModule with ScalaModule {
@@ -246,7 +246,6 @@ trait GetReportContext extends Mockito {
         "play.mailer.mock" -> true
       )
     )
-    .disable[TasksModule]
     .overrides(new FakeModule())
     .build()
 

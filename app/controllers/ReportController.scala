@@ -178,9 +178,11 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
 
+    logger.debug("getEvents")
+
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
-      case None => EventFilter(eventType = None)
+      case None => EventFilter()
     }
 
     Try(UUID.fromString(uuid)) match {
@@ -217,5 +219,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     })
 
   }
+
 
 }

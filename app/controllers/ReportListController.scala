@@ -273,4 +273,5 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       )
     }
   }
+
 }
