@@ -12,19 +12,20 @@ import javax.inject.{Inject, Singleton}
 import models.{PasswordChange, User, UserPermission, UserRoles}
 import play.api._
 import play.api.libs.json.JsError
-import repositories.{ReportFilter, ReportRepository, UserRepository}
-import utils.Constants.ReportStatus
+import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
+import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AccountController @Inject()(
-                                val silhouette: Silhouette[AuthEnv],
-                                userRepository: UserRepository,
-                                reportRepository: ReportRepository,
-                                credentialsProvider: CredentialsProvider,
-                                configuration: Configuration
+                                   val silhouette: Silhouette[AuthEnv],
+                                   userRepository: UserRepository,
+                                   reportRepository: ReportRepository,
+                                   eventRepository: EventRepository,
+                                   credentialsProvider: CredentialsProvider,
+                                   configuration: Configuration
                               )(implicit ec: ExecutionContext)
  extends BaseController {
 
@@ -86,6 +87,10 @@ class AccountController @Inject()(
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)
       }
+      reminderExists <- report match {
+        case Some(report) => eventRepository.getEvents(report.id.get, EventFilter(action = Some(ActionEvent.RELANCE))).map(!_.isEmpty)
+        case _ => Future(List())
+      }
     } yield {
       (report, user) match {
         case (Some(report), Some(user)) if user.activationKey.isDefined =>
@@ -98,12 +103,19 @@ class AccountController @Inject()(
           converterProperties.setFontProvider(dfp)
           converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
 
-          HtmlConverter.convertToPdf(
-            new ByteArrayInputStream(views.html.pdfs.accountActivation(
+          val pdfString = reminderExists match {
+            case false => views.html.pdfs.accountActivation(
               report.companyAddress,
               report.creationDate.map(_.toLocalDate).get,
               user.activationKey.get
-            ).body.getBytes()), pdf, converterProperties)
+            )
+            case true => views.html.pdfs.accountActivationReminder(
+              report.companyAddress,
+              user.activationKey.get
+            )
+          }
+
+          HtmlConverter.convertToPdf(new ByteArrayInputStream(pdfString.body.getBytes()), pdf, converterProperties)
 
           Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
 

@@ -27,7 +27,7 @@ case class ReportFilter(
                        )
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -97,6 +97,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
   private val reportTableQuery = TableQuery[ReportTable]
 
   private val fileTableQuery = TableQuery[FileTable]
+
+  private val userTableQuery = TableQuery[userRepository.UserTable]
 
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
 
@@ -345,6 +347,16 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impli
     }
 
   }
+
+  def getReportsForStatusWithUser(status: ReportStatusValue): Future[List[(Report, User)]] = db.run {
+    reportTableQuery
+      .filter(_.status === status.value)
+      .join(userTableQuery).on(_.companySiret === _.login)
+      .to[List]
+      .result
+  }
+
+
 
 
 }

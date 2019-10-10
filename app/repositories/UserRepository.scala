@@ -49,7 +49,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def * = (id, login, password, activationKey, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
-  private val userTableQuery = TableQuery[UserTable]
+  val userTableQuery = TableQuery[UserTable]
   
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 

@@ -3,7 +3,7 @@
 # ~~~~
 
 # Static pages
-GET          /api                                        controllers.StaticController.api
+GET          /api                                       controllers.StaticController.api
 
 # Statistics API
 GET          /api/stats                                 controllers.StatisticController.getStatistics()

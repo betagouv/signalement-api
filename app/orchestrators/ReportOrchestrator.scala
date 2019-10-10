@@ -45,7 +45,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             report.id,
-            user.id,
+            Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
@@ -169,7 +169,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           report.id,
-          userUUID,
+          Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
@@ -199,7 +199,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           report.id,
-          userUUID,
+          Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,
@@ -234,30 +234,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     )
   }
 
-  private def sendMailClosedByNoReading(report: Report) = {
-    mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas souhaité consulter votre signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    )
-  }
-
-  private def sendMailClosedByNoAction(report: Report) = {
-    mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = report.email)(
-      subject = "Le professionnel n’a pas répondu au signalement",
-      bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    )
-  }
-
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
       report <- reportRepository.getReport(reportId)
@@ -267,7 +243,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
               reportId = r.id,
-              userId = user.id
+              userId = Some(user.id)
             )).map(Some(_))
           case _ => Future(None)
       }
@@ -287,8 +263,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       newEvent.foreach(event => event.action match {
         case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
         case REPONSE_PRO_SIGNALEMENT => sendMailsAfterProAcknowledgment(report.get, event, user)
-        case NON_CONSULTE => sendMailClosedByNoReading(report.get)
-        case CONSULTE_IGNORE => sendMailClosedByNoAction(report.get)
         case _ => ()
       })
       newEvent

@@ -8,11 +8,12 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class EventFilter(eventType: Option[EventTypeValue])
+case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
 @Singleton
 class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
@@ -26,7 +27,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
-    def userId = column[UUID]("user_id")
+    def userId = column[Option[UUID]]("user_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
@@ -34,7 +35,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def detail = column[Option[String]]("detail")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, UUID, OffsetDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], Option[String])
 
     def constructEvent: EventData => Event = {
 
@@ -73,6 +74,9 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
       .filter(_.reportId === uuidReport)
       .filterOpt(filter.eventType) {
         case (table, eventType) => table.eventType === eventType.value
+      }
+      .filterOpt(filter.action) {
+        case (table, action) => table.action === action.value
       }
       .sortBy(_.creationDate.desc)
       .to[List]

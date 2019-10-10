@@ -119,6 +119,7 @@ object Constants {
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
+    object RELANCE extends ActionEventValue("Relance")
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
@@ -141,6 +142,7 @@ object Constants {
       REPONSE_PRO_SIGNALEMENT,
       NON_CONSULTE,
       CONSULTE_IGNORE,
+      RELANCE,
       EMAIL_AR,
       EMAIL_NON_PRISE_EN_COMPTE,
       EMAIL_TRANSMISSION,
