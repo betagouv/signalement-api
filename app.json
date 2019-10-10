@@ -5,7 +5,7 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-86.herokuapp.com"
+      "required": false
     },
     "APPLICATION_PROTOCOL": {
       "value": "https://"
@@ -21,6 +21,12 @@
     },
     "EVOLUTIONS_AUTO_APPLY_DOWNS": {
       "required": true
+    },
+    "HEROKU_APP_NAME": {
+      "required": true
+    },
+    "JAVA_TOOL_OPTIONS": {
+      "value": "-Dconfig.resource=heroku.application.conf"
     },
     "MAX_CONNECTIONS": {
       "required": true
