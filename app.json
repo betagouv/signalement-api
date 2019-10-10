@@ -5,7 +5,7 @@
   },
   "env": {
     "APPLICATION_HOST": {
-      "value": "signalement-api-pr-85.herokuapp.com"
+      "value": "signalement-api-pr-86.herokuapp.com"
     },
     "APPLICATION_PROTOCOL": {
       "value": "https://"
