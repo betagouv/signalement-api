@@ -22,6 +22,7 @@ import utils.Constants.ReportStatus._
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
+                                   companyRepository: CompanyRepository,
                                    eventRepository: EventRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
@@ -82,9 +83,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
+      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
+        siret,
+        Company(
+          UUID.randomUUID(),
+          siret,
+          OffsetDateTime.now,
+          draftReport.companyName,
+          draftReport.companyAddress,
+          draftReport.companyPostalCode
+        )
+      ).map(Some(_))).getOrElse(Future(None))
       report <- reportRepository.create(
         draftReport.copy(
           id = Some(UUID.randomUUID()),
+          companyId = company.map(_.id),
           creationDate = Some(OffsetDateTime.now()),
           status = Some(if (draftReport.isEligible) Constants.ReportStatus.A_TRAITER else Constants.ReportStatus.NA)
         )

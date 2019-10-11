@@ -116,7 +116,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           val reportId = Some(UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b"))
           val reportsList = List(
             Report(
-              reportId, "foo", List("bar"), List(), "myCompany", "18 rue des Champs",
+              reportId, "foo", List("bar"), List(), None, "myCompany", "18 rue des Champs",
               None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", "jdoe@example.com",
               true, List(), None
             )

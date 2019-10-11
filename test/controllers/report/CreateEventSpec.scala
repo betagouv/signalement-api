@@ -107,7 +107,7 @@ trait CreateEventContext extends Mockito {
   val reportUUID = UUID.randomUUID()
 
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
+    Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
 
