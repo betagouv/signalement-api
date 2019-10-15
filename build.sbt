@@ -40,7 +40,6 @@ libraryDependencies ++= Seq(
 
   "io.sentry" % "sentry-logback" % "1.7.14",
 )
-scalacOptions in Test ++= Seq("-Yrangepos")
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
