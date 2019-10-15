@@ -121,6 +121,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     .run(reportTableQuery += report)
     .map(_ => report)
 
+  def list: Future[List[Report]] = db.run(reportTableQuery.to[List].result)
 
   def update(report: Report): Future[Report] = {
     val queryReport = for (refReport <- reportTableQuery if refReport.id === report.id)

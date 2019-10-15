@@ -29,7 +29,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val bucketName = configuration.get[String]("play.buckets.report")
   val mailFrom = configuration.get[String]("play.mail.from")
 
-  private def notifyProfessionalOfNewReport(report: Report): Future[_] = {
+  private def notifyProfessionalOfNewReport(report: Report): Future[Report] = {
     userRepository.findByLogin(report.companySiret.get).flatMap{
       case Some(user) if user.email.filter(_ != "").isDefined => {
         mailerService.sendEmail(
@@ -52,7 +52,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             None,
             Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
           )
-        ).map(event =>
+        ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
       }
@@ -69,13 +69,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             None,
             UserRoles.ToActivate
           )
-        )
+        ).map(_ => report)
       }
-      case _ => Future(Unit)
+      case _ => Future(report)
     }
   }
 
-  def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]) =
+  def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
       report <- reportRepository.create(
         draftReport.copy(
@@ -86,25 +86,26 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       )
       _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
       files <- reportRepository.retrieveReportFiles(report.id.get)
-    } yield {
-      mailerService.sendEmail(
-        from = mailFrom,
-        recipients = configuration.get[String]("play.mail.contactRecipient"))(
-        subject = "Nouveau signalement",
-        bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
-      )
-      mailerService.sendEmail(
-        from = mailFrom,
-        recipients = report.email)(
-        subject = "Votre signalement",
-        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+      report <- {
+        mailerService.sendEmail(
+          from = mailFrom,
+          recipients = configuration.get[String]("play.mail.contactRecipient"))(
+          subject = "Nouveau signalement",
+          bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
-      )
-      if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report)
-      report
-    }
+        mailerService.sendEmail(
+          from = mailFrom,
+          recipients = report.email)(
+          subject = "Votre signalement",
+          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+          attachments = Seq(
+            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+          )
+        )
+        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report)
+        else Future(report)
+      }
+    } yield report
   
   def updateReport(id: UUID, reportData: Report): Future[Option[Report]] =
     for {

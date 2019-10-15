@@ -57,6 +57,8 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
   private val reportTableQuery = TableQuery[reportRepository.ReportTable]
 
   private val eventTableQuery = TableQuery[EventTable]
+  
+  def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
 
   def createEvent(event: Event): Future[Event] = db
     .run(eventTableQuery += event)
