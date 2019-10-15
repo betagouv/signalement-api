@@ -1,8 +1,7 @@
 package utils
 
-import java.time.{ LocalDate, LocalDateTime }
-import java.time.format.DateTimeParseException
-import java.time.format.DateTimeFormatter
+import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.time.{LocalDate, LocalDateTime}
 
 object DateUtils {
 
@@ -11,17 +10,17 @@ object DateUtils {
   val TIME_FORMAT= "yyyy-MM-dd HH:mm:ss"
   val TIME_FORMATTER = DateTimeFormatter.ofPattern(TIME_FORMAT)
 
-  def parseDate(source: Option[String]): Option[LocalDateTime] = {
+  def parseDate(source: Option[String]): Option[LocalDate] = {
 
     try {
-      source.map(s => LocalDate.parse(s, FORMATTER).atStartOfDay())
+      source.map(s => LocalDate.parse(s, FORMATTER))
     } catch {
       case _: DateTimeParseException => None
     }
   }
 
-  def parseEndDate(source: Option[String]): Option[LocalDateTime] = {
-    Some(DateUtils.parseDate(source).getOrElse(LocalDateTime.now).plusDays(1))
+  def parseEndDate(source: Option[String]): Option[LocalDate] = {
+    Some(DateUtils.parseDate(source).getOrElse(LocalDate.now).plusDays(1))
   }
 
 

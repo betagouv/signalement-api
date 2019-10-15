@@ -3,32 +3,36 @@
 # ~~~~
 
 # Static pages
-GET          /api                                        controllers.StaticController.api
+GET          /api                                       controllers.StaticController.api
 
 # Statistics API
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
 
+# Reports list API
+GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
+GET          /api/reports/extract                       controllers.ReportListController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
+
 # Report API
-GET          /api/reports/extract                       controllers.ReportController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
+GET          /api/reports/siret/:siret/count            controllers.ReportController.getReportCountBySiret(siret: String)
+
 GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
 DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
-GET          /api/reports                               controllers.ReportController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], statusPro: Option[String], statusConso: Option[String], details: Option[String])
+
 POST         /api/reports                               controllers.ReportController.createReport()
 PUT          /api/reports                               controllers.ReportController.updateReport()
+
+GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
 # Events API
 GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
 POST        /api/reports/:uuid/events                   controllers.ReportController.createEvent(uuid)
 
 # Constants API
-GET         /api/constants/actionPros                   controllers.ConstantController.getActionPros()
-GET         /api/constants/actionConsos                 controllers.ConstantController.getActionConsos()
-GET         /api/constants/actionAgents                 controllers.ConstantController.getActionAgents()
-GET         /api/constants/statusPros                   controllers.ConstantController.getStatusPros()
-GET         /api/constants/statusConsos                 controllers.ConstantController.getStatusConsos()
+GET         /api/constants/actions                      controllers.ConstantController.getActions()
+GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
 
 # Company API
 GET         /api/companies/suggest/:search              controllers.CompanyController.getSuggestions(search)
@@ -48,6 +52,10 @@ GET         /api/account/:siret/document/activation     controllers.AccountContr
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate
+
+# Subscription API
+GET         /api/subscriptions                          controllers.SubscriptionController.getSubscriptions
+POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
 
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
 

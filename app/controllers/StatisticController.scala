@@ -11,9 +11,9 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.Departments
-import utils.Constants.StatusPro.{A_TRAITER, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
+import utils.Constants.ReportStatus.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.DateUtils
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.ExecutionContext
 
@@ -32,17 +32,17 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   def getStatistics = UserAwareAction.async { implicit request =>
 
     for {
-      reportsCount <- reportRepository.count
+      reportsCount <- reportRepository.count()
       reportsPerMonth <- reportRepository.countPerMonth
       reportsCount7Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(7)))
       reportsCount30Days <- reportRepository.nbSignalementsBetweenDates(DateUtils.formatTime(LocalDateTime.now().minusDays(30)))
       reportsCountInRegion <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED))
       reportsCount7DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(7)), departments = Some(Departments.AUTHORIZED))
       reportsCount30DaysInRegion <- reportRepository.nbSignalementsBetweenDates(start = DateUtils.formatTime(LocalDateTime.now().minusDays(30)), departments = Some(Departments.AUTHORIZED))
-      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE)))
-      reportsCountSendedToProBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, SIGNALEMENT_REFUSE, TRAITEMENT_EN_COURS, A_TRAITER)))
+      reportsCountSendedToPro <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_CONSULTE_IGNORE)))
+      reportsCountSendedToProBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(A_TRAITER, TRAITEMENT_EN_COURS, SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_CONSULTE_IGNORE)))
       reportsCountPromise <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(PROMESSE_ACTION)))
-      reportsCountPromiseBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE)))
+      reportsCountPromiseBase <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AUTHORIZED), statusList = Some(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_CONSULTE_IGNORE)))
       reportsCountWithoutSiret <- reportRepository.nbSignalementsBetweenDates(withoutSiret = true)
       reportsCountByCategory <- reportRepository.nbSignalementsByCategory()
       reportsCountAura <- reportRepository.nbSignalementsBetweenDates(departments = Some(Departments.AURA))

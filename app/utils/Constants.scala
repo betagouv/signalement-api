@@ -1,81 +1,71 @@
 package utils
 
+import models.{UserRole, UserRoles}
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 object Constants {
 
-  object StatusPro {
+  object ReportStatus {
 
-    // Valeurs possibles de status_pro
-    case class StatusProValue(val value: String)
+    case class ReportStatusValue(val value: String, isFinal: Boolean = false)
 
-    object StatusProValue {
-      implicit val statusProValueWrites = new Writes[StatusProValue] {
-        def writes(statusProValue: StatusProValue) = Json.toJson(statusProValue.value)
+    object ReportStatusValue {
+      implicit val reportStatusValueWrites = new Writes[ReportStatusValue] {
+        def writes(reportStatusValue: ReportStatusValue) = Json.toJson(reportStatusValue.value)
       }
-      implicit val statusProValueReads: Reads[StatusProValue] =
-        JsPath.read[String].map(fromValue(_).get)
-
+      implicit val reportStatusValueReads: Reads[ReportStatusValue] =
+        JsPath.read[String].map(fromValue(_))
     }
 
-    object A_TRAITER extends StatusProValue("À traiter")
-    object NA extends StatusProValue("NA")
-    object TRAITEMENT_EN_COURS extends StatusProValue("Traitement en cours")
-    object A_TRANSFERER_SIGNALEMENT extends StatusProValue("À transférer signalement")
-    object SIGNALEMENT_TRANSMIS extends StatusProValue("Signalement transmis")
-    object SIGNALEMENT_REFUSE extends StatusProValue("Signalement refusé")
-    object ADRESSE_INCORRECTE extends StatusProValue("Adresse postale incorrecte")
-    object PROMESSE_ACTION extends StatusProValue("Promesse action")
-    object PROMESSE_ACTION_REFUSEE extends StatusProValue("Pas de promesse d'action")
+    object A_TRAITER extends ReportStatusValue("À traiter")
+    object NA extends ReportStatusValue("NA", true)
+    object TRAITEMENT_EN_COURS extends ReportStatusValue("Traitement en cours")
+    object SIGNALEMENT_TRANSMIS extends ReportStatusValue("Signalement transmis")
+    object PROMESSE_ACTION extends ReportStatusValue("Promesse action", true)
+    object SIGNALEMENT_INFONDE extends ReportStatusValue("Signalement infondé", true)
+    object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue("Signalement non consulté", true)
+    object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue("Signalement consulté ignoré", true)
 
-
-    val status = Seq(
+    val reportStatusList = Seq(
       A_TRAITER,
       NA,
       TRAITEMENT_EN_COURS,
-      A_TRANSFERER_SIGNALEMENT,
       SIGNALEMENT_TRANSMIS,
-      SIGNALEMENT_REFUSE,
-      ADRESSE_INCORRECTE,
       PROMESSE_ACTION,
-      PROMESSE_ACTION_REFUSEE
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
     )
 
-    def fromValue(value: String) = status.find(_.value == value)
+    val reportStatusDGCCRFList = Seq(
+      NA,
+      TRAITEMENT_EN_COURS,
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_NON_CONSULTE,
+      SIGNALEMENT_CONSULTE_IGNORE
+    )
 
-  }
+    def fromValue(value: String) = reportStatusList.find(_.value == value).getOrElse(ReportStatusValue(""))
 
-  object StatusConso {
-
-    // Valeurs possibles de action de la table Event
-    case class StatusConsoValue(value: String)
-
-    object StatusConsoValue {
-      implicit val statusConsoValueWrites = new Writes[StatusConsoValue] {
-        def writes(statusConsoValue: StatusConsoValue) = Json.toJson(statusConsoValue.value)
-      }
-      implicit val statusConsoValueReads: Reads[StatusConsoValue] =
-        JsPath.read[String].map(fromValue(_).get)
+    def getReportStatusWithUserRole(reportStatus: Option[ReportStatusValue], userRole: UserRole) = {
+      reportStatus.map(status => (reportStatusDGCCRFList.contains(status), userRole) match {
+        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS
+        case (_, _) => status
+      })
     }
 
-    object EN_ATTENTE extends StatusConsoValue("En attente")
-    object A_RECONTACTER extends StatusConsoValue("À recontacter")
-    object A_INFORMER_TRANSMISSION extends StatusConsoValue("À informer transmission")
-    object A_INFORMER_REPONSE_PRO extends StatusConsoValue("À informer réponse pro")
-    object FAIT extends StatusConsoValue("Fait")
+    def getSpecificsReportStatusWithUserRole(reportStatus: Option[String], userRole: UserRole) = {
 
-    val status = Seq(
-      EN_ATTENTE,
-      A_RECONTACTER,
-      A_INFORMER_TRANSMISSION,
-      A_INFORMER_REPONSE_PRO,
-      FAIT
-    )
+      reportStatus.map(status => (status, userRole) match {
+        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value) :+ TRAITEMENT_EN_COURS.value
+        case (_, _) => List(status)
+      }).getOrElse(List())
+    }
 
-    def fromValue(value: String) = status.find(_.value == value)
+
   }
-
 
   object EventType {
 
@@ -87,7 +77,7 @@ object Constants {
         def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
       }
       implicit val eventTypeValueReads: Reads[EventTypeValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object PRO extends EventTypeValue("PRO")
@@ -102,7 +92,7 @@ object Constants {
       RECTIF
     )
 
-    def fromValue(value: String) = eventTypes.find(_.value == value)
+    def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
 
   }
 
@@ -115,18 +105,21 @@ object Constants {
         def writes(actionEventValue: ActionEventValue) = Json.obj("name" -> actionEventValue.value, "withResult" -> actionEventValue.withResult)
       }
       implicit val actionEventValueReads: Reads[ActionEventValue] =
-        JsPath.read[String].map(fromValue(_).get)
+        JsPath.read[String].map(fromValue(_))
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
-    object CONTACT_TEL extends ActionEventValue("Appel téléphonique", true)
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
+
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
+    object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
+    object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
+    object RELANCE extends ActionEventValue("Relance")
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
@@ -136,46 +129,69 @@ object Constants {
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
-    object COMMENT extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
+    object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object COMMENT_DGCCRF extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
-    val actionPros = Seq(
+    val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
-      CONTACT_TEL,
       CONTACT_EMAIL,
       CONTACT_COURRIER,
-      RETOUR_COURRIER,
-      REPONSE_PRO_CONTACT,
       ENVOI_SIGNALEMENT,
-      REPONSE_PRO_SIGNALEMENT
-    )
-
-    val actionConsos = Seq(
+      REPONSE_PRO_SIGNALEMENT,
+      NON_CONSULTE,
+      CONSULTE_IGNORE,
+      RELANCE,
       EMAIL_AR,
       EMAIL_NON_PRISE_EN_COMPTE,
       EMAIL_TRANSMISSION,
-      EMAIL_REPONSE_PRO
-    )
-
-    val actionRectifs = Seq(
+      EMAIL_REPONSE_PRO,
       MODIFICATION_COMMERCANT,
-      MODIFICATION_CONSO
-    )
-
-    val actionAgents = Seq(
+      MODIFICATION_CONSO,
       COMMENT,
+      COMMENT_DGCCRF,
       CONTROL
     )
 
-    def fromValue(value: String) = (actionPros ++ actionConsos ++ actionRectifs ++ actionAgents).find(_.value == value)
+    val actionsAdmin = Seq(
+      CONTACT_COURRIER,
+      COMMENT
+    )
+
+    val actionsDGCCRF = Seq(
+      CONTROL,
+      COMMENT_DGCCRF
+    )
+
+    def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
 
   object Departments {
 
     val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
+    val BretagneFrancheComte = List("21", "25", "39", "58", "70", "71", "89", "90")
+    val Bretagne = List("22", "29", "35", "56")
     val CDVL = List("18", "28", "36", "37", "41", "45")
+    val CollectivitesOutreMer = List("975", "977", "978", "984", "986", "987", "988", "989")
+    val Corse = List("2A", "2B")
+    val GrandEst = List("08", "10", "51", "52", "54", "55", "57", "67", "68", "88")
+    val Guadeloupe = List("971")
+    val Guyane = List("973")
+    val HautsDeFrance = List("02", "59", "60", "62", "80")
+    val IleDeFrance = List("75", "77", "78", "91", "92", "93", "94", "95")
+    val LaReunion = List("974")
+    val Martinique = List("972")
+    val Mayotte = List("976")
+    val Normandie = List("14", "27", "50", "61", "76")
+    val NouvelleAquitaine = List("16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87")
     val OCC = List("09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82")
+    val PaysDeLaLoire = List("44", "49", "53", "72", "85")
+    val ProvenceAlpesCoteAzur = List("04", "05", "06", "13", "83", "84")
+
+    val ALL = AURA ++ BretagneFrancheComte ++ Bretagne ++ CDVL ++ CollectivitesOutreMer ++ Corse ++
+     GrandEst ++ Guadeloupe ++ Guyane ++ HautsDeFrance ++ IleDeFrance ++ LaReunion ++ Martinique ++ Mayotte ++
+      Normandie ++ NouvelleAquitaine ++ OCC ++ PaysDeLaLoire ++ ProvenceAlpesCoteAzur
 
     val AUTHORIZED = AURA ++ CDVL ++ OCC
   }

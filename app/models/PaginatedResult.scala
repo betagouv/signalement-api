@@ -20,4 +20,6 @@ object PaginatedResult {
       "entities" -> paginatedResult.entities
     )
   }
+
+  val paginatedCompanyWithNbReports = Json.writes[PaginatedResult[CompanyWithNbReports]]
 }

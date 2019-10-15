@@ -1,6 +1,6 @@
 @(event: Event, user: User)
 
-@import utils.Constants.StatusPro._
+@import utils.Constants.ReportStatus._
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -19,7 +19,7 @@
             </p>
             @event.resultAction match {
                 case Some(true) => {
-                    <p>Vous venez de faire une promesse d’action et nous vous en félicitions !</p>
+                    <p>Vous venez de faire une promesse d’action et nous vous en félicitons !</p>
 
                     <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
 
@@ -33,7 +33,7 @@
                     </p>
 
                 }
-                case Some(false) => {
+                case _ => {
                     <p>
                         Vous estimez que le signalement est infondé.
                     </p>

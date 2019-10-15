@@ -1,18 +1,19 @@
 package repositories
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.Event
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class EventFilter(eventType: Option[EventTypeValue])
+case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
 @Singleton
 class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
@@ -26,21 +27,21 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
-    def userId = column[UUID]("user_id")
-    def creationDate = column[LocalDateTime]("creation_date")
+    def userId = column[Option[UUID]]("user_id")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
     def resultAction = column[Option[Boolean]]("result_action")
     def detail = column[Option[String]]("detail")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, UUID, LocalDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], Option[String])
 
     def constructEvent: EventData => Event = {
 
       case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
-        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType).get,
-          Constants.ActionEvent.fromValue(action).get, resultAction, detail)
+        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
+          Constants.ActionEvent.fromValue(action), resultAction, detail)
       }
     }
 
@@ -56,8 +57,6 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
   private val reportTableQuery = TableQuery[reportRepository.ReportTable]
 
   private val eventTableQuery = TableQuery[EventTable]
-
-  private val date_part = SimpleFunction.binary[String, LocalDateTime, Int]("date_part")
 
   def createEvent(event: Event): Future[Event] = db
     .run(eventTableQuery += event)
@@ -76,10 +75,21 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
       .filterOpt(filter.eventType) {
         case (table, eventType) => table.eventType === eventType.value
       }
+      .filterOpt(filter.action) {
+        case (table, action) => table.action === action.value
+      }
       .sortBy(_.creationDate.desc)
       .to[List]
       .result
   }
-
+  def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
+    val reportsIds = reports.map(_.id.get)
+    db.run(eventTableQuery.filter(
+      _.reportId inSetBind reportsIds
+    ).to[List].result)
+    .map(events =>
+      events.groupBy(_.reportId.get)
+    )
+  }
 }
 

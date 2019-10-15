@@ -20,9 +20,11 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import utils.ErrorHandler
 import net.ceedubs.ficus.readers.EnumerationReader._
+import utils.silhouette.api.{APIKey, APIKeyEnv, APIKeyRequestProvider, ApiKeyService}
+import utils.silhouette.auth.{AuthEnv, PasswordInfoDAO, UserService}
 
 /**
   * The Guice module which wires all Silhouette dependencies.
@@ -32,11 +34,13 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
     * Configures the module.
     */
-  def configure() {
+  override def configure() {
     bind[Silhouette[AuthEnv]].to[SilhouetteProvider[AuthEnv]]
+    bind[Silhouette[APIKeyEnv]].to[SilhouetteProvider[APIKeyEnv]]
     bind[SecuredErrorHandler].to[ErrorHandler]
     bind[UnsecuredErrorHandler].to[ErrorHandler]
     bind[IdentityService[User]].to[UserService]
+    bind[IdentityService[APIKey]].to[ApiKeyService]
 
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator)
     bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
@@ -48,7 +52,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   /**
-    * Provides the Silhouette environment.
+    * Provides the Silhouette Auth environment.
     *
     * @param userService The user service implementation.
     * @param authenticatorService The authentication service implementation.
@@ -56,7 +60,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     * @return The Silhouette environment.
     */
   @Provides
-  def provideEnvironment(
+  def provideAuthEnvironment(
                           userService: UserService,
                           authenticatorService: AuthenticatorService[JWTAuthenticator],
                           eventBus: EventBus
@@ -65,6 +69,29 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       userService,
       authenticatorService,
       Seq(),
+      eventBus
+    )
+  }
+
+  /**
+    * Provides the Silhouette Api environment.
+    *
+    * @param apiKeyService The api key service implementation.
+    * @param authenticatorService The authentication service implementation.
+    * @param eventBus The event bus instance.
+    * @return The Silhouette environment.
+    */
+  @Provides
+  def provideApiEnvironment(
+                             apiKeyService: ApiKeyService,
+                             authenticatorService: AuthenticatorService[DummyAuthenticator],
+                             apiKeyRequestProvider: APIKeyRequestProvider,
+                             eventBus: EventBus
+                        ): Environment[APIKeyEnv] = {
+    Environment[APIKeyEnv](
+      apiKeyService,
+      authenticatorService,
+      Seq(apiKeyRequestProvider),
       eventBus
     )
   }
@@ -138,5 +165,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
                                   passwordHasherRegistry: PasswordHasherRegistry
                                 ): CredentialsProvider = {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
+  }
+
+  /**
+    * Provides the dummy authenticator service.
+    * @return The dummy authenticator service.
+    */
+  @Provides
+  def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] = {
+    new DummyAuthenticatorService()
   }
 }

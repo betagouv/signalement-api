@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.Credentials
@@ -13,7 +13,7 @@ import play.api.libs.json.{JsError, JsPath, Json}
 import play.api.libs.mailer.AttachmentFile
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
-import utils.silhouette.{AuthEnv, UserService}
+import utils.silhouette.auth.{AuthEnv, UserService}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -73,12 +73,12 @@ class AuthController @Inject()(
           case Some(user) if user.email.isDefined =>
             for {
               _ <- authTokenRepository.deleteForUserId(user.id)
-              authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, LocalDateTime.now.plusDays(1)))
+              authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
               _ <- sendResetPasswordMail(user, s"${configuration.get[String]("play.website.url")}/connexion/nouveau-mot-de-passe/${authToken.id}")
             } yield {
               Ok
             }
-          case None => Future.successful(Ok)
+          case _ => Future.successful(Ok) // TODO: renvoyer une erreur? 424 FAILED_DEPENDENCY? 422 UNPROCESSABLE_ENTITY? 412 PRECONDITION_FAILED
         }
     )
   }

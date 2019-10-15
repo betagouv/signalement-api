@@ -1,6 +1,6 @@
 package models
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Identity
@@ -60,7 +60,8 @@ object UserPermission extends Enumeration {
       deleteFile,
       createEvent,
       activateAccount,
-      editDocuments = Value
+      editDocuments,
+      subscribeReports = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 
@@ -91,7 +92,8 @@ object UserRoles {
     "DGCCRF",
     Seq(
       UserPermission.listReports,
-      UserPermission.createEvent
+      UserPermission.createEvent,
+      UserPermission.subscribeReports
     )
   )
 
@@ -130,5 +132,5 @@ object PasswordChange {
 case class AuthToken(
                       id: UUID,
                       userID: UUID,
-                      expiry: LocalDateTime
+                      expiry: OffsetDateTime
                     )

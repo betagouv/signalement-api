@@ -1,6 +1,6 @@
 @(report: Report, event: Event)
 
-@import utils.Constants.StatusPro._
+@import utils.Constants.ReportStatus._
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -47,7 +47,7 @@
                     </p>
 
                 }
-                case Some(false) => {
+                case _ => {
 
                     <p>Ce signalement n’a pas été considéré comme légitime par le professionnel.</p>
 

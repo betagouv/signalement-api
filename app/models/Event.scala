@@ -1,6 +1,6 @@
 package models
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import play.api.libs.json._
@@ -11,8 +11,8 @@ import utils.Constants.EventType.EventTypeValue
 case class Event(
                   id: Option[UUID],
                   reportId: Option[UUID],
-                  userId: UUID,
-                  creationDate: Option[LocalDateTime],
+                  userId: Option[UUID],
+                  creationDate: Option[OffsetDateTime],
                   eventType: EventTypeValue,
                   action: ActionEventValue,
                   resultAction: Option[Boolean],

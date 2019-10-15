@@ -1,12 +1,12 @@
 package models
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.StatusConso.StatusConsoValue
-import utils.Constants.StatusPro.{PROMESSE_ACTION, PROMESSE_ACTION_REFUSEE, StatusProValue}
+import utils.Constants.ReportStatus._
+import utils.Constants.Departments
 
 case class Report(
                    id: Option[UUID],
@@ -17,27 +17,23 @@ case class Report(
                    companyAddress: String,
                    companyPostalCode: Option[String],
                    companySiret: Option[String],
-                   creationDate: Option[LocalDateTime],
+                   creationDate: Option[OffsetDateTime],
                    firstName: String,
                    lastName: String,
                    email: String,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
-                   statusPro: Option[StatusProValue],
-                   statusConso: Option[StatusConsoValue]
-                 )
+                   status: Option[ReportStatusValue]
+                 ) {
+  def isEligible = {
+    companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
+  }
+}
 
 object Report {
 
   implicit val reportWriter = Json.writes[Report]
   implicit val reportReader = Json.reads[Report]
-
-  private def getStatusProFiltered(statusPro: Option[StatusProValue]): String = {
-    statusPro match {
-      case Some(PROMESSE_ACTION) | Some(PROMESSE_ACTION_REFUSEE) => statusPro.get.value
-      case _ => ""
-    }
-  }
 
   val reportProWriter = new Writes[Report] {
     def writes(report: Report) =
@@ -53,7 +49,7 @@ object Report {
       "companySiret" -> report.companySiret,
       "files" -> report.files,
       "contactAgreement" -> report.contactAgreement,
-      "statusPro" -> getStatusProFiltered(report.statusPro)
+      "status" -> report.status
     ) ++ (report.contactAgreement match {
         case true => Json.obj(
           "firstName" -> report.firstName,
@@ -79,5 +75,20 @@ object DetailInputValue {
       case input if input.contains(':') => DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
       case input => DetailInputValue("Précision :", input)
     }
+  }
+}
+
+case class CompanyWithNbReports(companySiret: String, companyPostalCode: String, companyName: String, companyAddress: String, count: Int)
+
+object CompanyWithNbReports {
+
+  implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
+    def writes(company: CompanyWithNbReports) = Json.obj(
+      "companyPostalCode" -> company.companyPostalCode,
+      "companySiret" -> company.companySiret,
+      "companyName" -> company.companyName,
+      "companyAddress" -> company.companyAddress,
+      "count" -> company.count
+    )
   }
 }

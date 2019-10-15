@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import javax.inject.{Inject, Singleton}
-import models.{User, UserRole, UserRoles}
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -21,11 +21,10 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
- import dbConfig._
- import profile.api._
+  import dbConfig._
+  import PostgresProfile.api._
 
-
-  private class UserTable(tag: Tag) extends Table[User](tag, "users") {
+  class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     def id = column[UUID]("id", O.PrimaryKey)
 
@@ -50,7 +49,7 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def * = (id, login, password, activationKey, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
-  private val userTableQuery = TableQuery[UserTable]
+  val userTableQuery = TableQuery[UserTable]
   
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
@@ -100,4 +99,12 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findByLogin(login: String): Future[Option[User]] = db
     .run(userTableQuery.filter(_.login === login).to[List].result.headOption)
 
+  def prefetchLogins(logins: List[String]): Future[Map[String, User]] = db
+    .run(
+      userTableQuery
+        .filter(_.login inSetBind logins)
+        .map(u => (u.login, u))
+        .to[List]
+        .result
+    ).map(_.toMap)
 }

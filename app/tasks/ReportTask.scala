@@ -8,7 +8,7 @@ import javax.inject.Inject
 import models.Report
 import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
-import repositories.{ReportFilter, ReportRepository}
+import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
 import services.MailerService
 import utils.Constants.Departments
 
@@ -17,6 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReportTask @Inject()(actorSystem: ActorSystem,
                            reportRepository: ReportRepository,
+                           subscriptionRepository: SubscriptionRepository,
                            mailerService: MailerService,
                            configuration: Configuration,
                            environment: Environment)
@@ -38,13 +39,12 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
 
-    val taskDate = LocalDateTime.now
+    val taskDate = LocalDate.now
 
-    Logger.debug(s"taskDate - ${taskDate}");
-    Logger.debug(s"initialDelay - ${initialDelay}");
-    Logger.debug(s"interval - ${interval}");
+    logger.debug("Traitement de notification hebdomdaire des signalements")
+    logger.debug(s"taskDate - ${taskDate}");
 
-    val departments = Departments.AUTHORIZED
+    val departments = Departments.ALL
 
     reportRepository.getReports(
         0,
@@ -57,7 +57,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
           case _ => sendMailReportsOfTheWeek(
             reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
             department,
-            taskDate.minusDays(7).toLocalDate)
+            taskDate.minusDays(7))
         }
       )
     )
@@ -66,24 +66,40 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
 
   private def sendMailReportsOfTheWeek(reports: Seq[Report], department: String, startDate: LocalDate) = {
 
-    logger.debug(s"Department $department - send mail to ${getMailForDepartment(department)}")
+    getMailForDepartment(department: String).flatMap(recipients => {
 
-    Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
-      recipients = getMailForDepartment(department) :_*)(
-      subject = s"[SignalConso] ${reports.length match {
-        case 0 => "Aucun nouveau signalement"
-        case 1 => "Un nouveau signalement"
-        case n => s"${reports.length} nouveaux signalements"
-      }} pour le département ${department}",
-      bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
+      logger.debug(s"Department $department - send mail to ${recipients}")
+
+      Future(mailerService.sendEmail(
+        from = configuration.get[String]("play.mail.from"),
+        recipients = recipients: _*)(
+        subject = s"[SignalConso] ${
+          reports.length match {
+            case 0 => "Aucun nouveau signalement"
+            case 1 => "Un nouveau signalement"
+            case n => s"${reports.length} nouveaux signalements"
+          }
+        } pour le département ${department}",
+        bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      ))
+    })
   }
 
   private def getMailForDepartment(department: String) = {
-    mailsByDepartments.find(mailByDepartment => mailByDepartment._1 == department).map(_._2.split(",").toList).getOrElse(Seq.empty)
+
+    logger.debug(s"getMailForDepartment ${department}")
+
+    subscriptionRepository.listSubscribeUserMailsForDepartment(department).flatMap(
+      userMails => {
+        logger.debug(s"getMailForDepartment ${department} : ${userMails}")
+        Future(
+          mailsByDepartments.find(mailByDepartment => mailByDepartment._1 == department).map(_._2.split(",").toList).getOrElse(List.empty) ::: userMails
+        )
+      }
+    )
+
   }
 }

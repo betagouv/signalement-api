@@ -33,6 +33,7 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
   <logger name="controllers" level="DEBUG" />
+  <logger name="orchestrators" level="DEBUG" />
   <logger name="repositories" level="DEBUG" />
   <logger name="services" level="DEBUG" />
   <logger name="tasks" level="DEBUG" />

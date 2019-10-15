@@ -1,6 +1,6 @@
 @(report: Report, files: List[ReportFile])
 
-@import utils.Constants.StatusPro._
+@import utils.Constants.ReportStatus._
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -17,7 +17,7 @@
             <p>
                 Bonjour @report.firstName @report.lastName,
             </p>
-            @report.statusPro match {
+            @report.status match {
                 case Some(NA) => {
                     <p>
                         Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
@@ -26,7 +26,7 @@
                         Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données SignalConso.
                     </p>
                     <p>
-                        En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/courrier/80666">https://www.economie.gouv.fr/courrier/80666</a>
+                        En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
                     </p>
                 }
                 case _ => {
@@ -64,7 +64,7 @@
                 <i>L'équipe SignalConso</i>
             </p>
 
-            @if(report.statusPro != Some(NA)) {
+            @if(report.status != Some(NA)) {
                 <p style="text-align: center;
                     margin: 30px">
                     <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">

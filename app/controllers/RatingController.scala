@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
@@ -9,7 +9,7 @@ import models.Rating
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import repositories.RatingRepository
-import utils.silhouette.AuthEnv
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,7 +30,7 @@ class RatingController @Inject()(ratingRepository: RatingRepository,
         ratingRepository.createRating(
           rating.copy(
             id = Some(UUID.randomUUID()),
-            creationDate = Some(LocalDateTime.now()))
+            creationDate = Some(OffsetDateTime.now()))
         ).flatMap(rating => Future.successful(Ok(Json.toJson(rating))))
       }
     )

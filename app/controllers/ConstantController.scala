@@ -5,40 +5,30 @@ import javax.inject._
 import models.UserRoles
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.silhouette.AuthEnv
+import utils.Constants.{ActionEvent, ReportStatus}
+import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
-import utils.Constants.ActionEvent.{actionConsos, actionPros, actionAgents}
-import utils.Constants.StatusPro.{status => statusPros}
-import utils.Constants.StatusConso.{status => statusConsos}
-import utils.Constants.StatusPro
 
 
 @Singleton
 class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit ec: ExecutionContext) extends BaseController {
   val logger: Logger = Logger(this.getClass)
 
-  def getActionPros = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(actionPros)))
-  }
-
-  def getActionConsos = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(actionConsos)))
-  }
-
-  def getActionAgents = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(actionAgents)))
-  }
-
-  def getStatusPros = SecuredAction.async { implicit request =>
+  def getActions = SecuredAction.async { implicit request =>
     request.identity.userRole match {
-      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(statusPros.filter(s => s != StatusPro.A_TRANSFERER_SIGNALEMENT))))
-      case _ => Future.successful(Ok(Json.toJson(statusPros)))
+      case UserRoles.Admin => Future.successful(Ok(Json.toJson(ActionEvent.actionsAdmin)))
+      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(ActionEvent.actionsDGCCRF)))
+      case _ => Future.successful(Ok(Json.obj()))
     }
   }
 
-  def getStatusConsos = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(statusConsos)))
+  def getReportStatus = SecuredAction.async { implicit request =>
+
+    request.identity.userRole match {
+      case UserRoles.DGCCRF => Future.successful(Ok(Json.toJson(ReportStatus.reportStatusDGCCRFList)))
+      case _ => Future.successful(Ok(Json.toJson(ReportStatus.reportStatusList)))
+    }
   }
 
 }
