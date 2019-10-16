@@ -129,8 +129,9 @@ trait CreateReportSpec extends Specification with AppSpec with FutureMatchers {
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
     val reports = Await.result(reportRepository.list, Duration.Inf).toList
     reports.length must beEqualTo(1)
+    val expectedReport = report.copy(id = reports.head.id, creationDate = reports.head.creationDate, status = Some(status))
     report = reports.head
-    report.status must beEqualTo(Some(status))
+    report must beEqualTo(expectedReport)
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
