@@ -6,6 +6,7 @@ import org.specs2.mock.Mockito
 import org.specs2.specification._
 import play.api.db.DBApi
 import play.api.db.evolutions._
+
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MailerService
 

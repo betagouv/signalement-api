@@ -3,18 +3,10 @@ package controllers.report
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
 import controllers.ReportController
 import models._
-import net.codingwell.scalaguice.ScalaModule
-import org.specs2.{Spec, Specification}
-import org.specs2.matcher.Matcher
-import org.specs2.mock.Mockito
-import play.api.Configuration
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.specs2.Specification
+import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.test._
@@ -25,6 +17,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
+import utils.AppSpec
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -37,8 +30,8 @@ object CreateReportFromNotEligibleDepartment extends CreateReportSpec {
           an outside experimentation department                         ${step(report = report.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "NA"                        ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.NA)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.NA)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
          And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
@@ -51,8 +44,8 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateRepo
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
          And create an account for the professional                     ${accountToActivateMustHaveBeenCreated}
     """
 }
@@ -65,8 +58,8 @@ object CreateReportForProWithNotActivatedAccountFromEligibleDepartment extends C
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
          And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
@@ -78,31 +71,53 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
           a professional who has an activated account                   ${step(report = report.copy(companySiret = Some(siretForCompanyWithActivatedAccount)))}
           an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
          When create the report                                         ${step(createReport())}
-         Then create the report with reportStatusList "A_TRAITER"                 ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report.copy(id = Some(reportUUID)), Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
+         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest().withBody(Json.toJson(report))).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
          And do no create an account                                    ${accountMustNotHaveBeenCreated}
          And create an event "CONTACT_EMAIL"                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_EMAIL)}
-         And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And update report reportStatusList to "TRAITEMENT_EN_COURS"              ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
+         And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
-trait CreateReportSpec extends Spec with CreateReportContext {
+trait CreateReportSpec extends Specification with AppSpec with FutureMatchers {
 
   import org.specs2.matcher.MatchersImplicits._
   import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 
+  val reportFixture = Report(
+    None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
+    "firstName", "lastName", "email", true, List(), None
+  )
+
   var report = reportFixture
 
+  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val userRepository = app.injector.instanceOf[UserRepository]
+
+  val contactEmail = "contact@signalconso.beta.gouv.fr"
+
+  val siretForCompanyWithoutAccount = "00000000000000"
+  val siretForCompanyWithNotActivatedAccount = "11111111111111"
+  val siretForCompanyWithActivatedAccount = "22222222222222"
+
+  val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "password", Some("code_activation"), None, None, None, UserRoles.ToActivate)
+  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("pro@signalconso.beta.gouv.fr"), Some("Prénom"), Some("Nom"), UserRoles.Pro)
+
+  override def setupData = {
+    userRepository.create(toActivateUser)
+    userRepository.create(proUser)
+  }
+
   def createReport() =  {
-    Await.result(application.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(report))), Duration.Inf)
+    Await.result(app.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(report))), Duration.Inf)
   }
 
   def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
-    there was one(application.injector.instanceOf[MailerService])
+    there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
-        application.configuration.get[String]("play.mail.from"),
+        app.configuration.get[String]("play.mail.from"),
         recipient
       )(
         subject,
@@ -112,96 +127,30 @@ trait CreateReportSpec extends Spec with CreateReportContext {
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).create(argThat(reportStatusMatcher(Some(status))))
-  }
-
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
-  }
-
-  def reportStatusMatcher(status: Option[ReportStatusValue]): Matcher[Report] = { report: Report =>
-    (status == report.status, s"reportStatusList doesn't match ${status}")
+    val reports = Await.result(reportRepository.list, Duration.Inf).toList
+    reports.length must beEqualTo(1)
+    val expectedReport = report.copy(id = reports.head.id, creationDate = reports.head.creationDate, status = Some(status))
+    report = reports.head
+    report must beEqualTo(expectedReport)
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    there was one(mockEventRepository).createEvent(argThat(eventActionMatcher(action)))
-  }
-
-  def eventActionMatcher(action: ActionEventValue): Matcher[Event] = { event: Event =>
-    (action == event.action, s"action doesn't match ${action}")
+    val events = Await.result(eventRepository.list, Duration.Inf).toList
+    events.length must beEqualTo(1)
+    events.head.action must beEqualTo(action)
   }
 
   def accountToActivateMustHaveBeenCreated = {
-    there was one(mockUserRepository).create(
-      argThat({ user: User =>
-        (user.userRole == UserRoles.ToActivate && user.login == siretForCompanyWithoutAccount && user.activationKey.isDefined, "user doesn't match")
-      })
-    )
+    val users = Await.result(userRepository.list, Duration.Inf).toList
+    users.length must beEqualTo(1)
+    val user = users.head
+    user.userRole must beEqualTo(UserRoles.ToActivate)
+    user.login must beEqualTo(siretForCompanyWithoutAccount)
+    user.activationKey must beSome
   }
 
   def accountMustNotHaveBeenCreated = {
-    there was no(mockUserRepository).create(any[User])
+    val users = Await.result(userRepository.list, Duration.Inf).toList
+    users.map(_.id) must contain(exactly(toActivateUser.id, proUser.id))
   }
-
-
-}
-
-trait CreateReportContext extends Mockito {
-
-  implicit val ec = ExecutionContext.global
-
-  val contactEmail = "mail@test.fr"
-
-  val siretForCompanyWithoutAccount = "00000000000000"
-  val siretForCompanyWithNotActivatedAccount = "11111111111111"
-  val siretForCompanyWithActivatedAccount = "22222222222222"
-
-  val reportUUID = UUID.randomUUID();
-
-  val reportFixture = Report(
-    None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
-  )
-
-  val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "code_activation", None, None, None, None, UserRoles.ToActivate)
-  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
-
-  val mockReportRepository = mock[ReportRepository]
-  val mockEventRepository = mock[EventRepository]
-  val mockUserRepository = mock[UserRepository]
-  val mockMailerService = mock[MailerService]
-
-  mockReportRepository.create(any[Report]) answers { report => Future(report.asInstanceOf[Report].copy(id = Some(reportUUID))) }
-  mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-  mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
-  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
-
-  mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
-  mockUserRepository.findByLogin(siretForCompanyWithoutAccount) returns Future(None)
-  mockUserRepository.findByLogin(siretForCompanyWithNotActivatedAccount) returns Future(Some(toActivateUser))
-  mockUserRepository.findByLogin(siretForCompanyWithActivatedAccount) returns Future(Some(proUser))
-
-  mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
-
-  class FakeModule extends AbstractModule with ScalaModule {
-    override def configure() = {
-      bind[ReportRepository].toInstance(mockReportRepository)
-      bind[EventRepository].toInstance(mockEventRepository)
-      bind[UserRepository].toInstance(mockUserRepository)
-      bind[MailerService].toInstance(mockMailerService)
-    }
-  }
-
-  lazy val application = new GuiceApplicationBuilder()
-    .configure(
-      Configuration(
-        "play.evolutions.enabled" -> false,
-        "slick.dbs.default.db.connectionPool" -> "disabled",
-        "play.mailer.mock" -> true,
-        "play.mail.contactRecipient" -> contactEmail
-      )
-    )
-    .overrides(new FakeModule())
-    .build()
-
 }
