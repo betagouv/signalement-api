@@ -104,7 +104,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     "firstName", "lastName", "email", true, List(), None
   )
   val reportFixture = Report(
-    None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
+    None, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
 
@@ -181,8 +181,16 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
     val reports = Await.result(reportRepository.list, Duration.Inf).toList.filter(_.id != existingReport.id)
     reports.length must beEqualTo(1)
-    val expectedReport = report.copy(id = reports.head.id, creationDate = reports.head.creationDate, status = Some(status))
+    val expectedReport = report.copy(
+      id = reports.head.id,
+      creationDate = reports.head.creationDate,
+      companyId = reports.head.companyId,
+      status = Some(status)
+    )
     report = reports.head
+    report.id must beSome
+    report.creationDate must beSome
+    report.companyId must beSome
     report must beEqualTo(expectedReport)
   }
 
