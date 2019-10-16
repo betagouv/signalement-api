@@ -5,6 +5,7 @@ import java.util.UUID
 
 import models.UserRoles.Pro
 import models._
+import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -118,19 +119,19 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_EMAIL, None, Some("test"))
+    CONTACT_EMAIL, None, Some(stringToDetailsJsValue("test")))
   val onTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_EMAIL, None, Some("test"))
+    CONTACT_EMAIL, None, Some(stringToDetailsJsValue("test")))
   val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
   val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
 
 
 

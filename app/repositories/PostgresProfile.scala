@@ -4,6 +4,7 @@ import com.github.tminglei.slickpg._
 import play.api.libs.json.{JsValue, Json}
 
 trait PostgresProfile extends ExPostgresProfile
+  with PgPlayJsonSupport
   with PgArraySupport
   with PgDate2Support {
 
@@ -13,13 +14,11 @@ trait PostgresProfile extends ExPostgresProfile
 
   object MyAPI extends API
     with ArrayImplicits
+    with JsonImplicits
     with DateTimeImplicits {
+
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
-    implicit val playJsonArrayTypeMapper =
-      new AdvancedArrayJdbcType[JsValue](pgjson,
-        (s) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse(_))(s).orNull,
-        (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
-      ).to(_.toList)
+
   }
 
 }
