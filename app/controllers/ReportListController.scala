@@ -10,6 +10,7 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
+import models.Event._
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
 import repositories._
@@ -178,7 +179,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, events, _) =>
           report.status
           .filter(_ == ReportStatus.PROMESSE_ACTION)
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail))
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e => jsValueToString(e.details)))
           .getOrElse("")
       ),
       ReportColumn(
@@ -210,7 +211,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.getOrElse("")}")
           .mkString("\n"),
         available=request.identity.userRole == UserRoles.DGCCRF
       )

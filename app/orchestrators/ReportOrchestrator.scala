@@ -3,12 +3,14 @@ package orchestrators
 import javax.inject.Inject
 import java.time.OffsetDateTime
 import java.util.UUID
+
 import play.api.{Configuration, Environment, Logger}
 import play.api.libs.mailer.AttachmentFile
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-
 import models._
+import models.Event._
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants

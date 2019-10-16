@@ -5,6 +5,7 @@ import java.util.UUID
 
 import models.UserRoles.Pro
 import models._
+import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

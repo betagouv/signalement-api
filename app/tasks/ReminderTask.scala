@@ -8,10 +8,11 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
+import models.Event._
 import models.{Event, Report, User}
 import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
-import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
+import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.PRO
