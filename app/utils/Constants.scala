@@ -26,6 +26,7 @@ object Constants {
     object SIGNALEMENT_INFONDE extends ReportStatusValue("Signalement infondé", true)
     object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue("Signalement non consulté", true)
     object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue("Signalement consulté ignoré", true)
+    object SIGNALEMENT_MAL_ATTRIBUE extends ReportStatusValue("Signalement mal attribué", true)
 
     val reportStatusList = Seq(
       A_TRAITER,

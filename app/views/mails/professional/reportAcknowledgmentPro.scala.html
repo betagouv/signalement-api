@@ -1,4 +1,4 @@
-@(event: Event, user: User)
+@(reportResponse: ReportResponse, user: User)
 
 @import utils.Constants.ReportStatus._
 
@@ -17,14 +17,14 @@
             <p>
                 Bonjour @user.firstName @user.lastName,
             </p>
-            @event.resultAction match {
-                case Some(true) => {
+            @reportResponse.responseType match {
+                case ReportResponseType.ACCEPTED => {
                     <p>Vous venez de faire une promesse d’action et nous vous en félicitons !</p>
 
                     <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
 
                     <p>
-                        "@event.details"
+                        "@reportResponse.consumerDetails"
                     </p>
 
                     <p>
@@ -33,7 +33,7 @@
                     </p>
 
                 }
-                case _ => {
+                case ReportResponseType.REJECTED => {
                     <p>
                         Vous estimez que le signalement est infondé.
                     </p>
@@ -43,7 +43,7 @@
                     </p>
 
                     <p>
-                        "@event.details"
+                        "@reportResponse.consumerDetails"
                     </p>
 
                     <p>

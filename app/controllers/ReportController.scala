@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, Json, OFormat}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
@@ -17,7 +17,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.EventType
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -80,6 +80,27 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         }
     })
   }
+
+  def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
+
+    logger.debug(s"reportResponse ${uuid}")
+
+    request.body.validate[ReportResponse].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      reportResponse => {
+        for {
+          report <- reportRepository.getReport(UUID.fromString(uuid))
+          updatedReport <- report.filter(_.companySiret == Some(request.identity.login)) match {
+              case Some(report) => reportOrchestrator.handleReportResponse(report, reportResponse, request.identity).map(Some(_))
+              case _ => Future(None)
+            }
+        } yield updatedReport
+          .map(r => Ok(Json.toJson(r)))
+          .getOrElse(NotFound)
+        }
+      )
+  }
+
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     logger.debug("uploadReportFile")

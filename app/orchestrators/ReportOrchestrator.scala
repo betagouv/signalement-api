@@ -11,10 +11,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import models._
 import models.Event._
+import models.ReportResponse._
+import play.api.libs.json.{Json, OFormat}
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants
 import utils.Constants.ActionEvent._
+import utils.Constants.{ActionEvent, EventType}
 import utils.Constants.ReportStatus._
 
 
@@ -214,13 +217,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield newReport
   }
 
-  private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
+  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
     user.email.filter(_ != "").foreach(email =>
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
         subject = "Votre réponse au signalement",
-        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString,
         attachments = Seq(
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
@@ -230,7 +233,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       from = mailFrom,
       recipients = report.email)(
       subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
@@ -255,8 +258,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           r.copy(
             status = (event.action, event.resultAction) match {
               case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
-              case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
-              case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
               case (_, _)                                => r.status
             })
         ).map(Some(_))
@@ -265,10 +266,38 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       newEvent.foreach(event => event.action match {
         case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
-        case REPONSE_PRO_SIGNALEMENT => sendMailsAfterProAcknowledgment(report.get, event, user)
         case _ => ()
       })
       newEvent
     }
 
+
+  def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
+    for {
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.PRO,
+          ActionEvent.REPONSE_PRO_SIGNALEMENT,
+          None,
+          Some(Json.toJson(reportResponse))
+        )
+      )
+      updatedReport <- reportRepository.update(
+        report.copy(
+          status = Some(reportResponse.responseType match {
+            case ReportResponseType.ACCEPTED => PROMESSE_ACTION
+            case ReportResponseType.REJECTED => SIGNALEMENT_INFONDE
+            case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
+          })
+        )
+      )
+    } yield {
+      sendMailsAfterProAcknowledgment(report, reportResponse, user)
+      updatedReport
+    }
+  }
 }

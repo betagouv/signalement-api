@@ -43,15 +43,6 @@ object CreateEventByUnauthenticatedUser extends CreateEventSpec  {
     """
 }
 
-object CreateEventByNotConcernedProUser extends CreateEventSpec  {
-  override def is =
-    s2"""
-         Given an authenticated pro user which is not concerned by the report   ${step(someLoginInfo = Some(notConcernedProLoginInfo))}
-         When create an event                                                   ${step(someResult = Some(createEvent()))}
-         Then user is not authorized                                            ${skipped(userMustBeUnauthorized)} //TODO add control in the controller
-    """
-}
-
 object CreateEventAdminPostalMail extends CreateEventSpec {
   override def is =
     s2"""
@@ -59,34 +50,8 @@ object CreateEventAdminPostalMail extends CreateEventSpec {
         Given an action of sending postal letter                                 ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.CONTACT_COURRIER)))}
         When create the associated event                                         ${step(someResult = Some(createEvent()))}
         Then an event "CONTACT_COURRIER" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_COURRIER)}
-        And the report reportStatusList is updated to "TRAITEMENT_EN_COURS"                ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
+        And the report reportStatusList is updated to "TRAITEMENT_EN_COURS"      ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
         no email is sent                                                         ${mailMustNotHaveBeenSent}
-    """
-}
-
-object CreateEventProAnswer extends CreateEventSpec {
-  override def is =
-    s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo = Some(concernedProLoginInfo))}
-        Given a pro answer                                                       ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT)))}
-        When create the associated event                                         ${step(someResult = Some(createEvent()))}
-        Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"                    ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, someEvent.get).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-        And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(someEvent.get, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-    """
-}
-
-object CreateEventProDeclinedAnswer extends CreateEventSpec {
-  override def is =
-    s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo = Some(concernedProLoginInfo))}
-        Given a pro answer who declines the report                               ${step(someEvent = Some(eventToCreate(EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT, false)))}
-        When create the associated event                                         ${step(someResult = Some(createEvent()))}
-        Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
-        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"                ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_INFONDE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, someEvent.get).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-        And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(someEvent.get, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
@@ -163,21 +128,12 @@ trait CreateEventContext extends Mockito {
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue, withResult: Boolean = true) =
-    Event(None, Some(reportUUID), Some(concernedProUser.id), None, eventType, action, Some(withResult), None)
-
-  val siretForConcernedPro = "000000000000000"
-  val siretForNotConcernedPro = "11111111111111"
+    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Some(withResult), None)
 
   val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
-  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
-
-  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
-
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, concernedProLoginInfo -> concernedProUser, notConcernedProLoginInfo -> notConcernedProUser))
+  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser))
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
@@ -187,7 +143,6 @@ trait CreateEventContext extends Mockito {
   mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
 
-  mockUserRepository.get(concernedProUser.id) returns Future(Some(concernedProUser))
   mockUserRepository.get(adminUser.id) returns Future(Some(adminUser))
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }

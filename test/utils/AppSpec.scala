@@ -6,20 +6,23 @@ import org.specs2.mock.Mockito
 import org.specs2.specification._
 import play.api.db.DBApi
 import play.api.db.evolutions._
-
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.MailerService
 
 trait AppSpec extends BeforeAfterAll with Mockito {
 
-  class FakeModule extends AbstractModule with ScalaModule {
+  def configureFakeModule(): AbstractModule = {
+    new AppFakeModule
+  }
+
+  class AppFakeModule extends AbstractModule with ScalaModule {
     override def configure() = {
       bind[MailerService].toInstance(mock[MailerService])
     }
   }
 
   lazy val app = new GuiceApplicationBuilder()
-    .overrides(new FakeModule())
+    .overrides(configureFakeModule())
     .build()
 
   def injector = app.injector
