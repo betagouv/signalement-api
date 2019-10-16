@@ -52,7 +52,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
             None,
-            Some(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
+            Some(stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )"))
           )
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
@@ -177,7 +177,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
           None,
-          Some("Première consultation du détail du signalement par le professionnel")
+          Some(stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel"))
         )
       )
       updatedReport <- report.status match {
@@ -207,7 +207,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,
           None,
-          Some("Envoi email au consommateur d'information de transmission")
+          Some(stringToDetailsJsValue("Envoi email au consommateur d'information de transmission"))
         )
       )
       newReport <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))

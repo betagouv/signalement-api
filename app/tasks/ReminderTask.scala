@@ -210,7 +210,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     PRO,
     RELANCE,
     None,
-    Some(s"Ajout d'un évènement de relance")
+    Some(stringToDetailsJsValue(s"Ajout d'un évènement de relance"))
   )
 
   private def generateNoReadingEvent(report: Report): Event = Event(
@@ -221,7 +221,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     PRO,
     NON_CONSULTE,
     None,
-    Some("Clôture automatique : signalement non consulté")
+    Some(stringToDetailsJsValue("Clôture automatique : signalement non consulté"))
   )
 
   private def generateReadingNoActionEvent(report: Report): Event = Event(
@@ -232,7 +232,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     PRO,
     CONSULTE_IGNORE,
     None,
-    Some("Clôture automatique : signalement consulté ignoré")
+    Some(stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré"))
   )
 
   case class Reminder(

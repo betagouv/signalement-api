@@ -88,19 +88,19 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
   val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 1, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_COURRIER, None, Some("test"))
+    CONTACT_COURRIER, None, Some(stringToDetailsJsValue("test")))
   val onTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 6, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_COURRIER, None, Some("test"))
+    CONTACT_COURRIER, None, Some(stringToDetailsJsValue("test")))
   val outOfTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 4, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
   val onTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 8, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
 
   def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])

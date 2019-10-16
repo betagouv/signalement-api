@@ -119,19 +119,19 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    ENVOI_SIGNALEMENT, None, Some("test"))
+    ENVOI_SIGNALEMENT, None, Some(stringToDetailsJsValue("test")))
   val onTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    ENVOI_SIGNALEMENT, None, Some("test"))
+    ENVOI_SIGNALEMENT, None, Some(stringToDetailsJsValue("test")))
   val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
   val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some("test"))
+    RELANCE, None, Some(stringToDetailsJsValue("test")))
 
 
 
