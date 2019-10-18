@@ -26,48 +26,22 @@
                 @views.html.fragments.address(report.companyAddress)
             </p>
 
-            @reportResponse.responseType match {
-                case ReportResponseType.ACCEPTED => {
+            <p>Le professionnel a répondu à votre signalement !</p>
 
-                    <p>Le professionnel a répondu à votre signalement !</p>
+            <p>Voici sa réponse :</p>
 
-                    <p>Voici sa réponse :</p>
+            <p>
+                "@reportResponse.consumerDetails"
+            </p>
 
-                    <p>
-                        "@reportResponse.consumerDetails"
-                    </p>
+            <p>
+                Nous vous remercions d'avoir fait un signalement sur SignalConso.
+            </p>
 
-                    <p>
-                        Nous vous remercions d'avoir fait un signalement sur SignalConso.
-                    </p>
-
-                    <p>
-                        Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites
-                        un nouveau signalement.
-                    </p>
-
-                }
-                case ReportResponseType.REJECTED => {
-
-                    <p>Ce signalement n’a pas été considéré comme légitime par le professionnel.</p>
-
-                    <p>Voici sa réponse :</p>
-
-                    <p>
-                        "@reportResponse.consumerDetails"
-                    </p>
-
-                    <p>
-                        Néanmoins, nous vous précisons que les enquêteurs se réservent le droit d’effectuer un contrôle
-                        de l’établissement concerné.
-                    </p>
-
-                    <p>
-                        Nous vous remercions d'avoir traité le signalement !
-                    </p>
-
-                }
-            }
+            <p>
+                Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites
+                un nouveau signalement.
+            </p>
 
             <p>À bientôt sur SignalConso !</p>
 
