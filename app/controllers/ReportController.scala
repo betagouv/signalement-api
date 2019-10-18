@@ -15,7 +15,7 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.EventType
+import utils.Constants.{ActionEvent, EventType}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -197,7 +197,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     reportRepository.count(Some(siret)).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
   }
 
-  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async {
+  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     logger.debug("getEvents")
 
@@ -214,7 +214,12 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           events <- eventRepository.getEvents(id, filter)
         } yield {
           report match {
-            case Some(_) => Ok(Json.toJson(events))
+            case Some(_) => Ok(Json.toJson(events.filter(event =>
+              request.identity.userRole match {
+                case UserRoles.Pro => event.action == ActionEvent.REPONSE_PRO_SIGNALEMENT
+                case _ => true
+              }
+            )))
             case None => NotFound
           }
         }
