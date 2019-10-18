@@ -94,7 +94,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[String]("play.mail.contactRecipient"))(
+          recipients = configuration.get[String]("play.mail.contactRecipient").split(";"):_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -238,6 +238,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
     )
+    mailerService.sendEmail(
+      from = mailFrom,
+      recipients = configuration.get[String]("play.mail.contactRecipient").split(";"):_*)(
+      subject = "Un professionnel a répondu à un signalement",
+      bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
+    )
   }
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
@@ -273,6 +279,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
 
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
+    logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
       newEvent <- eventRepository.createEvent(
         Event(
@@ -296,7 +303,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       )
     } yield {
-      sendMailsAfterProAcknowledgment(report, reportResponse, user)
+      sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       updatedReport
     }
   }
