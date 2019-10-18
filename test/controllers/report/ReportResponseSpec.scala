@@ -54,8 +54,9 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         When post a response with type "ACCEPTED"                                ${step(someResult = Some(postReportResponse(reportReponseAccepted)))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.PROMESSE_ACTION)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, reportReponseAccepted).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportReponseAccepted).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportReponseAccepted, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,"Un professionnel a répondu à un signalement", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportReponseAccepted).toString)}
     """
 }
 
@@ -66,8 +67,22 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         When post a response with type "REJECTED"                                ${step(someResult = Some(postReportResponse(reportReponseRejected)))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_INFONDE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(reportFixture, reportReponseRejected).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportReponseRejected).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportReponseRejected, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,"Un professionnel a répondu à un signalement", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportReponseRejected).toString)}
+    """
+}
+
+class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+  override def is =
+    s2"""
+        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo = Some(concernedProLoginInfo))}
+        When post a response with type "NOT_CONCERNED"                           ${step(someResult = Some(postReportResponse(reportReponseNotConcerned)))}
+        Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
+        And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE)}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportReponseNotConcerned).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email.get,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportReponseNotConcerned, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,"Un professionnel a répondu à un signalement", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportReponseNotConcerned).toString)}
     """
 }
 
@@ -79,6 +94,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
 
+  val contactEmail = "contact@signalconso.beta.gouv.fr"
 
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
@@ -88,6 +104,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
+
+  var report = reportFixture
 
   val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
@@ -100,6 +118,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val reportReponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"))
   val reportReponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"))
+  val reportReponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"))
 
   override def setupData = {
     userRepository.create(concernedProUser)
@@ -157,11 +176,13 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
-    reportRepository.getReport(reportUUID) must reportStatusMatcher(Some(status)).await
+    report = Await.result(reportRepository.getReport(reportUUID), Duration.Inf).get
+    report must reportStatusMatcher(Some(status))
+
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
-    (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+    (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 
 }

@@ -1,5 +1,6 @@
 package utils
 
+import models.UserRoles.Pro
 import models.{UserRole, UserRoles}
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -36,7 +37,8 @@ object Constants {
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
       SIGNALEMENT_NON_CONSULTE,
-      SIGNALEMENT_CONSULTE_IGNORE
+      SIGNALEMENT_CONSULTE_IGNORE,
+      SIGNALEMENT_MAL_ATTRIBUE
     )
 
     val reportStatusDGCCRFList = Seq(
@@ -45,7 +47,8 @@ object Constants {
       PROMESSE_ACTION,
       SIGNALEMENT_INFONDE,
       SIGNALEMENT_NON_CONSULTE,
-      SIGNALEMENT_CONSULTE_IGNORE
+      SIGNALEMENT_CONSULTE_IGNORE,
+      SIGNALEMENT_MAL_ATTRIBUE
     )
 
     def fromValue(value: String) = reportStatusList.find(_.value == value).getOrElse(ReportStatusValue(""))
@@ -63,6 +66,7 @@ object Constants {
         case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value) :+ TRAITEMENT_EN_COURS.value
         case (_, _) => List(status)
       }).getOrElse(List())
+
     }
 
 
