@@ -11,7 +11,7 @@ import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import models.Event._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, S3Service}
@@ -179,7 +179,8 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, events, _) =>
           report.status
           .filter(_ == ReportStatus.PROMESSE_ACTION)
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e => jsValueToString(e.details)))
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+            e.details.map(_.as[JsObject].fields.map(_._2.toString).mkString("\n"))))
           .getOrElse("")
       ),
       ReportColumn(
@@ -211,7 +212,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${jsValueToString(event.details).getOrElse("")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.flatMap(_.as[JsObject].value.get("description")).getOrElse("")}")
           .mkString("\n"),
         available=request.identity.userRole == UserRoles.DGCCRF
       )
