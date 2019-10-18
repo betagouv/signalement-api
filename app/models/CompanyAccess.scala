@@ -12,9 +12,18 @@ object AccessLevel {
   val ADMIN = AccessLevel("admin")
 }
 
-case class CompanyAccess(
+case class UserAccess(
   companyId: UUID,
   userId: UUID,
   level: AccessLevel,
   updateDate: OffsetDateTime
+)
+
+case class AccessToken(
+  id: UUID,
+  companyId: UUID,
+  token: String,
+  level: AccessLevel,
+  valid: Boolean,
+  expirationDate: Option[OffsetDateTime]
 )
