@@ -29,13 +29,14 @@ class UserAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def pk = primaryKey("pk_company_user", (companyId, userId))
     def * = (companyId, userId, level, updateDate) <> (UserAccess.tupled, UserAccess.unapply)
 
-    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def user = foreignKey("USER_FK", userId, userRepository.userTableQuery)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
+    def user = foreignKey("USER_FK", userId, userRepository.userTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
 
   val UserAccessTableQuery = TableQuery[UserAccessTable]
+  UserAccessTableQuery.schema.create.statements.foreach(println)
 
-  class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
+  class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "company_access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
     def companyId = column[UUID]("company_id")
     def token = column[String]("token")
@@ -44,10 +45,11 @@ class UserAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
     def * = (id, companyId, token, level, valid, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
 
-    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
+  AccessTokenTableQuery.schema.create.statements.foreach(println)
 
   def getUserLevel(company: Company, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery
