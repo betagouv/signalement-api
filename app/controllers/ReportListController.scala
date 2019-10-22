@@ -179,8 +179,8 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, events, _) =>
           report.status
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
-            e.details.map(_.validate[ReportResponse].get.consumerDetails)
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
+            e.details.validate[ReportResponse].get.consumerDetails
           ))
           .getOrElse("")
       ),
@@ -190,7 +190,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
           report.status
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
-            e.details.map(_.validate[ReportResponse].get.dgccrfDetails.getOrElse(""))
+            e.details.validate[ReportResponse].get.dgccrfDetails
           ))
           .getOrElse("")
       ),
@@ -223,7 +223,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.flatMap(_.as[JsObject].value.get("description")).getOrElse("")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description")}")
           .mkString("\n"),
         available=request.identity.userRole == UserRoles.DGCCRF
       )

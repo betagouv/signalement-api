@@ -16,7 +16,7 @@ case class Event(
                   eventType: EventTypeValue,
                   action: ActionEventValue,
                   resultAction: Option[Boolean],
-                  details: Option[JsValue]
+                  details: JsValue = Json.obj()
                 )
                  
 object Event {
