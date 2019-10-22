@@ -117,14 +117,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       existingReport <- reportRepository.getReport(id)
       updatedReport <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
-          firstName = report.firstName,
-          lastName = report.lastName,
-          email = report.email,
-          contactAgreement = report.contactAgreement,
-          companyName = report.companyName,
-          companyAddress = report.companyAddress,
-          companyPostalCode = report.companyPostalCode,
-          companySiret = report.companySiret
+          firstName = reportData.firstName,
+          lastName = reportData.lastName,
+          email = reportData.email,
+          contactAgreement = reportData.contactAgreement,
+          companyName = reportData.companyName,
+          companyAddress = reportData.companyAddress,
+          companyPostalCode = reportData.companyPostalCode,
+          companySiret = reportData.companySiret
         )).map(Some(_))
         case _ => Future(None)
       }
@@ -132,7 +132,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       updatedReport
         .filter(_.isEligible)
         .filter(_.companySiret.isDefined)
-        .flatMap(r => existingReport.filter(_.companySiret != r.companySiret))
+        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .foreach(notifyProfessionalOfNewReport)
       updatedReport
     }
