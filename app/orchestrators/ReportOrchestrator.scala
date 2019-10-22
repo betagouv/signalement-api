@@ -11,10 +11,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import models._
 import models.Event._
+import models.ReportResponse._
+import play.api.libs.json.{Json, OFormat}
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants
 import utils.Constants.ActionEvent._
+import utils.Constants.{ActionEvent, EventType}
 import utils.Constants.ReportStatus._
 
 
@@ -52,7 +55,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
             None,
-            Some(stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )"))
+            stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
           )
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
@@ -91,7 +94,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[String]("play.mail.contactRecipient"))(
+          recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -177,7 +180,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
           None,
-          Some(stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel"))
+          stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel")
         )
       )
       updatedReport <- report.status match {
@@ -207,20 +210,20 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,
           None,
-          Some(stringToDetailsJsValue("Envoi email au consommateur d'information de transmission"))
+          stringToDetailsJsValue("Envoi email au consommateur d'information de transmission")
         )
       )
       newReport <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))
     } yield newReport
   }
 
-  private def sendMailsAfterProAcknowledgment(report: Report, event: Event, user: User) = {
+  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
     user.email.filter(_ != "").foreach(email =>
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
         subject = "Votre réponse au signalement",
-        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(event, user).toString,
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString,
         attachments = Seq(
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
@@ -230,10 +233,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       from = mailFrom,
       recipients = report.email)(
       subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, event).toString,
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
+    )
+    mailerService.sendEmail(
+      from = mailFrom,
+      recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
+      subject = "Un professionnel a répondu à un signalement",
+      bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
   }
 
@@ -255,8 +264,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           r.copy(
             status = (event.action, event.resultAction) match {
               case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
-              case (REPONSE_PRO_SIGNALEMENT, Some(true)) => Some(PROMESSE_ACTION)
-              case (REPONSE_PRO_SIGNALEMENT, _)          => Some(SIGNALEMENT_INFONDE)
               case (_, _)                                => r.status
             })
         ).map(Some(_))
@@ -265,10 +272,39 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       newEvent.foreach(event => event.action match {
         case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
-        case REPONSE_PRO_SIGNALEMENT => sendMailsAfterProAcknowledgment(report.get, event, user)
         case _ => ()
       })
       newEvent
     }
 
+
+  def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
+    logger.debug(s"handleReportResponse ${reportResponse.responseType}")
+    for {
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.PRO,
+          ActionEvent.REPONSE_PRO_SIGNALEMENT,
+          None,
+          Json.toJson(reportResponse)
+        )
+      )
+      updatedReport <- reportRepository.update(
+        report.copy(
+          status = Some(reportResponse.responseType match {
+            case ReportResponseType.ACCEPTED => PROMESSE_ACTION
+            case ReportResponseType.REJECTED => SIGNALEMENT_INFONDE
+            case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
+          })
+        )
+      )
+    } yield {
+      sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
+      updatedReport
+    }
+  }
 }

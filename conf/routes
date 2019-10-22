@@ -23,6 +23,7 @@ DELETE       /api/reports/:uuid                         controllers.ReportContro
 
 POST         /api/reports                               controllers.ReportController.createReport()
 PUT          /api/reports                               controllers.ReportController.updateReport()
+POST         /api/reports/:uuid/response                controllers.ReportController.reportResponse(uuid)
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
