@@ -90,10 +90,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       reportResponse => {
         for {
           report <- reportRepository.getReport(UUID.fromString(uuid))
-          updatedReport <- report.filter(_.companySiret == Some(request.identity.login)) match {
-              case Some(report) => reportOrchestrator.handleReportResponse(report, reportResponse, request.identity).map(Some(_))
-              case _ => Future(None)
-            }
+          updatedReport <- report.filter(_.companySiret == Some(request.identity.login))
+            .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
         } yield updatedReport
           .map(r => Ok(Json.toJson(r)))
           .getOrElse(NotFound)
