@@ -119,19 +119,19 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_EMAIL, None, Some(stringToDetailsJsValue("test")))
+    CONTACT_EMAIL, None, stringToDetailsJsValue("test"))
   val onTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    CONTACT_EMAIL, None, Some(stringToDetailsJsValue("test")))
+    CONTACT_EMAIL, None, stringToDetailsJsValue("test"))
   val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some(stringToDetailsJsValue("test")))
+    RELANCE, None, stringToDetailsJsValue("test"))
   val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
-    RELANCE, None, Some(stringToDetailsJsValue("test")))
+    RELANCE, None, stringToDetailsJsValue("test"))
 
 
 
