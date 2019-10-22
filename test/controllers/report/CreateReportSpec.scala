@@ -21,7 +21,7 @@ import utils.AppSpec
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-
+import ExecutionContext.Implicits.global
 
 object CreateReportFromNotEligibleDepartment extends CreateReportSpec {
   override def is =
@@ -80,11 +80,24 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
     """
 }
 
+object UpdateReportWithSiret extends CreateReportSpec {
+  override def is =
+    s2"""
+         Given a report with a new SIRET                                ${step(report = existingReport.copy(companySiret = Some("00000000000042")))}
+         When the report is updated                                     ${step(updateReport(report))}
+         Then the report SIRET is updated                               ${step(checkReport(report))}
+    """
+}
+
 trait CreateReportSpec extends Specification with AppSpec with FutureMatchers {
 
   import org.specs2.matcher.MatchersImplicits._
   import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 
+  val existingReport = Report(
+    Some(UUID.randomUUID()), "category", List("subcategory"), List(), "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
+    "firstName", "lastName", "email", true, List(), None
+  )
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
@@ -106,12 +119,25 @@ trait CreateReportSpec extends Specification with AppSpec with FutureMatchers {
   val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("pro@signalconso.beta.gouv.fr"), Some("Prénom"), Some("Nom"), UserRoles.Pro)
 
   override def setupData = {
-    userRepository.create(toActivateUser)
-    userRepository.create(proUser)
+    Await.result(for {
+      _ <- userRepository.create(toActivateUser)
+      _ <- userRepository.create(proUser)
+      _ <- reportRepository.create(existingReport)
+    } yield Unit,
+    Duration.Inf)
   }
 
   def createReport() =  {
     Await.result(app.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(report))), Duration.Inf)
+  }
+
+  def updateReport(reportData: Report) = {
+    Await.result(app.injector.instanceOf[ReportController].updateReport().apply(FakeRequest().withBody(Json.toJson(reportData))), Duration.Inf)
+  }
+
+  def checkReport(reportData: Report) = {
+    val report = Await.result(reportRepository.getReport(reportData.id.get), Duration.Inf)
+    report must beEqualTo(reportData)
   }
 
   def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
@@ -127,7 +153,7 @@ trait CreateReportSpec extends Specification with AppSpec with FutureMatchers {
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
-    val reports = Await.result(reportRepository.list, Duration.Inf).toList
+    val reports = Await.result(reportRepository.list, Duration.Inf).toList.filter(_.id != existingReport.id)
     reports.length must beEqualTo(1)
     val expectedReport = report.copy(id = reports.head.id, creationDate = reports.head.creationDate, status = Some(status))
     report = reports.head
