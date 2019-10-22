@@ -223,7 +223,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description").getOrElse("")}")
           .mkString("\n"),
         available=request.identity.userRole == UserRoles.DGCCRF
       )
