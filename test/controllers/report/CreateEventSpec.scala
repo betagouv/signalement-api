@@ -128,7 +128,7 @@ trait CreateEventContext extends Mockito {
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue, withResult: Boolean = true) =
-    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Some(withResult), None)
+    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Some(withResult))
 
   val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
