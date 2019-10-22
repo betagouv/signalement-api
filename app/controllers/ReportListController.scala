@@ -175,12 +175,23 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, _, _) => getReportStatusWithUserRole(report.status, request.identity.userRole).map(_.value).getOrElse("")
       ),
       ReportColumn(
-        "Détail promesse d'action", leftAlignmentColumn,
+        "Réponse au consommateur", leftAlignmentColumn,
         (report, events, _) =>
           report.status
-          .filter(_ == ReportStatus.PROMESSE_ACTION)
+          .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
-            e.details.map(_.as[JsObject].fields.map(_._2.toString).mkString("\n"))))
+            e.details.map(_.validate[ReportResponse].get.consumerDetails)
+          ))
+          .getOrElse("")
+      ),
+      ReportColumn(
+        "Réponse à la DGCCRF", leftAlignmentColumn,
+        (report, events, _) =>
+          report.status
+          .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+            e.details.map(_.validate[ReportResponse].get.dgccrfDetails.getOrElse(""))
+          ))
           .getOrElse("")
       ),
       ReportColumn(
