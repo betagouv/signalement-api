@@ -10,7 +10,8 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import play.api.libs.json.Json
+import models.Event._
+import play.api.libs.json.{JsObject, Json}
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, S3Service}
@@ -174,11 +175,23 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, _, _) => getReportStatusWithUserRole(report.status, request.identity.userRole).map(_.value).getOrElse("")
       ),
       ReportColumn(
-        "Détail promesse d'action", leftAlignmentColumn,
+        "Réponse au consommateur", leftAlignmentColumn,
         (report, events, _) =>
           report.status
-          .filter(_ == ReportStatus.PROMESSE_ACTION)
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(_.detail))
+          .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
+            e.details.validate[ReportResponse].get.consumerDetails
+          ))
+          .getOrElse("")
+      ),
+      ReportColumn(
+        "Réponse à la DGCCRF", leftAlignmentColumn,
+        (report, events, _) =>
+          report.status
+          .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+            e.details.validate[ReportResponse].get.dgccrfDetails
+          ))
           .getOrElse("")
       ),
       ReportColumn(
@@ -210,7 +223,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.detail.getOrElse("")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description").getOrElse("")}")
           .mkString("\n"),
         available=request.identity.userRole == UserRoles.DGCCRF
       )

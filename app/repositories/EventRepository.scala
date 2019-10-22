@@ -6,6 +6,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.{JsObject, JsValue}
 import slick.jdbc.JdbcProfile
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
@@ -32,31 +33,33 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def eventType = column[String]("event_type")
     def action = column[String]("action")
     def resultAction = column[Option[Boolean]]("result_action")
-    def detail = column[Option[String]]("detail")
+    def details = column[JsValue]("details")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], Option[String])
+    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], JsValue)
 
     def constructEvent: EventData => Event = {
 
-      case (id, reportId, userId, creationDate, eventType, action, resultAction, detail) => {
+      case (id, reportId, userId, creationDate, eventType, action, resultAction, details) => {
         Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
-          Constants.ActionEvent.fromValue(action), resultAction, detail)
+          Constants.ActionEvent.fromValue(action), resultAction, details)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, detail) =>
-        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, resultAction, detail)
+      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, details) =>
+        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, resultAction, details)
     }
 
     def * =
-      (id, reportId, userId, creationDate, eventType, action, resultAction, detail) <> (constructEvent, extractEvent.lift)
+      (id, reportId, userId, creationDate, eventType, action, resultAction, details) <> (constructEvent, extractEvent.lift)
   }
 
   private val reportTableQuery = TableQuery[reportRepository.ReportTable]
 
   private val eventTableQuery = TableQuery[EventTable]
+  
+  def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
 
   def createEvent(event: Event): Future[Event] = db
     .run(eventTableQuery += event)
