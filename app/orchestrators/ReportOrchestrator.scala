@@ -94,7 +94,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[String]("play.mail.contactRecipient").split(";"):_*)(
+          recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -240,7 +240,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = configuration.get[String]("play.mail.contactRecipient").split(";"):_*)(
+      recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
       subject = "Un professionnel a répondu à un signalement",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
