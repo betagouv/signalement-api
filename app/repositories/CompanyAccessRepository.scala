@@ -8,7 +8,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import models._
-import org.apache.poi.ss.formula.functions.Offset
 
 @Singleton
 class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
@@ -34,7 +33,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   }
 
   val UserAccessTableQuery = TableQuery[UserAccessTable]
-  UserAccessTableQuery.schema.create.statements.foreach(println)
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "company_access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
@@ -49,7 +47,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   }
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
-  AccessTokenTableQuery.schema.create.statements.foreach(println)
 
   def getUserLevel(company: Company, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery
