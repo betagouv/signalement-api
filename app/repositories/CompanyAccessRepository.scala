@@ -60,6 +60,16 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
+  def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
+    db.run(UserAccessTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .filter(_._1.userId === user.id)
+      .filter(_._1.level =!= AccessLevel.NONE)
+      .sortBy(_._1.updateDate.desc)
+      .map(r => (r._2, r._1.level))
+      .to[List]
+      .result
+    )
+
   private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(UserAccess(
       companyId = companyId,
