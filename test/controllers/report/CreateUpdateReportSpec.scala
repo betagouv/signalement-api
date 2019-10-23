@@ -14,7 +14,7 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.test._
-import repositories.{EventRepository, ReportRepository, UserRepository}
+import repositories._
 import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
@@ -90,7 +90,7 @@ object UpdateReportWithSiret extends CreateUpdateReportSpec {
          Given a preexisting report
             with a new SIRET                                            ${step(report = existingReport.copy(companySiret = Some("00000000000042")))}
          When the report is updated                                     ${step(updateReport(report))}
-         Then the report SIRET is updated                               ${checkReport(report)}
+         Then the report contains company info                          ${checkReport(report.copy(companyId = Some(existingCompany.id), companySiret = Some(existingCompany.siret)))}
     """
 }
 
@@ -103,6 +103,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
+  val existingCompany = Company(
+    UUID.randomUUID(), "00000000000042", OffsetDateTime.now(),
+    "Test", "42 rue du Tests", Some("37500")
+  )
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
@@ -113,6 +117,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
 
   val contactEmail = "contact@signalconso.beta.gouv.fr"
 
@@ -128,6 +133,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       _ <- userRepository.create(toActivateUser)
       _ <- userRepository.create(proUser)
       _ <- reportRepository.create(existingReport)
+      _ <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
     } yield Unit,
     Duration.Inf)
   }

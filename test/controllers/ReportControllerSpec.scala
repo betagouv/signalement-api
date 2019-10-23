@@ -21,7 +21,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
-import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
+import repositories._
 import services.{MailerService, S3Service}
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent._
@@ -155,6 +155,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     val mockReportRepository = mock[ReportRepository]
     val mockEventRepository = mock[EventRepository]
+    val mockCompanyRepository = mock[CompanyRepository]
+    val mockCompanyAccessRepository = mock[CompanyAccessRepository]
     val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
@@ -172,6 +174,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         bind[Environment[AuthEnv]].toInstance(env)
         bind[ReportRepository].toInstance(mockReportRepository)
         bind[EventRepository].toInstance(mockEventRepository)
+        bind[CompanyRepository].toInstance(mockCompanyRepository)
+        bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
         bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
       }

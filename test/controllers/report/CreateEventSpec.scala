@@ -21,7 +21,7 @@ import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.{EventRepository, ReportRepository, UserRepository}
+import repositories._
 import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
@@ -138,6 +138,8 @@ trait CreateEventContext extends Mockito {
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
   val mockMailerService = mock[MailerService]
+  val mockCompanyRepository = mock[CompanyRepository]
+  val mockCompanyAccessRepository = mock[CompanyAccessRepository]
   val mockUserRepository = mock[UserRepository]
 
   mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
@@ -153,6 +155,8 @@ trait CreateEventContext extends Mockito {
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
       bind[MailerService].toInstance(mockMailerService)
+      bind[CompanyRepository].toInstance(mockCompanyRepository)
+      bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
       bind[UserRepository].toInstance(mockUserRepository)
     }
   }
