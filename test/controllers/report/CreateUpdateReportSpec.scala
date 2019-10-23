@@ -100,7 +100,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 
   val existingReport = Report(
-    Some(UUID.randomUUID()), "category", List("subcategory"), List(), "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
+    Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
   val reportFixture = Report(

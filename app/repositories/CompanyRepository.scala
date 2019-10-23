@@ -33,4 +33,7 @@ class CompanyRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impl
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
+
+  def findBySiret(siret: String): Future[Option[Company]] =
+    db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 }

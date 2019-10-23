@@ -11,7 +11,7 @@ import models._
 import org.apache.poi.ss.formula.functions.Offset
 
 @Singleton
-class UserAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      val companyRepository: CompanyRepository, val userRepository: UserRepository)
                                      (implicit ec: ExecutionContext) {
 
