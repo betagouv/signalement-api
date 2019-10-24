@@ -118,23 +118,28 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse("")
+        (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Code postal", centerAlignmentColumn,
-        (report, _, _) => report.companyPostalCode.getOrElse("")
+        (report, _, _) => report.companyPostalCode.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Siret", centerAlignmentColumn,
-        (report, _, _) => report.companySiret.getOrElse("")
+        (report, _, _) => report.companySiret.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Nom de l'établissement", leftAlignmentColumn,
-        (report, _, _) => report.companyName
+        (report, _, _) => report.companyName,
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Adresse de l'établissement", leftAlignmentColumn,
-        (report, _, _) => report.companyAddress
+        (report, _, _) => report.companyAddress,
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
@@ -158,11 +163,13 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         (report, _, _) =>
           report.files
           .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
-          .mkString("\n")
+          .mkString("\n"),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Statut", leftAlignmentColumn,
-        (report, _, _) => report.status.map(_.getValueWithUserRole(request.identity.userRole)).getOrElse("")
+        (report, _, _) => report.status.map(_.getValueWithUserRole(request.identity.userRole)).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Réponse au consommateur", leftAlignmentColumn,
@@ -186,19 +193,23 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Identifiant", centerAlignmentColumn,
-        (report, _, _) => report.id.map(_.toString).getOrElse("")
+        (report, _, _) => report.id.map(_.toString).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Prénom", leftAlignmentColumn,
-        (report, _, _) => report.firstName
+        (report, _, _) => report.firstName,
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Nom", leftAlignmentColumn,
-        (report, _, _) => report.lastName
+        (report, _, _) => report.lastName,
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Email", leftAlignmentColumn,
-        (report, _, _) => report.email
+        (report, _, _) => report.email,
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Code d'activation", centerAlignmentColumn,
@@ -223,7 +234,20 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       paginatedReports <- reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments.map(d => d.split(",").toSeq).getOrElse(Seq()), None, siret, None, startDate, endDate, category, statusList, details)
+        ReportFilter(
+          departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          None,
+          request.identity.userRole match {
+            case UserRoles.Pro => Some(request.identity.login)
+            case _ => siret
+          },
+          None,
+          startDate,
+          endDate,
+          category,
+          statusList,
+          details
+        )
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyUsersMap <- userRepository.prefetchLogins(paginatedReports.entities.flatMap(_.companySiret))
