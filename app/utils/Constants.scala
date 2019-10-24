@@ -140,14 +140,10 @@ object Constants {
 
   object ActionEvent {
 
-    case class ActionEventValue(val value: String, val withResult: Boolean = false)
+    case class ActionEventValue(value: String)
 
     object ActionEventValue {
-      implicit val actionEventValueWrites = new Writes[ActionEventValue] {
-        def writes(actionEventValue: ActionEventValue) = Json.obj("name" -> actionEventValue.value, "withResult" -> actionEventValue.withResult)
-      }
-      implicit val actionEventValueReads: Reads[ActionEventValue] =
-        JsPath.read[String].map(fromValue(_))
+      implicit val actionEventValueFormat: OFormat[ActionEventValue] = Json.format[ActionEventValue]
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")
@@ -156,9 +152,9 @@ object Constants {
 
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
-    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
     object RELANCE extends ActionEventValue("Relance")
