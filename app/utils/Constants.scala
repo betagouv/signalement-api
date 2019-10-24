@@ -35,6 +35,9 @@ object Constants {
     )
     object NA extends ReportStatusValue(
       "NA",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
       isFinal = true
     )
     object TRAITEMENT_EN_COURS extends ReportStatusValue(
@@ -143,7 +146,8 @@ object Constants {
     case class ActionEventValue(value: String)
 
     object ActionEventValue {
-      implicit val actionEventValueFormat: OFormat[ActionEventValue] = Json.format[ActionEventValue]
+      implicit val actionEventValueReads: Reads[ActionEventValue] = JsPath.read[String].map(fromValue(_))
+      implicit val actionEventValueWriter = Json.writes[ActionEventValue]
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")

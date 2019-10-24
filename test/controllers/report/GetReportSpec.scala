@@ -221,7 +221,7 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(neverRequestedFinalReportUUID, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReportUUID, EventFilter(None)) returns Future(
-    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReportUUID), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT, Some(true)))
+    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReportUUID), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT))
   )
 
   class FakeModule extends AbstractModule with ScalaModule {

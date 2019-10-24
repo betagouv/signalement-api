@@ -209,7 +209,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     Some(OffsetDateTime.now()),
     PRO,
     RELANCE,
-    None,
     stringToDetailsJsValue(s"Ajout d'un évènement de relance")
   )
 
@@ -220,7 +219,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     Some(OffsetDateTime.now()),
     PRO,
     NON_CONSULTE,
-    None,
     stringToDetailsJsValue("Clôture automatique : signalement non consulté")
   )
 
@@ -231,7 +229,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     Some(OffsetDateTime.now()),
     PRO,
     CONSULTE_IGNORE,
-    None,
     stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré")
   )
 

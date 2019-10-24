@@ -32,27 +32,26 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
     def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
-    def resultAction = column[Option[Boolean]]("result_action")
     def details = column[JsValue]("details")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, Option[Boolean], JsValue)
+    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, JsValue)
 
     def constructEvent: EventData => Event = {
 
-      case (id, reportId, userId, creationDate, eventType, action, resultAction, details) => {
+      case (id, reportId, userId, creationDate, eventType, action, details) => {
         Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
-          Constants.ActionEvent.fromValue(action), resultAction, details)
+          Constants.ActionEvent.fromValue(action), details)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, resultAction, details) =>
-        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, resultAction, details)
+      case Event(id, reportId, userId, creationDate, eventType, action, details) =>
+        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, details)
     }
 
     def * =
-      (id, reportId, userId, creationDate, eventType, action, resultAction, details) <> (constructEvent, extractEvent.lift)
+      (id, reportId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
   private val reportTableQuery = TableQuery[reportRepository.ReportTable]
