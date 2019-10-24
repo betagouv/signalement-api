@@ -112,7 +112,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
 
   val reportUUID = UUID.randomUUID()
 
-  val transmittedReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), "company1", "addresse" + UUID.randomUUID().toString, None,
+  val transmittedReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
     Some(SIGNALEMENT_TRANSMIS))

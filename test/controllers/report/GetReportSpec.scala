@@ -186,19 +186,19 @@ trait GetReportContext extends Mockito {
 
   val neverRequestedReportUUID = UUID.randomUUID();
   val neverRequestedReport = Report(
-    Some(neverRequestedReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(neverRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
 

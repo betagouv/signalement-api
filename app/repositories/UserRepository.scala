@@ -96,8 +96,15 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def delete(email: String): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
-  def findByLogin(login: String): Future[Option[User]] = db
-    .run(userTableQuery.filter(_.login === login).to[List].result.headOption)
+  def findByLogin(login: String): Future[Option[User]] =
+    db
+    .run(userTableQuery
+    .filter(u =>
+      if (login.contains("@"))
+        (u.email === login).getOrElse(false)
+      else
+        (u.login === login)
+      ).to[List].result.headOption)
 
   def prefetchLogins(logins: List[String]): Future[Map[String, User]] = db
     .run(

@@ -81,7 +81,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val reportUUID = UUID.randomUUID()
 
-  val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), "company1", "addresse" + UUID.randomUUID().toString, None,
+  val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithoutEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
     Some(TRAITEMENT_EN_COURS))

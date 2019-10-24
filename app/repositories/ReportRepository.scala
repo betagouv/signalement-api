@@ -5,6 +5,7 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models._
+import repositories._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
@@ -27,7 +28,7 @@ case class ReportFilter(
                        )
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository, val companyRepository: CompanyRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -41,6 +42,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     def category = column[String]("categorie")
     def subcategories = column[List[String]]("sous_categories")
     def details = column[List[String]]("details")
+    def companyId = column[Option[UUID]]("company_id")
     def companyName = column[String]("nom_etablissement")
     def companyAddress = column[String]("adresse_etablissement")
     def companyPostalCode = column[Option[String]]("code_postal")
@@ -52,23 +54,25 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     def contactAgreement = column[Boolean]("accord_contact")
     def status = column[Option[String]]("status")
 
-    type ReportData = (UUID, String, List[String], List[String], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String])
+    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
-        Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
+      case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
+        Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret,
           Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
-      case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
+      case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, files, status) =>
-        (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
+        (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
           creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.value))
     }
 
     def * =
-      (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
+      (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
         creationDate, firstName, lastName, email, contactAgreement, status) <> (constructReport, extractReport.lift)
   }
 
