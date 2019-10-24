@@ -57,14 +57,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)))
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromDefaultValue(_)))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, files, status) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.value))
+          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.defaulValue))
     }
 
     def * =
@@ -166,7 +166,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
     val whereStatus = statusList match {
       case None => ""
-      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.value)}'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.defaulValue)}'").mkString(" or ") + ")"
     }
 
     val whereSiret = withoutSiret match {
@@ -351,7 +351,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
   def getReportsForStatusWithUser(status: ReportStatusValue): Future[List[(Report, User)]] = db.run {
     reportTableQuery
-      .filter(_.status === status.value)
+      .filter(_.status === status.defaulValue)
       .join(userTableQuery).on(_.companySiret === _.login)
       .to[List]
       .result

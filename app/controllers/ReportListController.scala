@@ -52,11 +52,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
   ) = SecuredAction.async { implicit request =>
 
-    implicit val paginatedReportWriter = request.identity.userRole match {
-      case UserRoles.Pro => PaginatedResult.paginatedReportProWriter
-      case _ => PaginatedResult.paginatedReportWriter
-    }
-
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
     val LIMIT_MAX = 250
@@ -79,19 +74,14 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      getSpecificsReportStatusWithUserRole(status, request.identity.userRole),
+      getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole),
       details
     )
 
     logger.debug(s"ReportFilter $filter")
-    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports => {
-      val reports = paginatedReports.copy(
-        entities = paginatedReports.entities.map {
-          report => report.copy(status = getReportStatusWithUserRole(report.status, request.identity.userRole))
-        }
-      )
-      Future.successful(Ok(Json.toJson(reports)))
-    })
+    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports =>
+      Future.successful(Ok(Json.toJson(paginatedReports)))
+    )
   }
 
   def extractReports(departments: Option[String],
@@ -108,7 +98,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    val statusList = getSpecificsReportStatusWithUserRole(status, request.identity.userRole)
+    val statusList = getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole)
 
     val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
     val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
@@ -172,7 +162,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Statut", leftAlignmentColumn,
-        (report, _, _) => getReportStatusWithUserRole(report.status, request.identity.userRole).map(_.value).getOrElse("")
+        (report, _, _) => report.status.map(_.getValueWithUserRole(request.identity.userRole)).getOrElse("")
       ),
       ReportColumn(
         "Réponse au consommateur", leftAlignmentColumn,

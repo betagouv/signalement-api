@@ -125,12 +125,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   }
 
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
-
-    implicit val reportWriter = userRole match {
-      case UserRoles.Pro => Report.reportProWriter
-      case _ => Report.reportWriter
-    }
-
+    implicit val someUserRole = Some(userRole)
     someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(report)
   }
 

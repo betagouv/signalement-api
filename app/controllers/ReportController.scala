@@ -15,6 +15,7 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
+import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
@@ -57,6 +58,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("createReport")
+
+    implicit val userRole = None
 
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -161,11 +164,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     logger.debug("getReport")
 
-    implicit val reportWriter = request.identity.userRole match {
-      case UserRoles.Pro => Report.reportProWriter
-      case _ => Report.reportWriter
-    }
-
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
@@ -214,7 +212,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           report match {
             case Some(_) => Ok(Json.toJson(events.filter(event =>
               request.identity.userRole match {
-                case UserRoles.Pro => event.action == ActionEvent.REPONSE_PRO_SIGNALEMENT
+                case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event.action
                 case _ => true
               }
             )))
