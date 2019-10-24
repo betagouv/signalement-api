@@ -1,3 +1,5 @@
+-- !Ups
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 INSERT INTO companies
@@ -24,11 +26,13 @@ ON      u.login = c.siret
 WHERE   u.role = 'Professionnel';
 
 INSERT INTO company_access_tokens
-        (id, company_id, token, level, valid)
+        (id, company_id, token, level, valid, expiration_date)
 SELECT
-        UUID_GENERATE_V4(), c.id, u.activation_key, 'admin', TRUE
+        UUID_GENERATE_V4(), c.id, u.activation_key, 'admin', TRUE, c.creation_date + INTERVAL '60 DAY'
 FROM    users u
 JOIN    companies c
 ON      u.login = c.siret
 WHERE   u.role = 'ToActivate'
 AND     u.activation_key <> '';
+
+-- !Downs

@@ -35,6 +35,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
   val mailFrom = configuration.get[String]("play.mail.from")
+  val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   private def generateActivationKey(company: Company): Future[Unit] = {
     val activationKey = f"${Random.nextInt(1000000)}%06d"
@@ -51,7 +52,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           UserRoles.ToActivate
         )
       );
-      accessToken <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, activationKey, None)
+      accessToken <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, activationKey, tokenDuration)
     } yield Unit
   }
 
