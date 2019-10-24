@@ -36,3 +36,8 @@ WHERE   u.role = 'ToActivate'
 AND     u.activation_key <> '';
 
 -- !Downs
+
+TRUNCATE company_access_tokens CASCADE;
+TRUNCATE company_accesses CASCADE;
+UPDATE signalement SET company_id = NULL;
+TRUNCATE companies CASCADE;
