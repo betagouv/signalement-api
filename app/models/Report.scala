@@ -13,6 +13,7 @@ case class Report(
                    category: String,
                    subcategories: List[String],
                    details: List[DetailInputValue],
+                   companyId: Option[UUID],
                    companyName: String,
                    companyAddress: String,
                    companyPostalCode: Option[String],

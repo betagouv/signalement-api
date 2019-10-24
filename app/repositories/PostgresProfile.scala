@@ -20,7 +20,8 @@ trait PostgresProfile extends ExPostgresProfile
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
   }
-
+  override protected def computeCapabilities: Set[slick.basic.Capability] =
+    super.computeCapabilities + slick.jdbc.JdbcCapabilities.insertOrUpdate
 }
 
 object PostgresProfile extends PostgresProfile
