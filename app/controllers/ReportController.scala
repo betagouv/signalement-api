@@ -115,7 +115,11 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
         reportOrchestrator
-        .addReportFile(UUID.fromString(maybeUploadResult._1.key), maybeUploadResult._2)
+        .addReportFile(
+          UUID.fromString(maybeUploadResult._1.key),
+          maybeUploadResult._2,
+          request.body.dataParts.get("reportFileOrigin").map(o => ReportFileOrigin(o.head)).getOrElse(ReportFileOrigin.CONSUMER)
+        )
         .map(file => Ok(Json.toJson(file)))
       }
   }

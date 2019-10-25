@@ -6,7 +6,8 @@ import utils.EnumUtils
 case class ReportResponse(
                            responseType: ReportResponseType.Value,
                            consumerDetails: String,
-                           dgccrfDetails: Option[String]
+                           dgccrfDetails: Option[String],
+                           fileIds: List[String]
                          )
 
 object ReportResponse {

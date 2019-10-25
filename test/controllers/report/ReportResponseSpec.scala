@@ -116,9 +116,9 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
 
-  val reportReponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"))
-  val reportReponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"))
-  val reportReponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"))
+  val reportReponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"), List.empty)
+  val reportReponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"), List.empty)
+  val reportReponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
   override def setupData = {
     userRepository.create(concernedProUser)

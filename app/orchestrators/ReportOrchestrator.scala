@@ -182,8 +182,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(id: UUID, filename: String) =
-    reportRepository.createFile(ReportFile(id, None, OffsetDateTime.now(), filename))
+  def addReportFile(id: UUID, filename: String, origin: ReportFileOrigin) =
+    reportRepository.createFile(
+      ReportFile(
+        id,
+        None,
+        OffsetDateTime.now(),
+        filename,
+        origin
+      )
+    )
 
   def removeReportFile(id: UUID) =
     for {
@@ -321,6 +329,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Json.toJson(reportResponse)
         )
       )
+      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds.map(UUID.fromString(_)), report.id.get)
       updatedReport <- reportRepository.update(
         report.copy(
           status = Some(reportResponse.responseType match {

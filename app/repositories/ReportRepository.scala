@@ -76,26 +76,29 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
         creationDate, firstName, lastName, email, contactAgreement, status) <> (constructReport, extractReport.lift)
   }
 
-  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
+  implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
+
+  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[Option[UUID]]("signalement_id")
-    def creationDate = column[OffsetDateTime]("date_creation")
-    def filename = column[String]("nom")
+    def reportId = column[Option[UUID]]("report_id")
+    def creationDate = column[OffsetDateTime]("creation_date")
+    def filename = column[String]("filename")
+    def origin = column[ReportFileOrigin]("origin")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], OffsetDateTime, String)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String, ReportFileOrigin)
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename) => ReportFile(id, reportId, creationDate, filename)
+      case (id, reportId, creationDate, filename, origin) => ReportFile(id, reportId, creationDate, filename, origin)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+      case ReportFile(id, reportId, creationDate, filename, origin) => (id, reportId, creationDate, filename, origin)
     }
 
     def * =
-      (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
+      (id, reportId, creationDate, filename, origin) <> (constructFile, extractFile.lift)
   }
 
   private val reportTableQuery = TableQuery[ReportTable]
