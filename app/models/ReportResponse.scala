@@ -1,5 +1,7 @@
 package models
 
+import java.util.UUID
+
 import play.api.libs.json.{Json, OFormat, Reads, Writes}
 import utils.EnumUtils
 
@@ -7,7 +9,7 @@ case class ReportResponse(
                            responseType: ReportResponseType.Value,
                            consumerDetails: String,
                            dgccrfDetails: Option[String],
-                           fileIds: List[String]
+                           fileIds: List[UUID]
                          )
 
 object ReportResponse {

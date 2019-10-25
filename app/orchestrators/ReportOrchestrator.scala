@@ -329,7 +329,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Json.toJson(reportResponse)
         )
       )
-      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds.map(UUID.fromString(_)), report.id.get)
+      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id.get)
       updatedReport <- reportRepository.update(
         report.copy(
           status = Some(reportResponse.responseType match {
