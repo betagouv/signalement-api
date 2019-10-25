@@ -22,6 +22,8 @@ import utils.Constants.ReportStatus._
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
+                                   companyRepository: CompanyRepository,
+                                   companyAccessRepository: CompanyAccessRepository,
                                    eventRepository: EventRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
@@ -33,8 +35,28 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
   val mailFrom = configuration.get[String]("play.mail.from")
+  val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-  private def notifyProfessionalOfNewReport(report: Report): Future[Report] = {
+  private def generateActivationKey(company: Company): Future[Unit] = {
+    val activationKey = f"${Random.nextInt(1000000)}%06d"
+    for {
+      user <- userRepository.create(
+        User(
+          UUID.randomUUID(),
+          company.siret,
+          activationKey,
+          Some(activationKey),
+          None,
+          None,
+          None,
+          UserRoles.ToActivate
+        )
+      );
+      accessToken <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, activationKey, tokenDuration)
+    } yield Unit
+  }
+
+  private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
     userRepository.findByLogin(report.companySiret.get).flatMap{
       case Some(user) if user.email.filter(_ != "").isDefined => {
         mailerService.sendEmail(
@@ -60,30 +82,28 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
       }
-      case None => {
-        val activationKey = f"${Random.nextInt(1000000)}%06d"
-        userRepository.create(
-          User(
-            UUID.randomUUID(),
-            report.companySiret.get,
-            activationKey,
-            Some(activationKey),
-            None,
-            None,
-            None,
-            UserRoles.ToActivate
-          )
-        ).map(_ => report)
-      }
+      case None => generateActivationKey(company).map(_ => report)
       case _ => Future(report)
     }
   }
 
   def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
+      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
+        siret,
+        Company(
+          UUID.randomUUID(),
+          siret,
+          OffsetDateTime.now,
+          draftReport.companyName,
+          draftReport.companyAddress,
+          draftReport.companyPostalCode
+        )
+      ).map(Some(_))).getOrElse(Future(None))
       report <- reportRepository.create(
         draftReport.copy(
           id = Some(UUID.randomUUID()),
+          companyId = company.map(_.id),
           creationDate = Some(OffsetDateTime.now()),
           status = Some(if (draftReport.isEligible) Constants.ReportStatus.A_TRAITER else Constants.ReportStatus.NA)
         )
@@ -106,7 +126,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
           )
         )
-        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report)
+        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company.get)
         else Future(report)
       }
     } yield report
@@ -114,12 +134,24 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   def updateReport(id: UUID, reportData: Report): Future[Option[Report]] =
     for {
       existingReport <- reportRepository.getReport(id)
+      company <- reportData.companySiret.map(siret => companyRepository.getOrCreate(
+        siret,
+        Company(
+          UUID.randomUUID(),
+          siret,
+          OffsetDateTime.now,
+          reportData.companyName,
+          reportData.companyAddress,
+          reportData.companyPostalCode
+        )
+      ).map(Some(_))).getOrElse(Future(None))
       updatedReport <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
           firstName = reportData.firstName,
           lastName = reportData.lastName,
           email = reportData.email,
           contactAgreement = reportData.contactAgreement,
+          companyId = company.map(_.id),
           companyName = reportData.companyName,
           companyAddress = reportData.companyAddress,
           companyPostalCode = reportData.companyPostalCode,
@@ -132,7 +164,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         .filter(_.isEligible)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .foreach(notifyProfessionalOfNewReport)
+        .foreach(r => notifyProfessionalOfNewReport(r, company.get))
       updatedReport
     }
 

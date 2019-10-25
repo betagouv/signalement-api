@@ -12,7 +12,7 @@ import javax.inject.{Inject, Singleton}
 import models.{PasswordChange, User, UserPermission, UserRoles}
 import play.api._
 import play.api.libs.json.JsError
-import repositories.{EventFilter, EventRepository, ReportFilter, ReportRepository, UserRepository}
+import repositories._
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
@@ -22,6 +22,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountController @Inject()(
                                    val silhouette: Silhouette[AuthEnv],
                                    userRepository: UserRepository,
+                                   companyRepository: CompanyRepository,
+                                   companyAccessRepository: CompanyAccessRepository,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
                                    credentialsProvider: CredentialsProvider,
@@ -64,16 +66,20 @@ class AccountController @Inject()(
       },
       user => {
         for {
+          activationKey <- userRepository.get(user.id).map(_.flatMap(_.activationKey))
           _ <- userRepository.update(user)
           _ <- userRepository.updateAccountActivation(request.identity.id, None, UserRoles.Pro)
           _ <- userRepository.updatePassword(request.identity.id, user.password)
-        } yield {
-          NoContent
-        }
+          // Forward compatibility with new access model
+          company <- companyRepository.findBySiret(request.identity.login)
+          token <- activationKey
+                    .flatMap(key =>
+                      company.map(c => companyAccessRepository.findToken(c, key)))
+                    .getOrElse(Future(None))
+          _ <- token.map(companyAccessRepository.applyToken(_, user)).getOrElse(Future(None))
+        } yield NoContent
       }.recover {
-        case e => {
-          Unauthorized
-        }
+        case e => Unauthorized
       }
     )
   }

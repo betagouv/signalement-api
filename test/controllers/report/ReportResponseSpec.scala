@@ -101,7 +101,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", "email", true, List(), None
   )
 
