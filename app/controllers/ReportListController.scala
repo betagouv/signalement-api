@@ -162,8 +162,9 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         "Pièces jointes", leftAlignmentColumn,
         (report, _, _) =>
           report.files
-          .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
-          .mkString("\n"),
+            .filter(file => file.origin == ReportFileOrigin.CONSUMER)
+            .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
+            .mkString("\n"),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
