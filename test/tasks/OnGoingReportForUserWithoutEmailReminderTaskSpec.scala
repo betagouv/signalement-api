@@ -18,6 +18,7 @@ import utils.Constants.{ActionEvent, ReportStatus}
 import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_COURRIER, RELANCE}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
+import utils.EmailAddress
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -83,7 +84,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithoutEmail.login),
-    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
+    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, List.empty,
     Some(TRAITEMENT_EN_COURS))
   val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),
@@ -102,10 +103,10 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
     Some(OffsetDateTime.of(2019, 9, 8, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
-        app.configuration.get[String]("play.mail.from"),
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,
@@ -115,7 +116,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(app.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
+    there was no(app.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {

@@ -3,9 +3,10 @@ package repositories
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models.Subscription
+import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
+import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -65,15 +66,14 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .map(_ => subscription)
   }
 
-  def listSubscribeUserMailsForDepartment(code: String) = db
+  def listSubscribeUserMailsForDepartment(code: String): Future[List[EmailAddress]] = db
     .run(
       subscriptionTableQuery
         .filter(subscription => code.bind === subscription.values.any)
-        .joinLeft(userTableQuery).on(_.userId === _.id)
-        .map(_._2)
+        .join(userTableQuery).on(_.userId === _.id)
+        .map(_._2.email)
         .to[List]
         .result
-        .map(result => result.flatMap(_.flatMap(_.email)))
-    )
+    ).map(_.flatten)
 }
 

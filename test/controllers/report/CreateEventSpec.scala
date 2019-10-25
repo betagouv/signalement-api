@@ -29,9 +29,11 @@ import utils.Constants.EventType.EventTypeValue
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
+import org.apache.commons.mail.Email
 
 
 object CreateEventByUnauthenticatedUser extends CreateEventSpec  {
@@ -108,13 +110,13 @@ trait CreateEventContext extends Mockito {
 
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("toto@example.com"), true, List(), None
   )
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(application.injector.instanceOf[MailerService])
       .sendEmail(
-        application.configuration.get[String]("play.mail.from"),
+        EmailAddress(application.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,
@@ -124,13 +126,13 @@ trait CreateEventContext extends Mockito {
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
+    there was no(application.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =
     Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
+  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser))

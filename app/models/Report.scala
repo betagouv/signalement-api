@@ -7,6 +7,7 @@ import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
 import utils.Constants.Departments
+import utils.EmailAddress
 
 case class Report(
                    id: Option[UUID],
@@ -21,7 +22,7 @@ case class Report(
                    creationDate: Option[OffsetDateTime],
                    firstName: String,
                    lastName: String,
-                   email: String,
+                   email: EmailAddress,
                    contactAgreement: Boolean,
                    files: List[ReportFile],
                    status: Option[ReportStatusValue]

@@ -30,6 +30,7 @@ import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 import scala.concurrent.Future
 
@@ -117,7 +118,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           val reportsList = List(
             Report(
               reportId, "foo", List("bar"), List(), None, "myCompany", "18 rue des Champs",
-              None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", "jdoe@example.com",
+              None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", EmailAddress("jdoe@example.com"),
               true, List(), None
             )
           )
@@ -146,9 +147,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   trait Context extends Scope {
 
-    val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
+    val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
     val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.login)
-    val proIdentity = User(UUID.randomUUID(),"00000000000000", "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+    val proIdentity = User(UUID.randomUUID(),"00000000000000", "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
     val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
 
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))

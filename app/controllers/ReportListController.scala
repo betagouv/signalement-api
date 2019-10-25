@@ -143,7 +143,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.email).getOrElse(""),
+        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.email).map(_.value).getOrElse(""),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -209,7 +209,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email", leftAlignmentColumn,
-        (report, _, _) => report.email,
+        (report, _, _) => report.email.value,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(

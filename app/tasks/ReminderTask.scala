@@ -19,6 +19,7 @@ import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -144,10 +145,10 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
   }
 
-  def remindReportByMail(report: Report, userMail: String) = {
+  def remindReportByMail(report: Report, userMail: EmailAddress) = {
     eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
       mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
+        from = EmailAddress(configuration.get[String]("play.mail.from")),
         recipients = userMail)(
         subject = "Nouveau signalement",
         bodyHtml = views.html.mails.professional.reportNotification(report).toString,
@@ -172,7 +173,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
       mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
+        from = EmailAddress(configuration.get[String]("play.mail.from")),
         recipients = report.email)(
         subject = "Le professionnel n’a pas souhaité consulter votre signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
@@ -190,7 +191,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_CONSULTE_IGNORE)))
     } yield {
       mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
+        from = EmailAddress(configuration.get[String]("play.mail.from")),
         recipients = report.email)(subject = "Le professionnel n’a pas répondu au signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
         attachments = Seq(

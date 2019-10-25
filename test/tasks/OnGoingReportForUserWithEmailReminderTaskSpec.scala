@@ -18,6 +18,7 @@ import utils.Constants.{ActionEvent, ReportStatus}
 import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, RELANCE}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
+import utils.EmailAddress
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -108,13 +109,13 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val userWithEmail = User(UUID.randomUUID(), "22222222222222", "", None, Some("email"), None, Some("test"), Pro)
+  val userWithEmail = User(UUID.randomUUID(), "22222222222222", "", None, Some(EmailAddress("email")), None, Some("test"), Pro)
 
   val reportUUID = UUID.randomUUID()
 
   val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithEmail.login),
-    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", "email 1", true, List.empty,
+    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, List.empty,
     Some(TRAITEMENT_EN_COURS))
   val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
@@ -136,10 +137,10 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
 
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
-        app.configuration.get[String]("play.mail.from"),
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,
@@ -149,7 +150,7 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(app.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
+    there was no(app.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {
