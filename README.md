@@ -61,7 +61,7 @@ sbt test
 Pour éxecuter uniquement un test (donné par son nom de classe):
 
 ```bash
-bt "testOnly *SomeTestSpec"
+sbt "testOnly *SomeTestSpec"
 ```
 
 ## Démo
