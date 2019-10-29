@@ -46,9 +46,13 @@ POST	    /api/authenticate                           controllers.AuthController.
 POST	    /api/authenticate/password/forgot           controllers.AuthController.forgotPassword
 POST	    /api/authenticate/password/reset            controllers.AuthController.resetPassword(token: java.util.UUID)
 
+# Accesses API
+GET         /api/accesses/token                         controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
+
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
-PUT         /api/account/activation                     controllers.AccountController.activateAccount
+POST        /api/account/activation                     controllers.AccountController.activateAccount
+PUT         /api/account/activation                     controllers.AccountController.activateAccountDeprecated
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
 # Rating API

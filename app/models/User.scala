@@ -9,6 +9,16 @@ import play.api.libs.json._
 import utils.EnumUtils
 import utils.EmailAddress
 
+case class DraftUser(
+  email: String,
+  firstName: String,
+  lastName: String,
+  password: String
+)
+object DraftUser {
+  implicit val draftUserFormat = Json.format[DraftUser]
+}
+
 case class User (
                  id: UUID,
                  login: String,

@@ -1,6 +1,7 @@
 package controllers
 
 import java.io.{ByteArrayInputStream, File}
+import java.util.UUID
 
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
@@ -9,7 +10,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
-import models.{PasswordChange, User, UserPermission, UserRoles}
+import models._
 import play.api._
 import play.api.libs.json.JsError
 import repositories._
@@ -57,9 +58,37 @@ class AccountController @Inject()(
     )
   }
 
-  def activateAccount = SecuredAction(WithPermission(UserPermission.activateAccount)).async(parse.json) { implicit request =>
+  def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
 
     logger.debug("activateAccount")
+
+    request.body.validate[ActivationRequest].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      // FIXME: Move part of the logic in a new AccessOrchestrator
+      {case ActivationRequest(draftUser, tokenInfo) => {
+        for {
+          company     <- companyRepository.findBySiret(tokenInfo.companySiret)
+          token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
+          applied     <- token.map(t =>
+                          userRepository.create(User(
+                            // FIXME: Remove login field
+                            UUID.randomUUID(), draftUser.email, draftUser.password, None,
+                            Some(draftUser.email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
+                          )).map(companyAccessRepository.applyToken(t, _)))
+                          .getOrElse(Future(false))
+        } yield NoContent
+      }.recover {
+        case e => Unauthorized
+      }}
+    )
+  }
+
+  // This route is maintained for backward compatibility until front is updated
+  def activateAccountDeprecated = SecuredAction(WithPermission(UserPermission.activateAccount)).async(parse.json) { implicit request =>
+
+    logger.debug("activateAccountDeprecated")
 
     request.body.validate[User].fold(
       errors => {
