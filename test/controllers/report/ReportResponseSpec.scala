@@ -121,9 +121,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportReponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"))
 
   override def setupData = {
-    userRepository.create(concernedProUser)
-    userRepository.create(notConcernedProUser)
-    reportRepository.create(reportFixture)
+    Await.result(for {
+      _ <- userRepository.create(concernedProUser)
+      _ <- userRepository.create(notConcernedProUser)
+      _ <- reportRepository.create(reportFixture)
+    } yield Unit,
+    Duration.Inf)
   }
 
   override def configureFakeModule(): AbstractModule = {
