@@ -11,3 +11,6 @@ local.conf
 /.metals/
 .bloop
 .java-version
+conf/local.application.conf
+.clever.json
+.vscode/
