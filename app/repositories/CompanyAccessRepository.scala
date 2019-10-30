@@ -48,9 +48,9 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
 
-  def getUserLevel(company: Company, user: User): Future[AccessLevel] =
+  def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery
-      .filter(_.companyId === company.id)
+      .filter(_.companyId === companyId)
       .filter(_.userId === user.id)
       .map(_.level)
       .result
@@ -66,6 +66,37 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .to[List]
       .result
     )
+
+  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] = {
+    db.run(
+      (for {
+        access    <- UserAccessTableQuery           if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        user      <- userRepository.userTableQuery  if user.id === access.userId
+      } yield (access.companyId, user))
+      .to[List]
+      .result
+    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
+  }
+
+  def fetchAdmins(company: Company): Future[List[User]] =
+    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
+      .filter(_._1.companyId === company.id)
+      .filter(_._1.level === AccessLevel.ADMIN)
+      .map(_._2)
+      .to[List]
+      .result
+    )
+  
+  // The method below provides access to the user's unique Company
+  // until we have a way to handle multiple companies per user
+  // There should always be 1 company per pro user 
+  def findUniqueCompany(user: User): Future[Company] =
+    for {
+      accesses <- fetchCompaniesWithLevel(user)
+    } yield accesses
+            .filter(_._2 == AccessLevel.ADMIN)
+            .map(_._1)
+            .head
 
   private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(UserAccess(
