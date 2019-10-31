@@ -47,7 +47,8 @@ POST	    /api/authenticate/password/forgot           controllers.AuthController.
 POST	    /api/authenticate/password/reset            controllers.AuthController.resetPassword(token: java.util.UUID)
 
 # Accesses API
-GET         /api/accesses/token                         controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
+GET         /api/accesses/:siret                        controllers.CompanyAccessController.listAccesses(siret: String)
+GET         /api/accesses/:siret/token                  controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
 
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword

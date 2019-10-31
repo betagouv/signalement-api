@@ -18,7 +18,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   import PostgresProfile.api._
   import dbConfig._
 
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel(_))
+  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
 
   class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
     def companyId = column[UUID]("company_id")
@@ -60,6 +60,16 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
     db.run(UserAccessTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id)
       .filter(_._1.userId === user.id)
+      .filter(_._1.level =!= AccessLevel.NONE)
+      .sortBy(_._1.updateDate.desc)
+      .map(r => (r._2, r._1.level))
+      .to[List]
+      .result
+    )
+
+  def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
+    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
+      .filter(_._1.companyId === company.id)
       .filter(_._1.level =!= AccessLevel.NONE)
       .sortBy(_._1.updateDate.desc)
       .map(r => (r._2, r._1.level))
