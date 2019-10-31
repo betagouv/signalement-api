@@ -66,14 +66,14 @@ class AccountController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      // FIXME: Move part of the logic in a new AccessOrchestrator
+      // TODO: Create an AccessOrchestrator ?
       {case ActivationRequest(draftUser, tokenInfo) => {
         for {
           company     <- companyRepository.findBySiret(tokenInfo.companySiret)
           token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
           applied     <- token.map(t =>
                           userRepository.create(User(
-                            // FIXME: Remove login field
+                            // TODO: Remove login field once we drop support for old-accounts SIRET login
                             UUID.randomUUID(), draftUser.email, draftUser.password, None,
                             Some(draftUser.email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
                           )).map(companyAccessRepository.applyToken(t, _)))
