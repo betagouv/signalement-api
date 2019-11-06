@@ -15,6 +15,7 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
+import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
@@ -112,7 +113,11 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
       maybeUploadResult =>
         reportOrchestrator
-        .addReportFile(UUID.fromString(maybeUploadResult._1.key), maybeUploadResult._2)
+        .addReportFile(
+          UUID.fromString(maybeUploadResult._1.key),
+          maybeUploadResult._2,
+          request.body.dataParts.get("reportFileOrigin").map(o => ReportFileOrigin(o.head)).getOrElse(ReportFileOrigin.CONSUMER)
+        )
         .map(file => Ok(Json.toJson(file)))
       }
   }
@@ -160,11 +165,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     logger.debug("getReport")
-
-    implicit val reportWriter = request.identity.userRole match {
-      case UserRoles.Pro => Report.reportProWriter
-      case _ => Report.reportWriter
-    }
 
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
@@ -214,7 +214,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           report match {
             case Some(_) => Ok(Json.toJson(events.filter(event =>
               request.identity.userRole match {
-                case UserRoles.Pro => event.action == ActionEvent.REPONSE_PRO_SIGNALEMENT
+                case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event.action
                 case _ => true
               }
             )))

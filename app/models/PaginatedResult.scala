@@ -9,17 +9,9 @@ case class PaginatedResult[T](
                              )
 
 object PaginatedResult {
-  implicit val paginatedReportWriter = Json.writes[PaginatedResult[Report]]
-  implicit val paginatedReportReader = Json.reads[PaginatedResult[Report]]
 
-  val paginatedReportProWriter = new Writes[PaginatedResult[Report]] {
-    implicit val reportProWriter = Report.reportProWriter
-    def writes(paginatedResult: PaginatedResult[Report]) = Json.obj(
-      "totalCount" -> paginatedResult.totalCount,
-      "hasNextPage" -> paginatedResult.hasNextPage,
-      "entities" -> paginatedResult.entities
-    )
-  }
+  implicit def paginatedReportWriter(implicit userRole: Option[UserRole]) = Json.writes[PaginatedResult[Report]]
+  implicit val paginatedReportReader = Json.reads[PaginatedResult[Report]]
 
   val paginatedCompanyWithNbReports = Json.writes[PaginatedResult[CompanyWithNbReports]]
 }

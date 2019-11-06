@@ -127,8 +127,8 @@ trait CreateEventContext extends Mockito {
     there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
   }
 
-  def eventToCreate(eventType: EventTypeValue, action: ActionEventValue, withResult: Boolean = true) =
-    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Some(withResult))
+  def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =
+    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
 
   val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
