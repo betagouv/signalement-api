@@ -6,18 +6,26 @@ L’outil SignalConso permet à chaque consommateur de signaler directement les 
 
 Plus d'information ici : https://beta.gouv.fr/startup/signalement.html
 
-L'API nécessite une base PostgreSQL pour la persistence des données (versions supportées : 9.5, 9.6, 10.x).
+L'API nécessite une base PostgreSQL pour la persistence des données (versions supportées : 9.5+).
 
-Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) version >= 1.2.6
+Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt])
 
 ## Développement
 
-Créer un fichier de configuration local, par exemple local.conf, et configurer la connexion à la base de données via la propriété `slick.dbs.default.db.properties.url` (ne fonctionne que si le compte requiert un mot de passe)
+### PostgreSQL
 
-```scala
+L'application requiert une connexion à un serveur PostgreSQL (sur macOS, vous pouvez utiliser [https://postgresapp.com/]).
+Créez une base de données pour l'application : `createdb signalconso` (par défaut localement, la base sera accessible au user `$USER`, sans mot de passe).
+
+Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas (voir [https://www.playframework.com/documentation/2.7.x/Evolutions]).
+
+### Configuration locale
+
+Créer un fichier de configuration local `conf/local.application.conf`, en vous inspirant du template suivant :
+```
 include "application.conf"
 
-slick.dbs.default.db.properties.url=postgres://user:pass@host/dbname
+slick.dbs.default.db.properties.url = "postgres://user:pass@host/signalconso"
 play.mailer.mock = yes
 ```
 
@@ -29,40 +37,18 @@ Si elle n'est pas active, il faut configurer un serveur de mails à travers les 
 Lancer l'application en local :
 
 ```bash
-sbt "run -Dconfig.file=[chemin vers le fichier de configuration local]"
-
-Ex:
-sbt "run -Dconfig.file=./conf/local.conf"
+sbt "run -Dconfig.resource=application.local.conf"
 
 # alternative
-sbt "run -Dconfig.file=./conf/local.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
+sbt "run -Dconfig.resource=application.local.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
 ```
 
 Remarques:
 
 - les guillemets après la commande `sbt` sont nécessaires pour que sbt sache où commence la sous-commande
-- on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.file=chemin-vers-fichier.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
+- on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.resource=application.local.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
-
-## Installation Postgres
-
-Après intallation de Postgres, il faut créer la database nécessaire pour l'application.
-Le nom de cette base de données doit correspondre à la configuration utilisée.
-
-Si l'on utilise un fichier spécifique `local.conf` contenant :
-
-```
-slick.dbs.default.db.properties.url = "postgres://randomUser@localhost:5432/api"
-```
-
-Il faudra alors créer une base api :
-
-```sh
-CREATE DATABASE api;
-```
-
-Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas.
 
 ## Tests
 
@@ -70,6 +56,12 @@ Pour exécuter les tests :
 
 ```bash
 sbt test
+```
+
+Pour éxecuter uniquement un test (donné par son nom de classe):
+
+```bash
+sbt "testOnly *SomeTestSpec"
 ```
 
 ## Démo

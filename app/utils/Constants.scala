@@ -9,25 +9,85 @@ object Constants {
 
   object ReportStatus {
 
-    case class ReportStatusValue(val value: String, isFinal: Boolean = false)
+    case class ReportStatusValue(defaultValue: String, valueByRole: Map[UserRole, String] = Map(), isFinal: Boolean = false) {
 
-    object ReportStatusValue {
-      implicit val reportStatusValueWrites = new Writes[ReportStatusValue] {
-        def writes(reportStatusValue: ReportStatusValue) = Json.toJson(reportStatusValue.value)
+      def getValueWithUserRole(userRole: UserRole) = {
+        valueByRole.get(userRole).getOrElse(defaultValue)
       }
-      implicit val reportStatusValueReads: Reads[ReportStatusValue] =
-        JsPath.read[String].map(fromValue(_))
     }
 
-    object A_TRAITER extends ReportStatusValue("À traiter")
-    object NA extends ReportStatusValue("NA", true)
-    object TRAITEMENT_EN_COURS extends ReportStatusValue("Traitement en cours")
-    object SIGNALEMENT_TRANSMIS extends ReportStatusValue("Signalement transmis")
-    object PROMESSE_ACTION extends ReportStatusValue("Promesse action", true)
-    object SIGNALEMENT_INFONDE extends ReportStatusValue("Signalement infondé", true)
-    object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue("Signalement non consulté", true)
-    object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue("Signalement consulté ignoré", true)
-    object SIGNALEMENT_MAL_ATTRIBUE extends ReportStatusValue("Signalement mal attribué", true)
+    object ReportStatusValue {
+      implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
+        def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
+          userRole.map(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
+        )
+      }
+      implicit val reportStatusValueReads: Reads[ReportStatusValue] =
+        JsPath.read[String].map(fromDefaultValue(_))
+    }
+
+    object A_TRAITER extends ReportStatusValue(
+      "À traiter",
+      Map(
+        UserRoles.DGCCRF -> "Traitement en cours",
+        UserRoles.Pro -> "Non consulté"
+      )
+    )
+    object NA extends ReportStatusValue(
+      "NA",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
+    object TRAITEMENT_EN_COURS extends ReportStatusValue(
+      "Traitement en cours",
+      Map(
+        UserRoles.Pro -> "Non consulté"
+      )
+    )
+    object SIGNALEMENT_TRANSMIS extends ReportStatusValue(
+      "Signalement transmis",
+      Map(
+        UserRoles.DGCCRF -> "Traitement en cours",
+        UserRoles.Pro -> "En attente de réponse"
+      )
+    )
+    object PROMESSE_ACTION extends ReportStatusValue(
+      "Promesse action",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
+    object SIGNALEMENT_INFONDE extends ReportStatusValue(
+      "Signalement infondé",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
+    object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue(
+      "Signalement non consulté",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
+    object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue(
+      "Signalement consulté ignoré",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
+    object SIGNALEMENT_MAL_ATTRIBUE extends ReportStatusValue(
+      "Signalement mal attribué",
+      Map(
+        UserRoles.Pro -> "Clôturé"
+      ),
+      isFinal = true
+    )
 
     val reportStatusList = Seq(
       A_TRAITER,
@@ -41,34 +101,14 @@ object Constants {
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
-    val reportStatusDGCCRFList = Seq(
-      NA,
-      TRAITEMENT_EN_COURS,
-      PROMESSE_ACTION,
-      SIGNALEMENT_INFONDE,
-      SIGNALEMENT_NON_CONSULTE,
-      SIGNALEMENT_CONSULTE_IGNORE,
-      SIGNALEMENT_MAL_ATTRIBUE
-    )
+    def fromDefaultValue(value: String) = reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
-    def fromValue(value: String) = reportStatusList.find(_.value == value).getOrElse(ReportStatusValue(""))
 
-    def getReportStatusWithUserRole(reportStatus: Option[ReportStatusValue], userRole: UserRole) = {
-      reportStatus.map(status => (reportStatusDGCCRFList.contains(status), userRole) match {
-        case (false, UserRoles.DGCCRF) => TRAITEMENT_EN_COURS
-        case (_, _) => status
-      })
+    def getReportStatusDefaultValuesForValueWithUserRole(value: Option[String], userRole: UserRole) = {
+      value.map(value =>
+        reportStatusList.filter(_.getValueWithUserRole(userRole) == value).map(_.defaultValue)
+      ).getOrElse(List())
     }
-
-    def getSpecificsReportStatusWithUserRole(reportStatus: Option[String], userRole: UserRole) = {
-
-      reportStatus.map(status => (status, userRole) match {
-        case (TRAITEMENT_EN_COURS.value, UserRoles.DGCCRF) => ReportStatus.reportStatusList.filter(s => !reportStatusDGCCRFList.contains(s)).map(_.value) :+ TRAITEMENT_EN_COURS.value
-        case (_, _) => List(status)
-      }).getOrElse(List())
-
-    }
-
 
   }
 
@@ -103,14 +143,11 @@ object Constants {
 
   object ActionEvent {
 
-    case class ActionEventValue(val value: String, val withResult: Boolean = false)
+    case class ActionEventValue(value: String)
 
     object ActionEventValue {
-      implicit val actionEventValueWrites = new Writes[ActionEventValue] {
-        def writes(actionEventValue: ActionEventValue) = Json.obj("name" -> actionEventValue.value, "withResult" -> actionEventValue.withResult)
-      }
-      implicit val actionEventValueReads: Reads[ActionEventValue] =
-        JsPath.read[String].map(fromValue(_))
+      implicit val actionEventValueReads: Reads[ActionEventValue] = JsPath.read[String].map(fromValue(_))
+      implicit val actionEventValueWriter = Json.writes[ActionEventValue]
     }
 
     object A_CONTACTER extends ActionEventValue("À contacter")
@@ -119,9 +156,9 @@ object Constants {
 
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
-    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement", true)
+    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
-    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact", true)
+    object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
     object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
     object RELANCE extends ActionEventValue("Relance")
