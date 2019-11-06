@@ -35,7 +35,7 @@ object Report {
 
   implicit val reportReader = Json.reads[Report]
 
-  implicit def writer(implicit userRole: Option[UserRole]) = new Writes[Report] {
+  implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
     def writes(report: Report) =
       Json.obj(
         "id" -> report.id,

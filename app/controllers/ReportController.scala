@@ -59,8 +59,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("createReport")
 
-    implicit val userRole = None
-
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
