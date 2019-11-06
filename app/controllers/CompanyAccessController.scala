@@ -25,7 +25,7 @@ class CompanyAccessController @Inject()(
           "firstName" -> user.firstName.getOrElse("—"),
           "lastName"  -> user.lastName.getOrElse("—"),
           "email"     -> user.email.getOrElse("—"),
-          "level"     -> level.display
+          "level"     -> level.value
       )
     }))
   }

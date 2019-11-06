@@ -6,12 +6,12 @@ import java.util.UUID
 import play.api.libs.json._
 
 
-sealed case class AccessLevel(value: String, display: String)
+sealed case class AccessLevel(value: String)
 
 object AccessLevel {
-  val NONE = AccessLevel("none", "Aucun accès")
-  val MEMBER = AccessLevel("member", "Accès simple")
-  val ADMIN = AccessLevel("admin", "Administrateur")
+  val NONE = AccessLevel("none")
+  val MEMBER = AccessLevel("member")
+  val ADMIN = AccessLevel("admin")
 
   def fromValue(v: String) = {
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
