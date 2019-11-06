@@ -9,10 +9,10 @@ object Constants {
 
   object ReportStatus {
 
-    case class ReportStatusValue(defaulValue: String, valueByRole: Map[UserRole, String] = Map(), isFinal: Boolean = false) {
+    case class ReportStatusValue(defaultValue: String, valueByRole: Map[UserRole, String] = Map(), isFinal: Boolean = false) {
 
       def getValueWithUserRole(userRole: UserRole) = {
-        valueByRole.get(userRole).getOrElse(defaulValue)
+        valueByRole.get(userRole).getOrElse(defaultValue)
       }
     }
 
@@ -101,12 +101,12 @@ object Constants {
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
-    def fromDefaultValue(value: String) = reportStatusList.find(_.defaulValue == value).getOrElse(ReportStatusValue(""))
+    def fromDefaultValue(value: String) = reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
 
     def getReportStatusDefaultValuesForValueWithUserRole(value: Option[String], userRole: UserRole) = {
       value.map(value =>
-        reportStatusList.filter(_.getValueWithUserRole(userRole) == value).map(_.defaulValue)
+        reportStatusList.filter(_.getValueWithUserRole(userRole) == value).map(_.defaultValue)
       ).getOrElse(List())
     }
 

@@ -68,7 +68,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, files, status) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.defaulValue))
+          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.defaultValue))
     }
 
     def * =
@@ -173,7 +173,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
     val whereStatus = statusList match {
       case None => ""
-      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.defaulValue)}'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.defaultValue)}'").mkString(" or ") + ")"
     }
 
     val whereSiret = withoutSiret match {
@@ -358,7 +358,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
   def getReportsForStatusWithUser(status: ReportStatusValue): Future[List[(Report, User)]] = db.run {
     reportTableQuery
-      .filter(_.status === status.defaulValue)
+      .filter(_.status === status.defaultValue)
       .join(userTableQuery).on(_.companySiret === _.login)
       .to[List]
       .result
