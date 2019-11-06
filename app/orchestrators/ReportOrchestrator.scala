@@ -76,7 +76,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
-            None,
             stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
           )
         ).flatMap(event =>
@@ -183,8 +182,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(id: UUID, filename: String) =
-    reportRepository.createFile(ReportFile(id, None, OffsetDateTime.now(), filename))
+  def addReportFile(id: UUID, filename: String, origin: ReportFileOrigin) =
+    reportRepository.createFile(
+      ReportFile(
+        id,
+        None,
+        OffsetDateTime.now(),
+        filename,
+        origin
+      )
+    )
 
   def removeReportFile(id: UUID) =
     for {
@@ -211,7 +218,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
           Constants.ActionEvent.ENVOI_SIGNALEMENT,
-          None,
           stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel")
         )
       )
@@ -241,7 +247,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_TRANSMISSION,
-          None,
           stringToDetailsJsValue("Envoi email au consommateur d'information de transmission")
         )
       )
@@ -294,9 +299,9 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       updatedReport: Option[Report] <- (report, newEvent) match {
         case (Some(r), Some(event)) => reportRepository.update(
           r.copy(
-            status = (event.action, event.resultAction) match {
-              case (CONTACT_COURRIER, _)                 => Some(TRAITEMENT_EN_COURS)
-              case (_, _)                                => r.status
+            status = event.action match {
+              case CONTACT_COURRIER => Some(TRAITEMENT_EN_COURS)
+              case _ => r.status
             })
         ).map(Some(_))
         case _ => Future(None)
@@ -321,10 +326,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(OffsetDateTime.now()),
           EventType.PRO,
           ActionEvent.REPONSE_PRO_SIGNALEMENT,
-          None,
           Json.toJson(reportResponse)
         )
       )
+      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id.get)
       updatedReport <- reportRepository.update(
         report.copy(
           status = Some(reportResponse.responseType match {

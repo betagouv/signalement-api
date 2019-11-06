@@ -61,14 +61,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
         Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromValue(_)))
+          Some(creationDate), firstName, lastName, email, contactAgreement, List.empty, status.map(ReportStatus.fromDefaultValue(_)))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
       creationDate, firstName, lastName, email, contactAgreement, files, status) =>
         (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.value))
+          creationDate.get, firstName, lastName, email, contactAgreement, status.map(_.defaultValue))
     }
 
     def * =
@@ -76,26 +76,29 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
         creationDate, firstName, lastName, email, contactAgreement, status) <> (constructReport, extractReport.lift)
   }
 
-  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "piece_jointe") {
+  implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
+
+  private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[Option[UUID]]("signalement_id")
-    def creationDate = column[OffsetDateTime]("date_creation")
-    def filename = column[String]("nom")
+    def reportId = column[Option[UUID]]("report_id")
+    def creationDate = column[OffsetDateTime]("creation_date")
+    def filename = column[String]("filename")
+    def origin = column[ReportFileOrigin]("origin")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], OffsetDateTime, String)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String, ReportFileOrigin)
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename) => ReportFile(id, reportId, creationDate, filename)
+      case (id, reportId, creationDate, filename, origin) => ReportFile(id, reportId, creationDate, filename, origin)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename) => (id, reportId, creationDate, filename)
+      case ReportFile(id, reportId, creationDate, filename, origin) => (id, reportId, creationDate, filename, origin)
     }
 
     def * =
-      (id, reportId, creationDate, filename) <> (constructFile, extractFile.lift)
+      (id, reportId, creationDate, filename, origin) <> (constructFile, extractFile.lift)
   }
 
   private val reportTableQuery = TableQuery[ReportTable]
@@ -170,7 +173,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
     val whereStatus = statusList match {
       case None => ""
-      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.value)}'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.defaultValue)}'").mkString(" or ") + ")"
     }
 
     val whereSiret = withoutSiret match {
@@ -355,7 +358,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
   def getReportsForStatusWithUser(status: ReportStatusValue): Future[List[(Report, User)]] = db.run {
     reportTableQuery
-      .filter(_.status === status.value)
+      .filter(_.status === status.defaultValue)
       .join(userTableQuery).on(_.companySiret === _.login)
       .to[List]
       .result

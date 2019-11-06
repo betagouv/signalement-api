@@ -15,7 +15,6 @@ case class Event(
                   creationDate: Option[OffsetDateTime],
                   eventType: EventTypeValue,
                   action: ActionEventValue,
-                  resultAction: Option[Boolean],
                   details: JsValue = Json.obj()
                 )
                  

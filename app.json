@@ -35,7 +35,7 @@
       "required": true
     },
     "MAIL_CONTACT_RECIPIENTS": {
-      "required": true
+      "value": "contact@signalconso.beta.gouv.fr"
     },
     "MAILER_HOST": {
       "required": true

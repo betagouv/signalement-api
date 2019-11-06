@@ -33,31 +33,30 @@ case class Report(
 
 object Report {
 
-  implicit val reportWriter = Json.writes[Report]
   implicit val reportReader = Json.reads[Report]
 
-  val reportProWriter = new Writes[Report] {
+  implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
     def writes(report: Report) =
       Json.obj(
-      "id" -> report.id,
-      "category" -> report.category,
-      "subcategories" -> report.subcategories,
-      "details" -> report.details,
-      "creationDate" -> report.creationDate,
-      "companyName" -> report.companyName,
-      "companyAddress" -> report.companyAddress,
-      "companyPostalCode" -> report.companyPostalCode,
-      "companySiret" -> report.companySiret,
-      "files" -> report.files,
-      "contactAgreement" -> report.contactAgreement,
-      "status" -> report.status
-    ) ++ (report.contactAgreement match {
-        case true => Json.obj(
+        "id" -> report.id,
+        "category" -> report.category,
+        "subcategories" -> report.subcategories,
+        "details" -> report.details,
+        "companyName" -> report.companyName,
+        "companyAddress" -> report.companyAddress,
+        "companyPostalCode" -> report.companyPostalCode,
+        "companySiret" -> report.companySiret,
+        "creationDate" -> report.creationDate,
+        "contactAgreement" -> report.contactAgreement,
+        "files" -> report.files,
+        "status" -> report.status
+      ) ++ ((userRole, report.contactAgreement) match {
+        case (Some(UserRoles.Pro), false) => Json.obj()
+        case (_, _) => Json.obj(
           "firstName" -> report.firstName,
           "lastName" -> report.lastName,
           "email" -> report.email
         )
-        case _ => Json.obj()
       })
   }
 }

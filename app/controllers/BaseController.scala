@@ -18,6 +18,8 @@ trait BaseController extends InjectedController {
 
   implicit def securedRequest2User[A](implicit req: SecuredRequest[AuthEnv, A]) = req.identity
 
+  implicit def securedRequest2UserRoleOpt[A](implicit req: SecuredRequest[AuthEnv, A]) = Some(req.identity.userRole)
+
   implicit def securedRequest2UserOpt[A](implicit req: SecuredRequest[AuthEnv, A]) = Some(req.identity)
 
   implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]) = req.identity

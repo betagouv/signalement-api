@@ -126,7 +126,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           )
           mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
             Map(reportId.get -> List(
-              Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT, Some(true))
+              Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
             ))
           )
           mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
