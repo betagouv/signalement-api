@@ -16,6 +16,9 @@ object AccessLevel {
   def fromValue(v: String) = {
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
   }
+  implicit val reads = new Reads[AccessLevel] {
+    def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue(_))
+  }
 }
 
 case class UserAccess(

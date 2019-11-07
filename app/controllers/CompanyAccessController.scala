@@ -3,16 +3,17 @@ package controllers
 import javax.inject.{Inject, Singleton}
 import repositories._
 import models._
-import play.api.libs.json.Json
+import orchestrators.CompanyAccessOrchestrator
+import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.AuthEnv
-
 
 @Singleton
 class CompanyAccessController @Inject()(
                                 val companyRepository: CompanyRepository,
                                 val companyAccessRepository: CompanyAccessRepository,
+                                val companyAccessOrchestrator: CompanyAccessOrchestrator,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
@@ -28,6 +29,18 @@ class CompanyAccessController @Inject()(
           "level"     -> level.value
       )
     }))
+  }
+
+  case class AccessInvitation(email: String, level: AccessLevel)
+
+  def sendInvitation(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async(parse.json) { implicit request =>
+    implicit val reads = Json.reads[AccessInvitation]
+    request.body.validate[AccessInvitation].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      invitation => companyAccessOrchestrator
+                    .sendInvitation(request.company, invitation.email, invitation.level, request.identity)
+                    .map(_ => Ok)
+    )
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>

@@ -121,15 +121,15 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   def createToken(
       company: Company, level: AccessLevel, token: String,
-      validity: Option[java.time.temporal.TemporalAmount]): Future[Unit] =
-    db.run(AccessTokenTableQuery += AccessToken(
+      validity: Option[java.time.temporal.TemporalAmount]): Future[AccessToken] =
+    db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
       companyId = company.id,
       token = token,
       level = level,
       valid = true,
       expirationDate = validity.map(OffsetDateTime.now.plus(_))
-    )).map(_ => Unit)
+    ))
 
   def findToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(AccessTokenTableQuery

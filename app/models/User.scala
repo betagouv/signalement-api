@@ -27,7 +27,9 @@ case class User (
                  firstName: Option[String],
                  lastName: Option[String],
                  userRole: UserRole
-               ) extends Identity
+               ) extends Identity {
+  def fullName = firstName.flatMap(f => lastName.map(l => s"${f} ${l}"))
+}
 
 object User {
   implicit val userWrites = new Writes[User] {
