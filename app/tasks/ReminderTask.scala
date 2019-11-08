@@ -42,6 +42,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours
+  val reportExpirationDelay = java.time.Period.parse(configuration.get[String]("play.reports.expirationDelay"))
 
   val startDate = if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime) else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
@@ -104,7 +105,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 0)
       .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, CONTACT_COURRIER)
-        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(21))).getOrElse(false))
+        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
   }
 
   def remindOnGoingReportByPost(report: Report) = {
@@ -119,7 +120,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
     reportsWithUser
       .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
-        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(21))).getOrElse(false))
+        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
       .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
   }
 
