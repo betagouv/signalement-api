@@ -58,17 +58,19 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    userRepository.findByLogin(report.companySiret.get).flatMap{
-      case Some(user) if user.email.filter(_ != "").isDefined => {
+    companyAccessRepository.fetchAdmins(company).flatMap(admins =>
+      if (admins.exists(_.email.isDefined)) {
+        val adminsWithEmail = admins.filter(_.email.isDefined)
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = user.email.get)(
+          recipients = adminsWithEmail.flatMap(_.email): _*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.professional.reportNotification(report).toString,
           attachments = Seq(
             AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
           )
         )
+        val user = adminsWithEmail.head     // We must chose one as Event links to a single User
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
@@ -82,10 +84,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
+      } else if (admins.isEmpty) {
+        generateActivationKey(company).map(_ => report)
+      } else {
+        Future(report)
       }
-      case None => generateActivationKey(company).map(_ => report)
-      case _ => Future(report)
-    }
+    )
   }
 
   def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
