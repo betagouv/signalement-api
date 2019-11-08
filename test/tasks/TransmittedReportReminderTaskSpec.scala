@@ -32,7 +32,7 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(transmittedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, transmittedReport.creationDate.get.plusDays(21)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
@@ -58,7 +58,7 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(transmittedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, transmittedReport.creationDate.get.plusDays(21)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
