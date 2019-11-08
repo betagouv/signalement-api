@@ -65,5 +65,3 @@ GET         /api/subscriptions                          controllers.Subscription
 POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
 
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
-
-

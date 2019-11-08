@@ -11,6 +11,7 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
 import models._
+import orchestrators._
 import play.api._
 import play.api.libs.json.JsError
 import repositories._
@@ -25,6 +26,7 @@ class AccountController @Inject()(
                                    userRepository: UserRepository,
                                    companyRepository: CompanyRepository,
                                    companyAccessRepository: CompanyAccessRepository,
+                                   companyAccessOrchestrator: CompanyAccessOrchestrator,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
                                    credentialsProvider: CredentialsProvider,
@@ -66,20 +68,11 @@ class AccountController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      // TODO: Create an AccessOrchestrator ?
-      {case ActivationRequest(draftUser, tokenInfo) => {
-        for {
-          company     <- companyRepository.findBySiret(tokenInfo.companySiret)
-          token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
-          applied     <- token.map(t =>
-                          userRepository.create(User(
-                            // TODO: Remove login field once we drop support for old-accounts SIRET login
-                            UUID.randomUUID(), draftUser.email, draftUser.password, None,
-                            Some(draftUser.email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
-                          )).map(companyAccessRepository.applyToken(t, _)))
-                          .getOrElse(Future(false))
-        } yield NoContent
-      }}
+      {case ActivationRequest(draftUser, tokenInfo) =>
+            companyAccessOrchestrator
+              .handleActivationRequest(draftUser, tokenInfo)
+              .map(_ => NoContent)
+      }
     )
   }
 

@@ -14,6 +14,7 @@ import java.util.UUID
 
 class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    companyAccessRepository: CompanyAccessRepository,
+                                   userRepository: UserRepository,
                                    mailerService: MailerService,
                                    configuration: Configuration,
                                    environment: Environment)
@@ -23,6 +24,20 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   val mailFrom = configuration.get[String]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[String]("play.website.url")
+
+  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[Boolean] = {
+    for {
+      company     <- companyRepository.findBySiret(tokenInfo.companySiret)
+      token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
+      applied     <- token.map(t =>
+                      userRepository.create(User(
+                        // TODO: Remove login field once we drop support for old-accounts SIRET login
+                        UUID.randomUUID(), draftUser.email, draftUser.password, None,
+                        Some(draftUser.email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
+                      )).flatMap(companyAccessRepository.applyToken(t, _)))
+                      .getOrElse(Future(false))
+    } yield applied
+  }
 
   def sendInvitation(company: Company, email: String, level: AccessLevel, invitedBy: User): Future[Unit] = {
     for {
