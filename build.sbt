@@ -44,7 +44,7 @@ libraryDependencies ++= Seq(
 
   specs2 % Test,
 
-  "io.sentry" % "sentry-logback" % "1.7.14",
+  "io.sentry" % "sentry-logback" % "1.7.28",
 )
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
