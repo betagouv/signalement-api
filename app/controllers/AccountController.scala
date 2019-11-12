@@ -108,7 +108,8 @@ class AccountController @Inject()(
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
 
     for {
-      user <- userRepository.findByLogin(siret)
+      company <- companyRepository.findBySiret(siret)
+      token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER.defaultValue)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
@@ -119,8 +120,8 @@ class AccountController @Inject()(
         case _ => Future(List())
       }
     } yield {
-      (report, user) match {
-        case (Some(report), Some(user)) if user.activationKey.isDefined =>
+      (report, token) match {
+        case (Some(report), Some(activationKey)) =>
 
           val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/activation_${siret}.pdf";
           val pdf = new PdfDocument(new PdfWriter(tmpFileName))
@@ -140,22 +141,20 @@ class AccountController @Inject()(
                 report.companyAddress,
                 creationDate,
                 creationDate.plus(reportExpirationDelay),
-                user.activationKey.get
+                activationKey
               )
             } else {
               views.html.pdfs.accountActivation(
                 report.companyAddress,
                 report.creationDate.map(_.toLocalDate).get,
-                user.activationKey.get
+                activationKey
               )
             }
 
           HtmlConverter.convertToPdf(new ByteArrayInputStream(pdfString.body.getBytes()), pdf, converterProperties)
 
           Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
-
-        case (Some(report), Some(user)) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
-        case (Some(report), None) => NotFound("Il n'y a pas d'utilisateur associé à ce Siret")
+        case (Some(report), None) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
         case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
       }
     }

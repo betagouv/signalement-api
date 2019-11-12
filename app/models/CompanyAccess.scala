@@ -34,6 +34,7 @@ case class AccessToken(
   token: String,
   level: AccessLevel,
   valid: Boolean,
+  emailedTo: Option[String],
   expirationDate: Option[OffsetDateTime]
 )
 

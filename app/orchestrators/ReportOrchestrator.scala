@@ -38,29 +38,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-  private def generateActivationKey(company: Company): Future[Unit] = {
-    val activationKey = f"${Random.nextInt(1000000)}%06d"
-    for {
-      user <- userRepository.create(
-        User(
-          UUID.randomUUID(),
-          company.siret,
-          activationKey,
-          Some(activationKey),
-          None,
-          None,
-          None,
-          UserRoles.ToActivate
-        )
-      );
-      accessToken <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, activationKey, tokenDuration)
-    } yield Unit
-  }
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    companyAccessRepository.fetchAdmins(company).flatMap(admins =>
-      if (admins.exists(_.email.isDefined)) {
-        val adminsWithEmail = admins.filter(_.email.isDefined)
+    companyAccessRepository.fetchAdmins(company).flatMap(admins => {
+      val adminsWithEmail = admins.filter(_.email.isDefined)
+      if (adminsWithEmail.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,
           recipients = adminsWithEmail.flatMap(_.email): _*)(
@@ -85,11 +67,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
       } else if (admins.isEmpty) {
-        generateActivationKey(company).map(_ => report)
+        companyAccessRepository.createToken(company, AccessLevel.ADMIN, f"${Random.nextInt(1000000)}%06d", tokenDuration).map(_ => report)
       } else {
         Future(report)
       }
-    )
+    })
   }
 
   def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =

@@ -41,7 +41,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def sendInvitation(company: Company, email: String, level: AccessLevel, invitedBy: User): Future[Unit] = {
     for {
-      accessToken <- companyAccessRepository.createToken(company, level, UUID.randomUUID.toString, tokenDuration)
+      accessToken <- companyAccessRepository.createToken(company, level, UUID.randomUUID.toString, tokenDuration, emailedTo = Some(email))
     } yield {
       val invitationUrl = s"${websiteUrl}/entreprise/rejoindre/${company.siret}?token=${accessToken.token}"
       mailerService.sendEmail(

@@ -40,8 +40,9 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     def token = column[String]("token")
     def level = column[AccessLevel]("level")
     def valid = column[Boolean]("valid")
+    def emailedTo = column[Option[String]]("emailed_to")
     def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
-    def * = (id, companyId, token, level, valid, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
+    def * = (id, companyId, token, level, valid, emailedTo, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
@@ -121,13 +122,14 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   def createToken(
       company: Company, level: AccessLevel, token: String,
-      validity: Option[java.time.temporal.TemporalAmount]): Future[AccessToken] =
+      validity: Option[java.time.temporal.TemporalAmount], emailedTo: Option[String] = None): Future[AccessToken] =
     db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
       companyId = company.id,
       token = token,
       level = level,
       valid = true,
+      emailedTo = emailedTo,
       expirationDate = validity.map(OffsetDateTime.now.plus(_))
     ))
 
@@ -150,5 +152,18 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
           AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
         ).transactionally)
         .map(_ => true)
+  }
+
+  def fetchActivationCode(company: Company): Future[Option[String]] = {
+    db.run(AccessTokenTableQuery
+      .filter(_.companyId === company.id)
+      .filter(_.emailedTo.isDefined)
+      .filter(
+        _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.valid)
+      .map(_.token)
+      .result
+      .headOption
+    )
   }
 }
