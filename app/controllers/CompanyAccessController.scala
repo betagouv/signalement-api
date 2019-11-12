@@ -1,6 +1,7 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
+import java.util.UUID
 import repositories._
 import models._
 import orchestrators.CompanyAccessOrchestrator
@@ -11,6 +12,7 @@ import utils.silhouette.auth.AuthEnv
 
 @Singleton
 class CompanyAccessController @Inject()(
+                                val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val companyAccessRepository: CompanyAccessRepository,
                                 val companyAccessOrchestrator: CompanyAccessOrchestrator,
@@ -23,6 +25,7 @@ class CompanyAccessController @Inject()(
       userAccesses <- companyAccessRepository.fetchUsersWithLevel(request.company)
     } yield Ok(Json.toJson(userAccesses.map{
       case (user, level) => Map(
+          "userId"    -> user.id.toString,
           "firstName" -> user.firstName.getOrElse("—"),
           "lastName"  -> user.lastName.getOrElse("—"),
           "email"     -> user.email.getOrElse("—"),
@@ -31,6 +34,22 @@ class CompanyAccessController @Inject()(
     }))
   }
 
+  def updateAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    request.body.asJson.map(json => (json \ "level").as[AccessLevel]).map(level =>
+      for {
+        user <- userRepository.get(userId)
+        _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, level)).getOrElse(Future(Unit))
+      } yield if (user.isDefined) Ok else NotFound
+    ).getOrElse(Future(NotFound))
+  }
+
+  def removeAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    for {
+      user <- userRepository.get(userId)
+      _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
+    } yield if (user.isDefined) Ok else NotFound
+}
+
   case class AccessInvitation(email: String, level: AccessLevel)
 
   def sendInvitation(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async(parse.json) { implicit request =>
@@ -38,7 +57,7 @@ class CompanyAccessController @Inject()(
     request.body.validate[AccessInvitation].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       invitation => companyAccessOrchestrator
-                    .sendInvitation(request.company, invitation.email, invitation.level, request.identity)
+                    .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
                     .map(_ => Ok)
     )
   }

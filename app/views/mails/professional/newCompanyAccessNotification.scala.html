@@ -1,10 +1,10 @@
-@(invitationUrl: String, company: Company, invitedBy: User)
+@(company: Company, invitedBy: User)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Rejoignez l'entreprise @company.name sur SignalConso</title>
+        <title>Vous avez maintenant accès à l'entreprise @company.name sur SignalConso</title>
     </head>
     <body>
         <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
@@ -18,12 +18,8 @@
             </p>
 
             <p>
-                @invitedBy.fullName vous invite à rejoindre l'entreprise @company.name sur SignalConso.
-                Afin de procéder, veuillez suivre le lien sécurisé ci-dessous.
-            </p>
-
-            <p style="text-align: center;">
-                <a href="@invitationUrl">@invitationUrl</a>
+                @invitedBy.fullName vous a donné accès à l'entreprise @company.name sur SignalConso.
+                Vous pouvez dès à présent vous connecter et accéder à cette entreprise avec votre compte pré-existant.
             </p>
 
             <p>Cordialement,</p>

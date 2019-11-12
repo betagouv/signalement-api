@@ -39,7 +39,29 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
     } yield applied
   }
 
-  def sendInvitation(company: Company, email: String, level: AccessLevel, invitedBy: User): Future[Unit] = {
+  def addUserOrInvite(company: Company, email: String, level: AccessLevel, invitedBy: User): Future[Unit] =
+    userRepository.findByLogin(email).map{
+      case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
+      case None       => sendInvitation(company, email, level, invitedBy)
+    }
+
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
+    for {
+      _ <- companyAccessRepository.setUserLevel(company, user, level)
+    } yield {
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = user.email.get)(
+        subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
+        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
+      Unit
+    }
+
+  def sendInvitation(company: Company, email: String, level: AccessLevel, invitedBy: User) = {
     for {
       accessToken <- companyAccessRepository.createToken(company, level, UUID.randomUUID.toString, tokenDuration, emailedTo = Some(email))
     } yield {
