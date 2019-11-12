@@ -124,7 +124,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
     case FileInfo(partName, filename, contentType, dispositionType) =>
-      val accumulator = Accumulator(s3Service.upload(BucketName, UUID.randomUUID.toString))
+      val accumulator = Accumulator(s3Service.upload(BucketName, s"${UUID.randomUUID.toString}_${filename}"))
 
       accumulator map { multipartUploadResult =>
         FilePart(partName, filename, contentType, multipartUploadResult)
