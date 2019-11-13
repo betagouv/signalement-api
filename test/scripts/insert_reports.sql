@@ -915,3 +915,17 @@ INSERT INTO signalement (id, type_etablissement, categorie, sous_categories, nom
 INSERT INTO signalement (id, type_etablissement, categorie, sous_categories, nom_etablissement, adresse_etablissement, prenom, nom, email, anomalie_file_id, date_creation, ticket_file_id, accord_contact, siret_etablissement, code_postal, details, piece_jointe_ids, status) VALUES ('b98fb94d-5917-4828-940c-2e7eeb25b8a1', null, 'Services après-vente', '{Pas de réponse du service client / service après-vente}', 'commerce 915', 'Adresse commerce 915', 'Prénom_915', 'Nom_915', 'email_915@signalconso.beta.gouv.fr', null, '2019-05-28 09:46:52.160000', null, false, 75476679178068, '76150', '{details : 915}', null, 'NA');
 INSERT INTO signalement (id, type_etablissement, categorie, sous_categories, nom_etablissement, adresse_etablissement, prenom, nom, email, anomalie_file_id, date_creation, ticket_file_id, accord_contact, siret_etablissement, code_postal, details, piece_jointe_ids, status) VALUES ('eca1a9a5-f48e-4727-9448-4f4a02f6c25f', null, 'Services après-vente', '{Pas de réponse du service client / service après-vente}', 'commerce 916', 'Adresse commerce 916', 'Prénom_916', 'Nom_916', 'email_916@signalconso.beta.gouv.fr', null, '2019-05-28 09:59:33.820000', null, false, 75476679178068, '76150', '{details : 916}', null, 'NA');
 INSERT INTO signalement (id, type_etablissement, categorie, sous_categories, nom_etablissement, adresse_etablissement, prenom, nom, email, anomalie_file_id, date_creation, ticket_file_id, accord_contact, siret_etablissement, code_postal, details, piece_jointe_ids, status) VALUES ('cdec379b-bf4c-4a83-bf66-a9201a5590bc', null, 'Publicité', '{Information mensongère, publicité trompeuse}', 'commerce 917', 'Adresse commerce 917', 'Prénom_917', 'Nom_917', 'email_917@signalconso.beta.gouv.fr', null, '2019-05-28 13:24:19.656000', null, true, null, '', '{details : 917}', null, 'NA');
+
+INSERT INTO companies
+    (id, siret, creation_date, name, address, postal_code)
+SELECT DISTINCT ON (siret_etablissement)
+    UUID_GENERATE_V4(), siret_etablissement, date_creation,
+    nom_etablissement, adresse_etablissement, code_postal
+FROM signalement
+WHERE siret_etablissement <> ''
+ORDER BY siret_etablissement, date_creation DESC;
+
+UPDATE signalement
+SET company_id = companies.id
+FROM companies
+WHERE signalement.siret_etablissement = companies.siret;
