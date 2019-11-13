@@ -91,7 +91,11 @@ object UpdateReportWithSiret extends CreateUpdateReportSpec {
          Given a preexisting report
             with a new SIRET                                            ${step(report = existingReport.copy(companySiret = Some(existingCompany.siret)))}
          When the report is updated                                     ${step(updateReport(report))}
-         Then the report contains company info                          ${checkReport(report.copy(companyId = Some(existingCompany.id), companySiret = Some(existingCompany.siret)))}
+         Then the report contains company info                          ${checkReport(report.copy(
+                                                                          companyId = Some(existingCompany.id),
+                                                                          companySiret = Some(existingCompany.siret),
+                                                                          status = Some(ReportStatus.TRAITEMENT_EN_COURS)
+                                                                        ))}
     """
 }
 

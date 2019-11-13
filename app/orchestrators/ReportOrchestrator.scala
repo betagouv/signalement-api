@@ -132,7 +132,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           reportData.companyPostalCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      updatedReport <- existingReport match {
+      reportWithNewData <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
           firstName = reportData.firstName,
           lastName = reportData.lastName,
@@ -146,14 +146,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )).map(Some(_))
         case _ => Future(None)
       }
-    } yield {
-      updatedReport
-        .filter(_.isEligible)
-        .filter(_.companySiret.isDefined)
-        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .foreach(r => notifyProfessionalOfNewReport(r, company.get))
-      updatedReport
-    }
+      updatedReport <- reportWithNewData
+          .filter(_.isEligible)
+          .filter(_.companySiret.isDefined)
+          .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+          .map(r => notifyProfessionalOfNewReport(r, company.get).map(Some(_)))
+          .getOrElse(Future(reportWithNewData))
+    } yield updatedReport
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
