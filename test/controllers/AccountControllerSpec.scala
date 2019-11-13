@@ -19,6 +19,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -52,7 +53,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
 
   trait Context extends Scope {
 
-    val identity = User(UUID.randomUUID(),"test@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("email"), UserRoles.Admin)
+    val identity = User(UUID.randomUUID(), "test@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("toto@example.com")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
     val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.login)
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 

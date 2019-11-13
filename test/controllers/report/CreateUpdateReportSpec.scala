@@ -22,6 +22,7 @@ import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
+import utils.EmailAddress
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -103,7 +104,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingReport = Report(
     Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
   )
   val existingCompany = Company(
     UUID.randomUUID(), "00000000000042", OffsetDateTime.now(),
@@ -111,7 +112,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   )
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
   )
 
   var report = reportFixture
@@ -121,14 +122,14 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
 
-  val contactEmail = "contact@signalconso.beta.gouv.fr"
+  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
   val siretForCompanyWithoutAccount = "00000000000000"
   val siretForCompanyWithNotActivatedAccount = "11111111111111"
   val siretForCompanyWithActivatedAccount = "22222222222222"
 
   val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "password", Some("code_activation"), None, None, None, UserRoles.ToActivate)
-  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some("pro@signalconso.beta.gouv.fr"), Some("Prénom"), Some("Nom"), UserRoles.Pro)
+  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
 
   override def setupData = {
     Await.result(for {
@@ -151,7 +152,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     }
   }
 
-  val concernedAdminUser = User(UUID.randomUUID(), "admin", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
+  val concernedAdminUser = User(UUID.randomUUID(), "admin", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
   val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.login)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(
@@ -176,10 +177,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     dbReport.get must beEqualTo(reportData)
   }
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
-        app.configuration.get[String]("play.mail.from"),
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,

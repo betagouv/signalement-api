@@ -19,6 +19,7 @@ import utils.Constants
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.Constants.ReportStatus._
+import utils.EmailAddress
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
@@ -34,7 +35,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
-  val mailFrom = configuration.get[String]("play.mail.from")
+  val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   private def generateActivationKey(company: Company): Future[Unit] = {
@@ -113,7 +114,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
+          recipients = configuration.get[Seq[String]]("play.mail.contactRecipients").map(EmailAddress(_)):_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -230,7 +231,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
     mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
+      from = mailFrom,
       recipients = report.email)(
       subject = "Votre signalement",
       bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
@@ -255,7 +256,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    user.email.filter(_ != "").foreach(email =>
+    user.email.filter(_.value != "").foreach(email =>
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
@@ -277,7 +278,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = configuration.get[Seq[String]]("play.mail.contactRecipients"):_*)(
+      recipients = configuration.get[Seq[String]]("play.mail.contactRecipients").map(EmailAddress(_)):_*)(
       subject = "Un professionnel a répondu à un signalement",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )

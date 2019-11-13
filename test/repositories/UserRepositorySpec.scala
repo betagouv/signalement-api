@@ -8,6 +8,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 
 import utils.AppSpec
+import utils.EmailAddress
 
 import models._
 import repositories._
@@ -17,7 +18,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
   lazy val userRepository = injector.instanceOf[UserRepository]
   val userToto = User(
                   UUID.randomUUID(), "toto", "password",
-                  None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"),
+                  None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"),
                   UserRoles.Pro
                 )
 

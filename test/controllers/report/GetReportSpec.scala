@@ -29,6 +29,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -129,10 +130,10 @@ trait GetReportSpec extends Spec with GetReportContext {
     someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(report)
   }
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(application.injector.instanceOf[MailerService])
       .sendEmail(
-        application.configuration.get[String]("play.mail.from"),
+        EmailAddress(application.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,
@@ -143,7 +144,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
 
   def mailMustNotHaveBeenSent() = {
-    there was no(application.injector.instanceOf[MailerService]).sendEmail(anyString, anyString)(anyString, anyString, any)
+    there was no(application.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
@@ -182,28 +183,28 @@ trait GetReportContext extends Mockito {
   val neverRequestedReportUUID = UUID.randomUUID();
   val neverRequestedReport = Report(
     Some(neverRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, List(), None
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
     Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
+    "firstName", "lastName", EmailAddress("email"), true, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
     Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, List(), None
   )
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some("Prénom"), Some("Nom"), Some("admin@signalconso.beta.gouv.fr"), UserRoles.Admin)
+  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
-  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
 
-  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, concernedProLoginInfo -> concernedProUser, notConcernedProLoginInfo -> notConcernedProUser))

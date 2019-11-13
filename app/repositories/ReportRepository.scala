@@ -12,6 +12,7 @@ import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils
+import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,13 +51,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
     def creationDate= column[OffsetDateTime]("date_creation")
     def firstName = column[String]("prenom")
     def lastName = column[String]("nom")
-    def email = column[String]("email")
+    def email = column[EmailAddress]("email")
     def contactAgreement = column[Boolean]("accord_contact")
     def status = column[Option[String]]("status")
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, String, Boolean, Option[String])
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, EmailAddress, Boolean, Option[String])
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, status) =>
@@ -255,7 +256,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
             case table => table.companyPostalCode.map(cp => cp.substring(0, 2).inSet(filter.departments)).getOrElse(false)
           }
           .filterOpt(filter.email) {
-            case(table, email) => table.email === email
+            case(table, email) => table.email === EmailAddress(email)
           }
           .filterOpt(filter.siret) {
             case(table, siret) => table.companySiret === siret

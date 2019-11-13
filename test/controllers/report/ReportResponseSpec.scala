@@ -24,6 +24,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -95,7 +96,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
 
-  val contactEmail = "contact@signalconso.beta.gouv.fr"
+  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
@@ -103,15 +104,15 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", "email", true, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, List(), None
   )
 
   var report = reportFixture
 
-  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
 
-  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some("Prénom"), Some("Nom"), Some("pro@signalconso.beta.gouv.fr"), UserRoles.Pro)
+  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
 
   var someLoginInfo: Option[LoginInfo] = None
@@ -160,10 +161,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     someResult must beSome and someResult.get.header.status === status
   }
 
-  def mailMustHaveBeenSent(recipient: String, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
-        app.configuration.get[String]("play.mail.from"),
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
       )(
         subject,
