@@ -235,16 +235,17 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     ).filter(_.available)
 
     for {
+      restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
+                              companyAccessRepository.findUniqueCompany(request.identity).map(Some(_))
+                           else
+                              Future(None)
       paginatedReports <- reportRepository.getReports(
         0,
         10000,
         ReportFilter(
           departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
           None,
-          request.identity.userRole match {
-            case UserRoles.Pro => Some(request.identity.login)
-            case _ => siret
-          },
+          restrictToCompany.map(c => Some(c.siret)).getOrElse(siret),
           None,
           startDate,
           endDate,
