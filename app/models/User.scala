@@ -9,7 +9,7 @@ import play.api.libs.json._
 import utils.{EnumUtils, EmailAddress}
 
 case class DraftUser(
-  email: String,
+  email: EmailAddress,
   firstName: String,
   lastName: String,
   password: String

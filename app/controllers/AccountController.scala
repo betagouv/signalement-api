@@ -47,7 +47,7 @@ class AccountController @Inject()(
       },
       passwordChange => {
         for {
-          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.get, passwordChange.oldPassword))
+          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.map(_.value).get, passwordChange.oldPassword))
           _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
         } yield {
           NoContent

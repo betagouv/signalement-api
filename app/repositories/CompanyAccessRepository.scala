@@ -8,6 +8,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import models._
+import utils.EmailAddress
 
 @Singleton
 class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
@@ -40,7 +41,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     def token = column[String]("token")
     def level = column[AccessLevel]("level")
     def valid = column[Boolean]("valid")
-    def emailedTo = column[Option[String]]("emailed_to")
+    def emailedTo = column[Option[EmailAddress]]("emailed_to")
     def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
     def * = (id, companyId, token, level, valid, emailedTo, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
 
@@ -122,7 +123,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   def createToken(
       company: Company, level: AccessLevel, token: String,
-      validity: Option[java.time.temporal.TemporalAmount], emailedTo: Option[String] = None): Future[AccessToken] =
+      validity: Option[java.time.temporal.TemporalAmount], emailedTo: Option[EmailAddress] = None): Future[AccessToken] =
     db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
       companyId = company.id,

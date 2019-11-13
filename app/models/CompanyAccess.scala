@@ -2,8 +2,8 @@ package models
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import play.api.libs.json._
+import utils.EmailAddress
 
 
 sealed case class AccessLevel(value: String)
@@ -34,7 +34,7 @@ case class AccessToken(
   token: String,
   level: AccessLevel,
   valid: Boolean,
-  emailedTo: Option[String],
+  emailedTo: Option[EmailAddress],
   expirationDate: Option[OffsetDateTime]
 )
 

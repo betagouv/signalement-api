@@ -9,6 +9,8 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
+
 
 @Singleton
 class CompanyAccessController @Inject()(
@@ -28,7 +30,7 @@ class CompanyAccessController @Inject()(
           "userId"    -> user.id.toString,
           "firstName" -> user.firstName.getOrElse("—"),
           "lastName"  -> user.lastName.getOrElse("—"),
-          "email"     -> user.email.getOrElse("—"),
+          "email"     -> user.email.map(_.value).getOrElse("—"),
           "level"     -> level.value
       )
     }))
@@ -50,7 +52,7 @@ class CompanyAccessController @Inject()(
     } yield if (user.isDefined) Ok else NotFound
 }
 
-  case class AccessInvitation(email: String, level: AccessLevel)
+  case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
   def sendInvitation(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async(parse.json) { implicit request =>
     implicit val reads = Json.reads[AccessInvitation]

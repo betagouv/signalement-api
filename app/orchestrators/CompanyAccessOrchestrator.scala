@@ -11,6 +11,7 @@ import models._
 import repositories._
 import services.MailerService
 import java.util.UUID
+import utils.EmailAddress
 
 class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    companyAccessRepository: CompanyAccessRepository,
@@ -21,7 +22,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  val mailFrom = configuration.get[String]("play.mail.from")
+  val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[String]("play.website.url")
 
@@ -32,15 +33,15 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       applied     <- token.map(t =>
                       userRepository.create(User(
                         // TODO: Remove login field once we drop support for old-accounts SIRET login
-                        UUID.randomUUID(), draftUser.email, draftUser.password, None,
+                        UUID.randomUUID(), draftUser.email.value, draftUser.password, None,
                         Some(draftUser.email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
                       )).flatMap(companyAccessRepository.applyToken(t, _)))
                       .getOrElse(Future(false))
     } yield applied
   }
 
-  def addUserOrInvite(company: Company, email: String, level: AccessLevel, invitedBy: User): Future[Unit] =
-    userRepository.findByLogin(email).map{
+  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+    userRepository.findByLogin(email.value).map{
       case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
@@ -61,7 +62,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       Unit
     }
 
-  def sendInvitation(company: Company, email: String, level: AccessLevel, invitedBy: User) = {
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User) = {
     for {
       accessToken <- companyAccessRepository.createToken(company, level, UUID.randomUUID.toString, tokenDuration, emailedTo = Some(email))
     } yield {
