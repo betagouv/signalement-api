@@ -118,7 +118,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
 
-  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", ReportFileOrigin.PROFESSIONAL)
+  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", "123_fichier.jpg", ReportFileOrigin.PROFESSIONAL)
 
   val reportResponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"), List(reportResponseFile.id))
   val reportResponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"), List.empty)
