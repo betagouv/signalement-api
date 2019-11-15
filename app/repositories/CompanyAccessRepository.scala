@@ -106,7 +106,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     for {
       accesses <- fetchCompaniesWithLevel(user)
     } yield accesses
-            .filter(_._2 == AccessLevel.ADMIN)
             .map(_._1)
             .head
 

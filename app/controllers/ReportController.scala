@@ -95,7 +95,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         for {
           report <- reportRepository.getReport(UUID.fromString(uuid))
           level <-  getProLevel(request.identity, report)
-          updatedReport <- report.filter(_ => level == AccessLevel.ADMIN)
+          updatedReport <- report.filter(_ => level != AccessLevel.NONE)
             .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
         } yield updatedReport
           .map(r => Ok(Json.toJson(r)))
@@ -103,7 +103,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         }
       )
   }
-
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     logger.debug("uploadReportFile")
@@ -179,7 +178,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           .filter(_ =>
                                   request.identity.userRole == UserRoles.DGCCRF
                               ||  request.identity.userRole == UserRoles.Admin
-                              ||  proLevel == AccessLevel.ADMIN)
+                              ||  proLevel != AccessLevel.NONE)
                           match {
                             case Some(r) => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))
                             case _ => Future(None)
