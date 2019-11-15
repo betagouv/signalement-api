@@ -3,7 +3,9 @@ package utils
 import play.api.libs.json._
 import repositories.PostgresProfile.api._
 
-case class EmailAddress(value: String)
+case class EmailAddress(value: String) {
+  override def toString = value
+}
 
 object EmailAddress {
   def apply(value: String) = new EmailAddress(value.trim.toLowerCase)
