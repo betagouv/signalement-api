@@ -45,7 +45,12 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
     userRepository.findByLogin(email.value).map{
-      case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
+      case Some(user) => {
+        // TODO: Allow multiple companies per user once we support it in UI
+        // addInvitedUserAndNotify(user, company, level, invitedBy)
+        logger.error(s"Invitation for email ${email} not sent: user already exist")
+        Future(None)
+      }
       case None       => sendInvitation(company, email, level, invitedBy)
     }
 
