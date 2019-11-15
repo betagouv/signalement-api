@@ -70,7 +70,7 @@ class CompanyAccessController @Inject()(
       token   <- company.map(companyAccessRepository.findToken(_, token))
                         .getOrElse(Future(None))
     } yield token.flatMap(t => company.map(c => 
-      Ok(Json.toJson(TokenInfo(t.token, c.siret)))
+      Ok(Json.toJson(TokenInfo(t.token, c.siret, t.emailedTo)))
     )).getOrElse(NotFound)
   }
 }

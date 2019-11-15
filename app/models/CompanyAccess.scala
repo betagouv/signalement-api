@@ -40,7 +40,8 @@ case class AccessToken(
 
 case class TokenInfo(
   token: String,
-  companySiret: String
+  companySiret: String,
+  emailedTo: Option[EmailAddress]
 )
 object TokenInfo {
   implicit val write = Json.writes[TokenInfo]
