@@ -7,6 +7,7 @@ import javax.inject.Inject
 import play.api.Logger
 import repositories.UserRepository
 import utils.silhouette.Implicits._
+import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +27,7 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository) extends Delegab
     }
   }
 
-  def remove(loginInfo: LoginInfo): Future[Unit] = userRepository.delete(loginInfo).map(_ => ())
+  def remove(loginInfo: LoginInfo): Future[Unit] = userRepository.delete(EmailAddress(loginInfo)).map(_ => ())    // FIXME: Is it used ?
 
   def save(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     find(loginInfo).flatMap {

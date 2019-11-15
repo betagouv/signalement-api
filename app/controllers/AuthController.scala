@@ -14,6 +14,7 @@ import play.api.libs.mailer.AttachmentFile
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
+import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -87,7 +88,7 @@ class AuthController @Inject()(
   private def sendResetPasswordMail(user: User, url: String) = {
     logger.debug(s"email ${user.email.get}")
     Future(mailerService.sendEmail(
-      from = configuration.get[String]("play.mail.from"),
+      from = EmailAddress(configuration.get[String]("play.mail.from")),
       recipients = user.email.get)(
       subject = "Votre mot de passe SignalConso",
       bodyHtml = views.html.mails.resetPassword(user, url).toString,

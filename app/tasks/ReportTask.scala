@@ -11,6 +11,7 @@ import play.api.{Configuration, Environment, Logger}
 import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
 import services.MailerService
 import utils.Constants.Departments
+import utils.EmailAddress
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,7 +72,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
       logger.debug(s"Department $department - send mail to ${recipients}")
 
       Future(mailerService.sendEmail(
-        from = configuration.get[String]("play.mail.from"),
+        from = EmailAddress(configuration.get[String]("play.mail.from")),
         recipients = recipients: _*)(
         subject = s"[SignalConso] ${
           reports.length match {
@@ -88,16 +89,14 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
     })
   }
 
-  private def getMailForDepartment(department: String) = {
+  private def getMailForDepartment(department: String): Future[List[EmailAddress]] = {
 
     logger.debug(s"getMailForDepartment ${department}")
 
-    subscriptionRepository.listSubscribeUserMailsForDepartment(department).flatMap(
-      userMails => {
+    subscriptionRepository.listSubscribeUserMailsForDepartment(department).map(
+      (userMails: List[EmailAddress]) => {
         logger.debug(s"getMailForDepartment ${department} : ${userMails}")
-        Future(
-          mailsByDepartments.find(mailByDepartment => mailByDepartment._1 == department).map(_._2.split(",").toList).getOrElse(List.empty) ::: userMails
-        )
+        mailsByDepartments.find(mailByDepartment => mailByDepartment._1 == department).map(_._2.split(",").toList.map(EmailAddress(_))).getOrElse(List[EmailAddress]()) ::: userMails
       }
     )
 

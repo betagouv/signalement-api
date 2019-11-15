@@ -7,13 +7,14 @@ import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.EnumUtils
+import utils.EmailAddress
 
 case class User (
                  id: UUID,
                  login: String,
                  password: String,
                  activationKey: Option[String],
-                 email: Option[String],
+                 email: Option[EmailAddress],
                  firstName: Option[String],
                  lastName: Option[String],
                  userRole: UserRole
@@ -37,7 +38,7 @@ object User {
       (JsPath \ "login").read[String] and
       (JsPath \ "password").read[String] and
       (JsPath \ "activationKey").readNullable[String] and
-      (JsPath \ "email").readNullable[String] and
+      (JsPath \ "email").readNullable[EmailAddress] and
       (JsPath \ "firstName").readNullable[String] and
       (JsPath \ "lastName").readNullable[String] and
       ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
