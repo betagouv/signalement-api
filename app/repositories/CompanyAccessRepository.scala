@@ -157,7 +157,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   def fetchActivationCode(company: Company): Future[Option[String]] = {
     db.run(AccessTokenTableQuery
       .filter(_.companyId === company.id)
-      .filter(_.emailedTo.isDefined)
+      .filterNot(_.emailedTo.isDefined)
       .filter(
         _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
