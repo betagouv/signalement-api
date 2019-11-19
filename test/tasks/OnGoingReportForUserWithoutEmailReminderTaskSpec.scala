@@ -84,7 +84,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithoutEmail.login),
-    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, List.empty,
+    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, false, List.empty,
     Some(TRAITEMENT_EN_COURS))
   val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
     Some(userWithoutEmail.id),

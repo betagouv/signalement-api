@@ -104,7 +104,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingReport = Report(
     Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, false, List(), None
   )
   val existingCompany = Company(
     UUID.randomUUID(), "00000000000042", OffsetDateTime.now(),
@@ -112,7 +112,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   )
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, false, List(), None
   )
 
   var report = reportFixture

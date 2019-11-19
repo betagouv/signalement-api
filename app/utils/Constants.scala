@@ -40,6 +40,10 @@ object Constants {
       ),
       isFinal = true
     )
+    object EMPLOYEE_REPORT extends ReportStatusValue(
+      "Lanceur d'alerte",
+      isFinal = true
+    )
     object TRAITEMENT_EN_COURS extends ReportStatusValue(
       "Traitement en cours",
       Map(
@@ -92,6 +96,7 @@ object Constants {
     val reportStatusList = Seq(
       A_TRAITER,
       NA,
+      EMPLOYEE_REPORT,
       TRAITEMENT_EN_COURS,
       SIGNALEMENT_TRANSMIS,
       PROMESSE_ACTION,
