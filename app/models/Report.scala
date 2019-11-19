@@ -23,8 +23,8 @@ case class Report(
                    firstName: String,
                    lastName: String,
                    email: EmailAddress,
-                   employeeConsumer: Boolean,
                    contactAgreement: Boolean,
+                   employeeConsumer: Boolean,
                    files: List[ReportFile],
                    status: Option[ReportStatusValue]
                  ) {
