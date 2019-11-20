@@ -105,7 +105,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE).length == 0)
       .filterNot(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
       .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, CONTACT_COURRIER)
-        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(reportExpirationDelay))).getOrElse(false))
+        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
   }
 
   def remindOnGoingReportByPost(report: Report) = {
@@ -120,7 +120,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
     reportsWithAdmins
       .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE)
-        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(reportExpirationDelay))).getOrElse(false))
+        .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
       .filterNot(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
   }
 

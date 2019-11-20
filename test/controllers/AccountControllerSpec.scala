@@ -39,7 +39,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
           val result = route(application, request).get
 
           Helpers.status(result) must beEqualTo(BAD_REQUEST)
-          contentAsJson(result) must beEqualTo(
+          Helpers.contentAsJson(result) must beEqualTo(
             Json.obj(
               "obj" -> Seq(
                 Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.toJson(Seq.empty))

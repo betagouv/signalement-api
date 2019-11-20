@@ -73,7 +73,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
       .filter(_._1.companyId === company.id)
       .filter(_._1.level =!= AccessLevel.NONE)
-      .sortBy(_._1.updateDate.desc)
+      .sortBy(entry => (entry._1.level, entry._2.email))
       .map(r => (r._2, r._1.level))
       .to[List]
       .result
@@ -142,6 +142,13 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .filter(_.token === token)
       .result
       .headOption
+    )
+
+  def fetchTokens(company: Company): Future[List[AccessToken]] =
+    db.run(AccessTokenTableQuery
+      .filter(_.companyId === company.id)
+      .to[List]
+      .result
     )
 
   def applyToken(token: AccessToken, user: User): Future[Boolean] = {
