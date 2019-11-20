@@ -29,6 +29,17 @@
                         En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
                     </p>
                 }
+                case Some(EMPLOYEE_REPORT) => {
+                    <p>
+                        Vous venez de déposer un signalement sur SignalConso et nous vous en remercions.
+                    </p>
+                    <p>
+                        Vous avez indiqué être employé de l'entreprise que vous avez signalé.
+                    </p>
+                    <p>
+                        Afin de garantir la sécurité de votre emploi, votre signalement ne sera pas transmis au commerçant. Par contre, il sera bien envoyé à la répression des fraudes du département concerné.
+                    </p>
+                }
                 case _ => {
                     <p>
                         Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
