@@ -72,7 +72,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
       logger.debug(s"Department $department - send mail to ${recipients}")
 
       Future(mailerService.sendEmail(
-        from = EmailAddress(configuration.get[String]("play.mail.from")),
+        from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = recipients: _*)(
         subject = s"[SignalConso] ${
           reports.length match {

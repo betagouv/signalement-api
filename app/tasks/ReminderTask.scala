@@ -148,7 +148,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def remindReportByMail(report: Report, userMail: EmailAddress) = {
     eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
       mailerService.sendEmail(
-        from = EmailAddress(configuration.get[String]("play.mail.from")),
+        from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = userMail)(
         subject = "Nouveau signalement",
         bodyHtml = views.html.mails.professional.reportNotification(report).toString,
@@ -173,7 +173,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_NON_CONSULTE)))
     } yield {
       mailerService.sendEmail(
-        from = EmailAddress(configuration.get[String]("play.mail.from")),
+        from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = report.email)(
         subject = "Le professionnel n’a pas souhaité consulter votre signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
@@ -191,7 +191,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       _ <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_CONSULTE_IGNORE)))
     } yield {
       mailerService.sendEmail(
-        from = EmailAddress(configuration.get[String]("play.mail.from")),
+        from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = report.email)(subject = "Le professionnel n’a pas répondu au signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
         attachments = Seq(

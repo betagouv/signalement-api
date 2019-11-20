@@ -15,11 +15,10 @@ import models.ReportResponse._
 import play.api.libs.json.{Json, OFormat}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants
+import utils.{Constants, EmailAddress, EmailAddressList}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.Constants.ReportStatus._
-import utils.EmailAddress
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
@@ -35,7 +34,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
-  val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
+  val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   private def generateActivationKey(company: Company): Future[Unit] = {
@@ -114,7 +113,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[Seq[String]]("play.mail.contactRecipients").map(EmailAddress(_)):_*)(
+          recipients = configuration.get[EmailAddressList]("play.mail.contactRecipients").value:_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -278,7 +277,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = configuration.get[Seq[String]]("play.mail.contactRecipients").map(EmailAddress(_)):_*)(
+      recipients = configuration.get[EmailAddressList]("play.mail.contactRecipients").value:_*)(
       subject = "Un professionnel a répondu à un signalement",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
