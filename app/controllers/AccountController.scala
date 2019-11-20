@@ -32,6 +32,7 @@ class AccountController @Inject()(
  extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
+  val reportExpirationDelay = java.time.Period.parse(configuration.get[String]("play.reports.expirationDelay"))
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
 
@@ -93,8 +94,8 @@ class AccountController @Inject()(
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)
       }
-      reminderExists <- report match {
-        case Some(report) => eventRepository.getEvents(report.id.get, EventFilter(action = Some(ActionEvent.RELANCE))).map(!_.isEmpty)
+      events <- report match {
+        case Some(report) => eventRepository.getEvents(report.id.get, EventFilter(action = None))
         case _ => Future(List())
       }
     } yield {
@@ -108,18 +109,26 @@ class AccountController @Inject()(
           val dfp = new DefaultFontProvider(true, true, true)
           converterProperties.setFontProvider(dfp)
           converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
-
-          val pdfString = reminderExists match {
-            case false => views.html.pdfs.accountActivation(
-              report.companyAddress,
-              report.creationDate.map(_.toLocalDate).get,
-              user.activationKey.get
-            )
-            case true => views.html.pdfs.accountActivationReminder(
-              report.companyAddress,
-              user.activationKey.get
-            )
-          }
+          val creationDate = events
+                            .filter(_.action == ActionEvent.CONTACT_COURRIER)
+                            .headOption
+                            .flatMap(_.creationDate)
+                            .getOrElse(report.creationDate.get)
+                            .toLocalDate
+          val pdfString = if (events.exists(_.action == ActionEvent.RELANCE)) {
+              views.html.pdfs.accountActivationReminder(
+                report.companyAddress,
+                creationDate,
+                creationDate.plus(reportExpirationDelay),
+                user.activationKey.get
+              )
+            } else {
+              views.html.pdfs.accountActivation(
+                report.companyAddress,
+                report.creationDate.map(_.toLocalDate).get,
+                user.activationKey.get
+              )
+            }
 
           HtmlConverter.convertToPdf(new ByteArrayInputStream(pdfString.body.getBytes()), pdf, converterProperties)
 
