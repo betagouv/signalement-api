@@ -28,17 +28,9 @@ object EmailAddress {
       EmailAddress(rootConfig.getString(path))
     }
   }
-}
-
-case class EmailAddressList(value: List[EmailAddress])
-
-object EmailAddressList {
-
-  implicit val configLoader: ConfigLoader[EmailAddressList] = new ConfigLoader[EmailAddressList] {
-    def load(rootConfig: Config, path: String): EmailAddressList = {
-      EmailAddressList(
-        rootConfig.getString(path).split(",").map(EmailAddress(_)).toList
-      )
+  implicit val listConfigLoader: ConfigLoader[List[EmailAddress]] = new ConfigLoader[List[EmailAddress]] {
+    def load(rootConfig: Config, path: String): List[EmailAddress] = {
+      rootConfig.getString(path).split(",").map(EmailAddress(_)).toList
     }
   }
 }

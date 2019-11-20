@@ -15,7 +15,7 @@ import models.ReportResponse._
 import play.api.libs.json.{Json, OFormat}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.{Constants, EmailAddress, EmailAddressList}
+import utils.{Constants, EmailAddress}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.Constants.ReportStatus._
@@ -99,7 +99,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = configuration.get[EmailAddressList]("play.mail.contactRecipients").value:_*)(
+          recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
@@ -262,7 +262,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = configuration.get[EmailAddressList]("play.mail.contactRecipients").value:_*)(
+      recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
       subject = "Un professionnel a répondu à un signalement",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
