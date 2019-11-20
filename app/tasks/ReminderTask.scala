@@ -9,7 +9,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.Event._
-import models.{Event, Report, User}
+import models._
 import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import repositories.{EventRepository, ReportRepository, UserRepository}
@@ -59,32 +59,32 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     logger.debug(s"taskDate - ${now}");
 
     for {
-      onGoingReportsWithUser <- reportRepository.getReportsForStatusWithUser(TRAITEMENT_EN_COURS)
-      transmittedReportsWithUser <- reportRepository.getReportsForStatusWithUser(SIGNALEMENT_TRANSMIS)
-      reportEventsMap <- eventRepository.prefetchReportsEvents(onGoingReportsWithUser.map(_._1) ::: transmittedReportsWithUser.map(_._1))
+      onGoingReportsWithAdmins <- reportRepository.getReportsForStatusWithAdmins(TRAITEMENT_EN_COURS)
+      transmittedReportsWithAdmins <- reportRepository.getReportsForStatusWithAdmins(SIGNALEMENT_TRANSMIS)
+      reportEventsMap <- eventRepository.prefetchReportsEvents(onGoingReportsWithAdmins.map(_._1) ::: transmittedReportsWithAdmins.map(_._1))
       onGoingReportsPostReminders <- Future.sequence(
-        extractOnGoingReportsToRemindByPost(onGoingReportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => remindOnGoingReportByPost(reportWithUser._1))
+        extractOnGoingReportsToRemindByPost(onGoingReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => remindOnGoingReportByPost(reportWithAdmins._1))
       )
       closedByNoReadingForUserWithoutEmail <- Future.sequence(
-        extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(onGoingReportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => closeOnGoingReportByNoReadingForUserWithoutEmail(reportWithUser._1))
+        extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(onGoingReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => closeOnGoingReportByNoReadingForUserWithoutEmail(reportWithAdmins._1))
       )
       onGoingReportsMailReminders <- Future.sequence(
-        extractReportsToRemindByMail(onGoingReportsWithUser, reportEventsMap, now, CONTACT_EMAIL)
-          .map(reportWithUser => remindReportByMail(reportWithUser._1, reportWithUser._2.email.get))
+        extractReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, now, CONTACT_EMAIL)
+          .map(reportWithAdmins => remindReportByMail(reportWithAdmins._1, reportWithAdmins._2.flatMap(_.email)))
       )
       closedByNoReadingForUserWithEmail <- Future.sequence(
-        extractReportsToCloseForUserWithEmail(onGoingReportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => closeOnGoingReportByNoReadingForUserWithEmail(reportWithUser._1))
+        extractReportsToCloseForUserWithEmail(onGoingReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => closeOnGoingReportByNoReadingForUserWithEmail(reportWithAdmins._1))
       )
       transmittedReportsMailReminders <- Future.sequence(
-        extractReportsToRemindByMail(transmittedReportsWithUser, reportEventsMap, now, ENVOI_SIGNALEMENT)
-          .map(reportWithUser => remindReportByMail(reportWithUser._1, reportWithUser._2.email.get))
+        extractReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, now, ENVOI_SIGNALEMENT)
+          .map(reportWithAdmins => remindReportByMail(reportWithAdmins._1, reportWithAdmins._2.flatMap(_.email)))
       )
       closedByNoAction <- Future.sequence(
-        extractReportsToCloseForUserWithEmail(transmittedReportsWithUser, reportEventsMap, now)
-          .map(reportWithUser => closeTransmittedReportByNoAction(reportWithUser._1))
+        extractReportsToCloseForUserWithEmail(transmittedReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => closeTransmittedReportByNoAction(reportWithAdmins._1))
       )
     } yield {
       (onGoingReportsPostReminders ::: closedByNoReadingForUserWithEmail :::
@@ -100,11 +100,11 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     reportEventsMap.getOrElse(reportId, List.empty).filter(_.action == action)
   }
 
-  def extractOnGoingReportsToRemindByPost(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
-    reportsWithUser
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 0)
-      .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, CONTACT_COURRIER)
+  def extractOnGoingReportsToRemindByPost(reportsWithadmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithadmins
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE).length == 0)
+      .filterNot(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, CONTACT_COURRIER)
         .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
   }
 
@@ -117,11 +117,11 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
-    reportsWithUser
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
+  def extractOnGoingReportsToCloseByNoReadingForUserWithoutEmail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithAdmins
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE)
         .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minus(reportExpirationDelay))).getOrElse(false))
-      .filterNot(reportWithUser => reportWithUser._2.email.isDefined)
+      .filterNot(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
   }
 
   def closeOnGoingReportByNoReadingForUserWithoutEmail(report: Report) = {
@@ -133,25 +133,25 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def extractReportsToRemindByMail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime, previousAction: ActionEventValue) = {
-    reportsWithUser
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 0)
-      .filter(reportWithUser => reportWithUser._2.email.isDefined)
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, previousAction)
+  def extractReportsToRemindByMail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime, previousAction: ActionEventValue) = {
+    reportsWithAdmins
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE).length == 0)
+      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, previousAction)
         .headOption.flatMap(_.creationDate).map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)) :::
-      reportsWithUser
-        .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE).length == 1)
-        .filter(reportWithUser => reportWithUser._2.email.isDefined)
-        .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
+      reportsWithAdmins
+        .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE).length == 1)
+        .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
+        .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE)
           .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
   }
 
-  def remindReportByMail(report: Report, userMail: EmailAddress) = {
+  def remindReportByMail(report: Report, adminMails: List[EmailAddress]) = {
     val expirationDate = report.creationDate.get.plus(reportExpirationDelay)
     eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
       mailerService.sendEmail(
         from = EmailAddress(configuration.get[String]("play.mail.from")),
-        recipients = userMail)(
+        recipients = adminMails: _*)(
         subject = "Nouveau signalement",
         bodyHtml = views.html.mails.professional.reportReminder(report, expirationDate).toString,
         attachments = Seq(
@@ -162,11 +162,11 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-  def extractReportsToCloseForUserWithEmail(reportsWithUser: List[(Report, User)], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
-    reportsWithUser
-      .filter(reportWithUser => extractEventsWithAction(reportWithUser._1.id.get, reportEventsMap, RELANCE)
+  def extractReportsToCloseForUserWithEmail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithAdmins
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id.get, reportEventsMap, RELANCE)
         .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)).length == 2)
-      .filter(reportWithUser => reportWithUser._2.email.isDefined)
+      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.isDefined))
   }
 
   def closeOnGoingReportByNoReadingForUserWithEmail(report: Report) = {

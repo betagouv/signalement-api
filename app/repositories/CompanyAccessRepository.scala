@@ -8,6 +8,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import models._
+import utils.EmailAddress
 
 @Singleton
 class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
@@ -18,7 +19,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   import PostgresProfile.api._
   import dbConfig._
 
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel(_))
+  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
 
   class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
     def companyId = column[UUID]("company_id")
@@ -40,17 +41,18 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     def token = column[String]("token")
     def level = column[AccessLevel]("level")
     def valid = column[Boolean]("valid")
+    def emailedTo = column[Option[EmailAddress]]("emailed_to")
     def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
-    def * = (id, companyId, token, level, valid, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
+    def * = (id, companyId, token, level, valid, emailedTo, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
 
-  def getUserLevel(company: Company, user: User): Future[AccessLevel] =
+  def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery
-      .filter(_.companyId === company.id)
+      .filter(_.companyId === companyId)
       .filter(_.userId === user.id)
       .map(_.level)
       .result
@@ -67,6 +69,46 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .result
     )
 
+  def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
+    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
+      .filter(_._1.companyId === company.id)
+      .filter(_._1.level =!= AccessLevel.NONE)
+      .sortBy(entry => (entry._1.level, entry._2.email))
+      .map(r => (r._2, r._1.level))
+      .to[List]
+      .result
+    )
+
+  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] = {
+    db.run(
+      (for {
+        access    <- UserAccessTableQuery           if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        user      <- userRepository.userTableQuery  if user.id === access.userId
+      } yield (access.companyId, user))
+      .to[List]
+      .result
+    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
+  }
+
+  def fetchAdmins(company: Company): Future[List[User]] =
+    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
+      .filter(_._1.companyId === company.id)
+      .filter(_._1.level === AccessLevel.ADMIN)
+      .map(_._2)
+      .to[List]
+      .result
+    )
+  
+  // The method below provides access to the user's unique Company
+  // until we have a way to handle multiple companies per user
+  // There should always be 1 company per pro user 
+  def findUniqueCompany(user: User): Future[Company] =
+    for {
+      accesses <- fetchCompaniesWithLevel(user)
+    } yield accesses
+            .map(_._1)
+            .head
+
   private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(UserAccess(
       companyId = companyId,
@@ -80,25 +122,35 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   def createToken(
       company: Company, level: AccessLevel, token: String,
-      validity: Option[java.time.temporal.TemporalAmount]): Future[Unit] =
-    db.run(AccessTokenTableQuery += AccessToken(
+      validity: Option[java.time.temporal.TemporalAmount], emailedTo: Option[EmailAddress] = None): Future[AccessToken] =
+    db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
       companyId = company.id,
       token = token,
       level = level,
       valid = true,
+      emailedTo = emailedTo,
       expirationDate = validity.map(OffsetDateTime.now.plus(_))
-    )).map(_ => Unit)
+    ))
 
-  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
-    db.run(AccessTokenTableQuery
+  private def fetchValidTokens(company: Company) =
+    AccessTokenTableQuery
       .filter(
         _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
       .filter(_.companyId === company.id)
+
+  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens(company)
       .filter(_.token === token)
       .result
       .headOption
+    )
+
+  def fetchTokens(company: Company): Future[List[AccessToken]] =
+    db.run(fetchValidTokens(company)
+      .to[List]
+      .result
     )
 
   def applyToken(token: AccessToken, user: User): Future[Boolean] = {
@@ -109,5 +161,14 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
           AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
         ).transactionally)
         .map(_ => true)
+  }
+
+  def fetchActivationCode(company: Company): Future[Option[String]] = {
+    db.run(fetchValidTokens(company)
+      .filterNot(_.emailedTo.isDefined)
+      .map(_.token)
+      .result
+      .headOption
+    )
   }
 }

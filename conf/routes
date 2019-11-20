@@ -46,9 +46,17 @@ POST	    /api/authenticate                           controllers.AuthController.
 POST	    /api/authenticate/password/forgot           controllers.AuthController.forgotPassword
 POST	    /api/authenticate/password/reset            controllers.AuthController.resetPassword(token: java.util.UUID)
 
+# Accesses API
+GET         /api/accesses/:siret                        controllers.CompanyAccessController.listAccesses(siret: String)
+PUT         /api/accesses/:siret/:userId                controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
+DELETE      /api/accesses/:siret/:userId                controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
+GET         /api/accesses/:siret/token                  controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
+POST        /api/accesses/:siret/invitation             controllers.CompanyAccessController.sendInvitation(siret: String)
+
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
-PUT         /api/account/activation                     controllers.AccountController.activateAccount
+POST        /api/account/activation                     controllers.AccountController.activateAccount
+PUT         /api/account/activation                     controllers.AccountController.activateAccountDeprecated
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
 # Rating API
@@ -59,5 +67,3 @@ GET         /api/subscriptions                          controllers.Subscription
 POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
 
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
-
-

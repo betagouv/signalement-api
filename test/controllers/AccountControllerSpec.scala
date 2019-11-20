@@ -39,7 +39,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
           val result = route(application, request).get
 
           Helpers.status(result) must beEqualTo(BAD_REQUEST)
-          contentAsJson(result) must beEqualTo(
+          Helpers.contentAsJson(result) must beEqualTo(
             Json.obj(
               "obj" -> Seq(
                 Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.toJson(Seq.empty))
@@ -53,8 +53,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
 
   trait Context extends Scope {
 
-    val identity = User(UUID.randomUUID(), "test@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("toto@example.com")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
-    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.login)
+    val identity = User(UUID.randomUUID(), "test@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("test@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
+    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.get.value)
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
     class FakeModule extends AbstractModule with ScalaModule {

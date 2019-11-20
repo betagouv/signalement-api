@@ -1,0 +1,33 @@
+@(company: Company, invitedBy: User)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Vous avez maintenant accès à l'entreprise @company.name sur SignalConso</title>
+    </head>
+    <body>
+        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
+            <div style="text-align: center; margin: 30px auto 50px">
+                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
+                <br>
+            </div>
+
+            <p>
+                Bonjour,
+            </p>
+
+            <p>
+                @invitedBy.fullName vous a donné accès à l'entreprise @company.name sur SignalConso.
+                Vous pouvez dès à présent vous connecter et accéder à cette entreprise avec votre compte pré-existant.
+            </p>
+
+            <p>Cordialement,</p>
+
+            <p>
+                <i>L'équipe SignalConso</i>
+            </p>
+
+        </div>
+    </body>
+</html>
