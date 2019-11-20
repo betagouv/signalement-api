@@ -25,6 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 class ReportListController @Inject()(reportRepository: ReportRepository,
+                                 companyAccessRepository: CompanyAccessRepository,
                                  eventRepository: EventRepository,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
@@ -66,10 +67,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     val filter = ReportFilter(
       departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
       email,
-      request.identity.userRole match {
-        case UserRoles.Pro => Some(request.identity.login)
-        case _ => siret
-      },
+      siret,
       companyName,
       startDate,
       endDate,
@@ -79,9 +77,19 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     )
 
     logger.debug(s"ReportFilter $filter")
-    reportRepository.getReports(offsetNormalized, limitNormalized, filter).flatMap( paginatedReports =>
-      Future.successful(Ok(Json.toJson(paginatedReports)))
-    )
+    for {
+      company <- Some(request.identity)
+                  .filter(_.userRole == UserRoles.Pro)
+                  .map(companyAccessRepository.findUniqueCompany(_).map(Some(_)))
+                  .getOrElse(Future(None))
+      paginatedReports <- reportRepository.getReports(
+                            offsetNormalized,
+                            limitNormalized,
+                            company.map(c => filter.copy(siret=Some(c.siret)))
+                                   .getOrElse(filter))
+    } yield {
+      Ok(Json.toJson(paginatedReports))
+    }
   }
 
   def extractReports(departments: Option[String],
@@ -108,7 +116,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     case class ReportColumn(
       name: String, column: Column,
-      extract: (Report, List[Event], Option[User]) => String, available: Boolean = true
+      extract: (Report, List[Event], List[User]) => String, available: Boolean = true
     )
 
     val reportColumns = List(
@@ -143,7 +151,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.email).map(_.value).getOrElse(""),
+        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).flatMap(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -213,11 +221,6 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
-        "Code d'activation", centerAlignmentColumn,
-        (report, _, companyUser) => companyUser.filter(_ => report.isEligible).flatMap(_.activationKey).getOrElse(""),
-        available=request.identity.userRole == UserRoles.Admin
-      ),
-      ReportColumn(
         "Accord pour contact", centerAlignmentColumn,
         (report, _, _) => if (report.contactAgreement) "Oui" else "Non"
       ),
@@ -232,16 +235,17 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     ).filter(_.available)
 
     for {
+      restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
+                              companyAccessRepository.findUniqueCompany(request.identity).map(Some(_))
+                           else
+                              Future(None)
       paginatedReports <- reportRepository.getReports(
         0,
         10000,
         ReportFilter(
           departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
           None,
-          request.identity.userRole match {
-            case UserRoles.Pro => Some(request.identity.login)
-            case _ => siret
-          },
+          restrictToCompany.map(c => Some(c.siret)).getOrElse(siret),
           None,
           startDate,
           endDate,
@@ -251,7 +255,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
         )
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyUsersMap <- userRepository.prefetchLogins(paginatedReports.entities.flatMap(_.companySiret))
+      companyAdminsMap   <- companyAccessRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
     } yield {
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
       val reportsSheet = Sheet(name = "Signalements")
@@ -262,7 +266,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
               _.extract(
                 report,
                 reportEventsMap.getOrElse(report.id.get, Nil),
-                report.companySiret.flatMap(companyUsersMap.get(_))
+                report.companyId.flatMap(companyAdminsMap.get(_)).getOrElse(Nil)
               )
             ))
           )

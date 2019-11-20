@@ -6,8 +6,17 @@ import java.util.UUID
 import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.EnumUtils
-import utils.EmailAddress
+import utils.{EnumUtils, EmailAddress}
+
+case class DraftUser(
+  email: EmailAddress,
+  firstName: String,
+  lastName: String,
+  password: String
+)
+object DraftUser {
+  implicit val draftUserFormat = Json.format[DraftUser]
+}
 
 case class User (
                  id: UUID,
@@ -18,7 +27,9 @@ case class User (
                  firstName: Option[String],
                  lastName: Option[String],
                  userRole: UserRole
-               ) extends Identity
+               ) extends Identity {
+  def fullName = firstName.flatMap(f => lastName.map(l => s"${f} ${l}"))
+}
 
 object User {
   implicit val userWrites = new Writes[User] {
