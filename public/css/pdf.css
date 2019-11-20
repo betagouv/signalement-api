@@ -53,3 +53,7 @@ body {
 .footer > img {
     vertical-align: middle;
 }
+
+p.standout {
+    background: #ccc;
+}

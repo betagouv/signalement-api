@@ -17,7 +17,7 @@ import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.{EventRepository, ReportRepository, UserRepository}
+import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent.ActionEventValue
@@ -95,15 +95,26 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
 
+  val companyData = Company(
+    UUID.randomUUID(),
+    siretForConcernedPro,
+    OffsetDateTime.now,
+    "Test entreprise",
+    "10 rue des Champs",
+    Some("75010"),
+  )
+
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(reportUUID), "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", EmailAddress("email"), true, List(), None
   )
 
@@ -125,13 +136,17 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
   override def setupData = {
-    Await.result(for {
-      _ <- userRepository.create(concernedProUser)
-      _ <- userRepository.create(notConcernedProUser)
-      _ <- reportRepository.create(reportFixture)
-      - <- reportRepository.createFile(reportResponseFile)
-    } yield Unit,
-    Duration.Inf)
+    Await.result(
+      for {
+        company <- companyRepository.getOrCreate(companyData.siret, companyData)
+        admin   <- userRepository.create(concernedProUser)
+        _       <- companyAccessRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
+        _       <- userRepository.create(notConcernedProUser)
+        _       <- reportRepository.create(reportFixture)
+        -       <- reportRepository.createFile(reportResponseFile)
+      } yield Unit,
+      Duration.Inf
+    )
   }
 
   override def configureFakeModule(): AbstractModule = {

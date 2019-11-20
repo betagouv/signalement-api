@@ -1,4 +1,4 @@
-@(companyAddress: String, code: String)
+@(companyAddress: String, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)
 
 
 <!doctype html>
@@ -43,7 +43,8 @@
             </p>
 
             <p>
-                Nous vous avons adressé un courrier vous indiquant que nous avions reçu un signalement sur votre établissement
+                <strong>Nous vous avons adressé un courrier le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+                vous indiquant que nous avions reçu un signalement sur votre établissement
             </p>
 
             <p class="text-center text-bold">
@@ -51,16 +52,18 @@
             </p>
 
             <p class="text-bold">
-                Vous n’avez pas encore activé votre espace professionnel et vous n’avez pas consulté ce signalement.
+                Nous avons remarqué que vous n’avez pas encore activé votre espace professionnel et que vous n’avez donc pas consulté ce signalement.
             </p>
 
             <p>
-                Si vous n’activez pas votre espace professionnel et ne consultez pas le signalement,
-                les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
+                Vous avez jusqu’au @expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour activer votre espace professionnel
+                et consulter le signalement.
+                Passé ce délai, vous pourrez toujours le lire mais vous ne pourrez plus y répondre.
+                Les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
             </p>
 
             <p class="mt-3">
-                Pour connaitre ce signalement, rendez-vous sur https://signalconso.beta.gouv.fr/ avec votre code d’activation de 6 chiffres.
+                Pour connaitre ce signalement, rendez-vous sur https://signalconso.beta.gouv.fr/ avec votre numéro SIRET et votre code d’activation de 6 chiffres.
             </p>
 
             <p class="text-center text-bold">
@@ -68,19 +71,17 @@
             </p>
 
             <p class="mt-3">
-                Une fois votre espace professionnel activé, vous pourrez consulter les signalements concernant votre établissement et le cas échéant :
-            </p>
-            <ul>
-                <li>Prendre des mesures correctives ou préventives suite au signalement</li>
-                <li>Contacter le consommateur si ce dernier a souhaité vous laisser ses coordonnées</li>
-            </ul>
-
-            <p>
-                Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse contact@@signalconso.beta.gouv.fr
+                Une fois votre espace professionnel activé, vous pourrez consulter les signalements concernant votre établissementUne fois votre espace professionnel activé,
+                vous pourrez consulter les signalements concernant votre établissement et y apporter une réponse.
             </p>
 
             <p>
-                Nous restons à votre disposition pour tout renseignement complémentaire,
+                Ce nouveau service public est facultatif et gratuit. À travers SignalConso, notre objectif est d’établir un rapport de confiance et de transparence
+                entre les consommateurs, les professionnels et les services de la DGCCRF.
+            </p>
+
+            <p>
+                Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse <strong>contact@@signalconso.beta.gouv.fr</strong>.
             </p>
 
             <p class="text-right mr-5">

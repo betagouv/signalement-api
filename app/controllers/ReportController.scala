@@ -24,6 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
+                                 companyAccessRepository: CompanyAccessRepository,
                                  reportRepository: ReportRepository,
                                  eventRepository: EventRepository,
                                  userRepository: UserRepository,
@@ -38,6 +39,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
+
+  private def getProLevel(user: User, report: Option[Report]) =
+    report.flatMap(_.companyId).map(companyAccessRepository.getUserLevel(_, user)).getOrElse(Future(AccessLevel.NONE))
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
@@ -85,13 +89,13 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
 
     logger.debug(s"reportResponse ${uuid}")
-
     request.body.validate[ReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportResponse => {
         for {
           report <- reportRepository.getReport(UUID.fromString(uuid))
-          updatedReport <- report.filter(_.companySiret == Some(request.identity.login))
+          level <-  getProLevel(request.identity, report)
+          updatedReport <- report.filter(_ => level != AccessLevel.NONE)
             .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
         } yield updatedReport
           .map(r => Ok(Json.toJson(r)))
@@ -99,7 +103,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         }
       )
   }
-
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     logger.debug("uploadReportFile")
@@ -170,10 +173,12 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
-        updatedReport <-  report
-                          .filterNot(
-                                request.identity.userRole == UserRoles.Pro
-                            &&  _.companySiret != Some(request.identity.login))
+        proLevel      <- getProLevel(request.identity, report)
+        updatedReport <- report
+                          .filter(_ =>
+                                  request.identity.userRole == UserRoles.DGCCRF
+                              ||  request.identity.userRole == UserRoles.Admin
+                              ||  proLevel != AccessLevel.NONE)
                           match {
                             case Some(r) => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))
                             case _ => Future(None)
@@ -222,7 +227,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           }
         }
       }}
-
   }
 
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
