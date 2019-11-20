@@ -40,6 +40,19 @@ object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
          And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
+object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
+  override def is =
+    s2"""
+         Given a report which concerns
+          an experimentation department                                   ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
+          an employee consumer                                            ${step(report = report.copy(employeeConsumer = true))}
+         When create the report                                           ${step(createReport())}
+         Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
+         And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
+         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.EMPLOYEE_REPORT)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And do no create an account                                      ${accountMustNotHaveBeenCreated}
+    """
+}
 
 object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpdateReportSpec {
   override def is =
