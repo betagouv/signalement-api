@@ -133,20 +133,22 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       expirationDate = validity.map(OffsetDateTime.now.plus(_))
     ))
 
-  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
-    db.run(AccessTokenTableQuery
+  private def fetchValidTokens(company: Company) =
+    AccessTokenTableQuery
       .filter(
         _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
       .filter(_.companyId === company.id)
+
+  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens(company)
       .filter(_.token === token)
       .result
       .headOption
     )
 
   def fetchTokens(company: Company): Future[List[AccessToken]] =
-    db.run(AccessTokenTableQuery
-      .filter(_.companyId === company.id)
+    db.run(fetchValidTokens(company)
       .to[List]
       .result
     )
@@ -162,12 +164,8 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   }
 
   def fetchActivationCode(company: Company): Future[Option[String]] = {
-    db.run(AccessTokenTableQuery
-      .filter(_.companyId === company.id)
+    db.run(fetchValidTokens(company)
       .filterNot(_.emailedTo.isDefined)
-      .filter(
-        _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
-      .filter(_.valid)
       .map(_.token)
       .result
       .headOption
