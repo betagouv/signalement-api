@@ -147,8 +147,9 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .headOption
     )
 
-  def fetchTokens(company: Company): Future[List[AccessToken]] =
+  def fetchPendingTokens(company: Company): Future[List[AccessToken]] =
     db.run(fetchValidTokens(company)
+      .sortBy(_.expirationDate.desc)
       .to[List]
       .result
     )

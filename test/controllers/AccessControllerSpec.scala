@@ -102,11 +102,12 @@ class InvitationWorkflowSpec(implicit ee: ExecutionEnv) extends BaseAccessContro
 
 The invitation workflow should
   Let an admin send invitation by email             $e1
-  Create a token in database                        $e2
-  Let an anonymous visitor check the token          $e3
+  Have created a token in database                  $e2
+  Show the token in pending invitations             $e3
+  Let an anonymous visitor check the token          $e4
                                                     """
   val invitedEmail = "test@example.com"
-  var tokenString: String = null
+  var invitationToken: AccessToken = null
 
   def e1 = {
     val request = FakeRequest(POST, routes.CompanyAccessController.sendInvitation(company.siret).toString)
@@ -115,19 +116,35 @@ The invitation workflow should
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
   }
+
   def e2 = {
-    val tokens = companyAccessRepository.fetchTokens(company)
-    tokens.map(_.foreach(t => {tokenString = t.token}))
+    val tokens = companyAccessRepository.fetchPendingTokens(company)
+    tokens.map(_.foreach(t => {invitationToken = t}))
     tokens.map(_.length) must beEqualTo(1).await
   }
 
   def e3 = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.fetchTokenInfo(company.siret, tokenString).toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.listPendingTokens(company.siret).toString)
+                  .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    contentAsJson(result) must beEqualTo(
+       Json.toJson(List(Map(
+        "id"                -> invitationToken.id.toString,
+        "level"             -> "member",
+        "emailedTo"         -> invitedEmail,
+        "expirationDate"    -> invitationToken.expirationDate.get.toString
+      )))
+    )
+  }
+
+  def e4 = {
+    val request = FakeRequest(GET, routes.CompanyAccessController.fetchTokenInfo(company.siret, invitationToken.token).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(
       Json.obj(
-        "token" -> tokenString,
+        "token" -> invitationToken.token,
         "companySiret" -> company.siret,
         "emailedTo" -> invitedEmail
       )

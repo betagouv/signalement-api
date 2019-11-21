@@ -50,7 +50,7 @@ class CompanyAccessController @Inject()(
       user <- userRepository.get(userId)
       _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
     } yield if (user.isDefined) Ok else NotFound
-}
+  }
 
   case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
@@ -62,6 +62,19 @@ class CompanyAccessController @Inject()(
                     .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
                     .map(_ => Ok)
     )
+  }
+
+  def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    for {
+      tokens <- companyAccessRepository.fetchPendingTokens(request.company)
+    } yield Ok(Json.toJson(tokens.map(token =>
+      Json.obj(
+          "id"              -> token.id.toString,
+          "level"           -> token.level.value,
+          "emailedTo"       -> token.emailedTo,
+          "expirationDate"  -> token.expirationDate
+      )
+    )))
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
