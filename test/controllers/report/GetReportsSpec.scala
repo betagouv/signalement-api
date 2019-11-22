@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ReportListController
 import models._
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.matcher.FutureMatchers
+import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher, JsonType}
 import org.specs2.mutable.Specification
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -69,7 +69,7 @@ class GetReportsByAnotherProUser(implicit ee: ExecutionEnv) extends GetReportsSp
     """
 }
 
-abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
+abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers with JsonMatchers {
 
   implicit val timeout: Timeout = 30.seconds
 
@@ -136,12 +136,24 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
   }
 
   def reportsMustBeRenderedForUserRole(userRole: UserRole) = {
+
     implicit val someUserRole = Some(userRole)
-    userRole match {
-      case UserRoles.Admin => someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult(2, false, List(reportFromEmployee, reportToProcess)))
-      case UserRoles.DGCCRF => someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult(2, false, List(reportFromEmployee, reportToProcess)))
-      case UserRoles.Pro => someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult(1, false, List(reportToProcess)))
-      case _ => someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
+
+    def aReportWith(id: Matcher[JsonType]): Matcher[String] =
+      /("id").andHave(id)
+
+    def haveReports(reports: Matcher[String]*): Matcher[String] =
+      /("entities").andHave(allOf(reports:_*))
+
+     userRole match {
+      case UserRoles.Admin =>
+        contentAsJson(Future(someResult.get)).toString must haveReports(aReportWith(id = reportFromEmployee.id.get.toString), aReportWith(id = reportToProcess.id.get.toString))
+      case UserRoles.DGCCRF =>
+        contentAsJson(Future(someResult.get)).toString must haveReports(aReportWith(id = reportFromEmployee.id.get.toString), aReportWith(id = reportToProcess.id.get.toString))
+      case UserRoles.Pro =>
+        someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult(1, false, List(reportToProcess)))
+      case _ =>
+        someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
   }
 
