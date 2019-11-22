@@ -140,6 +140,13 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .filter(_.valid)
       .filter(_.companyId === company.id)
 
+  def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens(company)
+      .filter(_.id === id)
+      .result
+      .headOption
+    )
+
   def findToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(fetchValidTokens(company)
       .filter(_.token === token)
@@ -163,6 +170,13 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
         ).transactionally)
         .map(_ => true)
   }
+
+  def invalidateToken(token: AccessToken): Future[Int] =
+    db.run(AccessTokenTableQuery
+            .filter(_.id === token.id)
+            .map(_.valid)
+            .update(false)
+    )
 
   def fetchActivationCode(company: Company): Future[Option[String]] = {
     db.run(fetchValidTokens(company)

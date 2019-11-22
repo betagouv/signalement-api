@@ -77,6 +77,13 @@ class CompanyAccessController @Inject()(
     )))
   }
 
+  def removePendingToken(siret: String, tokenId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    for {
+      token <- companyAccessRepository.getToken(request.company, tokenId)
+      _ <- token.map(companyAccessRepository.invalidateToken(_)).getOrElse(Future(Unit))
+    } yield {if (token.isDefined) Ok else NotFound}
+  }
+
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
     for {
       company <- companyRepository.findBySiret(siret)
