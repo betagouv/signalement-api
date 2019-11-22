@@ -38,37 +38,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-  private def generateActivationKey(company: Company): Future[Unit] = {
-    val activationKey = f"${Random.nextInt(1000000)}%06d"
-    for {
-      user <- userRepository.create(
-        User(
-          UUID.randomUUID(),
-          company.siret,
-          activationKey,
-          Some(activationKey),
-          None,
-          None,
-          None,
-          UserRoles.ToActivate
-        )
-      );
-      accessToken <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, activationKey, tokenDuration)
-    } yield Unit
-  }
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    userRepository.findByLogin(report.companySiret.get).flatMap{
-      case Some(user) if user.email.filter(_ != "").isDefined => {
+    companyAccessRepository.fetchAdmins(company).flatMap(admins => {
+      val adminsWithEmail = admins.filter(_.email.isDefined)
+      if (adminsWithEmail.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = user.email.get)(
+          recipients = adminsWithEmail.flatMap(_.email): _*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.professional.reportNotification(report).toString,
           attachments = Seq(
             AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
           )
         )
+        val user = adminsWithEmail.head     // We must chose one as Event links to a single User
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
@@ -82,10 +66,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
+      } else if (admins.isEmpty) {
+        companyAccessRepository.createToken(company, AccessLevel.ADMIN, f"${Random.nextInt(1000000)}%06d", tokenDuration).map(_ => report)
+      } else {
+        Future(report)
       }
-      case None => generateActivationKey(company).map(_ => report)
-      case _ => Future(report)
-    }
+    })
   }
 
   def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
@@ -146,7 +132,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           reportData.companyPostalCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      updatedReport <- existingReport match {
+      reportWithNewData <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
           firstName = reportData.firstName,
           lastName = reportData.lastName,
@@ -160,14 +146,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )).map(Some(_))
         case _ => Future(None)
       }
-    } yield {
-      updatedReport
-        .filter(_.isEligible)
-        .filter(_.companySiret.isDefined)
-        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .foreach(r => notifyProfessionalOfNewReport(r, company.get))
-      updatedReport
-    }
+      updatedReport <- reportWithNewData
+          .filter(_.isEligible)
+          .filter(_.companySiret.isDefined)
+          .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+          .map(r => notifyProfessionalOfNewReport(r, company.get).map(Some(_)))
+          .getOrElse(Future(reportWithNewData))
+    } yield updatedReport
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {

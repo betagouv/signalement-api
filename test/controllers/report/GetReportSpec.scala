@@ -22,7 +22,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.{EventFilter, EventRepository, ReportRepository, UserRepository}
+import repositories._
 import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
@@ -180,21 +180,22 @@ trait GetReportContext extends Mockito {
   val siretForConcernedPro = "000000000000000"
   val siretForNotConcernedPro = "11111111111111"
 
-  val neverRequestedReportUUID = UUID.randomUUID();
+  val companyId = UUID.randomUUID
+  val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
-    Some(neverRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(neverRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", EmailAddress("email"), true, false, List(), None
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
+    Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
     "firstName", "lastName", EmailAddress("email"), true, false, List(), None
   )
 
@@ -211,7 +212,12 @@ trait GetReportContext extends Mockito {
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
+  val mockCompanyAccessRepository = mock[CompanyAccessRepository]
   val mockMailerService = mock[MailerService]
+
+  mockCompanyAccessRepository.getUserLevel(companyId, concernedProUser) returns Future(AccessLevel.ADMIN)
+  mockCompanyAccessRepository.getUserLevel(companyId, notConcernedProUser) returns Future(AccessLevel.NONE)
+  mockCompanyAccessRepository.getUserLevel(companyId, adminUser) returns Future(AccessLevel.NONE)
 
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReportUUID) returns Future(Some(neverRequestedFinalReport))
@@ -230,6 +236,7 @@ trait GetReportContext extends Mockito {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
+      bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
       bind[MailerService].toInstance(mockMailerService)
     }
   }

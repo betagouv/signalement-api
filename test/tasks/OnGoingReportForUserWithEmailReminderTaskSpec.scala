@@ -32,7 +32,7 @@ class RemindOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) ex
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, onGoingReport.creationDate.get.plusDays(21)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
@@ -58,7 +58,7 @@ class RemindTwiceOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEn
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email.get,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, onGoingReport.creationDate.get.plusDays(21)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
 }
 
@@ -107,13 +107,22 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
   implicit val ec = ee.executionContext
 
+  val companyData = Company(
+    UUID.randomUUID(),
+    "22222222222222",
+    OffsetDateTime.now,
+    "Test entreprise",
+    "10 rue des Champs",
+    Some("75010"),
+  )
+
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
   val userWithEmail = User(UUID.randomUUID(), "22222222222222", "", None, Some(EmailAddress("email")), None, Some("test"), Pro)
 
   val reportUUID = UUID.randomUUID()
 
-  val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), None, "company1", "addresse" + UUID.randomUUID().toString, None,
+  val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(userWithEmail.login),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, false, List.empty,
     Some(TRAITEMENT_EN_COURS))
@@ -181,9 +190,18 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReminderTask]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
 
   def setupUser(user: User) = {
-    Await.result(userRepository.create(user), Duration.Inf)
+    Await.result(
+      for {
+        company <- companyRepository.getOrCreate(companyData.siret, companyData)
+        admin   <- userRepository.create(user)
+        _       <- companyAccessRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
+      } yield Unit,
+      Duration.Inf
+    )
   }
   def setupReport(report: Report) = {
     Await.result(reportRepository.create(report), Duration.Inf)

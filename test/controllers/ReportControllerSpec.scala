@@ -47,7 +47,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportOrchestrator], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyAccessRepository], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -117,7 +117,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           val reportId = Some(UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b"))
           val reportsList = List(
             Report(
-              reportId, "foo", List("bar"), List(), None, "myCompany", "18 rue des Champs",
+              reportId, "foo", List("bar"), List(), Some(companyId), "myCompany", "18 rue des Champs",
               None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", EmailAddress("jdoe@example.com"),
               true, false, List(), None
             )
@@ -152,6 +152,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val proIdentity = User(UUID.randomUUID(),"00000000000000", "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
     val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
 
+    val companyId = UUID.randomUUID
+
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository = mock[ReportRepository]
@@ -165,6 +167,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
+    mockCompanyAccessRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
     mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
 

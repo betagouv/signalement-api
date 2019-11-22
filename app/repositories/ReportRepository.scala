@@ -29,7 +29,7 @@ case class ReportFilter(
                        )
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository, val companyRepository: CompanyRepository)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, companyAccessRepository: CompanyAccessRepository, val companyRepository: CompanyRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -107,7 +107,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
 
   private val fileTableQuery = TableQuery[FileTable]
 
-  private val userTableQuery = TableQuery[userRepository.UserTable]
+  private val companyTableQuery = companyRepository.companyTableQuery
 
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
 
@@ -355,19 +355,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userR
         hasNextPage = res.length - ( offset + limit ) > 0
       )
     }
-
   }
 
-  def getReportsForStatusWithUser(status: ReportStatusValue): Future[List[(Report, User)]] = db.run {
-    reportTableQuery
-      .filter(_.status === status.defaultValue)
-      .join(userTableQuery).on(_.companySiret === _.login)
-      .to[List]
-      .result
+  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] = {
+    for {
+      reports <- db.run {
+                  reportTableQuery
+                    .filter(_.status === status.defaultValue)
+                    .to[List]
+                    .result
+                }
+      adminsMap <- companyAccessRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
+    } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
   }
-
-
-
-
 }
-

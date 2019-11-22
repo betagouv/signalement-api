@@ -102,9 +102,13 @@ object UpdateReportWithSiret extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a preexisting report
-            with a new SIRET                                            ${step(report = existingReport.copy(companySiret = Some("00000000000042")))}
+            with a new SIRET                                            ${step(report = existingReport.copy(companySiret = Some(existingCompany.siret)))}
          When the report is updated                                     ${step(updateReport(report))}
-         Then the report contains company info                          ${checkReport(report.copy(companyId = Some(existingCompany.id), companySiret = Some(existingCompany.siret)))}
+         Then the report contains company info                          ${checkReport(report.copy(
+                                                                          companyId = Some(existingCompany.id),
+                                                                          companySiret = Some(existingCompany.siret),
+                                                                          status = Some(ReportStatus.TRAITEMENT_EN_COURS)
+                                                                        ))}
     """
 }
 
@@ -115,12 +119,24 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   implicit val ec = ExecutionContext.global
 
+  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+
+  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
+
+  val siretForCompanyWithoutAccount = "00000000000000"
+  val siretForCompanyWithNotActivatedAccount = "11111111111111"
+  val siretForCompanyWithActivatedAccount = "22222222222222"
+
   val existingReport = Report(
     Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
     "firstName", "lastName", EmailAddress("email@example.com"), true, false, List(), None
   )
   val existingCompany = Company(
-    UUID.randomUUID(), "00000000000042", OffsetDateTime.now(),
+    UUID.randomUUID(), siretForCompanyWithActivatedAccount, OffsetDateTime.now(),
     "Test", "42 rue du Tests", Some("37500")
   )
   val reportFixture = Report(
@@ -130,26 +146,16 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   var report = reportFixture
 
-  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-
-  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
-
-  val siretForCompanyWithoutAccount = "00000000000000"
-  val siretForCompanyWithNotActivatedAccount = "11111111111111"
-  val siretForCompanyWithActivatedAccount = "22222222222222"
-
   val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "password", Some("code_activation"), None, None, None, UserRoles.ToActivate)
   val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
 
   override def setupData = {
     Await.result(for {
       _ <- userRepository.create(toActivateUser)
-      _ <- userRepository.create(proUser)
+      u <- userRepository.create(proUser)
       _ <- reportRepository.create(existingReport)
-      _ <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
+      c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
+      _ <- companyAccessRepository.setUserLevel(c, u, AccessLevel.ADMIN)
     } yield Unit,
     Duration.Inf)
   }
