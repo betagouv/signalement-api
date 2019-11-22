@@ -139,19 +139,26 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
     implicit val someUserRole = Some(userRole)
 
-    def aReportWith(id: Matcher[JsonType]): Matcher[String] =
-      /("id").andHave(id)
+    def aReport(report: Report): Matcher[String] =
+      /("id").andHave(report.id.get.toString)
 
     def haveReports(reports: Matcher[String]*): Matcher[String] =
       /("entities").andHave(allOf(reports:_*))
 
      userRole match {
       case UserRoles.Admin =>
-        contentAsJson(Future(someResult.get)).toString must haveReports(aReportWith(id = reportFromEmployee.id.get.toString), aReportWith(id = reportToProcess.id.get.toString))
+        contentAsJson(Future(someResult.get)).toString must
+          /("totalCount" -> 2) and
+          haveReports(aReport(reportFromEmployee), aReport(reportToProcess))
       case UserRoles.DGCCRF =>
-        contentAsJson(Future(someResult.get)).toString must haveReports(aReportWith(id = reportFromEmployee.id.get.toString), aReportWith(id = reportToProcess.id.get.toString))
+        contentAsJson(Future(someResult.get)).toString must
+          /("totalCount" -> 2) and
+          haveReports( aReport(reportFromEmployee), aReport(reportToProcess))
       case UserRoles.Pro =>
-        someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult(1, false, List(reportToProcess)))
+        contentAsJson(Future(someResult.get)).toString must
+          /("totalCount" -> 1) and
+          haveReports(aReport(reportToProcess)) and
+          not(haveReports(aReport(reportFromEmployee)))
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
