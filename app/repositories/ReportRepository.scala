@@ -25,7 +25,8 @@ case class ReportFilter(
                          end: Option[LocalDate] = None,
                          category: Option[String] = None,
                          statusList: Seq[String] = List(),
-                         details: Option[String] = None
+                         details: Option[String] = None,
+                         employeeConsumer: Option[Boolean] = None
                        )
 
 @Singleton
@@ -279,6 +280,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+          }
+          .filterOpt(filter.employeeConsumer) {
+            case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
           }
 
 

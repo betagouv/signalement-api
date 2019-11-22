@@ -73,7 +73,11 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       endDate,
       category,
       getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole),
-      details
+      details,
+      request.identity.userRole match {
+        case UserRoles.Pro => Some(false)
+        case _ => None
+      }
     )
 
     logger.debug(s"ReportFilter $filter")
@@ -177,7 +181,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Statut", leftAlignmentColumn,
-        (report, _, _) => report.status.map(_.getValueWithUserRole(request.identity.userRole)).getOrElse(""),
+        (report, _, _) => report.status.flatMap(_.getValueWithUserRole(request.identity.userRole)).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
@@ -251,7 +255,11 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
           endDate,
           category,
           statusList,
-          details
+          details,
+          request.identity.userRole match {
+            case UserRoles.Pro => Some(false)
+            case _ => None
+          }
         )
       )
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
