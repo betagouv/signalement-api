@@ -43,7 +43,7 @@ libraryDependencies ++= Seq(
   "com.itextpdf" % "html2pdf" % "2.1.5",
 
   specs2 % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.1" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.14.2" % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.14",
 )
