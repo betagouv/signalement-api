@@ -119,7 +119,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             Report(
               reportId, "foo", List("bar"), List(), Some(companyId), "myCompany", "18 rue des Champs",
               None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", EmailAddress("jdoe@example.com"),
-              true, List(), None
+              true, false, List(), None
             )
           )
           mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(

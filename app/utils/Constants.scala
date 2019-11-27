@@ -9,17 +9,17 @@ object Constants {
 
   object ReportStatus {
 
-    case class ReportStatusValue(defaultValue: String, valueByRole: Map[UserRole, String] = Map(), isFinal: Boolean = false) {
+    case class ReportStatusValue(defaultValue: String, valueByRole: Map[UserRole, Option[String]] = Map(), isFinal: Boolean = false) {
 
       def getValueWithUserRole(userRole: UserRole) = {
-        valueByRole.get(userRole).getOrElse(defaultValue)
+        valueByRole.get(userRole).getOrElse(Some(defaultValue))
       }
     }
 
     object ReportStatusValue {
       implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
         def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
-          userRole.map(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
+          userRole.flatMap(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
         )
       }
       implicit val reportStatusValueReads: Reads[ReportStatusValue] =
@@ -29,62 +29,69 @@ object Constants {
     object A_TRAITER extends ReportStatusValue(
       "À traiter",
       Map(
-        UserRoles.DGCCRF -> "Traitement en cours",
-        UserRoles.Pro -> "Non consulté"
+        UserRoles.DGCCRF -> Some("Traitement en cours"),
+        UserRoles.Pro -> Some("Non consulté")
       )
     )
     object NA extends ReportStatusValue(
       "NA",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
+      ),
+      isFinal = true
+    )
+    object EMPLOYEE_REPORT extends ReportStatusValue(
+      "Lanceur d'alerte",
+      Map(
+        UserRoles.Pro -> None
       ),
       isFinal = true
     )
     object TRAITEMENT_EN_COURS extends ReportStatusValue(
       "Traitement en cours",
       Map(
-        UserRoles.Pro -> "Non consulté"
+        UserRoles.Pro -> Some("Non consulté")
       )
     )
     object SIGNALEMENT_TRANSMIS extends ReportStatusValue(
       "Signalement transmis",
       Map(
-        UserRoles.DGCCRF -> "Traitement en cours",
-        UserRoles.Pro -> "En attente de réponse"
+        UserRoles.DGCCRF -> Some("Traitement en cours"),
+        UserRoles.Pro -> Some("En attente de réponse")
       )
     )
     object PROMESSE_ACTION extends ReportStatusValue(
       "Promesse action",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
       ),
       isFinal = true
     )
     object SIGNALEMENT_INFONDE extends ReportStatusValue(
       "Signalement infondé",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
       ),
       isFinal = true
     )
     object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue(
       "Signalement non consulté",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
       ),
       isFinal = true
     )
     object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue(
       "Signalement consulté ignoré",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
       ),
       isFinal = true
     )
     object SIGNALEMENT_MAL_ATTRIBUE extends ReportStatusValue(
       "Signalement mal attribué",
       Map(
-        UserRoles.Pro -> "Clôturé"
+        UserRoles.Pro -> Some("Clôturé")
       ),
       isFinal = true
     )
@@ -92,6 +99,7 @@ object Constants {
     val reportStatusList = Seq(
       A_TRAITER,
       NA,
+      EMPLOYEE_REPORT,
       TRAITEMENT_EN_COURS,
       SIGNALEMENT_TRANSMIS,
       PROMESSE_ACTION,
@@ -106,7 +114,7 @@ object Constants {
 
     def getReportStatusDefaultValuesForValueWithUserRole(value: Option[String], userRole: UserRole) = {
       value.map(value =>
-        reportStatusList.filter(_.getValueWithUserRole(userRole) == value).map(_.defaultValue)
+        reportStatusList.filter(_.getValueWithUserRole(userRole).map( _ == value).getOrElse(false)).map(_.defaultValue)
       ).getOrElse(List())
     }
 

@@ -40,6 +40,19 @@ object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
          And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
+object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
+  override def is =
+    s2"""
+         Given a report which concerns
+          an experimentation department                                   ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
+          an employee consumer                                            ${step(report = report.copy(employeeConsumer = true))}
+         When create the report                                           ${step(createReport())}
+         Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
+         And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
+         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.EMPLOYEE_REPORT)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And do no create an account                                      ${accountMustNotHaveBeenCreated}
+    """
+}
 
 object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpdateReportSpec {
   override def is =
@@ -120,7 +133,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingReport = Report(
     Some(UUID.randomUUID()), "category", List("subcategory"), List(), None, "dummyCompany", "dummyAddress", Some(Departments.AUTHORIZED(0)), None, Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, false, List(), None
   )
   val existingCompany = Company(
     UUID.randomUUID(), siretForCompanyWithActivatedAccount, OffsetDateTime.now(),
@@ -128,7 +141,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   )
   val reportFixture = Report(
     None, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email@example.com"), true, List(), None
+    "firstName", "lastName", EmailAddress("email@example.com"), true, false, List(), None
   )
 
   var report = reportFixture
@@ -167,12 +180,14 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def createReport() =  {
     implicit val someUserRole = None
+    implicit val reportWriter = Json.writes[Report]
     Await.result(app.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(report))), Duration.Inf)
   }
 
   def updateReport(reportData: Report) = {
     implicit val someUserRole = Some(concernedAdminUser.userRole)
-    Await.result(app.injector.instanceOf[ReportController].updateReport().apply(
+    implicit val reportWriter = Json.writes[Report]
+    Await.result(app.injector.instanceOf[ReportController].updateReport(reportData.id.get.toString).apply(
       FakeRequest()
       .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
       .withBody(Json.toJson(reportData))), Duration.Inf)
