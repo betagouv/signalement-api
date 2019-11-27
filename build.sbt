@@ -44,9 +44,9 @@ libraryDependencies ++= Seq(
 
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.8.1" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.1" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.14.2" % Test,
 
-  "io.sentry" % "sentry-logback" % "1.7.14",
+  "io.sentry" % "sentry-logback" % "1.7.28",
 )
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"

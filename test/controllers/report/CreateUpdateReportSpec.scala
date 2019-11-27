@@ -187,7 +187,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   def updateReport(reportData: Report) = {
     implicit val someUserRole = Some(concernedAdminUser.userRole)
     implicit val reportWriter = Json.writes[Report]
-    Await.result(app.injector.instanceOf[ReportController].updateReport().apply(
+    Await.result(app.injector.instanceOf[ReportController].updateReport(reportData.id.get.toString).apply(
       FakeRequest()
       .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
       .withBody(Json.toJson(reportData))), Duration.Inf)
