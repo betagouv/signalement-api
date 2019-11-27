@@ -69,7 +69,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     )
   }
 
-  def updateReport = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+  def updateReport(uuid: String) = updateReportDeprecated
+
+  def updateReportDeprecated = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
 
