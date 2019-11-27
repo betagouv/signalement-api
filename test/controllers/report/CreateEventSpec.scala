@@ -110,7 +110,7 @@ trait CreateEventContext extends Mockito {
 
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("toto@example.com"), true, List(), None
+    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), None
   )
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {

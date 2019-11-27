@@ -26,7 +26,7 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
 
   def getReportStatus = SecuredAction.async { implicit request =>
     Future.successful(Ok(Json.toJson(
-      reportStatusList.map(_.getValueWithUserRole(request.identity.userRole)).distinct
+      reportStatusList.flatMap(_.getValueWithUserRole(request.identity.userRole)).distinct
     )))
   }
 
