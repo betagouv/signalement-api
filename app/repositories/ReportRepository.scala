@@ -153,9 +153,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     val ORIGIN_BO = "2019-05-20"
 
     db.run(
-      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, signalement.date_creation)))
+      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, reports.date_creation)))
            from events e1
-           inner join signalement on e1.report_id = signalement.id
+           inner join reports on e1.report_id = reports.id
            where action = 'Envoi du signalement'
            and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
            and date_creation > to_date($ORIGIN_BO, 'yyyy-mm-dd')
@@ -185,9 +185,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     }
 
     db.run(
-      sql"""select count(distinct signalement.id)
-         from signalement
-         left join events on signalement.id = events.report_id
+      sql"""select count(distinct reports.id)
+         from reports
+         left join events on reports.id = events.report_id
          where 1 = 1
          and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
@@ -208,9 +208,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
 
     db.run(
-      sql"""select categorie, count(distinct signalement.id)
-         from signalement
-         left join events on signalement.id = events.report_id
+      sql"""select categorie, count(distinct reports.id)
+         from reports
+         left join events on reports.id = events.report_id
          where 1 = 1
          and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
          and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
@@ -346,7 +346,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     for {
       res <- db.run(
       sql"""select siret_etablissement, code_postal, nom_etablissement, adresse_etablissement, count(*)
-        from signalement
+        from reports
         group by siret_etablissement, code_postal, nom_etablissement, adresse_etablissement
         order by count(*) desc
         """.as[(CompanyWithNbReports)]
