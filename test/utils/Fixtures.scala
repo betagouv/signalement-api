@@ -48,8 +48,8 @@ object Fixtures {
         firstName <- genFirstName
         lastName <- genLastName
         email <- genEmailAddress(firstName, lastName)
-        contactAgreement <- Arbitrary[Boolean]
-        employeeConsumer <- Arbitrary[Boolean]
+        contactAgreement <- arbitrary[Boolean]
+        employeeConsumer <- arbitrary[Boolean]
     } yield Report(
         Some(id), category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
         Some(OffsetDateTime.now()), firstName, lastName, email, contactAgreement, employeeConsumer, List(), None
