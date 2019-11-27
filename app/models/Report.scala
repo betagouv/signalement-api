@@ -59,6 +59,7 @@ object Report {
         "companySiret" -> report.companySiret,
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
+        "employeeConsumer" -> report.employeeConsumer,
         "files" -> report.files,
         "status" -> report.status
       ) ++ ((userRole, report.contactAgreement) match {
