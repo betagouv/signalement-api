@@ -153,12 +153,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     val ORIGIN_BO = "2019-05-20"
 
     db.run(
-      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, signalement.date_creation)))
+      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, reports.creation_date)))
            from events e1
-           inner join signalement on e1.report_id = signalement.id
+           inner join reports on e1.report_id = reports.id
            where action = 'Envoi du signalement'
            and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
-           and date_creation > to_date($ORIGIN_BO, 'yyyy-mm-dd')
+           and reports.creation_date > to_date($ORIGIN_BO, 'yyyy-mm-dd')
          """.as[Int].headOption
     )
   }
@@ -171,7 +171,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
 
     val whereDepartments = departments match {
       case None => ""
-      case Some(list) => " and (" + list.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(dep => s"company_postal_code like '$dep%'").mkString(" or ") + ")"
     }
 
     val whereStatus = statusList match {
@@ -180,17 +180,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     }
 
     val whereSiret = withoutSiret match {
-      case true => s" and siret_etablissement is null or (siret_etablissement is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
+      case true => s" and company_siret is null or (company_siret is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
       case false => ""
     }
 
     db.run(
-      sql"""select count(distinct signalement.id)
-         from signalement
-         left join events on signalement.id = events.report_id
+      sql"""select count(distinct reports.id)
+         from reports
+         left join events on reports.id = events.report_id
          where 1 = 1
-         and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
          #$whereStatus
          #$whereSiret
@@ -202,20 +202,20 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
 
     val whereDepartments = departments match {
       case None => ""
-      case Some(seq) => " and (" + seq.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+      case Some(seq) => " and (" + seq.map(dep => s"company_postal_code like '$dep%'").mkString(" or ") + ")"
     }
 
     implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
 
     db.run(
-      sql"""select categorie, count(distinct signalement.id)
-         from signalement
-         left join events on signalement.id = events.report_id
+      sql"""select category, count(distinct reports.id)
+         from reports
+         left join events on reports.id = events.report_id
          where 1 = 1
-         and date_creation > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and date_creation < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
-         group by categorie
+         group by category
       """.as[(ReportsByCategory)]
     )
   }
@@ -345,9 +345,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
 
     for {
       res <- db.run(
-      sql"""select siret_etablissement, code_postal, nom_etablissement, adresse_etablissement, count(*)
-        from signalement
-        group by siret_etablissement, code_postal, nom_etablissement, adresse_etablissement
+      sql"""select company_siret, company_postal_code, company_name, company_address, count(*)
+        from reports
+        group by company_siret, company_postal_code, company_name, company_address
         order by count(*) desc
         """.as[(CompanyWithNbReports)]
       )
