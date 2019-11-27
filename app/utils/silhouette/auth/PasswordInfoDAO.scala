@@ -10,8 +10,10 @@ import utils.silhouette.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 
-class PasswordInfoDAO @Inject() (userRepository: UserRepository) extends DelegableAuthInfoDAO[PasswordInfo] {
+class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val classTag: ClassTag[PasswordInfo])
+      extends DelegableAuthInfoDAO[PasswordInfo] {
 
   val logger: Logger = Logger(this.getClass())
 
