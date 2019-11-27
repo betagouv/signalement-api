@@ -171,7 +171,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
 
     val whereDepartments = departments match {
       case None => ""
-      case Some(list) => " and (" + list.map(dep => s"code_postal like '$dep%'").mkString(" or ") + ")"
+      case Some(list) => " and (" + list.map(dep => s"company_postal_code like '$dep%'").mkString(" or ") + ")"
     }
 
     val whereStatus = statusList match {
