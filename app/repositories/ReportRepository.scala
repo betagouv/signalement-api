@@ -158,7 +158,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
            inner join reports on e1.report_id = reports.id
            where action = 'Envoi du signalement'
            and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
-           and creation_date > to_date($ORIGIN_BO, 'yyyy-mm-dd')
+           and reports.creation_date > to_date($ORIGIN_BO, 'yyyy-mm-dd')
          """.as[Int].headOption
     )
   }
@@ -189,8 +189,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
          from reports
          left join events on reports.id = events.report_id
          where 1 = 1
-         and creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
          #$whereStatus
          #$whereSiret
@@ -212,8 +212,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
          from reports
          left join events on reports.id = events.report_id
          where 1 = 1
-         and creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
+         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
          #$whereDepartments
          group by category
       """.as[(ReportsByCategory)]
