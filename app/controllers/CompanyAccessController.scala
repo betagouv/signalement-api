@@ -36,6 +36,18 @@ class CompanyAccessController @Inject()(
     }))
   }
 
+  def myCompanies = SecuredAction.async { implicit request =>
+    for {
+      companyAccesses <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
+    } yield Ok(Json.toJson(companyAccesses.map{
+      case (company, level) => Map(
+          "companySiret"  -> company.siret,
+          "companyName"   -> company.name,
+          "level"         -> level.value
+      )
+    }))
+  }
+
   def updateAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     request.body.asJson.map(json => (json \ "level").as[AccessLevel]).map(level =>
       for {

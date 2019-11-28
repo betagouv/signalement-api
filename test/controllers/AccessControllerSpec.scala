@@ -98,6 +98,38 @@ The listAccesses endpoint should
   }
 }
 
+class MyCompaniesSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec { override def is = s2"""
+
+The myCompanies endpoint should
+  list my accesses as an admin                      ${checkAccess(proAdminUser, AccessLevel.ADMIN)}
+  list my accesses as a basic member                ${checkAccess(proMemberUser, AccessLevel.MEMBER)}
+  reject me if I am not connected                   $checkNotConnected
+                                                    """
+  def checkAccess(user: User, level: AccessLevel) = {
+    val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
+                  .withAuthenticator[AuthEnv](loginInfo(user))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    contentAsJson(result) must beEqualTo(
+      Json.parse(
+        s"""
+        [
+          {
+            "companySiret":"${company.siret}",
+            "companyName":"${company.name}",
+            "level":"${level.value}"
+          }]
+        """
+      )
+    )
+  }
+  def checkNotConnected = {
+    val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(UNAUTHORIZED)
+  }
+}
+
 class InvitationWorkflowSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec { override def is = s2"""
 
 The invitation workflow should

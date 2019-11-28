@@ -48,6 +48,7 @@ POST	    /api/authenticate/password/forgot           controllers.AuthController.
 POST	    /api/authenticate/password/reset            controllers.AuthController.resetPassword(token: java.util.UUID)
 
 # Accesses API
+GET         /api/accesses/connected-user                controllers.CompanyAccessController.myCompanies()
 GET         /api/accesses/:siret                        controllers.CompanyAccessController.listAccesses(siret: String)
 GET         /api/accesses/:siret/pending                controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT         /api/accesses/:siret/:userId                controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
