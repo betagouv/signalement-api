@@ -40,7 +40,7 @@ libraryDependencies ++= Seq(
   "com.norbitltd" %% "spoiwo" % "1.6.1",
 
   "com.itextpdf" % "itext7-core" % "7.1.8",
-  "com.itextpdf" % "html2pdf" % "2.1.5",
+  "com.itextpdf" % "html2pdf" % "2.1.6",
 
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.8.1" % Test,
