@@ -7,6 +7,12 @@ GET          /api                                       controllers.StaticContro
 
 # Statistics API
 GET          /api/stats                                 controllers.StatisticController.getStatistics()
+GET          /api/stats/reports                         controllers.StatisticController.getReportCount()
+GET          /api/stats/reports/monthly                 controllers.StatisticController.getMonthlyReportCount()
+GET          /api/stats/reports/read                    controllers.StatisticController.getReportReadByProPercentage()
+GET          /api/stats/reports/monthly/read            controllers.StatisticController.getMonthlyReportReadByProPercentage()
+GET          /api/stats/reports/responsed               controllers.StatisticController.getReportWithResponsePercentage()
+GET          /api/stats/reports/monthly/responsed       controllers.StatisticController.getMonthlyReportWithResponsePercentage()
 
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])

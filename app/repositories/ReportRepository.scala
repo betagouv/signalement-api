@@ -9,7 +9,7 @@ import repositories._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
-import utils.Constants.ReportStatus
+import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils
 import utils.EmailAddress
@@ -104,7 +104,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
       (id, reportId, creationDate, filename, origin) <> (constructFile, extractFile.lift)
   }
 
-  private val reportTableQuery = TableQuery[ReportTable]
+  val reportTableQuery = TableQuery[ReportTable]
 
   private val fileTableQuery = TableQuery[FileTable]
 
@@ -147,6 +147,18 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
       }
       .length.result)
 
+  def monthlyCount: Future[List[MonthlyStat]] = db
+    .run(
+      reportTableQuery
+        .filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
+        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
+        .map{
+          case ((month, year), group) => (month, year, group.length)
+        }
+        .to[List].result
+    )
+    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
+
   def avgDurationsForSendingReport() = {
 
     // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
@@ -163,74 +175,29 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     )
   }
 
-  def protectString(str: String) = {
-    str.replace("'", "''")
-  }
+  val baseStatReportTableQuery = reportTableQuery.filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
+  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
 
-  def nbSignalementsBetweenDates(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None, statusList: Option[List[ReportStatusValue]] = None, withoutSiret: Boolean = false) = {
-
-    val whereDepartments = departments match {
-      case None => ""
-      case Some(list) => " and (" + list.map(dep => s"company_postal_code like '$dep%'").mkString(" or ") + ")"
-    }
-
-    val whereStatus = statusList match {
-      case None => ""
-      case Some(list) => " and (" + list.map(status => s"status = '${protectString(status.defaultValue)}'").mkString(" or ") + ")"
-    }
-
-    val whereSiret = withoutSiret match {
-      case true => s" and company_siret is null or (company_siret is not null and events.action = '${MODIFICATION_COMMERCANT.value}')"
-      case false => ""
-    }
-
-    db.run(
-      sql"""select count(distinct reports.id)
-         from reports
-         left join events on reports.id = events.report_id
-         where 1 = 1
-         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
-         #$whereDepartments
-         #$whereStatus
-         #$whereSiret
-      """.as[Int].headOption
-    )
-  }
-
-  def nbSignalementsByCategory(start: String = DateUtils.formatTime(DateUtils.getOriginDate()), end: String = DateUtils.formatTime(LocalDateTime.now), departments: Option[List[String]] = None): Future[Vector[ReportsByCategory]] = {
-
-    val whereDepartments = departments match {
-      case None => ""
-      case Some(seq) => " and (" + seq.map(dep => s"company_postal_code like '$dep%'").mkString(" or ") + ")"
-    }
-
-    implicit val getReportByCategoryResult = GetResult(r => ReportsByCategory(r.nextString, r.nextInt))
-
-    db.run(
-      sql"""select category, count(distinct reports.id)
-         from reports
-         left join events on reports.id = events.report_id
-         where 1 = 1
-         and reports.creation_date > to_timestamp($start, 'yyyy-mm-dd hh24:mi:ss')
-         and reports.creation_date < to_timestamp($end, 'yyyy-mm-dd hh24:mi:ss')
-         #$whereDepartments
-         group by category
-      """.as[(ReportsByCategory)]
-    )
-  }
-
-
-  def countPerMonth: Future[List[ReportsPerMonth]] = db
+  def countWithStatus(statusList: List[ReportStatusValue]) = db
     .run(
-      reportTableQuery
+      baseStatReportTableQuery
+        .filter(_.status inSet statusList.map(_.defaultValue))
+        .length
+        .result
+    )
+
+  def countMonthlyWithStatus(statusList: List[ReportStatusValue]): Future[List[MonthlyStat]] = db
+    .run(
+      baseMonthlyStatReportTableQuery
+        .filter(_.status inSet statusList.map(_.defaultValue))
         .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
         .map{
           case ((month, year), group) => (month, year, group.length)
         }
         .to[List].result
     )
-    .map(_.map(result => ReportsPerMonth(result._3, YearMonth.of(result._2, result._1))))
+    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
+
 
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
