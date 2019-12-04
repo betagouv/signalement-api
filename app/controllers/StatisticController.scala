@@ -13,7 +13,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.{A_TRAITER, EMPLOYEE_REPORT, NA, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.DateUtils
-import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.{AuthEnv, WithRole}
 
 import scala.concurrent.ExecutionContext
 
@@ -87,11 +87,11 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
       ))
   }
 
-  def getReportReadMedianDelay = UserAwareAction.async { implicit request =>
+  def getReportReadMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     reportDataRepository.getReportReadMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
   }
 
-  def getReportWithResponseMedianDelay = UserAwareAction.async { implicit request =>
+  def getReportWithResponseMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     reportDataRepository.getReportResponseMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
   }
 
