@@ -18,8 +18,6 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      val eventRepository: EventRepository,
                                      val reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
 
-  val logger: Logger = Logger(this.getClass)
-
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
   import dbConfig._
@@ -64,7 +62,6 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           .to[List]
           .result)
       _ <- {
-        logger.debug(s"delaisToAdd $delaisToAdd")
         db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1, e._2, Some(e._3.toMillis)))))
       }
     } yield Unit
