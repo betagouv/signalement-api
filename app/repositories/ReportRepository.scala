@@ -159,22 +159,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     )
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
-  def avgDurationsForSendingReport() = {
-
-    // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
-    val ORIGIN_BO = "2019-05-20"
-
-    db.run(
-      sql"""select EXTRACT(DAY from AVG(AGE(e1.creation_date, reports.creation_date)))
-           from events e1
-           inner join reports on e1.report_id = reports.id
-           where action = 'Envoi du signalement'
-           and not exists(select * from events e2 where e2.report_id = e1.report_id and e2.action = 'Envoi du signalement' and e2.creation_date < e1.creation_date)
-           and reports.creation_date > to_date($ORIGIN_BO, 'yyyy-mm-dd')
-         """.as[Int].headOption
-    )
-  }
-
   val baseStatReportTableQuery = reportTableQuery.filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
 

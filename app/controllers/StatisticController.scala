@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.{LocalDateTime, YearMonth}
+import java.time.{Duration, LocalDateTime, YearMonth}
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
@@ -18,7 +18,7 @@ import utils.silhouette.auth.AuthEnv
 import scala.concurrent.ExecutionContext
 
 class StatisticController @Inject()(reportRepository: ReportRepository,
-                                    eventRepository: EventRepository,
+                                    reportDataRepository: ReportDataRepository,
                                     userRepository: UserRepository,
                                     mailerService: MailerService,
                                     s3Service: S3Service,
@@ -87,19 +87,12 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
       ))
   }
 
-  def getStatistics = UserAwareAction.async { implicit request =>
+  def getReportReadMedianDelay = UserAwareAction.async { implicit request =>
+    reportDataRepository.getReportReadMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
+  }
 
-    for {
-      reportsDurationsForEnvoiSignalement <- reportRepository.avgDurationsForSendingReport()
-
-    } yield {
-
-      Ok(Json.toJson(
-        Statistics(
-          reportsDurationsForEnvoiSignalement.getOrElse(0)
-        )
-      ))
-    }
+  def getReportWithResponseMedianDelay = UserAwareAction.async { implicit request =>
+    reportDataRepository.getReportResponseMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
   }
 
 }

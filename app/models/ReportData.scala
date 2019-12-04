@@ -1,9 +1,10 @@
 package models
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 case class ReportData(
                        reportId: UUID,
-                       readTime: Option[Long],
-                       responseTime: Option[Long]
+                       readDelay: Option[Double],
+                       responseDelay: Option[Double]
                      )
