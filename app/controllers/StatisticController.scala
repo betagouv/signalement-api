@@ -95,4 +95,13 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
     reportDataRepository.getReportResponseMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
   }
 
+  def updateReportData() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+
+    for {
+      _ <- reportDataRepository.updateReportReadDelay
+      _ <- reportDataRepository.updateReportResponseDelay
+    } yield Ok("ReportData updated")
+
+  }
+
 }

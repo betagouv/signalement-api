@@ -14,6 +14,7 @@ GET          /api/stats/reports/read/delay                      controllers.Stat
 GET          /api/stats/reports/responsed/percentage            controllers.StatisticController.getReportWithResponsePercentage()
 GET          /api/stats/reports/responsed/percentage/monthly    controllers.StatisticController.getMonthlyReportWithResponsePercentage()
 GET          /api/stats/reports/responsed/delay                 controllers.StatisticController.getReportWithResponseMedianDelay()
+POST         /api/stats/reports                                 controllers.StatisticController.updateReportData()
 
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
