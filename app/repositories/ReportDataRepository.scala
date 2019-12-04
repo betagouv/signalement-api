@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.OffsetDateTime
+import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -32,11 +32,15 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val reportDataTableQuery = TableQuery[ReportDataTable]
 
+  // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
+  val startDate = OffsetDateTime.of(2019, 5, 20, 0, 0, 0, 0, ZoneOffset.UTC);
+
   def updateReportReadDelay = {
     for {
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.ENVOI_SIGNALEMENT.value)
+          .filter(_.creationDate > startDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
           .filterNot(_._2.map(_.readDelay.isDefined).getOrElse(false))
           .join(reportRepository.reportTableQuery).on(_._1.reportId === _.id)
@@ -54,6 +58,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.REPONSE_PRO_SIGNALEMENT.value)
+          .filter(_.creationDate > startDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
           .filterNot(_._2.map(_.responseDelay.isDefined).getOrElse(false))
           .join(eventRepository.eventTableQuery).on(_._1.reportId === _.reportId)
