@@ -61,5 +61,4 @@ class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .filter(_.userId === userId)
       .delete
   }
-
 }

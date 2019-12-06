@@ -16,6 +16,7 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import models.User
+import repositories.UserRepository
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -47,8 +48,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
-
-    bind[DelegableAuthInfoDAO[PasswordInfo]].to[PasswordInfoDAO]
   }
 
   /**
@@ -175,4 +174,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] = {
     new DummyAuthenticatorService()
   }
+
+  /**
+   * See https://www.silhouette.rocks/docs/migration-guide
+   */
+  @Provides
+  def providePasswordDAO(userRepository: UserRepository): DelegableAuthInfoDAO[PasswordInfo] = new PasswordInfoDAO(userRepository)
 }

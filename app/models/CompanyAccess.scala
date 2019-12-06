@@ -19,6 +19,9 @@ object AccessLevel {
   implicit val reads = new Reads[AccessLevel] {
     def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue(_))
   }
+  implicit val writes = new Writes[AccessLevel] {
+    def writes(level: AccessLevel) = Json.toJson(level.value)
+  }
 }
 
 case class UserAccess(
