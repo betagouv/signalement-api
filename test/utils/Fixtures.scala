@@ -15,14 +15,12 @@ object Fixtures {
         id <- arbitrary[UUID]
         login <- arbitrary[String]
         password <- arbitrary[String]
-        activationKey <- arbitrary[String]
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
     } yield User(
-        id, login, password, Some(activationKey),
-        Some(email),
+        id, login, password, Some(email),
         Some(firstName), Some(lastName), userRole
     )
 
@@ -32,7 +30,6 @@ object Fixtures {
 
     val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-    val genToActivateUser = genUser.map(_.copy(userRole = UserRoles.ToActivate))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
     val genCompany = for {

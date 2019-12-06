@@ -23,6 +23,7 @@ import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -37,7 +38,6 @@ object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
          Then create the report with reportStatusList "NA"              ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.NA)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
@@ -50,7 +50,6 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
          And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report.copy(status = Some(ReportStatus.EMPLOYEE_REPORT)), Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And do no create an account                                      ${accountMustNotHaveBeenCreated}
     """
 }
 
@@ -64,21 +63,6 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpda
          Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And create an account for the professional                     ${accountToActivateMustHaveBeenCreated}
-    """
-}
-
-object CreateReportForProWithNotActivatedAccountFromEligibleDepartment extends CreateUpdateReportSpec {
-  override def is =
-    s2"""
-         Given a report which concerns
-          a professional who has a not activated account                ${step(report = report.copy(companySiret = Some(siretForCompanyWithNotActivatedAccount)))}
-          an experimentation department                                 ${step(report = report.copy(companyPostalCode = Some(Departments.AUTHORIZED(0))))}
-         When create the report                                         ${step(createReport())}
-         Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And do no create an account                                    ${accountMustNotHaveBeenCreated}
     """
 }
 
@@ -92,7 +76,6 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,"Nouveau signalement", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(report.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And do no create an account                                    ${accountMustNotHaveBeenCreated}
          And create an event "CONTACT_EMAIL"                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_EMAIL)}
          And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email.get,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
     """
@@ -128,7 +111,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
   val siretForCompanyWithoutAccount = "00000000000000"
-  val siretForCompanyWithNotActivatedAccount = "11111111111111"
   val siretForCompanyWithActivatedAccount = "22222222222222"
 
   val existingReport = Report(
@@ -145,13 +127,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   )
 
   var report = reportFixture
-
-  val toActivateUser = User(UUID.randomUUID(), siretForCompanyWithNotActivatedAccount, "password", Some("code_activation"), None, None, None, UserRoles.ToActivate)
-  val proUser = User(UUID.randomUUID(), siretForCompanyWithActivatedAccount, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
+  val proUser = Fixtures.genProUser.sample.get
 
   override def setupData = {
     Await.result(for {
-      _ <- userRepository.create(toActivateUser)
       u <- userRepository.create(proUser)
       _ <- reportRepository.create(existingReport)
       c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
@@ -171,7 +150,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     }
   }
 
-  val concernedAdminUser = User(UUID.randomUUID(), "admin", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
+  val concernedAdminUser = Fixtures.genAdminUser.sample.get
   val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.login)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(
@@ -230,19 +209,5 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     val events = Await.result(eventRepository.list, Duration.Inf).toList
     events.length must beEqualTo(1)
     events.head.action must beEqualTo(action)
-  }
-
-  def accountToActivateMustHaveBeenCreated = {
-    val users = Await.result(userRepository.list, Duration.Inf).toList
-    users.length must beEqualTo(1)
-    val user = users.head
-    user.userRole must beEqualTo(UserRoles.ToActivate)
-    user.login must beEqualTo(siretForCompanyWithoutAccount)
-    user.activationKey must beSome
-  }
-
-  def accountMustNotHaveBeenCreated = {
-    val users = Await.result(userRepository.list, Duration.Inf).toList
-    users.map(_.id) must contain(exactly(toActivateUser.id, proUser.id))
   }
 }

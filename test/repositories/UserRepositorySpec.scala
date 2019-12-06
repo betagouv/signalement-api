@@ -9,6 +9,7 @@ import org.specs2.matcher.FutureMatchers
 
 import utils.AppSpec
 import utils.EmailAddress
+import utils.Fixtures
 
 import models._
 import repositories._
@@ -16,11 +17,7 @@ import repositories._
 class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val userRepository = injector.instanceOf[UserRepository]
-  val userToto = User(
-                  UUID.randomUUID(), "toto", "password",
-                  None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"),
-                  UserRoles.Pro
-                )
+  val userToto = Fixtures.genProUser.sample.get
 
   override def setupData() {
     Await.result(userRepository.create(userToto), Duration.Inf)

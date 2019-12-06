@@ -68,7 +68,6 @@ POST        /api/accesses/:siret/invitation             controllers.CompanyAcces
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
-PUT         /api/account/activation                     controllers.AccountController.activateAccountDeprecated
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
 # Rating API

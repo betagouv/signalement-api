@@ -76,35 +76,6 @@ class AccountController @Inject()(
     )
   }
 
-  // This route is maintained for backward compatibility until front is updated
-  def activateAccountDeprecated = SecuredAction(WithPermission(UserPermission.activateAccount)).async(parse.json) { implicit request =>
-
-    logger.debug("activateAccountDeprecated")
-
-    request.body.validate[User].fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      user => {
-        for {
-          activationKey <- userRepository.get(user.id).map(_.flatMap(_.activationKey))
-          _ <- userRepository.update(user)
-          _ <- userRepository.updateAccountActivation(request.identity.id, None, UserRoles.Pro)
-          _ <- userRepository.updatePassword(request.identity.id, user.password)
-          // Forward compatibility with new access model
-          company <- companyRepository.findBySiret(request.identity.login)
-          token <- activationKey
-                    .flatMap(key =>
-                      company.map(c => companyAccessRepository.findToken(c, key)))
-                    .getOrElse(Future(None))
-          _ <- token.map(companyAccessRepository.applyToken(_, user)).getOrElse(Future(None))
-        } yield NoContent
-      }.recover {
-        case e => Unauthorized
-      }
-    )
-  }
-
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
 
     for {

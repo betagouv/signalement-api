@@ -30,6 +30,7 @@ import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -132,7 +133,7 @@ trait CreateEventContext extends Mockito {
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =
     Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
+  val adminUser = Fixtures.genAdminUser.sample.get
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser))

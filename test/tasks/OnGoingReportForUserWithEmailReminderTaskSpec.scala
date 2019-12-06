@@ -19,6 +19,7 @@ import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, RELANCE}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -118,7 +119,7 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val userWithEmail = User(UUID.randomUUID(), "22222222222222", "", None, Some(EmailAddress("email")), None, Some("test"), Pro)
+  val userWithEmail = Fixtures.genProUser.sample.get
 
   val reportUUID = UUID.randomUUID()
 

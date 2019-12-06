@@ -31,23 +31,22 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def login = column[String]("login")
     def password = column[String]("password")
-    def activationKey = column[Option[String]]("activation_key")
     def email = column[Option[EmailAddress]]("email")
     def firstName = column[Option[String]]("firstname")
     def lastName = column[Option[String]]("lastname")
     def role = column[String]("role")
 
-    type UserData = (UUID, String, String, Option[String], Option[EmailAddress], Option[String], Option[String], String)
+    type UserData = (UUID, String, String, Option[EmailAddress], Option[String], Option[String], String)
 
     def constructUser: UserData => User = {
-      case (id, login, password, activationKey, email, firstName, lastName, role) => User(id, login, password, activationKey, email, firstName, lastName, UserRoles.withName(role))
+      case (id, login, password, email, firstName, lastName, role) => User(id, login, password, email, firstName, lastName, UserRoles.withName(role))
     }
 
     def extractUser: PartialFunction[User, UserData] = {
-      case User(id, login, password, activationKey, email, firstName, lastName, role) => (id, login, password, activationKey, email, firstName, lastName, role.name)
+      case User(id, login, password, email, firstName, lastName, role) => (id, login, password, email, firstName, lastName, role.name)
     }
 
-    def * = (id, login, password, activationKey, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
+    def * = (id, login, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
   val userTableQuery = TableQuery[UserTable]
@@ -68,16 +67,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       queryUser
         .map(u => (u.firstName, u.lastName, u.email))
         .update(user.firstName, user.lastName, user.email)
-    )
-  }
-
-  def updateAccountActivation(userId: UUID, activationKey: Option[String], userRole: UserRole): Future[Int] = {
-    val queryUser = for (refUser <- userTableQuery if refUser.id === userId)
-      yield refUser
-    db.run(
-      queryUser
-        .map(u => (u.activationKey, u.role))
-        .update(activationKey, userRole.name)
     )
   }
 

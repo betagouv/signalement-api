@@ -25,6 +25,7 @@ import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -120,10 +121,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   var report = reportFixture
 
-  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
+  val concernedProUser = Fixtures.genProUser.sample.get
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
 
-  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
+  val notConcernedProUser = Fixtures.genProUser.sample.get
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
 
   var someLoginInfo: Option[LoginInfo] = None

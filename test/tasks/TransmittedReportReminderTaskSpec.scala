@@ -19,6 +19,7 @@ import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{SIGNALEMENT_TRANSMIS, ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -109,7 +110,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val userWithEmail = User(UUID.randomUUID(), "22222222222222", "", None, Some(EmailAddress("email")), None, Some("test"), Pro)
+  val userWithEmail = Fixtures.genProUser.sample.get
 
   val companyData = Company(
     UUID.randomUUID(),

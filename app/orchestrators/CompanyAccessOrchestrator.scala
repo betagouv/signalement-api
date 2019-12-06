@@ -36,8 +36,8 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                       // * Set email mandatory
                       val email = Some(tokenInfo.emailedTo.getOrElse(draftUser.email)).get
                       userRepository.create(User(
-                        UUID.randomUUID(), email.value, draftUser.password, None,
-                        Some(email), Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
+                        UUID.randomUUID(), email.value, draftUser.password, Some(email),
+                        Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
                       )).flatMap(companyAccessRepository.applyToken(t, _))})
                       .getOrElse(Future(false))
     } yield applied

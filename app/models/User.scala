@@ -22,7 +22,6 @@ case class User (
                  id: UUID,
                  login: String,
                  password: String,
-                 activationKey: Option[String],
                  email: Option[EmailAddress],
                  firstName: Option[String],
                  lastName: Option[String],
@@ -48,7 +47,6 @@ object User {
     (JsPath \ "id").read[UUID] and
       (JsPath \ "login").read[String] and
       (JsPath \ "password").read[String] and
-      (JsPath \ "activationKey").readNullable[String] and
       (JsPath \ "email").readNullable[EmailAddress] and
       (JsPath \ "firstName").readNullable[String] and
       (JsPath \ "lastName").readNullable[String] and
@@ -109,11 +107,6 @@ object UserRoles {
     )
   )
 
-  object ToActivate extends UserRole(
-    "ToActivate",
-    Seq(UserPermission.activateAccount)
-  )
-
   object Pro extends UserRole(
     "Professionnel",
     Seq(
@@ -122,7 +115,7 @@ object UserRoles {
     )
   )
 
-  val userRoles = Seq(Admin, DGCCRF, Pro, ToActivate)
+  val userRoles = Seq(Admin, DGCCRF, Pro)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head
