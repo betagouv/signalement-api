@@ -41,9 +41,10 @@ class CompanyAccessController @Inject()(
       companyAccesses <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
     } yield Ok(Json.toJson(companyAccesses.map{
       case (company, level) => Map(
-          "companySiret"  -> company.siret,
-          "companyName"   -> company.name,
-          "level"         -> level.value
+          "companySiret"      -> company.siret,
+          "companyName"       -> company.name,
+          "companyAddress"    -> company.address,
+          "level"             -> level.value
       )
     }))
   }

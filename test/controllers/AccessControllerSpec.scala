@@ -117,6 +117,7 @@ The myCompanies endpoint should
           {
             "companySiret":"${company.siret}",
             "companyName":"${company.name}",
+            "companyAddress":"${company.address}",
             "level":"${level.value}"
           }]
         """
