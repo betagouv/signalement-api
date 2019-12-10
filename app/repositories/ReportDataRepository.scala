@@ -1,11 +1,11 @@
 package repositories
 
-import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
+import java.time.{LocalDate, LocalTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models.ReportData
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
@@ -16,7 +16,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      val eventRepository: EventRepository,
-                                     val reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
+                                     val reportRepository: ReportRepository,
+                                     configuration: Configuration)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
@@ -32,17 +33,20 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val reportDataTableQuery = TableQuery[ReportDataTable]
 
-  // date de mise en place du back office. Nécessaire de filtrer sur cette date pour avoir des chiffres cohérents
-  val startDate = OffsetDateTime.of(2019, 5, 20, 0, 0, 0, 0, ZoneOffset.UTC);
+
+  val backofficeStartDate = OffsetDateTime.of(
+    LocalDate.parse(configuration.get[String]("play.stats.backofficeStartDate")),
+    LocalTime.MIDNIGHT,
+    ZoneOffset.UTC)
 
   def updateReportReadDelay = {
     for {
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.ENVOI_SIGNALEMENT.value)
-          .filter(_.creationDate > startDate)
+          .filter(_.creationDate > backofficeStartDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
-          .filterNot(_._2.map(_.readDelay.isDefined).getOrElse(false))
+          .filterNot(_._2.flatMap(_.readDelay).isDefined)
           .join(reportRepository.reportTableQuery).on(_._1.reportId === _.id)
           .map(result => (result._1._1.reportId, result._1._1.creationDate - result._2.creationDate, result._1._2.flatMap(_.responseDelay)))
           .to[List]
@@ -58,9 +62,9 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.REPONSE_PRO_SIGNALEMENT.value)
-          .filter(_.creationDate > startDate)
+          .filter(_.creationDate > backofficeStartDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
-          .filterNot(_._2.map(_.responseDelay.isDefined).getOrElse(false))
+          .filterNot(_._2.flatMap(_.responseDelay).isDefined)
           .join(eventRepository.eventTableQuery).on(_._1.reportId === _.reportId)
           .filter(_._2.action === ActionEvent.ENVOI_SIGNALEMENT.value)
           .map(result => (result._1._1.reportId, result._1._2.flatMap(_.readDelay), result._1._1.creationDate - result._2.creationDate))

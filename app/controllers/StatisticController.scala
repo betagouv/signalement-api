@@ -40,7 +40,7 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   def getReportReadByProPercentage = UserAwareAction.async { implicit request =>
     for {
       count <- reportRepository.countWithStatus(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE))
-      baseCount <- reportRepository.countWithStatus(ReportStatus.reportStatusList.filterNot(List(NA, EMPLOYEE_REPORT).contains(_)).toList)
+      baseCount <- reportRepository.countWithStatus(ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList)
     } yield
       Ok(Json.obj(
         "value" -> count * 100 / baseCount
@@ -50,7 +50,7 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   def getMonthlyReportReadByProPercentage = UserAwareAction.async { implicit request =>
     for {
       monthlyCounts <- reportRepository.countMonthlyWithStatus(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE))
-      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(ReportStatus.reportStatusList.filterNot(List(NA, EMPLOYEE_REPORT).contains(_)).toList)
+      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList)
     } yield
       Ok(Json.toJson(
         monthlyBaseCounts.map(
