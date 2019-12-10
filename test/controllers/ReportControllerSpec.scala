@@ -15,22 +15,18 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{Json, Writes}
-import play.api.libs.mailer.AttachmentFile
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
-import utils.Constants.ReportStatus._
-import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
+import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
 
 import scala.concurrent.Future
 
