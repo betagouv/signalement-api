@@ -122,10 +122,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var report = reportFixture
 
   val concernedProUser = Fixtures.genProUser.sample.get
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
+  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.get.value)
 
   val notConcernedProUser = Fixtures.genProUser.sample.get
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
+  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.get.value)
 
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None

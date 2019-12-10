@@ -13,14 +13,13 @@ import scala.util.Random
 object Fixtures {
     val genUser = for {
         id <- arbitrary[UUID]
-        login <- arbitrary[String]
         password <- arbitrary[String]
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
     } yield User(
-        id, login, password, Some(email),
+        id, password, Some(email),
         Some(firstName), Some(lastName), userRole
     )
 

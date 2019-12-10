@@ -114,7 +114,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
 
   val companyData = Company(
     UUID.randomUUID(),
-    userWithEmail.login,
+    "22222222222222",
     OffsetDateTime.now,
     "Test entreprise",
     "10 rue des Champs",
@@ -124,7 +124,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val reportUUID = UUID.randomUUID()
 
   val transmittedReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
-    Some(userWithEmail.login),
+    Some(userWithEmail.email.get.value),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, false, List.empty,
     Some(SIGNALEMENT_TRANSMIS))
   val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),

@@ -36,7 +36,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
                                                                  """
 
   def e1 = userRepository.get(userToto.id) must beSome.await
-  def e2 = userRepository.findByLogin(userToto.login) must beSome.await
+  def e2 = userRepository.findByLogin(userToto.email.get.value) must beSome.await
   def e3 = userRepository.delete(userToto.id) must beEqualTo(1).await
   def e4 = userRepository.get(userToto.id) must beNone.await
 }

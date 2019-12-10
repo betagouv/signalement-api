@@ -151,7 +151,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   }
 
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
-  val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.login)
+  val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.get.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(
     concernedAdminLoginInfo -> concernedAdminUser

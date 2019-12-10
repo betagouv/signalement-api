@@ -20,7 +20,6 @@ object DraftUser {
 
 case class User (
                  id: UUID,
-                 login: String,
                  password: String,
                  email: Option[EmailAddress],
                  firstName: Option[String],
@@ -34,7 +33,6 @@ object User {
   implicit val userWrites = new Writes[User] {
     def writes(user: User) = Json.obj(
       "id" -> user.id,
-      "login" -> user.login,
       "email" -> user.email,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
@@ -45,7 +43,6 @@ object User {
 
   implicit val userReads: Reads[User] = (
     (JsPath \ "id").read[UUID] and
-      (JsPath \ "login").read[String] and
       (JsPath \ "password").read[String] and
       (JsPath \ "email").readNullable[EmailAddress] and
       (JsPath \ "firstName").readNullable[String] and

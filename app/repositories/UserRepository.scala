@@ -29,24 +29,23 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def id = column[UUID]("id", O.PrimaryKey)
 
-    def login = column[String]("login")
     def password = column[String]("password")
     def email = column[Option[EmailAddress]]("email")
     def firstName = column[Option[String]]("firstname")
     def lastName = column[Option[String]]("lastname")
     def role = column[String]("role")
 
-    type UserData = (UUID, String, String, Option[EmailAddress], Option[String], Option[String], String)
+    type UserData = (UUID, String, Option[EmailAddress], Option[String], Option[String], String)
 
     def constructUser: UserData => User = {
-      case (id, login, password, email, firstName, lastName, role) => User(id, login, password, email, firstName, lastName, UserRoles.withName(role))
+      case (id, password, email, firstName, lastName, role) => User(id, password, email, firstName, lastName, UserRoles.withName(role))
     }
 
     def extractUser: PartialFunction[User, UserData] = {
-      case User(id, login, password, email, firstName, lastName, role) => (id, login, password, email, firstName, lastName, role.name)
+      case User(id, password, email, firstName, lastName, role) => (id, password, email, firstName, lastName, role.name)
     }
 
-    def * = (id, login, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
+    def * = (id, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
   val userTableQuery = TableQuery[UserTable]
@@ -90,18 +89,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     db
     .run(userTableQuery
     .filter(u =>
-      if (login.contains("@"))
         (u.email === EmailAddress(login)).getOrElse(false)
-      else
-        (u.login === login)
       ).to[List].result.headOption)
-
-  def prefetchLogins(logins: List[String]): Future[Map[String, User]] = db
-    .run(
-      userTableQuery
-        .filter(_.login inSetBind logins)
-        .map(u => (u.login, u))
-        .to[List]
-        .result
-    ).map(_.toMap)
 }

@@ -32,11 +32,11 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
       applied     <- token.map(t => {
                       // TODO (once we drop support for old-accounts SIRET login)
-                      // * Remove login field
+                      // * Remove login field (OK)
                       // * Set email mandatory
                       val email = Some(tokenInfo.emailedTo.getOrElse(draftUser.email)).get
                       userRepository.create(User(
-                        UUID.randomUUID(), email.value, draftUser.password, Some(email),
+                        UUID.randomUUID(), draftUser.password, Some(email),
                         Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
                       )).flatMap(companyAccessRepository.applyToken(t, _))})
                       .getOrElse(Future(false))

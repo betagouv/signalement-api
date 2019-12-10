@@ -127,9 +127,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
             ))
           )
-          mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
-            Map("00000000000000" -> proIdentity)
-          )
 
           val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)
           val result = route(application, request).get
@@ -145,9 +142,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
   trait Context extends Scope {
 
     val adminIdentity = Fixtures.genAdminUser.sample.get
-    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.login)
+    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.get.value)
     val proIdentity = Fixtures.genProUser.sample.get
-    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
+    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.get.value)
 
     val companyId = UUID.randomUUID
 
