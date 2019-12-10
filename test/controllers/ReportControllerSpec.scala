@@ -142,9 +142,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
   trait Context extends Scope {
 
     val adminIdentity = Fixtures.genAdminUser.sample.get
-    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.get.value)
+    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
     val proIdentity = Fixtures.genProUser.sample.get
-    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.get.value)
+    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
 
     val companyId = UUID.randomUUID
 

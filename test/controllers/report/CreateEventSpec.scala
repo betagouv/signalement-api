@@ -134,7 +134,7 @@ trait CreateEventContext extends Mockito {
     Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
 
   val adminUser = Fixtures.genAdminUser.sample.get
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.get.value)
+  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser))
 

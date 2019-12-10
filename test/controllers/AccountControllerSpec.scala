@@ -56,7 +56,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
   trait Context extends Scope {
 
     val identity = Fixtures.genAdminUser.sample.get
-    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.get.value)
+    val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
     implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
     class FakeModule extends AbstractModule with ScalaModule {

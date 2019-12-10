@@ -30,12 +30,12 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def id = column[UUID]("id", O.PrimaryKey)
 
     def password = column[String]("password")
-    def email = column[Option[EmailAddress]]("email")
-    def firstName = column[Option[String]]("firstname")
-    def lastName = column[Option[String]]("lastname")
+    def email = column[EmailAddress]("email")
+    def firstName = column[String]("firstname")
+    def lastName = column[String]("lastname")
     def role = column[String]("role")
 
-    type UserData = (UUID, String, Option[EmailAddress], Option[String], Option[String], String)
+    type UserData = (UUID, String, EmailAddress, String, String, String)
 
     def constructUser: UserData => User = {
       case (id, password, email, firstName, lastName, role) => User(id, password, email, firstName, lastName, UserRoles.withName(role))
@@ -88,7 +88,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findByLogin(login: String): Future[Option[User]] =
     db
     .run(userTableQuery
-    .filter(u =>
-        (u.email === EmailAddress(login)).getOrElse(false)
-      ).to[List].result.headOption)
+    .filter(_.email === EmailAddress(login))
+    .to[List].result.headOption)
 }

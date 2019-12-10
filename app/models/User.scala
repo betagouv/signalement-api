@@ -21,9 +21,9 @@ object DraftUser {
 case class User (
                  id: UUID,
                  password: String,
-                 email: Option[EmailAddress],
-                 firstName: Option[String],
-                 lastName: Option[String],
+                 email: EmailAddress,
+                 firstName: String,
+                 lastName: String,
                  userRole: UserRole
                ) extends Identity {
   def fullName = firstName.flatMap(f => lastName.map(l => s"${f} ${l}"))
@@ -44,9 +44,9 @@ object User {
   implicit val userReads: Reads[User] = (
     (JsPath \ "id").read[UUID] and
       (JsPath \ "password").read[String] and
-      (JsPath \ "email").readNullable[EmailAddress] and
-      (JsPath \ "firstName").readNullable[String] and
-      (JsPath \ "lastName").readNullable[String] and
+      (JsPath \ "email").read[EmailAddress] and
+      (JsPath \ "firstName").read[String] and
+      (JsPath \ "lastName").read[String] and
       ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
     )(User.apply _)
 }

@@ -79,7 +79,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val userWithoutEmail = Fixtures.genProUser.sample.get.copy(email=None)
+  val userWithoutEmail = Fixtures.genProUser.sample.get.copy(email=EmailAddress(""))
 
   val reportUUID = UUID.randomUUID()
 

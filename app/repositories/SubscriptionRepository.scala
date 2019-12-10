@@ -74,6 +74,6 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .map(_._2.email)
         .to[List]
         .result
-    ).map(_.flatten)
+    )
 }
 

@@ -201,13 +201,13 @@ trait GetReportContext extends Mockito {
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.get.value)
+  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
 
   val concernedProUser = Fixtures.genProUser.sample.get
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.get.value)
+  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
 
   val notConcernedProUser = Fixtures.genProUser.sample.get
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.get.value)
+  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, concernedProLoginInfo -> concernedProUser, notConcernedProLoginInfo -> notConcernedProUser))
 

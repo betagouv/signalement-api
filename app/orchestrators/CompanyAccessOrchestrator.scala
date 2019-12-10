@@ -31,13 +31,10 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       company     <- companyRepository.findBySiret(tokenInfo.companySiret)
       token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
       applied     <- token.map(t => {
-                      // TODO (once we drop support for old-accounts SIRET login)
-                      // * Remove login field (OK)
-                      // * Set email mandatory
-                      val email = Some(tokenInfo.emailedTo.getOrElse(draftUser.email)).get
+                      val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
                       userRepository.create(User(
-                        UUID.randomUUID(), draftUser.password, Some(email),
-                        Some(draftUser.firstName), Some(draftUser.lastName), UserRoles.Pro
+                        UUID.randomUUID(), draftUser.password, email,
+                        draftUser.firstName, draftUser.lastName, UserRoles.Pro
                       )).flatMap(companyAccessRepository.applyToken(t, _))})
                       .getOrElse(Future(false))
     } yield applied
@@ -60,7 +57,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
     } yield {
       mailerService.sendEmail(
         from = mailFrom,
-        recipients = user.email.get)(
+        recipients = user.email)(
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
         bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString,
         attachments = Seq(

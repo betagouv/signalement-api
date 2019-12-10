@@ -40,18 +40,17 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
     companyAccessRepository.fetchAdmins(company).flatMap(admins => {
-      val adminsWithEmail = admins.filter(_.email.isDefined)
-      if (adminsWithEmail.nonEmpty) {
+      if (admins.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = adminsWithEmail.flatMap(_.email): _*)(
+          recipients = admins.map(_.email): _*)(
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.professional.reportNotification(report).toString,
           attachments = Seq(
             AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
           )
         )
-        val user = adminsWithEmail.head     // We must chose one as Event links to a single User
+        val user = admins.head     // We must chose one as Event links to a single User
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
@@ -60,15 +59,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
-            stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email.getOrElse("") } )")
+            stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email } )")
           )
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
-      } else if (admins.isEmpty) {
-        companyAccessRepository.createToken(company, AccessLevel.ADMIN, f"${Random.nextInt(1000000)}%06d", tokenDuration).map(_ => report)
       } else {
-        Future(report)
+        companyAccessRepository.createToken(company, AccessLevel.ADMIN, f"${Random.nextInt(1000000)}%06d", tokenDuration).map(_ => report)
       }
     })
   }
@@ -240,7 +237,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    user.email.filter(_.value != "").foreach(email =>
+    Some(user.email).filter(_.value != "").foreach(email =>
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
