@@ -1,5 +1,6 @@
 -- !Ups
 
+DELETE FROM USERS WHERE role = 'ToActivate';
 ALTER TABLE USERS
     ALTER COLUMN email SET NOT NULL,
     ALTER COLUMN firstname SET NOT NULL,
