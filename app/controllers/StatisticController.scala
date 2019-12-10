@@ -88,11 +88,11 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   }
 
   def getReportReadMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportReadMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
+    reportDataRepository.getReportReadMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong))))
   }
 
   def getReportWithResponseMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportResponseMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMillis(count.toLong))))
+    reportDataRepository.getReportResponseMedianDelay.map(count => Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong))))
   }
 
   def updateReportData() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
