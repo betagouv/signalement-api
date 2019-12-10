@@ -33,9 +33,8 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private val reportDataTableQuery = TableQuery[ReportDataTable]
 
-
-  val backofficeStartDate = OffsetDateTime.of(
-    LocalDate.parse(configuration.get[String]("play.stats.backofficeStartDate")),
+  val backofficeProStartDate = OffsetDateTime.of(
+    LocalDate.parse(configuration.get[String]("play.stats.backofficeProStartDate")),
     LocalTime.MIDNIGHT,
     ZoneOffset.UTC)
 
@@ -44,7 +43,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.ENVOI_SIGNALEMENT.value)
-          .filter(_.creationDate > backofficeStartDate)
+          .filter(_.creationDate > backofficeProStartDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
           .filterNot(_._2.flatMap(_.readDelay).isDefined)
           .join(reportRepository.reportTableQuery).on(_._1.reportId === _.id)
@@ -62,7 +61,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       delaisToAdd <- db.run(
         eventRepository.eventTableQuery
           .filter(_.action === ActionEvent.REPONSE_PRO_SIGNALEMENT.value)
-          .filter(_.creationDate > backofficeStartDate)
+          .filter(_.creationDate > backofficeProStartDate)
           .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
           .filterNot(_._2.flatMap(_.responseDelay).isDefined)
           .join(eventRepository.eventTableQuery).on(_._1.reportId === _.reportId)

@@ -1,10 +1,11 @@
 package repositories
 
-import java.time.{LocalDate, LocalDateTime, OffsetDateTime, YearMonth}
+import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime, YearMonth, ZoneOffset}
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import models._
+import play.api.Configuration
 import repositories._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
@@ -30,7 +31,10 @@ case class ReportFilter(
                        )
 
 @Singleton
-class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, companyAccessRepository: CompanyAccessRepository, val companyRepository: CompanyRepository)(implicit ec: ExecutionContext) {
+class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+                                 companyAccessRepository: CompanyAccessRepository,
+                                 val companyRepository: CompanyRepository,
+                                 configuration: Configuration)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -116,6 +120,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
+  val backofficeAdminStartDate = OffsetDateTime.of(
+    LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
+    LocalTime.MIDNIGHT,
+    ZoneOffset.UTC)
+
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
       val expr = SimpleExpression.binary[String,String,Boolean] { (s, p, qb) =>
@@ -159,7 +168,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, compa
     )
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
-  val baseStatReportTableQuery = reportTableQuery.filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
+  val baseStatReportTableQuery = reportTableQuery
+    .filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
+    .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
 
   def countWithStatus(statusList: List[ReportStatusValue]) = db
