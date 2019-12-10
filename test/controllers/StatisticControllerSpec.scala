@@ -1,0 +1,174 @@
+package controllers
+
+import java.time.{OffsetDateTime, YearMonth}
+
+import com.google.inject.AbstractModule
+import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.mohiva.play.silhouette.test._
+import models._
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher}
+import org.specs2.mutable.Specification
+import play.api.test.Helpers._
+import play.api.test._
+import repositories._
+import utils.Constants.ReportStatus.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_TRANSMIS}
+import utils.silhouette.auth.AuthEnv
+import utils.{AppSpec, Fixtures}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+
+
+class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticControllerSpec  {
+  override def is =
+    s2"""it should
+         return reports count                               ${getReportCount}
+         return monthly reports count                       ${getMonthlyReportCount}
+         return reports read by pro percentage              ${getReportWithResponsePercentage}
+         return monthly reports read by pro percentage      ${getMonthlyReportWithResponsePercentage}
+         return reports with response percentage            ${getReportWithResponsePercentage}
+         return monthly reports with response percentage    ${getMonthlyReportWithResponsePercentage}
+    """
+
+
+  def aMonthlyStat(monthlyStat: MonthlyStat): Matcher[String] =
+    /("value").andHave(monthlyStat.value) and
+      /("month").andHave(monthlyStat.yearMonth.getMonthValue - 1) and
+      /("year").andHave(monthlyStat.yearMonth.getYear)
+
+  def haveMonthlyStats(monthlyStats: Matcher[String]*): Matcher[String] =
+    have(allOf(monthlyStats:_*))
+
+  def getReportCount =  {
+    val request = FakeRequest(GET, routes.StatisticController.getReportCount().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must /("value" -> allReports.length)
+  }
+
+  def getMonthlyReportCount =  {
+    val request = FakeRequest(GET, routes.StatisticController.getMonthlyReportCount().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must haveMonthlyStats(
+      aMonthlyStat(MonthlyStat(currentMonthReports.length, YearMonth.now)),
+      aMonthlyStat(MonthlyStat(lastMonthReports.length, YearMonth.now.minusMonths(1)))
+    )
+  }
+
+  def getReportReadByProPercentage =  {
+    val request = FakeRequest(GET, routes.StatisticController.getReportReadByProPercentage().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must /("value" -> reportsReadByPro.length * 100 / allReports.length)
+  }
+
+  def getMonthlyReportReadByProPercentage =  {
+    val request = FakeRequest(GET, routes.StatisticController.getMonthlyReportReadByProPercentage().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must haveMonthlyStats(
+      aMonthlyStat(MonthlyStat(currentMonthReportsReadByPro.length * 100 / currentMonthReports.length, YearMonth.now)),
+      aMonthlyStat(MonthlyStat(lastMonthReportsWithResponse.length * 100 / lastMonthReports.length, YearMonth.now.minusMonths(1)))
+    )
+  }
+
+  def getReportWithResponsePercentage =  {
+    val request = FakeRequest(GET, routes.StatisticController.getReportWithResponsePercentage().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must /("value" -> reportsWithResponse.length * 100 /
+      (currentMonthReportsSend ::: reportsWithResponse ::: reportsClosedByNoAction).length)
+  }
+
+  def getMonthlyReportWithResponsePercentage =  {
+    val request = FakeRequest(GET, routes.StatisticController.getMonthlyReportWithResponsePercentage().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must haveMonthlyStats(
+      aMonthlyStat(MonthlyStat(currentMonthReportsWithResponse.length * 100 /
+        (currentMonthReportsSend ::: currentMonthReportsWithResponse ::: currentMonthReportsClosedByNoAction).length, YearMonth.now)),
+      aMonthlyStat(MonthlyStat(lastMonthReportsWithResponse.length * 100 /
+        (lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction).length, YearMonth.now.minusMonths(1)))
+    )
+  }
+}
+
+abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers with JsonMatchers {
+
+
+  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val reportRepository = injector.instanceOf[ReportRepository]
+
+  val company = Fixtures.genCompany.sample.get
+
+  val lastYearReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+  val lastYearReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+  val lastYearReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+  val lastYearReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+  val lastYearReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+
+  val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
+  val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
+  val lastYearReports = lastYearReportsToProcess ::: lastYearReportsReadByPro
+
+  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+  val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+  val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+  val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+  val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+
+  val lastMonthReportsWithResponse = lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
+  val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
+  val lastMonthReports = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
+
+  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get
+  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_TRANSMIS)).sample.get
+  val currentMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get
+  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get
+  val currentMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get
+  val currentMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get
+
+  val currentMonthReportsWithResponse = currentMonthReportsAccepted ::: currentMonthReportsRejected ::: currentMonthReportsNotConcerned
+  val currentMonthReportsReadByPro = currentMonthReportsWithResponse ::: currentMonthReportsClosedByNoAction
+  val currentMonthReports = currentMonthReportsToProcess ::: currentMonthReportsSend ::: currentMonthReportsReadByPro
+
+  val reportsWithResponse = lastYearReportsWithResponse ::: lastMonthReportsWithResponse ::: currentMonthReportsWithResponse
+  val reportsReadByPro = lastYearReportsReadByPro ::: lastMonthReportsReadByPro ::: currentMonthReportsReadByPro
+  val reportsClosedByNoAction = lastYearReportsClosedByNoAction ::: lastMonthReportsClosedByNoAction ::: currentMonthReportsClosedByNoAction
+
+  val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports
+
+  override def setupData = {
+    Await.result(companyRepository.getOrCreate(company.siret, company), Duration.Inf)
+    for (report <-allReports ) {
+      Await.result(reportRepository.create(report), Duration.Inf)
+    }
+  }
+
+  override def configureFakeModule(): AbstractModule = {
+    new FakeModule
+  }
+
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.get.value)
+
+  implicit val env = new FakeEnvironment[AuthEnv](Seq().map(
+    user => loginInfo(user) -> user
+  ))
+
+  class FakeModule extends AppFakeModule {
+    override def configure() = {
+      super.configure
+      bind[Environment[AuthEnv]].toInstance(env)
+    }
+  }
+}
