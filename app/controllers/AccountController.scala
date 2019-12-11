@@ -110,7 +110,7 @@ class AccountController @Inject()(
     for {
       company <- companyRepository.findBySiret(siret)
       token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
-      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER.defaultValue)))
+      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)

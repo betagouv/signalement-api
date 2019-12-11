@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.{JsError, Json, OFormat}
+import play.api.libs.json.{JsError, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Environment, Logger}
@@ -16,7 +16,7 @@ import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
-import utils.Constants.{ActionEvent, EventType}
+import utils.Constants.EventType
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -41,7 +41,10 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val BucketName = configuration.get[String]("play.buckets.report")
 
   private def getProLevel(user: User, report: Option[Report]) =
-    report.flatMap(_.companyId).map(companyAccessRepository.getUserLevel(_, user)).getOrElse(Future(AccessLevel.NONE))
+    report
+      .filter(_.status.map(_.getValueWithUserRole(user.userRole)).isDefined)
+      .flatMap(_.companyId).map(companyAccessRepository.getUserLevel(_, user))
+      .getOrElse(Future(AccessLevel.NONE))
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
