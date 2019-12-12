@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.{ByteArrayInputStream, File}
-import java.util.UUID
+import java.time.OffsetDateTime
 
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
@@ -15,6 +15,7 @@ import orchestrators._
 import play.api._
 import play.api.libs.json.JsError
 import repositories._
+import utils.Constants.ReportStatus.A_TRAITER
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 
@@ -130,32 +131,70 @@ class AccountController @Inject()(
           val dfp = new DefaultFontProvider(true, true, true)
           converterProperties.setFontProvider(dfp)
           converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
-          val creationDate = events
-                            .filter(_.action == ActionEvent.CONTACT_COURRIER)
-                            .headOption
-                            .flatMap(_.creationDate)
-                            .getOrElse(report.creationDate.get)
-                            .toLocalDate
-          val pdfString = if (events.exists(_.action == ActionEvent.RELANCE)) {
-              views.html.pdfs.accountActivationReminder(
-                report.companyAddress,
-                creationDate,
-                creationDate.plus(reportExpirationDelay),
-                activationKey
-              )
-            } else {
-              views.html.pdfs.accountActivation(
-                report.companyAddress,
-                report.creationDate.map(_.toLocalDate).get,
-                activationKey
-              )
-            }
 
-          HtmlConverter.convertToPdf(new ByteArrayInputStream(pdfString.body.getBytes()), pdf, converterProperties)
+          HtmlConverter.convertToPdf(new ByteArrayInputStream(getHtmlDocumentForReport(report, events, activationKey).body.getBytes()), pdf, converterProperties)
 
           Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
         case (Some(report), None) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
         case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
+      }
+    }
+  }
+
+  def getHtmlDocumentForReport(report: Report, events: List[Event], activationKey: String) = {
+    val creationDate = events
+      .filter(_.action == ActionEvent.CONTACT_COURRIER)
+      .headOption
+      .flatMap(_.creationDate)
+      .getOrElse(report.creationDate.get)
+      .toLocalDate
+    if (events.exists(_.action == ActionEvent.RELANCE)) {
+      views.html.pdfs.accountActivationReminder(
+        report.companyAddress,
+        creationDate,
+        creationDate.plus(reportExpirationDelay),
+        activationKey
+      )
+    } else {
+      views.html.pdfs.accountActivation(
+        report.companyAddress,
+        report.creationDate.map(_.toLocalDate).get,
+        activationKey
+      )
+    }
+  }
+
+  //def getActivationDocuments() = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
+  def getActivationDocuments() = UnsecuredAction.async { implicit request =>
+
+    for {
+      paginatedReports <- reportRepository.getReports(0, 100, ReportFilter(statusList = Seq(A_TRAITER.defaultValue)))
+      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
+      reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(paginatedReports.entities.flatMap(_.companyId))
+    } yield {
+
+      logger.debug(s"docs ${paginatedReports.entities}")
+      logger.debug(s"codes ${reportActivationCodesMap}")
+
+      val htmlDocuments = paginatedReports.entities
+        .map(report => (report, reportEventsMap.get(report.id.get), reportActivationCodesMap.get(report.companyId.get)))
+        .filter(_._3.isDefined)
+        .map(tuple => getHtmlDocumentForReport(tuple._1, tuple._2.getOrElse(List.empty), tuple._3.get))
+
+      if (!htmlDocuments.isEmpty) {
+        val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/activation_${OffsetDateTime.now.toString}.pdf";
+        val pdf = new PdfDocument(new PdfWriter(tmpFileName))
+
+        val converterProperties = new ConverterProperties
+        val dfp = new DefaultFontProvider(true, true, true)
+        converterProperties.setFontProvider(dfp)
+        converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
+
+        HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
+
+        Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+      } else {
+        NotFound
       }
     }
   }

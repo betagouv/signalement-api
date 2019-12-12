@@ -70,6 +70,7 @@ POST        /api/account/password                       controllers.AccountContr
 POST        /api/account/activation                     controllers.AccountController.activateAccount
 PUT         /api/account/activation                     controllers.AccountController.activateAccountDeprecated
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
+GET         /api/account/document/activation            controllers.AccountController.getActivationDocuments()
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

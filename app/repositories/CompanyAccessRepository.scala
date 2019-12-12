@@ -186,4 +186,15 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .headOption
     )
   }
+
+  def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] = {
+    db.run(AccessTokenTableQuery
+      .filter(_.companyId inSetBind companyIds.distinct)
+      .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.valid)
+      .filterNot(_.emailedTo.isDefined)
+      .to[List].result
+    )
+      .map(f => f.map(accessToken => accessToken.companyId -> accessToken.token).toMap)
+  }
 }
