@@ -2,6 +2,7 @@ package controllers
 
 import java.io.{ByteArrayInputStream, File}
 import java.time.OffsetDateTime
+import java.util.UUID
 
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
@@ -13,7 +14,7 @@ import javax.inject.{Inject, Singleton}
 import models._
 import orchestrators._
 import play.api._
-import play.api.libs.json.JsError
+import play.api.libs.json.{JsError, Json}
 import repositories._
 import utils.Constants.ReportStatus.A_TRAITER
 import utils.Constants.{ActionEvent, ReportStatus}
@@ -164,39 +165,52 @@ class AccountController @Inject()(
     }
   }
 
-  //def getActivationDocuments() = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
-  def getActivationDocuments() = UnsecuredAction.async { implicit request =>
+  def getActivationDocumentForReportList() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
 
-    for {
-      paginatedReports <- reportRepository.getReports(0, 100, ReportFilter(statusList = Seq(A_TRAITER.defaultValue)))
-      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(paginatedReports.entities.flatMap(_.companyId))
-    } yield {
+    import AccountObjects.ReportList
 
-      logger.debug(s"docs ${paginatedReports.entities}")
-      logger.debug(s"codes ${reportActivationCodesMap}")
+    request.body.validate[ReportList](Json.reads[ReportList]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      result => {
 
-      val htmlDocuments = paginatedReports.entities
-        .map(report => (report, reportEventsMap.get(report.id.get), reportActivationCodesMap.get(report.companyId.get)))
-        .filter(_._3.isDefined)
-        .map(tuple => getHtmlDocumentForReport(tuple._1, tuple._2.getOrElse(List.empty), tuple._3.get))
+        logger.debug(s"getActivationDocumentForReportList ${result.reportIds}")
 
-      if (!htmlDocuments.isEmpty) {
-        val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/activation_${OffsetDateTime.now.toString}.pdf";
-        val pdf = new PdfDocument(new PdfWriter(tmpFileName))
+        for {
+          reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == Some(A_TRAITER)))
+          reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
+          reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
+        } yield {
 
-        val converterProperties = new ConverterProperties
-        val dfp = new DefaultFontProvider(true, true, true)
-        converterProperties.setFontProvider(dfp)
-        converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
+          val htmlDocuments = reports
+            .map(report => (report, reportEventsMap.get(report.id.get), reportActivationCodesMap.get(report.companyId.get)))
+            .filter(_._3.isDefined)
+            .map(tuple => getHtmlDocumentForReport(tuple._1, tuple._2.getOrElse(List.empty), tuple._3.get))
 
-        HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
+          if (!htmlDocuments.isEmpty) {
+            val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/courriers_${OffsetDateTime.now.toString}.pdf";
+            val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 
-        Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
-      } else {
-        NotFound
+            val converterProperties = new ConverterProperties
+            val dfp = new DefaultFontProvider(true, true, true)
+            converterProperties.setFontProvider(dfp)
+            converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
+
+            HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
+
+            Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+          } else {
+            NotFound
+          }
+        }
       }
-    }
+    )
+
   }
 
+}
+
+object AccountObjects {
+  case class ReportList(reportIds: List[UUID])
 }

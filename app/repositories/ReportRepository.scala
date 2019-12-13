@@ -269,6 +269,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       )
   }
 
+  def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
+    reportTableQuery.filter(_.id inSet(ids))
+      .to[List]
+      .result
+  )
+
   def createFile(file: ReportFile): Future[ReportFile] = db
     .run(fileTableQuery += file)
     .map(_ => file)

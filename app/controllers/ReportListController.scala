@@ -3,6 +3,7 @@ package controllers
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
@@ -11,7 +12,8 @@ import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import models.Event._
-import play.api.libs.json.{JsObject, Json}
+import orchestrators.ReportOrchestrator
+import play.api.libs.json.{JsError, JsObject, Json}
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, S3Service}
@@ -22,19 +24,20 @@ import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
-class ReportListController @Inject()(reportRepository: ReportRepository,
-                                 companyAccessRepository: CompanyAccessRepository,
-                                 eventRepository: EventRepository,
-                                 userRepository: UserRepository,
-                                 mailerService: MailerService,
-                                 s3Service: S3Service,
-                                 val silhouette: Silhouette[AuthEnv],
-                                 val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                 configuration: Configuration,
-                                 environment: Environment)
-                                (implicit val executionContext: ExecutionContext) extends BaseController {
+class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
+                                     reportRepository: ReportRepository,
+                                     companyAccessRepository: CompanyAccessRepository,
+                                     eventRepository: EventRepository,
+                                     userRepository: UserRepository,
+                                     mailerService: MailerService,
+                                     s3Service: S3Service,
+                                     val silhouette: Silhouette[AuthEnv],
+                                     val silhouetteAPIKey: Silhouette[APIKeyEnv],
+                                     configuration: Configuration,
+                                     environment: Environment)
+                                    (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -314,4 +317,31 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     }
   }
 
+  def createEventOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
+
+    import ReportListObjects.EventOnReportList
+
+    request.body.validate[EventOnReportList](Json.reads[EventOnReportList]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      eventOnReportList => {
+
+        logger.debug(s"createEventOnReportList ${eventOnReportList.reportIds}")
+
+        Future.sequence(eventOnReportList.reportIds.map(reportId =>
+          reportOrchestrator
+            .newEvent(reportId, eventOnReportList.event, request.identity)
+        )).map(_ => Ok)
+      }
+    )
+  }
+
+}
+
+object ReportListObjects {
+  case class EventOnReportList(
+                                event: Event,
+                                reportIds: List[UUID]
+                              )
 }
