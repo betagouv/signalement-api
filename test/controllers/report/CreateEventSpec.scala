@@ -26,7 +26,7 @@ import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-import utils.Constants.ReportStatus.ReportStatusValue
+import utils.Constants.ReportStatus.{A_TRAITER, ReportStatusValue}
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
@@ -110,7 +110,7 @@ trait CreateEventContext extends Mockito {
 
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), None
+    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), Some(A_TRAITER)
   )
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
