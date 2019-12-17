@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
     # specify the version you desire here
-    - image: circleci/openjdk:8-jdk
+    - image: openjdk:12-jdk
       environment:
         # PG client params (test conf fetch them from env)
         TEST_PGUSER: signalconso
