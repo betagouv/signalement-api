@@ -13,18 +13,12 @@ import scala.util.Random
 object Fixtures {
     val genUser = for {
         id <- arbitrary[UUID]
-        login <- arbitrary[String]
         password <- arbitrary[String]
-        activationKey <- arbitrary[String]
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
-    } yield User(
-        id, login, password, Some(activationKey),
-        Some(email),
-        Some(firstName), Some(lastName), userRole
-    )
+    } yield User(id, password, email, firstName, lastName, userRole)
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -32,7 +26,6 @@ object Fixtures {
 
     val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-    val genToActivateUser = genUser.map(_.copy(userRole = UserRoles.ToActivate))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
     val genCompany = for {

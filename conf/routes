@@ -30,7 +30,6 @@ GET          /api/reports/:uuid                         controllers.ReportContro
 DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
 
 POST         /api/reports                               controllers.ReportController.createReport()
-PUT          /api/reports                               controllers.ReportController.updateReportDeprecated()
 PUT          /api/reports/:uuid                         controllers.ReportController.updateReport(uuid)
 POST         /api/reports/:uuid/response                controllers.ReportController.reportResponse(uuid)
 
@@ -68,7 +67,6 @@ POST        /api/accesses/:siret/invitation             controllers.CompanyAcces
 # Account API
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
-PUT         /api/account/activation                     controllers.AccountController.activateAccountDeprecated
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 
 # Rating API
