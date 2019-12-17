@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.File
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, OffsetDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -17,7 +17,7 @@ import play.api.libs.json.{JsError, JsObject, Json}
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.ReportStatus
+import utils.Constants.{ActionEvent, EventType, ReportStatus}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
@@ -317,22 +317,26 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
-  def createEventOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
+  def confirmContactByPostOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
 
-    import ReportListObjects.EventOnReportList
+    import ReportListObjects.ReportList
 
-    request.body.validate[EventOnReportList](Json.reads[EventOnReportList]).fold(
+    request.body.validate[ReportList](Json.reads[ReportList]).fold(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      eventOnReportList => {
+      reportList => {
 
-        logger.debug(s"createEventOnReportList ${eventOnReportList.reportIds}")
+        logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
 
-        Future.sequence(eventOnReportList.reportIds.map(reportId =>
+        Future.sequence(reportList.reportIds.map(reportId =>
           reportOrchestrator
-            .newEvent(reportId, eventOnReportList.event, request.identity)
-        )).map(_ => Ok)
+            .newEvent(
+              reportId,
+              Event(Some(UUID.randomUUID()), Some(reportId), Some(request.identity.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
+              request.identity
+            )
+        )).map(events => Ok(Json.toJson(events)))
       }
     )
   }
@@ -340,8 +344,5 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
 }
 
 object ReportListObjects {
-  case class EventOnReportList(
-                                event: Event,
-                                reportIds: List[UUID]
-                              )
+  case class ReportList(reportIds: List[UUID])
 }

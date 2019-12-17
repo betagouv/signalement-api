@@ -272,7 +272,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     for {
       report <- reportRepository.getReport(reportId)
       newEvent <- report match {
-          case Some(r) => eventRepository.createEvent(
+          case Some(r) if authorizedEventForReport(draftEvent, r ) => eventRepository.createEvent(
             draftEvent.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
@@ -298,6 +298,16 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       })
       newEvent
     }
+
+
+  //TODO complete this function in a specific PullRequest to securised the workflow
+  def authorizedEventForReport(event: Event, report: Report): Boolean = {
+    (event.action, report.status) match {
+      case (CONTACT_COURRIER, Some(A_TRAITER)) => true
+      case (CONTACT_COURRIER, _) => false
+      case (_, _) => true
+    }
+  }
 
 
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
