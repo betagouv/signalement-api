@@ -59,7 +59,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
             Constants.ActionEvent.CONTACT_EMAIL,
-            stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${user.email } )")
+            stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${admins.map(_.email).mkString(", ")} )")
           )
         ).flatMap(event =>
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
