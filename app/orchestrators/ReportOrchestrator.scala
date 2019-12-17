@@ -164,21 +164,24 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(id: UUID, filename: String, origin: ReportFileOrigin) =
+  def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {
     reportRepository.createFile(
       ReportFile(
-        id,
+        UUID.randomUUID,
         None,
         OffsetDateTime.now(),
         filename,
+        storageFilename,
         origin
       )
     )
+  }
 
   def removeReportFile(id: UUID) =
     for {
-      repositoryDelete <- reportRepository.deleteFile(id)
-      s3Delete <- s3Service.delete(bucketName, id.toString)
+      reportFile <- reportRepository.getFile(id)
+      repositoryDelete <- reportFile.map(f => reportRepository.deleteFile(f.id)).getOrElse(Future(None))
+      s3Delete <- reportFile.map(f => s3Service.delete(bucketName, f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
   def deleteReport(id: UUID) =
