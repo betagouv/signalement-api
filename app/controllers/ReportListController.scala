@@ -72,7 +72,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole),
+      getStatusListForValueWithUserRole(status, request.identity.userRole),
       details,
       request.identity.userRole match {
         case UserRoles.Pro => Some(false)
@@ -110,7 +110,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    val statusList = getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole)
+    val statusList = getStatusListForValueWithUserRole(status, request.identity.userRole)
 
     val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
     val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)

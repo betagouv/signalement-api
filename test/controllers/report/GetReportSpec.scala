@@ -185,7 +185,7 @@ trait GetReportContext extends Mockito {
   val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
     Some(neverRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(TRAITEMENT_EN_COURS)
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
@@ -197,7 +197,7 @@ trait GetReportContext extends Mockito {
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
     Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_TRANSMIS)
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

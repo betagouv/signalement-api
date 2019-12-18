@@ -21,7 +21,7 @@ import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus.ReportStatusValue
+import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS}
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
@@ -116,7 +116,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), None
+    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_TRANSMIS)
   )
 
   var report = reportFixture
