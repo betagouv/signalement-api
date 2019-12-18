@@ -87,6 +87,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
   val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = Some(A_TRAITER))
   val reportFromEmployee = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = true, status = Some(EMPLOYEE_REPORT))
+  val reportNA = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = Some(NA))
 
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
@@ -103,6 +104,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
       _ <- companyAccessRepository.setUserLevel(anotherCompany, anotherAdmin, AccessLevel.ADMIN)
       _ <- reportRepository.create(reportToProcess)
       _ <- reportRepository.create(reportFromEmployee)
+      _ <- reportRepository.create(reportNA)
     } yield Unit,
       Duration.Inf)
   }
@@ -110,7 +112,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     new FakeModule
   }
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.get.value)
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser, dgccrfUser, proAdminUser, anotherProUser).map(
     user => loginInfo(user) -> user
@@ -148,11 +150,11 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
      userRole match {
       case UserRoles.Admin =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 2) and
+          /("totalCount" -> 3) and
           haveReports(aReport(reportFromEmployee), aReport(reportToProcess))
       case UserRoles.DGCCRF =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 2) and
+          /("totalCount" -> 3) and
           haveReports( aReport(reportFromEmployee), aReport(reportToProcess))
       case UserRoles.Pro =>
         contentAsJson(Future(someResult.get)).toString must

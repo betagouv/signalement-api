@@ -28,9 +28,9 @@ class CompanyAccessController @Inject()(
     } yield Ok(Json.toJson(userAccesses.map{
       case (user, level) => Map(
           "userId"    -> user.id.toString,
-          "firstName" -> user.firstName.getOrElse("—"),
-          "lastName"  -> user.lastName.getOrElse("—"),
-          "email"     -> user.email.map(_.value).getOrElse("—"),
+          "firstName" -> user.firstName,
+          "lastName"  -> user.lastName,
+          "email"     -> user.email.value,
           "level"     -> level.value
       )
     }))

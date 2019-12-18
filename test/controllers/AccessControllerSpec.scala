@@ -43,7 +43,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
     new FakeModule
   }
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.get.value)
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](Seq(proAdminUser, proMemberUser).map(
     user => loginInfo(user) -> user
@@ -74,16 +74,16 @@ The listAccesses endpoint should
         [
           {
             "userId":"${proAdminUser.id}",
-            "email":"${proAdminUser.email.get}",
-            "firstName":"${proAdminUser.firstName.get}",
-            "lastName":"${proAdminUser.lastName.get}",
+            "email":"${proAdminUser.email}",
+            "firstName":"${proAdminUser.firstName}",
+            "lastName":"${proAdminUser.lastName}",
             "level":"admin"
           },
           {
             "userId":"${proMemberUser.id}",
-            "email":"${proMemberUser.email.get}",
-            "firstName":"${proMemberUser.firstName.get}",
-            "lastName":"${proMemberUser.lastName.get}",
+            "email":"${proMemberUser.email}",
+            "firstName":"${proMemberUser.firstName}",
+            "lastName":"${proMemberUser.lastName}",
             "level":"member"
           }]
         """
