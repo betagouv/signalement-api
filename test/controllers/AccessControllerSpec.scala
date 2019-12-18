@@ -138,6 +138,8 @@ The invitation workflow should
   Have created a token in database                  $e2
   Show the token in pending invitations             $e3
   Let an anonymous visitor check the token          $e4
+  When the same user is invited again               $e1
+  Then the token should be updated                       $e5
                                                     """
   val invitedEmail = "test@example.com"
   var invitationToken: AccessToken = null
@@ -182,5 +184,11 @@ The invitation workflow should
         "emailedTo" -> invitedEmail
       )
     )
+  }
+
+  def e5 = {
+    val latestToken = Await.result(companyAccessRepository.fetchPendingTokens(company).map(_.head), Duration.Inf)
+    latestToken.id must beEqualTo(invitationToken.id)
+    latestToken.expirationDate.get must beGreaterThan(invitationToken.expirationDate.get)
   }
 }
