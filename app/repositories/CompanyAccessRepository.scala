@@ -151,6 +151,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   def fetchActivationToken(company: Company): Future[Option[AccessToken]] =
     db.run(fetchValidTokens(company)
       .filterNot(_.emailedTo.isDefined)
+      .filter(_.level === AccessLevel.ADMIN)
       .result
       .headOption
     )

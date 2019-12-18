@@ -139,7 +139,7 @@ The invitation workflow should
   Show the token in pending invitations             $e3
   Let an anonymous visitor check the token          $e4
   When the same user is invited again               $e1
-  Then the token should be updated                       $e5
+  Then the token should be updated                  $e5
                                                     """
   val invitedEmail = "test@example.com"
   var invitationToken: AccessToken = null

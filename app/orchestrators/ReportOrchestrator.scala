@@ -38,6 +38,18 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
 
+  private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
+    for {
+      existingToken <- companyAccessRepository.fetchActivationToken(company)
+      _             <- existingToken.map(companyAccessRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
+      token         <- existingToken.map(Future(_)).getOrElse(
+                        companyAccessRepository.createToken(
+                          company, AccessLevel.ADMIN,
+                          f"${Random.nextInt(1000000)}%06d", tokenDuration
+                        )
+                       )
+    } yield token.token
+
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
     companyAccessRepository.fetchAdmins(company).flatMap(admins => {
       if (admins.nonEmpty) {
@@ -65,7 +77,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
         )
       } else {
-        companyAccessRepository.createToken(company, AccessLevel.ADMIN, f"${Random.nextInt(1000000)}%06d", tokenDuration).map(_ => report)
+        genActivationToken(company, tokenDuration).map(_ => report)
       }
     })
   }
