@@ -8,7 +8,7 @@ scalaVersion := "2.12.10"
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion        = "5.0.0"
-val slickPgVersion          = "0.18.0"
+val slickPgVersion          = "0.18.1"
 val playMailerVersion       = "7.0.1"
 val playSilhouetteVersion   = "6.1.1"
 
