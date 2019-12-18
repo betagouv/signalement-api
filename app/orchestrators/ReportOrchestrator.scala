@@ -324,8 +324,19 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           })
         )
       )
+      - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      - <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_REPONSE_PRO,
+          stringToDetailsJsValue("Envoi email au consommateur de la réponse du professionnel")
+        )
+      )
     } yield {
-      sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       updatedReport
     }
   }
