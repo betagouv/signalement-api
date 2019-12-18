@@ -35,7 +35,7 @@ class AccountController @Inject()(
  extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
-  val reportExpirationDelay = java.time.Period.parse(configuration.get[String]("play.reports.expirationDelay"))
+  val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
 
@@ -112,7 +112,7 @@ class AccountController @Inject()(
               views.html.pdfs.accountActivationReminder(
                 report.companyAddress,
                 creationDate,
-                remindEvent.creationDate.map(_.toLocalDate).get.plus(reportExpirationDelay),
+                remindEvent.creationDate.map(_.toLocalDate).get.plus(reportReminderByPostDelay),
                 activationKey
               )
           ).getOrElse(
