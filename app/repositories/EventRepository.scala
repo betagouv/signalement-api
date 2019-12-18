@@ -17,14 +17,14 @@ import scala.concurrent.{ExecutionContext, Future}
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
 @Singleton
-class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
+class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import PostgresProfile.api._
   import dbConfig._
 
-  private class EventTable(tag: Tag) extends Table[Event](tag, "events") {
+  class EventTable(tag: Tag) extends Table[Event](tag, "events") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
@@ -54,9 +54,9 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, report
       (id, reportId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
-  private val reportTableQuery = TableQuery[reportRepository.ReportTable]
+  val reportTableQuery = TableQuery[reportRepository.ReportTable]
 
-  private val eventTableQuery = TableQuery[EventTable]
+  val eventTableQuery = TableQuery[EventTable]
   
   def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
 

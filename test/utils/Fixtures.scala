@@ -6,22 +6,19 @@ import java.util.UUID
 import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import utils.Constants.ReportStatus.ReportStatusValue
+
+import scala.util.Random
 
 object Fixtures {
     val genUser = for {
         id <- arbitrary[UUID]
-        login <- arbitrary[String]
         password <- arbitrary[String]
-        activationKey <- arbitrary[String]
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
-    } yield User(
-        id, login, password, Some(activationKey),
-        Some(email),
-        Some(firstName), Some(lastName), userRole
-    )
+    } yield User(id, password, email, firstName, lastName, userRole)
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -29,7 +26,6 @@ object Fixtures {
 
     val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-    val genToActivateUser = genUser.map(_.copy(userRole = UserRoles.ToActivate))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
     val genCompany = for {
@@ -54,4 +50,7 @@ object Fixtures {
         Some(id), category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
         Some(OffsetDateTime.now()), firstName, lastName, email, contactAgreement, employeeConsumer, List(), None
     )
+
+    def genReportsForCompanyWithStatus(company: Company, status: Option[ReportStatusValue]) =
+        Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 }

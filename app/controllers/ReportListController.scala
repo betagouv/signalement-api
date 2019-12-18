@@ -155,7 +155,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).flatMap(_.email).mkString(","),
+        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(

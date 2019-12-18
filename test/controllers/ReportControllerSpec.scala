@@ -15,22 +15,19 @@ import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{Json, Writes}
-import play.api.libs.mailer.AttachmentFile
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
-import utils.Constants.ReportStatus._
-import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
+import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Future
 
@@ -130,9 +127,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
             ))
           )
-          mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
-            Map("00000000000000" -> proIdentity)
-          )
 
           val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)
           val result = route(application, request).get
@@ -147,10 +141,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   trait Context extends Scope {
 
-    val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
-    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.login)
-    val proIdentity = User(UUID.randomUUID(),"00000000000000", "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
-    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
+    val adminIdentity = Fixtures.genAdminUser.sample.get
+    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
+    val proIdentity = Fixtures.genProUser.sample.get
+    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
 
     val companyId = UUID.randomUUID
 

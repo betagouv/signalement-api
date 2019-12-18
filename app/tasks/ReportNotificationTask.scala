@@ -16,13 +16,13 @@ import utils.EmailAddress
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReportTask @Inject()(actorSystem: ActorSystem,
-                           reportRepository: ReportRepository,
-                           subscriptionRepository: SubscriptionRepository,
-                           mailerService: MailerService,
-                           configuration: Configuration,
-                           environment: Environment)
-                          (implicit executionContext: ExecutionContext) {
+class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
+                                       reportRepository: ReportRepository,
+                                       subscriptionRepository: SubscriptionRepository,
+                                       mailerService: MailerService,
+                                       configuration: Configuration,
+                                       environment: Environment)
+                                      (implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
 
@@ -43,6 +43,7 @@ class ReportTask @Inject()(actorSystem: ActorSystem,
     val taskDate = LocalDate.now
 
     logger.debug("Traitement de notification hebdomdaire des signalements")
+    logger.debug(s"initialDelay - ${initialDelay}");
     logger.debug(s"taskDate - ${taskDate}");
 
     val departments = Departments.ALL

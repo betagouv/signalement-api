@@ -1,12 +1,15 @@
 package repositories
 
+import java.time.OffsetDateTime
+
 import com.github.tminglei.slickpg._
-import play.api.libs.json.{JsValue, Json}
+import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 
 trait PostgresProfile extends ExPostgresProfile
   with PgPlayJsonSupport
   with PgArraySupport
-  with PgDate2Support {
+  with PgDate2Support
+  with PgAggFuncSupport{
 
   def pgjson = "jsonb"
 
@@ -18,6 +21,8 @@ trait PostgresProfile extends ExPostgresProfile
     with DateTimeImplicits {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
+
+    val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   }
   override protected def computeCapabilities: Set[slick.basic.Capability] =

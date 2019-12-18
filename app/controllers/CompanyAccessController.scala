@@ -28,10 +28,23 @@ class CompanyAccessController @Inject()(
     } yield Ok(Json.toJson(userAccesses.map{
       case (user, level) => Map(
           "userId"    -> user.id.toString,
-          "firstName" -> user.firstName.getOrElse("—"),
-          "lastName"  -> user.lastName.getOrElse("—"),
-          "email"     -> user.email.map(_.value).getOrElse("—"),
+          "firstName" -> user.firstName,
+          "lastName"  -> user.lastName,
+          "email"     -> user.email.value,
           "level"     -> level.value
+      )
+    }))
+  }
+
+  def myCompanies = SecuredAction.async { implicit request =>
+    for {
+      companyAccesses <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
+    } yield Ok(Json.toJson(companyAccesses.map{
+      case (company, level) => Map(
+          "companySiret"      -> company.siret,
+          "companyName"       -> company.name,
+          "companyAddress"    -> company.address,
+          "level"             -> level.value
       )
     }))
   }
@@ -50,7 +63,7 @@ class CompanyAccessController @Inject()(
       user <- userRepository.get(userId)
       _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
     } yield if (user.isDefined) Ok else NotFound
-}
+  }
 
   case class AccessInvitation(email: EmailAddress, level: AccessLevel)
 
@@ -62,6 +75,26 @@ class CompanyAccessController @Inject()(
                     .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
                     .map(_ => Ok)
     )
+  }
+
+  def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    for {
+      tokens <- companyAccessRepository.fetchPendingTokens(request.company)
+    } yield Ok(Json.toJson(tokens.map(token =>
+      Json.obj(
+          "id"              -> token.id.toString,
+          "level"           -> token.level.value,
+          "emailedTo"       -> token.emailedTo,
+          "expirationDate"  -> token.expirationDate
+      )
+    )))
+  }
+
+  def removePendingToken(siret: String, tokenId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
+    for {
+      token <- companyAccessRepository.getToken(request.company, tokenId)
+      _ <- token.map(companyAccessRepository.invalidateToken(_)).getOrElse(Future(Unit))
+    } yield {if (token.isDefined) Ok else NotFound}
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
