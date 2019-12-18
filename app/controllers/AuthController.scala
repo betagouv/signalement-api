@@ -71,7 +71,7 @@ class AuthController @Inject()(
       err => Future(BadRequest),
       login =>
         userService.retrieve(LoginInfo(CredentialsProvider.ID, login)).flatMap{
-          case Some(user) if user.email.isDefined =>
+          case Some(user) =>
             for {
               _ <- authTokenRepository.deleteForUserId(user.id)
               authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
@@ -86,10 +86,10 @@ class AuthController @Inject()(
 
 
   private def sendResetPasswordMail(user: User, url: String) = {
-    logger.debug(s"email ${user.email.get}")
+    logger.debug(s"email ${user.email}")
     Future(mailerService.sendEmail(
       from = configuration.get[EmailAddress]("play.mail.from"),
-      recipients = user.email.get)(
+      recipients = user.email)(
       subject = "Votre mot de passe SignalConso",
       bodyHtml = views.html.mails.resetPassword(user, url).toString,
       attachments = Seq(

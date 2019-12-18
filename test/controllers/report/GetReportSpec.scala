@@ -30,6 +30,7 @@ import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -199,14 +200,14 @@ trait GetReportContext extends Mockito {
     "firstName", "lastName", EmailAddress("email"), true, false, List(), None
   )
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
+  val adminUser = Fixtures.genAdminUser.sample.get
+  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
 
-  val concernedProUser = User(UUID.randomUUID(), siretForConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
-  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.login)
+  val concernedProUser = Fixtures.genProUser.sample.get
+  val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
 
-  val notConcernedProUser = User(UUID.randomUUID(), siretForNotConcernedPro, "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
-  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.login)
+  val notConcernedProUser = Fixtures.genProUser.sample.get
+  val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser, concernedProLoginInfo -> concernedProUser, notConcernedProLoginInfo -> notConcernedProUser))
 

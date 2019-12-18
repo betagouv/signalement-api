@@ -47,7 +47,7 @@ class AccountController @Inject()(
       },
       passwordChange => {
         for {
-          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.map(_.value).get, passwordChange.oldPassword))
+          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.value, passwordChange.oldPassword))
           _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
         } yield {
           NoContent
@@ -72,35 +72,6 @@ class AccountController @Inject()(
             companyAccessOrchestrator
               .handleActivationRequest(draftUser, tokenInfo)
               .map(_ => NoContent)
-      }
-    )
-  }
-
-  // This route is maintained for backward compatibility until front is updated
-  def activateAccountDeprecated = SecuredAction(WithPermission(UserPermission.activateAccount)).async(parse.json) { implicit request =>
-
-    logger.debug("activateAccountDeprecated")
-
-    request.body.validate[User].fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      user => {
-        for {
-          activationKey <- userRepository.get(user.id).map(_.flatMap(_.activationKey))
-          _ <- userRepository.update(user)
-          _ <- userRepository.updateAccountActivation(request.identity.id, None, UserRoles.Pro)
-          _ <- userRepository.updatePassword(request.identity.id, user.password)
-          // Forward compatibility with new access model
-          company <- companyRepository.findBySiret(request.identity.login)
-          token <- activationKey
-                    .flatMap(key =>
-                      company.map(c => companyAccessRepository.findToken(c, key)))
-                    .getOrElse(Future(None))
-          _ <- token.map(companyAccessRepository.applyToken(_, user)).getOrElse(Future(None))
-        } yield NoContent
-      }.recover {
-        case e => Unauthorized
       }
     )
   }

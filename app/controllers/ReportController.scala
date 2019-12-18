@@ -69,23 +69,17 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     )
   }
 
-  def updateReport(uuid: String) = updateReportDeprecated
-
-  def updateReportDeprecated = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+  def updateReport(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
     logger.debug("updateReport")
 
     request.body.validate[Report].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      report => {
-        report.id match {
-          case None => Future.successful(BadRequest)
-          case Some(id) => reportOrchestrator.updateReport(id, report).map{
+      report => reportOrchestrator.updateReport(UUID.fromString(uuid), report).map{
             case Some(_) => Ok
             case None => NotFound
           }
-        }
-    })
+    )
   }
 
   def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>

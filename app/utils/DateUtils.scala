@@ -37,8 +37,4 @@ object DateUtils {
 
   }
 
-  def getOriginDate() = {
-    LocalDate.parse("2019-01-01", FORMATTER).atStartOfDay
-  }
-
 }

@@ -19,6 +19,7 @@ import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_COURRIER, RELANCE}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -78,7 +79,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val runningDateTime = LocalDate.of(2019, 9, 26).atStartOfDay()
 
-  val userWithoutEmail = User(UUID.randomUUID(), "11111111111111", "", Some("123123"), None, None, Some("test"), Pro)
+  val userWithoutEmail = Fixtures.genProUser.sample.get.copy(email=EmailAddress(""))
 
   val reportUUID = UUID.randomUUID()
 
@@ -92,7 +93,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
   )
 
   val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
-    Some(userWithoutEmail.login),
+    Some(companyData.siret),
     Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, false, List.empty,
     Some(TRAITEMENT_EN_COURS))
   val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),

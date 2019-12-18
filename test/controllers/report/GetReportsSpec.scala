@@ -110,7 +110,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     new FakeModule
   }
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.get.value)
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser, dgccrfUser, proAdminUser, anotherProUser).map(
     user => loginInfo(user) -> user
