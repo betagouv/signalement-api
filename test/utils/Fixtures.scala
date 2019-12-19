@@ -13,7 +13,7 @@ import scala.util.Random
 object Fixtures {
     val genUser = for {
         id <- arbitrary[UUID]
-        password <- arbitrary[String]
+        password <- arbString.arbitrary
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
@@ -30,7 +30,7 @@ object Fixtures {
 
     val genCompany = for {
         id <- arbitrary[UUID]
-        name <- arbitrary[String]
+        name <- arbString.arbitrary
         randInt <- Gen.choose(0, 1000000)
     } yield Company(
         id, "000000000" + randInt takeRight 9, OffsetDateTime.now(),
@@ -39,8 +39,8 @@ object Fixtures {
 
     def genReportForCompany(company: Company) = for {
         id <- arbitrary[UUID]
-        category <- arbitrary[String]
-        subcategory <- arbitrary[String]
+        category <- arbString.arbitrary
+        subcategory <- arbString.arbitrary
         firstName <- genFirstName
         lastName <- genLastName
         email <- genEmailAddress(firstName, lastName)
