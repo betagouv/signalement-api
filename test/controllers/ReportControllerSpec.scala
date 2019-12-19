@@ -27,6 +27,7 @@ import utils.Constants.EventType
 import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
+import utils.Fixtures
 
 import scala.concurrent.Future
 
@@ -126,9 +127,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
             ))
           )
-          mockUserRepository.prefetchLogins(List("00000000000000")) returns Future(
-            Map("00000000000000" -> proIdentity)
-          )
 
           val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)
           val result = route(application, request).get
@@ -143,10 +141,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   trait Context extends Scope {
 
-    val adminIdentity = User(UUID.randomUUID(),"admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
-    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.login)
-    val proIdentity = User(UUID.randomUUID(),"00000000000000", "password", None, Some(EmailAddress("pro@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Pro)
-    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.login)
+    val adminIdentity = Fixtures.genAdminUser.sample.get
+    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
+    val proIdentity = Fixtures.genProUser.sample.get
+    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
 
     val companyId = UUID.randomUUID
 

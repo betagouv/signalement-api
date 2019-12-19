@@ -37,7 +37,7 @@ class AccountController @Inject()(
  extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
-  val reportExpirationDelay = java.time.Period.parse(configuration.get[String]("play.reports.expirationDelay"))
+  val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
 
@@ -49,7 +49,7 @@ class AccountController @Inject()(
       },
       passwordChange => {
         for {
-          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.map(_.value).get, passwordChange.oldPassword))
+          identLogin <- credentialsProvider.authenticate(Credentials(request.identity.email.value, passwordChange.oldPassword))
           _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
         } yield {
           NoContent
@@ -78,41 +78,12 @@ class AccountController @Inject()(
     )
   }
 
-  // This route is maintained for backward compatibility until front is updated
-  def activateAccountDeprecated = SecuredAction(WithPermission(UserPermission.activateAccount)).async(parse.json) { implicit request =>
-
-    logger.debug("activateAccountDeprecated")
-
-    request.body.validate[User].fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      user => {
-        for {
-          activationKey <- userRepository.get(user.id).map(_.flatMap(_.activationKey))
-          _ <- userRepository.update(user)
-          _ <- userRepository.updateAccountActivation(request.identity.id, None, UserRoles.Pro)
-          _ <- userRepository.updatePassword(request.identity.id, user.password)
-          // Forward compatibility with new access model
-          company <- companyRepository.findBySiret(request.identity.login)
-          token <- activationKey
-                    .flatMap(key =>
-                      company.map(c => companyAccessRepository.findToken(c, key)))
-                    .getOrElse(Future(None))
-          _ <- token.map(companyAccessRepository.applyToken(_, user)).getOrElse(Future(None))
-        } yield NoContent
-      }.recover {
-        case e => Unauthorized
-      }
-    )
-  }
-
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
 
     for {
       company <- companyRepository.findBySiret(siret)
       token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
-      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER.defaultValue)))
+      paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
         case Nil => Future(None)
@@ -132,9 +103,9 @@ class AccountController @Inject()(
           val dfp = new DefaultFontProvider(true, true, true)
           converterProperties.setFontProvider(dfp)
           converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
-
+        
           HtmlConverter.convertToPdf(new ByteArrayInputStream(getHtmlDocumentForReport(report, events, activationKey).body.getBytes()), pdf, converterProperties)
-
+        
           Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
         case (Some(report), None) => NotFound("Il n'y a pas de code d'activation associé à ce Siret")
         case (None, _) => NotFound("Il n'y a pas de signalement à traiter associé à ce Siret")
@@ -149,20 +120,21 @@ class AccountController @Inject()(
       .flatMap(_.creationDate)
       .getOrElse(report.creationDate.get)
       .toLocalDate
-    if (events.exists(_.action == ActionEvent.RELANCE)) {
-      views.html.pdfs.accountActivationReminder(
-        report.companyAddress,
-        creationDate,
-        creationDate.plus(reportExpirationDelay),
-        activationKey
-      )
-    } else {
+    val remindEvent = events.find(_.action == ActionEvent.RELANCE)
+    val pdfString = remindEvent.map(remindEvent =>
+        views.html.pdfs.accountActivationReminder(
+          report.companyAddress,
+          creationDate,
+          remindEvent.creationDate.map(_.toLocalDate).get.plus(reportReminderByPostDelay),
+          activationKey
+        )
+    ).getOrElse(
       views.html.pdfs.accountActivation(
         report.companyAddress,
         report.creationDate.map(_.toLocalDate).get,
         activationKey
       )
-    }
+    )
   }
 
   def getActivationDocumentForReportList() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>

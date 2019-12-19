@@ -29,25 +29,23 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def id = column[UUID]("id", O.PrimaryKey)
 
-    def login = column[String]("login")
     def password = column[String]("password")
-    def activationKey = column[Option[String]]("activation_key")
-    def email = column[Option[EmailAddress]]("email")
-    def firstName = column[Option[String]]("firstname")
-    def lastName = column[Option[String]]("lastname")
+    def email = column[EmailAddress]("email")
+    def firstName = column[String]("firstname")
+    def lastName = column[String]("lastname")
     def role = column[String]("role")
 
-    type UserData = (UUID, String, String, Option[String], Option[EmailAddress], Option[String], Option[String], String)
+    type UserData = (UUID, String, EmailAddress, String, String, String)
 
     def constructUser: UserData => User = {
-      case (id, login, password, activationKey, email, firstName, lastName, role) => User(id, login, password, activationKey, email, firstName, lastName, UserRoles.withName(role))
+      case (id, password, email, firstName, lastName, role) => User(id, password, email, firstName, lastName, UserRoles.withName(role))
     }
 
     def extractUser: PartialFunction[User, UserData] = {
-      case User(id, login, password, activationKey, email, firstName, lastName, role) => (id, login, password, activationKey, email, firstName, lastName, role.name)
+      case User(id, password, email, firstName, lastName, role) => (id, password, email, firstName, lastName, role.name)
     }
 
-    def * = (id, login, password, activationKey, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
+    def * = (id, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
   val userTableQuery = TableQuery[UserTable]
@@ -71,16 +69,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
   }
 
-  def updateAccountActivation(userId: UUID, activationKey: Option[String], userRole: UserRole): Future[Int] = {
-    val queryUser = for (refUser <- userTableQuery if refUser.id === userId)
-      yield refUser
-    db.run(
-      queryUser
-        .map(u => (u.activationKey, u.role))
-        .update(activationKey, userRole.name)
-    )
-  }
-
   def updatePassword(userId: UUID, password: String): Future[Int] = {
     val queryUser = for (refUser <- userTableQuery if refUser.id === userId)
       yield refUser
@@ -100,19 +88,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findByLogin(login: String): Future[Option[User]] =
     db
     .run(userTableQuery
-    .filter(u =>
-      if (login.contains("@"))
-        (u.email === EmailAddress(login)).getOrElse(false)
-      else
-        (u.login === login)
-      ).to[List].result.headOption)
-
-  def prefetchLogins(logins: List[String]): Future[Map[String, User]] = db
-    .run(
-      userTableQuery
-        .filter(_.login inSetBind logins)
-        .map(u => (u.login, u))
-        .to[List]
-        .result
-    ).map(_.toMap)
+    .filter(_.email === EmailAddress(login))
+    .to[List].result.headOption)
 }
