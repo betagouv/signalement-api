@@ -97,7 +97,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         mailerService.sendEmail(
           from = mailFrom,
           recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
-          subject = "Nouveau signalement",
+          subject = s"Nouveau signalement [${report.category}]",
           bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
         )
         mailerService.sendEmail(
@@ -260,7 +260,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
-      subject = "Un professionnel a répondu à un signalement",
+      subject = s"Un professionnel a répondu à un signalement [${report.category}]",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
   }
@@ -331,8 +331,19 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           })
         )
       )
+      - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      - <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          report.id,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_REPONSE_PRO,
+          stringToDetailsJsValue("Envoi email au consommateur de la réponse du professionnel")
+        )
+      )
     } yield {
-      sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       updatedReport
     }
   }
