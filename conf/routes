@@ -38,6 +38,7 @@ GET          /api/nbReportsGroupByCompany               controllers.ReportContro
 # Events API
 GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
 POST        /api/reports/:uuid/events                   controllers.ReportController.createEvent(uuid)
+POST        /api/reports/events/contactByPost           controllers.ReportListController.confirmContactByPostOnReportList()
 
 # Constants API
 GET         /api/constants/actions                      controllers.ConstantController.getActions()
@@ -68,6 +69,7 @@ POST        /api/accesses/:siret/invitation             controllers.CompanyAcces
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
+POST        /api/account/document/activation            controllers.AccountController.getActivationDocumentForReportList()
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

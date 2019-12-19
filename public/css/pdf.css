@@ -3,7 +3,7 @@
     margin-bottom: 1cm;
 }
 
-body {
+body, div {
     font-family: 'Arial', sans-serif;
     font-size: 13px;
     height: 960px;
@@ -47,7 +47,7 @@ body {
     width: 100%;
     float: left;
     position: absolute;
-    bottom: 0px;
+    top: 1000px;
 }
 
 .footer > img {
