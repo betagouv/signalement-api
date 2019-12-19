@@ -41,7 +41,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   }
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
-    userRepository.findByLogin(email.value).map{
+    userRepository.findByLogin(email.value).flatMap{
       case Some(user) => {
         // TODO: Allow multiple companies per user once we support it in UI
         // addInvitedUserAndNotify(user, company, level, invitedBy)
@@ -81,10 +81,8 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                         ))
      } yield token.token
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User) =
-    for {
-      tokenCode <- genInvitationToken(company, level, tokenDuration, email)
-    } yield {
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+    genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
       val invitationUrl = s"${websiteUrl}/entreprise/rejoindre/${company.siret}?token=${tokenCode}"
       mailerService.sendEmail(
         from = mailFrom,
@@ -96,5 +94,5 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
         )
       )
       Unit
-    }
+    })
 }
