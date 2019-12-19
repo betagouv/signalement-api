@@ -35,7 +35,7 @@ class AccountController @Inject()(
  extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
-  val reportExpirationDelay = java.time.Period.parse(configuration.get[String]("play.reports.expirationDelay"))
+  val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
 
@@ -107,20 +107,21 @@ class AccountController @Inject()(
                             .flatMap(_.creationDate)
                             .getOrElse(report.creationDate.get)
                             .toLocalDate
-          val pdfString = if (events.exists(_.action == ActionEvent.RELANCE)) {
+          val remindEvent = events.find(_.action == ActionEvent.RELANCE)
+          val pdfString = remindEvent.map(remindEvent =>
               views.html.pdfs.accountActivationReminder(
                 report.companyAddress,
                 creationDate,
-                creationDate.plus(reportExpirationDelay),
+                remindEvent.creationDate.map(_.toLocalDate).get.plus(reportReminderByPostDelay),
                 activationKey
               )
-            } else {
-              views.html.pdfs.accountActivation(
-                report.companyAddress,
-                report.creationDate.map(_.toLocalDate).get,
-                activationKey
-              )
-            }
+          ).getOrElse(
+            views.html.pdfs.accountActivation(
+              report.companyAddress,
+              report.creationDate.map(_.toLocalDate).get,
+              activationKey
+            )
+          )
 
           HtmlConverter.convertToPdf(new ByteArrayInputStream(pdfString.body.getBytes()), pdf, converterProperties)
 
