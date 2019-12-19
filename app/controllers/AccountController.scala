@@ -121,7 +121,7 @@ class AccountController @Inject()(
       .getOrElse(report.creationDate.get)
       .toLocalDate
     val remindEvent = events.find(_.action == ActionEvent.RELANCE)
-    val pdfString = remindEvent.map(remindEvent =>
+    remindEvent.map(remindEvent =>
         views.html.pdfs.accountActivationReminder(
           report.companyAddress,
           creationDate,
