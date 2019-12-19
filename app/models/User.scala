@@ -20,22 +20,19 @@ object DraftUser {
 
 case class User (
                  id: UUID,
-                 login: String,
                  password: String,
-                 activationKey: Option[String],
-                 email: Option[EmailAddress],
-                 firstName: Option[String],
-                 lastName: Option[String],
+                 email: EmailAddress,
+                 firstName: String,
+                 lastName: String,
                  userRole: UserRole
                ) extends Identity {
-  def fullName = firstName.flatMap(f => lastName.map(l => s"${f} ${l}"))
+  def fullName = s"${firstName} ${lastName}"
 }
 
 object User {
   implicit val userWrites = new Writes[User] {
     def writes(user: User) = Json.obj(
       "id" -> user.id,
-      "login" -> user.login,
       "email" -> user.email,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
@@ -46,12 +43,10 @@ object User {
 
   implicit val userReads: Reads[User] = (
     (JsPath \ "id").read[UUID] and
-      (JsPath \ "login").read[String] and
       (JsPath \ "password").read[String] and
-      (JsPath \ "activationKey").readNullable[String] and
-      (JsPath \ "email").readNullable[EmailAddress] and
-      (JsPath \ "firstName").readNullable[String] and
-      (JsPath \ "lastName").readNullable[String] and
+      (JsPath \ "email").read[EmailAddress] and
+      (JsPath \ "firstName").read[String] and
+      (JsPath \ "lastName").read[String] and
       ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
     )(User.apply _)
 }
@@ -109,11 +104,6 @@ object UserRoles {
     )
   )
 
-  object ToActivate extends UserRole(
-    "ToActivate",
-    Seq(UserPermission.activateAccount)
-  )
-
   object Pro extends UserRole(
     "Professionnel",
     Seq(
@@ -122,7 +112,7 @@ object UserRoles {
     )
   )
 
-  val userRoles = Seq(Admin, DGCCRF, Pro, ToActivate)
+  val userRoles = Seq(Admin, DGCCRF, Pro)
 
   def withName(name: String): UserRole = {
     userRoles.filter(_.name == name).head

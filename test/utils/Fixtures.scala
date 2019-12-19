@@ -13,18 +13,12 @@ import scala.util.Random
 object Fixtures {
     val genUser = for {
         id <- arbitrary[UUID]
-        login <- arbitrary[String]
-        password <- arbitrary[String]
-        activationKey <- arbitrary[String]
+        password <- arbString.arbitrary
         firstName <- genFirstName
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
-    } yield User(
-        id, login, password, Some(activationKey),
-        Some(email),
-        Some(firstName), Some(lastName), userRole
-    )
+    } yield User(id, password, email, firstName, lastName, userRole)
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -32,12 +26,11 @@ object Fixtures {
 
     val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-    val genToActivateUser = genUser.map(_.copy(userRole = UserRoles.ToActivate))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
     val genCompany = for {
         id <- arbitrary[UUID]
-        name <- arbitrary[String]
+        name <- arbString.arbitrary
         randInt <- Gen.choose(0, 1000000)
     } yield Company(
         id, "000000000" + randInt takeRight 9, OffsetDateTime.now(),
@@ -46,8 +39,8 @@ object Fixtures {
 
     def genReportForCompany(company: Company) = for {
         id <- arbitrary[UUID]
-        category <- arbitrary[String]
-        subcategory <- arbitrary[String]
+        category <- arbString.arbitrary
+        subcategory <- arbString.arbitrary
         firstName <- genFirstName
         lastName <- genLastName
         email <- genEmailAddress(firstName, lastName)

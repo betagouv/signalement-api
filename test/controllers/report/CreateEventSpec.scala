@@ -26,10 +26,11 @@ import services.MailerService
 import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-import utils.Constants.ReportStatus.ReportStatusValue
+import utils.Constants.ReportStatus.{A_TRAITER, ReportStatusValue}
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -110,7 +111,7 @@ trait CreateEventContext extends Mockito {
 
   val reportFixture = Report(
     Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), None
+    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), Some(A_TRAITER)
   )
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
@@ -132,8 +133,8 @@ trait CreateEventContext extends Mockito {
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =
     Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
 
-  val adminUser = User(UUID.randomUUID(), "admin@signalconso.beta.gouv.fr", "password", None, Some(EmailAddress("admin@signalconso.beta.gouv.fr")), Some("Prénom"), Some("Nom"), UserRoles.Admin)
-  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.login)
+  val adminUser = Fixtures.genAdminUser.sample.get
+  val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminUser))
 

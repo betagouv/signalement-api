@@ -1,8 +1,9 @@
 package controllers
 
 import java.io.File
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, OffsetDateTime}
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
@@ -11,30 +12,32 @@ import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
 import models.Event._
-import play.api.libs.json.{JsObject, Json}
+import orchestrators.ReportOrchestrator
+import play.api.libs.json.{JsError, JsObject, Json}
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.ReportStatus
+import utils.Constants.{ActionEvent, EventType, ReportStatus}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
+import scala.util.{Failure, Random, Success, Try}
 
-class ReportListController @Inject()(reportRepository: ReportRepository,
-                                 companyAccessRepository: CompanyAccessRepository,
-                                 eventRepository: EventRepository,
-                                 userRepository: UserRepository,
-                                 mailerService: MailerService,
-                                 s3Service: S3Service,
-                                 val silhouette: Silhouette[AuthEnv],
-                                 val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                 configuration: Configuration,
-                                 environment: Environment)
-                                (implicit val executionContext: ExecutionContext) extends BaseController {
+class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
+                                     reportRepository: ReportRepository,
+                                     companyAccessRepository: CompanyAccessRepository,
+                                     eventRepository: EventRepository,
+                                     userRepository: UserRepository,
+                                     mailerService: MailerService,
+                                     s3Service: S3Service,
+                                     val silhouette: Silhouette[AuthEnv],
+                                     val silhouetteAPIKey: Silhouette[APIKeyEnv],
+                                     configuration: Configuration,
+                                     environment: Environment)
+                                    (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -72,7 +75,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       startDate,
       endDate,
       category,
-      getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole),
+      getStatusListForValueWithUserRole(status, request.identity.userRole),
       details,
       request.identity.userRole match {
         case UserRoles.Pro => Some(false)
@@ -110,7 +113,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
     logger.debug(s"role ${request.identity.userRole}")
 
-    val statusList = getReportStatusDefaultValuesForValueWithUserRole(status, request.identity.userRole)
+    val statusList = getStatusListForValueWithUserRole(status, request.identity.userRole)
 
     val headerStyle = CellStyle(fillPattern = CellFill.Solid, fillForegroundColor = Color.Gainsborough, font = Font(bold = true), horizontalAlignment = CellHorizontalAlignment.Center)
     val centerAlignmentStyle = CellStyle(horizontalAlignment = CellHorizontalAlignment.Center, verticalAlignment = CellVerticalAlignment.Center, wrapText = true)
@@ -155,7 +158,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).flatMap(_.email).mkString(","),
+        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -314,4 +317,32 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     }
   }
 
+  def confirmContactByPostOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
+
+    import ReportListObjects.ReportList
+
+    request.body.validate[ReportList](Json.reads[ReportList]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      reportList => {
+
+        logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
+
+        Future.sequence(reportList.reportIds.map(reportId =>
+          reportOrchestrator
+            .newEvent(
+              reportId,
+              Event(Some(UUID.randomUUID()), Some(reportId), Some(request.identity.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
+              request.identity
+            )
+        )).map(events => Ok(Json.toJson(events)))
+      }
+    )
+  }
+
+}
+
+object ReportListObjects {
+  case class ReportList(reportIds: List[UUID])
 }

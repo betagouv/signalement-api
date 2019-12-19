@@ -36,7 +36,7 @@ object Constants {
     object NA extends ReportStatusValue(
       "NA",
       Map(
-        UserRoles.Pro -> Some("Clôturé")
+        UserRoles.Pro -> None
       ),
       isFinal = true
     )
@@ -112,10 +112,11 @@ object Constants {
     def fromDefaultValue(value: String) = reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
 
-    def getReportStatusDefaultValuesForValueWithUserRole(value: Option[String], userRole: UserRole) = {
-      value.map(value =>
-        reportStatusList.filter(_.getValueWithUserRole(userRole).map( _ == value).getOrElse(false)).map(_.defaultValue)
-      ).getOrElse(List())
+    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) = {
+      value match {
+        case Some(value) => reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value))
+        case None => reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined)
+      }
     }
 
   }

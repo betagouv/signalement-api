@@ -25,7 +25,7 @@ case class ReportFilter(
                          start: Option[LocalDate] = None,
                          end: Option[LocalDate] = None,
                          category: Option[String] = None,
-                         statusList: Seq[String] = List(),
+                         statusList: Seq[ReportStatusValue] = List(),
                          details: Option[String] = None,
                          employeeConsumer: Option[Boolean] = None
                        )
@@ -237,8 +237,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           .filterOpt(filter.category) {
             case(table, category) => table.category === category
           }
-          .filterIf(filter.statusList.length > 0) {
-            case table => table.status.inSet(filter.statusList).getOrElse(false)
+          .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
+            case table => table.status.inSet(filter.statusList.map(_.defaultValue)).getOrElse(false)
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
@@ -268,6 +268,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         hasNextPage = count - ( offset + limit ) > 0
       )
   }
+
+  def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
+    reportTableQuery.filter(_.id inSet(ids))
+      .to[List]
+      .result
+  )
 
   def createFile(file: ReportFile): Future[ReportFile] = db
     .run(fileTableQuery += file)

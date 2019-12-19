@@ -159,7 +159,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
     new FakeModule
   }
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.get.value)
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](Seq().map(
     user => loginInfo(user) -> user
