@@ -26,7 +26,7 @@ case class User (
                  lastName: String,
                  userRole: UserRole
                ) extends Identity {
-  def fullName = firstName.flatMap(f => lastName.map(l => s"${f} ${l}"))
+  def fullName = s"${firstName} ${lastName}"
 }
 
 object User {
