@@ -307,7 +307,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
       Ok.sendFile(
         new File(tmpFileName),
-        fileName = _ => Some("signalements.xlsx"),
+        fileName = _ => "signalements.xlsx",
         inline = false,
         onClose = () => new File(tmpFileName).delete
       )
