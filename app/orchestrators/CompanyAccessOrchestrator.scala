@@ -81,7 +81,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                         ))
      } yield token.token
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User) = {
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User) =
     for {
       tokenCode <- genInvitationToken(company, level, tokenDuration, email)
     } yield {
@@ -97,5 +97,4 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       )
       Unit
     }
-  }
 }

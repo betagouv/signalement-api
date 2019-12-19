@@ -200,7 +200,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
             .map(a => (a.level, a.expirationDate))
             .update((level, validity.map(OffsetDateTime.now.plus(_))))
     )
-  }
 
   def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] = {
     db.run(AccessTokenTableQuery
