@@ -41,7 +41,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   }
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
-    userRepository.findByLogin(email.value).map{
+    userRepository.findByLogin(email.value).flatMap{
       case Some(user) => {
         // TODO: Allow multiple companies per user once we support it in UI
         // addInvitedUserAndNotify(user, company, level, invitedBy)
@@ -67,11 +67,23 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
       Unit
     }
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User) = {
+  private def genInvitationToken(
+    company: Company, level: AccessLevel, validity: Option[java.time.temporal.TemporalAmount],
+    emailedTo: EmailAddress
+  ): Future[String] =
     for {
-      accessToken <- companyAccessRepository.createToken(company, level, UUID.randomUUID.toString, tokenDuration, emailedTo = Some(email))
-    } yield {
-      val invitationUrl = s"${websiteUrl}/entreprise/rejoindre/${company.siret}?token=${accessToken.token}"
+      existingToken <- companyAccessRepository.fetchValidToken(company, emailedTo)
+      _             <- existingToken.map(companyAccessRepository.updateToken(_, level, validity)).getOrElse(Future(None))
+      token         <- existingToken.map(Future(_)).getOrElse(
+                        companyAccessRepository.createToken(
+                            company, level, UUID.randomUUID.toString,
+                            tokenDuration, emailedTo = Some(emailedTo)
+                        ))
+     } yield token.token
+
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+    genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
+      val invitationUrl = s"${websiteUrl}/entreprise/rejoindre/${company.siret}?token=${tokenCode}"
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
@@ -82,6 +94,5 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
         )
       )
       Unit
-    }
-  }
+    })
 }
