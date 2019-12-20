@@ -171,7 +171,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle),
-        (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+        (report, _, _) => report.details.map(d => s"${d.label} ${d.value}").mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Pièces jointes", leftAlignmentColumn,
