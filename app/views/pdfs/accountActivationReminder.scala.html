@@ -13,85 +13,87 @@
 
     </head>
     <body>
-        <p>
-            <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' width="40%"/>
-            <br/>Service SignalConso
-            <br />Direction Interministérielle du Numérique
-            <br />20 avenue de Ségur
-            <br />75007 Paris
-        </p>
-
-        <div class="address">
-            @views.html.fragments.address(companyAddress)
-        </div>
-
-        <div class="content mt-3">
-
+        <div style="display: block; page-break-after: always">
             <p>
-                Objet : réception d’un signalement à propos de votre établissement par le biais de SignalConso
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' width="40%"/>
+                <br/>Service SignalConso
+                <br />Direction Interministérielle du Numérique
+                <br />20 avenue de Ségur
+                <br />75007 Paris
             </p>
 
-            <p class="mt-3">
-                Madame, Monsieur,
-            </p>
-
-            <p>
-                La Direction générale de la Concurrence, de la Consommation et de la Répression des fraudes (DGCCRF),
-                en partenariat avec la Direction Interministérielle du Numérique,
-                lance un nouveau service public en ligne : <i>SignalConso</i> (https://signalconso.beta.gouv.fr).
-                Cette plateforme en ligne permet aux consommateurs de signaler des manquements relatifs au Code de la Consommation.
-            </p>
-
-            <p>
-                <strong>Nous vous avons adressé un courrier le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
-                vous indiquant que nous avions reçu un signalement sur votre établissement
-            </p>
-
-            <p class="text-center text-bold">
+            <div class="address">
                 @views.html.fragments.address(companyAddress)
-            </p>
+            </div>
 
-            <p class="text-bold">
-                Nous avons remarqué que vous n’avez pas encore activé votre espace professionnel et que vous n’avez donc pas consulté ce signalement.
-            </p>
+            <div class="content mt-3">
 
-            <p>
-                Vous avez jusqu’au @expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour activer votre espace professionnel
-                et consulter le signalement.
-                Passé ce délai, vous pourrez toujours le lire mais vous ne pourrez plus y répondre.
-                Les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
-            </p>
+                <p>
+                    Objet : réception d’un signalement à propos de votre établissement par le biais de SignalConso
+                </p>
 
-            <p class="mt-3">
-                Pour connaitre ce signalement, rendez-vous sur https://signalconso.beta.gouv.fr/ avec votre numéro SIRET et votre code d’activation de 6 chiffres.
-            </p>
+                <p class="mt-3">
+                    Madame, Monsieur,
+                </p>
 
-            <p class="text-center text-bold">
-                Votre Code d’activation : @code
-            </p>
+                <p>
+                    La Direction générale de la Concurrence, de la Consommation et de la Répression des fraudes (DGCCRF),
+                    en partenariat avec la Direction Interministérielle du Numérique,
+                    lance un nouveau service public en ligne : <i>SignalConso</i> (https://signalconso.beta.gouv.fr).
+                    Cette plateforme en ligne permet aux consommateurs de signaler des manquements relatifs au Code de la Consommation.
+                </p>
 
-            <p class="mt-3">
-                Une fois votre espace professionnel activé, vous pourrez consulter les signalements concernant votre établissementUne fois votre espace professionnel activé,
-                vous pourrez consulter les signalements concernant votre établissement et y apporter une réponse.
-            </p>
+                <p>
+                    <strong>Nous vous avons adressé un courrier le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+                    vous indiquant que nous avions reçu un signalement sur votre établissement
+                </p>
 
-            <p>
-                Ce nouveau service public est facultatif et gratuit. À travers SignalConso, notre objectif est d’établir un rapport de confiance et de transparence
-                entre les consommateurs, les professionnels et les services de la DGCCRF.
-            </p>
+                <p class="text-center text-bold">
+                    @views.html.fragments.address(companyAddress)
+                </p>
 
-            <p>
-                Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse <strong>contact@@signalconso.beta.gouv.fr</strong>.
-            </p>
+                <p class="text-bold">
+                    Nous avons remarqué que vous n’avez pas encore activé votre espace professionnel et que vous n’avez donc pas consulté ce signalement.
+                </p>
 
-            <p class="text-right mr-5">
-                L’équipe SignalConso
-            </p>
-        </div>
+                <p>
+                    Vous avez jusqu’au @expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour activer votre espace professionnel
+                    et consulter le signalement.
+                    Passé ce délai, vous pourrez toujours le lire mais vous ne pourrez plus y répondre.
+                    Les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
+                </p>
 
-        <div class="footer text-center">
-            <img src='@routes.Assets.versioned("images/logo-beta-gouv.jpg")'/>
-            Incubateur de services publics numériques https://beta.gouv.fr
+                <p class="mt-3">
+                    Pour connaitre ce signalement, rendez-vous sur https://signalconso.beta.gouv.fr/ avec votre numéro SIRET et votre code d’activation de 6 chiffres.
+                </p>
+
+                <p class="text-center text-bold">
+                    Votre Code d’activation : @code
+                </p>
+
+                <p class="mt-3">
+                    Une fois votre espace professionnel activé, vous pourrez consulter les signalements concernant votre établissementUne fois votre espace professionnel activé,
+                    vous pourrez consulter les signalements concernant votre établissement et y apporter une réponse.
+                </p>
+
+                <p>
+                    Ce nouveau service public est facultatif et gratuit. À travers SignalConso, notre objectif est d’établir un rapport de confiance et de transparence
+                    entre les consommateurs, les professionnels et les services de la DGCCRF.
+                </p>
+
+                <p>
+                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse <strong>contact@@signalconso.beta.gouv.fr</strong>.
+                </p>
+
+                <p class="text-right mr-5">
+                    L’équipe SignalConso
+                </p>
+            </div>
+
+            <div class="footer text-center">
+                <img src='@routes.Assets.versioned("images/logo-beta-gouv.jpg")'/>
+                Incubateur de services publics numériques https://beta.gouv.fr
+            </div>
         </div>
 
     </body>

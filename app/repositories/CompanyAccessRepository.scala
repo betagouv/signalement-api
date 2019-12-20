@@ -140,6 +140,22 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .filter(_.valid)
       .filter(_.companyId === company.id)
 
+  def fetchValidToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens(company)
+      .filter(_.emailedTo === emailedTo)
+      .sortBy(_.expirationDate.desc)
+      .result
+      .headOption
+    )
+
+  def fetchActivationToken(company: Company): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens(company)
+      .filterNot(_.emailedTo.isDefined)
+      .filter(_.level === AccessLevel.ADMIN)
+      .result
+      .headOption
+    )
+
   def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
     db.run(fetchValidTokens(company)
       .filter(_.id === id)
@@ -178,14 +194,12 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
             .update(false)
     )
 
-  def fetchActivationCode(company: Company): Future[Option[String]] = {
-    db.run(fetchValidTokens(company)
-      .filterNot(_.emailedTo.isDefined)
-      .map(_.token)
-      .result
-      .headOption
+  def updateToken(token: AccessToken, level: AccessLevel, validity: Option[java.time.temporal.TemporalAmount]) =
+    db.run(AccessTokenTableQuery
+            .filter(_.id === token.id)
+            .map(a => (a.level, a.expirationDate))
+            .update((level, validity.map(OffsetDateTime.now.plus(_))))
     )
-  }
 
   def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] = {
     db.run(AccessTokenTableQuery
@@ -197,4 +211,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
     )
       .map(f => f.map(accessToken => accessToken.companyId -> accessToken.token).toMap)
   }
+
+  def fetchActivationCode(company: Company): Future[Option[String]] =
+    fetchActivationToken(company).map(_.map(_.token))
 }
