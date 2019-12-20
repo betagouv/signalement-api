@@ -66,7 +66,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
-            report.id,
+            Some(report.id),
             Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
@@ -74,7 +74,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${admins.map(_.email).mkString(", ")} )")
           )
         ).flatMap(event =>
-          reportRepository.update(report.copy(status = Some(TRAITEMENT_EN_COURS)))
+          reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS))
         )
       } else {
         genActivationToken(company, tokenDuration).map(_ => report)
@@ -82,29 +82,41 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def newReport(draftReport: Report)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
+  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
-      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
-        siret,
+      company <- companyRepository.getOrCreate(
+        draftReport.companySiret,
         Company(
           UUID.randomUUID(),
-          siret,
+          draftReport.companySiret,
           OffsetDateTime.now,
           draftReport.companyName,
           draftReport.companyAddress,
-          draftReport.companyPostalCode
-        )
-      ).map(Some(_))).getOrElse(Future(None))
-      report <- reportRepository.create(
-        draftReport.copy(
-          id = Some(UUID.randomUUID()),
-          companyId = company.map(_.id),
-          creationDate = Some(OffsetDateTime.now()),
-          status = Some(draftReport.initialStatus())
+          Some(draftReport.companyPostalCode)
         )
       )
-      _ <- reportRepository.attachFilesToReport(report.files.map(_.id), report.id.get)
-      files <- reportRepository.retrieveReportFiles(report.id.get)
+      report <- reportRepository.create(
+        Report(
+          UUID.randomUUID(),
+          draftReport.category,
+          draftReport.subcategories,
+          draftReport.details,
+          Some(company.id),
+          draftReport.companyName,
+          draftReport.companyAddress,
+          Some(draftReport.companyPostalCode),
+          Some(draftReport.companySiret),
+          OffsetDateTime.now(),
+          draftReport.firstName,
+          draftReport.lastName,
+          draftReport.email,
+          draftReport.contactAgreement,
+          draftReport.employeeConsumer,
+          draftReport.initialStatus()
+        )
+      )
+      _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
+      files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
         mailerService.sendEmail(
           from = mailFrom,
@@ -121,11 +133,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
           )
         )
-        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company.get)
+        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield report
-  
+
+
   def updateReport(id: UUID, reportData: Report): Future[Option[Report]] =
     for {
       existingReport <- reportRepository.getReport(id)
@@ -164,7 +177,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
-      eventRepository.getEvents(report.id.get, EventFilter(None)).flatMap(events =>
+      eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
         if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
@@ -207,7 +220,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
-          report.id,
+          Some(report.id),
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
@@ -215,10 +228,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel")
         )
       )
-      updatedReport <- report.status match {
-        case Some(status) if status.isFinal => Future(report)
-        case _ => notifyConsumerOfReportTransmission(report, userUUID)
-      }
+      updatedReport <-
+        if (report.status.isFinal) {
+          Future(report)
+        } else {
+          notifyConsumerOfReportTransmission(report, userUUID)
+        }
     } yield updatedReport
   }
 
@@ -236,7 +251,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
-          report.id,
+          Some(report.id),
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -244,7 +259,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           stringToDetailsJsValue("Envoi email au consommateur d'information de transmission")
         )
       )
-      newReport <- reportRepository.update(report.copy(status = Some(SIGNALEMENT_TRANSMIS)))
+      newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
     } yield newReport
   }
 
@@ -285,7 +300,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             draftEvent.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
-              reportId = r.id,
+              reportId = Some(r.id),
               userId = Some(user.id)
             )).map(Some(_))
           case _ => Future(None)
@@ -294,7 +309,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         case (Some(r), Some(event)) => reportRepository.update(
           r.copy(
             status = event.action match {
-              case CONTACT_COURRIER => Some(TRAITEMENT_EN_COURS)
+              case CONTACT_COURRIER => TRAITEMENT_EN_COURS
               case _ => r.status
             })
         ).map(Some(_))
@@ -312,7 +327,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   //TODO complete this function in a specific PullRequest to securised the workflow
   def authorizedEventForReport(event: Event, report: Report): Boolean = {
     (event.action, report.status) match {
-      case (CONTACT_COURRIER, Some(A_TRAITER)) => true
+      case (CONTACT_COURRIER, A_TRAITER) => true
       case (CONTACT_COURRIER, _) => false
       case (_, _) => true
     }
@@ -325,7 +340,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       newEvent <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
-          report.id,
+          Some(report.id),
           Some(user.id),
           Some(OffsetDateTime.now()),
           EventType.PRO,
@@ -333,21 +348,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Json.toJson(reportResponse)
         )
       )
-      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id.get)
+      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
         report.copy(
-          status = Some(reportResponse.responseType match {
+          status = reportResponse.responseType match {
             case ReportResponseType.ACCEPTED => PROMESSE_ACTION
             case ReportResponseType.REJECTED => SIGNALEMENT_INFONDE
             case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
-          })
+          }
         )
       )
       - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
       - <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
-          report.id,
+          Some(report.id),
           Some(user.id),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,

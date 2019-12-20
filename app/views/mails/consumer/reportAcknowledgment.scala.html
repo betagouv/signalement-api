@@ -18,7 +18,7 @@
                 Bonjour @report.firstName @report.lastName,
             </p>
             @report.status match {
-                case Some(NA) => {
+                case NA => {
                     <p>
                         Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
                     </p>
@@ -29,7 +29,7 @@
                         En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
                     </p>
                 }
-                case Some(EMPLOYEE_REPORT) => {
+                case EMPLOYEE_REPORT => {
                     <p>
                         Vous venez de déposer un signalement sur SignalConso et nous vous en remercions.
                     </p>
