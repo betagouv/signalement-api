@@ -9,6 +9,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
+import com.amazonaws.HttpMethod
 import play.api.Configuration
 import javax.inject.{Inject, Singleton}
 
@@ -40,12 +41,12 @@ class S3Service @Inject()(
   def delete(bucketName: String, bucketKey: String) =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
-  def getSignedUrl(bucketName: String, bucketKey: String): String = {
+  def getSignedUrl(bucketName: String, bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
     // See https://docs.aws.amazon.com/AmazonS3/latest/dev/ShareObjectPreSignedURLJavaSDK.html
     val expiration = new java.util.Date
     expiration.setTime(expiration.getTime + 1000 * 60 * 60)
     val generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, bucketKey)
-                    .withMethod(com.amazonaws.HttpMethod.GET)
+                    .withMethod(method)
                     .withExpiration(expiration)
     awsS3Client.generatePresignedUrl(generatePresignedUrlRequest).toString
   }
