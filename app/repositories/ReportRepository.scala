@@ -159,7 +159,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def monthlyCount: Future[List[MonthlyStat]] = db
     .run(
       reportTableQuery
-        .filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
+        .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
         .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
         .map{
           case ((month, year), group) => (month, year, group.length)
@@ -171,7 +171,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   val baseStatReportTableQuery = reportTableQuery
     .filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
     .filter(_.creationDate > backofficeAdminStartDate)
-  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
+  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
   def countWithStatus(statusList: List[ReportStatusValue]) = db
     .run(
