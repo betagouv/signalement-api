@@ -91,21 +91,22 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def reportId = column[Option[UUID]]("report_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def filename = column[String]("filename")
+    def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], OffsetDateTime, String, ReportFileOrigin)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin)
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename, origin) => ReportFile(id, reportId, creationDate, filename, origin)
+      case (id, reportId, creationDate, filename, storageFilename, origin) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename, origin) => (id, reportId, creationDate, filename, origin)
+      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin) => (id, reportId, creationDate, filename, storageFilename, origin)
     }
 
     def * =
-      (id, reportId, creationDate, filename, origin) <> (constructFile, extractFile.lift)
+      (id, reportId, creationDate, filename, storageFilename, origin) <> (constructFile, extractFile.lift)
   }
 
   val reportTableQuery = TableQuery[ReportTable]
