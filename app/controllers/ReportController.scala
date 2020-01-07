@@ -232,7 +232,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
     logger.debug(s"getNbReportsGroupByCompany")
 
-    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReports
+    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
     // valeurs par défaut
     val LIMIT_DEFAULT = 25

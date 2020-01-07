@@ -132,7 +132,7 @@ case class ReportWithFiles(
                           )
 
 object ReportWithFiles {
-  implicit val reportWithFilesFormat = Json.format[ReportWithFiles]
+  implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
 }
 
 case class  DetailInputValue (
