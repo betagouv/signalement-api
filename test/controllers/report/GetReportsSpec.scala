@@ -85,9 +85,9 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
   val company = Fixtures.genCompany.sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
 
-  val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = Some(A_TRAITER))
-  val reportFromEmployee = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = true, status = Some(EMPLOYEE_REPORT))
-  val reportNA = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = Some(NA))
+  val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = A_TRAITER)
+  val reportFromEmployee = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
+  val reportNA = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = NA)
 
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
@@ -142,7 +142,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     implicit val someUserRole = Some(userRole)
 
     def aReport(report: Report): Matcher[String] =
-      /("id").andHave(report.id.get.toString)
+      /("report") /("id") andHave(report.id.toString)
 
     def haveReports(reports: Matcher[String]*): Matcher[String] =
       /("entities").andHave(allOf(reports:_*))

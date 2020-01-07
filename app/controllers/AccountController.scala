@@ -150,7 +150,7 @@ class AccountController @Inject()(
         logger.debug(s"getActivationDocumentForReportList ${result.reportIds}")
 
         for {
-          reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == Some(A_TRAITER)))
+          reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == A_TRAITER))
           reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
           reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
         } yield {

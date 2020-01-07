@@ -118,8 +118,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_TRANSMIS)
+    reportUUID, "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
   var report = reportFixture
@@ -203,11 +203,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
     report = Await.result(reportRepository.getReport(reportUUID), Duration.Inf).get
-    report must reportStatusMatcher(Some(status))
-
+    report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

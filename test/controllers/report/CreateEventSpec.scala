@@ -94,10 +94,10 @@ trait CreateEventSpec extends Spec with CreateEventContext {
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
@@ -110,8 +110,8 @@ trait CreateEventContext extends Mockito {
   val reportUUID = UUID.randomUUID()
 
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, List(), Some(A_TRAITER)
+    reportUUID, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some("00000000000000"), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("toto@example.com"), true, false, A_TRAITER
   )
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {

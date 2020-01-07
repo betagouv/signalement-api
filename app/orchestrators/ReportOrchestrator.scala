@@ -95,26 +95,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(draftReport.companyPostalCode)
         )
       )
-      report <- reportRepository.create(
-        Report(
-          UUID.randomUUID(),
-          draftReport.category,
-          draftReport.subcategories,
-          draftReport.details,
-          Some(company.id),
-          draftReport.companyName,
-          draftReport.companyAddress,
-          Some(draftReport.companyPostalCode),
-          Some(draftReport.companySiret),
-          OffsetDateTime.now(),
-          draftReport.firstName,
-          draftReport.lastName,
-          draftReport.email,
-          draftReport.contactAgreement,
-          draftReport.employeeConsumer,
-          draftReport.initialStatus()
-        )
-      )
+      report <- reportRepository.create(draftReport.generateReport.copy(companyId = Some(company.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
@@ -137,7 +118,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         else Future(report)
       }
     } yield report
-
 
   def updateReport(id: UUID, reportData: Report): Future[Option[Report]] =
     for {
@@ -163,7 +143,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           companyName = reportData.companyName,
           companyAddress = reportData.companyAddress,
           companyPostalCode = reportData.companyPostalCode,
-          companySiret = reportData.companySiret
+          companySiret = reportData.companySiret,
+          status = reportData.companySiret.filter(Some(_) != existingReport.flatMap(_.companySiret)).map(_ => reportData.initialStatus()).getOrElse(report.status)
         )).map(Some(_))
         case _ => Future(None)
       }

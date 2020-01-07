@@ -37,6 +37,27 @@ case class DraftReport(
       case (_, _) => A_TRAITER
     }
   }
+
+  def generateReport: Report = {
+    Report(
+      UUID.randomUUID(),
+      category,
+      subcategories,
+      details,
+      None,
+      companyName,
+      companyAddress,
+      Some(companyPostalCode),
+      Some(companySiret),
+      OffsetDateTime.now(),
+      firstName,
+      lastName,
+      email,
+      contactAgreement,
+      employeeConsumer,
+      initialStatus()
+    )
+  }
 }
 object DraftReport {
   implicit val draftReportFormat = Json.format[DraftReport]
