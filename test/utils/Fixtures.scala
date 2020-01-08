@@ -29,13 +29,16 @@ object Fixtures {
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
+    val genSiret = for {
+        randInt <- Gen.choose(0, 1000000)
+    } yield "000000000" + randInt takeRight 9
+
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
-        randInt <- Gen.choose(0, 1000000)
+        siret <- genSiret
     } yield Company(
-        id, "000000000" + randInt takeRight 9, OffsetDateTime.now(),
-        name, "42 rue du Test", Some("37500")
+        id, siret, OffsetDateTime.now(), name, "42 rue du Test", Some("37500")
     )
 
     def genDraftReport = for {
@@ -78,7 +81,7 @@ object Fixtures {
     def genReportCompany = for {
         name <- arbString.arbitrary
         address <- arbString.arbitrary
-        randInt <- Gen.choose(0, 1000000)
+        siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
-    } yield ReportCompany(name, address, postalCode.toString, "000000000" + randInt takeRight 9)
+    } yield ReportCompany(name, address, postalCode.toString, siret)
 }
