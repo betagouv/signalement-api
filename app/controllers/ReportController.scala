@@ -72,13 +72,26 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     )
   }
 
-  def updateReport(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+  def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
 
-    logger.debug("updateReport")
+    logger.debug("updateReportCompany")
 
-    request.body.validate[Report].fold(
+    request.body.validate[ReportCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      report => reportOrchestrator.updateReport(UUID.fromString(uuid), report).map{
+      reportCompany => reportOrchestrator.updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id).map{
+            case Some(_) => Ok
+            case None => NotFound
+          }
+    )
+  }
+
+  def updateReportConsumer(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+
+    logger.debug("updateReportConsumer")
+
+    request.body.validate[ReportConsumer].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      reportConsumer => reportOrchestrator.updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id).map{
             case Some(_) => Ok
             case None => NotFound
           }

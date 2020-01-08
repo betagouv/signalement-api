@@ -57,7 +57,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpda
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has no account                             ${step(draftReport = draftReport.copy(companySiret = newCompany.siret))}
+          a professional who has no account                             ${step(draftReport = draftReport.copy(companySiret = anotherCompany.siret))}
           an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.AUTHORIZED(0)))}
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
@@ -81,24 +81,45 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
     """
 }
 
-object UpdateReportSameSiret extends CreateUpdateReportSpec {
+object UpdateReportConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
-         Given a preexisting report with a modification                 ${step(report = existingReport.copy(lastName = Fixtures.genLastName.sample.get))}
-         When the report is updated                                     ${step(updateReport(report))}
-         Then the report contains updated info                          ${checkReport(report)}
+         Given a preexisting report                                     ${step(report = existingReport)}
+         When the report consumer is updated                            ${step(updateReportConsumer(report.id, reportConsumer))}
+         Then the report contains updated info                          ${checkReport(report.copy(
+                                                                          firstName = reportConsumer.firstName,
+                                                                          lastName = reportConsumer.lastName,
+                                                                          email = reportConsumer.email,
+                                                                          contactAgreement = reportConsumer.contactAgreement
+                                                                        ))}
     """
 }
 
-object UpdateReportWithAnotherSiret extends CreateUpdateReportSpec {
+object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
   override def is =
     s2"""
-         Given a preexisting report
-            with a new SIRET                                            ${step(report = existingReport.copy(companySiret = Some(anotherExistingCompany.siret)))}
-         When the report is updated                                     ${step(updateReport(report))}
-         Then the report contains company info and the status is reset  ${checkReport(report.copy(
-                                                                          companyId = Some(anotherExistingCompany.id),
-                                                                          companySiret = Some(anotherExistingCompany.siret),
+         Given a preexisting report                                     ${step(report = existingReport)}
+         When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanySameSiret))}
+         Then the report contains updated info                          ${checkReport(report.copy(
+                                                                          companyName = reportCompanySameSiret.name,
+                                                                          companyAddress = reportCompanySameSiret.address,
+                                                                          companyPostalCode = Some(reportCompanySameSiret.postalCode),
+                                                                          companySiret = Some(reportCompanySameSiret.siret)
+                                                                        ))}
+    """
+}
+
+object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
+  override def is =
+    s2"""
+         Given a preexisting report                                     ${step(report = existingReport)}
+         When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanyAnotherSiret))}
+         Then the report contains updated info and the status is reset  ${checkReport(report.copy(
+                                                                          companyId = Some(anotherCompany.id),
+                                                                          companyName = reportCompanyAnotherSiret.name,
+                                                                          companyAddress = reportCompanyAnotherSiret.address,
+                                                                          companyPostalCode = Some(reportCompanyAnotherSiret.postalCode),
+                                                                          companySiret = Some(reportCompanyAnotherSiret.siret),
                                                                           status = ReportStatus.A_TRAITER
                                                                         ))}
     """
@@ -120,8 +141,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
   val existingCompany = Fixtures.genCompany.sample.get
-  val anotherExistingCompany = Fixtures.genCompany.sample.get
-  val newCompany = Fixtures.genCompany.sample.get
+  val anotherCompany = Fixtures.genCompany.sample.get
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
@@ -129,11 +149,19 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   var report = draftReport.generateReport
   val proUser = Fixtures.genProUser.sample.get
 
+  val concernedAdminUser = Fixtures.genAdminUser.sample.get
+  val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
+
+  val reportConsumer = Fixtures.genReportConsumer.sample.get
+  val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
+  val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get.copy(siret = anotherCompany.siret, postalCode = "45000")
+
   override def setupData = {
     Await.result(for {
       u <- userRepository.create(proUser)
+      _ <- userRepository.create(concernedAdminUser)
       c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
-      _ <- companyRepository.getOrCreate(anotherExistingCompany.siret, anotherExistingCompany)
+      _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
       _ <- reportRepository.create(existingReport)
       _ <- companyAccessRepository.setUserLevel(c, u, AccessLevel.ADMIN)
     } yield Unit,
@@ -151,9 +179,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     }
   }
 
-  val concernedAdminUser = Fixtures.genAdminUser.sample.get
-  val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
-
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(
     concernedAdminLoginInfo -> concernedAdminUser
   ))
@@ -162,13 +187,18 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Await.result(app.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(draftReport))), Duration.Inf)
   }
 
-  def updateReport(reportData: Report) = {
-    implicit val someUserRole = Some(concernedAdminUser.userRole)
-    implicit val reportWriter = Json.writes[Report]
-    Await.result(app.injector.instanceOf[ReportController].updateReport(reportData.id.toString).apply(
+  def updateReportCompany(reportId: UUID, reportCompany: ReportCompany) = {
+    Await.result(app.injector.instanceOf[ReportController].updateReportCompany(reportId.toString).apply(
       FakeRequest()
       .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
-      .withBody(Json.toJson(reportData))), Duration.Inf)
+      .withBody(Json.toJson(reportCompany))), Duration.Inf)
+  }
+
+  def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumer) = {
+    Await.result(app.injector.instanceOf[ReportController].updateReportConsumer(reportId.toString).apply(
+      FakeRequest()
+      .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
+      .withBody(Json.toJson(reportConsumer))), Duration.Inf)
   }
 
   def checkReport(reportData: Report) = {
