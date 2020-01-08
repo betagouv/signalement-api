@@ -6,6 +6,7 @@ import java.util.UUID
 import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 
 import scala.util.Random
@@ -28,13 +29,29 @@ object Fixtures {
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
+    val genSiret = for {
+        randInt <- Gen.choose(0, 1000000)
+    } yield "000000000" + randInt takeRight 9
+
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
-        randInt <- Gen.choose(0, 1000000)
+        siret <- genSiret
     } yield Company(
-        id, "000000000" + randInt takeRight 9, OffsetDateTime.now(),
-        name, "42 rue du Test", Some("37500")
+        id, siret, OffsetDateTime.now(), name, "42 rue du Test", Some("37500")
+    )
+
+    def genDraftReport = for {
+        category <- arbString.arbitrary
+        subcategory <- arbString.arbitrary
+        firstName <- genFirstName
+        lastName <- genLastName
+        email <- genEmailAddress(firstName, lastName)
+        contactAgreement <- arbitrary[Boolean]
+        company <- genCompany
+    } yield DraftReport(
+        category, List(subcategory), List(), company.name, company.address, company.postalCode.map(_.substring(0, 2)).get, company.siret,
+        firstName, lastName, email, contactAgreement, false, List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -45,12 +62,26 @@ object Fixtures {
         lastName <- genLastName
         email <- genEmailAddress(firstName, lastName)
         contactAgreement <- arbitrary[Boolean]
-        employeeConsumer <- arbitrary[Boolean]
+        status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        Some(id), category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        Some(OffsetDateTime.now()), firstName, lastName, email, contactAgreement, employeeConsumer, List(), None
+        id, category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
-    def genReportsForCompanyWithStatus(company: Company, status: Option[ReportStatusValue]) =
+    def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
         Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
+
+    def genReportConsumer = for {
+        firstName <- genFirstName
+        lastName <- genLastName
+        email <- genEmailAddress(firstName, lastName)
+        contactAgreement <- arbitrary[Boolean]
+    } yield ReportConsumer(firstName, lastName, email, contactAgreement)
+
+    def genReportCompany = for {
+        name <- arbString.arbitrary
+        address <- arbString.arbitrary
+        siret <- genSiret
+        postalCode <- Gen.choose(10000, 99999)
+    } yield ReportCompany(name, address, postalCode.toString, siret)
 }

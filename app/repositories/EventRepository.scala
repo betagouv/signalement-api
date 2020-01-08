@@ -85,7 +85,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
       .result
   }
   def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
-    val reportsIds = reports.map(_.id.get)
+    val reportsIds = reports.map(_.id)
     db.run(eventTableQuery.filter(
       _.reportId inSetBind reportsIds
     ).to[List].result)

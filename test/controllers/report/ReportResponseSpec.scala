@@ -118,8 +118,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val reportUUID = UUID.randomUUID()
   val reportFixture = Report(
-    Some(reportUUID), "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_TRANSMIS)
+    reportUUID, "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
   var report = reportFixture
@@ -133,7 +133,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
 
-  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", ReportFileOrigin.PROFESSIONAL)
+  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", "123_fichier.jpg", ReportFileOrigin.PROFESSIONAL)
 
   val reportResponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"), List(reportResponseFile.id))
   val reportResponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"), List.empty)
@@ -203,11 +203,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
     report = Await.result(reportRepository.getReport(reportUUID), Duration.Inf).get
-    report must reportStatusMatcher(Some(status))
-
+    report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

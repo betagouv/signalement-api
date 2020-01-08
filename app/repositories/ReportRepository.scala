@@ -59,23 +59,23 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def email = column[EmailAddress]("email")
     def contactAgreement = column[Boolean]("contact_agreement")
     def employeeConsumer = column[Boolean]("employee_consumer")
-    def status = column[Option[String]]("status")
+    def status = column[String]("status")
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, Option[String])
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
-        Report(Some(id), category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          Some(creationDate), firstName, lastName, email, contactAgreement, employeeConsumer, List.empty, status.map(ReportStatus.fromDefaultValue(_)))
+        Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret,
+          creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status))
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-      creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, files, status) =>
-        (id.get, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          creationDate.get, firstName, lastName, email, contactAgreement, employeeConsumer, status.map(_.defaultValue))
+      creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
+        (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
+          creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue)
     }
 
     def * =
@@ -91,21 +91,22 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def reportId = column[Option[UUID]]("report_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def filename = column[String]("filename")
+    def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], OffsetDateTime, String, ReportFileOrigin)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin)
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename, origin) => ReportFile(id, reportId, creationDate, filename, origin)
+      case (id, reportId, creationDate, filename, storageFilename, origin) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename, origin) => (id, reportId, creationDate, filename, origin)
+      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin) => (id, reportId, creationDate, filename, storageFilename, origin)
     }
 
     def * =
-      (id, reportId, creationDate, filename, origin) <> (constructFile, extractFile.lift)
+      (id, reportId, creationDate, filename, storageFilename, origin) <> (constructFile, extractFile.lift)
   }
 
   val reportTableQuery = TableQuery[ReportTable]
@@ -159,7 +160,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def monthlyCount: Future[List[MonthlyStat]] = db
     .run(
       reportTableQuery
-        .filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
+        .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
         .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
         .map{
           case ((month, year), group) => (month, year, group.length)
@@ -171,7 +172,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   val baseStatReportTableQuery = reportTableQuery
     .filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
     .filter(_.creationDate > backofficeAdminStartDate)
-  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusYears(1))
+  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
   def countWithStatus(statusList: List[ReportStatusValue]) = db
     .run(
@@ -197,14 +198,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
       .filter(_.id === id)
-      .joinLeft(fileTableQuery).on(_.id === _.reportId)
-      .to[List]
       .result
-      .map(result =>
-        result.map(_._1).distinct
-          .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
-          .headOption
-      )
+      .headOption
   }
 
   def delete(id: UUID): Future[Int] = db.run {
@@ -238,7 +233,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
             case(table, category) => table.category === category
           }
           .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
-            case table => table.status.inSet(filter.statusList.map(_.defaultValue)).getOrElse(false)
+            case table => table.status.inSet(filter.statusList.map(_.defaultValue))
           }
           .filterOpt(filter.details) {
             case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
@@ -247,20 +242,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
             case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
           }
 
-
     for {
         reports <- query
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
-          .joinLeft(fileTableQuery).on(_.id === _.reportId)
-          .sortBy(_._1.creationDate.desc)
           .to[List]
           .result
-          .map(result =>
-            result.map(_._1).distinct
-              .map(report => report.copy(files = result.map(_._2).distinct.filter(_.map(_.reportId == report.id).getOrElse(false)).map(_.get)))
-          )
         count <- query.length.result
       } yield PaginatedResult(
         totalCount = count,
@@ -299,6 +287,15 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filter(_.reportId === reportId)
         .to[List].result
     )
+
+  def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] = {
+    db.run(fileTableQuery.filter(
+      _.reportId inSetBind reportsIds
+    ).to[List].result)
+      .map(events =>
+        events.groupBy(_.reportId.get)
+      )
+  }
 
   def deleteFile(uuid: UUID): Future[Int] = db
     .run(

@@ -94,8 +94,9 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                             limitNormalized,
                             company.map(c => filter.copy(siret=Some(c.siret)))
                                    .getOrElse(filter))
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
-      Ok(Json.toJson(paginatedReports))
+      Ok(Json.toJson(paginatedReports.copy(entities = paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil))))))
     }
   }
 
@@ -123,60 +124,60 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     case class ReportColumn(
       name: String, column: Column,
-      extract: (Report, List[Event], List[User]) => String, available: Boolean = true
+      extract: (Report, List[ReportFile], List[Event], List[User]) => String, available: Boolean = true
     )
 
     val reportColumns = List(
       ReportColumn(
         "Date de création", centerAlignmentColumn,
-        (report, _, _) => report.creationDate.map(_.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))).getOrElse("")
+        (report, _, _, _) => report.creationDate.format(DateTimeFormatter.ofPattern(("dd/MM/yyyy")))
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
+        (report, _, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Code postal", centerAlignmentColumn,
-        (report, _, _) => report.companyPostalCode.getOrElse(""),
+        (report, _, _, _) => report.companyPostalCode.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Siret", centerAlignmentColumn,
-        (report, _, _) => report.companySiret.getOrElse(""),
+        (report, _, _, _) => report.companySiret.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Nom de l'établissement", leftAlignmentColumn,
-        (report, _, _) => report.companyName,
+        (report, _, _, _) => report.companyName,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Adresse de l'établissement", leftAlignmentColumn,
-        (report, _, _) => report.companyAddress,
+        (report, _, _, _) => report.companyAddress,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Email de l'établissement", centerAlignmentColumn,
-        (report, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
+        (report, _, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
         "Catégorie", leftAlignmentColumn,
-        (report, _, _) => report.category
+        (report, _, _, _) => report.category
       ),
       ReportColumn(
         "Sous-catégories", leftAlignmentColumn,
-        (report, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+        (report, _, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Détails", Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle),
-        (report, _, _) => report.details.map(d => s"${d.label} ${d.value}").mkString("\n").replace("&#160;", " ")
+        (report, _, _, _) => report.details.map(d => s"${d.label} ${d.value}").mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Pièces jointes", leftAlignmentColumn,
-        (report, _, _) =>
-          report.files
+        (report, files, _, _) =>
+          files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file => routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL())
             .mkString("\n"),
@@ -184,13 +185,13 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Statut", leftAlignmentColumn,
-        (report, _, _) => report.status.flatMap(_.getValueWithUserRole(request.identity.userRole)).getOrElse(""),
+        (report, _, _, _) => report.status.getValueWithUserRole(request.identity.userRole).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Réponse au consommateur", leftAlignmentColumn,
-        (report, events, _) =>
-          report.status
+        (report, _, events, _) =>
+          Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
             e.details.validate[ReportResponse].get.consumerDetails
@@ -199,8 +200,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Réponse à la DGCCRF", leftAlignmentColumn,
-        (report, events, _) =>
-          report.status
+        (report, _, events, _) =>
+          Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
           .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
             e.details.validate[ReportResponse].get.dgccrfDetails
@@ -209,31 +210,31 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Identifiant", centerAlignmentColumn,
-        (report, _, _) => report.id.map(_.toString).getOrElse(""),
+        (report, _, _, _) => report.id.toString,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Prénom", leftAlignmentColumn,
-        (report, _, _) => report.firstName,
+        (report, _, _, _) => report.firstName,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Nom", leftAlignmentColumn,
-        (report, _, _) => report.lastName,
+        (report, _, _, _) => report.lastName,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Email", leftAlignmentColumn,
-        (report, _, _) => report.email.value,
+        (report, _, _, _) => report.email.value,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
         "Accord pour contact", centerAlignmentColumn,
-        (report, _, _) => if (report.contactAgreement) "Oui" else "Non"
+        (report, _, _, _) => if (report.contactAgreement) "Oui" else "Non"
       ),
       ReportColumn(
         "Actions DGCCRF", leftAlignmentColumn,
-        (report, events, _) =>
+        (report, _, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
           .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description").getOrElse("")}")
           .mkString("\n"),
@@ -265,6 +266,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
           }
         )
       )
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap   <- companyAccessRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
     } yield {
@@ -276,7 +278,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
             Row().withCellValues(reportColumns.map(
               _.extract(
                 report,
-                reportEventsMap.getOrElse(report.id.get, Nil),
+                reportFilesMap.getOrElse(report.id, Nil),
+                reportEventsMap.getOrElse(report.id, Nil),
                 report.companyId.flatMap(companyAdminsMap.get(_)).getOrElse(Nil)
               )
             ))

@@ -24,6 +24,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
+import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
 import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -111,20 +112,20 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
       "generate an export" in new Context {
         new WithApplication(application) {
-          val reportId = Some(UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b"))
+          val reportId = UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b")
           val reportsList = List(
             Report(
               reportId, "foo", List("bar"), List(), Some(companyId), "myCompany", "18 rue des Champs",
-              None, Some("00000000000000"), Some(OffsetDateTime.now()), "John", "Doe", EmailAddress("jdoe@example.com"),
-              true, false, List(), None
+              None, Some("00000000000000"), OffsetDateTime.now(), "John", "Doe", EmailAddress("jdoe@example.com"),
+              true, false, TRAITEMENT_EN_COURS
             )
           )
           mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(
             PaginatedResult(1, false, reportsList)
           )
           mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
-            Map(reportId.get -> List(
-              Event(reportId, reportId, Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
+            Map(reportId -> List(
+              Event(Some(reportId), Some(reportId), Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
             ))
           )
 
@@ -161,6 +162,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
+    mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
     mockCompanyAccessRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
     mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}

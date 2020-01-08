@@ -71,7 +71,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_TRANSMIS)}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
-         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(status = Some(ReportStatus.SIGNALEMENT_TRANSMIS)), UserRoles.Pro)}
+         And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(status = ReportStatus.SIGNALEMENT_TRANSMIS), UserRoles.Pro)}
       """
 }
 
@@ -128,7 +128,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
     implicit val someUserRole = Some(userRole)
-    someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(report)
+    someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(ReportWithFiles(report, List.empty))
   }
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
@@ -149,10 +149,10 @@ trait GetReportSpec extends Spec with GetReportContext {
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
-    there was one(mockReportRepository).update(argThat(reportStatusMatcher(Some(status))))
+    there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
@@ -184,20 +184,20 @@ trait GetReportContext extends Mockito {
   val companyId = UUID.randomUUID
   val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
-    Some(neverRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(TRAITEMENT_EN_COURS)
+    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    Some(neverRequestedFinalReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_CONSULTE_IGNORE)
+    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    Some(alreadyRequestedReportUUID), "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), Some(OffsetDateTime.now()),
-    "firstName", "lastName", EmailAddress("email"), true, false, List(), Some(SIGNALEMENT_TRANSMIS)
+    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -224,6 +224,7 @@ trait GetReportContext extends Mockito {
   mockReportRepository.getReport(neverRequestedFinalReportUUID) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReportUUID) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report])}
+  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReportUUID, EventFilter(None)) returns Future(List.empty)
