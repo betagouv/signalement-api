@@ -147,7 +147,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
     reportRepository.getFile(UUID.fromString(uuid)).map(_ match {
-      case Some(file) if file.filename == filename => Redirect(s3Service.getSignedUrl(BucketName, uuid))
+      case Some(file) if file.filename == filename => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
       case _ => NotFound
     })
   }
