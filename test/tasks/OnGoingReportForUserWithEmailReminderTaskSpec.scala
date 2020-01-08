@@ -123,10 +123,10 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
   val reportUUID = UUID.randomUUID()
 
-  val onGoingReport = Report(Some(reportUUID), "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
+  val onGoingReport = Report(reportUUID, "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
     Some(companyData.siret),
-    Some(OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC)), "r1", "nom 1", EmailAddress("email 1"), true, false, List.empty,
-    Some(TRAITEMENT_EN_COURS))
+    OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC), "r1", "nom 1", EmailAddress("email 1"), true, false,
+    TRAITEMENT_EN_COURS)
   val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
@@ -176,15 +176,15 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   }
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
-    reportRepository.getReport(reportUUID) must reportStatusMatcher(Some(status)).await
+    reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
   }
 
-  def reportStatusMatcher(status: Option[ReportStatusValue]): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
+  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Option[Report]] = { report: Option[Report] =>
     (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) = {
-    reportRepository.getReport(report.id.get).map(_.get.status) must beEqualTo(report.status).await
+    reportRepository.getReport(report.id).map(_.get.status) must beEqualTo(report.status).await
   }
 
   lazy val userRepository = injector.instanceOf[UserRepository]

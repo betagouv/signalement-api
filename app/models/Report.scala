@@ -9,8 +9,62 @@ import utils.Constants.ReportStatus._
 import utils.Constants.Departments
 import utils.{Constants, EmailAddress}
 
+
+case class DraftReport(
+                        category: String,
+                        subcategories: List[String],
+                        details: List[DetailInputValue],
+                        companyName: String,
+                        companyAddress: String,
+                        companyPostalCode: String,
+                        companySiret: String,
+                        firstName: String,
+                        lastName: String,
+                        email: EmailAddress,
+                        contactAgreement: Boolean,
+                        employeeConsumer: Boolean,
+                        fileIds: List[UUID]
+                      ) {
+
+  def isEligible = {
+    !employeeConsumer && Departments.AUTHORIZED.contains(companyPostalCode.slice(0, 2))
+  }
+
+  def initialStatus() = {
+    (companyPostalCode, employeeConsumer) match {
+      case (postalCode, _) if !Departments.AUTHORIZED.contains(postalCode.slice(0, 2)) => NA
+      case (_, true) => EMPLOYEE_REPORT
+      case (_, _) => A_TRAITER
+    }
+  }
+
+  def generateReport: Report = {
+    Report(
+      UUID.randomUUID(),
+      category,
+      subcategories,
+      details,
+      None,
+      companyName,
+      companyAddress,
+      Some(companyPostalCode),
+      Some(companySiret),
+      OffsetDateTime.now(),
+      firstName,
+      lastName,
+      email,
+      contactAgreement,
+      employeeConsumer,
+      initialStatus()
+    )
+  }
+}
+object DraftReport {
+  implicit val draftReportFormat = Json.format[DraftReport]
+}
+
 case class Report(
-                   id: Option[UUID],
+                   id: UUID,
                    category: String,
                    subcategories: List[String],
                    details: List[DetailInputValue],
@@ -19,14 +73,13 @@ case class Report(
                    companyAddress: String,
                    companyPostalCode: Option[String],
                    companySiret: Option[String],
-                   creationDate: Option[OffsetDateTime],
+                   creationDate: OffsetDateTime,
                    firstName: String,
                    lastName: String,
                    email: EmailAddress,
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
-                   files: List[ReportFile],
-                   status: Option[ReportStatusValue]
+                   status: ReportStatusValue
                  ) {
   def isEligible = {
     !employeeConsumer &&
@@ -60,7 +113,6 @@ object Report {
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
-        "files" -> report.files,
         "status" -> report.status
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
@@ -73,6 +125,15 @@ object Report {
   }
 }
 
+
+case class ReportWithFiles(
+                          report: Report,
+                          files: List[ReportFile]
+                          )
+
+object ReportWithFiles {
+  implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
+}
 
 case class  DetailInputValue (
                            label: String,

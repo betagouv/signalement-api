@@ -42,7 +42,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
-      .filter(_.status.map(_.getValueWithUserRole(user.userRole)).isDefined)
+      .filter(_.status.getValueWithUserRole(user.userRole).isDefined)
       .flatMap(_.companyId).map(companyAccessRepository.getUserLevel(_, user))
       .getOrElse(Future(AccessLevel.NONE))
 
@@ -66,7 +66,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("createReport")
 
-    request.body.validate[Report].fold(
+    request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
     )
@@ -86,7 +86,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
-
     logger.debug(s"reportResponse ${uuid}")
     request.body.validate[ReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -116,8 +115,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       maybeUploadResult =>
         reportOrchestrator
         .addReportFile(
-          UUID.fromString(maybeUploadResult._1.key),
           maybeUploadResult._2,
+          maybeUploadResult._1.key,
           request.body.dataParts.get("reportFileOrigin").map(o => ReportFileOrigin(o.head)).getOrElse(ReportFileOrigin.CONSUMER)
         )
         .map(file => Ok(Json.toJson(file)))
@@ -126,7 +125,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
     case FileInfo(partName, filename, contentType, dispositionType) =>
-      val accumulator = Accumulator(s3Service.upload(BucketName, UUID.randomUUID.toString))
+      val accumulator = Accumulator(s3Service.upload(BucketName, s"${UUID.randomUUID}_${filename}"))
 
       accumulator map { multipartUploadResult =>
         FilePart(partName, filename, contentType, multipartUploadResult)
@@ -137,7 +136,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
       case Some(file) if file.filename == filename =>
-        s3Service.download(BucketName, uuid).flatMap(
+        s3Service.download(BucketName, file.storageFilename).flatMap(
           file => {
             val dest: Array[Byte] = new Array[Byte](file.asByteBuffer.capacity())
             file.asByteBuffer.get(dest)
@@ -182,8 +181,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                             case Some(r) => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))
                             case _ => Future(None)
                           }
+        reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
       } yield updatedReport
-              .map(r => Ok(Json.toJson(r)))
+              .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
               .getOrElse(NotFound)
     }
   }
@@ -231,7 +231,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
     logger.debug(s"getNbReportsGroupByCompany")
 
-    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReports
+    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
     // valeurs par défaut
     val LIMIT_DEFAULT = 25

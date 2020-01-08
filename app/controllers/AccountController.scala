@@ -89,7 +89,7 @@ class AccountController @Inject()(
         case Nil => Future(None)
       }
       events <- report match {
-        case Some(report) => eventRepository.getEvents(report.id.get, EventFilter(action = None))
+        case Some(report) => eventRepository.getEvents(report.id, EventFilter(action = None))
         case _ => Future(List())
       }
     } yield {
@@ -118,7 +118,7 @@ class AccountController @Inject()(
       .filter(_.action == ActionEvent.CONTACT_COURRIER)
       .headOption
       .flatMap(_.creationDate)
-      .getOrElse(report.creationDate.get)
+      .getOrElse(report.creationDate)
       .toLocalDate
     val remindEvent = events.find(_.action == ActionEvent.RELANCE)
     remindEvent.map(remindEvent =>
@@ -131,7 +131,7 @@ class AccountController @Inject()(
     ).getOrElse(
       views.html.pdfs.accountActivation(
         report.companyAddress,
-        report.creationDate.map(_.toLocalDate).get,
+        report.creationDate.toLocalDate,
         activationKey
       )
     )
@@ -150,13 +150,13 @@ class AccountController @Inject()(
         logger.debug(s"getActivationDocumentForReportList ${result.reportIds}")
 
         for {
-          reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == Some(A_TRAITER)))
+          reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == A_TRAITER))
           reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
           reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
         } yield {
 
           val htmlDocuments = reports
-            .map(report => (report, reportEventsMap.get(report.id.get), reportActivationCodesMap.get(report.companyId.get)))
+            .map(report => (report, reportEventsMap.get(report.id), reportActivationCodesMap.get(report.companyId.get)))
             .filter(_._3.isDefined)
             .map(tuple => getHtmlDocumentForReport(tuple._1, tuple._2.getOrElse(List.empty), tuple._3.get))
 

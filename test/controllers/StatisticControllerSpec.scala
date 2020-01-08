@@ -111,32 +111,32 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
 
   val company = Fixtures.genCompany.sample.get
 
-  val lastYearReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
-  val lastYearReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
-  val lastYearReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
-  val lastYearReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
-  val lastYearReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusYears(1))))
+  val lastYearReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
 
   val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
   val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
   val lastYearReports = lastYearReportsToProcess ::: lastYearReportsReadByPro
 
-  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
-  val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
-  val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
-  val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
-  val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get.map(_.copy(creationDate = Some(OffsetDateTime.now().minusMonths(1))))
+  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
 
   val lastMonthReportsWithResponse = lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
   val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
   val lastMonthReports = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
 
-  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, Some(A_TRAITER)).sample.get
-  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_TRANSMIS)).sample.get
-  val currentMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, Some(PROMESSE_ACTION)).sample.get
-  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_INFONDE)).sample.get
-  val currentMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_MAL_ATTRIBUE)).sample.get
-  val currentMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, Some(SIGNALEMENT_CONSULTE_IGNORE)).sample.get
+  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get
+  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_TRANSMIS).sample.get
+  val currentMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get
+  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get
+  val currentMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get
+  val currentMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get
 
   val currentMonthReportsWithResponse = currentMonthReportsAccepted ::: currentMonthReportsRejected ::: currentMonthReportsNotConcerned
   val currentMonthReportsReadByPro = currentMonthReportsWithResponse ::: currentMonthReportsClosedByNoAction

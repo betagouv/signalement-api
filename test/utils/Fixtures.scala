@@ -6,6 +6,7 @@ import java.util.UUID
 import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 
 import scala.util.Random
@@ -37,6 +38,19 @@ object Fixtures {
         name, "42 rue du Test", Some("37500")
     )
 
+    def genDraftReport = for {
+        category <- arbString.arbitrary
+        subcategory <- arbString.arbitrary
+        firstName <- genFirstName
+        lastName <- genLastName
+        email <- genEmailAddress(firstName, lastName)
+        contactAgreement <- arbitrary[Boolean]
+        company <- genCompany
+    } yield DraftReport(
+        category, List(subcategory), List(), company.name, company.address, company.postalCode.map(_.substring(0, 2)).get, company.siret,
+        firstName, lastName, email, contactAgreement, false, List.empty
+    )
+
     def genReportForCompany(company: Company) = for {
         id <- arbitrary[UUID]
         category <- arbString.arbitrary
@@ -45,12 +59,12 @@ object Fixtures {
         lastName <- genLastName
         email <- genEmailAddress(firstName, lastName)
         contactAgreement <- arbitrary[Boolean]
-        employeeConsumer <- arbitrary[Boolean]
+        status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        Some(id), category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        Some(OffsetDateTime.now()), firstName, lastName, email, contactAgreement, employeeConsumer, List(), None
+        id, category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
-    def genReportsForCompanyWithStatus(company: Company, status: Option[ReportStatusValue]) =
+    def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
         Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 }
