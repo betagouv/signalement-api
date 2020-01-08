@@ -67,4 +67,18 @@ object Fixtures {
 
     def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
         Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
+
+    def genReportConsumer = for {
+        firstName <- genFirstName
+        lastName <- genLastName
+        email <- genEmailAddress(firstName, lastName)
+        contactAgreement <- arbitrary[Boolean]
+    } yield ReportConsumer(firstName, lastName, email, contactAgreement)
+
+    def genReportCompany = for {
+        name <- arbString.arbitrary
+        address <- arbString.arbitrary
+        randInt <- Gen.choose(0, 1000000)
+        postalCode <- Gen.choose(10000, 99999)
+    } yield ReportCompany(name, address, postalCode.toString, "000000000" + randInt takeRight 9)
 }

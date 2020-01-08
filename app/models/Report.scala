@@ -165,3 +165,25 @@ object CompanyWithNbReports {
     )
   }
 }
+
+case class ReportCompany(
+                          name: String,
+                          address: String,
+                          postalCode: String,
+                          siret: String
+                        )
+
+object ReportCompany {
+  implicit val format = Json.format[ReportCompany]
+}
+
+case class ReportConsumer(
+                           firstName: String,
+                           lastName: String,
+                           email: EmailAddress,
+                           contactAgreement: Boolean
+                        )
+
+object ReportConsumer {
+  implicit val format = Json.format[ReportConsumer]
+}
