@@ -9,7 +9,7 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 
 @Singleton
@@ -41,7 +41,7 @@ class CompanyAccessController @Inject()(
       companyAccesses <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
     } yield Ok(Json.toJson(companyAccesses.map{
       case (company, level) => Map(
-          "companySiret"      -> company.siret,
+          "companySiret"      -> company.siret.value,
           "companyName"       -> company.name,
           "companyAddress"    -> company.address,
           "level"             -> level.value
@@ -99,7 +99,7 @@ class CompanyAccessController @Inject()(
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
     for {
-      company <- companyRepository.findBySiret(siret)
+      company <- companyRepository.findBySiret(SIRET(siret))
       token   <- company.map(companyAccessRepository.findToken(_, token))
                         .getOrElse(Future(None))
     } yield token.flatMap(t => company.map(c => 

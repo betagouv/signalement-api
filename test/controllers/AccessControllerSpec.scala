@@ -64,7 +64,7 @@ The listAccesses endpoint should
   be denied for a non admin                         $e2
                                                     """
   def e1 = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret).toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
                   .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
@@ -91,7 +91,7 @@ The listAccesses endpoint should
     )
   }
   def e2 = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret).toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.listAccesses(company.siret.value).toString)
                   .withAuthenticator[AuthEnv](loginInfo(proMemberUser))
     val result = route(app, request).get
     status(result) must beEqualTo(NOT_FOUND)
@@ -145,7 +145,7 @@ The invitation workflow should
   var invitationToken: AccessToken = null
 
   def e1 = {
-    val request = FakeRequest(POST, routes.CompanyAccessController.sendInvitation(company.siret).toString)
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendInvitation(company.siret.value).toString)
                   .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
                   .withBody(Json.obj("email" -> invitedEmail, "level" -> "member"))
     val result = route(app, request).get
@@ -159,7 +159,7 @@ The invitation workflow should
   }
 
   def e3 = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.listPendingTokens(company.siret).toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.listPendingTokens(company.siret.value).toString)
                   .withAuthenticator[AuthEnv](loginInfo(proAdminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
@@ -174,7 +174,7 @@ The invitation workflow should
   }
 
   def e4 = {
-    val request = FakeRequest(GET, routes.CompanyAccessController.fetchTokenInfo(company.siret, invitationToken.token).toString)
+    val request = FakeRequest(GET, routes.CompanyAccessController.fetchTokenInfo(company.siret.value, invitationToken.token).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     contentAsJson(result) must beEqualTo(

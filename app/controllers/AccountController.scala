@@ -19,6 +19,7 @@ import repositories._
 import utils.Constants.ReportStatus.A_TRAITER
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.SIRET
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -79,9 +80,8 @@ class AccountController @Inject()(
   }
 
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
-
     for {
-      company <- companyRepository.findBySiret(siret)
+      company <- companyRepository.findBySiret(SIRET(siret))
       token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER)))
       report <- paginatedReports.entities match {

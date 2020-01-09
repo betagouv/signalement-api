@@ -36,7 +36,7 @@ object Fixtures {
 
     val genSiret = for {
         randInt <- Gen.choose(0, 1000000)
-    } yield "000000000" + randInt takeRight 9
+    } yield SIRET("000000000" + randInt takeRight 9)
 
     val genCompany = for {
         id <- arbitrary[UUID]

@@ -21,7 +21,7 @@ import utils.Constants.{ActionEvent, EventType, ReportStatus}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{Constants, DateUtils}
+import utils.{Constants, DateUtils, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Random, Success, Try}
@@ -92,7 +92,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            company.map(c => filter.copy(siret=Some(c.siret)))
+                            company.map(c => filter.copy(siret=Some(c.siret.value)))
                                    .getOrElse(filter))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
@@ -144,7 +144,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Siret", centerAlignmentColumn,
-        (report, _, _, _) => report.companySiret.getOrElse(""),
+        (report, _, _, _) => report.companySiret.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
@@ -253,7 +253,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         ReportFilter(
           departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
           None,
-          restrictToCompany.map(c => Some(c.siret)).getOrElse(siret),
+          restrictToCompany.map(c => Some(c.siret.value)).getOrElse(siret),
           None,
           startDate,
           endDate,
