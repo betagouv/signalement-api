@@ -146,17 +146,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
-
-    reportRepository.getFile(UUID.fromString(uuid)).flatMap(_ match {
-      case Some(file) if file.filename == filename =>
-        s3Service.download(BucketName, file.storageFilename).flatMap(
-          file => {
-            val dest: Array[Byte] = new Array[Byte](file.asByteBuffer.capacity())
-            file.asByteBuffer.get(dest)
-            Future(Ok(dest))
-          }
-        )
-      case _ => Future(NotFound)
+    reportRepository.getFile(UUID.fromString(uuid)).map(_ match {
+      case Some(file) if file.filename == filename => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
+      case _ => NotFound
     })
   }
 

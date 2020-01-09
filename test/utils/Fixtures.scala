@@ -12,6 +12,11 @@ import utils.Constants.ReportStatus.ReportStatusValue
 import scala.util.Random
 
 object Fixtures {
+    // Avoids creating strings with null chars because Postgres text fields don't support it.
+    // see http://stackoverflow.com/questions/1347646/postgres-error-on-insert-error-invalid-byte-sequence-for-encoding-utf8-0x0
+    implicit val stringArbitrary: Arbitrary[String] =
+        Arbitrary(Gen.identifier.map(_.replaceAll("\u0000", "")))
+
     val genUser = for {
         id <- arbitrary[UUID]
         password <- arbString.arbitrary
@@ -23,7 +28,7 @@ object Fixtures {
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
-    def genEmailAddress(firstName: String, lastName: String): Gen[EmailAddress] = EmailAddress(s"${firstName}.${lastName}.${Gen.choose(0, 1000000)}@example.com")
+    def genEmailAddress(firstName: String, lastName: String): Gen[EmailAddress] = EmailAddress(s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com")
 
     val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
