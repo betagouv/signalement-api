@@ -19,6 +19,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
+import utils.SIRET
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -201,7 +202,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
-    reportRepository.count(Some(siret)).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
+    reportRepository.count(Some(SIRET(siret))).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
   }
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
