@@ -13,7 +13,7 @@ import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
 import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -52,7 +52,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def companyName = column[String]("company_name")
     def companyAddress = column[String]("company_address")
     def companyPostalCode = column[Option[String]]("company_postal_code")
-    def companySiret = column[Option[String]]("company_siret")
+    def companySiret = column[Option[SIRET]]("company_siret")
     def creationDate= column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")
     def lastName = column[String]("last_name")
@@ -63,7 +63,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[String], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[SIRET], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
@@ -150,7 +150,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .map(_ => report)
   }
 
-  def count(siret: Option[String] = None): Future[Int] = db
+  def count(siret: Option[SIRET] = None): Future[Int] = db
     .run(reportTableQuery
       .filterOpt(siret) {
         case(table, siret) => table.companySiret === siret
@@ -218,7 +218,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
             case(table, email) => table.email === EmailAddress(email)
           }
           .filterOpt(filter.siret) {
-            case(table, siret) => table.companySiret === siret
+            case(table, siret) => table.companySiret === SIRET(siret)
           }
           .filterOpt(filter.companyName) {
             case(table, companyName) => table.companyName like s"${companyName}%"

@@ -178,8 +178,8 @@ trait GetReportContext extends Mockito {
 
   implicit val ec = ExecutionContext.global
 
-  val siretForConcernedPro = "000000000000000"
-  val siretForNotConcernedPro = "11111111111111"
+  val siretForConcernedPro = Fixtures.genSiret.sample.get
+  val siretForNotConcernedPro = Fixtures.genSiret.sample.get
 
   val companyId = UUID.randomUUID
   val neverRequestedReportUUID = UUID.randomUUID

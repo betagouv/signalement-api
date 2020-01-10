@@ -7,7 +7,7 @@ import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
 import utils.Constants.Departments
-import utils.{Constants, EmailAddress}
+import utils.{Constants, EmailAddress, SIRET}
 
 
 case class DraftReport(
@@ -17,7 +17,7 @@ case class DraftReport(
                         companyName: String,
                         companyAddress: String,
                         companyPostalCode: String,
-                        companySiret: String,
+                        companySiret: SIRET,
                         firstName: String,
                         lastName: String,
                         email: EmailAddress,
@@ -72,7 +72,7 @@ case class Report(
                    companyName: String,
                    companyAddress: String,
                    companyPostalCode: Option[String],
-                   companySiret: Option[String],
+                   companySiret: Option[SIRET],
                    creationDate: OffsetDateTime,
                    firstName: String,
                    lastName: String,
@@ -170,7 +170,7 @@ case class ReportCompany(
                           name: String,
                           address: String,
                           postalCode: String,
-                          siret: String
+                          siret: SIRET
                         )
 
 object ReportCompany {

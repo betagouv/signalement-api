@@ -85,7 +85,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
 
   val companyData = Company(
     UUID.randomUUID(),
-    "11111111111111",
+    Fixtures.genSiret.sample.get,
     OffsetDateTime.now,
     "Test entreprise",
     "10 rue des Champs",

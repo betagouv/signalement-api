@@ -3,7 +3,7 @@ package models
 import java.time.OffsetDateTime
 import java.util.UUID
 import play.api.libs.json._
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 
 sealed case class AccessLevel(value: String)
@@ -43,7 +43,7 @@ case class AccessToken(
 
 case class TokenInfo(
   token: String,
-  companySiret: String,
+  companySiret: SIRET,
   emailedTo: Option[EmailAddress]
 )
 object TokenInfo {

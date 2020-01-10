@@ -8,6 +8,7 @@ import play.api.mvc.InjectedController
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import utils.silhouette.auth.AuthEnv
+import utils.SIRET
 
 import models._
 import repositories._
@@ -43,7 +44,7 @@ trait BaseCompanyController extends BaseController {
     def executionContext = ec
     def refine[A](request: SecuredRequestWrapper[A]) = {
       for {
-        company       <- companyRepository.findBySiret(siret)
+        company       <- companyRepository.findBySiret(SIRET(siret))
         accessLevel   <- company.map(
                                     c => companyAccessRepository.getUserLevel(c.id, request.identity).map(Some(_)))
                                 .getOrElse(Future(None))

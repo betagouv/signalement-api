@@ -14,7 +14,7 @@ import scala.util.Random
 object Fixtures {
     // Avoids creating strings with null chars because Postgres text fields don't support it.
     // see http://stackoverflow.com/questions/1347646/postgres-error-on-insert-error-invalid-byte-sequence-for-encoding-utf8-0x0
-    implicit val stringArbitrary: Arbitrary[String] =
+    implicit val arbString: Arbitrary[String] =
         Arbitrary(Gen.identifier.map(_.replaceAll("\u0000", "")))
 
     val genUser = for {
@@ -36,7 +36,7 @@ object Fixtures {
 
     val genSiret = for {
         randInt <- Gen.choose(0, 1000000)
-    } yield "000000000" + randInt takeRight 9
+    } yield SIRET("000000000" + randInt takeRight 9)
 
     val genCompany = for {
         id <- arbitrary[UUID]

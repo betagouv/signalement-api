@@ -104,8 +104,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
-  val siretForConcernedPro = "000000000000000"
-  val siretForNotConcernedPro = "11111111111111"
+  val siretForConcernedPro = Fixtures.genSiret.sample.get
+  val siretForNotConcernedPro = Fixtures.genSiret.sample.get
 
   val companyData = Company(
     UUID.randomUUID(),

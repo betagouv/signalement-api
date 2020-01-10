@@ -114,7 +114,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
 
   val companyData = Company(
     UUID.randomUUID(),
-    "22222222222222",
+    Fixtures.genSiret.sample.get,
     OffsetDateTime.now,
     "Test entreprise",
     "10 rue des Champs",
@@ -124,7 +124,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val reportUUID = UUID.randomUUID()
 
   val transmittedReport = Report(reportUUID, "test", List.empty, List("détails test"), Some(companyData.id), "company1", "addresse" + UUID.randomUUID().toString, None,
-    Some(userWithEmail.email.value),
+    Fixtures.genSiret.sample,
     OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC), "r1", "nom 1", EmailAddress("email 1"), true, false,
     SIGNALEMENT_TRANSMIS)
   val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),

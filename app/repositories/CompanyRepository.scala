@@ -6,6 +6,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
+import utils.SIRET
 
 import models._
 
@@ -18,7 +19,7 @@ class CompanyRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impl
 
   class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
     def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[String]("siret", O.Unique)
+    def siret = column[SIRET]("siret", O.Unique)
     def creationDate = column[OffsetDateTime]("creation_date")
     def name = column[String]("name")
     def address = column[String]("address")
@@ -29,11 +30,11 @@ class CompanyRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(impl
 
   val companyTableQuery = TableQuery[CompanyTable]
 
-  def getOrCreate(siret: String, data: Company): Future[Company] =
+  def getOrCreate(siret: SIRET, data: Company): Future[Company] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
 
-  def findBySiret(siret: String): Future[Option[Company]] =
+  def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 }
