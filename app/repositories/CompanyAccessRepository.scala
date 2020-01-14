@@ -98,16 +98,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .to[List]
       .result
     )
-  
-  // The method below provides access to the user's unique Company
-  // until we have a way to handle multiple companies per user
-  // There should always be 1 company per pro user 
-  def findUniqueCompany(user: User): Future[Company] =
-    for {
-      accesses <- fetchCompaniesWithLevel(user)
-    } yield accesses
-            .map(_._1)
-            .head
 
   private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(UserAccess(
