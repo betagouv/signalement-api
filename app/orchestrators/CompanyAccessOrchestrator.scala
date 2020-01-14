@@ -42,12 +42,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap{
-      case Some(user) => {
-        // TODO: Allow multiple companies per user once we support it in UI
-        // addInvitedUserAndNotify(user, company, level, invitedBy)
-        logger.error(s"Invitation for email ${email} not sent: user already exist")
-        Future(None)
-      }
+      case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
 
@@ -64,7 +59,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
           AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
         )
       )
-      Unit
+      ()
     }
 
   private def genInvitationToken(
