@@ -71,10 +71,14 @@ class AccountController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      {case ActivationRequest(draftUser, tokenInfo) =>
-            companyAccessOrchestrator
-              .handleActivationRequest(draftUser, tokenInfo)
-              .map(_ => NoContent)
+      {
+        case ActivationRequest(draftUser, tokenInfo) =>
+          companyAccessOrchestrator
+            .handleActivationRequest(draftUser, tokenInfo)
+            .map(_ => NoContent)
+            .recover {
+              case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") => Conflict  // HTTP 409
+            }
       }
     )
   }
