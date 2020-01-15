@@ -1,12 +1,15 @@
 package controllers
 
 import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import models._
+import repositories._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import play.api.Configuration
@@ -26,6 +29,10 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
+  lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+
   override def configureFakeModule(): AbstractModule = {
     new FakeModule
   }
@@ -35,6 +42,17 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
       super.configure
       bind[Environment[AuthEnv]].toInstance(env)
     }
+  }
+
+  val proUser = Fixtures.genProUser.sample.get
+  val company = Fixtures.genCompany.sample.get
+  override def setupData = {
+    Await.result(for {
+      _ <- userRepository.create(proUser)
+      _ <- companyRepository.getOrCreate(company.siret, company)
+      _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "123456", None, None)
+    } yield Unit,
+    Duration.Inf)
   }
 
   "AccountController" should {
@@ -58,6 +76,28 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               )
             )
           )
+      }
+    }
+
+    "activateAccount" should {
+      "raise a 409 in case of duplicate email addresse" in {
+        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+          .withJsonBody(Json.obj(
+            "draftUser" -> Json.obj(
+              "email" -> proUser.email,
+              "firstName" -> proUser.firstName,
+              "lastName" -> proUser.lastName,
+              "password" -> "toto"
+            ),
+            "tokenInfo" -> Json.obj(
+              "token" -> "123456",
+              "companySiret" -> company.siret
+            )
+          ))
+
+        val result = route(app, request).get
+
+        Helpers.status(result) must beEqualTo(409)
       }
     }
   }
