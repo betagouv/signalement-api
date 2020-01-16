@@ -26,7 +26,12 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[String]("play.website.url")
 
-  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[Boolean] = {
+  object ActivationOutcome extends Enumeration {
+    type ActivationOutcome = Value
+    val Success, NotFound, EmailConflict = Value
+  }
+  import ActivationOutcome._
+  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[ActivationOutcome] = {
     for {
       company     <- companyRepository.findBySiret(tokenInfo.companySiret)
       token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
@@ -37,7 +42,10 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
                         draftUser.firstName, draftUser.lastName, UserRoles.Pro
                       )).flatMap(companyAccessRepository.applyToken(t, _))})
                       .getOrElse(Future(false))
-    } yield applied
+    } yield if (applied) ActivationOutcome.Success else ActivationOutcome.NotFound
+  } recover {
+    case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique")
+      => ActivationOutcome.EmailConflict
   }
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
