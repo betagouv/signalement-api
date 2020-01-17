@@ -35,13 +35,22 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
     for {
       company     <- companyRepository.findBySiret(tokenInfo.companySiret)
       token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
-      applied     <- token.map(t => {
+      user        <- token.map(_ => {
                       val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
                       userRepository.create(User(
                         UUID.randomUUID(), draftUser.password, email,
-                        draftUser.firstName, draftUser.lastName, UserRoles.Pro
-                      )).flatMap(companyAccessRepository.applyToken(t, _))})
-                      .getOrElse(Future(false))
+                        draftUser.firstName, draftUser.lastName, UserRoles.Pro)).map(Some(_))
+                      }).getOrElse(Future(None))
+      applied     <- user.map(companyAccessRepository.applyToken(token.get, _))
+                         .getOrElse(Future(false))
+      // If the token pointed to an email (hence validated), bind other tokens with same email
+      _           <- token.flatMap(_.emailedTo).flatMap(_ => user).map(u =>
+                        companyAccessRepository
+                        .fetchPendingTokens(u.email)
+                        .flatMap(tokens =>
+                          Future.sequence(tokens.map(companyAccessRepository.applyToken(_, u)))
+                        )
+                      ).getOrElse(Future(Nil))
     } yield if (applied) ActivationOutcome.Success else ActivationOutcome.NotFound
   } recover {
     case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique")
