@@ -12,6 +12,7 @@ import models._
 import repositories._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
+import org.specs2.matcher.FutureMatchers
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -23,7 +24,7 @@ import utils.EmailAddress
 import utils.Fixtures
 
 
-class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Results {
+class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Results with FutureMatchers {
 
   val identity = Fixtures.genAdminUser.sample.get
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
@@ -56,9 +57,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
   }
 
   "AccountController" should {
-
     "changePassword" should {
-
       "return a BadRequest with errors if passwords are equals" in {
           val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
@@ -87,7 +86,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               "email" -> proUser.email,
               "firstName" -> proUser.firstName,
               "lastName" -> proUser.lastName,
-              "password" -> "toto"
+              "password" -> proUser.password
             ),
             "tokenInfo" -> Json.obj(
               "token" -> "123456",
@@ -98,6 +97,36 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val result = route(app, request).get
 
         Helpers.status(result) must beEqualTo(409)
+      }
+
+      "use preexisting tokens with same email, if any" in {
+        val newUser = Fixtures.genUser.sample.get
+        val otherCompany = Fixtures.genCompany.sample.get
+        val otherToken = Await.result(for {
+          _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
+          _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "000000", None, Some(newUser.email))
+          token <- companyAccessRepository.createToken(otherCompany, AccessLevel.ADMIN, "whatever", None, Some(newUser.email))
+        } yield token,
+        Duration.Inf)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+          .withJsonBody(Json.obj(
+            "draftUser" -> Json.obj(
+              "email" -> newUser.email,
+              "firstName" -> newUser.firstName,
+              "lastName" -> newUser.lastName,
+              "password" -> newUser.password
+            ),
+            "tokenInfo" -> Json.obj(
+              "token" -> "000000",
+              "companySiret" -> company.siret
+            )
+          ))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(204)
+
+        companyAccessRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
+        companyAccessRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
       }
     }
   }

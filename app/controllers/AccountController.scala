@@ -75,9 +75,10 @@ class AccountController @Inject()(
         case ActivationRequest(draftUser, tokenInfo) =>
           companyAccessOrchestrator
             .handleActivationRequest(draftUser, tokenInfo)
-            .map(_ => NoContent)
-            .recover {
-              case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") => Conflict  // HTTP 409
+            .map {
+              case companyAccessOrchestrator.ActivationOutcome.NotFound      => NotFound
+              case companyAccessOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
+              case companyAccessOrchestrator.ActivationOutcome.Success       => NoContent
             }
       }
     )

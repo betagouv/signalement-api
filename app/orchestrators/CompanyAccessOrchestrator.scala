@@ -26,18 +26,35 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[String]("play.website.url")
 
-  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[Boolean] = {
+  object ActivationOutcome extends Enumeration {
+    type ActivationOutcome = Value
+    val Success, NotFound, EmailConflict = Value
+  }
+  import ActivationOutcome._
+  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[ActivationOutcome] = {
     for {
       company     <- companyRepository.findBySiret(tokenInfo.companySiret)
       token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
-      applied     <- token.map(t => {
+      user        <- token.map(_ => {
                       val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
                       userRepository.create(User(
                         UUID.randomUUID(), draftUser.password, email,
-                        draftUser.firstName, draftUser.lastName, UserRoles.Pro
-                      )).flatMap(companyAccessRepository.applyToken(t, _))})
-                      .getOrElse(Future(false))
-    } yield applied
+                        draftUser.firstName, draftUser.lastName, UserRoles.Pro)).map(Some(_))
+                      }).getOrElse(Future(None))
+      applied     <- user.map(companyAccessRepository.applyToken(token.get, _))
+                         .getOrElse(Future(false))
+      // If the token pointed to an email (hence validated), bind other tokens with same email
+      _           <- token.flatMap(_.emailedTo).flatMap(_ => user).map(u =>
+                        companyAccessRepository
+                        .fetchPendingTokens(u.email)
+                        .flatMap(tokens =>
+                          Future.sequence(tokens.map(companyAccessRepository.applyToken(_, u)))
+                        )
+                      ).getOrElse(Future(Nil))
+    } yield if (applied) ActivationOutcome.Success else ActivationOutcome.NotFound
+  } recover {
+    case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique")
+      => ActivationOutcome.EmailConflict
   }
 
   def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
