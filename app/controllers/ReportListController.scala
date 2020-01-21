@@ -41,11 +41,11 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   val logger: Logger = Logger(this.getClass)
 
-  def fetchCompany(user: User, siret: Option[String]): Future[Company] = {
+  def fetchCompany(user: User, siret: Option[String]): Future[Option[Company]] = {
     for {
       accesses <- companyAccessRepository.fetchCompaniesWithLevel(user)
     } yield {
-      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).head
+      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).headOption
     }
   }
 
@@ -95,7 +95,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     for {
       company <- Some(request.identity)
                   .filter(_.userRole == UserRoles.Pro)
-                  .map(u => fetchCompany(u, siret).map(Some(_)))
+                  .map(u => fetchCompany(u, siret))
                   .getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
@@ -252,7 +252,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
 
     for {
       restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                              fetchCompany(request.identity, siret).map(Some(_))
+                              fetchCompany(request.identity, siret)
                            else
                               Future(None)
       paginatedReports <- reportRepository.getReports(
