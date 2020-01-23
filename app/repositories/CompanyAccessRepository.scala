@@ -5,6 +5,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.Logger
 import slick.jdbc.JdbcProfile
 
 import models._
@@ -15,6 +16,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
                                      val companyRepository: CompanyRepository, val userRepository: UserRepository)
                                      (implicit ec: ExecutionContext) {
 
+  val logger: Logger = Logger(this.getClass())
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
   import dbConfig._
@@ -98,16 +100,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .to[List]
       .result
     )
-  
-  // The method below provides access to the user's unique Company
-  // until we have a way to handle multiple companies per user
-  // There should always be 1 company per pro user 
-  def findUniqueCompany(user: User): Future[Company] =
-    for {
-      accesses <- fetchCompaniesWithLevel(user)
-    } yield accesses
-            .map(_._1)
-            .head
 
   private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(UserAccess(
@@ -177,14 +169,29 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       .result
     )
 
+  def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
+    db.run(AccessTokenTableQuery
+      .filter(
+        _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.valid)
+      .filter(_.emailedTo === emailedTo)
+      .to[List]
+      .result
+    )
+
   def applyToken(token: AccessToken, user: User): Future[Boolean] = {
-    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined)
+    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
+      logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
       Future(false)
-    else db.run(DBIO.seq(
-          upsertUserAccess(token.companyId, user.id, token.level),
-          AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
-        ).transactionally)
-        .map(_ => true)
+    } else {
+      val res = db.run(DBIO.seq(
+        upsertUserAccess(token.companyId, user.id, token.level),
+        AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
+      ).transactionally)
+      .map(_ => true)
+      logger.debug(s"Token ${token.id} applied to user ${user.id}")
+      res
+    }
   }
 
   def invalidateToken(token: AccessToken): Future[Int] =

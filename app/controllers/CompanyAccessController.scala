@@ -106,4 +106,31 @@ class CompanyAccessController @Inject()(
       Ok(Json.toJson(TokenInfo(t.token, c.siret, t.emailedTo)))
     )).getOrElse(NotFound)
   }
+
+  case class AcceptTokenRequest(token: String)
+
+  def acceptToken(siret: String) = SecuredAction.async(parse.json) { implicit request =>
+    implicit val reads = Json.reads[AcceptTokenRequest]
+    request.body.validate[AcceptTokenRequest].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      acceptTokenRequest =>
+        for {
+          company <- companyRepository.findBySiret(SIRET(siret))
+          token   <- company.map(
+                      companyAccessRepository
+                        .findToken(_, acceptTokenRequest.token)
+                        .map(
+                          _.filter(
+                            _.emailedTo.filter(email => email != request.identity.email).isEmpty
+                          )
+                        )
+                      )
+                      .getOrElse(Future(None))
+          applied <- token.map(t =>
+                      companyAccessRepository
+                      .applyToken(t, request.identity)
+                    ).getOrElse(Future(false))
+        } yield if (applied) Ok else NotFound
+    )
+  }
 }

@@ -71,10 +71,15 @@ class AccountController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      {case ActivationRequest(draftUser, tokenInfo) =>
-            companyAccessOrchestrator
-              .handleActivationRequest(draftUser, tokenInfo)
-              .map(_ => NoContent)
+      {
+        case ActivationRequest(draftUser, tokenInfo) =>
+          companyAccessOrchestrator
+            .handleActivationRequest(draftUser, tokenInfo)
+            .map {
+              case companyAccessOrchestrator.ActivationOutcome.NotFound      => NotFound
+              case companyAccessOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
+              case companyAccessOrchestrator.ActivationOutcome.Success       => NoContent
+            }
       }
     )
   }
