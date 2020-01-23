@@ -24,7 +24,7 @@ class CompanyAccessController @Inject()(
 
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     for {
-      userAccesses <- companyAccessRepository.fetchUsersWithLevel(request.company)
+      userAccesses <- companyRepository.fetchUsersWithLevel(request.company)
     } yield Ok(Json.toJson(userAccesses.map{
       case (user, level) => Map(
           "userId"    -> user.id.toString,
@@ -38,7 +38,7 @@ class CompanyAccessController @Inject()(
 
   def myCompanies = SecuredAction.async { implicit request =>
     for {
-      companyAccesses <- companyAccessRepository.fetchCompaniesWithLevel(request.identity)
+      companyAccesses <- companyRepository.fetchCompaniesWithLevel(request.identity)
     } yield Ok(Json.toJson(companyAccesses.map{
       case (company, level) => Map(
           "companySiret"      -> company.siret.value,
@@ -53,7 +53,7 @@ class CompanyAccessController @Inject()(
     request.body.asJson.map(json => (json \ "level").as[AccessLevel]).map(level =>
       for {
         user <- userRepository.get(userId)
-        _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, level)).getOrElse(Future(Unit))
+        _    <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(Unit))
       } yield if (user.isDefined) Ok else NotFound
     ).getOrElse(Future(NotFound))
   }
@@ -61,7 +61,7 @@ class CompanyAccessController @Inject()(
   def removeAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     for {
       user <- userRepository.get(userId)
-      _    <- user.map(u => companyAccessRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
+      _    <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
     } yield if (user.isDefined) Ok else NotFound
   }
 

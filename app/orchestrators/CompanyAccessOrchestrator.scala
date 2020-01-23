@@ -65,7 +65,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
     for {
-      _ <- companyAccessRepository.setUserLevel(company, user, level)
+      _ <- companyRepository.setUserLevel(company, user, level)
     } yield {
       mailerService.sendEmail(
         from = mailFrom,

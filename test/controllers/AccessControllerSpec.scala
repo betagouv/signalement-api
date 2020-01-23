@@ -34,8 +34,8 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
       admin <- userRepository.create(proAdminUser)
       member <- userRepository.create(proMemberUser)
       c <- companyRepository.getOrCreate(company.siret, company)
-      _ <- companyAccessRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
-      _ <- companyAccessRepository.setUserLevel(c, member, AccessLevel.MEMBER)
+      _ <- companyRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
+      _ <- companyRepository.setUserLevel(c, member, AccessLevel.MEMBER)
     } yield Unit,
     Duration.Inf)
   }
@@ -226,7 +226,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   }
 
   def e4 = {
-    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany), Duration.Inf)
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(proMemberUser.id))
   }
 

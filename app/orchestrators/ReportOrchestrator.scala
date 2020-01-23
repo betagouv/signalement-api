@@ -51,7 +51,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield token.token
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    companyAccessRepository.fetchAdmins(company).flatMap(admins => {
+    companyRepository.fetchAdmins(company).flatMap(admins => {
       if (admins.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,

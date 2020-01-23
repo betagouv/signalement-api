@@ -165,7 +165,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
       for {
         company <- companyRepository.getOrCreate(companyData.siret, companyData)
         user    <- userRepository.create(user)
-        _       <- companyAccessRepository.setUserLevel(company, user, AccessLevel.ADMIN)
+        _       <- companyRepository.setUserLevel(company, user, AccessLevel.ADMIN)
       } yield Unit,
       Duration.Inf
     )

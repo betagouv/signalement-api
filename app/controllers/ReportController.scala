@@ -25,7 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
-                                 companyAccessRepository: CompanyAccessRepository,
+                                 companyRepository: CompanyRepository,
                                  reportRepository: ReportRepository,
                                  eventRepository: EventRepository,
                                  userRepository: UserRepository,
@@ -44,7 +44,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   private def getProLevel(user: User, report: Option[Report]) =
     report
       .filter(_.status.getValueWithUserRole(user.userRole).isDefined)
-      .flatMap(_.companyId).map(companyAccessRepository.getUserLevel(_, user))
+      .flatMap(_.companyId).map(companyRepository.getUserLevel(_, user))
       .getOrElse(Future(AccessLevel.NONE))
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>

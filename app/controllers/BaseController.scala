@@ -46,7 +46,7 @@ trait BaseCompanyController extends BaseController {
       for {
         company       <- companyRepository.findBySiret(SIRET(siret))
         accessLevel   <- company.map(
-                                    c => companyAccessRepository.getUserLevel(c.id, request.identity).map(Some(_)))
+                                    c => companyRepository.getUserLevel(c.id, request.identity).map(Some(_)))
                                 .getOrElse(Future(None))
       } yield {
         company

@@ -213,12 +213,12 @@ trait GetReportContext extends Mockito {
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
-  val mockCompanyAccessRepository = mock[CompanyAccessRepository]
+  val mockCompanyRepository = mock[CompanyRepository]
   val mockMailerService = mock[MailerService]
 
-  mockCompanyAccessRepository.getUserLevel(companyId, concernedProUser) returns Future(AccessLevel.ADMIN)
-  mockCompanyAccessRepository.getUserLevel(companyId, notConcernedProUser) returns Future(AccessLevel.NONE)
-  mockCompanyAccessRepository.getUserLevel(companyId, adminUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(companyId, concernedProUser) returns Future(AccessLevel.ADMIN)
+  mockCompanyRepository.getUserLevel(companyId, notConcernedProUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(companyId, adminUser) returns Future(AccessLevel.NONE)
 
   mockReportRepository.getReport(neverRequestedReportUUID) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReportUUID) returns Future(Some(neverRequestedFinalReport))
@@ -238,7 +238,7 @@ trait GetReportContext extends Mockito {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
-      bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
+      bind[CompanyRepository].toInstance(mockCompanyRepository)
       bind[MailerService].toInstance(mockMailerService)
     }
   }

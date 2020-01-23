@@ -334,7 +334,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                     .to[List]
                     .result
                 }
-      adminsMap <- companyAccessRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
+      adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
   }
 }

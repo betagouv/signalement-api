@@ -125,8 +125,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        companyAccessRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
-        companyAccessRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
       }
     }
   }
