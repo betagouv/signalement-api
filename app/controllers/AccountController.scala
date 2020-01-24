@@ -29,7 +29,7 @@ class AccountController @Inject()(
                                    userRepository: UserRepository,
                                    companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
-                                   companyAccessOrchestrator: CompanyAccessOrchestrator,
+                                   companyAccessOrchestrator: AccessesOrchestrator,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
                                    credentialsProvider: CredentialsProvider,

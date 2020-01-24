@@ -13,7 +13,7 @@ import services.MailerService
 import java.util.UUID
 import utils.EmailAddress
 
-class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
+class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
