@@ -23,7 +23,7 @@ import repositories._
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
   val proMemberUser = Fixtures.genProUser.sample.get
@@ -34,8 +34,8 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
       admin <- userRepository.create(proAdminUser)
       member <- userRepository.create(proMemberUser)
       c <- companyRepository.getOrCreate(company.siret, company)
-      _ <- companyAccessRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
-      _ <- companyAccessRepository.setUserLevel(c, member, AccessLevel.MEMBER)
+      _ <- companyRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
+      _ <- companyRepository.setUserLevel(c, member, AccessLevel.MEMBER)
     } yield Unit,
     Duration.Inf)
   }
@@ -153,7 +153,7 @@ The invitation workflow should
   }
 
   def e2 = {
-    val tokens = companyAccessRepository.fetchPendingTokens(company)
+    val tokens = accessTokenRepository.fetchPendingTokens(company)
     tokens.map(_.foreach(t => {invitationToken = t}))
     tokens.map(_.length) must beEqualTo(1).await
   }
@@ -187,7 +187,7 @@ The invitation workflow should
   }
 
   def e5 = {
-    val latestToken = Await.result(companyAccessRepository.fetchPendingTokens(company).map(_.head), Duration.Inf)
+    val latestToken = Await.result(accessTokenRepository.fetchPendingTokens(company).map(_.head), Duration.Inf)
     latestToken.id must beEqualTo(invitationToken.id)
     latestToken.expirationDate.get must beGreaterThan(invitationToken.expirationDate.get)
   }
@@ -211,7 +211,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
 
   def e2 = {
     token = Await.result(
-      companyAccessRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
+      accessTokenRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
       Duration.Inf
     )
     token must haveClass [AccessToken]
@@ -226,12 +226,12 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   }
 
   def e4 = {
-    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany), Duration.Inf)
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(proMemberUser.id))
   }
 
   def e5 = {
-    val pendingTokens = Await.result(companyAccessRepository.fetchPendingTokens(newCompany), Duration.Inf)
+    val pendingTokens = Await.result(accessTokenRepository.fetchPendingTokens(newCompany), Duration.Inf)
     pendingTokens should beEmpty
   }
 }

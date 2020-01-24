@@ -35,7 +35,7 @@ trait BaseController extends InjectedController {
 trait BaseCompanyController extends BaseController {
   type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
   def companyRepository: CompanyRepository
-  def companyAccessRepository: CompanyAccessRepository
+  def accessTokenRepository: AccessTokenRepository
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: SecuredRequestWrapper[A]) extends WrappedRequest[A](request) {
     def identity = request.identity
@@ -46,7 +46,7 @@ trait BaseCompanyController extends BaseController {
       for {
         company       <- companyRepository.findBySiret(SIRET(siret))
         accessLevel   <- company.map(
-                                    c => companyAccessRepository.getUserLevel(c.id, request.identity).map(Some(_)))
+                                    c => companyRepository.getUserLevel(c.id, request.identity).map(Some(_)))
                                 .getOrElse(Future(None))
       } yield {
         company

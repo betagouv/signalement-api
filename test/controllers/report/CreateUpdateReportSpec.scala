@@ -136,7 +136,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
@@ -163,7 +162,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
       _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
       _ <- reportRepository.create(existingReport)
-      _ <- companyAccessRepository.setUserLevel(c, u, AccessLevel.ADMIN)
+      _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
     } yield Unit,
     Duration.Inf)
   }

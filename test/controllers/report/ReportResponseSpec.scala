@@ -100,7 +100,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
@@ -144,7 +144,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       for {
         company <- companyRepository.getOrCreate(companyData.siret, companyData)
         admin   <- userRepository.create(concernedProUser)
-        _       <- companyAccessRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
+        _       <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
         _       <- userRepository.create(notConcernedProUser)
         _       <- reportRepository.create(reportFixture)
         -       <- reportRepository.createFile(reportResponseFile)

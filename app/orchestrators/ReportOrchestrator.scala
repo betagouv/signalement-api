@@ -23,7 +23,7 @@ import utils.Constants.ReportStatus._
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    companyRepository: CompanyRepository,
-                                   companyAccessRepository: CompanyAccessRepository,
+                                   accessTokenRepository: AccessTokenRepository,
                                    eventRepository: EventRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
@@ -40,10 +40,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
-      existingToken <- companyAccessRepository.fetchActivationToken(company)
-      _             <- existingToken.map(companyAccessRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
+      existingToken <- accessTokenRepository.fetchActivationToken(company)
+      _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
-                        companyAccessRepository.createToken(
+                        accessTokenRepository.createToken(
                           company, AccessLevel.ADMIN,
                           f"${Random.nextInt(1000000)}%06d", tokenDuration
                         )
@@ -51,7 +51,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield token.token
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    companyAccessRepository.fetchAdmins(company).flatMap(admins => {
+    companyRepository.fetchAdmins(company).flatMap(admins => {
       if (admins.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,

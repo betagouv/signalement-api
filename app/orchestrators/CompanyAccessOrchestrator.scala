@@ -14,7 +14,7 @@ import java.util.UUID
 import utils.EmailAddress
 
 class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
-                                   companyAccessRepository: CompanyAccessRepository,
+                                   accessTokenRepository: AccessTokenRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
                                    configuration: Configuration,
@@ -34,21 +34,21 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
   def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[ActivationOutcome] = {
     for {
       company     <- companyRepository.findBySiret(tokenInfo.companySiret)
-      token       <- company.map(companyAccessRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
+      token       <- company.map(accessTokenRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
       user        <- token.map(_ => {
                       val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
                       userRepository.create(User(
                         UUID.randomUUID(), draftUser.password, email,
                         draftUser.firstName, draftUser.lastName, UserRoles.Pro)).map(Some(_))
                       }).getOrElse(Future(None))
-      applied     <- user.map(companyAccessRepository.applyToken(token.get, _))
+      applied     <- user.map(accessTokenRepository.applyToken(token.get, _))
                          .getOrElse(Future(false))
       // If the token pointed to an email (hence validated), bind other tokens with same email
       _           <- token.flatMap(_.emailedTo).flatMap(_ => user).map(u =>
-                        companyAccessRepository
+                        accessTokenRepository
                         .fetchPendingTokens(u.email)
                         .flatMap(tokens =>
-                          Future.sequence(tokens.map(companyAccessRepository.applyToken(_, u)))
+                          Future.sequence(tokens.map(accessTokenRepository.applyToken(_, u)))
                         )
                       ).getOrElse(Future(Nil))
     } yield if (applied) ActivationOutcome.Success else ActivationOutcome.NotFound
@@ -65,7 +65,7 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
     for {
-      _ <- companyAccessRepository.setUserLevel(company, user, level)
+      _ <- companyRepository.setUserLevel(company, user, level)
     } yield {
       mailerService.sendEmail(
         from = mailFrom,
@@ -84,10 +84,10 @@ class CompanyAccessOrchestrator @Inject()(companyRepository: CompanyRepository,
     emailedTo: EmailAddress
   ): Future[String] =
     for {
-      existingToken <- companyAccessRepository.fetchValidToken(company, emailedTo)
-      _             <- existingToken.map(companyAccessRepository.updateToken(_, level, validity)).getOrElse(Future(None))
+      existingToken <- accessTokenRepository.fetchValidToken(company, emailedTo)
+      _             <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
-                        companyAccessRepository.createToken(
+                        accessTokenRepository.createToken(
                             company, level, UUID.randomUUID.toString,
                             tokenDuration, emailedTo = Some(emailedTo)
                         ))

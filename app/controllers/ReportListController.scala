@@ -28,7 +28,7 @@ import scala.util.{Failure, Random, Success, Try}
 
 class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                                      reportRepository: ReportRepository,
-                                     companyAccessRepository: CompanyAccessRepository,
+                                     companyRepository: CompanyRepository,
                                      eventRepository: EventRepository,
                                      userRepository: UserRepository,
                                      mailerService: MailerService,
@@ -43,7 +43,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def fetchCompany(user: User, siret: Option[String]): Future[Company] = {
     for {
-      accesses <- companyAccessRepository.fetchCompaniesWithLevel(user)
+      accesses <- companyRepository.fetchCompaniesWithLevel(user)
     } yield {
       siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).head
     }
@@ -276,7 +276,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap   <- companyAccessRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
+      companyAdminsMap   <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
     } yield {
       val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
       val reportsSheet = Sheet(name = "Signalements")

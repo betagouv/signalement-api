@@ -12,7 +12,7 @@ import models._
 import utils.EmailAddress
 
 @Singleton
-class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      val companyRepository: CompanyRepository, val userRepository: UserRepository)
                                      (implicit ec: ExecutionContext) {
 
@@ -20,22 +20,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
   import dbConfig._
-
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
-
-  class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
-    def companyId = column[UUID]("company_id")
-    def userId = column[UUID]("user_id")
-    def level = column[AccessLevel]("level")
-    def updateDate = column[OffsetDateTime]("update_date")
-    def pk = primaryKey("pk_company_user", (companyId, userId))
-    def * = (companyId, userId, level, updateDate) <> (UserAccess.tupled, UserAccess.unapply)
-
-    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    def user = foreignKey("USER_FK", userId, userRepository.userTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-  }
-
-  val UserAccessTableQuery = TableQuery[UserAccessTable]
+  import companyRepository.AccessLevelColumnType
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "company_access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
@@ -51,66 +36,6 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
   }
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
-
-  def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
-    db.run(UserAccessTableQuery
-      .filter(_.companyId === companyId)
-      .filter(_.userId === user.id)
-      .map(_.level)
-      .result
-      .headOption
-    ).map(_.getOrElse(AccessLevel.NONE))
-
-  def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
-    db.run(UserAccessTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id)
-      .filter(_._1.userId === user.id)
-      .filter(_._1.level =!= AccessLevel.NONE)
-      .sortBy(_._1.updateDate.desc)
-      .map(r => (r._2, r._1.level))
-      .to[List]
-      .result
-    )
-
-  def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
-    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
-      .filter(_._1.companyId === company.id)
-      .filter(_._1.level =!= AccessLevel.NONE)
-      .sortBy(entry => (entry._1.level, entry._2.email))
-      .map(r => (r._2, r._1.level))
-      .to[List]
-      .result
-    )
-
-  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] = {
-    db.run(
-      (for {
-        access    <- UserAccessTableQuery           if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
-        user      <- userRepository.userTableQuery  if user.id === access.userId
-      } yield (access.companyId, user))
-      .to[List]
-      .result
-    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
-  }
-
-  def fetchAdmins(company: Company): Future[List[User]] =
-    db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
-      .filter(_._1.companyId === company.id)
-      .filter(_._1.level === AccessLevel.ADMIN)
-      .map(_._2)
-      .to[List]
-      .result
-    )
-
-  private def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
-    UserAccessTableQuery.insertOrUpdate(UserAccess(
-      companyId = companyId,
-      userId = userId,
-      level = level,
-      updateDate = OffsetDateTime.now
-    ))
-
-  def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
-    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
 
   def createToken(
       company: Company, level: AccessLevel, token: String,
@@ -185,7 +110,7 @@ class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
       Future(false)
     } else {
       val res = db.run(DBIO.seq(
-        upsertUserAccess(token.companyId, user.id, token.level),
+        companyRepository.upsertUserAccess(token.companyId, user.id, token.level),
         AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
       ).transactionally)
       .map(_ => true)

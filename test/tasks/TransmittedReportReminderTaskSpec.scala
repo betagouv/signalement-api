@@ -189,14 +189,14 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReminderTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   def setupUser(user: User) = {
     Await.result(
       for {
         company <- companyRepository.getOrCreate(companyData.siret, companyData)
         admin   <- userRepository.create(user)
-        _       <- companyAccessRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
+        _       <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
       } yield Unit,
       Duration.Inf
     )
