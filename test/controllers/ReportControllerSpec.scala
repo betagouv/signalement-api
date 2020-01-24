@@ -153,7 +153,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mockReportRepository = mock[ReportRepository]
     val mockEventRepository = mock[EventRepository]
     val mockCompanyRepository = mock[CompanyRepository]
-    val mockCompanyAccessRepository = mock[CompanyAccessRepository]
+    val mockAccessTokenRepository = mock[AccessTokenRepository]
     val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
@@ -174,7 +174,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         bind[ReportRepository].toInstance(mockReportRepository)
         bind[EventRepository].toInstance(mockEventRepository)
         bind[CompanyRepository].toInstance(mockCompanyRepository)
-        bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
+        bind[AccessTokenRepository].toInstance(mockAccessTokenRepository)
         bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
       }

@@ -75,7 +75,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
 
   val adminUser = Fixtures.genAdminUser.sample.get

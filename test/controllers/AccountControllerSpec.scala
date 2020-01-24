@@ -32,7 +32,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   override def configureFakeModule(): AbstractModule = {
     new FakeModule
@@ -51,7 +51,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
     Await.result(for {
       _ <- userRepository.create(proUser)
       _ <- companyRepository.getOrCreate(company.siret, company)
-      _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "123456", None, None)
+      _ <- accessTokenRepository.createToken(company, AccessLevel.ADMIN, "123456", None, None)
     } yield Unit,
     Duration.Inf)
   }
@@ -104,8 +104,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val otherCompany = Fixtures.genCompany.sample.get
         val otherToken = Await.result(for {
           _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
-          _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "000000", None, Some(newUser.email))
-          token <- companyAccessRepository.createToken(otherCompany, AccessLevel.ADMIN, "whatever", None, Some(newUser.email))
+          _ <- accessTokenRepository.createToken(company, AccessLevel.ADMIN, "000000", None, Some(newUser.email))
+          token <- accessTokenRepository.createToken(otherCompany, AccessLevel.ADMIN, "whatever", None, Some(newUser.email))
         } yield token,
         Duration.Inf)
         val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)

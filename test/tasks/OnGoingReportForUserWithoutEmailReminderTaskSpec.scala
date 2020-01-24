@@ -158,7 +158,7 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReminderTask]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   def setupCompanyWithAdmin(user: User) = {
     Await.result(

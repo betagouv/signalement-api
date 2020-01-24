@@ -35,7 +35,7 @@ trait BaseController extends InjectedController {
 trait BaseCompanyController extends BaseController {
   type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
   def companyRepository: CompanyRepository
-  def companyAccessRepository: CompanyAccessRepository
+  def accessTokenRepository: AccessTokenRepository
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: SecuredRequestWrapper[A]) extends WrappedRequest[A](request) {
     def identity = request.identity

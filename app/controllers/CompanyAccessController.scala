@@ -16,7 +16,7 @@ import utils.{EmailAddress, SIRET}
 class CompanyAccessController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
-                                val companyAccessRepository: CompanyAccessRepository,
+                                val accessTokenRepository: AccessTokenRepository,
                                 val companyAccessOrchestrator: CompanyAccessOrchestrator,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
@@ -79,7 +79,7 @@ class CompanyAccessController @Inject()(
 
   def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     for {
-      tokens <- companyAccessRepository.fetchPendingTokens(request.company)
+      tokens <- accessTokenRepository.fetchPendingTokens(request.company)
     } yield Ok(Json.toJson(tokens.map(token =>
       Json.obj(
           "id"              -> token.id.toString,
@@ -92,15 +92,15 @@ class CompanyAccessController @Inject()(
 
   def removePendingToken(siret: String, tokenId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     for {
-      token <- companyAccessRepository.getToken(request.company, tokenId)
-      _ <- token.map(companyAccessRepository.invalidateToken(_)).getOrElse(Future(Unit))
+      token <- accessTokenRepository.getToken(request.company, tokenId)
+      _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(Unit))
     } yield {if (token.isDefined) Ok else NotFound}
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
     for {
       company <- companyRepository.findBySiret(SIRET(siret))
-      token   <- company.map(companyAccessRepository.findToken(_, token))
+      token   <- company.map(accessTokenRepository.findToken(_, token))
                         .getOrElse(Future(None))
     } yield token.flatMap(t => company.map(c => 
       Ok(Json.toJson(TokenInfo(t.token, c.siret, t.emailedTo)))
@@ -117,7 +117,7 @@ class CompanyAccessController @Inject()(
         for {
           company <- companyRepository.findBySiret(SIRET(siret))
           token   <- company.map(
-                      companyAccessRepository
+                      accessTokenRepository
                         .findToken(_, acceptTokenRequest.token)
                         .map(
                           _.filter(
@@ -127,7 +127,7 @@ class CompanyAccessController @Inject()(
                       )
                       .getOrElse(Future(None))
           applied <- token.map(t =>
-                      companyAccessRepository
+                      accessTokenRepository
                       .applyToken(t, request.identity)
                     ).getOrElse(Future(false))
         } yield if (applied) Ok else NotFound

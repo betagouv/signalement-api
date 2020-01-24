@@ -142,7 +142,7 @@ trait CreateEventContext extends Mockito {
   val mockEventRepository = mock[EventRepository]
   val mockMailerService = mock[MailerService]
   val mockCompanyRepository = mock[CompanyRepository]
-  val mockCompanyAccessRepository = mock[CompanyAccessRepository]
+  val mockAccessTokenRepository = mock[AccessTokenRepository]
   val mockUserRepository = mock[UserRepository]
 
   mockReportRepository.getReport(reportUUID) returns Future(Some(reportFixture))
@@ -159,7 +159,7 @@ trait CreateEventContext extends Mockito {
       bind[EventRepository].toInstance(mockEventRepository)
       bind[MailerService].toInstance(mockMailerService)
       bind[CompanyRepository].toInstance(mockCompanyRepository)
-      bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
+      bind[AccessTokenRepository].toInstance(mockAccessTokenRepository)
       bind[UserRepository].toInstance(mockUserRepository)
     }
   }

@@ -12,7 +12,7 @@ import models._
 import utils.EmailAddress
 
 @Singleton
-class CompanyAccessRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
+class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      val companyRepository: CompanyRepository, val userRepository: UserRepository)
                                      (implicit ec: ExecutionContext) {
 

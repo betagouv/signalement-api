@@ -23,7 +23,7 @@ import repositories._
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
   val proMemberUser = Fixtures.genProUser.sample.get
@@ -153,7 +153,7 @@ The invitation workflow should
   }
 
   def e2 = {
-    val tokens = companyAccessRepository.fetchPendingTokens(company)
+    val tokens = accessTokenRepository.fetchPendingTokens(company)
     tokens.map(_.foreach(t => {invitationToken = t}))
     tokens.map(_.length) must beEqualTo(1).await
   }
@@ -187,7 +187,7 @@ The invitation workflow should
   }
 
   def e5 = {
-    val latestToken = Await.result(companyAccessRepository.fetchPendingTokens(company).map(_.head), Duration.Inf)
+    val latestToken = Await.result(accessTokenRepository.fetchPendingTokens(company).map(_.head), Duration.Inf)
     latestToken.id must beEqualTo(invitationToken.id)
     latestToken.expirationDate.get must beGreaterThan(invitationToken.expirationDate.get)
   }
@@ -211,7 +211,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
 
   def e2 = {
     token = Await.result(
-      companyAccessRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
+      accessTokenRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
       Duration.Inf
     )
     token must haveClass [AccessToken]
@@ -231,7 +231,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   }
 
   def e5 = {
-    val pendingTokens = Await.result(companyAccessRepository.fetchPendingTokens(newCompany), Duration.Inf)
+    val pendingTokens = Await.result(accessTokenRepository.fetchPendingTokens(newCompany), Duration.Inf)
     pendingTokens should beEmpty
   }
 }

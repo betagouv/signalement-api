@@ -32,7 +32,7 @@ case class ReportFilter(
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
-                                 companyAccessRepository: CompanyAccessRepository,
+                                 accessTokenRepository: AccessTokenRepository,
                                  val companyRepository: CompanyRepository,
                                  configuration: Configuration)(implicit ec: ExecutionContext) {
 

@@ -28,7 +28,7 @@ class AccountController @Inject()(
                                    val silhouette: Silhouette[AuthEnv],
                                    userRepository: UserRepository,
                                    companyRepository: CompanyRepository,
-                                   companyAccessRepository: CompanyAccessRepository,
+                                   accessTokenRepository: AccessTokenRepository,
                                    companyAccessOrchestrator: CompanyAccessOrchestrator,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
@@ -87,7 +87,7 @@ class AccountController @Inject()(
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
     for {
       company <- companyRepository.findBySiret(SIRET(siret))
-      token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
+      token <- company.map(accessTokenRepository.fetchActivationCode(_)).getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
@@ -157,7 +157,7 @@ class AccountController @Inject()(
         for {
           reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == A_TRAITER))
           reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
-          reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
+          reportActivationCodesMap <- accessTokenRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
         } yield {
 
           val htmlDocuments = reports
