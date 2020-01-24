@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 import java.util.UUID
 import repositories._
 import models._
-import orchestrators.CompanyAccessOrchestrator
+import orchestrators.AccessesOrchestrator
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
@@ -17,7 +17,7 @@ class CompanyAccessController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val accessTokenRepository: AccessTokenRepository,
-                                val companyAccessOrchestrator: CompanyAccessOrchestrator,
+                                val companyAccessOrchestrator: AccessesOrchestrator,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
