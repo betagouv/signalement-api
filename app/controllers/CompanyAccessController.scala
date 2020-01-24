@@ -83,7 +83,7 @@ class CompanyAccessController @Inject()(
     } yield Ok(Json.toJson(tokens.map(token =>
       Json.obj(
           "id"              -> token.id.toString,
-          "level"           -> token.level.value,
+          "level"           -> token.companyLevel.get.value,
           "emailedTo"       -> token.emailedTo,
           "expirationDate"  -> token.expirationDate
       )
@@ -103,7 +103,7 @@ class CompanyAccessController @Inject()(
       token   <- company.map(accessTokenRepository.findToken(_, token))
                         .getOrElse(Future(None))
     } yield token.flatMap(t => company.map(c => 
-      Ok(Json.toJson(TokenInfo(t.token, c.siret, t.emailedTo)))
+      Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))
     )).getOrElse(NotFound)
   }
 

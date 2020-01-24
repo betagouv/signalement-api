@@ -33,7 +33,8 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
   import ActivationOutcome._
   def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[ActivationOutcome] = {
     for {
-      company     <- companyRepository.findBySiret(tokenInfo.companySiret)
+      // FIXME: handle different token kinds (without company)
+      company     <- tokenInfo.companySiret.map(siret => companyRepository.findBySiret(siret)).getOrElse(Future(None))
       token       <- company.map(accessTokenRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
       user        <- token.map(_ => {
                       val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
@@ -88,8 +89,8 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       _             <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
                         accessTokenRepository.createToken(
-                            company, level, UUID.randomUUID.toString,
-                            tokenDuration, emailedTo = Some(emailedTo)
+                            TokenKind.COMPANY_JOIN, UUID.randomUUID.toString, tokenDuration,
+                            Some(company), Some(level), emailedTo = Some(emailedTo)
                         ))
      } yield token.token
 

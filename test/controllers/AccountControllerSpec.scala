@@ -51,7 +51,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
     Await.result(for {
       _ <- userRepository.create(proUser)
       _ <- companyRepository.getOrCreate(company.siret, company)
-      _ <- accessTokenRepository.createToken(company, AccessLevel.ADMIN, "123456", None, None)
+      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company), Some(AccessLevel.ADMIN), None)
     } yield Unit,
     Duration.Inf)
   }
@@ -90,6 +90,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
             ),
             "tokenInfo" -> Json.obj(
               "token" -> "123456",
+              "kind" -> "COMPANY_INIT",
               "companySiret" -> company.siret
             )
           ))
@@ -104,8 +105,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val otherCompany = Fixtures.genCompany.sample.get
         val otherToken = Await.result(for {
           _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
-          _ <- accessTokenRepository.createToken(company, AccessLevel.ADMIN, "000000", None, Some(newUser.email))
-          token <- accessTokenRepository.createToken(otherCompany, AccessLevel.ADMIN, "whatever", None, Some(newUser.email))
+          _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "000000", None, Some(company), Some(AccessLevel.ADMIN), Some(newUser.email))
+          token <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "whatever", None, Some(otherCompany), Some(AccessLevel.ADMIN), Some(newUser.email))
         } yield token,
         Duration.Inf)
         val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
@@ -118,6 +119,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
             ),
             "tokenInfo" -> Json.obj(
               "token" -> "000000",
+              "kind" -> "COMPANY_INIT",
               "companySiret" -> company.siret
             )
           ))
