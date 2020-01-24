@@ -192,3 +192,46 @@ The invitation workflow should
     latestToken.expirationDate.get must beGreaterThan(invitationToken.expirationDate.get)
   }
 }
+
+class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec { override def is = s2"""
+
+  Given a new company                         $e1
+  And an initial token to join the company    $e2
+  An existing user may use the token          $e3
+  And then join the company                   $e4
+  And the token be used                       $e5
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  var token: AccessToken = null
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass [Company]
+  }
+
+  def e2 = {
+    token = Await.result(
+      companyAccessRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
+      Duration.Inf
+    )
+    token must haveClass [AccessToken]
+  }
+
+  def e3 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.acceptToken(newCompany.siret.value).toString)
+                  .withAuthenticator[AuthEnv](loginInfo(proMemberUser))
+                  .withBody(Json.obj("token" -> "123456"))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+  }
+
+  def e4 = {
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List(proMemberUser.id))
+  }
+
+  def e5 = {
+    val pendingTokens = Await.result(companyAccessRepository.fetchPendingTokens(newCompany), Duration.Inf)
+    pendingTokens should beEmpty
+  }
+}
