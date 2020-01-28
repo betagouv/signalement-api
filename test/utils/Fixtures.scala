@@ -4,8 +4,11 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import models._
+import models.Event._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.EventType.EventTypeValue
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 
@@ -89,4 +92,14 @@ object Fixtures {
         siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
     } yield ReportCompany(name, address, postalCode.toString, siret)
+
+    def genAdviceOnReportResponse = for {
+        positive <- arbitrary[Boolean]
+        details <- arbString.arbitrary
+    } yield AdviceOnReportResponse(positive, Some(details))
+
+    def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+        id <- arbitrary[UUID]
+        details <- arbString.arbitrary
+    } yield Event(Some(id), Some(reportId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
 }
