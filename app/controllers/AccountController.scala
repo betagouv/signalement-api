@@ -29,7 +29,7 @@ class AccountController @Inject()(
                                    userRepository: UserRepository,
                                    companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
-                                   companyAccessOrchestrator: AccessesOrchestrator,
+                                   accessesOrchestrator: AccessesOrchestrator,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
                                    credentialsProvider: CredentialsProvider,
@@ -73,12 +73,12 @@ class AccountController @Inject()(
       },
       {
         case ActivationRequest(draftUser, tokenInfo) =>
-          companyAccessOrchestrator
+          accessesOrchestrator
             .handleActivationRequest(draftUser, tokenInfo)
             .map {
-              case companyAccessOrchestrator.ActivationOutcome.NotFound      => NotFound
-              case companyAccessOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
-              case companyAccessOrchestrator.ActivationOutcome.Success       => NoContent
+              case accessesOrchestrator.ActivationOutcome.NotFound      => NotFound
+              case accessesOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
+              case accessesOrchestrator.ActivationOutcome.Success       => NoContent
             }
       }
     )

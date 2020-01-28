@@ -17,7 +17,7 @@ class CompanyAccessController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val accessTokenRepository: AccessTokenRepository,
-                                val companyAccessOrchestrator: AccessesOrchestrator,
+                                val accessesOrchestrator: AccessesOrchestrator,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
@@ -71,7 +71,7 @@ class CompanyAccessController @Inject()(
     implicit val reads = Json.reads[AccessInvitation]
     request.body.validate[AccessInvitation].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      invitation => companyAccessOrchestrator
+      invitation => accessesOrchestrator
                     .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
                     .map(_ => Ok)
     )
