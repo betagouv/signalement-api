@@ -88,11 +88,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               "lastName" -> proUser.lastName,
               "password" -> proUser.password
             ),
-            "tokenInfo" -> Json.obj(
-              "token" -> "123456",
-              "kind" -> "COMPANY_INIT",
-              "companySiret" -> company.siret
-            )
+            "token" -> "123456",
+            "companySiret" -> company.siret
           ))
 
         val result = route(app, request).get
@@ -117,11 +114,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               "lastName" -> newUser.lastName,
               "password" -> newUser.password
             ),
-            "tokenInfo" -> Json.obj(
-              "token" -> "000000",
-              "kind" -> "COMPANY_INIT",
-              "companySiret" -> company.siret
-            )
+            "token" -> "000000",
+            "companySiret" -> company.siret
           ))
 
         val result = route(app, request).get

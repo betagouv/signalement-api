@@ -11,7 +11,7 @@ import models._
 import repositories._
 import services.MailerService
 import java.util.UUID
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
@@ -31,13 +31,13 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
     val Success, NotFound, EmailConflict = Value
   }
   import ActivationOutcome._
-  def handleActivationRequest(draftUser: DraftUser, tokenInfo: TokenInfo): Future[ActivationOutcome] = {
+  def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
     for {
       // FIXME: handle different token kinds (without company)
-      company     <- tokenInfo.companySiret.map(siret => companyRepository.findBySiret(siret)).getOrElse(Future(None))
-      token       <- company.map(accessTokenRepository.findToken(_, tokenInfo.token)).getOrElse(Future(None))
+      company     <- siret.map(siret => companyRepository.findBySiret(siret)).getOrElse(Future(None))
+      token       <- company.map(accessTokenRepository.findToken(_, token)).getOrElse(Future(None))
       user        <- token.map(_ => {
-                      val email = tokenInfo.emailedTo.getOrElse(draftUser.email)
+                      val email = token.flatMap(_.emailedTo).getOrElse(draftUser.email)
                       userRepository.create(User(
                         UUID.randomUUID(), draftUser.password, email,
                         draftUser.firstName, draftUser.lastName, UserRoles.Pro)).map(Some(_))

@@ -47,9 +47,9 @@ object TokenInfo {
 
 case class ActivationRequest(
   draftUser: DraftUser,
-  tokenInfo: TokenInfo
+  token: String,
+  companySiret: Option[SIRET],
 )
 object ActivationRequest {
-  implicit val tokenInfoFormat = Json.format[TokenInfo]
   implicit val ActivationRequestFormat = Json.format[ActivationRequest]
 }

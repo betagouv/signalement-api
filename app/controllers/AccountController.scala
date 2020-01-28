@@ -72,9 +72,9 @@ class AccountController @Inject()(
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       {
-        case ActivationRequest(draftUser, tokenInfo) =>
+        case ActivationRequest(draftUser, token, companySiret) =>
           accessesOrchestrator
-            .handleActivationRequest(draftUser, tokenInfo)
+            .handleActivationRequest(draftUser, token, companySiret)
             .map {
               case accessesOrchestrator.ActivationOutcome.NotFound      => NotFound
               case accessesOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
