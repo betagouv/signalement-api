@@ -166,6 +166,7 @@ object Constants {
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
     object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
+    object ADVICE_ON_REPORT_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
     object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
@@ -191,6 +192,7 @@ object Constants {
       CONTACT_COURRIER,
       ENVOI_SIGNALEMENT,
       REPONSE_PRO_SIGNALEMENT,
+      ADVICE_ON_REPORT_RESPONSE,
       NON_CONSULTE,
       CONSULTE_IGNORE,
       RELANCE,

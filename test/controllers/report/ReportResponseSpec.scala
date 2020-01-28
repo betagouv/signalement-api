@@ -57,8 +57,8 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.PROMESSE_ACTION)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, adviceUrl).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseAccepted).toString)}
     """
@@ -71,8 +71,8 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         When post a response with type "REJECTED"                                ${step(someResult = Some(postReportResponse(reportResponseRejected)))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
-        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_INFONDE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_INFONDE)}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, adviceUrl).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseRejected).toString)}
     """
@@ -85,8 +85,8 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         When post a response with type "NOT_CONCERNED"                           ${step(someResult = Some(postReportResponse(reportResponseNotConcerned)))}
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
-        And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"Le professionnel a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+        And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_MAL_ATTRIBUE)}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, adviceUrl).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseNotConcerned).toString)}
     """
@@ -107,21 +107,11 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val siretForConcernedPro = Fixtures.genSiret.sample.get
   val siretForNotConcernedPro = Fixtures.genSiret.sample.get
 
-  val companyData = Company(
-    UUID.randomUUID(),
-    siretForConcernedPro,
-    OffsetDateTime.now,
-    "Test entreprise",
-    "10 rue des Champs",
-    Some("75010"),
-  )
+  val companyData = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro)
 
-  val reportUUID = UUID.randomUUID()
-  val reportFixture = Report(
-    reportUUID, "category", List("subcategory"), List(), Some(companyData.id), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
-    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
-  )
+  val reportFixture = Fixtures.genReportForCompany(companyData).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
 
+  var adviceUrl = ""
   var report = reportFixture
 
   val concernedProUser = Fixtures.genProUser.sample.get
@@ -140,6 +130,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
   override def setupData = {
+    adviceUrl = s"${app.configuration.get[String]("play.website.url")}/suivi-des-signalements/${reportFixture.id}/avis"
     Await.result(
       for {
         company <- companyRepository.getOrCreate(companyData.siret, companyData)
@@ -171,8 +162,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   def postReportResponse(reportResponse: ReportResponse) =  {
     Await.result(
-      app.injector.instanceOf[ReportController].reportResponse(reportUUID.toString)
-        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest("POST", s"/api/reports/${reportUUID}/response")).withBody(Json.toJson(reportResponse))),
+      app.injector.instanceOf[ReportController].reportResponse(reportFixture.id.toString)
+        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest("POST", s"/api/reports/${reportFixture.id}/response")).withBody(Json.toJson(reportResponse))),
       Duration.Inf)
   }
 
@@ -201,8 +192,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     (action == event.action, s"action doesn't match ${action}")
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {
-    report = Await.result(reportRepository.getReport(reportUUID), Duration.Inf).get
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+    report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
@@ -212,7 +203,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   def reportFileMustHaveBeenAttachedToReport() = {
     val reportFile = Await.result(reportRepository.getFile(reportResponseFile.id), Duration.Inf).get
-    reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportUUID)))
+    reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportFixture.id)))
   }
 
 }

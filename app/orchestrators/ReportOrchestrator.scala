@@ -307,8 +307,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString,
+      subject = "L'entreprise a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
+        report,
+        reportResponse,
+        s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
+      ).toString,
       attachments = Seq(
         AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
       )
@@ -402,5 +406,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       updatedReport
     }
+  }
+
+  def handleAdviceOnReportResponse(reportId: UUID, adviceOnReportResponse: AdviceOnReportResponse): Future[Event] = {
+    logger.debug(s"Report ${reportId} - the consumer give an advice on response")
+    eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        Some(reportId),
+        None,
+        Some(OffsetDateTime.now()),
+        EventType.CONSO,
+        ActionEvent.ADVICE_ON_REPORT_RESPONSE,
+        stringToDetailsJsValue(
+          s"${if (adviceOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+            s"${adviceOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
+        )
+      )
+    )
   }
 }
