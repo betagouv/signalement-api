@@ -1,4 +1,4 @@
-@(report: Report, reportResponse: ReportResponse)
+@(report: Report, reportResponse: ReportResponse, adviceUrl: String)
 
 @import utils.Constants.ReportStatus._
 
@@ -26,7 +26,7 @@
                 @views.html.fragments.address(report.companyAddress)
             </p>
 
-            <p>Le professionnel a répondu à votre signalement !</p>
+            <p>L'entreprise a répondu à votre signalement !</p>
 
             <p>Voici sa réponse :</p>
 
@@ -36,6 +36,10 @@
 
             <p>
                 Nous vous remercions d'avoir fait un signalement sur SignalConso.
+            </p>
+
+            <p>
+                Vous pouvez, si vous souhaitez, <a href="@adviceUrl" target="_blank">faire un retour à la DGCCRF</a> concernant la réponse de l'entreprise.
             </p>
 
             <p>
