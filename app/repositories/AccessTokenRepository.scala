@@ -52,12 +52,14 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       expirationDate = validity.map(OffsetDateTime.now.plus(_))
     ))
 
-  private def fetchValidTokens(company: Company) =
+  private def fetchValidTokens =
     AccessTokenTableQuery
       .filter(
         _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
-      .filter(_.companyId === company.id)
+
+  private def fetchValidTokens(company: Company) =
+    fetchValidTokens.filter(_.companyId === company.id)
 
   def fetchValidToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(fetchValidTokens(company)
@@ -78,6 +80,13 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
     db.run(fetchValidTokens(company)
       .filter(_.id === id)
+      .result
+      .headOption
+    )
+
+  def findToken(token: String): Future[Option[AccessToken]] =
+    db.run(fetchValidTokens
+      .filter(_.token === token)
       .result
       .headOption
     )
