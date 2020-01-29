@@ -128,7 +128,7 @@ class CompanyAccessController @Inject()(
                       .getOrElse(Future(None))
           applied <- token.map(t =>
                       accessTokenRepository
-                      .applyToken(t, request.identity)
+                      .applyCompanyToken(t, request.identity)
                     ).getOrElse(Future(false))
         } yield if (applied) Ok else NotFound
     )

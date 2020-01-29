@@ -58,11 +58,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
 
-  private def fetchValidTokens(company: Company) =
+  private def fetchCompanyValidTokens(company: Company) =
     fetchValidTokens.filter(_.companyId === company.id)
 
   def fetchValidToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
-    db.run(fetchValidTokens(company)
+    db.run(fetchCompanyValidTokens(company)
       .filter(_.emailedTo === emailedTo)
       .sortBy(_.expirationDate.desc)
       .result
@@ -70,7 +70,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
 
   def fetchActivationToken(company: Company): Future[Option[AccessToken]] =
-    db.run(fetchValidTokens(company)
+    db.run(fetchCompanyValidTokens(company)
       .filterNot(_.emailedTo.isDefined)
       .filter(_.level === AccessLevel.ADMIN)
       .result
@@ -78,7 +78,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
 
   def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
-    db.run(fetchValidTokens(company)
+    db.run(fetchCompanyValidTokens(company)
       .filter(_.id === id)
       .result
       .headOption
@@ -92,14 +92,14 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
 
   def findToken(company: Company, token: String): Future[Option[AccessToken]] =
-    db.run(fetchValidTokens(company)
+    db.run(fetchCompanyValidTokens(company)
       .filter(_.token === token)
       .result
       .headOption
     )
 
   def fetchPendingTokens(company: Company): Future[List[AccessToken]] =
-    db.run(fetchValidTokens(company)
+    db.run(fetchCompanyValidTokens(company)
       .sortBy(_.expirationDate.desc)
       .to[List]
       .result
@@ -115,20 +115,15 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
     )
 
-  def applyToken(token: AccessToken, user: User): Future[Boolean] = {
+  def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] = {
     if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
       logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
       Future(false)
-    } else {
-      val res = db.run(DBIO.seq(
-        // FIXME: Update method for non-company tokens
+    } else db.run(DBIO.seq(
         companyRepository.upsertUserAccess(token.companyId.get, user.id, token.companyLevel.get),
         AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
       ).transactionally)
       .map(_ => true)
-      logger.debug(s"Token ${token.id} applied to user ${user.id}")
-      res
-    }
   }
 
   def invalidateToken(token: AccessToken): Future[Int] =
