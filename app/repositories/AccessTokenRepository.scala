@@ -87,6 +87,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def findToken(token: String): Future[Option[AccessToken]] =
     db.run(fetchValidTokens
       .filter(_.token === token)
+      .filterNot(_.companyId.isDefined)
       .result
       .headOption
     )

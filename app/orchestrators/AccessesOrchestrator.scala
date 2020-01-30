@@ -36,7 +36,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       val email = accessToken.emailedTo.getOrElse(draftUser.email)
       userRepository
       .create(User(
-        UUID.randomUUID, draftUser.password, draftUser.email,
+        UUID.randomUUID, draftUser.password, email,
         draftUser.firstName, draftUser.lastName, role))
       .map(u => {
         log(s"User with id ${u.id} created through token ${accessToken.id}")
@@ -44,7 +44,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       })
     }
   }
-  
+
   class GenericTokenWorkflow(draftUser: DraftUser, token: String) extends TokenWorkflow(draftUser, token) {
     def fetchToken = { accessTokenRepository.findToken(token) }
     def run = for {
@@ -118,6 +118,8 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       ()
     }
 
+  private def randomToken = UUID.randomUUID.toString
+
   private def genInvitationToken(
     company: Company, level: AccessLevel, validity: Option[java.time.temporal.TemporalAmount],
     emailedTo: EmailAddress
@@ -127,7 +129,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       _             <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
                         accessTokenRepository.createToken(
-                            TokenKind.COMPANY_JOIN, UUID.randomUUID.toString, tokenDuration,
+                            TokenKind.COMPANY_JOIN, randomToken, tokenDuration,
                             Some(company), Some(level), emailedTo = Some(emailedTo)
                         ))
      } yield token.token
@@ -146,4 +148,23 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       )
       Unit
     })
+
+  def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] = {
+    for {
+      token <- accessTokenRepository.createToken(TokenKind.DGCCRF_ACCOUNT, randomToken, tokenDuration, None, None, Some(email))
+    } yield {
+      val invitationUrl = s"${websiteUrl}/dgccrf/rejoindre/?token=${token.token}"
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = email)(
+        subject = "Votre accès DGCCRF sur SignalConso",
+        bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString,
+        attachments = Seq(
+          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
+        )
+      )
+      logger.debug(s"Sent DGCCRF account invitation to ${email}")
+      Unit
+    }
+  }
 }
