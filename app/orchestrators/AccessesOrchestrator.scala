@@ -1,17 +1,15 @@
 package orchestrators
 
-import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
-import play.api.{Configuration, Environment, Logger}
-import play.api.libs.mailer.AttachmentFile
-import play.api.libs.json._
+import java.util.UUID
 
+import javax.inject.Inject
 import models._
+import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.MailerService
-import java.util.UUID
 import utils.EmailAddress
+
+import scala.concurrent.{ExecutionContext, Future}
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
@@ -71,10 +69,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         from = mailFrom,
         recipients = user.email)(
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
-        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
       )
       ()
     }
@@ -100,10 +95,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         from = mailFrom,
         recipients = email)(
         subject = s"Rejoignez l'entreprise ${company.name} sur SignalConso",
-        bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
       Unit
     })

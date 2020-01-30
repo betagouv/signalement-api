@@ -2,148 +2,134 @@
 
 @import utils.Constants.ReportStatus._
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Votre signalement</title>
-    </head>
-    <body>
-        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
-            <div style="text-align: center; margin: 30px auto 50px">
-                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
-                <br>
-            </div>
+@views.html.mails.layout("Votre signalement") {
+
+    <p>
+        Bonjour @report.firstName @report.lastName,
+    </p>
+    @report.status match {
+        case NA => {
             <p>
-                Bonjour @report.firstName @report.lastName,
+                Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
             </p>
-            @report.status match {
-                case NA => {
-                    <p>
-                        Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
-                    </p>
-                    <p>
-                        Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
-                    </p>
-                    <p>
-                        En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
-                    </p>
-                }
-                case EMPLOYEE_REPORT => {
-                    <p>
-                        Vous venez de déposer un signalement sur SignalConso et nous vous en remercions.
-                    </p>
-                    <p>
-                        Vous avez indiqué être employé de l'entreprise que vous avez signalée.
-                    </p>
-                    <p>
-                        Afin de garantir la sécurité de votre emploi, votre signalement ne sera pas transmis à l'entreprise. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
-                    </p>
-                }
-                case _ => {
-                    <p>
-                        Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
-                    </p>
-                    <p>
-                        Nous allons contacter le commerçant pour lui proposer d’en prendre connaissance. Il faut environ 6 jours pour que le commerçant
-                        prenne connaissance du signalement.
-                    </p>
-
-                    <p>
-                        Dès que le commerçant aura lu le signalement, vous recevrez un email.
-                    </p>
-
-                    <p>
-                        Si le commerçant décide de mettre en place des actions pour corriger le problème, vous recevrez également un email.
-                    </p>
-
-                    <p>
-                        Si, malgré nos relances, le commerçant ne souhaite toujours pas consulter son signalement, vous serez informé
-                        de son refus. Les enquêteurs de la répression des fraudes en seront aussi informés. Généralement, nous considérons
-                        que le signalement est refusé au bout de 6 semaines.
-                    </p>
-                }
-            }
-
             <p>
-                Vous avez une question ? Vous souhaitez modifier votre signalement ? <a href="mailto:contact@@signalconso.beta.gouv.fr">Contactez-nous</a>.
+                Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
+            </p>
+            <p>
+                En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
+            </p>
+        }
+        case EMPLOYEE_REPORT => {
+            <p>
+                Vous venez de déposer un signalement sur SignalConso et nous vous en remercions.
+            </p>
+            <p>
+                Vous avez indiqué être employé de l'entreprise que vous avez signalée.
+            </p>
+            <p>
+                Afin de garantir la sécurité de votre emploi, votre signalement ne sera pas transmis à l'entreprise. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
+            </p>
+        }
+        case _ => {
+            <p>
+                Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
+            </p>
+            <p>
+                Nous allons contacter le commerçant pour lui proposer d’en prendre connaissance. Il faut environ 6 jours pour que le commerçant
+                prenne connaissance du signalement.
             </p>
 
-            <p>À bientôt sur SignalConso !</p>
-
             <p>
-                <i>L'équipe SignalConso</i>
+                Dès que le commerçant aura lu le signalement, vous recevrez un email.
             </p>
 
-            @if(report.status != NA) {
-                <p style="text-align: center;
-                    margin: 30px">
-                    <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
-                        <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
-                    </a>
-                </p>
-            }
+            <p>
+                Si le commerçant décide de mettre en place des actions pour corriger le problème, vous recevrez également un email.
+            </p>
+
+            <p>
+                Si, malgré nos relances, le commerçant ne souhaite toujours pas consulter son signalement, vous serez informé
+                de son refus. Les enquêteurs de la répression des fraudes en seront aussi informés. Généralement, nous considérons
+                que le signalement est refusé au bout de 6 semaines.
+            </p>
+        }
+    }
+
+    <p>
+        Vous avez une question ? Vous souhaitez modifier votre signalement ? <a href="mailto:contact@@signalconso.beta.gouv.fr">Contactez-nous</a>.
+    </p>
+
+    <p>À bientôt sur SignalConso !</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+
+    @if(report.status != NA) {
+        <p style="text-align: center;
+            margin: 30px">
+            <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
+                <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
+            </a>
+        </p>
+    }
 
 
-            <div style="padding-bottom: 0.5em">
-                <div style="font-weight: bold;
-                    text-align: center;
-                    border-bottom: 1px solid #D3D3D3;
-                    padding-bottom: 20px;
-                    margin-bottom: 20px">Détail du signalement</div>
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #D3D3D3;
+            padding-bottom: 20px;
+            margin-bottom: 20px">Détail du signalement</div>
 
-                <b>Problème</b>
-                <br/>
-                @report.category
-                <br />
-                @report.subcategories.map {subcategory =>
-                    @subcategory
-                    <br />
-                }
-
-                <br />
-                <b>Description</b>
-                <br/>
-                @report.details.map { detailInputValue =>
-                    @Html(detailInputValue.label) @Html(detailInputValue.value)
-                    <br/>
-                }
-
-                @if(files.length > 0) {
-                    <br/>
-                    Pièces jointes :
-                    <ul>
-                    @files.map { file =>
-                        <li>
-                            @file.filename
-                        </li>
-                    }
-                    </ul>
-                } else {
-                    <br />
-                }
-
-                <b>Établissement</b>
-                <br/>
-                @report.companyAddress
-                <br/>
-
-                <br />
-                <b>Consommateur</b>
-                <br/>
-                Nom : @report.lastName
-                <br />
-                Prénom : @report.firstName
-                <br />
-                Email : @report.email
-                <br/>
-                @if(!report.employeeConsumer) {
-                    Accord pour contact : @if(report.contactAgreement) {oui} else {non}
-                    <br/>
-                }
-            </div>
+        <b>Problème</b>
+        <br/>
+        @report.category
+        <br />
+        @report.subcategories.map {subcategory =>
+            @subcategory
             <br />
+        }
 
-        </div>
-    </body>
-</html>
+        <br />
+        <b>Description</b>
+        <br/>
+        @report.details.map { detailInputValue =>
+            @Html(detailInputValue.label) @Html(detailInputValue.value)
+            <br/>
+        }
+
+        @if(files.length > 0) {
+            <br/>
+            Pièces jointes :
+            <ul>
+            @files.map { file =>
+                <li>
+                    @file.filename
+                </li>
+            }
+            </ul>
+        } else {
+            <br />
+        }
+
+        <b>Établissement</b>
+        <br/>
+        @report.companyAddress
+        <br/>
+
+        <br />
+        <b>Consommateur</b>
+        <br/>
+        Nom : @report.lastName
+        <br />
+        Prénom : @report.firstName
+        <br />
+        Email : @report.email
+        <br/>
+        @if(!report.employeeConsumer) {
+            Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            <br/>
+        }
+    </div>
+}
