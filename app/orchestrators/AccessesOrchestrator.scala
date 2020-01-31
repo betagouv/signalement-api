@@ -85,7 +85,6 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
   }
   import ActivationOutcome._
   def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
-    // FIXME: handle case without siret
     val workflow = siret.map(s => new CompanyTokenWorkflow(draftUser, token, s))
                         .getOrElse(new GenericTokenWorkflow(draftUser, token))
     workflow.run

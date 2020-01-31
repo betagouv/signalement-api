@@ -184,7 +184,7 @@ class AccountController @Inject()(
       }
     )
   }
-  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDCCRF)).async(parse.json) { implicit request =>
+  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) { implicit request =>
     request.body.validate[EmailAddress]((JsPath \ "email").read[EmailAddress]).fold(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))

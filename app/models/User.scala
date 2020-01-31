@@ -69,7 +69,7 @@ object UserPermission extends Enumeration {
       activateAccount,
       editDocuments,
       subscribeReports,
-      inviteDCCRF = Value
+      inviteDGCCRF = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 
