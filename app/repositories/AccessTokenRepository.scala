@@ -61,7 +61,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   private def fetchCompanyValidTokens(company: Company) =
     fetchValidTokens.filter(_.companyId === company.id)
 
-  def fetchValidToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
+  def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(fetchCompanyValidTokens(company)
       .filter(_.emailedTo === emailedTo)
       .sortBy(_.expirationDate.desc)
