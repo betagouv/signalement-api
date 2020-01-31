@@ -124,6 +124,35 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         companyRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
         companyRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
       }
+
+      "send a DGCCRF invitation" in {
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+            .withAuthenticator[AuthEnv](identLoginInfo)
+            .withJsonBody(Json.obj("email" -> "user@dgccrf"))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(200)
+      }
+
+      "activate the DGCCF user" in {
+        val ccrfUser = Fixtures.genUser.sample.get
+        val ccrfToken = Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf")), Duration.Inf).head
+        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+          .withJsonBody(Json.obj(
+            "draftUser" -> Json.obj(
+              "email" -> "user@dgccrf",
+              "firstName" -> ccrfUser.firstName,
+              "lastName" -> ccrfUser.lastName,
+              "password" -> ccrfUser.password
+            ),
+            "token" -> ccrfToken.token
+          ))
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(204)
+
+        val createdUser = Await.result(userRepository.findByLogin("user@dgccrf"), Duration.Inf)
+        createdUser.get.userRole must beEqualTo(UserRoles.DGCCRF)
+      }
     }
   }
 }

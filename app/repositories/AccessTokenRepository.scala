@@ -23,7 +23,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   import companyRepository.AccessLevelColumnType
   implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.value, TokenKind.fromValue(_))
 
-  class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "company_access_tokens") {
+  class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
     def kind = column[TokenKind]("kind")
     def token = column[String]("token")
