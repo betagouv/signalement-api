@@ -93,10 +93,10 @@ object Fixtures {
         postalCode <- Gen.choose(10000, 99999)
     } yield ReportCompany(name, address, postalCode.toString, siret)
 
-    def genAdviceOnReportResponse = for {
+    def genReviewOnReportResponse = for {
         positive <- arbitrary[Boolean]
         details <- arbString.arbitrary
-    } yield AdviceOnReportResponse(positive, Some(details))
+    } yield ReviewOnReportResponse(positive, Some(details))
 
     def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
         id <- arbitrary[UUID]

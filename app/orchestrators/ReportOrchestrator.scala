@@ -408,8 +408,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def handleAdviceOnReportResponse(reportId: UUID, adviceOnReportResponse: AdviceOnReportResponse): Future[Event] = {
-    logger.debug(s"Report ${reportId} - the consumer give an advice on response")
+  def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
+    logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
         Some(UUID.randomUUID()),
@@ -417,10 +417,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         None,
         Some(OffsetDateTime.now()),
         EventType.CONSO,
-        ActionEvent.ADVICE_ON_REPORT_RESPONSE,
+        ActionEvent.REVIEW_ON_REPORT_RESPONSE,
         stringToDetailsJsValue(
-          s"${if (adviceOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
-            s"${adviceOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
+          s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+            s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )
     )

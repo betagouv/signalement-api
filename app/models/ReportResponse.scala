@@ -23,11 +23,11 @@ object ReportResponseType extends Enumeration {
   implicit def enumWrites: Writes[ReportResponseType.Value] = EnumUtils.enumWrites
 }
 
-case class AdviceOnReportResponse(
+case class ReviewOnReportResponse(
                            positive: Boolean,
                            details: Option[String]
                          )
 
-object AdviceOnReportResponse {
-  implicit val adviceOnReportResponse: OFormat[AdviceOnReportResponse] = Json.format[AdviceOnReportResponse]
+object ReviewOnReportResponse {
+  implicit val reviewOnReportResponse: OFormat[ReviewOnReportResponse] = Json.format[ReviewOnReportResponse]
 }

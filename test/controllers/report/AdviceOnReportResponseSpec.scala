@@ -21,35 +21,35 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 
-class AdviceOnReportWithoutResponse(implicit ee: ExecutionEnv) extends AdviceOnReportResponseSpec  {
+class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec  {
   override def is =
     s2"""
          Given a report without response                              ${step(reportId = reportWithoutResponse.id)}
-         When post an advice                                          ${step(someResult = Some(postAdvice(adviceOnReportResponse)))}
+         When post a review                                          ${step(someResult = Some(postReview(reviewOnReportResponse)))}
          Then result status is forbidden                              ${resultStatusMustBe(Status.FORBIDDEN)}
     """
 }
 
-class FirstAdviceOnReport(implicit ee: ExecutionEnv) extends AdviceOnReportResponseSpec  {
+class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec  {
   override def is =
     s2"""
          Given a report with a response                               ${step(reportId = reportWithResponse.id)}
-         When post an advice                                          ${step(someResult = Some(postAdvice(adviceOnReportResponse)))}
+         When post a review                                          ${step(someResult = Some(postReview(reviewOnReportResponse)))}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
-         And an event "ADVICE_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(ActionEvent.ADVICE_ON_REPORT_RESPONSE)}
+         And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(ActionEvent.REVIEW_ON_REPORT_RESPONSE)}
     """
 }
 
-class SecondAdviceOnReport(implicit ee: ExecutionEnv) extends AdviceOnReportResponseSpec  {
+class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec  {
   override def is =
     s2"""
-         Given a report with an advice                                ${step(reportId = reportWithAdvice.id)}
-         When post an advice                                          ${step(someResult = Some(postAdvice(adviceOnReportResponse)))}
+         Given a report with a review                                ${step(reportId = reportWithReview.id)}
+         When post a review                                          ${step(someResult = Some(postReview(reviewOnReportResponse)))}
          Then result status is CONFLICT                               ${resultStatusMustBe(Status.CONFLICT)}
     """
 }
 
-abstract class AdviceOnReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
+abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
@@ -62,11 +62,11 @@ abstract class AdviceOnReportResponseSpec(implicit ee: ExecutionEnv) extends Spe
   val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
   val responseEvent = Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT).sample.get
 
-  val reportWithAdvice = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
-  val responseWithAdviceEvent = Fixtures.genEventForReport(reportWithAdvice.id, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT).sample.get
-  val adviceEvent = Fixtures.genEventForReport(reportWithAdvice.id, EventType.PRO, ActionEvent.ADVICE_ON_REPORT_RESPONSE).sample.get
+  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
+  val responseWithReviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT).sample.get
+  val reviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REVIEW_ON_REPORT_RESPONSE).sample.get
 
-  val adviceOnReportResponse = Fixtures.genAdviceOnReportResponse.sample.get
+  val reviewOnReportResponse = Fixtures.genReviewOnReportResponse.sample.get
 
   var reportId = UUID.randomUUID()
 
@@ -78,19 +78,19 @@ abstract class AdviceOnReportResponseSpec(implicit ee: ExecutionEnv) extends Spe
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- reportRepository.create(reportWithoutResponse)
         _ <- reportRepository.create(reportWithResponse)
-        _ <- reportRepository.create(reportWithAdvice)
+        _ <- reportRepository.create(reportWithReview)
         _ <- eventRepository.createEvent(responseEvent)
-        _ <- eventRepository.createEvent(responseWithAdviceEvent)
-        _ <- eventRepository.createEvent(adviceEvent)
+        _ <- eventRepository.createEvent(responseWithReviewEvent)
+        _ <- eventRepository.createEvent(reviewEvent)
       } yield Unit,
       Duration.Inf
     )
   }
 
-  def postAdvice(adviceOnReportResponse: AdviceOnReportResponse) =  {
+  def postReview(reviewOnReportResponse: ReviewOnReportResponse) =  {
     Await.result(
-      app.injector.instanceOf[ReportController].adviceOnReportResponse(reportId.toString)
-        .apply(FakeRequest("POST", s"/api/reports/${reportId}/response/advice").withBody(Json.toJson(adviceOnReportResponse))),
+      app.injector.instanceOf[ReportController].reviewOnReportResponse(reportId.toString)
+        .apply(FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))),
       Duration.Inf)
   }
 

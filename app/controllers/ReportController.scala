@@ -116,17 +116,17 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       )
   }
 
-  def adviceOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body.validate[AdviceOnReportResponse].fold(
+  def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
+    request.body.validate[ReviewOnReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      advice => for {
+      review => for {
           events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
           result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
-          } else if (events.exists(_.action == ActionEvent.ADVICE_ON_REPORT_RESPONSE)) {
+          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
             Future(Conflict)
           } else {
-            reportOrchestrator.handleAdviceOnReportResponse(UUID.fromString(uuid), advice).map(_ => Ok)
+            reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
           }
         } yield result
     )
