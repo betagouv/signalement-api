@@ -16,8 +16,8 @@ class MailerService @Inject() (mailerClient: MailerClient, system: ActorSystem, 
     AttachmentFile("logo-marianne.png", environment.getFile("/appfiles/logo-marianne.png"), contentId = Some("logo-marianne"))
   )
 
-  def sendEmail(from: EmailAddress, recipients: EmailAddress*)(subject: String, bodyHtml: String, attachments: Seq[Attachment] = defaultAttachments) = {
-    mailerClient.send(Email(subject, from.value, recipients.map(_.value), bodyHtml = Some(bodyHtml), attachments = attachments))
+  def sendEmail(from: EmailAddress, recipients: EmailAddress*)(subject: String, bodyHtml: String, attachments: Seq[Attachment] = Seq.empty) = {
+    mailerClient.send(Email(subject, from.value, recipients.map(_.value), bodyHtml = Some(bodyHtml), attachments = defaultAttachments ++ attachments))
   }
 }
 

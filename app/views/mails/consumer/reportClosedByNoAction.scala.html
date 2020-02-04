@@ -2,27 +2,33 @@
 
 @import utils.Constants.ReportStatus._
 
-@views.html.mails.layout("L'entreprise n’a pas répondu au signalement") {
+@views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
     <p>
         Bonjour @report.firstName @report.lastName,
     </p>
 
     <p>
-        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
+        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b> concernant l'entreprise (SIRET : @report.companySiret) :
     </p>
 
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyAddress)
-    </p>
-
-    <p>Ce signalement n’a pas reçu de réponse de la part du professionnel.</p>
-
-    <p>
-        Néanmoins, nous vous précisons que les enquêteurs se réservent le droit d’effectuer un contrôle de l’établissement concerné.
+        <b>@views.html.fragments.address(report.companyAddress)</b>
     </p>
 
     <p>
-        Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites un nouveau signalement.
+        L'entreprise n'a pas souhaité répondre à votre signalement.
+    </p>
+
+    <p>
+        <b>
+            Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement.
+            Ils peuvent décider de contrôler ou de surveiller l'entreprise que vous avez signalée, en fonction des informations que vous avez transmis.
+        </b>
+    </p>
+
+    <p>
+        Si vous retournez dans cette entreprise et constatez que le problème n'a pas été corrigé, faites un nouveau signalement.
+        Savoir que la situation perdure est un élément important pour les enquêteurs.
     </p>
 
     <p>À bientôt sur SignalConso !</p>
@@ -36,4 +42,16 @@
             <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
         </a>
     </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+            Comprendre SignalConso
+        </div>
+        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+    </div>
 }

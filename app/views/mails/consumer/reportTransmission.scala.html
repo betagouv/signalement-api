@@ -6,15 +6,23 @@
     </p>
 
     <p>
-        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
+        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b> concernant l'entreprise (SIRET : @report.companySiret) :
     </p>
 
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyAddress)
+        <b>@views.html.fragments.address(report.companyAddress)</b>
     </p>
 
     <p>
-        Le commerçant a pris connaissance de votre signalement aujourd’hui. Si le commerçant nous indique avoir corrigé le problème, nous vous tiendrons au courant par email.
+        L'entreprise a pris connaissance de votre signalement aujourd'hui.
+    </p>
+
+    <p>
+        Si elle propose une solution ou corrige le problème, vous recevrez un email.
+    </p>
+
+    <p>
+        Pour information, les enquêteurs de la répression des fraudes ont également bien reçu votre signalement.
     </p>
 
     <p>A bientôt sur SignalConso !</p>
@@ -28,4 +36,14 @@
             <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
         </a>
     </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">Comprendre SignalConso</div>
+        <img src="cid:schemaSignalConso-Etape3" style="max-width: 100%"/>
+    </div>
 }

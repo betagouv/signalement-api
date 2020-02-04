@@ -10,7 +10,7 @@
     @report.status match {
         case NA => {
             <p>
-                Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l’indiquons sur notre site.
+                Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l'indiquons sur notre site.
             </p>
             <p>
                 Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
@@ -32,25 +32,26 @@
         }
         case _ => {
             <p>
-                Votre signalement a bien été enregistré dans la base de données de la répression des fraudes.
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Nous allons contacter le commerçant pour lui proposer d’en prendre connaissance. Il faut environ 6 jours pour que le commerçant
-                prenne connaissance du signalement.
+                Que va-t-il se passer ?
             </p>
-
             <p>
-                Dès que le commerçant aura lu le signalement, vous recevrez un email.
+                <b>L'entreprise va être informée de votre signalement pour qu'elle puisse corriger le problème.</b>
             </p>
 
             <p>
-                Si le commerçant décide de mettre en place des actions pour corriger le problème, vous recevrez également un email.
+                Dès que l'entreprise aura lu le signalement, vous recevrez un email.
+                En moyenne l'entreprise met 8 jours pour lire le signalement.
+            </p>
+            <p>
+                Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
             </p>
 
             <p>
-                Si, malgré nos relances, le commerçant ne souhaite toujours pas consulter son signalement, vous serez informé
-                de son refus. Les enquêteurs de la répression des fraudes en seront aussi informés. Généralement, nous considérons
-                que le signalement est refusé au bout de 6 semaines.
+                Que l'entreprise lise ou non votre signalement,
+                <b>les enquêteurs de la répression des fraudes sont également informés de votre signalement.</b>
             </p>
         }
     }
@@ -78,9 +79,10 @@
     <div style="padding-bottom: 0.5em">
         <div style="font-weight: bold;
             text-align: center;
+            border-top: 1px solid #D3D3D3;
             border-bottom: 1px solid #D3D3D3;
-            padding-bottom: 20px;
-            margin-bottom: 20px">Détail du signalement</div>
+            padding: 10px 0;
+            margin: 10px">Détail du signalement</div>
 
         <b>Problème</b>
         <br/>
@@ -113,7 +115,7 @@
             <br />
         }
 
-        <b>Établissement</b>
+        <b>Entreprise</b>
         <br/>
         @report.companyAddress
         <br/>
@@ -131,5 +133,15 @@
             Accord pour contact : @if(report.contactAgreement) {oui} else {non}
             <br/>
         }
+    </div>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">Comprendre SignalConso</div>
+        <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
     </div>
 }

@@ -12,6 +12,7 @@ import models._
 import models.Event._
 import models.ReportResponse._
 import play.api.libs.json.{Json, OFormat}
+import play.api.libs.mailer.AttachmentFile
 import repositories._
 import services.{MailerService, S3Service}
 import utils.{Constants, EmailAddress}
@@ -104,8 +105,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           from = mailFrom,
           recipients = report.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString
-        )
+          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+          Seq(AttachmentFile("schemaSignalConso-Etape2.png", environment.getFile("/appfiles/schemaSignalConso-Etape2.png"), contentId = Some("schemaSignalConso-Etape2"))))
         if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
@@ -262,8 +263,9 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Votre signalement",
-      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString
+      subject = "L'entreprise a pris connaissance de votre signalement",
+      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
+      Seq(AttachmentFile("schemaSignalConso-Etape3.png", environment.getFile("/appfiles/schemaSignalConso-Etape3.png"), contentId = Some("schemaSignalConso-Etape3")))
     )
     for {
       event <- eventRepository.createEvent(
@@ -293,8 +295,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString
+      subject = "L'entreprise a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString,
+      report.status match {
+        case SIGNALEMENT_MAL_ATTRIBUE => Seq.empty
+        case _ => Seq(AttachmentFile("schemaSignalConso-Etape4.png", environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4")))
+      }
     )
     mailerService.sendEmail(
       from = mailFrom,
