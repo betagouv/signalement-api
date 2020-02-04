@@ -10,7 +10,6 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.AppSpec
@@ -113,16 +112,12 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
     Some(OffsetDateTime.of(2019, 9, 8, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(
-        subject,
-        bodyHtml,
-        attachments
-      )
+      )(subject, bodyHtml)
   }
 
   def mailMustNotHaveBeenSent() = {

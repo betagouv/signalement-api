@@ -17,7 +17,6 @@ import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
@@ -70,7 +69,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
          When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.ENVOI_SIGNALEMENT)}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_TRANSMIS)}
-         And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", application.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(neverRequestedReport.email,"Votre signalement", views.html.mails.consumer.reportTransmission(neverRequestedReport).toString)}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(neverRequestedReport.copy(status = ReportStatus.SIGNALEMENT_TRANSMIS), UserRoles.Pro)}
       """
 }
@@ -131,16 +130,12 @@ trait GetReportSpec extends Spec with GetReportContext {
     someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(ReportWithFiles(report, List.empty))
   }
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
     there was one(application.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(application.configuration.get[String]("play.mail.from")),
         recipient
-      )(
-        subject,
-        bodyHtml,
-        attachments
-      )
+      )(subject, bodyHtml)
   }
 
 
