@@ -110,7 +110,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
-    } yield report
+    } yield {
+      logger.debug(s"Report ${report.id} created")
+      report
+    }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
