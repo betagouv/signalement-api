@@ -14,12 +14,12 @@ import javax.inject.{Inject, Singleton}
 import models._
 import orchestrators._
 import play.api._
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, Json, JsPath}
 import repositories._
 import utils.Constants.ReportStatus.A_TRAITER
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.SIRET
+import utils.{SIRET, EmailAddress}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,8 +28,8 @@ class AccountController @Inject()(
                                    val silhouette: Silhouette[AuthEnv],
                                    userRepository: UserRepository,
                                    companyRepository: CompanyRepository,
-                                   companyAccessRepository: CompanyAccessRepository,
-                                   companyAccessOrchestrator: CompanyAccessOrchestrator,
+                                   accessTokenRepository: AccessTokenRepository,
+                                   accessesOrchestrator: AccessesOrchestrator,
                                    reportRepository: ReportRepository,
                                    eventRepository: EventRepository,
                                    credentialsProvider: CredentialsProvider,
@@ -72,13 +72,13 @@ class AccountController @Inject()(
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       {
-        case ActivationRequest(draftUser, tokenInfo) =>
-          companyAccessOrchestrator
-            .handleActivationRequest(draftUser, tokenInfo)
+        case ActivationRequest(draftUser, token, companySiret) =>
+          accessesOrchestrator
+            .handleActivationRequest(draftUser, token, companySiret)
             .map {
-              case companyAccessOrchestrator.ActivationOutcome.NotFound      => NotFound
-              case companyAccessOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
-              case companyAccessOrchestrator.ActivationOutcome.Success       => NoContent
+              case accessesOrchestrator.ActivationOutcome.NotFound      => NotFound
+              case accessesOrchestrator.ActivationOutcome.EmailConflict => Conflict  // HTTP 409
+              case accessesOrchestrator.ActivationOutcome.Success       => NoContent
             }
       }
     )
@@ -87,7 +87,7 @@ class AccountController @Inject()(
   def getActivationDocument(siret: String) = SecuredAction(WithPermission(UserPermission.editDocuments)).async { implicit request =>
     for {
       company <- companyRepository.findBySiret(SIRET(siret))
-      token <- company.map(companyAccessRepository.fetchActivationCode(_)).getOrElse(Future(None))
+      token <- company.map(accessTokenRepository.fetchActivationCode(_)).getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(0, 1, ReportFilter(siret = Some(siret), statusList = Seq(ReportStatus.A_TRAITER)))
       report <- paginatedReports.entities match {
         case report :: otherReports => Future(Some(report))
@@ -157,7 +157,7 @@ class AccountController @Inject()(
         for {
           reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == A_TRAITER))
           reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
-          reportActivationCodesMap <- companyAccessRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
+          reportActivationCodesMap <- accessTokenRepository.prefetchActivationCodes(reports.flatMap(_.companyId))
         } yield {
 
           val htmlDocuments = reports
@@ -183,9 +183,22 @@ class AccountController @Inject()(
         }
       }
     )
-
   }
-
+  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) { implicit request =>
+    request.body.validate[EmailAddress]((JsPath \ "email").read[EmailAddress]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
+    )
+  }
+  def fetchTokenInfo(token: String) = UnsecuredAction.async { implicit request =>
+    for {
+      accessToken <- accessTokenRepository.findToken(token)
+    } yield accessToken.map(t =>
+      Ok(Json.toJson(TokenInfo(t.token, t.kind, None, t.emailedTo)))
+    ).getOrElse(NotFound)
+  }
 }
 
 object AccountObjects {

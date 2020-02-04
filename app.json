@@ -80,7 +80,7 @@
       "required": true
     },
     "WEBSITE_URL": {
-      "required": true
+      "value": "https://signalement-app-pr-232.herokuapp.com"
     }
   },
   "formation": {

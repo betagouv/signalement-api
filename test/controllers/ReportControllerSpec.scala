@@ -45,7 +45,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyAccessRepository], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
+        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration], mock[play.api.Environment]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -137,7 +137,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
       }
     }
-
   }
 
   trait Context extends Scope {
@@ -154,7 +153,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mockReportRepository = mock[ReportRepository]
     val mockEventRepository = mock[EventRepository]
     val mockCompanyRepository = mock[CompanyRepository]
-    val mockCompanyAccessRepository = mock[CompanyAccessRepository]
+    val mockAccessTokenRepository = mock[AccessTokenRepository]
     val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
@@ -163,7 +162,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
     mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
-    mockCompanyAccessRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
+    mockCompanyRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
     mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
 
@@ -175,7 +174,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         bind[ReportRepository].toInstance(mockReportRepository)
         bind[EventRepository].toInstance(mockEventRepository)
         bind[CompanyRepository].toInstance(mockCompanyRepository)
-        bind[CompanyAccessRepository].toInstance(mockCompanyAccessRepository)
+        bind[AccessTokenRepository].toInstance(mockAccessTokenRepository)
         bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
       }

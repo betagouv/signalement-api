@@ -32,7 +32,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   override def configureFakeModule(): AbstractModule = {
     new FakeModule
@@ -51,7 +51,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
     Await.result(for {
       _ <- userRepository.create(proUser)
       _ <- companyRepository.getOrCreate(company.siret, company)
-      _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "123456", None, None)
+      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company), Some(AccessLevel.ADMIN), None)
     } yield Unit,
     Duration.Inf)
   }
@@ -88,10 +88,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               "lastName" -> proUser.lastName,
               "password" -> proUser.password
             ),
-            "tokenInfo" -> Json.obj(
-              "token" -> "123456",
-              "companySiret" -> company.siret
-            )
+            "token" -> "123456",
+            "companySiret" -> company.siret
           ))
 
         val result = route(app, request).get
@@ -104,8 +102,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val otherCompany = Fixtures.genCompany.sample.get
         val otherToken = Await.result(for {
           _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
-          _ <- companyAccessRepository.createToken(company, AccessLevel.ADMIN, "000000", None, Some(newUser.email))
-          token <- companyAccessRepository.createToken(otherCompany, AccessLevel.ADMIN, "whatever", None, Some(newUser.email))
+          _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "000000", None, Some(company), Some(AccessLevel.ADMIN), Some(newUser.email))
+          token <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "whatever", None, Some(otherCompany), Some(AccessLevel.ADMIN), Some(newUser.email))
         } yield token,
         Duration.Inf)
         val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
@@ -116,17 +114,44 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
               "lastName" -> newUser.lastName,
               "password" -> newUser.password
             ),
-            "tokenInfo" -> Json.obj(
-              "token" -> "000000",
-              "companySiret" -> company.siret
-            )
+            "token" -> "000000",
+            "companySiret" -> company.siret
           ))
 
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        companyAccessRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
-        companyAccessRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
+      }
+
+      "send a DGCCRF invitation" in {
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+            .withAuthenticator[AuthEnv](identLoginInfo)
+            .withJsonBody(Json.obj("email" -> "user@dgccrf"))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(200)
+      }
+
+      "activate the DGCCF user" in {
+        val ccrfUser = Fixtures.genUser.sample.get
+        val ccrfToken = Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf")), Duration.Inf).head
+        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+          .withJsonBody(Json.obj(
+            "draftUser" -> Json.obj(
+              "email" -> "user@dgccrf",
+              "firstName" -> ccrfUser.firstName,
+              "lastName" -> ccrfUser.lastName,
+              "password" -> ccrfUser.password
+            ),
+            "token" -> ccrfToken.token
+          ))
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(204)
+
+        val createdUser = Await.result(userRepository.findByLogin("user@dgccrf"), Duration.Inf)
+        createdUser.get.userRole must beEqualTo(UserRoles.DGCCRF)
       }
     }
   }
