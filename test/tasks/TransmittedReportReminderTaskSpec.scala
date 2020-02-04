@@ -3,6 +3,7 @@ package tasks
 import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
+import controllers.report.CreateReportForProWithoutAccountFromEligibleDepartment.app
 import models.UserRoles.Pro
 import models._
 import models.Event._
@@ -10,12 +11,13 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
+import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, ENVOI_SIGNALEMENT, RELANCE}
 import utils.Constants.EventType.PRO
-import utils.Constants.ReportStatus.{SIGNALEMENT_TRANSMIS, ReportStatusValue, TRAITEMENT_EN_COURS}
+import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.EmailAddress
 import utils.Fixtures
@@ -85,7 +87,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.CONSULTE_IGNORE)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_CONSULTE_IGNORE)}
-         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"Le professionnel n’a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString)}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"L'entreprise n'a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString, Seq(AttachmentFile("schemaSignalConso-Etape4.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4"))))}
    """
 }
 
@@ -143,12 +145,12 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(subject, bodyHtml)
+      )(subject, bodyHtml, attachments)
   }
 
   def mailMustNotHaveBeenSent() = {

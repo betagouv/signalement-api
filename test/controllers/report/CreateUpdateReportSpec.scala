@@ -8,10 +8,12 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ReportController
+import controllers.report.CreateReportForProWithoutAccountFromEligibleDepartment.app
 import models._
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json
+import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.test._
 import repositories._
 import services.MailerService
@@ -36,7 +38,7 @@ object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "NA"              ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("schemaSignalConso-Etape2.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape2.png"), contentId = Some("schemaSignalConso-Etape2"))))}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
@@ -48,7 +50,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
          And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("schemaSignalConso-Etape2.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape2.png"), contentId = Some("schemaSignalConso-Etape2"))))}
     """
 }
 
@@ -61,7 +63,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpda
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("schemaSignalConso-Etape2.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape2.png"), contentId = Some("schemaSignalConso-Etape2"))))}
     """
 }
 
@@ -74,7 +76,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, Seq(AttachmentFile("schemaSignalConso-Etape2.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape2.png"), contentId = Some("schemaSignalConso-Etape2"))))}
          And create an event "CONTACT_EMAIL"                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_EMAIL)}
          And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString)}
     """
@@ -204,12 +206,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     dbReport.get must beEqualTo(reportData)
   }
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(subject, bodyHtml)
+      )(subject, bodyHtml, attachments)
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {

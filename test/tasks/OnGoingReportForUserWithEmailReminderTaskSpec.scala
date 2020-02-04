@@ -10,6 +10,7 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
+import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
 import utils.AppSpec
@@ -85,7 +86,7 @@ class CloseOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) ext
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.NON_CONSULTE)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
-         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"Le professionnel n’a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString)}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"L'entreprise n'a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString, Seq(AttachmentFile("schemaSignalConso-Etape3.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape3.png"), contentId = Some("schemaSignalConso-Etape3"))))}
    """
 }
 
@@ -146,12 +147,12 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
 
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(subject, bodyHtml)
+      )(subject, bodyHtml, attachments)
   }
 
   def mailMustNotHaveBeenSent() = {
