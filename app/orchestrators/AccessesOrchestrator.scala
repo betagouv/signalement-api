@@ -150,10 +150,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         from = mailFrom,
         recipients = email)(
         subject = "Votre accès DGCCRF sur SignalConso",
-        bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
       )
       logger.debug(s"Sent DGCCRF account invitation to ${email}")
       Unit
