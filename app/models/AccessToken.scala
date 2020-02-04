@@ -6,19 +6,39 @@ import play.api.libs.json._
 import utils.{EmailAddress, SIRET}
 
 
+sealed case class TokenKind(value: String)
+
+object TokenKind {
+  val COMPANY_INIT = TokenKind("COMPANY_INIT")
+  val COMPANY_JOIN = TokenKind("COMPANY_JOIN")
+  val DGCCRF_ACCOUNT = TokenKind("DGCCRF_ACCOUNT")
+
+  def fromValue(v: String) = {
+    List(COMPANY_INIT, COMPANY_JOIN, DGCCRF_ACCOUNT).find(_.value == v).head
+  }
+  implicit val reads = new Reads[TokenKind] {
+    def reads(json: JsValue): JsResult[TokenKind] = json.validate[String].map(fromValue(_))
+  }
+  implicit val writes = new Writes[TokenKind] {
+    def writes(kind: TokenKind) = Json.toJson(kind.value)
+  }
+}
+
 case class AccessToken(
   id: UUID,
-  companyId: UUID,
+  kind: TokenKind,
   token: String,
-  level: AccessLevel,
   valid: Boolean,
+  companyId: Option[UUID],
+  companyLevel: Option[AccessLevel],
   emailedTo: Option[EmailAddress],
   expirationDate: Option[OffsetDateTime]
 )
 
 case class TokenInfo(
   token: String,
-  companySiret: SIRET,
+  kind: TokenKind,
+  companySiret: Option[SIRET],
   emailedTo: Option[EmailAddress]
 )
 object TokenInfo {
@@ -27,9 +47,9 @@ object TokenInfo {
 
 case class ActivationRequest(
   draftUser: DraftUser,
-  tokenInfo: TokenInfo
+  token: String,
+  companySiret: Option[SIRET],
 )
 object ActivationRequest {
-  implicit val tokenInfoFormat = Json.format[TokenInfo]
   implicit val ActivationRequestFormat = Json.format[ActivationRequest]
 }

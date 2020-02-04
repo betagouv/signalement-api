@@ -37,15 +37,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(company)
       _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
                         accessTokenRepository.createToken(
-                          company, AccessLevel.ADMIN,
-                          f"${Random.nextInt(1000000)}%06d", tokenDuration
+                          TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
+                          Some(company), Some(AccessLevel.ADMIN)
                         )
                        )
     } yield token.token
