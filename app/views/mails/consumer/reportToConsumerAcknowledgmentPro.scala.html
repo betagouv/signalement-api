@@ -1,4 +1,4 @@
-@(report: Report, reportResponse: ReportResponse)
+@(report: Report, reportResponse: ReportResponse, reviewUrl: String)
 
 @import utils.Constants.ReportStatus._
 
@@ -14,7 +14,6 @@
     <p style="text-align: center;">
     @views.html.fragments.address(report.companyAddress)
     </p>
-
 
     @report.status match {
         case SIGNALEMENT_INFONDE => {
@@ -44,7 +43,7 @@
         <p>
             <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
             <br/>
-            Vous avez la possibilité de faire un retour à la répression des fraudes en donnant votre avis sur cette réponse.
+            Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
         </p>
     }
 
