@@ -301,10 +301,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         reportResponse,
         s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
       ).toString,
-      report.status match {
-        case SIGNALEMENT_MAL_ATTRIBUE => Seq.empty
-        case _ => Seq(AttachmentFile("schemaSignalConso-Etape4.png", environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4")))
-      }
+      Seq(AttachmentFile("schemaSignalConso-Etape4.png", environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4")))
     )
     mailerService.sendEmail(
       from = mailFrom,

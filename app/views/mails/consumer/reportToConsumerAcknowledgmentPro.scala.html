@@ -15,23 +15,9 @@
     @views.html.fragments.address(report.companyAddress)
     </p>
 
-    @report.status match {
-        case SIGNALEMENT_INFONDE => {
-            <p>
-                <b>L'entreprise trouve que votre signalement n'est pas légitime.</b>
-            </p>
-        }
-        case SIGNALEMENT_MAL_ATTRIBUE => {
-            <p>
-                <b>L'entreprise a indiqué qu'il y a eu une erreur et que le signalement ne la concerne pas.</b>
-            </p>
-        }
-        case _ => {
-            <p>
-                <b>L'entreprise a répondu à votre signalement.</b>
-            </p>
-        }
-    }
+    <p>
+        <b>L'entreprise a répondu à votre signalement.</b>
+    </p>
 
     <p>Voici sa réponse :</p>
 
@@ -39,38 +25,23 @@
         <i>"@reportResponse.consumerDetails"</i>
     </p>
 
-    @if(report.status != SIGNALEMENT_MAL_ATTRIBUE){
-        <p>
-            <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
-            <br/>
-            Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
-        </p>
-    }
+    <p>
+        <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
+        <br/>
+        Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
+    </p>
 
-    @report.status match {
-        case SIGNALEMENT_INFONDE => {
-            <p>
-                <b>Sachez que, malgré la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider de contrôler l'entreprise</b>
-                que vous avez signalée, en fonction des informations que vous avez transmis.
-            </p>
-        }
-        case SIGNALEMENT_MAL_ATTRIBUE => {
-            <p>
-                Votre signalement sera donc supprimé. Vous pouvez, si vous le souhaitez, en créer un nouveau sur la bonne entreprise.
-            </p>
-            <p>
-                Si vous n'êtes pas d'accord avec cette erreur, écrivez-nous à <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a>
-            </p>
-        }
-        case _ => {
-            <p>
-                <b>Vous souhaitez attendre de voir si la situation s'améliore ?</b>
-                <br/>
-                N'hésitez pas à refaire un nouveau signalement si vous constatez que le problème n'a pas été corrigé.
-                La répression des fraudes sera ainsi mieux au courant de la situation.
-            </p>
-        }
-    }
+    <p>
+        <b>Sachez que, malgré la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider faire un contrôle,
+            en fonction des informations que vous avez transmis.</b>
+    </p>
+
+    <p>
+        <b>Vous souhaitez attendre de voir si la situation s'améliore ?</b>
+        <br/>
+        N'hésitez pas à refaire un nouveau signalement si vous constatez que le problème n'a pas été corrigé.
+        La répression des fraudes sera ainsi mieux au courant de la situation.
+    </p>
 
     <p>À bientôt sur SignalConso !</p>
 
@@ -84,17 +55,15 @@
         </a>
     </p>
 
-    @if(report.status != SIGNALEMENT_MAL_ATTRIBUE) {
-        <div style="padding-bottom: 0.5em">
-            <div style="font-weight: bold;
-                text-align: center;
-                border-top: 1px solid #D3D3D3;
-                border-bottom: 1px solid #D3D3D3;
-                padding: 10px 0;
-                margin: 10px">
-                Comprendre SignalConso
-            </div>
-            <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+            Comprendre SignalConso
         </div>
-    }
+        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+    </div>
 }
