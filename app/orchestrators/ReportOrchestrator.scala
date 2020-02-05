@@ -293,8 +293,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString
+      subject = "L'entreprise a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
+        report,
+        reportResponse,
+        s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
+      ).toString
     )
     mailerService.sendEmail(
       from = mailFrom,
@@ -385,5 +389,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       updatedReport
     }
+  }
+
+  def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
+    logger.debug(s"Report ${reportId} - the consumer give a review on response")
+    eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        Some(reportId),
+        None,
+        Some(OffsetDateTime.now()),
+        EventType.CONSO,
+        ActionEvent.REVIEW_ON_REPORT_RESPONSE,
+        stringToDetailsJsValue(
+          s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+            s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
+        )
+      )
+    )
   }
 }

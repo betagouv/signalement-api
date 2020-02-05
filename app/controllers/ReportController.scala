@@ -16,10 +16,10 @@ import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType
+import utils.Constants.{ActionEvent, EventType}
+import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.SIRET
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -114,6 +114,22 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           .getOrElse(NotFound)
         }
       )
+  }
+
+  def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
+    request.body.validate[ReviewOnReportResponse].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      review => for {
+          events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
+          result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
+            Future(Forbidden)
+          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
+            Future(Conflict)
+          } else {
+            reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
+          }
+        } yield result
+    )
   }
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
