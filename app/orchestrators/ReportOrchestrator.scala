@@ -5,7 +5,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import play.api.{Configuration, Environment, Logger}
-import play.api.libs.mailer.AttachmentFile
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -37,15 +36,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(company)
       _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
                         accessTokenRepository.createToken(
-                          company, AccessLevel.ADMIN,
-                          f"${Random.nextInt(1000000)}%06d", tokenDuration
+                          TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
+                          Some(company), Some(AccessLevel.ADMIN)
                         )
                        )
     } yield token.token
@@ -57,10 +55,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           from = mailFrom,
           recipients = admins.map(_.email): _*)(
           subject = "Nouveau signalement",
-          bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-          )
+          bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
         val user = admins.head     // We must chose one as Event links to a single User
         eventRepository.createEvent(
@@ -109,10 +104,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           from = mailFrom,
           recipients = report.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-          )
+          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString
         )
         if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
@@ -271,10 +263,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       from = mailFrom,
       recipients = report.email)(
       subject = "Votre signalement",
-      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
+      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString
     )
     for {
       event <- eventRepository.createEvent(
@@ -298,10 +287,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         from = mailFrom,
         recipients = email)(
         subject = "Votre réponse au signalement",
-        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
     mailerService.sendEmail(
@@ -312,10 +298,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         report,
         reportResponse,
         s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
-      ).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
+      ).toString
     )
     mailerService.sendEmail(
       from = mailFrom,

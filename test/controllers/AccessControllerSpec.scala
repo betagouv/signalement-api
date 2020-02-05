@@ -180,6 +180,7 @@ The invitation workflow should
     contentAsJson(result) must beEqualTo(
       Json.obj(
         "token" -> invitationToken.token,
+        "kind" -> "COMPANY_JOIN",
         "companySiret" -> company.siret,
         "emailedTo" -> invitedEmail
       )
@@ -211,7 +212,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
 
   def e2 = {
     token = Await.result(
-      accessTokenRepository.createToken(newCompany, AccessLevel.ADMIN, "123456", None, None),
+      accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany), Some(AccessLevel.ADMIN), None),
       Duration.Inf
     )
     token must haveClass [AccessToken]

@@ -17,7 +17,6 @@ import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, Writes}
-import play.api.libs.mailer.{Attachment, AttachmentFile}
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
@@ -113,18 +112,6 @@ trait CreateEventContext extends Mockito {
     reportUUID, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Fixtures.genSiret.sample, OffsetDateTime.now(),
     "firstName", "lastName", EmailAddress("toto@example.com"), true, false, A_TRAITER
   )
-
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
-    there was one(application.injector.instanceOf[MailerService])
-      .sendEmail(
-        EmailAddress(application.configuration.get[String]("play.mail.from")),
-        recipient
-      )(
-        subject,
-        bodyHtml,
-        attachments
-      )
-  }
 
   def mailMustNotHaveBeenSent() = {
     there was no(application.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)

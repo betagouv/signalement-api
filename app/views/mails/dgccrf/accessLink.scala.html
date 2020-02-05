@@ -1,0 +1,22 @@
+@(invitationUrl: String)
+
+@views.html.mails.layout("Accédez à SignalConso") {
+    <p>
+        Bonjour,
+    </p>
+
+    <p>
+        Vous avez été invité à accéder à l'interface DGCCRF sur SignalConso.
+        <br/>Afin de procéder, veuillez suivre le lien sécurisé ci-dessous :
+    </p>
+
+    <p style="text-align: center;">
+        <a href="@invitationUrl">Finaliser mon inscription</a>
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

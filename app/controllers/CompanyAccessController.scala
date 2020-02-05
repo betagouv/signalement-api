@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 import java.util.UUID
 import repositories._
 import models._
-import orchestrators.CompanyAccessOrchestrator
+import orchestrators.AccessesOrchestrator
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
@@ -17,7 +17,7 @@ class CompanyAccessController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val accessTokenRepository: AccessTokenRepository,
-                                val companyAccessOrchestrator: CompanyAccessOrchestrator,
+                                val accessesOrchestrator: AccessesOrchestrator,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
@@ -71,7 +71,7 @@ class CompanyAccessController @Inject()(
     implicit val reads = Json.reads[AccessInvitation]
     request.body.validate[AccessInvitation].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      invitation => companyAccessOrchestrator
+      invitation => accessesOrchestrator
                     .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
                     .map(_ => Ok)
     )
@@ -83,7 +83,7 @@ class CompanyAccessController @Inject()(
     } yield Ok(Json.toJson(tokens.map(token =>
       Json.obj(
           "id"              -> token.id.toString,
-          "level"           -> token.level.value,
+          "level"           -> token.companyLevel.get.value,
           "emailedTo"       -> token.emailedTo,
           "expirationDate"  -> token.expirationDate
       )
@@ -103,7 +103,7 @@ class CompanyAccessController @Inject()(
       token   <- company.map(accessTokenRepository.findToken(_, token))
                         .getOrElse(Future(None))
     } yield token.flatMap(t => company.map(c => 
-      Ok(Json.toJson(TokenInfo(t.token, c.siret, t.emailedTo)))
+      Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))
     )).getOrElse(NotFound)
   }
 
@@ -128,7 +128,7 @@ class CompanyAccessController @Inject()(
                       .getOrElse(Future(None))
           applied <- token.map(t =>
                       accessTokenRepository
-                      .applyToken(t, request.identity)
+                      .applyCompanyToken(t, request.identity)
                     ).getOrElse(Future(false))
         } yield if (applied) Ok else NotFound
     )

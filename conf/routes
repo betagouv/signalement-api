@@ -67,10 +67,12 @@ DELETE      /api/accesses/:siret/token/:tokenId         controllers.CompanyAcces
 POST        /api/accesses/:siret/invitation             controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
+GET         /api/account/token                          controllers.AccountController.fetchTokenInfo(token: String)
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 POST        /api/account/document/activation            controllers.AccountController.getActivationDocumentForReportList()
+POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

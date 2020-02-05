@@ -10,7 +10,6 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
 import utils.AppSpec
@@ -33,7 +32,7 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(14)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(14)).toString)}
     """
 }
 
@@ -59,7 +58,7 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(7)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(7)).toString)}
     """
 }
 
@@ -86,7 +85,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.CONSULTE_IGNORE)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_CONSULTE_IGNORE)}
-         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"Le professionnel n’a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"Le professionnel n’a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString)}
    """
 }
 
@@ -144,16 +143,12 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(
-        subject,
-        bodyHtml,
-        attachments
-      )
+      )(subject, bodyHtml)
   }
 
   def mailMustNotHaveBeenSent() = {
