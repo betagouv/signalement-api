@@ -110,6 +110,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
         bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
       )
+      logger.debug(s"User ${user.id} may now access company ${company.id}")
       ()
     }
 
@@ -138,6 +139,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         subject = s"Rejoignez l'entreprise ${company.name} sur SignalConso",
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
+      logger.debug(s"Token sent to ${email} for company ${company.id}")
       Unit
     })
 

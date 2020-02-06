@@ -41,9 +41,6 @@ class AccountController @Inject()(
   val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
-
-    logger.debug("changePassword")
-
     request.body.validate[PasswordChange].fold(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
@@ -64,9 +61,6 @@ class AccountController @Inject()(
   }
 
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
-
-    logger.debug("activateAccount")
-
     request.body.validate[ActivationRequest].fold(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
@@ -151,9 +145,6 @@ class AccountController @Inject()(
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       result => {
-
-        logger.debug(s"getActivationDocumentForReportList ${result.reportIds}")
-
         for {
           reports <- reportRepository.getReportsByIds(result.reportIds).map(_.filter(_.status == A_TRAITER))
           reportEventsMap <- eventRepository.prefetchReportsEvents(reports)
