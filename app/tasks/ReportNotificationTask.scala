@@ -87,9 +87,6 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   }
 
   private def getMailForDepartment(department: String): Future[List[EmailAddress]] = {
-
-    logger.debug(s"getMailForDepartment ${department}")
-
     subscriptionRepository.listSubscribeUserMailsForDepartment(department).map(
       (userMails: List[EmailAddress]) => {
         logger.debug(s"getMailForDepartment ${department} : ${userMails}")

@@ -22,7 +22,6 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val cl
     update(loginInfo, authInfo)
 
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = {
-    logger.debug(s"find $loginInfo")
     userRepository.findByLogin(loginInfo).map {
       case Some(user) => Some(user.password)
       case _ => None

@@ -21,9 +21,6 @@ class RatingController @Inject()(ratingRepository: RatingRepository,
   val logger: Logger = Logger(this.getClass)
 
   def rate = UserAwareAction.async(parse.json) { implicit request =>
-
-    logger.debug("rate")
-
     request.body.validate[Rating].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       rating => {
