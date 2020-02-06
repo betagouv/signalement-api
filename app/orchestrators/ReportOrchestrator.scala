@@ -1,23 +1,23 @@
 package orchestrators
 
-import javax.inject.Inject
 import java.time.OffsetDateTime
 import java.util.UUID
 
+import javax.inject.Inject
+import models.Event._
+import models.ReportResponse._
+import models._
+import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
+import repositories._
+import services.{MailerService, S3Service}
+import utils.Constants.ActionEvent._
+import utils.Constants.ReportStatus._
+import utils.Constants.{ActionEvent, EventType}
+import utils.{Constants, EmailAddress}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-import models._
-import models.Event._
-import models.ReportResponse._
-import play.api.libs.json.{Json, OFormat}
-import repositories._
-import services.{MailerService, S3Service}
-import utils.{Constants, EmailAddress}
-import utils.Constants.ActionEvent._
-import utils.Constants.{ActionEvent, EventType}
-import utils.Constants.ReportStatus._
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
@@ -104,7 +104,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           from = mailFrom,
           recipients = report.email)(
           subject = "Votre signalement",
-          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString
+          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+          mailerService.attachmentSeqForWorkflowStepN(2)
         )
         if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
@@ -262,8 +263,9 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Votre signalement",
-      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString
+      subject = "L'entreprise a pris connaissance de votre signalement",
+      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
+      mailerService.attachmentSeqForWorkflowStepN(3)
     )
     for {
       event <- eventRepository.createEvent(
@@ -298,7 +300,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         report,
         reportResponse,
         s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
-      ).toString
+      ).toString,
+      mailerService.attachmentSeqForWorkflowStepN(4)
     )
     mailerService.sendEmail(
       from = mailFrom,

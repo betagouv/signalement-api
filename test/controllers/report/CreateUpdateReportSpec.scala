@@ -1,6 +1,5 @@
 package controllers.report
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.google.inject.AbstractModule
@@ -12,21 +11,18 @@ import models._
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json
+import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories._
 import services.MailerService
-import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, ReportStatus}
+import utils.{AppSpec, EmailAddress, Fixtures}
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import ExecutionContext.Implicits.global
+import scala.concurrent.{Await, ExecutionContext}
 
 object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
   override def is =
@@ -36,7 +32,7 @@ object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "NA"              ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
@@ -48,7 +44,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
          And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 
@@ -61,7 +57,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpda
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 
@@ -74,7 +70,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
          And create an event "CONTACT_EMAIL"                            ${eventMustHaveBeenCreatedWithAction(ActionEvent.CONTACT_EMAIL)}
          And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString)}
     """
@@ -126,15 +122,13 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
 
 trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatchers {
 
-  import org.specs2.matcher.MatchersImplicits._
-  import org.mockito.ArgumentMatchers.{eq => eqTo, _}
-
   implicit val ec = ExecutionContext.global
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val mailerService = app.injector.instanceOf[MailerService]
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
@@ -204,12 +198,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     dbReport.get must beEqualTo(reportData)
   }
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String) = {
-    there was one(app.injector.instanceOf[MailerService])
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+    there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(subject, bodyHtml)
+      )(subject, bodyHtml, attachments)
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {

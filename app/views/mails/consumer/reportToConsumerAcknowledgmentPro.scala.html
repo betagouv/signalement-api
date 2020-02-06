@@ -8,32 +8,39 @@
     </p>
 
     <p>
-        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
+        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l'entreprise (SIRET : @report.companySiret) :
     </p>
 
     <p style="text-align: center;">
     @views.html.fragments.address(report.companyAddress)
     </p>
 
-    <p>L'entreprise a répondu à votre signalement !</p>
+    <p>
+        <b>L'entreprise a répondu à votre signalement.</b>
+    </p>
 
     <p>Voici sa réponse :</p>
 
     <p>
-        "@reportResponse.consumerDetails"
+        <i>"@reportResponse.consumerDetails"</i>
     </p>
 
     <p>
-        Nous vous remercions d'avoir fait un signalement sur SignalConso.
+        <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
+        <br/>
+        Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
     </p>
 
     <p>
-        Vous pouvez, si vous le souhaitez, <a href="@reviewUrl" target="_blank">faire un retour à la DGCCRF</a> concernant la réponse de l'entreprise.
+        <b>Sachez que, malgré la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider faire un contrôle,
+            en fonction des informations que vous avez transmis.</b>
     </p>
 
     <p>
-        Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites
-        un nouveau signalement.
+        <b>Vous souhaitez attendre de voir si la situation s'améliore ?</b>
+        <br/>
+        N'hésitez pas à refaire un nouveau signalement si vous constatez que le problème n'a pas été corrigé.
+        La répression des fraudes sera ainsi mieux au courant de la situation.
     </p>
 
     <p>À bientôt sur SignalConso !</p>
@@ -47,4 +54,16 @@
             <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
         </a>
     </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+            Comprendre SignalConso
+        </div>
+        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+    </div>
 }
