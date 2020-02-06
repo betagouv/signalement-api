@@ -10,7 +10,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.Event._
 import models._
-import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
@@ -177,7 +176,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         recipients = report.email)(
         subject = "L'entreprise n'a pas souhaité consulter votre signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        Seq(AttachmentFile("schemaSignalConso-Etape3.png", environment.getFile("/appfiles/schemaSignalConso-Etape3.png"), contentId = Some("schemaSignalConso-Etape3")))
+        mailerService.attachmentSeqForWorkflowStepN(3)
       )
       Reminder(report.id, ReminderValue.CloseOnGoingReportByNoReadingForUserWithEmail)
     }
@@ -192,7 +191,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = report.email)(subject = "L'entreprise n'a pas répondu au signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        Seq(AttachmentFile("schemaSignalConso-Etape4.png", environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4")))
+        mailerService.attachmentSeqForWorkflowStepN(4)
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }

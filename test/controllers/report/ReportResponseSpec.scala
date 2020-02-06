@@ -13,19 +13,17 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.libs.json.Json
-import play.api.libs.mailer.{Attachment, AttachmentFile}
+import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
 import services.MailerService
-import utils.AppSpec
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS}
-import utils.Constants.{ActionEvent, Departments, ReportStatus}
+import utils.Constants.{ActionEvent, ReportStatus}
+import utils.{AppSpec, EmailAddress, Fixtures}
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -58,7 +56,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString, Seq(AttachmentFile("schemaSignalConso-Etape4.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4"))))}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString)}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseAccepted).toString)}
     """
@@ -72,7 +70,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
         And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_INFONDE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString, Seq(AttachmentFile("schemaSignalConso-Etape4.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4"))))}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString)}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseRejected).toString)}
     """
@@ -86,7 +84,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         Then an event "REPONSE_PRO_SIGNALEMENT" is created                       ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPONSE_PRO_SIGNALEMENT)}
         And an event "EMAIL_REPONSE_PRO" is created                              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_REPONSE_PRO)}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_MAL_ATTRIBUE)}
-        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl).toString, Seq(AttachmentFile("schemaSignalConso-Etape4.png", app.environment.getFile("/appfiles/schemaSignalConso-Etape4.png"), contentId = Some("schemaSignalConso-Etape4"))))}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString)}
         And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseNotConcerned).toString)}
     """
@@ -94,13 +92,12 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  import org.specs2.matcher.MatchersImplicits._
-
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val mailerService = app.injector.instanceOf[MailerService]
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
@@ -172,7 +169,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
-    there was one(app.injector.instanceOf[MailerService])
+    there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
