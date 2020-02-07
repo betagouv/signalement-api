@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.Event._
 import models._
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
@@ -32,12 +32,13 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                              s3Service: S3Service,
                              val silhouette: Silhouette[AuthEnv],
                              val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                             configuration: Configuration,
-                             environment: Environment)
+                             configuration: Configuration)
                             (implicit val executionContext: ExecutionContext) {
 
 
   val logger: Logger = Logger(this.getClass)
+
+  implicit val websiteUrl = configuration.get[String]("play.website.url")
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours

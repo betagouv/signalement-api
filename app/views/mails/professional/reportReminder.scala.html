@@ -1,4 +1,4 @@
-@(report: Report, expirationDate: java.time.OffsetDateTime)
+@(report: Report, expirationDate: java.time.OffsetDateTime)(implicit websiteUrl: String)
 
 @views.html.mails.layout(s"Nouveau signalement") {
     <p>
@@ -16,7 +16,7 @@
     <p><strong>Vous n’avez pas encore pris connaissance de ce signalement.</strong></p>
 
     <p>
-        Pour le consulter, il vous suffit de vous connecter sur votre <a href="https://signalconso.beta.gouv.fr/connexion">Espace Professionnel</a>
+        Pour le consulter, il vous suffit de vous connecter sur votre <a href="@websiteUrl/connexion">Espace Professionnel</a>
         à l'aide de votre adresse e-mail et du mot de passe que vous avez créé à votre première connexion sur SignalConso.
     </p>
 

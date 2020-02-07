@@ -31,6 +31,8 @@ class AuthController @Inject()(
 
   val logger: Logger = Logger(this.getClass())
 
+  implicit val websiteUrl = configuration.get[String]("play.website.url")
+
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
 
     request.body.validate[UserLogin].fold(
@@ -68,7 +70,7 @@ class AuthController @Inject()(
             for {
               _ <- authTokenRepository.deleteForUserId(user.id)
               authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
-              _ <- sendResetPasswordMail(user, s"${configuration.get[String]("play.website.url")}/connexion/nouveau-mot-de-passe/${authToken.id}")
+              _ <- sendResetPasswordMail(user, authToken)
             } yield {
               Ok
             }
@@ -78,12 +80,12 @@ class AuthController @Inject()(
   }
 
 
-  private def sendResetPasswordMail(user: User, url: String) = {
+  private def sendResetPasswordMail(user: User, authToken: AuthToken) = {
     mailerService.sendEmail(
       from = configuration.get[EmailAddress]("play.mail.from"),
       recipients = user.email)(
       subject = "Votre mot de passe SignalConso",
-      bodyHtml = views.html.mails.resetPassword(user, url).toString
+      bodyHtml = views.html.mails.resetPassword(user, authToken).toString
     )
     logger.debug(s"Sent password reset to ${user.email}")
     Future(Unit)

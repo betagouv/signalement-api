@@ -4,7 +4,7 @@ import java.util.UUID
 
 import javax.inject.Inject
 import models._
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import repositories._
 import services.MailerService
 import java.util.UUID
@@ -16,8 +16,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
-                                   configuration: Configuration,
-                                   environment: Environment)
+                                   configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
