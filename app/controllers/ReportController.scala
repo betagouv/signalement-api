@@ -16,10 +16,10 @@ import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType
+import utils.Constants.{ActionEvent, EventType}
+import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.SIRET
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -48,9 +48,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       .getOrElse(Future(AccessLevel.NONE))
 
   def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-
-    logger.debug("createEvent")
-
     request.body.validate[Event].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       event => {
@@ -65,8 +62,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
-    logger.debug("createReport")
-
     request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
@@ -74,9 +69,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
-
-    logger.debug("updateReportCompany")
-
     request.body.validate[ReportCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportCompany => reportOrchestrator.updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id).map{
@@ -87,9 +79,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def updateReportConsumer(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
-
-    logger.debug("updateReportConsumer")
-
     request.body.validate[ReportConsumer].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportConsumer => reportOrchestrator.updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id).map{
@@ -116,9 +105,23 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       )
   }
 
-  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
-    logger.debug("uploadReportFile")
+  def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
+    request.body.validate[ReviewOnReportResponse].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      review => for {
+          events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
+          result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
+            Future(Forbidden)
+          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
+            Future(Conflict)
+          } else {
+            reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
+          }
+        } yield result
+    )
+  }
 
+  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     val maybeUploadResult =
       request.body.file("reportFile").map {
         case FilePart(key, filename, contentType, multipartUploadResult, _, _) =>
@@ -154,7 +157,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
-    logger.debug("deleteReportFile")
     val uuid = UUID.fromString(id)
     reportRepository.getFile(uuid).flatMap(_ match {
       case Some(file) if file.filename == filename =>
@@ -170,9 +172,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-
-    logger.debug("getReport")
-
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
@@ -206,9 +205,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-
-    logger.debug("getEvents")
-
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
       case None => EventFilter()
@@ -235,8 +231,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
-    logger.debug(s"getNbReportsGroupByCompany")
-
     implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
     // valeurs par défaut

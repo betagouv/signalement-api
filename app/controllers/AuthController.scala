@@ -10,7 +10,6 @@ import javax.inject.{Inject, Singleton}
 import models.{AuthToken, User, UserLogin}
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
-import play.api.libs.mailer.AttachmentFile
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
@@ -39,7 +38,6 @@ class AuthController @Inject()(
       err => Future(BadRequest),
       data => {
         credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
-          logger.debug("loginInfo");
           userService.retrieve(loginInfo).flatMap {
             case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
               silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -48,7 +46,6 @@ class AuthController @Inject()(
               }
             }
             case None => {
-              logger.debug("None");
               Future(Unauthorized)
             }
           }
@@ -64,9 +61,6 @@ class AuthController @Inject()(
 
 
   def forgotPassword = UnsecuredAction.async(parse.json) { implicit request =>
-
-    logger.debug("forgotPassword")
-
     request.body.validate[String]((JsPath \ "login").read[String]).fold(
       err => Future(BadRequest),
       login =>
@@ -86,16 +80,14 @@ class AuthController @Inject()(
 
 
   private def sendResetPasswordMail(user: User, url: String) = {
-    logger.debug(s"email ${user.email}")
-    Future(mailerService.sendEmail(
+    mailerService.sendEmail(
       from = configuration.get[EmailAddress]("play.mail.from"),
       recipients = user.email)(
       subject = "Votre mot de passe SignalConso",
-      bodyHtml = views.html.mails.resetPassword(user, url).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
-    ))
+      bodyHtml = views.html.mails.resetPassword(user, url).toString
+    )
+    logger.debug(s"Sent password reset to ${user.email}")
+    Future(Unit)
   }
 
   def resetPassword(token: UUID) = UnsecuredAction.async(parse.json) { implicit request =>

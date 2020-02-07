@@ -6,7 +6,6 @@ import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime}
 import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.Report
-import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
 import services.MailerService
@@ -82,18 +81,12 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
             case n => s"${reports.length} nouveaux signalements"
           }
         } pour le département ${department}",
-        bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString
       ))
     })
   }
 
   private def getMailForDepartment(department: String): Future[List[EmailAddress]] = {
-
-    logger.debug(s"getMailForDepartment ${department}")
-
     subscriptionRepository.listSubscribeUserMailsForDepartment(department).map(
       (userMails: List[EmailAddress]) => {
         logger.debug(s"getMailForDepartment ${department} : ${userMails}")

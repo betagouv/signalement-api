@@ -17,9 +17,6 @@ class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthE
   val logger: Logger = Logger(this.getClass)
 
   def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UnsecuredAction.async { implicit request =>
-
-    logger.debug(s"getCompanies [$search, $postalCode, $maxCount]")
-
     var request = ws
       .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$search")
       .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")

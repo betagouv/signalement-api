@@ -2,88 +2,72 @@
 
 @import utils.Constants.ReportStatus._
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Votre réponse au signalement</title>
-    </head>
-    <body>
-        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
-            <div style="text-align: center; margin: 30px auto 50px">
-                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
-                <br>
-            </div>
-            <p>
-                Bonjour @user.firstName @user.lastName,
-            </p>
-            @reportResponse.responseType match {
-                case ReportResponseType.ACCEPTED => {
-                    <p>Vous venez de faire une promesse d’action et nous vous en félicitons !</p>
+@views.html.mails.layout(s"Votre réponse au signalement") {
+    <p>
+        Bonjour @user.firstName @user.lastName,
+    </p>
+    @reportResponse.responseType match {
+        case ReportResponseType.ACCEPTED => {
+            <p>Vous venez de faire une promesse d’action et nous vous en félicitons !</p>
 
-                    <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
-
-                    <p>
-                        "@reportResponse.consumerDetails"
-                    </p>
-
-                    <p>
-                        Votre coopération est également visible par la DGCCRF et s’inscrit dans la relation de transparence
-                        et d’efficacité avec l’administration.
-                    </p>
-
-                }
-                case ReportResponseType.REJECTED => {
-                    <p>
-                        Vous estimez que le signalement est infondé.
-                    </p>
-
-                    <p>
-                        Nous avons informé le consommateur ; il visualisera votre réponse :
-                    </p>
-
-                    <p>
-                        "@reportResponse.consumerDetails"
-                    </p>
-
-                    <p>
-                        Nous vous remercions d'avoir traité le signalement !
-                    </p>
-
-                }
-                case ReportResponseType.NOT_CONCERNED => {
-                    <p>
-                        Vous estimez que le signalement ne concerne pas votre établissement.
-                    </p>
-
-                    <p>
-                        Nous avons informé le consommateur ; il visualisera votre réponse :
-                    </p>
-
-                    <p>
-                        "@reportResponse.consumerDetails"
-                    </p>
-
-                    <p>
-                        Nous vous remercions d'avoir traité le signalement !
-                    </p>
-
-                }
-            }
+            <p>Nous en avons informé le consommateur qui visualisera votre réponse :</p>
 
             <p>
-                Par ailleurs, nous vous rappelons que seuls les constats effectués par les enquêteurs de la DGCCRF
-                peuvent donner suite à des poursuites.
+                "@reportResponse.consumerDetails"
             </p>
-
-            <p>Cordialement,</p>
 
             <p>
-                <i>L'équipe SignalConso</i>
+                Votre coopération est également visible par la DGCCRF et s’inscrit dans la relation de transparence
+                et d’efficacité avec l’administration.
             </p>
 
-            <br />
+        }
+        case ReportResponseType.REJECTED => {
+            <p>
+                Vous estimez que le signalement est infondé.
+            </p>
 
-        </div>
-    </body>
-</html>
+            <p>
+                Nous avons informé le consommateur ; il visualisera votre réponse :
+            </p>
+
+            <p>
+                "@reportResponse.consumerDetails"
+            </p>
+
+            <p>
+                Nous vous remercions d'avoir traité le signalement !
+            </p>
+
+        }
+        case ReportResponseType.NOT_CONCERNED => {
+            <p>
+                Vous estimez que le signalement ne concerne pas votre entreprise.
+            </p>
+
+            <p>
+                Nous avons informé le consommateur ; il visualisera votre réponse :
+            </p>
+
+            <p>
+                "@reportResponse.consumerDetails"
+            </p>
+
+            <p>
+                Nous vous remercions d'avoir traité le signalement !
+            </p>
+
+        }
+    }
+
+    <p>
+        Par ailleurs, nous vous rappelons que seuls les constats effectués par les enquêteurs de la DGCCRF
+        peuvent donner suite à des poursuites.
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

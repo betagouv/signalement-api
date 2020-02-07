@@ -1,27 +1,15 @@
 package tasks
 
 import java.time.temporal.ChronoUnit
-import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
-import java.util.UUID
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import akka.actor.ActorSystem
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import models.Event._
-import models._
-import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
-import repositories.{EventRepository, ReportDataRepository, ReportRepository, UserRepository}
-import services.{MailerService, S3Service}
-import utils.Constants.ActionEvent._
-import utils.Constants.EventType.PRO
-import utils.Constants.ReportStatus._
-import utils.EmailAddress
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
+import repositories.ReportDataRepository
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 
 class ReportDataTask @Inject()(actorSystem: ActorSystem,

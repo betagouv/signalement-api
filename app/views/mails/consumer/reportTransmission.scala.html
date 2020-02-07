@@ -1,46 +1,49 @@
 @(report: Report)
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Votre signalement</title>
-    </head>
-    <body>
-        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
-            <div style="text-align: center; margin: 30px auto 50px">
-                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
-                <br>
-            </div>
+@views.html.mails.layout("L'entreprise a pris connaissance de votre signalement") {
+    <p>
+        Bonjour @report.firstName @report.lastName,
+    </p>
 
-            <p>
-                Bonjour @report.firstName @report.lastName,
-            </p>
+    <p>
+        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b> concernant l'entreprise (SIRET : @report.companySiret) :
+    </p>
 
-            <p>
-                Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
-            </p>
+    <p style="text-align: center;">
+        <b>@views.html.fragments.address(report.companyAddress)</b>
+    </p>
 
-            <p style="text-align: center;">
-                @views.html.fragments.address(report.companyAddress)
-            </p>
+    <p>
+        L'entreprise a pris connaissance de votre signalement aujourd'hui.
+    </p>
 
-            <p>
-                Le commerçant a pris connaissance de votre signalement aujourd’hui. Si le commerçant nous indique avoir corrigé le problème, nous vous tiendrons au courant par email.
-            </p>
+    <p>
+        Si elle propose une solution ou corrige le problème, vous recevrez un email.
+    </p>
 
-            <p>A bientôt sur SignalConso !</p>
+    <p>
+        Pour information, les enquêteurs de la répression des fraudes ont également bien reçu votre signalement.
+    </p>
 
-            <p>
-                <i>L'équipe SignalConso</i>
-            </p>
+    <p>A bientôt sur SignalConso !</p>
 
-            <p style="text-align: center; margin: 30px">
-                <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
-                    <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
-                </a>
-            </p>
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
 
-        </div>
-    </body>
-</html>
+    <p style="text-align: center; margin: 30px">
+        <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
+            <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
+        </a>
+    </p>
+
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">Comprendre SignalConso</div>
+        <img src="cid:schemaSignalConso-Etape3" style="max-width: 100%"/>
+    </div>
+}

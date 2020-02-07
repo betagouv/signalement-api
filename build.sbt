@@ -9,7 +9,7 @@ lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion        = "4.0.2"
 val slickPgVersion          = "0.18.1"
-val playMailerVersion       = "7.0.1"
+val playMailerVersion       = "8.0.0"
 val playSilhouetteVersion   = "6.1.1"
 
 libraryDependencies ++= Seq(
@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "1.1.2",
-  "com.amazonaws" % "aws-java-sdk-s3" % "1.11.714",
+  "com.amazonaws" % "aws-java-sdk-s3" % "1.11.716",
 
   "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-password-bcrypt" % playSilhouetteVersion,
@@ -43,10 +43,10 @@ libraryDependencies ++= Seq(
   "com.itextpdf" % "html2pdf" % "2.1.6",
 
   specs2 % Test,
-  "org.specs2" %% "specs2-matcher-extra" % "4.8.1" % Test,
+  "org.specs2" %% "specs2-matcher-extra" % "4.8.3" % Test,
   "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
 
-  "io.sentry" % "sentry-logback" % "1.7.29",
+  "io.sentry" % "sentry-logback" % "1.7.30",
 )
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"

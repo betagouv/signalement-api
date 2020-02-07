@@ -10,7 +10,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models.Event._
 import models._
-import play.api.libs.mailer.AttachmentFile
 import play.api.{Configuration, Environment, Logger}
 import repositories.{EventRepository, ReportRepository, UserRepository}
 import services.{MailerService, S3Service}
@@ -154,10 +153,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = adminMails: _*)(
         subject = "Nouveau signalement",
-        bodyHtml = views.html.mails.professional.reportReminder(report, expirationDate).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.professional.reportReminder(report, expirationDate).toString
       )
       Reminder(report.id, ReminderValue.RemindReportByMail)
     }
@@ -178,11 +174,9 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = report.email)(
-        subject = "Le professionnel n’a pas souhaité consulter votre signalement",
+        subject = "L'entreprise n'a pas souhaité consulter votre signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        mailerService.attachmentSeqForWorkflowStepN(3)
       )
       Reminder(report.id, ReminderValue.CloseOnGoingReportByNoReadingForUserWithEmail)
     }
@@ -195,11 +189,9 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     } yield {
       mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = report.email)(subject = "Le professionnel n’a pas répondu au signalement",
+        recipients = report.email)(subject = "L'entreprise n'a pas répondu au signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        mailerService.attachmentSeqForWorkflowStepN(4)
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }

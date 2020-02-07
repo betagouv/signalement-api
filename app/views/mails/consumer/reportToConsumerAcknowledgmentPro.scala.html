@@ -1,62 +1,69 @@
-@(report: Report, reportResponse: ReportResponse)
+@(report: Report, reportResponse: ReportResponse, reviewUrl: String)
 
 @import utils.Constants.ReportStatus._
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Votre réponse au signalement</title>
-    </head>
-    <body>
-        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
-            <div style="text-align: center; margin: 30px auto 50px">
-                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
-                <br>
-            </div>
-            <p>
-                Bonjour @report.firstName @report.lastName,
-            </p>
+@views.html.mails.layout("L'entreprise a répondu à votre signalement") {
+    <p>
+        Bonjour @report.firstName @report.lastName,
+    </p>
 
-            <p>
-                Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l’établissement (SIRET : @report.companySiret) :
-            </p>
+    <p>
+        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l'entreprise (SIRET : @report.companySiret) :
+    </p>
 
-            <p style="text-align: center;">
-                @views.html.fragments.address(report.companyAddress)
-            </p>
+    <p style="text-align: center;">
+    @views.html.fragments.address(report.companyAddress)
+    </p>
 
-            <p>Le professionnel a répondu à votre signalement !</p>
+    <p>
+        <b>L'entreprise a répondu à votre signalement.</b>
+    </p>
 
-            <p>Voici sa réponse :</p>
+    <p>Voici sa réponse :</p>
 
-            <p>
-                "@reportResponse.consumerDetails"
-            </p>
+    <p>
+        <i>"@reportResponse.consumerDetails"</i>
+    </p>
 
-            <p>
-                Nous vous remercions d'avoir fait un signalement sur SignalConso.
-            </p>
+    <p>
+        <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
+        <br/>
+        Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
+    </p>
 
-            <p>
-                Si vous retournez dans cet établissement et vous constatez que le problème n’a pas été corrigé, faites
-                un nouveau signalement.
-            </p>
+    <p>
+        <b>Sachez que, malgré la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider faire un contrôle,
+            en fonction des informations que vous avez transmis.</b>
+    </p>
 
-            <p>À bientôt sur SignalConso !</p>
+    <p>
+        <b>Vous souhaitez attendre de voir si la situation s'améliore ?</b>
+        <br/>
+        N'hésitez pas à refaire un nouveau signalement si vous constatez que le problème n'a pas été corrigé.
+        La répression des fraudes sera ainsi mieux au courant de la situation.
+    </p>
 
-            <p>
-                <i>L'équipe SignalConso</i>
-            </p>
+    <p>À bientôt sur SignalConso !</p>
 
-            <p style="text-align: center; margin: 30px">
-                <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
-                    <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
-                </a>
-            </p>
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
 
-            <br />
+    <p style="text-align: center; margin: 30px">
+        <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
+            <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
+        </a>
+    </p>
 
+    <div style="padding-bottom: 0.5em">
+        <div style="font-weight: bold;
+            text-align: center;
+            border-top: 1px solid #D3D3D3;
+            border-bottom: 1px solid #D3D3D3;
+            padding: 10px 0;
+            margin: 10px">
+            Comprendre SignalConso
         </div>
-    </body>
-</html>
+        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+    </div>
+}

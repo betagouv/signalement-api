@@ -1,37 +1,22 @@
 @(invitationUrl: String)
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Accédez à SignalConso</title>
-    </head>
-    <body>
-        <div style="margin: 0 auto; max-width: 650px; width: 100%; padding: 1em; font-size: 16px">
-            <div style="text-align: center; margin: 30px auto 50px">
-                <img src="cid:logo" style="max-width: 400px; vertical-align: middle"/>
-                <br>
-            </div>
+@views.html.mails.layout("Accédez à SignalConso") {
+    <p>
+        Bonjour,
+    </p>
 
-            <p>
-                Bonjour,
-            </p>
+    <p>
+        Vous avez été invité à accéder à l'interface DGCCRF sur SignalConso.
+        <br/>Afin de procéder, veuillez suivre le lien sécurisé ci-dessous :
+    </p>
 
-            <p>
-                Vous avez été invité à accéder à l'interface DGCCRF sur SignalConso.
-                Afin de procéder, veuillez suivre le lien sécurisé ci-dessous :
-            </p>
+    <p style="text-align: center;">
+        <a href="@invitationUrl">Finaliser mon inscription</a>
+    </p>
 
-            <p style="text-align: center;">
-                <a href="@invitationUrl">Finaliser mon inscription</a>
-            </p>
+    <p>Cordialement,</p>
 
-            <p>Cordialement,</p>
-
-            <p>
-                <i>L'équipe SignalConso</i>
-            </p>
-
-        </div>
-    </body>
-</html>
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

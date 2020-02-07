@@ -1,24 +1,23 @@
 package orchestrators
 
-import javax.inject.Inject
 import java.time.OffsetDateTime
 import java.util.UUID
 
+import javax.inject.Inject
+import models.Event._
+import models.ReportResponse._
+import models._
+import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
-import play.api.libs.mailer.AttachmentFile
+import repositories._
+import services.{MailerService, S3Service}
+import utils.Constants.ActionEvent._
+import utils.Constants.ReportStatus._
+import utils.Constants.{ActionEvent, EventType}
+import utils.{Constants, EmailAddress}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-import models._
-import models.Event._
-import models.ReportResponse._
-import play.api.libs.json.{Json, OFormat}
-import repositories._
-import services.{MailerService, S3Service}
-import utils.{Constants, EmailAddress}
-import utils.Constants.ActionEvent._
-import utils.Constants.{ActionEvent, EventType}
-import utils.Constants.ReportStatus._
 
 
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
@@ -56,10 +55,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           from = mailFrom,
           recipients = admins.map(_.email): _*)(
           subject = "Nouveau signalement",
-          bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-          )
+          bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
         val user = admins.head     // We must chose one as Event links to a single User
         eventRepository.createEvent(
@@ -109,14 +105,15 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           recipients = report.email)(
           subject = "Votre signalement",
           bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-          attachments = Seq(
-            AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-          )
+          mailerService.attachmentSeqForWorkflowStepN(2)
         )
         if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
-    } yield report
+    } yield {
+      logger.debug(s"Report ${report.id} created")
+      report
+    }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
@@ -269,11 +266,9 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Votre signalement",
+      subject = "L'entreprise a pris connaissance de votre signalement",
       bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
+      mailerService.attachmentSeqForWorkflowStepN(3)
     )
     for {
       event <- eventRepository.createEvent(
@@ -297,20 +292,19 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         from = mailFrom,
         recipients = email)(
         subject = "Votre réponse au signalement",
-        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString,
-        attachments = Seq(
-          AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-        )
+        bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
     mailerService.sendEmail(
       from = mailFrom,
       recipients = report.email)(
-      subject = "Le professionnel a répondu à votre signalement",
-      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponse).toString,
-      attachments = Seq(
-        AttachmentFile("logo-signal-conso.png", environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))
-      )
+      subject = "L'entreprise a répondu à votre signalement",
+      bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
+        report,
+        reportResponse,
+        s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
+      ).toString,
+      mailerService.attachmentSeqForWorkflowStepN(4)
     )
     mailerService.sendEmail(
       from = mailFrom,
@@ -401,5 +395,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       updatedReport
     }
+  }
+
+  def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
+    logger.debug(s"Report ${reportId} - the consumer give a review on response")
+    eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        Some(reportId),
+        None,
+        Some(OffsetDateTime.now()),
+        EventType.CONSO,
+        ActionEvent.REVIEW_ON_REPORT_RESPONSE,
+        stringToDetailsJsValue(
+          s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+            s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
+        )
+      )
+    )
   }
 }

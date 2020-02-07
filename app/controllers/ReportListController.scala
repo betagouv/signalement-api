@@ -156,17 +156,17 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
-        "Nom de l'établissement", leftAlignmentColumn,
+        "Nom de l'entreprise", leftAlignmentColumn,
         (report, _, _, _) => report.companyName,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
-        "Adresse de l'établissement", leftAlignmentColumn,
+        "Adresse de l'entreprise", leftAlignmentColumn,
         (report, _, _, _) => report.companyAddress,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
-        "Email de l'établissement", centerAlignmentColumn,
+        "Email de l'entreprise", centerAlignmentColumn,
         (report, _, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),

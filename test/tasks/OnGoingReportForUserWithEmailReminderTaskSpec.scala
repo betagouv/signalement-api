@@ -33,7 +33,7 @@ class RemindOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) ex
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, OffsetDateTime.now.plusDays(14)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, OffsetDateTime.now.plusDays(14)).toString)}
     """
 }
 
@@ -59,7 +59,7 @@ class RemindTwiceOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEn
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.RELANCE)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(onGoingReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, OffsetDateTime.now.plusDays(7)).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(userWithEmail.email,"Nouveau signalement", views.html.mails.professional.reportReminder(onGoingReport, OffsetDateTime.now.plusDays(7)).toString)}
     """
 }
 
@@ -86,7 +86,7 @@ class CloseOngoingReportOutOfTimeForUserWithEmail(implicit ee: ExecutionEnv) ext
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(reportUUID, ActionEvent.NON_CONSULTE)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(reportUUID, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
-         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"Le professionnel n’a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString, Seq(AttachmentFile("logo-signal-conso.png", app.environment.getFile("/appfiles/logo-signal-conso.png"), contentId = Some("logo"))))}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(onGoingReport.email,"L'entreprise n'a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(onGoingReport).toString, mailerService.attachmentSeqForWorkflowStepN(3))}
    """
 }
 
@@ -148,19 +148,15 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
 
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
-    there was one(app.injector.instanceOf[MailerService])
+    there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipient
-      )(
-        subject,
-        bodyHtml,
-        attachments
-      )
+      )(subject, bodyHtml, attachments)
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(app.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
+    there was no(mailerService).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {
@@ -193,6 +189,7 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   lazy val reminderTask = injector.instanceOf[ReminderTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val mailerService = app.injector.instanceOf[MailerService]
 
   def setupUser(user: User) = {
     Await.result(

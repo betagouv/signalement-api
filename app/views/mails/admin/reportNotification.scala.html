@@ -1,79 +1,72 @@
 @(report: Report, files: List[ReportFile])(implicit request: play.api.mvc.Request[Any])
 
-<!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Nouveau signalement</title>
-    </head>
-    <body>
-        <ul>
-            <li>
-                Catégorie : @report.category
-            </li>
-            <li>
-                Sous-catégories : @report.subcategories.map { subcategory =>
-                    <br />
-                    @subcategory
-                }
-            </li>
+@views.html.mails.layout("Nouveau signalement") {
+    <ul>
+        <li>
+            Catégorie : @report.category
+        </li>
+        <li>
+            Sous-catégories : @report.subcategories.map { subcategory =>
+            <br />
+            @subcategory
+        }
+        </li>
 
-            @report.details.map { detailInputValue =>
-                <li>
-                    @Html(detailInputValue.label) @Html(detailInputValue.value)
-                </li>
-            }
-        </ul>
-        <ul>
+        @report.details.map { detailInputValue =>
             <li>
-                Nom de l'établissement : @report.companyName
+                @Html(detailInputValue.label) @Html(detailInputValue.value)
             </li>
-            <li>
-                Adresse de l'établissement : @report.companyAddress
-            </li>
-            <li>
-                Siret : @report.companySiret
-            </li>
-        </ul>
-        <ul>
-            <li>
-                Nom : @report.lastName
-            </li>
-            <li>
-                Prénom : @report.firstName
-            </li>
-            <li>
-                Email : @report.email
-            </li>
-            <li>
-                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
-            </li>
-            <li>
-                Lanceur d'alerte : @if(report.employeeConsumer) {oui} else {non}
-            </li>
-        </ul>
-        <ul>
-            <li>
-                Identifiant technique : @report.id
-            </li>
-        </ul>
-        <ul>
-            <li>
-                @files match {
-                    case List() => { Aucune pièce jointe }
-                    case files => {
-                        Pièces jointes :
-                        <ul>
-                            @files.map { file =>
-                                <li>
-                                    <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL()">@file.filename</a>
-                                    &nbsp;(@file.id)
-                                </li>
-                            }
-                        </ul>
-                    }
+        }
+    </ul>
+    <ul>
+        <li>
+            Nom de l'entreprise : @report.companyName
+        </li>
+        <li>
+            Adresse de l'entreprise : @report.companyAddress
+        </li>
+        <li>
+            Siret : @report.companySiret
+        </li>
+    </ul>
+    <ul>
+        <li>
+            Nom : @report.lastName
+        </li>
+        <li>
+            Prénom : @report.firstName
+        </li>
+        <li>
+            Email : @report.email
+        </li>
+        <li>
+            Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+        </li>
+        <li>
+            Lanceur d'alerte : @if(report.employeeConsumer) {oui} else {non}
+        </li>
+    </ul>
+    <ul>
+        <li>
+            Identifiant technique : @report.id
+        </li>
+    </ul>
+    <ul>
+        <li>
+        @files match {
+            case List() => { Aucune pièce jointe }
+            case files => {
+                Pièces jointes :
+                <ul>
+                @files.map { file =>
+                    <li>
+                        <a href="@routes.ReportController.downloadReportFile(file.id.toString, file.filename).absoluteURL()">@file.filename</a>
+                            &nbsp;(@file.id)
+                    </li>
                 }
-            </li>
-        </ul>
-    </body>
-</html>
+                </ul>
+            }
+        }
+        </li>
+    </ul>
+}
