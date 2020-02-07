@@ -40,6 +40,8 @@ class AccountController @Inject()(
   val logger: Logger = Logger(this.getClass())
   val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
+  implicit val websiteUrl = configuration.get[String]("play.website.url")
+
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
     request.body.validate[PasswordChange].fold(
       errors => {
