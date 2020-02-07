@@ -25,6 +25,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   val logger: Logger = Logger(this.getClass())
 
   implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.start.hour"), configuration.get[Int]("play.tasks.report.start.minute"), 0)
   val startDayOfWeek = DayOfWeek.valueOf(configuration.get[String]("play.tasks.report.start.dayOfWeek"))

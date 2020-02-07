@@ -36,6 +36,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {

@@ -1,5 +1,6 @@
 @import java.time.LocalDate
-@(reports: Seq[Report], department: String, startDate: LocalDate)(implicit websiteUrl: String)
+@import utils.EmailAddress
+@(reports: Seq[Report], department: String, startDate: LocalDate)(implicit websiteUrl: String, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Signalements de la semaine") {
     <p>
@@ -63,7 +64,7 @@
     </p>
     <ul>
         <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@websiteUrl/dgccrf">@websiteUrl/dgccrf</a></li>
-        <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a></li>
+        <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:@contactAddress">@contactAddress</a></li>
     </ul>
 
     <p>
@@ -71,6 +72,6 @@
     </p>
 
     <p style="font-size: 12px; font-color:#8393a7; padding-top: 2em">
-        Ceci est un mail automatique. Si vous ne souhaitez plus le recevoir, merci de nous l'indiquer par mail à l'adresse <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a>
+        Ceci est un mail automatique. Si vous ne souhaitez plus le recevoir, merci de nous l'indiquer par mail à l'adresse <a href="mailto:@contactAddress">@contactAddress</a>
     </p>
 }

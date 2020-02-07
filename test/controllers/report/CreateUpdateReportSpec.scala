@@ -10,6 +10,7 @@ import controllers.ReportController
 import models._
 import org.specs2.Specification
 import org.specs2.matcher._
+import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
@@ -129,6 +130,9 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+
+  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[String]("play.website.url")
+  implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
 
