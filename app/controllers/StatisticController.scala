@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
 import play.api.libs.json.Json
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
@@ -23,8 +23,7 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
                                     mailerService: MailerService,
                                     s3Service: S3Service,
                                     val silhouette: Silhouette[AuthEnv],
-                                    configuration: Configuration,
-                                    environment: Environment)
+                                    configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)

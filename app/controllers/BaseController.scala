@@ -1,17 +1,14 @@
 package controllers
 
-import javax.inject.{Inject, Singleton}
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.{SecuredRequest, UserAwareRequest}
-import play.api.i18n.I18nSupport
-import play.api.mvc.InjectedController
-import play.api.mvc._
-import scala.concurrent.{ExecutionContext, Future}
-import utils.silhouette.auth.AuthEnv
-import utils.SIRET
-
 import models._
+import play.api.mvc.{InjectedController, _}
 import repositories._
+import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseController extends InjectedController {
 

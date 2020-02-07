@@ -25,7 +25,6 @@ class AuthController @Inject()(
                                 userService: UserService,
                                 mailerService: MailerService,
                                 configuration: Configuration,
-                                environment: Environment,
                                 credentialsProvider: CredentialsProvider
                               )(implicit ec: ExecutionContext)
  extends BaseController {
