@@ -6,7 +6,7 @@ import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime}
 import akka.actor.ActorSystem
 import javax.inject.Inject
 import models.Report
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
 import services.MailerService
 import utils.Constants.Departments
@@ -19,8 +19,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
                                        reportRepository: ReportRepository,
                                        subscriptionRepository: SubscriptionRepository,
                                        mailerService: MailerService,
-                                       configuration: Configuration,
-                                       environment: Environment)
+                                       configuration: Configuration)
                                       (implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
