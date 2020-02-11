@@ -246,7 +246,7 @@ object Constants {
      GrandEst ++ Guadeloupe ++ Guyane ++ HautsDeFrance ++ IleDeFrance ++ LaReunion ++ Martinique ++ Mayotte ++
       Normandie ++ NouvelleAquitaine ++ OCC ++ PaysDeLaLoire ++ ProvenceAlpesCoteAzur
 
-    val AUTHORIZED = AURA ++ CDVL ++ OCC
+    val AUTHORIZED = ALL
   }
 
 }
