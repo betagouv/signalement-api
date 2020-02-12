@@ -1,8 +1,11 @@
 package actors
 
 import akka.actor._
+import akka.stream.scaladsl.FileIO
+import akka.stream.Materializer
 import play.api.{Logger, Configuration}
 import play.api.libs.json.JsObject
+import java.nio.file.{Path, Paths}
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -17,6 +20,7 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import controllers.routes
 import models._
 import repositories._
+import services.S3Service
 import utils.Constants
 import utils.Constants.ReportStatus
 import utils.DateUtils
@@ -38,25 +42,36 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
                                     companyRepository: CompanyRepository,
                                     reportRepository: ReportRepository,
                                     eventRepository: EventRepository,
-                                    userRepository: UserRepository)
+                                    asyncFileRepository: AsyncFileRepository,
+                                    s3Service: S3Service)
+                                    (implicit val mat: Materializer)
                                   extends Actor {
   import ReportsExtractActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
   val baseUrl = configuration.get[String]("play.application.url")
+  val BucketName = configuration.get[String]("play.buckets.report")
+  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
+
   val logger: Logger = Logger(this.getClass)
   override def preStart() = {
     logger.debug("Starting")
   }
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
-    logger.error(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
+    logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   }
   override def receive = {
-    case ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) => {
-      extractReports(requestedBy, restrictToCompany, filters)
-      logger.debug(s"Built report for User ${requestedBy.id}")
-    }
-    case _ => logger.error("Could not handle request")
+    case ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) =>
+      for {
+        // FIXME: We might want to move the random name generation
+        // in a common place if we want to reuse it for other async files
+        tmpPath      <- genTmpFile(requestedBy, restrictToCompany, filters)
+        uploadResult <- saveRemotely(tmpPath, tmpPath.toString)
+        asyncFile    <- asyncFileRepository.create(requestedBy, tmpPath.getFileName.toString, tmpPath.getFileName.toString)
+      } yield {
+        logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
+      }
+    case _ => logger.debug("Could not handle request")
   }
 
   // Common layout variables
@@ -188,12 +203,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     ).filter(_.available)
   }
 
-  def extractReports(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) = {
+  def genTmpFile(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) = {
     val startDate = DateUtils.parseDate(filters.start)
     val endDate = DateUtils.parseEndDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    logger.debug(s"role ${requestedBy.userRole}")
     val reportColumns = buildColumns(requestedBy)
     val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
     for {
@@ -220,7 +234,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap   <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
     } yield {
-      val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/signalements-${Random.alphanumeric.take(12).mkString}.xlsx";
+      val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
@@ -259,9 +273,15 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           leftAlignmentColumn
         )
 
-      Workbook(reportsSheet, filtersSheet).saveAsXlsx(tmpFileName)
+      val localPath = Paths.get(tmpDirectory, targetFilename)
+      Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
+      logger.debug(s"Generated extract locally: ${localPath}")
+      localPath
     }
   }
+
+  def saveRemotely(localPath: Path, remoteName: String) =
+    s3Service.upload(BucketName, s"extracts/${remoteName}").runWith(FileIO.fromPath(localPath))
 }
 
 class ReportsExtractModule extends AbstractModule with AkkaGuiceSupport {

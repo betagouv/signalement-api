@@ -31,6 +31,15 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
 
   val AsyncFileTableQuery = TableQuery[AsyncFileTable]
 
+  def create(owner: User, filename: String, storageFilename: String): Future[AsyncFile] =
+    db.run(AsyncFileTableQuery returning AsyncFileTableQuery += AsyncFile(
+      id = UUID.randomUUID(),
+      userId = owner.id,
+      creationDate = OffsetDateTime.now,
+      filename = filename,
+      storageFilename = storageFilename
+    ))
+
   def list(user: User): Future[List[AsyncFile]] =
     db.run(AsyncFileTableQuery
       .filter(_.userId === user.id)
