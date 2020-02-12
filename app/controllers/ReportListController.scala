@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Singleton, Named}
 import actors.ReportsExtractActor
 import models._
 import models.Event._
@@ -37,13 +37,12 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                                      userRepository: UserRepository,
                                      mailerService: MailerService,
                                      s3Service: S3Service,
-                                     system: ActorSystem,
+                                     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
                                      val silhouette: Silhouette[AuthEnv],
                                      val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                      configuration: Configuration)
                                     (implicit val executionContext: ExecutionContext) extends BaseController {
 
-  val reportsExtractActor = system.actorOf(ReportsExtractActor.props, "reports-extract-actor")
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
@@ -120,11 +119,6 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                      category: Option[String],
                      status: Option[String],
                      details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-
-    val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseEndDate(end)
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
     for {
       restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
                               fetchCompany(request.identity, siret).map(Some(_))
@@ -134,20 +128,10 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       logger.debug(s"Requesting report for user ${request.identity.email}")
       reportsExtractActor ! ReportsExtractActor.ExtractRequest(
         request.identity,
-        ReportFilter(
-          departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-          None,
-          restrictToCompany.map(c => Some(c.siret.value)).getOrElse(siret),
-          None,
-          startDate,
-          endDate,
-          category,
-          getStatusListForValueWithUserRole(status, request.identity.userRole),
-          details,
-          request.identity.userRole match {
-            case UserRoles.Pro => Some(false)
-            case _ => None
-          }
+        restrictToCompany,
+        ReportsExtractActor.RawFilters(
+          departments, siret, start, end,
+          category, status, details
         )
       )
       Ok
