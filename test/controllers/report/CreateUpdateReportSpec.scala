@@ -1,5 +1,6 @@
 package controllers.report
 
+import java.net.URI
 import java.util.UUID
 
 import com.google.inject.AbstractModule
@@ -131,7 +132,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[String]("play.website.url")
+  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
   implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")

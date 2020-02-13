@@ -1,5 +1,6 @@
 package controllers.report
 
+import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -108,7 +109,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   val reportFixture = Fixtures.genReportForCompany(companyData).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
 
-  var reviewUrl = ""
+  var reviewUrl = new URI("")
   var report = reportFixture
 
   val concernedProUser = Fixtures.genProUser.sample.get
@@ -127,7 +128,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseNotConcerned = ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
   override def setupData = {
-    reviewUrl = s"${app.configuration.get[String]("play.website.url")}/suivi-des-signalements/${reportFixture.id}/avis"
+    reviewUrl = app.configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${reportFixture.id}/avis")
     Await.result(
       for {
         company <- companyRepository.getOrCreate(companyData.siret, companyData)

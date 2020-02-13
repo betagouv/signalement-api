@@ -1,5 +1,6 @@
 package tasks
 
+import java.net.URI
 import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
@@ -186,7 +187,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[String]("play.website.url")
+  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
   implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   def setupUser(user: User) = {
