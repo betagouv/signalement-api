@@ -1,6 +1,7 @@
 package controllers
 
 import java.io.{ByteArrayInputStream, File}
+import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -14,12 +15,12 @@ import javax.inject.{Inject, Singleton}
 import models._
 import orchestrators._
 import play.api._
-import play.api.libs.json.{JsError, Json, JsPath}
+import play.api.libs.json.{JsError, JsPath, Json}
 import repositories._
 import utils.Constants.ReportStatus.A_TRAITER
 import utils.Constants.{ActionEvent, ReportStatus}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{SIRET, EmailAddress}
+import utils.{EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,7 +41,7 @@ class AccountController @Inject()(
   val logger: Logger = Logger(this.getClass())
   val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
-  implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>

@@ -1,6 +1,6 @@
 package orchestrators
 
-import java.util.UUID
+import java.net.URI
 
 import javax.inject.Inject
 import models._
@@ -8,6 +8,7 @@ import play.api.{Configuration, Logger}
 import repositories._
 import services.MailerService
 import java.util.UUID
+
 import utils.{EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,7 +23,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
   val logger = Logger(this.getClass)
   val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
-  val websiteUrl = configuration.get[String]("play.website.url")
+  val websiteUrl = configuration.get[URI]("play.website.url")
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -131,7 +132,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
-      val invitationUrl = s"${websiteUrl}/entreprise/rejoindre/${company.siret}?token=${tokenCode}"
+      val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(
@@ -146,7 +147,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
     for {
       token <- accessTokenRepository.createToken(TokenKind.DGCCRF_ACCOUNT, randomToken, tokenDuration, None, None, Some(email))
     } yield {
-      val invitationUrl = s"${websiteUrl}/dgccrf/rejoindre/?token=${token.token}"
+      val invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
       mailerService.sendEmail(
         from = mailFrom,
         recipients = email)(

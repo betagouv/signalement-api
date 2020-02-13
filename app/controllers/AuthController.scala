@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -31,7 +32,7 @@ class AuthController @Inject()(
 
   val logger: Logger = Logger(this.getClass())
 
-  implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>

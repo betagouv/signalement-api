@@ -1,6 +1,7 @@
 package tasks
 
 
+import java.net.URI
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
 import java.util.UUID
@@ -38,7 +39,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours

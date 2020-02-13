@@ -1,5 +1,6 @@
 @import utils.EmailAddress
-@(companyAddress: String, creationDate: java.time.LocalDate, code: String)(implicit websiteUrl: String, contactAddress: EmailAddress)
+@import java.net.URI
+@(companyAddress: String, creationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -60,7 +61,7 @@
                 </p>
 
                 <p class="mt-3">
-                    Pour connaitre ce signalement, rendez-vous sur @websiteUrl/activation avec votre code d’activation de 6 chiffres.
+                    Pour connaitre ce signalement, rendez-vous sur @websiteUrl.resolve("/activation") avec votre code d’activation de 6 chiffres.
                 </p>
 
                 <p class="text-center text-bold">
@@ -82,7 +83,7 @@
 
                 <p class="standout">
                     Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email
-                    à l’adresse <strong>@contactAddress.toString</strong>
+                    à l’adresse <strong>@contactAddress</strong>
                 </p>
 
                 <p>

@@ -1,5 +1,6 @@
 package orchestrators
 
+import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -35,7 +36,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
-  implicit val websiteUrl = configuration.get[String]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
@@ -304,7 +305,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
         report,
         reportResponse,
-        s"${configuration.get[String]("play.website.url")}/suivi-des-signalements/${report.id}/avis"
+        configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
       ).toString,
       mailerService.attachmentSeqForWorkflowStepN(4)
     )
