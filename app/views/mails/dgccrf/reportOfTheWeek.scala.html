@@ -1,5 +1,7 @@
 @import java.time.LocalDate
-@(reports: Seq[Report], department: String, startDate: LocalDate)
+@import utils.EmailAddress
+@import java.net.URI
+@(reports: Seq[Report], department: String, startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Signalements de la semaine") {
     <p>
@@ -62,8 +64,8 @@
         Pour consulter l'intégralité des signalements, notamment les pièces jointes :
     </p>
     <ul>
-        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="https://signalconso.beta.gouv.fr/dgccrf">https://signalconso.beta.gouv.fr/dgccrf</a></li>
-        <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a></li>
+        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@websiteUrl.resolve("/dgccrf")">@websiteUrl.resolve("/dgccrf")</a></li>
+        <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:@contactAddress">@contactAddress</a></li>
     </ul>
 
     <p>
@@ -71,6 +73,6 @@
     </p>
 
     <p style="font-size: 12px; font-color:#8393a7; padding-top: 2em">
-        Ceci est un mail automatique. Si vous ne souhaitez plus le recevoir, merci de nous l'indiquer par mail à l'adresse <a href="mailto:contact@@signalconso.beta.gouv.fr">contact@@signalconso.beta.gouv.fr</a>
+        Ceci est un mail automatique. Si vous ne souhaitez plus le recevoir, merci de nous l'indiquer par mail à l'adresse <a href="mailto:@contactAddress">@contactAddress</a>
     </p>
 }

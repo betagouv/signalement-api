@@ -14,7 +14,7 @@ import models._
 import models.Event._
 import orchestrators.ReportOrchestrator
 import play.api.libs.json.{JsError, JsObject, Json}
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.{ActionEvent, EventType, ReportStatus}
@@ -35,8 +35,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                                      s3Service: S3Service,
                                      val silhouette: Silhouette[AuthEnv],
                                      val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                     configuration: Configuration,
-                                     environment: Environment)
+                                     configuration: Configuration)
                                     (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)

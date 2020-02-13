@@ -1,4 +1,5 @@
-@(invitationUrl: String, company: Company, invitedBy: User)
+@import java.net.URI
+@(invitationUrl: URI, company: Company, invitedBy: User)
 
 @views.html.mails.layout(s"Rejoignez l'entreprise @$company.name sur SignalConso") {
     <p>
