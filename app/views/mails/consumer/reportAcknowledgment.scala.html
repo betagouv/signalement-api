@@ -1,4 +1,5 @@
-@(report: Report, files: List[ReportFile])
+@import utils.EmailAddress
+@(report: Report, files: List[ReportFile])(implicit contactAddress: EmailAddress)
 
 @import utils.Constants.ReportStatus._
 
@@ -60,7 +61,7 @@
     }
 
     <p>
-        Vous avez une question ? Vous souhaitez modifier votre signalement ? <a href="mailto:contact@@signalconso.beta.gouv.fr">Contactez-nous</a>.
+        Vous avez une question ? Vous souhaitez modifier votre signalement ? <a href="mailto:@contactAddress">Contactez-nous</a>.
     </p>
 
     <p>À bientôt sur SignalConso !</p>

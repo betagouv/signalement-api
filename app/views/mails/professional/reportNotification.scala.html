@@ -1,4 +1,5 @@
-@(report: Report)
+@import java.net.URI
+@(report: Report)(implicit websiteUrl: URI)
 
 @views.html.mails.layout(s"Nouveau signalement") {
     <p>
@@ -24,7 +25,7 @@
     </p>
 
     <p>
-        Pour consulter vos signalements, il vous suffit de vous connecter sur votre <a href="https://signalconso.beta.gouv.fr/connexion">Espace Professionnel</a>.
+        Pour consulter vos signalements, il vous suffit de vous connecter sur votre <a href="@websiteUrl.resolve("/connexion")">Espace Professionnel</a>.
     </p>
 
     <p>

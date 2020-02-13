@@ -1,5 +1,6 @@
 package tasks
 
+import java.net.URI
 import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
@@ -10,6 +11,7 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
+import play.api.Configuration
 import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
@@ -190,6 +192,9 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+
+  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   def setupUser(user: User) = {
     Await.result(

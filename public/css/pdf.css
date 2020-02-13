@@ -9,6 +9,10 @@ body, div {
     height: 960px;
 }
 
+img + img {
+    margin-left: 10px;
+}
+
 .text-center {
     text-align: center;
 }
@@ -31,7 +35,7 @@ body, div {
 
 .address {
     position: absolute;
-    top: 4cm;
+    top: 4.5cm;
     left: 11cm;
     width: 9cm;
 }

@@ -10,7 +10,7 @@ import orchestrators.ReportOrchestrator
 import play.api.libs.json.{JsError, Json}
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
@@ -33,8 +33,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  s3Service: S3Service,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                 configuration: Configuration,
-                                 environment: Environment)
+                                 configuration: Configuration)
                                 (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
