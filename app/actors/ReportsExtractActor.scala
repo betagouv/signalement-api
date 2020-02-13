@@ -65,9 +65,9 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        tmpPath      <- genTmpFile(requestedBy, restrictToCompany, filters)
-        uploadResult <- saveRemotely(tmpPath, tmpPath.toString)
-        asyncFile    <- asyncFileRepository.create(requestedBy, tmpPath.getFileName.toString, tmpPath.getFileName.toString)
+        tmpPath       <- genTmpFile(requestedBy, restrictToCompany, filters)
+        remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
+        asyncFile     <- asyncFileRepository.create(requestedBy, tmpPath.getFileName.toString, remotePath)
       } yield {
         logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
       }
@@ -280,8 +280,10 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     }
   }
 
-  def saveRemotely(localPath: Path, remoteName: String) =
-    s3Service.upload(BucketName, s"extracts/${remoteName}").runWith(FileIO.fromPath(localPath))
+  def saveRemotely(localPath: Path, remoteName: String) = {
+    val remotePath = s"extracts/${remoteName}"
+    s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
+  }
 }
 
 class ReportsExtractModule extends AbstractModule with AkkaGuiceSupport {
