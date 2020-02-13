@@ -51,5 +51,4 @@
     <appender-ref ref="Sentry" />
   </root>
 
-
 </configuration>

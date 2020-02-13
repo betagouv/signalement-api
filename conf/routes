@@ -37,6 +37,9 @@ POST         /api/reports/:uuid/consumer                controllers.ReportContro
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
+# Async files API
+GET         /api/async-files                            controllers.AsyncFileController.listAsyncFiles
+
 # Events API
 GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
 POST        /api/reports/:uuid/events                   controllers.ReportController.createEvent(uuid)
