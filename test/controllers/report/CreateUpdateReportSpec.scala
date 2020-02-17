@@ -135,7 +135,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
   implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
-  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
+  val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
   val existingCompany = Fixtures.genCompany.sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
