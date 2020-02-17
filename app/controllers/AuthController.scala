@@ -55,7 +55,7 @@ class AuthController @Inject()(
         }
       }.recover {
         case e => {
-          e.printStackTrace()
+          logger.error(e.getMessage)
           Unauthorized
         }
       }
