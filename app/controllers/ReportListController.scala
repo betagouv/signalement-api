@@ -90,7 +90,6 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       }
     )
 
-    logger.debug(s"ReportFilter $filter")
     for {
       company <- Some(request.identity)
                   .filter(_.userRole == UserRoles.Pro)
