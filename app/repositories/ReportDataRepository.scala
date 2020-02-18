@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.{LocalDate, LocalTime, OffsetDateTime, ZoneOffset}
+import java.time._
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
