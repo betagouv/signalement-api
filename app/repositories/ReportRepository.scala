@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime, YearMonth, ZoneOffset}
+import java.time._
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -174,9 +174,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
-  def countWithStatus(statusList: List[ReportStatusValue]) = db
+  def countWithStatus(statusList: List[ReportStatusValue], cutoff: Option[Duration]) = db
     .run(
       baseStatReportTableQuery
+        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
         .filter(_.status inSet statusList.map(_.defaultValue))
         .length
         .result
