@@ -54,10 +54,10 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
     ).map(reports =>{
       logger.debug(s"reports ${reports.entities.map(_.companyPostalCode)}")
       departments.foreach(department =>
-        reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)) match {
+        reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
           case Nil =>
-          case _ => sendMailReportsOfTheWeek(
-            reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
+          case departementReports => sendMailReportsOfTheWeek(
+            departementReports,
             department,
             taskDate.minusDays(7))
         }
