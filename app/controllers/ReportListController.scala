@@ -335,17 +335,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       reportList => {
-
         logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
-
-        Future.sequence(reportList.reportIds.map(reportId =>
-          reportOrchestrator
-            .newEvent(
-              reportId,
-              Event(Some(UUID.randomUUID()), Some(reportId), Some(request.identity.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
-              request.identity
-            )
-        )).map(events => Ok(Json.toJson(events)))
+        reportOrchestrator.markBatchPosted(request.identity, reportList.reportIds).map(events => Ok)
       }
     )
   }

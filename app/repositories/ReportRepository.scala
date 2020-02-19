@@ -338,4 +338,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
   }
+
+  def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
+    .run(
+      reportTableQuery
+        .filter(_.status === ReportStatus.A_TRAITER.defaultValue)
+        .filter(_.companyId inSet companiesIds)
+        .to[List].result
+    )
 }
