@@ -21,10 +21,10 @@ class ReportNotification(implicit ee: ExecutionEnv) extends ReportNotificationTa
   override def is =
     s2"""
          When reportNotificationTask task run                                             ${step(Await.result(reportNotificationTask.runTask(runningDate), Duration.Inf))}
-         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(user.email, officeEmail)("Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
-         And a mail is sent to the subscribed user and office  - case 1 new report        ${mailMustHaveBeenSent(officeEmail)("Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(report2), department2, runningDate.minusDays(7)).toString)}
-         And a mail is sent to the subscribed user and office  - case many new reports    ${mailMustHaveBeenSent(user.email, officeEmail)("2 nouveaux signalements", views.html.mails.dgccrf.reportOfTheWeek(Seq(report11, report12), department1, runningDate.minusDays(7)).toString)}
-         And a mail is sent to the subscribed user and office  - case of Guadeloupe       ${mailMustHaveBeenSent(user.email)("Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(reportGuadeloupe), guadeloupe, runningDate.minusDays(7)).toString)}
+         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(List(user.email, officeEmail), "Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
+         And a mail is sent to the subscribed user and office  - case 1 new report        ${mailMustHaveBeenSent(List(officeEmail), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(report2), department2, runningDate.minusDays(7)).toString)}
+         And a mail is sent to the subscribed user and office  - case many new reports    ${mailMustHaveBeenSent(List(user.email, officeEmail), "2 nouveaux signalements", views.html.mails.dgccrf.reportOfTheWeek(Seq(report11, report12), department1, runningDate.minusDays(7)).toString)}
+         And a mail is sent to the subscribed user and office  - case of Guadeloupe       ${mailMustHaveBeenSent(List(user.email), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(reportGuadeloupe), guadeloupe, runningDate.minusDays(7)).toString)}
     """
 }
 
@@ -80,7 +80,7 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
     )
   }
 
-  def mailMustHaveBeenSent(recipients: EmailAddress*)(subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipients: List[EmailAddress], subject: String, bodyHtml: String) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
