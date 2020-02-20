@@ -72,10 +72,9 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filter(subscription => code.bind === subscription.values.any)
         .joinLeft(userTableQuery).on(_.userId === _.id)
         .map(subscription => subscription._1.email.ifNull(subscription._2.map(_.email)))
-        .filter(_.isDefined)
-        .map(_.get)
         .to[List]
         .result
+        .map(_.flatten)
     )
 }
 
