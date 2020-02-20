@@ -50,16 +50,16 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
     reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments = departments, start = Some(taskDate.minusDays(7)), end = Some(taskDate))
+        ReportFilter(start = Some(taskDate.minusDays(7)), end = Some(taskDate))
     ).map(reports =>{
       logger.debug(s"reports ${reports.entities.map(_.companyPostalCode)}")
       departments.foreach(department =>
         reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
-          case Nil =>
-          case departementReports => sendMailReportsOfTheWeek(
+          case departementReports if departementReports.nonEmpty => sendMailReportsOfTheWeek(
             departementReports,
             department,
             taskDate.minusDays(7))
+          case _ =>
         }
       )}
     )
