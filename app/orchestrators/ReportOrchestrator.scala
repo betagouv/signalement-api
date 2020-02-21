@@ -423,8 +423,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       contactedCompanies  <- reportRepository.getReportsByIds(reportsIds).map(_.flatMap(_.companyId).distinct)
       pendingReports      <- reportRepository.getPendingReports(contactedCompanies)
       eventsMap           <- eventRepository.prefetchReportsEvents(pendingReports)
-      _                   <- Future.sequence(pendingReports.filterNot(r =>
-                                eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE)).map(r =>
+      _                   <- Future.sequence(pendingReports.filter(r =>
+                                !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
           newEvent(
             r.id,
             Event(Some(UUID.randomUUID()), Some(r.id), Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
