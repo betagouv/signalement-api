@@ -140,7 +140,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
+        (report, _, _, _) => report.department().getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
@@ -165,7 +165,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Email de l'entreprise", centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
+        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(

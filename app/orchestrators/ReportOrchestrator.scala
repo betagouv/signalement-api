@@ -109,7 +109,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
           mailerService.attachmentSeqForWorkflowStepN(2)
         )
-        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
+        if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
@@ -147,7 +147,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           status = report.initialStatus()
         )).map(Some(_))).getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.isEligible)
+        .filter(_.status == A_TRAITER)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
