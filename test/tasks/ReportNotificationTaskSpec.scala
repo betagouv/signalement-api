@@ -21,7 +21,7 @@ class ReportNotification(implicit ee: ExecutionEnv) extends ReportNotificationTa
   override def is =
     s2"""
          When reportNotificationTask task run                                             ${step(Await.result(reportNotificationTask.runTask(runningDate), Duration.Inf))}
-         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(List(user.email, officeEmail), "Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
+         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(List(userWithoutReport.email), "Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
          And a mail is sent to the subscribed user and office  - case 1 new report        ${mailMustHaveBeenSent(List(officeEmail), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(report2), department2, runningDate.minusDays(7)).toString)}
          And a mail is sent to the subscribed user and office  - case many new reports    ${mailMustHaveBeenSent(List(user.email, officeEmail), "2 nouveaux signalements", views.html.mails.dgccrf.reportOfTheWeek(Seq(report11, report12), department1, runningDate.minusDays(7)).toString)}
          And a mail is sent to the subscribed user and office  - case of Guadeloupe       ${mailMustHaveBeenSent(List(user.email), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(reportGuadeloupe), guadeloupe, runningDate.minusDays(7)).toString)}
@@ -54,8 +54,9 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
 
   val user = Fixtures.genDgccrfUser.sample.get
   val userWithoutReport = Fixtures.genDgccrfUser.sample.get
-  val officeSubscription = Subscription(Some(UUID.randomUUID()), None, Some(officeEmail), "Departments", List(department1, department2, department3, martinique))
-  val userSubscription = Subscription(Some(UUID.randomUUID()), Some(user.id), None, "Departments", List(department1, department3, guadeloupe))
+  val officeSubscription = Subscription(Some(UUID.randomUUID()), None, Some(officeEmail), "Departments", List(department1, department2, martinique))
+  val userSubscription = Subscription(Some(UUID.randomUUID()), Some(user.id), None, "Departments", List(department1, guadeloupe))
+  val userSubscriptionWithoutReport = Subscription(Some(UUID.randomUUID()), Some(userWithoutReport.id), None, "Departments", List(department3))
 
   val company = Fixtures.genCompany.sample.get
   val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1))
@@ -75,6 +76,7 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
         _ <- reportRepository.create(reportGuadeloupe)
         _ <- subscriptionRepository.create(userSubscription)
         _ <- subscriptionRepository.create(officeSubscription)
+        _ <- subscriptionRepository.create(userSubscriptionWithoutReport)
       } yield Unit,
       Duration.Inf
     )
