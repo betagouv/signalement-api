@@ -170,7 +170,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
   val baseStatReportTableQuery = reportTableQuery
-    .filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
     .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
@@ -213,7 +212,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
       val query = reportTableQuery
           .filterIf(filter.departments.length > 0) {
-            case table => table.companyPostalCode.map(cp => cp.substring(0, 2).inSet(filter.departments)).getOrElse(false)
+            case table => table.companyPostalCode.map(cp =>
+              cp.substring(0, 2).inSet(filter.departments.intersect(Departments.METROPOLE))
+                || cp.substring(0, 3).inSet(filter.departments.intersect(Departments.DOM_TOM))
+            ).getOrElse(false)
           }
           .filterOpt(filter.email) {
             case(table, email) => table.email === EmailAddress(email)

@@ -64,7 +64,7 @@ object GetReportByNotConcernedProUser extends GetReportSpec  {
 }
 
 object GetReportByConcernedProUserFirstTime extends GetReportSpec  {
-  override def is = 
+  override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step(someLoginInfo = Some(concernedProLoginInfo))}
          When retrieving the report for the first time                          ${step(someResult = Some(getReport(neverRequestedReportUUID)))}
@@ -180,19 +180,19 @@ trait GetReportContext extends Mockito {
   val companyId = UUID.randomUUID
   val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
-    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.ALL(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
     "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.ALL(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
     "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
+    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), "companyName", "companyAddress", Some(Departments.ALL(0)), Some(siretForConcernedPro), OffsetDateTime.now(),
     "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 

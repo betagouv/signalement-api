@@ -26,13 +26,13 @@ import utils.silhouette.auth.AuthEnv
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 
-object CreateReportFromNotEligibleDepartment extends CreateUpdateReportSpec {
+object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an outside experimentation department                         ${step(draftReport = draftReport.copy(companyPostalCode = Departments.CollectivitesOutreMer(0)))}
+          a dom tom department                                          ${step(draftReport = draftReport.copy(companyPostalCode = Departments.CollectivitesOutreMer(0)))}
          When create the report                                         ${step(createReport())}
-         Then create the report with reportStatusList "NA"              ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
+         Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
@@ -41,7 +41,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Departments.AUTHORIZED(0)))}
+          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
           an employee consumer                                            ${step(draftReport = draftReport.copy(employeeConsumer = true))}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
@@ -55,7 +55,7 @@ object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpda
     s2"""
          Given a draft report which concerns
           a professional who has no account                             ${step(draftReport = draftReport.copy(companySiret = anotherCompany.siret))}
-          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.AUTHORIZED(0)))}
+          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
          When create the report                                         ${step(createReport())}
          Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
@@ -68,7 +68,7 @@ object CreateReportForProWithActivatedAccountFromEligibleDepartment extends Crea
     s2"""
          Given a draft report which concerns
           a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = existingCompany.siret))}
-          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.AUTHORIZED(0)))}
+          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
