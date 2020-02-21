@@ -22,26 +22,26 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   private class SubscriptionTable(tag: Tag) extends Table[Subscription](tag, "subscriptions") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def userId = column[UUID]("user_id")
+    def userId = column[Option[UUID]]("user_id")
+    def email = column[Option[EmailAddress]]("email")
     def category = column[String]("category")
     def values = column[List[String]]("values")
     def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
 
-    type SubscriptionData = (UUID, UUID, String, List[String])
+    type SubscriptionData = (UUID, Option[UUID], Option[EmailAddress], String, List[String])
 
     def constructSubscription: SubscriptionData => Subscription = {
-
-      case (id, userId, category, values) => {
-        Subscription(Some(id), Some(userId), category, values)
+      case (id, userId, email, category, values) => {
+        Subscription(Some(id), userId, email, category, values)
       }
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, userId, category, values) => (id.get, userId.get, category, values)
+      case Subscription(id, userId, email, category, values) => (id.get, userId, email, category, values)
     }
 
     def * =
-      (id, userId, category, values) <> (constructSubscription, extractSubscription.lift)
+      (id, userId, email, category, values) <> (constructSubscription, extractSubscription.lift)
   }
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
@@ -70,10 +70,11 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .run(
       subscriptionTableQuery
         .filter(subscription => code.bind === subscription.values.any)
-        .join(userTableQuery).on(_.userId === _.id)
-        .map(_._2.email)
+        .joinLeft(userTableQuery).on(_.userId === _.id)
+        .map(subscription => subscription._1.email.ifNull(subscription._2.map(_.email)))
         .to[List]
         .result
+        .map(_.flatten)
     )
 }
 
