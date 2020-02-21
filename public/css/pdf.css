@@ -34,20 +34,24 @@ body, div {
     margin-right: 24px;
 }
 
-.logos {
+.logo-marianne {
     position: absolute;
     top: 0cm;
     text-align: center;
     width: 100%;
 }
 
-.logos img + img {
-    margin-left: 10px;
+.logo-sc {
+    position: absolute;
+    top: 3cm;
+    left: 3.2cm;
 }
 
 .code {
     position: absolute;
     right: 0.5cm;
+    width: 100%;
+    text-align: right;
 }
 
 .sender {
@@ -63,7 +67,7 @@ body, div {
     position: absolute;
     top: 5.5cm;
     left: 9.6cm;
-    width: 10.1cm;
+    width: 8cm;
 }
 
 .content {
@@ -73,15 +77,17 @@ body, div {
     text-align: justify;
 }
 
-.footer {
-    width: 100%;
-    float: left;
+.page-end {
     position: absolute;
-    top: 1000px;
+    bottom: 0;
+    height: 100%;
 }
 
-.footer > img {
-    vertical-align: middle;
+.footer {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    height: 100%;
 }
 
 p.standout {
