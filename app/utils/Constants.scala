@@ -242,11 +242,11 @@ object Constants {
     val PaysDeLaLoire = List("44", "49", "53", "72", "85")
     val ProvenceAlpesCoteAzur = List("04", "05", "06", "13", "83", "84")
 
-    val ALL = AURA ++ BretagneFrancheComte ++ Bretagne ++ CDVL ++ CollectivitesOutreMer ++ Corse ++
-     GrandEst ++ Guadeloupe ++ Guyane ++ HautsDeFrance ++ IleDeFrance ++ LaReunion ++ Martinique ++ Mayotte ++
-      Normandie ++ NouvelleAquitaine ++ OCC ++ PaysDeLaLoire ++ ProvenceAlpesCoteAzur
+    val METROPOLE = AURA ++ BretagneFrancheComte ++ Bretagne ++ CDVL ++ Corse ++ GrandEst ++ HautsDeFrance ++
+      IleDeFrance ++ Normandie ++ NouvelleAquitaine ++ OCC ++ PaysDeLaLoire ++ ProvenceAlpesCoteAzur
+    val DOM_TOM = CollectivitesOutreMer ++ Guadeloupe ++ Guyane ++ LaReunion ++ Martinique ++ Mayotte
 
-    val AUTHORIZED = ALL
+    val ALL = METROPOLE ++ DOM_TOM
   }
 
 }
