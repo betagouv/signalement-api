@@ -41,10 +41,26 @@ body, div {
     width: 100%;
 }
 
+.logo-marianne > img {
+    height: 1.8cm;
+}
+
 .logo-sc {
     position: absolute;
-    top: 3cm;
+    top: 2.7cm;
     left: 3.2cm;
+}
+
+.logo-sc > img {
+    height: 1.8cm;
+}
+
+.sender {
+    font-size: 8pt;
+    line-height: 10pt;
+    position: absolute;
+    top: 2.5cm;
+    left: 9.6cm;
 }
 
 .code {
@@ -54,16 +70,10 @@ body, div {
     text-align: right;
 }
 
-.sender {
-    font-size: 8pt;
-    position: absolute;
-    top: 2.84cm;
-    left: 9.6cm;
-}
-
 .recipient {
     font-family: 'OCR-B 10 BT';
     font-size: 10pt;
+    line-height: 10pt;
     position: absolute;
     top: 5.5cm;
     left: 9.6cm;
@@ -88,6 +98,10 @@ body, div {
     position: absolute;
     bottom: 0;
     height: 100%;
+}
+
+.footer > img {
+    height: 1cm;
 }
 
 p.standout {
