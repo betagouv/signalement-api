@@ -112,30 +112,26 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
-  def extractReports(departments: Option[String],
-                     siret: Option[String],
-                     start: Option[String],
-                     end: Option[String],
-                     category: Option[String],
-                     status: Option[String],
-                     details: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-    for {
-      restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                              fetchCompany(request.identity, siret).map(Some(_))
-                           else
-                              Future(None)
-    } yield {
-      logger.debug(s"Requesting report for user ${request.identity.email}")
-      reportsExtractActor ! ReportsExtractActor.ExtractRequest(
-        request.identity,
-        restrictToCompany,
-        ReportsExtractActor.RawFilters(
-          departments, siret, start, end,
-          category, status, details
+  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
+    implicit val reads = Json.reads[ReportsExtractActor.RawFilters]
+    request.body.validate[ReportsExtractActor.RawFilters].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      filters =>
+      for {
+        restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
+                                fetchCompany(request.identity, filters.siret).map(Some(_))
+                            else
+                                Future(None)
+      } yield {
+        logger.debug(s"Requesting report for user ${request.identity.email}")
+        reportsExtractActor ! ReportsExtractActor.ExtractRequest(
+          request.identity,
+          restrictToCompany,
+          filters
         )
-      )
-      Ok
-    }
+        Ok
+      }
+    )
   }
 
   def confirmContactByPostOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
