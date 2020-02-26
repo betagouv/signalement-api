@@ -43,6 +43,7 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
   def list(user: User): Future[List[AsyncFile]] =
     db.run(AsyncFileTableQuery
       .filter(_.userId === user.id)
+      .sortBy(_.creationDate.desc)
       .to[List]
       .result
     )
