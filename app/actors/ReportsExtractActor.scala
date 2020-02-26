@@ -94,7 +94,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
+        (report, _, _, _) => report.department().getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -119,7 +119,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Email de l'entreprise", centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
+        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available=requestedBy.userRole == UserRoles.Admin
       ),
       ReportColumn(
