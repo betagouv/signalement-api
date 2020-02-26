@@ -247,6 +247,17 @@ object Constants {
     val DOM_TOM = CollectivitesOutreMer ++ Guadeloupe ++ Guyane ++ LaReunion ++ Martinique ++ Mayotte
 
     val ALL = METROPOLE ++ DOM_TOM
+
+    def fromPostalCode(postalCode: String) = {
+      postalCode match {
+        case "97150" => Some("978")
+        case "97133" => Some("977")
+        case code if code.startsWith("200") => Some("2A")
+        case code if code.startsWith("201") => Some("2A")
+        case code if code.startsWith("202") => Some("2B")
+        case code => Departments.ALL.find(postalCode.startsWith(_))
+      }
+    }
   }
 
 }

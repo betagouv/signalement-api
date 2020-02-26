@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.File
-import java.time.{LocalDateTime, OffsetDateTime}
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -11,20 +11,19 @@ import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, Cell
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import javax.inject.Inject
 import models._
-import models.Event._
 import orchestrators.ReportOrchestrator
 import play.api.libs.json.{JsError, JsObject, Json}
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.{ActionEvent, EventType, ReportStatus}
 import utils.Constants.ReportStatus._
+import utils.Constants.{Departments, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.{Constants, DateUtils, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.Random
 
 class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                                      reportRepository: ReportRepository,
@@ -140,7 +139,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.department().getOrElse(""),
+        (report, _, _, _) => report.companyPostalCode.map(Departments.fromPostalCode(_)).flatten.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
