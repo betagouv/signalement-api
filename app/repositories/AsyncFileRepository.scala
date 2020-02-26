@@ -23,22 +23,30 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
     def id = column[UUID]("id", O.PrimaryKey)
     def userId = column[UUID]("user_id")
     def creationDate = column[OffsetDateTime]("creation_date")
-    def filename = column[String]("filename")
-    def storageFilename = column[String]("storage_filename")
+    def filename = column[Option[String]]("filename")
+    def storageFilename = column[Option[String]]("storage_filename")
 
     def * = (id, userId, creationDate, filename, storageFilename) <> (AsyncFile.tupled, AsyncFile.unapply)
   }
 
   val AsyncFileTableQuery = TableQuery[AsyncFileTable]
 
-  def create(owner: User, filename: String, storageFilename: String): Future[AsyncFile] =
+  def create(owner: User): Future[AsyncFile] =
     db.run(AsyncFileTableQuery returning AsyncFileTableQuery += AsyncFile(
       id = UUID.randomUUID(),
       userId = owner.id,
       creationDate = OffsetDateTime.now,
-      filename = filename,
-      storageFilename = storageFilename
+      filename = None,
+      storageFilename = None
     ))
+  
+  def update(uuid: UUID, filename: String, storageFilename: String): Future[Int] =
+    db.run(
+      AsyncFileTableQuery
+        .filter(_.id === uuid)
+        .map(f => (f.filename, f.storageFilename))
+        .update((Some(filename), Some(storageFilename)))
+    )
 
   def list(user: User): Future[List[AsyncFile]] =
     db.run(AsyncFileTableQuery

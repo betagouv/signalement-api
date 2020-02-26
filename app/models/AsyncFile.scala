@@ -7,6 +7,6 @@ case class AsyncFile(
   id: UUID,
   userId: UUID,
   creationDate: OffsetDateTime,
-  filename: String,
-  storageFilename: String
+  filename: Option[String],
+  storageFilename: Option[String]
 )

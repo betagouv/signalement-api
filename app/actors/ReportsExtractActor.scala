@@ -24,6 +24,7 @@ import services.S3Service
 import utils.Constants
 import utils.Constants.ReportStatus
 import utils.DateUtils
+import java.util.UUID
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
@@ -66,9 +67,13 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        tmpPath       <- genTmpFile(requestedBy, restrictToCompany, filters)
+        asyncFile     <- asyncFileRepository.create(requestedBy)
+        tmpPath       <- {
+          sender() ! Unit
+          genTmpFile(requestedBy, restrictToCompany, filters)
+        }
         remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        asyncFile     <- asyncFileRepository.create(requestedBy, tmpPath.getFileName.toString, remotePath)
+        _             <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
       } yield {
         logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
       }

@@ -29,8 +29,8 @@ class AsyncFileController @Inject()(
       case asyncFile: AsyncFile => {
           Map(
             "creationDate"    -> asyncFile.creationDate.toString,
-            "filename"        -> asyncFile.filename,
-            "url"             -> s3Service.getSignedUrl(BucketName, asyncFile.storageFilename),
+            "filename"        -> asyncFile.filename.getOrElse(""),
+            "url"             -> asyncFile.storageFilename.map(s3Service.getSignedUrl(BucketName, _)).getOrElse(""),
         )
       }
     }))

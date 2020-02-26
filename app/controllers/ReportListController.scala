@@ -1,6 +1,7 @@
 package controllers
 
 import akka.actor._
+import akka.pattern.ask
 import java.io.File
 import java.time.{LocalDateTime, OffsetDateTime}
 import java.time.format.DateTimeFormatter
@@ -124,7 +125,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                                 Future(None)
       } yield {
         logger.debug(s"Requesting report for user ${request.identity.email}")
-        reportsExtractActor ! ReportsExtractActor.ExtractRequest(
+        reportsExtractActor ? ReportsExtractActor.ExtractRequest(
           request.identity,
           restrictToCompany,
           filters
