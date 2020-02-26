@@ -47,19 +47,19 @@ body, div {
 
 .logo-sc {
     position: absolute;
-    top: 2.7cm;
+    top: 2.5cm;
     left: 3.2cm;
 }
 
 .logo-sc > img {
-    height: 1.8cm;
+    height: 1.7cm;
 }
 
 .sender {
     font-size: 8pt;
     line-height: 10pt;
     position: absolute;
-    top: 2.5cm;
+    top: 2.3cm;
     left: 9.6cm;
 }
 
