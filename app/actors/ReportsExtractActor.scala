@@ -8,7 +8,7 @@ import play.api.libs.json.JsObject
 import java.nio.file.{Path, Paths}
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
@@ -38,6 +38,7 @@ object ReportsExtractActor {
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
+@Singleton
 class ReportsExtractActor @Inject()(configuration: Configuration,
                                     companyRepository: CompanyRepository,
                                     reportRepository: ReportRepository,
