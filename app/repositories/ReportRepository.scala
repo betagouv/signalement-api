@@ -209,44 +209,42 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-
-      val query = reportTableQuery
-          .filterIf(filter.departments.length > 0) {
-            case table => table.companyPostalCode.map(cp =>
-              cp.substring(0, 2).inSet(filter.departments.intersect(Departments.METROPOLE))
-                || cp.substring(0, 3).inSet(filter.departments.intersect(Departments.DOM_TOM))
-            ).getOrElse(false)
-          }
-          .filterOpt(filter.email) {
-            case(table, email) => table.email === EmailAddress(email)
-          }
-          .filterOpt(filter.siret) {
-            case(table, siret) => table.companySiret === SIRET(siret)
-          }
-          .filterOpt(filter.companyName) {
-            case(table, companyName) => table.companyName like s"${companyName}%"
-          }
-          .filterOpt(filter.start) {
-            case(table, start) => date(table.creationDate) >= start
-          }
-          .filterOpt(filter.end) {
-            case(table, end) => date(table.creationDate) < end
-          }
-          .filterOpt(filter.category) {
-            case(table, category) => table.category === category
-          }
-          .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
-            case table => table.status.inSet(filter.statusList.map(_.defaultValue))
-          }
-          .filterOpt(filter.details) {
-            case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
-          }
-          .filterOpt(filter.employeeConsumer) {
-            case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
-          }
+    val query = reportTableQuery
+      .filterOpt(filter.email) {
+          case(table, email) => table.email === EmailAddress(email)
+        }
+        .filterOpt(filter.siret) {
+          case(table, siret) => table.companySiret === SIRET(siret)
+        }
+        .filterOpt(filter.companyName) {
+          case(table, companyName) => table.companyName like s"${companyName}%"
+        }
+        .filterOpt(filter.start) {
+          case(table, start) => date(table.creationDate) >= start
+        }
+        .filterOpt(filter.end) {
+          case(table, end) => date(table.creationDate) < end
+        }
+        .filterOpt(filter.category) {
+          case(table, category) => table.category === category
+        }
+        .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
+          case table => table.status.inSet(filter.statusList.map(_.defaultValue))
+        }
+        .filterOpt(filter.details) {
+          case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+        }
+        .filterOpt(filter.employeeConsumer) {
+          case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
+        }
+      .joinLeft(companyTableQuery).on(_.companyId === _.id)
+      .filterIf(filter.departments.length > 0) {
+        case (report, company) => company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
+      }
 
     for {
         reports <- query
+          .map(_._1)
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)

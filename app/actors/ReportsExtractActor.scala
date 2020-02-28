@@ -3,26 +3,27 @@ package actors
 import akka.actor._
 import akka.stream.scaladsl.FileIO
 import akka.stream.Materializer
-import play.api.{Logger, Configuration}
+import play.api.{Configuration, Logger}
 import play.api.libs.json.JsObject
 import java.nio.file.{Path, Paths}
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+
 import javax.inject.{Inject, Singleton}
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 import com.google.inject.AbstractModule
 import play.api.libs.concurrent.AkkaGuiceSupport
-
 import controllers.routes
 import models._
 import repositories._
 import services.S3Service
 import utils.Constants
-import utils.Constants.ReportStatus
+import utils.Constants.{Departments, ReportStatus}
 import utils.DateUtils
 import java.util.UUID
 
@@ -100,7 +101,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.department().getOrElse(""),
+        (report, _, _, _) => report.companyPostalCode.map(Departments.fromPostalCode(_)).flatten.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
