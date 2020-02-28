@@ -29,7 +29,7 @@ import java.util.UUID
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
 
-  case class RawFilters(departments: Option[String],
+  case class RawFilters(departments: List[String],
                         siret: Option[String],
                         start: Option[String],
                         end: Option[String],
@@ -221,7 +221,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         0,
         10000,
         ReportFilter(
-          filters.departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          filters.departments,
           None,
           restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
           None,
@@ -261,7 +261,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         .withRows(
           List(
             Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
-            filters.departments.map(departments => Row().withCellValues("Départment(s)", departments)),
+            Some(filters.departments).filter(!_.isEmpty).map(departments => Row().withCellValues("Départment(s)", departments.mkString(","))),
             (startDate, DateUtils.parseDate(filters.end)) match {
               case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
               case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
