@@ -29,33 +29,38 @@
             }
             </div>
 
-            @reports.map { report =>
-                <div style="border-bottom: 2px solid #898989;
-                    padding-top: 20px;
-                    padding-bottom: 20px">
-                    <b>Problème</b>
-                    <br/>
-                    @report.category
-                    <br />
-                    @report.subcategories.map { subcategory =>
-                        @subcategory
-                        <br />
-                    }
-                    <br />
-                    <b>Description</b>
-                    <br/>
-                    @report.details.map { detailInputValue =>
-                        @Html(detailInputValue.label) @Html(detailInputValue.value)
+            @reports.zipWithIndex.map { case(report, index) =>
+                @if(index < 20) {
+                    <div style="border-bottom: 2px solid #898989;
+                        padding-top: 20px;
+                        padding-bottom: 20px">
+                        <b>Problème</b>
                         <br/>
-                    }
+                        @report.category
+                        <br />
+                        @report.subcategories.map { subcategory =>
+                            @subcategory
+                            <br />
+                        }
+                        <br />
+                        <b>Description</b>
+                        <br/>
+                        @report.details.map { detailInputValue =>
+                            @Html(detailInputValue.label) @Html(detailInputValue.value)
+                            <br/>
+                        }
 
-                    <br />
-                    <b>Entreprise</b>
-                    <p style="text-align: center;">
-                    @views.html.fragments.address(report.companyAddress)
-                </p>
+                        <br />
+                        <b>Entreprise</b>
+                        <p style="text-align: center;">
+                        @views.html.fragments.address(report.companyAddress)
+                        </p>
 
-                </div>
+                    </div>
+                }
+            }
+            @if(reports.length > 20) {
+                [...]
             }
         </div>
     }
