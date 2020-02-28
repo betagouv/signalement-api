@@ -107,36 +107,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         }
       }
     }
-
-    "ReportListController" should {
-
-      "generate an export" in new Context {
-        new WithApplication(application) {
-          val reportId = UUID.fromString("283f76eb-0112-4e9b-a14c-ae2923b5509b")
-          val reportsList = List(
-            Report(
-              reportId, "foo", List("bar"), List(), Some(companyId), "myCompany", "18 rue des Champs",
-              None, Fixtures.genSiret.sample, OffsetDateTime.now(), "John", "Doe", EmailAddress("jdoe@example.com"),
-              true, false, TRAITEMENT_EN_COURS
-            )
-          )
-          mockReportRepository.getReports(any[Long], any[Int], any[ReportFilter]) returns Future(
-            PaginatedResult(1, false, reportsList)
-          )
-          mockEventRepository.prefetchReportsEvents(reportsList) returns Future(
-            Map(reportId -> List(
-              Event(Some(reportId), Some(reportId), Some(UUID.randomUUID), Some(OffsetDateTime.now()), EventType.DGCCRF, COMMENT)
-            ))
-          )
-
-          val request = FakeRequest("GET", s"/api/reports/extract").withAuthenticator[AuthEnv](adminLoginInfo)
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(OK)
-          Helpers.header(Helpers.CONTENT_DISPOSITION, result) must beEqualTo(Some("attachment; filename=\"signalements.xlsx\""))
-        }
-      }
-    }
   }
 
   trait Context extends Scope {
