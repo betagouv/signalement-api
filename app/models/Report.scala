@@ -78,10 +78,6 @@ case class Report(
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
   }
-
-  def department() = {
-    companyPostalCode.map(postalCode => Departments.ALL.find(postalCode.startsWith(_))).flatten
-  }
 }
 
 object Report {
