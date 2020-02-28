@@ -33,21 +33,12 @@ class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetRepo
     """
 }
 
-class GetReportsByAdminUserWithFilter(implicit ee: ExecutionEnv) extends GetReportsSpec  {
-  override def is =
-    s2"""
-         Given an authenticated admin user                            ${step(someLoginInfo = Some(loginInfo(adminUser)))}
-         When retrieving reports with department filter               ${step(someResult = Some(getReports(Some("2B"))))}
-         Then no reports are rendered                                 ${noReportsMustBeRendered(UserRoles.Admin)}
-    """
-}
-
 class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
   override def is =
     s2"""
          Given an authenticated admin user                            ${step(someLoginInfo = Some(loginInfo(adminUser)))}
-         When retrieving reports of                                   ${step(someResult = Some(getReports(Some("2A"))))}
-         Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUserRole(UserRoles.Admin)}
+         When retrieving reports                                      ${step(someResult = Some(getReports()))}
+         Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUserRole(UserRoles.Admin)}
     """
 }
 
@@ -56,7 +47,7 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec  
     s2"""
          Given an authenticated dgccrf user                           ${step(someLoginInfo = Some(loginInfo(dgccrfUser)))}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUserRole(UserRoles.DGCCRF)}
+         Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUserRole(UserRoles.DGCCRF)}
     """
 }
 
@@ -74,7 +65,7 @@ class GetReportsByAnotherProUser(implicit ee: ExecutionEnv) extends GetReportsSp
     s2"""
          Given an authenticated pro user not concened by reports      ${step(someLoginInfo = Some(loginInfo(anotherProUser)))}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         No reports are rendered                                      ${noReportsMustBeRendered(UserRoles.Pro)}
+         No reports are rendered                                      ${noReportsMustBeRenderedForUserRole(UserRoles.Pro)}
     """
 }
 
@@ -91,7 +82,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
   val dgccrfUser = Fixtures.genDgccrfUser.sample.get
   val proAdminUser = Fixtures.genProUser.sample.get
   val anotherProUser = Fixtures.genProUser.sample.get
-  val company = Fixtures.genCompany.sample.get.copy(postalCode = Some("20120"))
+  val company = Fixtures.genCompany.sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
 
   val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = A_TRAITER)
@@ -134,9 +125,9 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     }
   }
 
-  def getReports(departments: Option[String] = None) =  {
+  def getReports() =  {
     Await.result(
-      app.injector.instanceOf[ReportListController].getReports(None, None, departments, None, None, None, None, None, None, None, None)
+      app.injector.instanceOf[ReportListController].getReports(None, None, None, None, None, None, None, None, None, None, None)
         .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf
     )
@@ -175,7 +166,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     }
   }
 
-  def noReportsMustBeRendered(userRole: UserRole) = {
+  def noReportsMustBeRenderedForUserRole(userRole: UserRole) = {
     implicit val someUserRole = Some(userRole)
     someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult[Report](0, false, List()))
   }
