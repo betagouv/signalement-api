@@ -1,37 +1,25 @@
 package controllers
 
-import akka.actor._
-import akka.pattern.ask
-import java.io.File
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import com.mohiva.play.silhouette.api.Silhouette
-import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
-import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import javax.inject.{Inject, Singleton, Named}
 import actors.ReportsExtractActor
+import akka.actor._
+import akka.pattern.ask
+import com.mohiva.play.silhouette.api.Silhouette
+import javax.inject.{Inject, Named, Singleton}
 import models._
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.{JsError, JsObject, Json}
+import play.api.libs.json.{JsError, Json}
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ReportStatus._
-import utils.Constants.{Departments, ReportStatus}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{Constants, DateUtils, SIRET}
+import utils.{DateUtils, SIRET}
 
-import scala.concurrent.{ExecutionContext, Future}
-<<<<<<< HEAD
-import scala.util.Random
-=======
 import scala.concurrent.duration._
-import scala.util.{Failure, Random, Success, Try}
->>>>>>> master
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
