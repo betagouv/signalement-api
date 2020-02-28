@@ -140,7 +140,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.companyPostalCode.filter(_.length >= 2).map(_.substring(0, 2)).getOrElse(""),
+        (report, _, _, _) => report.department().getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains request.identity.userRole
       ),
       ReportColumn(
@@ -165,7 +165,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       ),
       ReportColumn(
         "Email de l'entreprise", centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.filter(_ => report.isEligible).map(_.email).mkString(","),
+        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available=request.identity.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -335,17 +335,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
       reportList => {
-
         logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
-
-        Future.sequence(reportList.reportIds.map(reportId =>
-          reportOrchestrator
-            .newEvent(
-              reportId,
-              Event(Some(UUID.randomUUID()), Some(reportId), Some(request.identity.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
-              request.identity
-            )
-        )).map(events => Ok(Json.toJson(events)))
+        reportOrchestrator.markBatchPosted(request.identity, reportList.reportIds).map(events => Ok)
       }
     )
   }

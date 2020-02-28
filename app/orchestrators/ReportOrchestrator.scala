@@ -37,7 +37,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
-  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
@@ -110,7 +109,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
           mailerService.attachmentSeqForWorkflowStepN(2)
         )
-        if (report.isEligible && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
+        if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
@@ -148,7 +147,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           status = report.initialStatus()
         )).map(Some(_))).getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.isEligible)
+        .filter(_.status == A_TRAITER)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
@@ -416,5 +415,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       )
     )
+  }
+
+  def markBatchPosted(user: User, reportsIds: List[UUID]): Future[Unit] = {
+    for {
+      contactedCompanies  <- reportRepository.getReportsByIds(reportsIds).map(_.flatMap(_.companyId).distinct)
+      pendingReports      <- reportRepository.getPendingReports(contactedCompanies)
+      eventsMap           <- eventRepository.prefetchReportsEvents(pendingReports)
+      _                   <- Future.sequence(pendingReports.filter(r =>
+                                !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
+          newEvent(
+            r.id,
+            Event(Some(UUID.randomUUID()), Some(r.id), Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
+            user
+          )
+        ))
+    } yield Unit
   }
 }

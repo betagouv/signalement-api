@@ -109,7 +109,7 @@ trait CreateEventContext extends Mockito {
   val reportUUID = UUID.randomUUID()
 
   val reportFixture = Report(
-    reportUUID, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.AUTHORIZED(0)), Fixtures.genSiret.sample, OffsetDateTime.now(),
+    reportUUID, "category", List("subcategory"), List(), None, "companyName", "companyAddress", Some(Departments.ALL(0)), Fixtures.genSiret.sample, OffsetDateTime.now(),
     "firstName", "lastName", EmailAddress("toto@example.com"), true, false, A_TRAITER
   )
 
