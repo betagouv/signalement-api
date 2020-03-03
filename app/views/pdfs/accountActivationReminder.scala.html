@@ -16,26 +16,17 @@
     </head>
     <body>
         <div style="display: block; page-break-after: always">
-            <div class="logo-marianne">
-                <img src='@routes.Assets.versioned("images/logo-marianne.svg")'/>
-            </div>
-
-            <div class="code">
-                DGCCRF_SCONSO_01
-            </div>
-
-            <div class="logo-sc">
+            <p>
+                <img src='@routes.Assets.versioned("images/logo-marianne.png")'/>
                 <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
-            </div>
-
-            <div class="sender">
                 <br/>Service SignalConso
-                <br />DGCCRF
-                <br />59, boulevard Vincent Auriol
+                <br />Direction Générale de la Concurrence,
+                <br />de la Consommation et de la Répression des Fraudes
+                <br />59, boulevard Auriol
                 <br />75703 Paris Cedex 13
-            </div>
+            </p>
 
-            <div class="recipient">
+            <div class="address">
                 @views.html.fragments.address(companyAddress)
             </div>
 
@@ -102,12 +93,8 @@
                 </p>
             </div>
 
-            <div class="page-end">
-                ###
-            </div>
-
             <div class="footer text-center">
-                <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
+                <img src='@routes.Assets.versioned("images/logo-ministere.jpg")'/>
             </div>
         </div>
 

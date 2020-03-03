@@ -3,15 +3,14 @@
     margin-bottom: 1cm;
 }
 
-@font-face {
-    font-family: "OCR-B 10 BT";
-    src: url("/assets/fonts/OCR-B 10 BT.ttf") format("ttf");
-}
-
 body, div {
     font-family: 'Arial', sans-serif;
     font-size: 13px;
     height: 960px;
+}
+
+img + img {
+    margin-left: 10px;
 }
 
 .text-center {
@@ -34,49 +33,10 @@ body, div {
     margin-right: 24px;
 }
 
-.logo-marianne {
+.address {
     position: absolute;
-    top: 0cm;
-    text-align: center;
-    width: 100%;
-}
-
-.logo-marianne > img {
-    height: 1.8cm;
-}
-
-.logo-sc {
-    position: absolute;
-    top: 2.5cm;
-    left: 3.2cm;
-}
-
-.logo-sc > img {
-    height: 1.7cm;
-}
-
-.sender {
-    font-size: 8pt;
-    line-height: 10pt;
-    position: absolute;
-    top: 2.3cm;
-    left: 9.6cm;
-}
-
-.code {
-    position: absolute;
-    right: 0.5cm;
-    width: 100%;
-    text-align: right;
-}
-
-.recipient {
-    font-family: 'OCR-B 10 BT';
-    font-size: 10pt;
-    line-height: 10pt;
-    position: absolute;
-    top: 5.5cm;
-    left: 9.6cm;
+    top: 4.5cm;
+    left: 11cm;
     width: 8cm;
 }
 
@@ -87,21 +47,15 @@ body, div {
     text-align: justify;
 }
 
-.page-end {
-    position: absolute;
-    bottom: 0;
-    height: 100%;
-}
-
 .footer {
     width: 100%;
+    float: left;
     position: absolute;
-    bottom: 0;
-    height: 100%;
+    top: 1000px;
 }
 
 .footer > img {
-    height: 1cm;
+    vertical-align: middle;
 }
 
 p.standout {
