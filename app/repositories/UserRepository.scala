@@ -1,6 +1,7 @@
 package repositories
 
 import java.util.UUID
+import java.time.{Duration, OffsetDateTime}
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import javax.inject.{Inject, Singleton}
@@ -10,7 +11,6 @@ import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
-
 /**
  * A repository for user.
  *
@@ -48,7 +48,17 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def * = (id, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
   }
 
+  class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
+
+    def id = column[UUID]("id", O.PrimaryKey)
+    def login = column[String]("login")
+    def timestamp = column[OffsetDateTime]("timestamp")
+
+    def * = (id, login, timestamp) <> (AuthAttempt.tupled, AuthAttempt.unapply)
+  }
+
   val userTableQuery = TableQuery[UserTable]
+  val authAttemptTableQuery = TableQuery[AuthAttempTable]
   
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
@@ -58,6 +68,20 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def get(userId: UUID): Future[Option[User]] = db
     .run(userTableQuery.filter(_.id === userId).to[List].result.headOption)
+
+  def countAuthAttempts(login: String, delay: Duration) = db
+    .run(
+      authAttemptTableQuery
+        .filter(_.login === login)
+        .filter(_.timestamp >= OffsetDateTime.now.minus(delay))
+        .length
+        .result
+    )
+
+  def saveAuthAttempt(login: String) = db
+    .run(
+      authAttemptTableQuery += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now)
+    )
 
   def update(user: User): Future[Int] = {
     val queryUser = for (refUser <- userTableQuery if refUser.id === user.id)

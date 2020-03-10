@@ -41,22 +41,20 @@ class AuthController @Inject()(
       err => Future(BadRequest),
       data => {
         credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
-          userService.retrieve(loginInfo).flatMap {
+          userService.retrieveSafe(loginInfo).flatMap {
             case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
               silhouette.env.eventBus.publish(LoginEvent(user, request))
               silhouette.env.authenticatorService.init(authenticator).map { token =>
                 Ok(Json.obj("token" -> token, "user" -> user))
               }
             }
-            case None => {
-              Future(Unauthorized)
-            }
+            case None => userRepository.saveAuthAttempt(data.login).map(_ => Unauthorized)
           }
         }
-      }.recover {
+      }.recoverWith {
         case e => {
           logger.error(e.getMessage)
-          Unauthorized
+          userRepository.saveAuthAttempt(data.login).map(_ => Unauthorized)
         }
       }
     )
