@@ -41,7 +41,7 @@ class AuthController @Inject()(
       data => {
         for {
           _        <- userRepository.saveAuthAttempt(data.login)
-          attempts <- userRepository.countAuthAttempts(data.login, java.time.Duration.parse("PT60M"))
+          attempts <- userRepository.countAuthAttempts(data.login, java.time.Duration.parse("PT30M"))
           response <- if (attempts > 15) Future(Forbidden) else
                       credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
                         userService.retrieve(loginInfo).flatMap {
