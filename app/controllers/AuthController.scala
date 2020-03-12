@@ -36,28 +36,30 @@ class AuthController @Inject()(
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
-
     request.body.validate[UserLogin].fold(
       err => Future(BadRequest),
       data => {
-        credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
-          userService.retrieve(loginInfo).flatMap {
-            case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
-              silhouette.env.eventBus.publish(LoginEvent(user, request))
-              silhouette.env.authenticatorService.init(authenticator).map { token =>
-                Ok(Json.obj("token" -> token, "user" -> user))
-              }
-            }
-            case None => {
-              Future(Unauthorized)
-            }
-          }
-        }
-      }.recover {
-        case e => {
-          logger.error(e.getMessage)
-          Unauthorized
-        }
+        for {
+          _        <- userRepository.saveAuthAttempt(data.login)
+          attempts <- userRepository.countAuthAttempts(data.login, java.time.Duration.parse("PT60M"))
+          response <- if (attempts > 15) Future(Forbidden) else
+                      credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
+                        userService.retrieve(loginInfo).flatMap {
+                          case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
+                            silhouette.env.eventBus.publish(LoginEvent(user, request))
+                            silhouette.env.authenticatorService.init(authenticator).map { token =>
+                              Ok(Json.obj("token" -> token, "user" -> user))
+                            }
+                          }
+                          case None => userRepository.saveAuthAttempt(data.login).map(_ => Unauthorized)
+                        }
+                      }.recoverWith {
+                        case e => {
+                          logger.error(e.getMessage)
+                          Future(Unauthorized)
+                        }
+                      }
+        } yield response
       }
     )
   }
