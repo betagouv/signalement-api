@@ -16,12 +16,5 @@ class UserService @Inject() (userRepository: UserRepository)
 
   def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByLogin(loginInfo)
 
-  def retrieveSafe(loginInfo: LoginInfo): Future[Option[User]] =
-    for {
-      user     <- retrieve(loginInfo)
-      attempts <- user.map(u => userRepository.countAuthAttempts(u.email.toString, java.time.Duration.parse("PT60M")))
-                      .getOrElse(Future(0))
-    } yield user.filter(_ => attempts < 15)
-
   def save(user: User): Future[User] = userRepository.update(user).map( _ => user)
 }
