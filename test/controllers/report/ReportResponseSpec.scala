@@ -100,7 +100,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  val contactEmail = EmailAddress("contact@signalconso.beta.gouv.fr")
+  val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
   val siretForConcernedPro = Fixtures.genSiret.sample.get
   val siretForNotConcernedPro = Fixtures.genSiret.sample.get

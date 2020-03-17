@@ -27,6 +27,7 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
                                    (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
+  val cutoff = configuration.getOptional[String]("play.stats.globalStatsCutoff").map(java.time.Duration.parse(_))
 
   def getReportCount = UserAwareAction.async { implicit request =>
     reportRepository.count().map(count => Ok(Json.obj("value" -> count)))
@@ -38,8 +39,14 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
 
   def getReportReadByProPercentage = UserAwareAction.async { implicit request =>
     for {
-      count <- reportRepository.countWithStatus(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE))
-      baseCount <- reportRepository.countWithStatus(ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList)
+      count <- reportRepository.countWithStatus(
+        List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE),
+        cutoff
+      )
+      baseCount <- reportRepository.countWithStatus(
+        ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+        cutoff
+      )
     } yield
       Ok(Json.obj(
         "value" -> count * 100 / baseCount
@@ -63,8 +70,14 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
 
   def getReportWithResponsePercentage = UserAwareAction.async { implicit request =>
     for {
-      count <- reportRepository.countWithStatus(List(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE))
-      baseCount <- reportRepository.countWithStatus(List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE))
+      count <- reportRepository.countWithStatus(
+        List(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+        cutoff
+      )
+      baseCount <- reportRepository.countWithStatus(
+        List(SIGNALEMENT_TRANSMIS, PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_CONSULTE_IGNORE),
+        cutoff
+      )
     } yield
       Ok(Json.obj(
         "value" -> count * 100 / baseCount
@@ -95,12 +108,9 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
   }
 
   def updateReportData() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-
     for {
       _ <- reportDataRepository.updateReportReadDelay
       _ <- reportDataRepository.updateReportResponseDelay
     } yield Ok("ReportData updated")
-
   }
-
 }

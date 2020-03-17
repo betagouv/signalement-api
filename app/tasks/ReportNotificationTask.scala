@@ -35,42 +35,40 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   val startDate = LocalDate.now.atTime(startTime).plusDays(startDayOfWeek.getValue + 7 - LocalDate.now.getDayOfWeek.getValue)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  val mailsByDepartments = configuration.get[String]("play.tasks.report.mails")
-    .split(";")
-    .filter(mailsByDepartment => mailsByDepartment.split("=").length == 2)
-    .map(mailsByDepartment => (mailsByDepartment.split("=")(0), mailsByDepartment.split("=")(1)))
+  val departments = Departments.ALL
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
+    logger.debug(s"initialDelay - ${initialDelay}");
+    runTask(LocalDate.now)
+  }
 
-    val taskDate = LocalDate.now
+  def runTask(taskDate: LocalDate) = {
 
     logger.debug("Traitement de notification hebdomdaire des signalements")
-    logger.debug(s"initialDelay - ${initialDelay}");
     logger.debug(s"taskDate - ${taskDate}");
-
-    val departments = Departments.ALL
 
     reportRepository.getReports(
         0,
         10000,
-        ReportFilter(departments = departments, start = Some(taskDate.minusDays(7)), end = Some(taskDate))
-    ).map(reports =>
+        ReportFilter(start = Some(taskDate.minusDays(7)), end = Some(taskDate))
+    ).map(reports =>{
+      logger.debug(s"reports ${reports.entities.map(_.companyPostalCode)}")
       departments.foreach(department =>
-        reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)) match {
-          case Nil =>
-          case _ => sendMailReportsOfTheWeek(
-            reports.entities.filter(report => report.companyPostalCode.map(_.substring(0, 2) == department).getOrElse(false)),
+        reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
+          case departementReports if departementReports.nonEmpty => sendMailReportsOfTheWeek(
+            departementReports,
             department,
             taskDate.minusDays(7))
+          case _ =>
         }
-      )
+      )}
     )
 
   }
 
   private def sendMailReportsOfTheWeek(reports: Seq[Report], department: String, startDate: LocalDate) = {
 
-    getMailForDepartment(department: String).flatMap(recipients => {
+    subscriptionRepository.listSubscribeUserMailsForDepartment(department).flatMap(recipients => {
 
       logger.debug(s"Department $department - send mail to ${recipients}")
 
@@ -87,15 +85,5 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
         bodyHtml = views.html.mails.dgccrf.reportOfTheWeek(reports, department, startDate).toString
       ))
     })
-  }
-
-  private def getMailForDepartment(department: String): Future[List[EmailAddress]] = {
-    subscriptionRepository.listSubscribeUserMailsForDepartment(department).map(
-      (userMails: List[EmailAddress]) => {
-        logger.debug(s"getMailForDepartment ${department} : ${userMails}")
-        mailsByDepartments.find(mailByDepartment => mailByDepartment._1 == department).map(_._2.split(",").toList.map(EmailAddress(_))).getOrElse(List[EmailAddress]()) ::: userMails
-      }
-    )
-
   }
 }

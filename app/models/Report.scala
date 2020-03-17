@@ -5,9 +5,9 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.ReportStatus._
 import utils.Constants.Departments
-import utils.{Constants, EmailAddress, SIRET}
+import utils.Constants.ReportStatus._
+import utils.{EmailAddress, SIRET}
 
 
 case class DraftReport(
@@ -26,16 +26,9 @@ case class DraftReport(
                         fileIds: List[UUID]
                       ) {
 
-  def isEligible = {
-    !employeeConsumer && Departments.AUTHORIZED.contains(companyPostalCode.slice(0, 2))
-  }
 
   def initialStatus() = {
-    (companyPostalCode, employeeConsumer) match {
-      case (postalCode, _) if !Departments.AUTHORIZED.contains(postalCode.slice(0, 2)) => NA
-      case (_, true) => EMPLOYEE_REPORT
-      case (_, _) => A_TRAITER
-    }
+    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
   }
 
   def generateReport: Report = {
@@ -81,17 +74,9 @@ case class Report(
                    employeeConsumer: Boolean,
                    status: ReportStatusValue
                  ) {
-  def isEligible = {
-    !employeeConsumer &&
-      companyPostalCode.map(postalCode => Departments.AUTHORIZED.contains(postalCode.slice(0, 2))).getOrElse(false);
-  }
 
   def initialStatus() = {
-    (companyPostalCode, employeeConsumer) match {
-      case (Some(postalCode), _) if !Departments.AUTHORIZED.contains(postalCode.slice(0, 2)) => NA
-      case (_, true) => EMPLOYEE_REPORT
-      case (_, _) => A_TRAITER
-    }
+    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
   }
 }
 

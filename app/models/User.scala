@@ -56,6 +56,12 @@ case class UserLogin(
                       password: String
                     )
 
+case class AuthAttempt(
+  id: UUID,
+  login: String,
+  timestamp: OffsetDateTime
+)
+
 object UserLogin {
   implicit val userLoginFormat = Json.format[UserLogin]
 }

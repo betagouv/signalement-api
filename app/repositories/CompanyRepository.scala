@@ -2,13 +2,15 @@ package repositories
 
 import java.time.OffsetDateTime
 import java.util.UUID
+
 import javax.inject.{Inject, Singleton}
+
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.SIRET
-
 import models._
+import utils.Constants.Departments
 
 @Singleton
 class CompanyRepository @Inject()(
@@ -25,8 +27,19 @@ class CompanyRepository @Inject()(
     def name = column[String]("name")
     def address = column[String]("address")
     def postalCode = column[Option[String]]("postal_code")
+    def department = column[Option[String]]("department")
 
-    def * = (id, siret, creationDate, name, address, postalCode) <> (Company.tupled, Company.unapply)
+    type CompanyData = (UUID, SIRET, OffsetDateTime, String, String, Option[String], Option[String])
+
+    def constructCompany: CompanyData => Company = {
+      case (id, siret, creationDate, name, address, postalCode, _) => Company(id, siret, creationDate, name, address, postalCode)
+    }
+
+    def extractCompany: PartialFunction[Company, CompanyData] = {
+      case Company(id, siret, creationDate, name, address, postalCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten  )
+    }
+
+    def * = (id, siret, creationDate, name, address, postalCode, department) <> (constructCompany, extractCompany.lift)
   }
 
   val companyTableQuery = TableQuery[CompanyTable]
