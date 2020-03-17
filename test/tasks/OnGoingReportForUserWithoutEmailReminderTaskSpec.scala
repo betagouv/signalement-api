@@ -116,12 +116,23 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
     there was one(app.injector.instanceOf[MailerService])
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        recipient
-      )(subject, bodyHtml)
+        Seq(recipient),
+        null,
+        subject,
+        bodyHtml
+      )
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(app.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
+    there was no(app.injector.instanceOf[MailerService])
+      .sendEmail(
+        EmailAddress(anyString),
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any
+      )
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {

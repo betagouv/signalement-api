@@ -114,7 +114,15 @@ trait CreateEventContext extends Mockito {
   )
 
   def mailMustNotHaveBeenSent() = {
-    there was no(application.injector.instanceOf[MailerService]).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
+    there was no(application.injector.instanceOf[MailerService])
+      .sendEmail(
+        EmailAddress(anyString),
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any
+      )
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =

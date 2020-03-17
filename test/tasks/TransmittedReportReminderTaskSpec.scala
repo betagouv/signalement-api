@@ -147,12 +147,24 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        recipient
-      )(subject, bodyHtml, attachments)
+        Seq(recipient),
+        null,
+        subject,
+        bodyHtml,
+        attachments
+      )
   }
 
   def mailMustNotHaveBeenSent() = {
-    there was no(mailerService).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
+    there was no(app.injector.instanceOf[MailerService])
+      .sendEmail(
+        EmailAddress(anyString),
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any
+      )
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {

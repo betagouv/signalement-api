@@ -173,8 +173,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        recipient
-      )(subject, bodyHtml, attachments)
+        Seq(recipient),
+        null,
+        subject,
+        bodyHtml,
+        attachments
+      )
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
