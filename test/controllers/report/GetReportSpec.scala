@@ -135,13 +135,24 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(application.configuration.get[String]("play.mail.from")),
-        recipient
-      )(subject, bodyHtml, attachments)
+        Seq(recipient),
+        null,
+        subject,
+        bodyHtml,
+        attachments
+      )
   }
 
-
   def mailMustNotHaveBeenSent() = {
-    there was no(mailerService).sendEmail(EmailAddress(anyString), EmailAddress(anyString))(anyString, anyString, any)
+    there was no(application.injector.instanceOf[MailerService])
+      .sendEmail(
+        EmailAddress(anyString),
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any
+      )
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {

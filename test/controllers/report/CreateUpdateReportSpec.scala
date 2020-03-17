@@ -207,8 +207,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        recipient
-      )(subject, bodyHtml, attachments)
+        Seq(recipient),
+        null,
+        subject,
+        bodyHtml,
+        attachments
+      )
   }
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {

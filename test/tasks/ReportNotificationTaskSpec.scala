@@ -1,34 +1,35 @@
 package tasks
 
 import java.net.URI
-import java.time.{LocalDate, OffsetDateTime}
+import java.time.LocalDate
 import java.util.UUID
 
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import org.specs2.mock.Mockito
 import play.api.Configuration
 import repositories._
 import services.MailerService
 import utils.{AppSpec, EmailAddress, Fixtures}
 
 import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.duration.Duration
 
 class ReportNotification(implicit ee: ExecutionEnv) extends ReportNotificationTaskSpec {
   override def is =
     s2"""
          When reportNotificationTask task run                                             ${step(Await.result(reportNotificationTask.runTask(runningDate), Duration.Inf))}
-         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(List(userWithoutReport.email), "Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
-         And a mail is sent to the subscribed user and office  - case 1 new report        ${mailMustHaveBeenSent(List(officeEmail), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(report2), department2, runningDate.minusDays(7)).toString)}
-         And a mail is sent to the subscribed user and office  - case many new reports    ${mailMustHaveBeenSent(List(user.email, officeEmail), "2 nouveaux signalements", views.html.mails.dgccrf.reportOfTheWeek(Seq(report11, report12), department1, runningDate.minusDays(7)).toString)}
-         And a mail is sent to the subscribed user and office  - case of Guadeloupe       ${mailMustHaveBeenSent(List(user.email), "Un nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq(reportGuadeloupe), guadeloupe, runningDate.minusDays(7)).toString)}
+         And no mail is sent to the subscribed user and office  - case no new report      ${not(mailMustHaveBeenSent(Seq(userWithoutReport.email), "Aucun nouveau signalement", views.html.mails.dgccrf.reportOfTheWeek(Seq.empty, department3, runningDate.minusDays(7)).toString))}
+         And a mail is sent to the subscribed user and office  - case 1 new report        ${mailMustHaveBeenSent(Seq(officeEmail), s"[SignalConso] Un nouveau signalement pour le département $department2", views.html.mails.dgccrf.reportOfTheWeek(Seq(report2), department2, runningDate.minusDays(7)).toString)}
+         And a mail is sent to the subscribed user and office  - case many new reports    ${mailMustHaveBeenSent(Seq(user.email, officeEmail), s"[SignalConso] 2 nouveaux signalements pour le département $department1", views.html.mails.dgccrf.reportOfTheWeek(Seq(report12, report11), department1, runningDate.minusDays(7)).toString)}
+         And a mail is sent to the subscribed user and office  - case of Guadeloupe       ${mailMustHaveBeenSent(Seq(user.email), s"[SignalConso] Un nouveau signalement pour le département $guadeloupe", views.html.mails.dgccrf.reportOfTheWeek(Seq(reportGuadeloupe), guadeloupe, runningDate.minusDays(7)).toString)}
     """
 }
 
-abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
+
+
+abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
@@ -59,10 +60,10 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
   val userSubscriptionWithoutReport = Subscription(Some(UUID.randomUUID()), Some(userWithoutReport.id), None, "Departments", List(department3))
 
   val company = Fixtures.genCompany.sample.get
-  val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1))
-  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1))
-  val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department2))
-  val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(guadeloupe))
+  val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"))
+  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"))
+  val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department2 + "000"))
+  val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(guadeloupe + "00"))
 
   override def setupData = {
     Await.result(
@@ -82,11 +83,15 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
     )
   }
 
-  def mailMustHaveBeenSent(recipients: List[EmailAddress], subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        recipients: _*
-      )(subject, bodyHtml)
+        Seq.empty,
+        blindRecipients,
+        subject,
+        bodyHtml,
+        null
+      )
   }
 }

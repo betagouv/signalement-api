@@ -74,7 +74,8 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
 
       Future(mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = recipients: _*)(
+        recipients = Seq.empty,
+        blindRecipients = recipients,
         subject = s"[SignalConso] ${
           reports.length match {
             case 0 => "Aucun nouveau signalement"

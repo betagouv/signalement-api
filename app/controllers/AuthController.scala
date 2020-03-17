@@ -87,7 +87,7 @@ class AuthController @Inject()(
   private def sendResetPasswordMail(user: User, authToken: AuthToken) = {
     mailerService.sendEmail(
       from = configuration.get[EmailAddress]("play.mail.from"),
-      recipients = user.email)(
+      recipients = Seq(user.email),
       subject = "Votre mot de passe SignalConso",
       bodyHtml = views.html.mails.resetPassword(user, authToken).toString
     )
