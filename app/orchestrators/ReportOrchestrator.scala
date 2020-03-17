@@ -96,23 +96,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
-        mailerService.sendEmail(
-          from = mailFrom,
-          recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
-          subject = s"Nouveau signalement [${report.category}]",
-          bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
-        )
-        mailerService.sendEmail(
-          from = mailFrom,
-          recipients = Seq(report.email),
-          subject = "Votre signalement",
-          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-          attachments = mailerService.attachmentSeqForWorkflowStepN(2)
-        )
         if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
+        subject = s"Nouveau signalement [${report.category}]",
+        bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
+      )
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = Seq(report.email),
+        subject = "Votre signalement",
+        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2)
+      )
       logger.debug(s"Report ${report.id} created")
       report
     }
