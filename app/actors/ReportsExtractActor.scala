@@ -205,7 +205,12 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
           .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description").getOrElse("")}")
           .mkString("\n"),
-        available=requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRoles.DGCCRF
+      ),
+      ReportColumn(
+        "Contrôle effectué", centerAlignmentColumn,
+        (report, _, events, _) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
+        available = requestedBy.userRole == UserRoles.DGCCRF
       )
     ).filter(_.available)
   }

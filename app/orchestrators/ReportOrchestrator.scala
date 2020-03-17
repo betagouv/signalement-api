@@ -55,7 +55,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       if (admins.nonEmpty) {
         mailerService.sendEmail(
           from = mailFrom,
-          recipients = admins.map(_.email): _*)(
+          recipients = admins.map(_.email),
           subject = "Nouveau signalement",
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
@@ -96,23 +96,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
-        mailerService.sendEmail(
-          from = mailFrom,
-          recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
-          subject = s"Nouveau signalement [${report.category}]",
-          bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
-        )
-        mailerService.sendEmail(
-          from = mailFrom,
-          recipients = report.email)(
-          subject = "Votre signalement",
-          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-          mailerService.attachmentSeqForWorkflowStepN(2)
-        )
         if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
+        subject = s"Nouveau signalement [${report.category}]",
+        bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
+      )
+      mailerService.sendEmail(
+        from = mailFrom,
+        recipients = Seq(report.email),
+        subject = "Votre signalement",
+        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2)
+      )
       logger.debug(s"Report ${report.id} created")
       report
     }
@@ -267,10 +267,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = report.email)(
+      recipients = Seq(report.email),
       subject = "L'entreprise a pris connaissance de votre signalement",
       bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachments = mailerService.attachmentSeqForWorkflowStepN(3)
     )
     for {
       event <- eventRepository.createEvent(
@@ -292,25 +292,25 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     Some(user.email).filter(_.value != "").foreach(email =>
       mailerService.sendEmail(
         from = mailFrom,
-        recipients = email)(
+        recipients = Seq(email),
         subject = "Votre réponse au signalement",
         bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = report.email)(
+      recipients = Seq(report.email),
       subject = "L'entreprise a répondu à votre signalement",
       bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
         report,
         reportResponse,
         configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
       ).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachments = mailerService.attachmentSeqForWorkflowStepN(4)
     )
     mailerService.sendEmail(
       from = mailFrom,
-      recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"):_*)(
+      recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
       subject = s"Un professionnel a répondu à un signalement [${report.category}]",
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )

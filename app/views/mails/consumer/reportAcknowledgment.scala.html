@@ -27,25 +27,38 @@
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
-            <p>
-                Que va-t-il se passer ?
-            </p>
-            <p>
-                <b>L'entreprise va être informée de votre signalement pour qu'elle puisse corriger le problème.</b>
-            </p>
 
-            <p>
-                Dès que l'entreprise aura lu le signalement, vous recevrez un email.
-                En moyenne l'entreprise met 8 jours pour lire le signalement.
-            </p>
-            <p>
-                Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
-            </p>
+            @if(report.status == TRAITEMENT_EN_COURS) {
+                <p>
+                    Que va-t-il se passer ?
+                </p>
+                <p>
+                    <b>L'entreprise va être informée de votre signalement pour qu'elle puisse corriger le problème.</b>
+                </p>
 
-            <p>
-                Que l'entreprise lise ou non votre signalement,
-                <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
-            </p>
+                <p>
+                    Dès que l'entreprise aura lu le signalement, vous recevrez un email.
+                    En moyenne l'entreprise met 8 jours pour lire le signalement.
+                </p>
+                <p>
+                    Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
+                </p>
+
+                <p>
+                    Que l'entreprise lise ou non votre signalement,
+                    <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
+                </p>
+            } else {
+                <p>
+                    Les enquêteurs de la répression des fraudes sont informés de votre signalement.
+                </p>
+                <p>
+                    <b>Attention : en raison des circonstances exceptionnelles liées au COVID-19, il nous est techniquement impossible d’envoyer votre signalement à l’entreprise.</b>
+                </p>
+                <p>
+                    Nous vous tiendrons au courant dès que l’envoi aura pu se faire. 
+                </p>
+            }
         }
     }
 

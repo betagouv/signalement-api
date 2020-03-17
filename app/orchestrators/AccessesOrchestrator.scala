@@ -106,7 +106,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
     } yield {
       mailerService.sendEmail(
         from = mailFrom,
-        recipients = user.email)(
+        recipients = Seq(user.email),
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
         bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
       )
@@ -135,7 +135,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
       mailerService.sendEmail(
         from = mailFrom,
-        recipients = email)(
+        recipients = Seq(email),
         subject = s"Rejoignez l'entreprise ${company.name} sur SignalConso",
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
@@ -150,7 +150,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       val invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
       mailerService.sendEmail(
         from = mailFrom,
-        recipients = email)(
+        recipients = Seq(email),
         subject = "Votre accès DGCCRF sur SignalConso",
         bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
       )
