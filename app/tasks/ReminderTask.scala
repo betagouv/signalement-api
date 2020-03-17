@@ -153,7 +153,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
       mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = adminMails: _*)(
+        recipients = adminMails,
         subject = "Nouveau signalement",
         bodyHtml = views.html.mails.professional.reportReminder(report, expirationDate).toString
       )
@@ -175,10 +175,10 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     } yield {
       mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = report.email)(
+        recipients = Seq(report.email),
         subject = "L'entreprise n'a pas souhaité consulter votre signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        mailerService.attachmentSeqForWorkflowStepN(3)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(3)
       )
       Reminder(report.id, ReminderValue.CloseOnGoingReportByNoReadingForUserWithEmail)
     }
@@ -191,9 +191,10 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     } yield {
       mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = report.email)(subject = "L'entreprise n'a pas répondu au signalement",
+        recipients = Seq(report.email),
+        subject = "L'entreprise n'a pas répondu au signalement",
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        mailerService.attachmentSeqForWorkflowStepN(4)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(4)
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }
