@@ -111,7 +111,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         recipients = Seq(report.email),
         subject = "Votre signalement",
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        mailerService.attachmentSeqForWorkflowStepN(2)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2)
       )
       logger.debug(s"Report ${report.id} created")
       report
