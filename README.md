@@ -70,7 +70,7 @@ La version de démo de l'API est accessible à l'adresse http://demo-signalement
 
 ## Production
 
-L'API de production de l'application  est accessible à l'adresse https://signalconso-api.beta.gouv.fr/api.
+L'API de production de l'application  est accessible à l'adresse https://signal-api.conso.gouv.fr/api.
 
 ## Variables d'environnement
 
@@ -81,8 +81,8 @@ L'API de production de l'application  est accessible à l'adresse https://signal
 |EVOLUTIONS_AUTO_APPLY|Exécution automatique des scripts `upgrade` de la base de données|false|
 |EVOLUTIONS_AUTO_APPLY_DOWNS|Exécution automatique des scripts `downgrade` de la base de données|false|
 |MAX_CONNECTIONS|Nombre maximum de connexions ouvertes vers la base de données||
-|MAIL_FROM|Expéditeur des mails|dev-noreply@signalconso.beta.gouv.fr|
-|MAIL_CONTACT_RECIPIENT|Boite mail destinataire des mails génériques|contact@signalconso.beta.gouv.fr|
+|MAIL_FROM|Expéditeur des mails|dev-noreply@signal.conso.gouv.fr|
+|MAIL_CONTACT_RECIPIENT|Boite mail destinataire des mails génériques|contact@signal.conso.gouv.fr|
 |MAILER_HOST|Hôte du serveur de mails||
 |MAILER_PORT|Port du serveur de mails||
 |MAILER_USER|Nom d'utilisateur du serveur de mails||

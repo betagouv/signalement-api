@@ -1,6 +1,6 @@
 package repositories
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime, YearMonth, ZoneOffset}
+import java.time._
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -170,13 +170,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
   val baseStatReportTableQuery = reportTableQuery
-    .filter(_.companyPostalCode.map(_.substring(0, 2) inSet Departments.AUTHORIZED).getOrElse(false))
     .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
-  def countWithStatus(statusList: List[ReportStatusValue]) = db
+  def countWithStatus(statusList: List[ReportStatusValue], cutoff: Option[Duration]) = db
     .run(
       baseStatReportTableQuery
+        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
         .filter(_.status inSet statusList.map(_.defaultValue))
         .length
         .result
@@ -209,41 +209,42 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-
-      val query = reportTableQuery
-          .filterIf(filter.departments.length > 0) {
-            case table => table.companyPostalCode.map(cp => cp.substring(0, 2).inSet(filter.departments)).getOrElse(false)
-          }
-          .filterOpt(filter.email) {
-            case(table, email) => table.email === EmailAddress(email)
-          }
-          .filterOpt(filter.siret) {
-            case(table, siret) => table.companySiret === SIRET(siret)
-          }
-          .filterOpt(filter.companyName) {
-            case(table, companyName) => table.companyName like s"${companyName}%"
-          }
-          .filterOpt(filter.start) {
-            case(table, start) => date(table.creationDate) >= start
-          }
-          .filterOpt(filter.end) {
-            case(table, end) => date(table.creationDate) < end
-          }
-          .filterOpt(filter.category) {
-            case(table, category) => table.category === category
-          }
-          .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
-            case table => table.status.inSet(filter.statusList.map(_.defaultValue))
-          }
-          .filterOpt(filter.details) {
-            case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
-          }
-          .filterOpt(filter.employeeConsumer) {
-            case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
-          }
+    val query = reportTableQuery
+      .filterOpt(filter.email) {
+          case(table, email) => table.email === EmailAddress(email)
+        }
+        .filterOpt(filter.siret) {
+          case(table, siret) => table.companySiret === SIRET(siret)
+        }
+        .filterOpt(filter.companyName) {
+          case(table, companyName) => table.companyName like s"${companyName}%"
+        }
+        .filterOpt(filter.start) {
+          case(table, start) => date(table.creationDate) >= start
+        }
+        .filterOpt(filter.end) {
+          case(table, end) => date(table.creationDate) < end
+        }
+        .filterOpt(filter.category) {
+          case(table, category) => table.category === category
+        }
+        .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
+          case table => table.status.inSet(filter.statusList.map(_.defaultValue))
+        }
+        .filterOpt(filter.details) {
+          case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+        }
+        .filterOpt(filter.employeeConsumer) {
+          case(table, employeeConsumer) => table.employeeConsumer === employeeConsumer
+        }
+      .joinLeft(companyTableQuery).on(_.companyId === _.id)
+      .filterIf(filter.departments.length > 0) {
+        case (report, company) => company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
+      }
 
     for {
         reports <- query
+          .map(_._1)
           .sortBy(_.creationDate.desc)
           .drop(offset)
           .take(limit)
@@ -337,4 +338,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
   }
+
+  def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
+    .run(
+      reportTableQuery
+        .filter(_.status === ReportStatus.A_TRAITER.defaultValue)
+        .filter(_.companyId inSet companiesIds)
+        .to[List].result
+    )
 }

@@ -1,5 +1,5 @@
 @import utils.EmailAddress
-@(report: Report, files: List[ReportFile])(implicit contactAddress: EmailAddress)
+@(report: Report, files: List[ReportFile])
 
 @import utils.Constants.ReportStatus._
 
@@ -9,17 +9,6 @@
         Bonjour @report.firstName @report.lastName,
     </p>
     @report.status match {
-        case NA => {
-            <p>
-                Le site SignalConso fonctionne uniquement dans les régions Centre-Val de Loire, Auvergne-Rhône-Alpes et Occitanie, comme nous l'indiquons sur notre site.
-            </p>
-            <p>
-                Votre signalement ne sera pas transmis au commerçant et à la répression des fraudes de la région. Par contre, il reste enregistré dans la base de données de la répression des fraudes.
-            </p>
-            <p>
-                En attendant de déployer SignalConso sur toute la France, vous pouvez contacter la DGCCRF via : <a href="https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier">https://www.economie.gouv.fr/contact/contacter-la-dgccrf?dest=particulier</a>
-            </p>
-        }
         case EMPLOYEE_REPORT => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
@@ -60,25 +49,11 @@
         }
     }
 
-    <p>
-        Vous avez une question ? Vous souhaitez modifier votre signalement ? <a href="mailto:@contactAddress">Contactez-nous</a>.
-    </p>
-
     <p>À bientôt sur SignalConso !</p>
 
     <p>
         <i>L'équipe SignalConso</i>
     </p>
-
-    @if(report.status != NA) {
-        <p style="text-align: center;
-            margin: 30px">
-            <a href="https://monavis.numerique.gouv.fr/Demarches/2071?&view-mode=formulaire-avis&nd_mode=en-ligne-enti%C3%A8rement&nd_source=button&key=5a58254dab900906fe4924e37c1c5bba">
-                <img src="https://monavis.numerique.gouv.fr/monavis-static/bouton-bleu.png" alt="Je donne mon avis" title="Je donne mon avis sur cette démarche" />
-            </a>
-        </p>
-    }
-
 
     <div style="padding-bottom: 0.5em">
         <div style="font-weight: bold;

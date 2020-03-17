@@ -18,7 +18,7 @@ POST         /api/stats/reports                                 controllers.Stat
 
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
-GET          /api/reports/extract                       controllers.ReportListController.extractReports(departments: Option[String], siret: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
+POST         /api/reports/extract                       controllers.ReportListController.extractReports()
 
 # Report API
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
@@ -36,6 +36,9 @@ POST         /api/reports/:uuid/company                 controllers.ReportContro
 POST         /api/reports/:uuid/consumer                controllers.ReportController.updateReportConsumer(uuid)
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
+
+# Async files API
+GET         /api/async-files                            controllers.AsyncFileController.listAsyncFiles
 
 # Events API
 GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
