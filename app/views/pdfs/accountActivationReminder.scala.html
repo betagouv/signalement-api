@@ -1,6 +1,6 @@
 @import utils.EmailAddress
 @import java.net.URI
-@(companyAddress: String, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(report: Report, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 
 <!doctype html>
@@ -27,7 +27,7 @@
             </p>
 
             <div class="address">
-                @views.html.fragments.address(companyAddress)
+                @views.html.fragments.address(report.companyAddress)
             </div>
 
             <div class="content mt-3">
@@ -53,7 +53,7 @@
                 </p>
 
                 <p class="text-center text-bold">
-                    @views.html.fragments.address(companyAddress)
+                    @views.html.fragments.address(report.companyAddress)
                 </p>
 
                 <p class="text-bold">
@@ -84,8 +84,9 @@
                     entre les consommateurs, les professionnels et les services de la DGCCRF.
                 </p>
 
-                <p>
-                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email à l’adresse <strong>@contactAddress</strong>.
+                <p class="standout">
+                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email
+                    à l’adresse <strong>@contactAddress</strong> en précisant la référence suivante : @report.id.toString.substring(0, 13)
                 </p>
 
                 <p class="text-right mr-5">
