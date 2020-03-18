@@ -17,7 +17,7 @@ case class Event(
                   action: ActionEventValue,
                   details: JsValue = Json.obj()
                 )
-                 
+
 object Event {
 
   implicit val eventFormat: OFormat[Event] = Json.format[Event]
