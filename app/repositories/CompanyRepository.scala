@@ -65,8 +65,14 @@ class CompanyRepository @Inject()(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
 
+  def findByShortId(id: String): Future[Option[Company]] =
+    db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").result.headOption)
+
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
+
+  def findByName(name: String): Future[Option[Company]] =
+    db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").result.headOption)
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery

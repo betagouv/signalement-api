@@ -73,6 +73,10 @@ GET         /api/account/:siret/document/activation     controllers.AccountContr
 POST        /api/account/document/activation            controllers.AccountController.getActivationDocumentForReportList()
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
 
+# Company details API
+GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
+GET         /api/companies/details/:siret               controllers.CompanyController.companyDetails(siret)
+
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate
 
