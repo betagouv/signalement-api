@@ -27,28 +27,17 @@ class CompanyController @Inject()(
         case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q))
         case q => companyRepository.findByName(q)
       }
-    } yield company.map(c => Ok(Json.obj(
-      "id" -> c.id,
-      "siret" -> c.siret,
-      "name"  -> c.name,
-      "address"  -> c.address,
-      "postalCode"  -> c.postalCode
-    ))).getOrElse(NotFound)
+    } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
-  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def companyDetails(uuid: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      company   <- companyRepository.findBySiret(SIRET(siret))
+      company   <- companyRepository.findByShortId(uuid)
       accesses  <- company.map(companyRepository.fetchUsersWithLevel(_)).getOrElse(Future(Nil))
       tokens    <- company.map(accessTokenRepository.fetchPendingTokens(_)).getOrElse(Future(Nil))
     } yield company.map(c => Ok(
       Json.obj(
-        "company" -> Json.obj(
-          "siret" -> c.siret,
-          "name"  -> c.name,
-          "address"  -> c.address,
-          "postalCode"  -> c.postalCode,
-        ),
+        "company" -> Json.toJson(c),
         "accesses" -> accesses.map {case (u, l) => Json.obj(
           "firstName" -> u.firstName,
           "lastName" -> u.lastName,
