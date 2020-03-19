@@ -78,6 +78,8 @@ case class Report(
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
   }
+
+  def shortId() = id.toString.substring(0, 13).toUpperCase
 }
 
 object Report {
