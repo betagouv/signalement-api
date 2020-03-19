@@ -22,12 +22,12 @@ class CompanyController @Inject()(
  extends BaseCompanyController {
   def findCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      company <- q match {
+      companies <- q match {
         case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
-        case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q))
+        case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q)).map(_.toList)
         case q => companyRepository.findByName(q)
       }
-    } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
+    } yield Ok(Json.toJson(companies))
   }
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
