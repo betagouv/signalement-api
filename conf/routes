@@ -75,7 +75,7 @@ POST        /api/account/dgccrf/invitation              controllers.AccountContr
 
 # Company details API
 GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
-GET         /api/companies/:uuid                        controllers.CompanyController.companyDetails(uuid)
+GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

@@ -30,9 +30,9 @@ class CompanyController @Inject()(
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
-  def companyDetails(uuid: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      company   <- companyRepository.findByShortId(uuid)
+      company   <- companyRepository.findBySiret(SIRET(siret))
       accesses  <- company.map(companyRepository.fetchUsersWithLevel(_)).getOrElse(Future(Nil))
       tokens    <- company.map(accessTokenRepository.fetchPendingTokens(_)).getOrElse(Future(Nil))
     } yield company.map(c => Ok(
