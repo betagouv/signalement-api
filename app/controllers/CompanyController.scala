@@ -33,23 +33,6 @@ class CompanyController @Inject()(
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       company   <- companyRepository.findBySiret(SIRET(siret))
-      accesses  <- company.map(companyRepository.fetchUsersWithLevel(_)).getOrElse(Future(Nil))
-      tokens    <- company.map(accessTokenRepository.fetchPendingTokens(_)).getOrElse(Future(Nil))
-    } yield company.map(c => Ok(
-      Json.obj(
-        "company" -> Json.toJson(c),
-        "accesses" -> accesses.map {case (u, l) => Json.obj(
-          "firstName" -> u.firstName,
-          "lastName" -> u.lastName,
-          "email" -> u.email,
-          "level" -> l,
-        )},
-        "invitations" -> tokens.map(t => Json.obj(
-          "kind" -> t.kind,
-          "level" -> t.companyLevel,
-          "emailedTo" -> t.emailedTo
-        ))
-      )
-    )).getOrElse(NotFound)
+    } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 }
