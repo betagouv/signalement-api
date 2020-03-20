@@ -79,7 +79,7 @@ case class Report(
     if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
   }
 
-  def shortId() = id.toString.substring(0, 13).toUpperCase
+  def companyShortId() = companyId.map(_.toString.substring(0, 13).toUpperCase)
 }
 
 object Report {
