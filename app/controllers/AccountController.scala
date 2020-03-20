@@ -126,15 +126,14 @@ class AccountController @Inject()(
     val remindEvent = events.find(_.action == ActionEvent.RELANCE)
     remindEvent.map(remindEvent =>
         views.html.pdfs.accountActivationReminder(
-          report.companyAddress,
+          report,
           creationDate,
           remindEvent.creationDate.map(_.toLocalDate).get.plus(reportReminderByPostDelay),
           activationKey
         )
     ).getOrElse(
       views.html.pdfs.accountActivation(
-        report.companyAddress,
-        report.creationDate.toLocalDate,
+        report,
         activationKey
       )
     )
