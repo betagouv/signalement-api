@@ -1,65 +1,38 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import play.api.Logger
-import play.api.http.Status._
-import play.api.libs.ws._
-import utils.silhouette.auth.AuthEnv
-
+import javax.inject.{Inject, Singleton}
+import java.util.UUID
+import repositories._
+import models._
+import orchestrators.AccessesOrchestrator
+import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
+import com.mohiva.play.silhouette.api.Silhouette
+import utils.silhouette.auth.{AuthEnv, WithRole}
+import utils.{EmailAddress, SIRET}
 
-case class Location(lat: Double, lon: Double)
 
-class CompanyController @Inject()(ws: WSClient, val silhouette: Silhouette[AuthEnv])
-                                 (implicit val executionContext: ExecutionContext) extends BaseController {
-
-  val logger: Logger = Logger(this.getClass)
-
-  def getCompanies(search: String, postalCode: Option[String], maxCount: Int) = UnsecuredAction.async { implicit request =>
-    var request = ws
-      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/full_text/$search")
-      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
-
-    if (postalCode.isDefined) {
-      request = request.addQueryStringParameters("code_postal" -> postalCode.get)
-    }
-    
-    request = request.addQueryStringParameters("per_page" -> maxCount.toString)
-
-    request.get().flatMap(
-      response => {
-        response.status match {
-          case NOT_FOUND => Future(NotFound(response.json))
-          case status if isServerError(status) =>
-            logger.error(s"getCompanies [$search, $postalCode, $maxCount] - $response")
-            Future(InternalServerError(response.json))
-          case _ => Future(Ok(response.json))
-        }
+@Singleton
+class CompanyController @Inject()(
+                                val userRepository: UserRepository,
+                                val companyRepository: CompanyRepository,
+                                val accessTokenRepository: AccessTokenRepository,
+                                val silhouette: Silhouette[AuthEnv]
+                              )(implicit ec: ExecutionContext)
+ extends BaseCompanyController {
+  def findCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    for {
+      companies <- q match {
+        case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
+        case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q)).map(_.toList)
+        case q => companyRepository.findByName(q)
       }
-    );
-
+    } yield Ok(Json.toJson(companies))
   }
 
-  def getCompaniesBySiret(siret: String, maxCount: Int) = UnsecuredAction.async { implicit request =>
-
-    logger.debug(s"getCompaniesBySiret [$siret]")
-
-    var request = ws
-      .url(s"https://entreprise.data.gouv.fr/api/sirene/v1/siret/$siret")
-      .addHttpHeaders("Accept" -> "application/json", "Content-Type" -> "application/json")
-
-    request = request.addQueryStringParameters("per_page" -> maxCount.toString)
-
-    request.get().flatMap(
-      response => response.status match {
-        case NOT_FOUND => Future(NotFound(response.json))
-        case status if isServerError(status) =>
-          logger.error(s"getCompaniesBySiret [$siret] - $response")
-          Future(InternalServerError(response.json))
-        case _ => Future(Ok(response.json))
-      }
-    );
-
+  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    for {
+      company   <- companyRepository.findBySiret(SIRET(siret))
+    } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 }
