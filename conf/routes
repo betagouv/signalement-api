@@ -49,10 +49,6 @@ POST        /api/reports/events/contactByPost           controllers.ReportListCo
 GET         /api/constants/actions                      controllers.ConstantController.getActions()
 GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
 
-# Company API
-GET         /api/companies/siret/:siret                 controllers.CompanyController.getCompaniesBySiret(siret, maxCount: Int ?= 10)
-GET         /api/companies/:search                      controllers.CompanyController.getCompanies(search, postalCode: Option[String], maxCount: Int ?= 10)
-
 # Authentication API
 POST	    /api/authenticate                           controllers.AuthController.authenticate
 POST	    /api/authenticate/password/forgot           controllers.AuthController.forgotPassword
@@ -76,6 +72,10 @@ POST        /api/account/activation                     controllers.AccountContr
 GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
 POST        /api/account/document/activation            controllers.AccountController.getActivationDocumentForReportList()
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
+
+# Company details API
+GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
+GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

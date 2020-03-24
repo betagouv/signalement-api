@@ -39,3 +39,15 @@ case class Company(
                   address: String,
                   postalCode: Option[String],
                 )
+
+object Company {
+  implicit val companyWrites = new Writes[Company] {
+    def writes(company: Company) = Json.obj(
+      "id" -> company.id,
+      "siret" -> company.siret,
+      "name"  -> company.name,
+      "address"  -> company.address,
+      "postalCode"  -> company.postalCode
+    )
+  }
+}
