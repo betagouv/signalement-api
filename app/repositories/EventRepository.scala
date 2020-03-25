@@ -28,6 +28,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
 
     def id = column[UUID]("id", O.PrimaryKey)
     def reportId = column[UUID]("report_id")
+    def companyId = column[Option[UUID]]("company_id")
     def userId = column[Option[UUID]]("user_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
@@ -35,23 +36,22 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
     def details = column[JsValue]("details")
     def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, JsValue)
+    type EventData = (UUID, UUID, Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
 
     def constructEvent: EventData => Event = {
-
-      case (id, reportId, userId, creationDate, eventType, action, details) => {
-        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
+      case (id, reportId, companyId, userId, creationDate, eventType, action, details) => {
+        Event(Some(id), Some(reportId), companyId, userId, Some(creationDate), Constants.EventType.fromValue(eventType),
           Constants.ActionEvent.fromValue(action), details)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, details) =>
-        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, details)
+      case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
+        (id.get, reportId.get, companyId, userId, creationDate.get, eventType.value, action.value, details)
     }
 
     def * =
-      (id, reportId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
+      (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
   val reportTableQuery = TableQuery[reportRepository.ReportTable]
