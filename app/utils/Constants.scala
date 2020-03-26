@@ -191,6 +191,8 @@ object Constants {
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
     object COMMENT extends ActionEventValue("Ajout d'un commentaire")
+    object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes du consommateur")
+    object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes du professionnel")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
     val actionEvents = Seq(
@@ -211,13 +213,15 @@ object Constants {
       MODIFICATION_COMMERCANT,
       MODIFICATION_CONSO,
       COMMENT,
+      CONSUMER_ATTACHMENTS,
+      PROFESSIONAL_ATTACHMENTS,
       CONTROL
     )
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
       Map(
         UserRoles.Pro -> List(COMMENT),
-        UserRoles.Admin -> List(COMMENT),
+        UserRoles.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
         UserRoles.DGCCRF -> List(COMMENT, CONTROL)
       )
 
