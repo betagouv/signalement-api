@@ -137,16 +137,25 @@ object Constants {
     object PRO extends EventTypeValue("PRO")
     object CONSO extends EventTypeValue("CONSO")
     object DGCCRF extends EventTypeValue("DGCCRF")
-    object RECTIF extends EventTypeValue("RECTIF")
+    object ADMIN extends EventTypeValue("ADMIN")
 
     val eventTypes = Seq(
       PRO,
       CONSO,
       DGCCRF,
-      RECTIF
+      ADMIN
     )
 
     def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
+
+    def fromUserRole(userRole: UserRole) = {
+      userRole match {
+        case UserRoles.Admin => ADMIN
+        case UserRoles.DGCCRF => DGCCRF
+        case UserRoles.Pro => PRO
+        case _ => CONSO
+      }
+    }
 
   }
 
@@ -182,7 +191,6 @@ object Constants {
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
     object COMMENT extends ActionEventValue("Ajout d'un commentaire")
-    object COMMENT_DGCCRF extends ActionEventValue("Ajout d'un commentaire interne à la DGCCRF")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
     val actionEvents = Seq(
@@ -203,19 +211,15 @@ object Constants {
       MODIFICATION_COMMERCANT,
       MODIFICATION_CONSO,
       COMMENT,
-      COMMENT_DGCCRF,
       CONTROL
     )
 
-    val actionsAdmin = Seq(
-      CONTACT_COURRIER,
-      COMMENT
-    )
-
-    val actionsDGCCRF = Seq(
-      CONTROL,
-      COMMENT_DGCCRF
-    )
+    val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
+      Map(
+        UserRoles.Pro -> List(COMMENT),
+        UserRoles.Admin -> List(COMMENT),
+        UserRoles.DGCCRF -> List(COMMENT, CONTROL)
+      )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }

@@ -159,7 +159,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(report.id),
             Some(userUUID),
             Some(OffsetDateTime.now()),
-            Constants.EventType.RECTIF,
+            Constants.EventType.ADMIN,
             Constants.ActionEvent.MODIFICATION_COMMERCANT,
             stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress}")
           )
@@ -187,7 +187,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(report.id),
             Some(userUUID),
             Some(OffsetDateTime.now()),
-            Constants.EventType.RECTIF,
+            Constants.EventType.ADMIN,
             Constants.ActionEvent.MODIFICATION_CONSO,
             stringToDetailsJsValue(
               s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
@@ -396,6 +396,27 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       )
     } yield {
       updatedReport
+    }
+  }
+
+
+  def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] = {
+    for {
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.fromUserRole(user.userRole),
+          reportAction.actionType,
+          reportAction.details.map(details => Json.obj("description" -> details)).getOrElse(Json.toJson(reportAction))
+        )
+      )
+      _ <- reportRepository.attachFilesToReport(reportAction.fileIds, report.id)
+    } yield {
+      logger.debug(s"Create event ${newEvent.id} on report ${report.id} for reportActionType ${reportAction.actionType}")
+      newEvent
     }
   }
 
