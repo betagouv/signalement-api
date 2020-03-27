@@ -191,8 +191,8 @@ object Constants {
     object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
 
     object COMMENT extends ActionEventValue("Ajout d'un commentaire")
-    object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes du consommateur")
-    object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes du professionnel")
+    object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par le consommateur")
+    object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par l'entreprise")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
     val actionEvents = Seq(
