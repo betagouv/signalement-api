@@ -100,6 +100,7 @@ object Fixtures {
 
     def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
         id <- arbitrary[UUID]
+        companyId <- arbitrary[UUID]
         details <- arbString.arbitrary
-    } yield Event(Some(id), Some(reportId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+    } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
 }

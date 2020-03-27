@@ -126,19 +126,19 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     Fixtures.genSiret.sample,
     OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC), "r1", "nom 1", EmailAddress("email 1"), true, false,
     SIGNALEMENT_TRANSMIS)
-  val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val outOfTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     ENVOI_SIGNALEMENT, stringToDetailsJsValue("test"))
-  val onTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val onTimeReportTransmittedEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     ENVOI_SIGNALEMENT, stringToDetailsJsValue("test"))
-  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
-  val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))

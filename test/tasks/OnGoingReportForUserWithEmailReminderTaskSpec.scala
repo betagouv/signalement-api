@@ -129,25 +129,22 @@ abstract class OnGoingReportForUserWithEmailReminderTaskSpec(implicit ee: Execut
     Some(companyData.siret),
     OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC), "r1", "nom 1", EmailAddress("email 1"), true, false,
     TRAITEMENT_EN_COURS)
-  val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val outOfTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_EMAIL, stringToDetailsJsValue("test"))
-  val onTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val onTimeContactByMailEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_EMAIL, stringToDetailsJsValue("test"))
-  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 18, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
-  val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID),
+  val onTimeReminderEvent = Event(Some(UUID.randomUUID()), Some(reportUUID), Some(companyData.id),
     Some(userWithEmail.id),
     Some(OffsetDateTime.of(2019, 9, 20, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
-
-
-
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(mailerService)

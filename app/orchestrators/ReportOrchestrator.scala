@@ -64,6 +64,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            Some(company.id),
             Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
@@ -157,6 +158,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            Some(company.id),
             Some(userUUID),
             Some(OffsetDateTime.now()),
             Constants.EventType.RECTIF,
@@ -185,6 +187,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            report.companyId,
             Some(userUUID),
             Some(OffsetDateTime.now()),
             Constants.EventType.RECTIF,
@@ -248,6 +251,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
@@ -277,6 +281,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -325,6 +330,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
               reportId = Some(r.id),
+              companyId = r.companyId,
               userId = Some(user.id)
             )).map(Some(_))
           case _ => Future(None)
@@ -365,6 +371,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(user.id),
           Some(OffsetDateTime.now()),
           EventType.PRO,
@@ -387,6 +394,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          updatedReport.companyId,
           Some(user.id),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -405,6 +413,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       Event(
         Some(UUID.randomUUID()),
         Some(reportId),
+        None,
         None,
         Some(OffsetDateTime.now()),
         EventType.CONSO,
@@ -426,7 +435,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                 !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
           newEvent(
             r.id,
-            Event(Some(UUID.randomUUID()), Some(r.id), Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
+            Event(Some(UUID.randomUUID()), Some(r.id), r.companyId, Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
             user
           )
         ))
