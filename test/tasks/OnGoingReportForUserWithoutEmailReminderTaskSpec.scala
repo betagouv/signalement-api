@@ -95,19 +95,19 @@ abstract class OnGoingReportForUserWithoutEmailReminderTaskSpec(implicit ee: Exe
     Some(companyData.siret),
     OffsetDateTime.of(2019, 9, 26, 0, 0, 0, 0, ZoneOffset.UTC), "r1", "nom 1", EmailAddress("email 1"), true, false,
     TRAITEMENT_EN_COURS)
-  val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val outOfTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID), Some(companyData.id),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 1, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_COURRIER, stringToDetailsJsValue("test"))
-  val onTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val onTimeContactByPostEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID), Some(companyData.id),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 6, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     CONTACT_COURRIER, stringToDetailsJsValue("test"))
-  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val outOfTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID), Some(companyData.id),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 4, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
-  val onTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID),
+  val onTimeReminderEvent = Event(Some(UUID.randomUUID() ), Some(reportUUID), Some(companyData.id),
     Some(userWithoutEmail.id),
     Some(OffsetDateTime.of(2019, 9, 8, 0, 0, 0, 0, ZoneOffset.UTC)), PRO,
     RELANCE, stringToDetailsJsValue("test"))
