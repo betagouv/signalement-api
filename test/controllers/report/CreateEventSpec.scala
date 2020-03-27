@@ -126,7 +126,7 @@ trait CreateEventContext extends Mockito {
   }
 
   def eventToCreate(eventType: EventTypeValue, action: ActionEventValue) =
-    Event(None, Some(reportUUID), Some(adminUser.id), None, eventType, action, Json.obj())
+    Event(None, Some(reportUUID), None, Some(adminUser.id), None, eventType, action, Json.obj())
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminUser.email.value)
