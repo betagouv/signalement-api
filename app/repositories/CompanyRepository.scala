@@ -133,5 +133,4 @@ class CompanyRepository @Inject()(
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
-
 }

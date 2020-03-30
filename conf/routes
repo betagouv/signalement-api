@@ -73,6 +73,7 @@ POST        /api/account/document/activation            controllers.AccountContr
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
 
 # Company details API
+GET         /api/companies/to-activateAccount           controllers.CompanyController.companiesToActivate
 GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 

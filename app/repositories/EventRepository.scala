@@ -93,5 +93,14 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
       events.groupBy(_.reportId.get)
     )
   }
-}
 
+  def fetchContactEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] = {
+    db.run(eventTableQuery
+      .filter(_.companyId inSetBind companyIds.distinct)
+      .filter(_.action === Constants.ActionEvent.CONTACT_COURRIER.value)
+      .sortBy(_.creationDate.desc.nullsLast)
+      .to[List].result
+    )
+      .map(f => f.groupBy(_.companyId.get).toMap)
+  }
+}

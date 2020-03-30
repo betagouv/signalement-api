@@ -17,6 +17,7 @@ class CompanyController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val accessTokenRepository: AccessTokenRepository,
+                                val eventRepository: EventRepository,
                                 val silhouette: Silhouette[AuthEnv]
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
@@ -32,7 +33,21 @@ class CompanyController @Inject()(
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      company   <- companyRepository.findBySiret(SIRET(siret))
+      company <- companyRepository.findBySiret(SIRET(siret))
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
+  }
+
+  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    for {
+      companies <- accessTokenRepository.companiesToActivate()
+      eventsMap <- eventRepository.fetchContactEvents(companies.map(_.id))
+    } yield Ok(
+      Json.toJson(companies.map(c =>
+        Json.obj(
+          "company" -> Json.toJson(c),
+          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.headOption)
+        )
+      ))
+    )
   }
 }
