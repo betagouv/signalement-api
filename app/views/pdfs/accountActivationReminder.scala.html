@@ -1,6 +1,6 @@
 @import utils.EmailAddress
 @import java.net.URI
-@(report: Report, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(company: Company, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 
 <!doctype html>
@@ -36,7 +36,7 @@
             </div>
 
             <div class="recipient">
-                @views.html.fragments.address(report.companyAddress)
+                @views.html.fragments.address(company.address)
             </div>
 
             <div class="content mt-3">
@@ -62,7 +62,7 @@
                 </p>
 
                 <p class="text-center text-bold">
-                    @views.html.fragments.address(report.companyAddress)
+                    @views.html.fragments.address(company.address)
                 </p>
 
                 <p class="text-bold">
@@ -95,7 +95,7 @@
 
                 <p class="standout">
                     Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email
-                    à l’adresse <strong>@contactAddress</strong> @report.companyShortId.map(id => s"en précisant la référence suivante : $id")
+                    à l’adresse <strong>@contactAddress</strong> @company.shortId.map(id => s"en précisant la référence suivante : $id")
                 </p>
 
                 <p class="text-right mr-5">

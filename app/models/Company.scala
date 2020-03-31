@@ -38,7 +38,9 @@ case class Company(
                   name: String,
                   address: String,
                   postalCode: Option[String],
-                )
+                ) {
+  def shortId = this.id.toString.substring(0, 13).toUpperCase
+}
 
 object Company {
   implicit val companyWrites = new Writes[Company] {

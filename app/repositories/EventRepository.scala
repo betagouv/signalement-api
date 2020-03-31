@@ -94,10 +94,9 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
     )
   }
 
-  def fetchContactEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] = {
+  def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] = {
     db.run(eventTableQuery
       .filter(_.companyId inSetBind companyIds.distinct)
-      .filter(_.action === Constants.ActionEvent.CONTACT_COURRIER.value)
       .sortBy(_.creationDate.desc.nullsLast)
       .to[List].result
     )

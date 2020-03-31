@@ -64,6 +64,9 @@ class CompanyRepository @Inject()(
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
+  
+  def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
 
   def findByShortId(id: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
