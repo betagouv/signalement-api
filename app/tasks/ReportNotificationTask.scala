@@ -101,6 +101,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
     subscriptionRepository.listSubscribeUserMails(department, category).flatMap(recipients => {
 
       logger.debug(s"Department $department - category ${category} - send mail to ${recipients}")
+      logger.debug(s"reports $reports")
 
       Future(mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
@@ -113,7 +114,8 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
             case n => s"${reports.length} nouveaux signalements"
           }
         } ${category.map(c => s"dans la catégorie ${c.value} ").getOrElse("")}pour le département ${department}",
-        bodyHtml = views.html.mails.dgccrf.reportNotification(reports, department, category, startDate).toString
+        bodyHtml = views.html.mails.dgccrf.reportNotification(reports, department, category, startDate).toString,
+        attachments = null
       ))
     })
   }

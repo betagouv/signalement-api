@@ -105,7 +105,8 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
         Seq.empty,
         blindRecipients,
         subject,
-        bodyHtml
+        bodyHtml,
+        null
       )
   }
 }
