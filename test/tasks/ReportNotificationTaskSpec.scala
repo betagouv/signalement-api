@@ -32,7 +32,7 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends ReportNotificat
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runDailyNotificationTask(runningDate, Some(ReportCategory.COVID)), Duration.Inf))}
-         And a mail is sent to the subscribed user and office                            ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement dans la catégorie COVID-19 (coronavirus) pour le département $covidDept", views.html.mails.dgccrf.reportNotification(Seq(covidReport), covidDept, Some(ReportCategory.COVID), runningDate.minusDays(1)).toString, null)}
+         And a mail is sent to the subscribed user                                       ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement dans la catégorie COVID-19 (coronavirus) pour le département $covidDept", views.html.mails.dgccrf.reportNotification(Seq(covidReport), covidDept, Some(ReportCategory.COVID), runningDate.minusDays(1)).toString)}
     """
 }
 
@@ -98,15 +98,14 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
     )
   }
 
-  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         Seq.empty,
         blindRecipients,
         subject,
-        bodyHtml,
-        attachments
+        bodyHtml
       )
   }
 }
