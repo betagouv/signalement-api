@@ -19,7 +19,6 @@ POST         /api/stats/reports                                 controllers.Stat
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
 POST         /api/reports/extract                       controllers.ReportListController.extractReports()
-POST         /api/reports/events/contactByPost          controllers.ReportListController.confirmContactByPostOnReportList()
 
 # Report API
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
@@ -73,6 +72,7 @@ POST        /api/account/dgccrf/invitation              controllers.AccountContr
 # Company details API
 GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
 GET         /api/companies/activation-document          controllers.CompanyController.getActivationDocument
+POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 

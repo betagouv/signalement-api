@@ -18,7 +18,7 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.{AuthEnv, WithRole, WithPermission}
-import utils.Constants.ActionEvent
+import utils.Constants.{ActionEvent, EventType}
 import utils.{EmailAddress, SIRET}
 
 
@@ -61,7 +61,7 @@ class CompanyController @Inject()(
       Json.toJson(companies.map(c =>
         Json.obj(
           "company" -> Json.toJson(c),
-          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.headOption)
+          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption)
         )
       ))
     )
@@ -131,6 +131,32 @@ class CompanyController @Inject()(
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
         activationKey
       )
+    )
+  }
+
+  def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    import CompanyObjects.CompanyList
+
+    request.body.validate[CompanyList](Json.reads[CompanyList]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      companyList => {
+        Future.sequence(companyList.companyIds.map(companyId => {
+          eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(companyId),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.PRO,
+              ActionEvent.CONTACT_COURRIER,
+              Json.obj()
+            )
+          )
+        })).map(_ => Ok)
+      }
     )
   }
 }

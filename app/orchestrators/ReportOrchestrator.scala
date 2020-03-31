@@ -447,20 +447,4 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       )
     )
   }
-
-  def markBatchPosted(user: User, reportsIds: List[UUID]): Future[Unit] = {
-    for {
-      contactedCompanies  <- reportRepository.getReportsByIds(reportsIds).map(_.flatMap(_.companyId).distinct)
-      pendingReports      <- reportRepository.getPendingReports(contactedCompanies)
-      eventsMap           <- eventRepository.prefetchReportsEvents(pendingReports)
-      _                   <- Future.sequence(pendingReports.filter(r =>
-                                !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
-          newEvent(
-            r.id,
-            Event(Some(UUID.randomUUID()), Some(r.id), r.companyId, Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
-            user
-          )
-        ))
-    } yield Unit
-  }
 }
