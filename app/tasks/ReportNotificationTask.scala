@@ -72,7 +72,6 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   def runDailyNotificationTask(taskDate: LocalDate, category: Option[ReportCategory]) = {
 
     logger.debug(s"Traitement de notification quotidien des signalements - category ${category}")
-    logger.debug(s"taskDate - ${taskDate}");
 
     reportRepository.getReports(
         0,
