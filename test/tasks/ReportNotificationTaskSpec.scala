@@ -9,6 +9,7 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.Configuration
+import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.{AppSpec, EmailAddress, Fixtures}
@@ -31,7 +32,7 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends ReportNotificat
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runDailyNotificationTask(runningDate, Some(ReportCategory.COVID)), Duration.Inf))}
-         And a mail is sent to the subscribed user and office                            ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement dans la catégorie COVID-19 (coronavirus) pour le département $covidDept", views.html.mails.dgccrf.reportNotification(Seq(covidReport), covidDept, Some(ReportCategory.COVID), runningDate.minusDays(1)).toString)}
+         And a mail is sent to the subscribed user and office                            ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement dans la catégorie COVID-19 (coronavirus) pour le département $covidDept", views.html.mails.dgccrf.reportNotification(Seq(covidReport), covidDept, Some(ReportCategory.COVID), runningDate.minusDays(1)).toString, null)}
     """
 }
 
@@ -97,7 +98,7 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
     )
   }
 
-  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
@@ -105,7 +106,7 @@ abstract class ReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Spe
         blindRecipients,
         subject,
         bodyHtml,
-        null
+        attachments
       )
   }
 }
