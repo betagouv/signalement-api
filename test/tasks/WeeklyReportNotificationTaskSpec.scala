@@ -1,7 +1,7 @@
 package tasks
 
 import java.net.URI
-import java.time.LocalDate
+import java.time.{LocalDate, OffsetDateTime}
 import java.util.UUID
 
 import models._
@@ -60,7 +60,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
 
   val company = Fixtures.genCompany.sample.get
   val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"))
-  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"))
+  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"), creationDate = OffsetDateTime.now.minusDays(1))
   val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department2 + "000"))
   val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(guadeloupe + "00"))
 
