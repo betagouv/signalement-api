@@ -58,7 +58,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       )
       _ <- Future.sequence(
         departments.map(department =>
-          reports.entities.filter(report => report.companyPostalCode.filter(_.startsWith(department)).isDefined) match {
+          reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
             case departementReports if departementReports.nonEmpty => sendMailReportNotification(
               departementReports,
               department,
@@ -88,7 +88,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       )
       _ <- Future.sequence(
         departments.map(department =>
-          reports.entities.filter(report => report.companyPostalCode.filter(_.startsWith(department)).isDefined) match {
+          reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
             case departementReports if departementReports.nonEmpty => sendMailReportNotification(
               departementReports,
               department,
