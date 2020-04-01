@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.Departments
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.{EmailAddress, SIRET}
 
@@ -173,4 +173,14 @@ case class ReportConsumer(
 
 object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
+}
+
+case class ReportAction(
+                          actionType: ActionEventValue,
+                          details: Option[String],
+                          fileIds: List[UUID]
+                        )
+
+object ReportAction {
+  implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
 }

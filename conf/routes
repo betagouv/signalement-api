@@ -19,6 +19,7 @@ POST         /api/stats/reports                                 controllers.Stat
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
 POST         /api/reports/extract                       controllers.ReportListController.extractReports()
+POST         /api/reports/events/contactByPost          controllers.ReportListController.confirmContactByPostOnReportList()
 
 # Report API
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
@@ -34,6 +35,8 @@ POST         /api/reports/:uuid/response                controllers.ReportContro
 POST         /api/reports/:uuid/response/review         controllers.ReportController.reviewOnReportResponse(uuid)
 POST         /api/reports/:uuid/company                 controllers.ReportController.updateReportCompany(uuid)
 POST         /api/reports/:uuid/consumer                controllers.ReportController.updateReportConsumer(uuid)
+POST         /api/reports/:uuid/action                  controllers.ReportController.createReportAction(uuid)
+GET          /api/reports/:uuid/events                  controllers.ReportController.getEvents(uuid, eventType: Option[String])
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
@@ -41,12 +44,8 @@ GET          /api/nbReportsGroupByCompany               controllers.ReportContro
 GET         /api/async-files                            controllers.AsyncFileController.listAsyncFiles
 
 # Events API
-GET         /api/reports/:uuid/events                   controllers.ReportController.getEvents(uuid, eventType: Option[String])
-POST        /api/reports/:uuid/events                   controllers.ReportController.createEvent(uuid)
-POST        /api/reports/events/contactByPost           controllers.ReportListController.confirmContactByPostOnReportList()
 
 # Constants API
-GET         /api/constants/actions                      controllers.ConstantController.getActions()
 GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
 
 # Authentication API
