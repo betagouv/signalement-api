@@ -4,8 +4,8 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.{JsResult, JsValue, Json, OFormat, Reads, Writes}
-import utils.Constants.Departments
+import play.api.libs.json._
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.{EmailAddress, SIRET}
 
@@ -175,6 +175,16 @@ object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
 }
 
+case class ReportAction(
+                         actionType: ActionEventValue,
+                         details: Option[String],
+                         fileIds: List[UUID]
+                       )
+
+object ReportAction {
+  implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
+}
+
 sealed case class ReportCategory(value: String)
 
 object ReportCategory {
@@ -183,6 +193,7 @@ object ReportCategory {
   def fromValue(v: String) = {
     List(COVID).find(_.value == v).head
   }
+
   implicit val reads = new Reads[ReportCategory] {
     def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))
   }
