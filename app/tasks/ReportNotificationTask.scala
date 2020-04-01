@@ -114,8 +114,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
             case n => s"${reports.length} nouveaux signalements"
           }
         } ${category.map(c => s"dans la catégorie ${c.value} ").getOrElse("")}pour le département ${department}",
-        bodyHtml = views.html.mails.dgccrf.reportNotification(reports, department, category, startDate).toString,
-        attachments = null
+        bodyHtml = views.html.mails.dgccrf.reportNotification(reports, department, category, startDate).toString
       ))
     })
   }
