@@ -7,12 +7,12 @@ import utils.EmailAddress
 
 
 case class Subscription (
-                  id: Option[UUID],
-                  userId: Option[UUID],
-                  email: Option[EmailAddress],
-                  category: String,
-                  values: List[String]
-                )
+                          id: Option[UUID],
+                          userId: Option[UUID],
+                          email: Option[EmailAddress],
+                          departments: List[String],
+                          categories: List[ReportCategory]
+                        )
 
 
 object Subscription {
