@@ -50,30 +50,34 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
     logger.debug("Traitement de notification hebdomadaire des signalements")
     logger.debug(s"taskDate - ${taskDate}");
 
-    reportRepository.getReports(
-        0,
-        10000,
-        ReportFilter(start = Some(taskDate.minusDays(7)), end = Some(taskDate))
-    ).map(reports =>{
-      departments.foreach(department =>
-        reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
-          case departementReports if departementReports.nonEmpty => sendMailReportNotification(
-            departementReports,
-            department,
-            None,
-            taskDate.minusDays(7)
-          )
-          case _ =>
-        }
-      )}
-    )
+    for {
+      reports <- reportRepository.getReports(
+          0,
+          10000,
+          ReportFilter(start = Some(taskDate.minusDays(7)), end = Some(taskDate))
+      )
+      _ <- Future.sequence(
+        departments.map(department =>
+          reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
+            case departementReports if departementReports.nonEmpty => sendMailReportNotification(
+              departementReports,
+              department,
+              None,
+              taskDate.minusDays(7)
+            )
+            case _ => Future(Unit)
+          }
+        )
+      )
+    } yield ()
   }
 
   def runDailyNotificationTask(taskDate: LocalDate, category: Option[ReportCategory]) = {
 
     logger.debug(s"Traitement de notification quotidien des signalements - category ${category}")
 
-    reportRepository.getReports(
+    for {
+      reports <- reportRepository.getReports(
         0,
         10000,
         ReportFilter(
@@ -81,29 +85,30 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
           end = Some(taskDate),
           category = category.map(_.value)
         )
-    ).map(reports => {
-      departments.foreach(department =>
-        reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
-          case departementReports if departementReports.nonEmpty => sendMailReportNotification(
-            departementReports,
-            department,
-            category,
-            taskDate.minusDays(1)
-          )
-          case _ =>
-        }
-      )}
-    )
+      )
+      _ <- Future.sequence(
+        departments.map(department =>
+          reports.entities.filter(report => report.companyPostalCode.map(_.startsWith(department)).getOrElse(false)) match {
+            case departementReports if departementReports.nonEmpty => sendMailReportNotification(
+              departementReports,
+              department,
+              category,
+              taskDate.minusDays(1)
+            )
+            case _ => Future(Unit)
+          }
+        )
+      )
+    } yield ()
   }
 
   private def sendMailReportNotification(reports: Seq[Report], department: String, category: Option[ReportCategory], startDate: LocalDate) = {
 
-    subscriptionRepository.listSubscribeUserMails(department, category).flatMap(recipients => {
+    subscriptionRepository.listSubscribeUserMails(department, category).map(recipients => {
 
       logger.debug(s"Department $department - category ${category} - send mail to ${recipients}")
-      logger.debug(s"reports $reports")
 
-      Future(mailerService.sendEmail(
+      mailerService.sendEmail(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq.empty,
         blindRecipients = recipients,
@@ -115,7 +120,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
           }
         } ${category.map(c => s"dans la catégorie ${c.value} ").getOrElse("")}pour le département ${department}",
         bodyHtml = views.html.mails.dgccrf.reportNotification(reports, department, category, startDate).toString
-      ))
+      )
     })
   }
 }
