@@ -46,20 +46,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       .flatMap(_.companyId).map(companyRepository.getUserLevel(_, user))
       .getOrElse(Future(AccessLevel.NONE))
 
-  def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-    request.body.validate[Event].fold(
-      errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      event => {
-        Try(UUID.fromString(uuid)) match {
-          case Failure(_) => Future.successful(PreconditionFailed)
-          case Success(id) => reportOrchestrator
-                                .newEvent(id, event, request.identity)
-                                .map(_.map(event => Ok(Json.toJson(event))).getOrElse(NotFound))
-        }
-      }
-    )
-  }
-
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -102,6 +88,20 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           .getOrElse(NotFound)
         }
       )
+  }
+
+  def createReportAction(uuid: String) = SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
+    request.body.validate[ReportAction].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      reportAction =>
+        for {
+          report <- reportRepository.getReport(UUID.fromString(uuid))
+          newEvent <- report.filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
+            .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity).map(Some(_))).getOrElse(Future(None))
+        } yield newEvent
+          .map(e => Ok(Json.toJson(e)))
+          .getOrElse(NotFound)
+    )
   }
 
   def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
