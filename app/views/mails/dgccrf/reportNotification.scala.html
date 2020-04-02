@@ -1,9 +1,9 @@
 @import java.time.LocalDate
 @import utils.EmailAddress
 @import java.net.URI
-@(reports: Seq[Report], department: String, startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(reports: Seq[Report], department: String, category: Option[ReportCategory], startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
-@views.html.mails.layout("Signalements de la semaine") {
+@views.html.mails.layout("Nouveaux signalements") {
     <p>
         Depuis le @startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
         @reports.length match {
@@ -13,7 +13,7 @@
                 @n nouveaux signalements ont été déposés
             }
         }
-        sur SignalConso pour le département @department.
+        sur SignalConso @category.map(c => s"dans la catégorie ${c.value} ")pour le département @department.
     </p>
 
     @if(reports.length > 0) {
