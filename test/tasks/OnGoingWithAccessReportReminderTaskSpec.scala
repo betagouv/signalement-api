@@ -1,123 +1,128 @@
 package tasks
 
 import java.net.URI
-import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
+import java.time.{LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
-import models.Event._
+import models.UserRoles.Pro
 import models._
+import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.Configuration
-import play.api.libs.mailer.Attachment
+import play.api.libs.mailer.{Attachment, AttachmentFile}
 import repositories._
 import services.MailerService
-import utils.Constants.ActionEvent.{ActionEventValue, ENVOI_SIGNALEMENT, RELANCE}
-import utils.Constants.EventType.PRO
-import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
+import utils.AppSpec
 import utils.Constants.{ActionEvent, ReportStatus}
-import utils.{AppSpec, EmailAddress, Fixtures}
+import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, RELANCE}
+import utils.Constants.EventType.{EventTypeValue, PRO}
+import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
+import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
-    val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
-         Given an event "ENVOI_SIGNALEMENT" created more than 7 days                  ${step(setupEvent(event))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS" created more than 7 days    ${step(setupReport(report))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.RELANCE)}
-         And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(14)).toString)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.RELANCE)}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email, "Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2))).toString)}
     """
   }
 }
 
-class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
-    val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
-         Given an event "CONTACT_EMAIL" created less than 7 days                      ${step(setupEvent(event))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS" created less than 7 days    ${step(setupReport(report))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then no event is created                                                     ${eventMustNotHaveBeenCreated(transmittedReport.id, List(event))}
-         And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
+         Then no event is created                                                     ${eventMustNotHaveBeenCreated(report.id, List.empty)}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent}
     """
   }
 }
 
-class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.RELANCE)}
-         And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(7)).toString)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.RELANCE)}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay)).toString)}
     """
   }
 }
 
-class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then no event is created                                                     ${eventMustNotHaveBeenCreated(transmittedReport.id, List(reminderEvent))}
-         And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
+         Then no event is created                                                     ${eventMustNotHaveBeenCreated(report.id, List(event))}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent}
     """
   }
 }
 
-class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)), id = Some(UUID.randomUUID))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.CONSULTE_IGNORE)}
-         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(transmittedReport.id, ReportStatus.SIGNALEMENT_CONSULTE_IGNORE)}
-         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"L'entreprise n'a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
+         Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.NON_CONSULTE)}
+         And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(report.id, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
+         And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(report.email,"L'entreprise n'a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(report).toString, mailerService.attachmentSeqForWorkflowStepN(3))}
    """
   }
 }
 
-class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
   override def is = {
+    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)), id = Some(UUID.randomUUID))
     s2"""
-         Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
+         Given a pro user with activated account                                      ${step(setupUser(proUser))}
+         Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then no event is created                                                     ${eventMustNotHaveBeenCreated(transmittedReport.id, List(event1, event2))}
-         And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
+         Then no event is created                                                     ${eventMustNotHaveBeenCreated(report.id, List(event1, event2))}
+         And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent}
    """
   }
 }
 
-abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
+abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
 
   implicit val ec = ee.executionContext
   val mailReminderDelay = java.time.Period.parse(app.configuration.get[String]("play.reports.mailReminderDelay"))
@@ -127,12 +132,11 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val proUser = Fixtures.genProUser.sample.get
 
   val company = Fixtures.genCompany.sample.get
-  val transmittedReport = Fixtures.genReportForCompany(company).sample.get.copy(
-    status = SIGNALEMENT_TRANSMIS
+  val onGoingReport = Fixtures.genReportForCompany(company).sample.get.copy(
+    status = TRAITEMENT_EN_COURS
   )
 
-  val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, RELANCE).sample.get
-  val transmittedEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, ENVOI_SIGNALEMENT).sample.get
+  val reminderEvent = Fixtures.genEventForReport(onGoingReport.id, PRO, RELANCE).sample.get
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
     there was one(mailerService)
@@ -178,7 +182,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }
 
-  def reportStatusMustNotHaveBeenUpdated(report: Report) = {
+  def reporStatustMustNotHaveBeenUpdated(report: Report) = {
     reportRepository.getReport(report.id).map(_.get.status) must beEqualTo(report.status).await
   }
 
@@ -208,7 +212,5 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   }
   def setupEvent(event: Event) = {
     Await.result(eventRepository.createEvent(event), Duration.Inf)
-  }
-  override def setupData() {
   }
 }

@@ -24,10 +24,11 @@ import utils.Fixtures
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends CloseUnreadNoAccessReportTaskSpec {
+class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).minusDays(1))
     s2"""
+       Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and expired reading delay   ${step(setupReport(report))}
        When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
        Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.NON_CONSULTE)}
@@ -37,21 +38,22 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends CloseUnreadNo
   }
 }
 
-class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends CloseUnreadNoAccessReportTaskSpec {
+class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).plusDays(1))
     s2"""
-       Given a report with status "TRAITEMENT_EN_COURS" and no expired reading delay   ${step(setupReport(report))}
-       When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
-       Then no event is created                                                     ${eventMustNotHaveBeenCreated(report.id, List.empty)}
-       And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
-       And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+       Given a company with no activated accout
+       Given a report with status "TRAITEMENT_EN_COURS" and no expired reading delay    ${step(setupReport(report))}
+       When remind task run                                                             ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
+       Then no event is created                                                         ${eventMustNotHaveBeenCreated(report.id, List.empty)}
+       And the report is not updated                                                    ${reporStatustMustNotHaveBeenUpdated(report)}
+       And no mail is sent                                                              ${mailMustNotHaveBeenSent}
     """
   }
 }
 
 
-abstract class CloseUnreadNoAccessReportTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
+abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
 
   implicit val ec = ee.executionContext
 
