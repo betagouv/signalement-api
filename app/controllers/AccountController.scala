@@ -31,7 +31,6 @@ class AccountController @Inject()(
  extends BaseController {
 
   val logger: Logger = Logger(this.getClass())
-  val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
