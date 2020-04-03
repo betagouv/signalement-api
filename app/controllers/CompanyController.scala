@@ -159,6 +159,13 @@ class CompanyController @Inject()(
       }
     )
   }
+
+  def updateCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
+    request.body.validate[Company].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      company => companyRepository.update(company).map(_ => Ok)
+    )
+  }
 }
 
 object CompanyObjects {

@@ -43,13 +43,5 @@ case class Company(
 }
 
 object Company {
-  implicit val companyWrites = new Writes[Company] {
-    def writes(company: Company) = Json.obj(
-      "id" -> company.id,
-      "siret" -> company.siret,
-      "name"  -> company.name,
-      "address"  -> company.address,
-      "postalCode"  -> company.postalCode
-    )
-  }
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
 }

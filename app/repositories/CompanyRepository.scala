@@ -64,6 +64,13 @@ class CompanyRepository @Inject()(
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
+
+  def update(company: Company): Future[Company] = {
+    val queryCompany = for (refCompany <- companyTableQuery if refCompany.id === company.id)
+      yield refCompany
+    db.run(queryCompany.update(company))
+      .map(_ => company)
+  }
   
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
