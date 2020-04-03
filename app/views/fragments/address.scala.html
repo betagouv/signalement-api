@@ -1,6 +1,6 @@
 @(address: String)
 
-@address.split(" - ").distinct.filter(_.trim != "FRANCE").map { ligne =>
+@address.split(" - ").distinct.map(_.trim).filterNot(line => address.split(" - ").distinct.count(_.contains(line)) > 1).filterNot(_ == "FRANCE").map { ligne =>
     <span>
         @ligne
     </span>
