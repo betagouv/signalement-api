@@ -28,7 +28,7 @@ case class DraftReport(
 
 
   def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
+    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
   }
 
   def generateReport: Report = {
@@ -76,10 +76,8 @@ case class Report(
                  ) {
 
   def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
+    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
   }
-
-  def companyShortId() = companyId.map(_.toString.substring(0, 13).toUpperCase)
 }
 
 object Report {

@@ -26,13 +26,6 @@ object Constants {
         JsPath.read[String].map(fromDefaultValue(_))
     }
 
-    object A_TRAITER extends ReportStatusValue(
-      "À traiter",
-      Map(
-        UserRoles.DGCCRF -> Some("Traitement en cours"),
-        UserRoles.Pro -> Some("Non consulté")
-      )
-    )
     object NA extends ReportStatusValue(
       "NA",
       Map(
@@ -97,7 +90,6 @@ object Constants {
     )
 
     val reportStatusList = Seq(
-      A_TRAITER,
       NA,
       EMPLOYEE_REPORT,
       TRAITEMENT_EN_COURS,
