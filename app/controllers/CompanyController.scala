@@ -61,7 +61,7 @@ class CompanyController @Inject()(
       Json.toJson(companies.map(c =>
         Json.obj(
           "company" -> Json.toJson(c),
-          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption)
+          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate)
         )
       ))
     )
