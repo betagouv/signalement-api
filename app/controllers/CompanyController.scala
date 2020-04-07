@@ -34,6 +34,7 @@ class CompanyController @Inject()(
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
   val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
+  val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
@@ -59,11 +60,14 @@ class CompanyController @Inject()(
       eventsMap <- eventRepository.fetchEvents(companies.map(_.id))
     } yield Ok(
       Json.toJson(companies.map(c =>
-        Json.obj(
-          "company" -> Json.toJson(c),
-          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption)
-        )
-      ))
+          (c, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate))
+        ).filter {case (c, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
+          case (c, lastNotice) =>
+            Json.obj(
+              "company" -> Json.toJson(c),
+              "lastNotice"  -> lastNotice
+            )
+      })
     )
   }
 
@@ -110,28 +114,22 @@ class CompanyController @Inject()(
   }
 
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
-    val creationDate = events
-      .filter(_.action == ActionEvent.CONTACT_COURRIER)
-      .headOption
-      .flatMap(_.creationDate)
-      .getOrElse(company.creationDate)
-      .toLocalDate
-    val remindEvent = events.find(_.action == ActionEvent.RELANCE)
+    val lastContact = events.filter(e => List(ActionEvent.CONTACT_COURRIER, ActionEvent.RELANCE).contains(e.action))
+                        .sortBy(_.creationDate).reverse.headOption
     val report = reports.sortBy(_.creationDate).reverse.headOption
-    remindEvent.map(e =>
+    if (lastContact.isDefined)
         views.html.pdfs.accountActivationReminder(
           company,
-          creationDate,
-          e.creationDate.map(_.toLocalDate).get.plus(reportReminderByPostDelay),
+          lastContact.flatMap(_.creationDate).getOrElse(company.creationDate).toLocalDate,
+          report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
           activationKey
         )
-    ).getOrElse(
+    else
       views.html.pdfs.accountActivation(
         company,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
         activationKey
       )
-    )
   }
 
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
