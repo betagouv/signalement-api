@@ -45,3 +45,12 @@ case class Company(
 object Company {
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
 }
+
+case class CompanyAddress(
+                  address: String,
+                  postalCode: String,
+                )
+
+object CompanyAddress {
+  implicit val companyAddressFormat: OFormat[CompanyAddress] = Json.format[CompanyAddress]
+}

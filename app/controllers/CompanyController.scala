@@ -160,10 +160,15 @@ class CompanyController @Inject()(
     )
   }
 
-  def updateCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
-    request.body.validate[Company].fold(
+  def updateCompanyAddress(siret: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
+    request.body.validate[CompanyAddress].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      company => companyRepository.update(company).map(_ => Ok)
+      companyAddress => for {
+        company <- companyRepository.findBySiret(SIRET(siret))
+        updatedCompany <- company.map(c =>
+          companyRepository.update(c.copy(address = companyAddress.address, postalCode = Some(companyAddress.postalCode))).map(Some(_))
+        ).getOrElse(Future(None))
+      } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
     )
   }
 }

@@ -75,6 +75,7 @@ POST        /api/companies/activation-document          controllers.CompanyContr
 POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
+PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate
