@@ -60,11 +60,14 @@ class CompanyController @Inject()(
       eventsMap <- eventRepository.fetchEvents(companies.map(_.id))
     } yield Ok(
       Json.toJson(companies.map(c =>
-        Json.obj(
-          "company" -> Json.toJson(c),
-          "lastNotice"  -> eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate)
-        )
-      ))
+          (c, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate))
+        ).filter {case (c, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
+          case (c, lastNotice) =>
+            Json.obj(
+              "company" -> Json.toJson(c),
+              "lastNotice"  -> lastNotice
+            )
+      })
     )
   }
 
