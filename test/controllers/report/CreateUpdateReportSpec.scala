@@ -235,7 +235,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   }
 
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) = {
-    val events = Await.result(eventRepository.getEvents(reportUUID, EventFilter()), Duration.Inf)
+    val events = Await.result(eventRepository.getEvents(None, Some(reportUUID), EventFilter()), Duration.Inf)
     events.length must beEqualTo(existingEvents.length)
   }
 }

@@ -204,7 +204,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
-      eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
+      eventRepository.getEvents(None, Some(report.id), EventFilter(None)).flatMap(events =>
         if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
