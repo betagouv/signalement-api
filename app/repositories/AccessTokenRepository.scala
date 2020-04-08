@@ -154,13 +154,12 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
   }
 
-  def companiesToActivate(): Future[List[Company]] =
+  def companiesToActivate(): Future[List[(AccessToken, Company)]] =
     db.run(AccessTokenTableQuery
       .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
       .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_._1.valid)
       .filter(_._1.kind === TokenKind.COMPANY_INIT)
-      .map(_._2)
       .to[List].result
     )
 

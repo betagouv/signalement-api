@@ -56,16 +56,17 @@ class CompanyController @Inject()(
 
   def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      companies <- accessTokenRepository.companiesToActivate()
-      eventsMap <- eventRepository.fetchEvents(companies.map(_.id))
+      accesses <- accessTokenRepository.companiesToActivate()
+      eventsMap <- eventRepository.fetchEvents(accesses.map {case (_, c) => c.id})
     } yield Ok(
-      Json.toJson(companies.map(c =>
-          (c, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate))
-        ).filter {case (c, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
-          case (c, lastNotice) =>
+      Json.toJson(accesses.map {case (t, c) =>
+          (c, t, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate))
+        }.filter {case (c, t, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
+          case (c, t, lastNotice) =>
             Json.obj(
               "company" -> Json.toJson(c),
-              "lastNotice"  -> lastNotice
+              "lastNotice" -> lastNotice,
+              "tokenCreation" -> t.creationDate
             )
       })
     )
