@@ -8,17 +8,18 @@ import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
-import utils.{Address, EmailAddress, SIRET}
+import utils.{Address, EmailAddress, SIRET, URL}
 
 
 case class DraftReport(
                         category: String,
                         subcategories: List[String],
                         details: List[DetailInputValue],
-                        companyName: String,
-                        companyAddress: Address,
-                        companyPostalCode: String,
-                        companySiret: SIRET,
+                        companyName: Option[String],
+                        companyAddress: Option[Address],
+                        companyPostalCode: Option[String],
+                        companySiret: Option[SIRET],
+                        websiteURL: Option[URL],
                         firstName: String,
                         lastName: String,
                         email: EmailAddress,
@@ -41,8 +42,9 @@ case class DraftReport(
       None,
       companyName,
       companyAddress,
-      Some(companyPostalCode),
-      Some(companySiret),
+      companyPostalCode,
+      companySiret,
+      None,
       OffsetDateTime.now(),
       firstName,
       lastName,
@@ -63,10 +65,11 @@ case class Report(
                    subcategories: List[String],
                    details: List[DetailInputValue],
                    companyId: Option[UUID],
-                   companyName: String,
-                   companyAddress: Address,
+                   companyName: Option[String],
+                   companyAddress: Option[Address],
                    companyPostalCode: Option[String],
                    companySiret: Option[SIRET],
+                   websiteId: Option[UUID],
                    creationDate: OffsetDateTime,
                    firstName: String,
                    lastName: String,
