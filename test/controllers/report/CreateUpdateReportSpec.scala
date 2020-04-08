@@ -30,7 +30,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a dom tom department                                              ${step(draftReport = draftReport.copy(companyPostalCode = Departments.CollectivitesOutreMer(0)))}
+          a dom tom department                                              ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                          ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
@@ -41,7 +41,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
+          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.ALL(0))))}
           an employee consumer                                            ${step(draftReport = draftReport.copy(employeeConsumer = true))}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
@@ -54,7 +54,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has no account                                   ${step(draftReport = draftReport.copy(companySiret = anotherCompany.siret))}
+          a professional who has no account                                   ${step(draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret)))}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                            ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
@@ -67,7 +67,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = existingCompany.siret))}
+          a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = Some(existingCompany.siret)))}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
@@ -97,8 +97,8 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
          Given a preexisting report                                     ${step(report = existingReport)}
          When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanySameSiret))}
          Then the report contains updated info                          ${checkReport(report.copy(
-                                                                          companyName = reportCompanySameSiret.name,
-                                                                          companyAddress = reportCompanySameSiret.address,
+                                                                          companyName = Some(reportCompanySameSiret.name),
+                                                                          companyAddress = Some(reportCompanySameSiret.address),
                                                                           companyPostalCode = Some(reportCompanySameSiret.postalCode),
                                                                           companySiret = Some(reportCompanySameSiret.siret)
                                                                         ))}
@@ -112,8 +112,8 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
          When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanyAnotherSiret))}
          Then the report contains updated info and the status is reset  ${checkReport(report.copy(
                                                                           companyId = Some(anotherCompany.id),
-                                                                          companyName = reportCompanyAnotherSiret.name,
-                                                                          companyAddress = reportCompanyAnotherSiret.address,
+                                                                          companyName = Some(reportCompanyAnotherSiret.name),
+                                                                          companyAddress = Some(reportCompanyAnotherSiret.address),
                                                                           companyPostalCode = Some(reportCompanyAnotherSiret.postalCode),
                                                                           companySiret = Some(reportCompanyAnotherSiret.siret),
                                                                           status = ReportStatus.TRAITEMENT_EN_COURS
