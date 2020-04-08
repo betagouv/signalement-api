@@ -116,12 +116,12 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Nom de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyName,
+        (report, _, _, _) => report.companyName.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyAddress,
+        (report, _, _, _) => report.companyAddress.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(

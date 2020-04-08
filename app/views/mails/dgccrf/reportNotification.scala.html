@@ -51,10 +51,13 @@
                         }
 
                         <br />
+
+                        @if(report.companyAddress.isDefined) {
                         <b>Entreprise</b>
                         <p style="text-align: center;">
-                        @views.html.fragments.address(report.companyAddress)
+                        @views.html.fragments.address(report.companyAddress.get)
                         </p>
+                        }
 
                     </div>
                 }

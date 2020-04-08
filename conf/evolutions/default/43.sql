@@ -8,9 +8,13 @@ CREATE TABLE "websites" (
 );
 
 ALTER TABLE "reports" ADD COLUMN "website_id" UUID REFERENCES websites(id);
+ALTER TABLE "reports" ALTER COLUMN "company_name" DROP NOT NULL;
+ALTER TABLE "reports" ALTER COLUMN "company_address" DROP NOT NULL;
 
 -- !Downs
 
 ALTER TABLE "reports" DROP COLUMN "website_id";
+ALTER TABLE "reports" ALTER COLUMN "company_name" SET NOT NULL;
+ALTER TABLE "reports" ALTER COLUMN "company_address" SET NOT NULL;
 
 DROP TABLE "websites";
