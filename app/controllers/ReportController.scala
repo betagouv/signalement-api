@@ -108,7 +108,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     request.body.validate[ReviewOnReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
-          events <- eventRepository.getEvents(None, Some(uuid).map(UUID.fromString(_)), EventFilter())
+          events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
           result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
           } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
