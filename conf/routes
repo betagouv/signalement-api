@@ -19,7 +19,6 @@ POST         /api/stats/reports                                 controllers.Stat
 # Reports list API
 GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String])
 POST         /api/reports/extract                       controllers.ReportListController.extractReports()
-POST         /api/reports/events/contactByPost          controllers.ReportListController.confirmContactByPostOnReportList()
 
 # Report API
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
@@ -68,13 +67,15 @@ POST        /api/accesses/:siret/invitation             controllers.CompanyAcces
 GET         /api/account/token                          controllers.AccountController.fetchTokenInfo(token: String)
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
-GET         /api/account/:siret/document/activation     controllers.AccountController.getActivationDocument(siret)
-POST        /api/account/document/activation            controllers.AccountController.getActivationDocumentForReportList()
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
 
 # Company details API
+GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
+POST        /api/companies/activation-document          controllers.CompanyController.getActivationDocument
+POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
+PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)
 
 # Rating API
 POST        /api/rating                                 controllers.RatingController.rate

@@ -125,22 +125,6 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       }
     )
   }
-
-  def confirmContactByPostOnReportList() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
-
-    import ReportListObjects.ReportList
-
-    request.body.validate[ReportList](Json.reads[ReportList]).fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      reportList => {
-        logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
-        reportOrchestrator.markBatchPosted(request.identity, reportList.reportIds).map(events => Ok)
-      }
-    )
-  }
-
 }
 
 object ReportListObjects {

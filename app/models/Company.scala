@@ -38,16 +38,19 @@ case class Company(
                   name: String,
                   address: String,
                   postalCode: Option[String],
-                )
+                ) {
+  def shortId = this.id.toString.substring(0, 13).toUpperCase
+}
 
 object Company {
-  implicit val companyWrites = new Writes[Company] {
-    def writes(company: Company) = Json.obj(
-      "id" -> company.id,
-      "siret" -> company.siret,
-      "name"  -> company.name,
-      "address"  -> company.address,
-      "postalCode"  -> company.postalCode
-    )
-  }
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+}
+
+case class CompanyAddress(
+                  address: String,
+                  postalCode: String,
+                )
+
+object CompanyAddress {
+  implicit val companyAddressFormat: OFormat[CompanyAddress] = Json.format[CompanyAddress]
 }

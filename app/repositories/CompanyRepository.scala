@@ -65,6 +65,16 @@ class CompanyRepository @Inject()(
       _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
     )
 
+  def update(company: Company): Future[Company] = {
+    val queryCompany = for (refCompany <- companyTableQuery if refCompany.id === company.id)
+      yield refCompany
+    db.run(queryCompany.update(company))
+      .map(_ => company)
+  }
+  
+  def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
+
   def findByShortId(id: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
 
@@ -133,5 +143,4 @@ class CompanyRepository @Inject()(
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
-
 }
