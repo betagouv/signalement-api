@@ -73,6 +73,7 @@ object UserPermission extends Enumeration {
       deleteFile,
       createReportAction,
       activateAccount,
+      updateCompany,
       editDocuments,
       subscribeReports,
       inviteDGCCRF = Value

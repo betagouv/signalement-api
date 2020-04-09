@@ -342,7 +342,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === ReportStatus.A_TRAITER.defaultValue)
+        .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
         .filter(_.companyId inSet companiesIds)
         .to[List].result
     )

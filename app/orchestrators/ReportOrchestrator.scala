@@ -97,7 +97,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
-        if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
+        if (report.status == TRAITEMENT_EN_COURS && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
@@ -148,7 +148,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           status = report.initialStatus()
         )).map(Some(_))).getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.status == A_TRAITER)
+        .filter(_.status == TRAITEMENT_EN_COURS)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
@@ -204,7 +204,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
-      eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
+      eventRepository.getEvents(None, Some(report.id), EventFilter(None)).flatMap(events =>
         if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
@@ -325,7 +325,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     for {
       report <- reportRepository.getReport(reportId)
       newEvent <- report match {
-          case Some(r) if authorizedEventForReport(draftEvent, r ) => eventRepository.createEvent(
+          case Some(r) => eventRepository.createEvent(
             draftEvent.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
@@ -352,17 +352,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       })
       newEvent
     }
-
-
-  //TODO complete this function in a specific PullRequest to securised the workflow
-  def authorizedEventForReport(event: Event, report: Report): Boolean = {
-    (event.action, report.status) match {
-      case (CONTACT_COURRIER, A_TRAITER) => true
-      case (CONTACT_COURRIER, _) => false
-      case (_, _) => true
-    }
-  }
-
 
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
@@ -446,21 +435,5 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       )
     )
-  }
-
-  def markBatchPosted(user: User, reportsIds: List[UUID]): Future[Unit] = {
-    for {
-      contactedCompanies  <- reportRepository.getReportsByIds(reportsIds).map(_.flatMap(_.companyId).distinct)
-      pendingReports      <- reportRepository.getPendingReports(contactedCompanies)
-      eventsMap           <- eventRepository.prefetchReportsEvents(pendingReports)
-      _                   <- Future.sequence(pendingReports.filter(r =>
-                                !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
-          newEvent(
-            r.id,
-            Event(Some(UUID.randomUUID()), Some(r.id), r.companyId, Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
-            user
-          )
-        ))
-    } yield Unit
   }
 }

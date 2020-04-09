@@ -26,6 +26,7 @@ object TokenKind {
 
 case class AccessToken(
   id: UUID,
+  creationDate: OffsetDateTime,
   kind: TokenKind,
   token: String,
   valid: Boolean,
