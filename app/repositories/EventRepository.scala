@@ -27,31 +27,30 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
   class EventTable(tag: Tag) extends Table[Event](tag, "events") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[UUID]("report_id")
+    def reportId = column[Option[UUID]]("report_id")
+    def companyId = column[Option[UUID]]("company_id")
     def userId = column[Option[UUID]]("user_id")
     def creationDate = column[OffsetDateTime]("creation_date")
     def eventType = column[String]("event_type")
     def action = column[String]("action")
     def details = column[JsValue]("details")
-    def report = foreignKey("fk_events_report", reportId, reportTableQuery)(_.id)
 
-    type EventData = (UUID, UUID, Option[UUID], OffsetDateTime, String, String, JsValue)
+    type EventData = (UUID, Option[UUID], Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
 
     def constructEvent: EventData => Event = {
-
-      case (id, reportId, userId, creationDate, eventType, action, details) => {
-        Event(Some(id), Some(reportId), userId, Some(creationDate), Constants.EventType.fromValue(eventType),
+      case (id, reportId, companyId, userId, creationDate, eventType, action, details) => {
+        Event(Some(id), reportId, companyId, userId, Some(creationDate), Constants.EventType.fromValue(eventType),
           Constants.ActionEvent.fromValue(action), details)
       }
     }
 
     def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, userId, creationDate, eventType, action, details) =>
-        (id.get, reportId.get, userId, creationDate.get, eventType.value, action.value, details)
+      case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
+        (id.get, reportId, companyId, userId, creationDate.get, eventType.value, action.value, details)
     }
 
     def * =
-      (id, reportId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
+      (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
   val reportTableQuery = TableQuery[reportRepository.ReportTable]
@@ -71,9 +70,13 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
         .delete
     )
 
-  def getEvents(uuidReport: UUID, filter: EventFilter): Future[List[Event]] = db.run {
+  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[Event]] = db.run {
     eventTableQuery
-      .filter(_.reportId === uuidReport)
+      .filterIf(companyId.isDefined && reportId.isDefined) { case table =>
+        (table.reportId === reportId).getOrElse(false) || (table.reportId.isEmpty && table.companyId === companyId).getOrElse(false)
+      }
+      .filterIf(companyId.isEmpty){ table => (table.reportId === reportId).getOrElse(false)}
+      .filterIf(reportId.isEmpty){ table => (table.companyId === companyId).getOrElse(false)}
       .filterOpt(filter.eventType) {
         case (table, eventType) => table.eventType === eventType.value
       }
@@ -93,5 +96,13 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
       events.groupBy(_.reportId.get)
     )
   }
-}
 
+  def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] = {
+    db.run(eventTableQuery
+      .filter(_.companyId inSetBind companyIds.distinct)
+      .sortBy(_.creationDate.desc.nullsLast)
+      .to[List].result
+    )
+      .map(f => f.groupBy(_.companyId.get).toMap)
+  }
+}

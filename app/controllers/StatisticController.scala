@@ -1,6 +1,6 @@
 package controllers
 
-import java.time.{Duration, LocalDateTime, YearMonth}
+import java.time.Duration
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
@@ -9,10 +9,8 @@ import play.api.libs.json.Json
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{MailerService, S3Service}
-import utils.Constants.ActionEvent._
-import utils.Constants.{Departments, ReportStatus}
-import utils.Constants.ReportStatus.{A_TRAITER, EMPLOYEE_REPORT, NA, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_NON_CONSULTE, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
-import utils.DateUtils
+import utils.Constants.ReportStatus
+import utils.Constants.ReportStatus._
 import utils.silhouette.auth.{AuthEnv, WithRole}
 
 import scala.concurrent.ExecutionContext

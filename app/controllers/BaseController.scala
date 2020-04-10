@@ -42,9 +42,10 @@ trait BaseCompanyController extends BaseController {
     def refine[A](request: SecuredRequestWrapper[A]) = {
       for {
         company       <- companyRepository.findBySiret(SIRET(siret))
-        accessLevel   <- company.map(
-                                    c => companyRepository.getUserLevel(c.id, request.identity).map(Some(_)))
-                                .getOrElse(Future(None))
+        accessLevel   <- if (request.identity.userRole == UserRoles.Admin) Future(Some(AccessLevel.ADMIN))
+                         else company.map(c =>
+                                companyRepository.getUserLevel(c.id, request.identity).map(Some(_))
+                              ).getOrElse(Future(None))
       } yield {
         company
           .flatMap(c => accessLevel.map((c, _)))

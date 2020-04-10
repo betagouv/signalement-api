@@ -25,6 +25,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
+    def creationDate = column[OffsetDateTime]("creation_date")
     def kind = column[TokenKind]("kind")
     def token = column[String]("token")
     def valid = column[Boolean]("valid")
@@ -32,7 +33,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def level = column[Option[AccessLevel]]("level")
     def emailedTo = column[Option[EmailAddress]]("emailed_to")
     def expirationDate = column[Option[OffsetDateTime]]("expiration_date")
-    def * = (id, kind, token, valid, companyId, level, emailedTo, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
+    def * = (id, creationDate, kind, token, valid, companyId, level, emailedTo, expirationDate) <> (AccessToken.tupled, AccessToken.unapply)
   }
 
   val AccessTokenTableQuery = TableQuery[AccessTokenTable]
@@ -43,6 +44,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ): Future[AccessToken] =
     db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
+      creationDate = OffsetDateTime.now,
       kind = kind,
       token = token,
       valid = true,
@@ -71,7 +73,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def fetchActivationToken(company: Company): Future[Option[AccessToken]] =
     db.run(fetchCompanyValidTokens(company)
-      .filterNot(_.emailedTo.isDefined)
+      .filter(_.kind === TokenKind.COMPANY_INIT)
       .filter(_.level === AccessLevel.ADMIN)
       .result
       .headOption
@@ -146,11 +148,20 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .filter(_.companyId inSetBind companyIds.distinct)
       .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_.valid)
-      .filterNot(_.emailedTo.isDefined)
+      .filter(_.kind === TokenKind.COMPANY_INIT)
       .to[List].result
     )
       .map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
   }
+
+  def companiesToActivate(): Future[List[(AccessToken, Company)]] =
+    db.run(AccessTokenTableQuery
+      .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_._1.valid)
+      .filter(_._1.kind === TokenKind.COMPANY_INIT)
+      .to[List].result
+    )
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchActivationToken(company).map(_.map(_.token))

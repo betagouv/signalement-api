@@ -11,13 +11,14 @@ import utils.Constants.EventType.EventTypeValue
 case class Event(
                   id: Option[UUID],
                   reportId: Option[UUID],
+                  companyId: Option[UUID],
                   userId: Option[UUID],
                   creationDate: Option[OffsetDateTime],
                   eventType: EventTypeValue,
                   action: ActionEventValue,
                   details: JsValue = Json.obj()
                 )
-                 
+
 object Event {
 
   implicit val eventFormat: OFormat[Event] = Json.format[Event]

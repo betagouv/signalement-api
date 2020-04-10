@@ -46,20 +46,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       .flatMap(_.companyId).map(companyRepository.getUserLevel(_, user))
       .getOrElse(Future(AccessLevel.NONE))
 
-  def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-    request.body.validate[Event].fold(
-      errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      event => {
-        Try(UUID.fromString(uuid)) match {
-          case Failure(_) => Future.successful(PreconditionFailed)
-          case Success(id) => reportOrchestrator
-                                .newEvent(id, event, request.identity)
-                                .map(_.map(event => Ok(Json.toJson(event))).getOrElse(NotFound))
-        }
-      }
-    )
-  }
-
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -104,11 +90,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       )
   }
 
+  def createReportAction(uuid: String) = SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
+    request.body.validate[ReportAction].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      reportAction =>
+        for {
+          report <- reportRepository.getReport(UUID.fromString(uuid))
+          newEvent <- report.filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
+            .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity).map(Some(_))).getOrElse(Future(None))
+        } yield newEvent
+          .map(e => Ok(Json.toJson(e)))
+          .getOrElse(NotFound)
+    )
+  }
+
   def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[ReviewOnReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
-          events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
+          events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
           result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
           } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
@@ -214,7 +214,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEvents(id, filter)
+          events <- eventRepository.getEvents(report.flatMap(_.companyId), Some(id), filter)
         } yield {
           report match {
             case Some(_) => Ok(Json.toJson(events.filter(event =>

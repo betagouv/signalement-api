@@ -13,7 +13,7 @@ import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
 import repositories._
-import utils.Constants.ReportStatus.{A_TRAITER, PROMESSE_ACTION, SIGNALEMENT_CONSULTE_IGNORE, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE, SIGNALEMENT_TRANSMIS}
+import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.{AppSpec, Fixtures}
 
@@ -111,7 +111,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
 
   val company = Fixtures.genCompany.sample.get
 
-  val lastYearReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
@@ -121,7 +121,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
   val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
   val lastYearReports = lastYearReportsToProcess ::: lastYearReportsReadByPro
 
-  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
+  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
   val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
   val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
   val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
@@ -131,7 +131,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
   val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
   val lastMonthReports = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
 
-  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, A_TRAITER).sample.get
+  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get
   val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_TRANSMIS).sample.get
   val currentMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get
   val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get

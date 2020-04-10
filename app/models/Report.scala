@@ -4,8 +4,8 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.{Json, OFormat, Writes}
-import utils.Constants.Departments
+import play.api.libs.json._
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.{EmailAddress, SIRET}
 
@@ -28,7 +28,7 @@ case class DraftReport(
 
 
   def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
+    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
   }
 
   def generateReport: Report = {
@@ -76,10 +76,8 @@ case class Report(
                  ) {
 
   def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else A_TRAITER
+    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
   }
-
-  def shortId() = id.toString.substring(0, 13).toUpperCase
 }
 
 object Report {
@@ -173,4 +171,31 @@ case class ReportConsumer(
 
 object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
+}
+
+case class ReportAction(
+                         actionType: ActionEventValue,
+                         details: Option[String],
+                         fileIds: List[UUID]
+                       )
+
+object ReportAction {
+  implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
+}
+
+sealed case class ReportCategory(value: String)
+
+object ReportCategory {
+  val COVID = ReportCategory("COVID-19 (coronavirus)")
+
+  def fromValue(v: String) = {
+    List(COVID).find(_.value == v).head
+  }
+
+  implicit val reads = new Reads[ReportCategory] {
+    def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))
+  }
+  implicit val writes = new Writes[ReportCategory] {
+    def writes(kind: ReportCategory) = Json.toJson(kind.value)
+  }
 }

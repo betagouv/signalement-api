@@ -99,7 +99,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv) extends Spe
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    val events = Await.result(eventRepository.getEvents(reportId, EventFilter(action = Some(action))), Duration.Inf).toList
+    val events = Await.result(eventRepository.getEvents(None, Some(reportId), EventFilter(action = Some(action))), Duration.Inf).toList
     events.length must beEqualTo(1)
   }
 

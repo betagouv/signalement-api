@@ -64,6 +64,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            Some(company.id),
             Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
@@ -96,7 +97,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
-        if (report.status == A_TRAITER && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
+        if (report.status == TRAITEMENT_EN_COURS && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
         else Future(report)
       }
     } yield {
@@ -147,7 +148,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           status = report.initialStatus()
         )).map(Some(_))).getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.status == A_TRAITER)
+        .filter(_.status == TRAITEMENT_EN_COURS)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
@@ -157,9 +158,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            Some(company.id),
             Some(userUUID),
             Some(OffsetDateTime.now()),
-            Constants.EventType.RECTIF,
+            Constants.EventType.ADMIN,
             Constants.ActionEvent.MODIFICATION_COMMERCANT,
             stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress}")
           )
@@ -185,9 +187,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
+            report.companyId,
             Some(userUUID),
             Some(OffsetDateTime.now()),
-            Constants.EventType.RECTIF,
+            Constants.EventType.ADMIN,
             Constants.ActionEvent.MODIFICATION_CONSO,
             stringToDetailsJsValue(
               s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
@@ -201,7 +204,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
-      eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
+      eventRepository.getEvents(None, Some(report.id), EventFilter(None)).flatMap(events =>
         if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
@@ -248,6 +251,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
@@ -277,6 +281,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -320,11 +325,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     for {
       report <- reportRepository.getReport(reportId)
       newEvent <- report match {
-          case Some(r) if authorizedEventForReport(draftEvent, r ) => eventRepository.createEvent(
+          case Some(r) => eventRepository.createEvent(
             draftEvent.copy(
               id = Some(UUID.randomUUID()),
               creationDate = Some(OffsetDateTime.now()),
               reportId = Some(r.id),
+              companyId = r.companyId,
               userId = Some(user.id)
             )).map(Some(_))
           case _ => Future(None)
@@ -347,17 +353,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       newEvent
     }
 
-
-  //TODO complete this function in a specific PullRequest to securised the workflow
-  def authorizedEventForReport(event: Event, report: Report): Boolean = {
-    (event.action, report.status) match {
-      case (CONTACT_COURRIER, A_TRAITER) => true
-      case (CONTACT_COURRIER, _) => false
-      case (_, _) => true
-    }
-  }
-
-
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
@@ -365,6 +360,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          report.companyId,
           Some(user.id),
           Some(OffsetDateTime.now()),
           EventType.PRO,
@@ -387,6 +383,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
+          updatedReport.companyId,
           Some(user.id),
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -399,12 +396,35 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
+
+  def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] = {
+    for {
+      newEvent <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.fromUserRole(user.userRole),
+          reportAction.actionType,
+          reportAction.details.map(details => Json.obj("description" -> details)).getOrElse(Json.toJson(reportAction))
+        )
+      )
+      _ <- reportRepository.attachFilesToReport(reportAction.fileIds, report.id)
+    } yield {
+      logger.debug(s"Create event ${newEvent.id} on report ${report.id} for reportActionType ${reportAction.actionType}")
+      newEvent
+    }
+  }
+
   def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
     logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
         Some(UUID.randomUUID()),
         Some(reportId),
+        None,
         None,
         Some(OffsetDateTime.now()),
         EventType.CONSO,
@@ -415,21 +435,5 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       )
     )
-  }
-
-  def markBatchPosted(user: User, reportsIds: List[UUID]): Future[Unit] = {
-    for {
-      contactedCompanies  <- reportRepository.getReportsByIds(reportsIds).map(_.flatMap(_.companyId).distinct)
-      pendingReports      <- reportRepository.getPendingReports(contactedCompanies)
-      eventsMap           <- eventRepository.prefetchReportsEvents(pendingReports)
-      _                   <- Future.sequence(pendingReports.filter(r =>
-                                !eventsMap.getOrElse(r.id, List.empty).exists(_.action == RELANCE) || reportsIds.contains(r.id)).map(r =>
-          newEvent(
-            r.id,
-            Event(Some(UUID.randomUUID()), Some(r.id), Some(user.id), Some(OffsetDateTime.now), EventType.PRO, ActionEvent.CONTACT_COURRIER, Json.obj()),
-            user
-          )
-        ))
-    } yield Unit
   }
 }

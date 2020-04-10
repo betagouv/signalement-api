@@ -15,7 +15,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 import utils.{DateUtils, SIRET}
 
 import scala.concurrent.duration._
@@ -125,22 +125,6 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       }
     )
   }
-
-  def confirmContactByPostOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-
-    import ReportListObjects.ReportList
-
-    request.body.validate[ReportList](Json.reads[ReportList]).fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      reportList => {
-        logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
-        reportOrchestrator.markBatchPosted(request.identity, reportList.reportIds).map(events => Ok)
-      }
-    )
-  }
-
 }
 
 object ReportListObjects {
