@@ -121,7 +121,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Adresse de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyAddress,
+        (report, _, _, _) => report.companyAddress.value,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(

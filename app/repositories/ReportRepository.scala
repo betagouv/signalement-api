@@ -12,8 +12,7 @@ import slick.jdbc.{GetResult, JdbcProfile}
 import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
 import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
-import utils.DateUtils
-import utils.{EmailAddress, SIRET}
+import utils.{Address, DateUtils, EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,7 +49,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def details = column[List[String]]("details")
     def companyId = column[Option[UUID]]("company_id")
     def companyName = column[String]("company_name")
-    def companyAddress = column[String]("company_address")
+    def companyAddress = column[Address]("company_address")
     def companyPostalCode = column[Option[String]]("company_postal_code")
     def companySiret = column[Option[SIRET]]("company_siret")
     def creationDate= column[OffsetDateTime]("creation_date")
@@ -63,7 +62,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, String, Option[String], Option[SIRET], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], String, Address, Option[String], Option[SIRET], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
