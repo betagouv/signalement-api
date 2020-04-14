@@ -87,7 +87,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         case UserRoles.Pro => Some(false)
         case _ => None
       },
-      hasCompany.getOrElse(false)
+      hasCompany
     )
 
     for {

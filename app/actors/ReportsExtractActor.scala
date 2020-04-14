@@ -36,7 +36,8 @@ object ReportsExtractActor {
                         end: Option[String],
                         category: Option[String],
                         status: Option[String],
-                        details: Option[String])
+                        details: Option[String],
+                        hasCompany: Option[Boolean])
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
@@ -239,7 +240,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
-          }
+          },
+          filters.hasCompany
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
