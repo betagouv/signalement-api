@@ -44,6 +44,7 @@ case class DraftReport(
       companyPostalCode,
       companySiret,
       None,
+      websiteURL,
       OffsetDateTime.now(),
       firstName,
       lastName,
@@ -69,6 +70,7 @@ case class Report(
                    companyPostalCode: Option[String],
                    companySiret: Option[SIRET],
                    websiteId: Option[UUID],
+                   websiteURL: Option[URL],
                    creationDate: OffsetDateTime,
                    firstName: String,
                    lastName: String,
@@ -101,7 +103,8 @@ object Report {
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
-        "status" -> report.status
+        "status" -> report.status,
+        "websiteURL" -> report.websiteURL
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
         case (_, _) => Json.obj(

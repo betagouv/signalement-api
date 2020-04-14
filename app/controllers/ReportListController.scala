@@ -57,7 +57,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                   end: Option[String],
                   category: Option[String],
                   status: Option[String],
-                  details: Option[String]
+                  details: Option[String],
+                  hasCompany: Option[Boolean]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -85,7 +86,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
-      }
+      },
+      hasCompany.getOrElse(false)
     )
 
     for {

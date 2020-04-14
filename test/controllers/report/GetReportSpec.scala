@@ -191,20 +191,20 @@ trait GetReportContext extends Mockito {
   val companyId = UUID.randomUUID
   val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
-    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)), Some(siretForConcernedPro), None, OffsetDateTime.now(),
-    "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
+    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)), Some(siretForConcernedPro), None, OffsetDateTime.now(),
-    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
+    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)), Some(siretForConcernedPro), None, OffsetDateTime.now(),
-    "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
+    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
