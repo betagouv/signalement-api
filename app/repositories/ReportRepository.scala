@@ -27,7 +27,7 @@ case class ReportFilter(
                          statusList: Seq[ReportStatusValue] = List(),
                          details: Option[String] = None,
                          employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Boolean = false
+                         hasCompany: Option[Boolean] = None
                        )
 
 @Singleton
@@ -230,8 +230,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.category) {
           case(table, category) => table.category === category
         }
-        .filterIf(filter.hasCompany) {
-          case table => table.companyId.isDefined
+        .filterOpt(filter.hasCompany) {
+          case (table, hasCompany) => table.companyId.isDefined === hasCompany
         }
         .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
           case table => table.status.inSet(filter.statusList.map(_.defaultValue))
