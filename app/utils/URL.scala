@@ -8,7 +8,7 @@ case class URL(value: String) {
 }
 
 object URL {
-  def apply(value: String) = new URL(new java.net.URI(value).getHost.toLowerCase)
+  def apply(value: String) = new URL(value.trim.toLowerCase)
   implicit val URLColumnType = MappedColumnType.base[URL, String](
     _.value,
     URL(_)

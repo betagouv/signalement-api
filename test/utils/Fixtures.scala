@@ -64,7 +64,7 @@ object Fixtures {
         company <- genCompany
     } yield DraftReport(
         category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        None, firstName, lastName, email, contactAgreement, false, List.empty
+        Some(URL("https://www.example.com")), firstName, lastName, email, contactAgreement, false, List.empty
     )
 
     def genReportForCompany(company: Company) = for {

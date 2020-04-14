@@ -220,11 +220,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       id = reports.head.id,
       creationDate = reports.head.creationDate,
       companyId = reports.head.companyId,
+      websiteId = reports.head.websiteId,
       status = status
     )
     report = reports.head
     reports.length must beEqualTo(1) and
       (report.companyId must beSome) and
+      (report.websiteId must beSome) and
       (report must beEqualTo(expectedReport))
   }
 
