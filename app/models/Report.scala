@@ -27,13 +27,8 @@ case class DraftReport(
                         fileIds: List[UUID]
                       ) {
 
-
-  def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
-  }
-
   def generateReport: Report = {
-    Report(
+    val report = Report(
       UUID.randomUUID(),
       category,
       subcategories,
@@ -51,8 +46,9 @@ case class DraftReport(
       email,
       contactAgreement,
       employeeConsumer,
-      initialStatus()
+      NA
     )
+    report.copy(status = report.initialStatus)
   }
 }
 object DraftReport {
@@ -81,7 +77,9 @@ case class Report(
                  ) {
 
   def initialStatus() = {
-    if (employeeConsumer) EMPLOYEE_REPORT else TRAITEMENT_EN_COURS
+    if (employeeConsumer) EMPLOYEE_REPORT
+    else if (companySiret.isDefined) TRAITEMENT_EN_COURS
+    else NA
   }
 }
 
