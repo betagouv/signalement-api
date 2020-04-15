@@ -131,6 +131,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available=requestedBy.userRole == UserRoles.Admin
       ),
       ReportColumn(
+        "Site web de l'entreprise", centerAlignmentColumn,
+        (report, _, _, _) => report.websiteURL.map(_.value).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Catégorie", leftAlignmentColumn,
         (report, _, _, _) => report.category
       ),
