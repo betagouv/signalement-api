@@ -23,7 +23,7 @@
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
         }
-        case _ => {
+        case _ if report.companyId.isDefined => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
@@ -56,6 +56,15 @@
             <p>
                 Que l'entreprise lise ou non votre signalement,
                 <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
+            </p>
+        }
+        case _ => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise qui gère le site internet,
+                mais les enquêteurs de la répression des fraudes en seront informés.
             </p>
         }
     }
