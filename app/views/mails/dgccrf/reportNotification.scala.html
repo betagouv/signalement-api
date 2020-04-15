@@ -58,6 +58,12 @@
                         @views.html.fragments.address(report.companyAddress.get)
                         </p>
                         }
+                        @if(report.websiteURL.isDefined) {
+                        <b>Site web</b>
+                        <p style="text-align: center;">
+                        Une adresse web (URL) a été enregistrée avec ce signalement.
+                        </p>
+                        }
 
                     </div>
                 }

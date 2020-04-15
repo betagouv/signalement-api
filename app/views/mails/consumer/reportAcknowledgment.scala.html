@@ -107,8 +107,15 @@
 
         <b>Entreprise</b>
         <br/>
-        @report.companyAddress
+        @if(report.companyAddress.isDefined) {
+        @report.companyAddress.get
         <br/>
+        }
+        @if(report.websiteURL.isDefined) {
+        Une adresse web (URL) a été enregistrée avec ce signalement.
+        <br/>
+        }
+
 
         <br />
         <b>Consommateur</b>
