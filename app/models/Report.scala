@@ -82,7 +82,7 @@ case class Report(
     else NA
   }
 
-  def shortURL() = websiteURL.map(_.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+  def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
 }
 
 object Report {
