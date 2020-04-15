@@ -5,6 +5,7 @@ import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json._
+import play.api.data.validation.ValidationError
 import utils.Constants.ActionEvent.ActionEventValue
 import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
@@ -53,7 +54,8 @@ case class DraftReport(
   }
 }
 object DraftReport {
-  implicit val draftReportFormat = Json.format[DraftReport]
+  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined)
+  implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
 case class Report(
