@@ -218,7 +218,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
 
   def genTmpFile(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) = {
     val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseEndDate(filters.end)
+    val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val reportColumns = buildColumns(requestedBy)

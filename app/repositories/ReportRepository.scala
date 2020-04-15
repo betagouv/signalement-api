@@ -223,10 +223,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           case(table, companyName) => table.companyName like s"${companyName}%"
         }
         .filterOpt(filter.start) {
-          case(table, start) => date(table.creationDate) >= start
+          case(table, start) => table.creationDate >= OffsetDateTime.of(start, LocalTime.MIN, OffsetDateTime.now.getOffset)
         }
         .filterOpt(filter.end) {
-          case(table, end) => date(table.creationDate) < end
+          case(table, end) => table.creationDate < OffsetDateTime.of(end, LocalTime.MAX, OffsetDateTime.now.getOffset)
         }
         .filterOpt(filter.category) {
           case(table, category) => table.category === category
