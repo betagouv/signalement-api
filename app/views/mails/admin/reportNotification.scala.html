@@ -19,15 +19,22 @@
         }
     </ul>
     <ul>
+    @if(report.companySiret.isDefined) {
         <li>
-            Nom de l'entreprise : @report.companyName
+            Nom de l'entreprise : @report.companyName.get
         </li>
         <li>
-            Adresse de l'entreprise : @report.companyAddress
+            Adresse de l'entreprise : @report.companyAddress.get
         </li>
         <li>
-            Siret : @report.companySiret
+            Siret : @report.companySiret.get
         </li>
+    }
+    @if(report.websiteURL.isDefined) {
+        <li>
+            Une adresse web (URL) a été enregistrée avec ce signalement.
+        </li>
+    }
     </ul>
     <ul>
         <li>
