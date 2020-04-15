@@ -81,6 +81,8 @@ case class Report(
     else if (companySiret.isDefined) TRAITEMENT_EN_COURS
     else NA
   }
+
+  def shortURL() = websiteURL.map(_.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
 }
 
 object Report {
