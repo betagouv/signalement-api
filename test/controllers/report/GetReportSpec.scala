@@ -29,7 +29,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
+import utils.{Address, EmailAddress}
 import utils.Fixtures
 
 import scala.concurrent.duration.{Duration, _}
@@ -191,19 +191,19 @@ trait GetReportContext extends Mockito {
   val companyId = UUID.randomUUID
   val neverRequestedReportUUID = UUID.randomUUID
   val neverRequestedReport = Report(
-    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)),
     Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
   )
 
   val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)),
     Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
   )
 
   val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some("companyAddress"), Some(Departments.ALL(0)),
+    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)),
     Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
@@ -224,9 +224,9 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
   lazy val mailerService = application.injector.instanceOf[MailerService]
 
-  mockCompanyRepository.getUserLevel(company.id, concernedProUser) returns Future(AccessLevel.ADMIN)
-  mockCompanyRepository.getUserLevel(company.id, notConcernedProUser) returns Future(AccessLevel.NONE)
-  mockCompanyRepository.getUserLevel(company.id, adminUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(companyId, concernedProUser) returns Future(AccessLevel.ADMIN)
+  mockCompanyRepository.getUserLevel(companyId, notConcernedProUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(companyId, adminUser) returns Future(AccessLevel.NONE)
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
@@ -238,7 +238,7 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(None, Some(neverRequestedReport.id), EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(None, Some(neverRequestedFinalReport.id), EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(None, Some(alreadyRequestedReport.id), EventFilter(None)) returns Future(
-    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(company.id), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT))
+    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(companyId), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT))
   )
 
   class FakeModule extends AbstractModule with ScalaModule {
