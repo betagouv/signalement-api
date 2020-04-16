@@ -26,6 +26,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    eventRepository: EventRepository,
                                    userRepository: UserRepository,
+                                   websiteRepository: WebsiteRepository,
                                    mailerService: MailerService,
                                    s3Service: S3Service,
                                    configuration: Configuration)
@@ -82,22 +83,25 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
-      company <- companyRepository.getOrCreate(
-        draftReport.companySiret,
+      website <- draftReport.websiteURL.map(websiteRepository.getOrCreate(_).map(Some(_))).getOrElse(Future(None))
+      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
+        siret,
         Company(
           UUID.randomUUID(),
-          draftReport.companySiret,
+          siret,
           OffsetDateTime.now,
-          draftReport.companyName,
-          draftReport.companyAddress,
-          Some(draftReport.companyPostalCode)
+          draftReport.companyName.get,
+          draftReport.companyAddress.get,
+          draftReport.companyPostalCode
         )
+      ).map(Some(_))).getOrElse(Future(None))
+      report <- reportRepository.create(
+        draftReport.generateReport.copy(companyId = company.map(_.id), websiteId = website.map(_.id))
       )
-      report <- reportRepository.create(draftReport.generateReport.copy(companyId = Some(company.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- {
-        if (report.status == TRAITEMENT_EN_COURS && report.companySiret.isDefined) notifyProfessionalOfNewReport(report, company)
+        if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
         else Future(report)
       }
     } yield {
@@ -135,8 +139,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       reportWithNewData <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
           companyId = Some(company.id),
-          companyName = reportCompany.name,
-          companyAddress = reportCompany.address,
+          companyName = Some(reportCompany.name),
+          companyAddress = Some(reportCompany.address),
           companyPostalCode = Some(reportCompany.postalCode),
           companySiret = Some(reportCompany.siret)
         )).map(Some(_))

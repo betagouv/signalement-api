@@ -57,7 +57,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                   end: Option[String],
                   category: Option[String],
                   status: Option[String],
-                  details: Option[String]
+                  details: Option[String],
+                  hasCompany: Option[Boolean]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -70,7 +71,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseEndDate(end)
+    val endDate = DateUtils.parseDate(end)
 
     val filter = ReportFilter(
       departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
@@ -85,7 +86,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
-      }
+      },
+      hasCompany
     )
 
     for {

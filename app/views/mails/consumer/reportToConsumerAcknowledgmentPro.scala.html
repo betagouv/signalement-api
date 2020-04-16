@@ -9,12 +9,18 @@
     </p>
 
     <p>
-        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant l'entreprise (SIRET : @report.companySiret) :
+        Vous avez fait un signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant une entreprise :
     </p>
-
+    @if(report.companySiret.isDefined) {
+        <p style="text-align: center;">
+            SIRET : <b>@report.companySiret.get)</b>
+        </p>
+    }
+    @if(report.companyAddress.isDefined) {
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyAddress)
+    @views.html.fragments.address(report.companyAddress.get)
     </p>
+    }
 
     <p>
         <b>L'entreprise a répondu à votre signalement.</b>

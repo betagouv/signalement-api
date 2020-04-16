@@ -36,7 +36,8 @@ object ReportsExtractActor {
                         end: Option[String],
                         category: Option[String],
                         status: Option[String],
-                        details: Option[String])
+                        details: Option[String],
+                        hasCompany: Option[Boolean])
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
@@ -116,18 +117,23 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Nom de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyName,
+        (report, _, _, _) => report.companyName.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.value,
+        (report, _, _, _) => report.companyAddress.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise", centerAlignmentColumn,
         (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available=requestedBy.userRole == UserRoles.Admin
+      ),
+      ReportColumn(
+        "Site web de l'entreprise", centerAlignmentColumn,
+        (report, _, _, _) => report.websiteURL.map(_.value).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie", leftAlignmentColumn,
@@ -217,7 +223,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
 
   def genTmpFile(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) = {
     val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseEndDate(filters.end)
+    val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val reportColumns = buildColumns(requestedBy)
@@ -239,7 +245,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
-          }
+          },
+          filters.hasCompany
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
