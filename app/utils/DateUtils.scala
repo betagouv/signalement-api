@@ -19,11 +19,6 @@ object DateUtils {
     }
   }
 
-  def parseEndDate(source: Option[String]): Option[LocalDate] = {
-    Some(DateUtils.parseDate(source).getOrElse(LocalDate.now).plusDays(1))
-  }
-
-
   def formatTime(time: LocalDateTime) = {
     time.format(TIME_FORMATTER)
   }

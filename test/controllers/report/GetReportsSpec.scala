@@ -127,7 +127,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
   def getReports() =  {
     Await.result(
-      app.injector.instanceOf[ReportListController].getReports(None, None, None, None, None, None, None, None, None, None, None)
+      app.injector.instanceOf[ReportListController].getReports(None, None, None, None, None, None, None, None, None, None, None, None)
         .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf
     )
