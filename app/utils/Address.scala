@@ -8,14 +8,15 @@ case class Address(value: String) {
 }
 
 object Address {
-  def apply(value: String) = new Address(value
-    .split(" - ")
-    .distinct
-    .map(_.trim)
-    .filterNot(_ == "FRANCE")
-    .filterNot(line => value.split(" - ").distinct.count(_.contains(line)) > 1)
-    .reduce((a1, a2) => s"$a1 - $a2")
-  )
+  def apply(value: String) = {
+    val distinctLines = value.split(" - ").distinct.map(_.trim)
+    new Address(
+      distinctLines
+        .filterNot(_ == "FRANCE")
+        .filterNot(line => distinctLines.count(_.contains(line)) > 1)
+      .reduce((a1, a2) => s"$a1 - $a2")
+    )
+  }
 
   implicit val AddressColumnType = MappedColumnType.base[Address, String](
     _.value,
