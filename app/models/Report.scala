@@ -6,8 +6,9 @@ import java.util.UUID
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
+import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
-import utils.{EmailAddress, SIRET}
+import utils.{Address, EmailAddress, SIRET}
 
 
 case class DraftReport(
@@ -15,7 +16,7 @@ case class DraftReport(
                         subcategories: List[String],
                         details: List[DetailInputValue],
                         companyName: String,
-                        companyAddress: String,
+                        companyAddress: Address,
                         companyPostalCode: String,
                         companySiret: SIRET,
                         firstName: String,
@@ -63,7 +64,7 @@ case class Report(
                    details: List[DetailInputValue],
                    companyId: Option[UUID],
                    companyName: String,
-                   companyAddress: String,
+                   companyAddress: Address,
                    companyPostalCode: Option[String],
                    companySiret: Option[SIRET],
                    creationDate: OffsetDateTime,
@@ -153,7 +154,7 @@ object CompanyWithNbReports {
 
 case class ReportCompany(
                           name: String,
-                          address: String,
+                          address: Address,
                           postalCode: String,
                           siret: SIRET
                         )

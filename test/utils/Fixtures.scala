@@ -41,12 +41,17 @@ object Fixtures {
         randInt <- Gen.choose(0, 1000000)
     } yield SIRET("000000000" + randInt takeRight 9)
 
+    val genAddress = for {
+        address <- arbString.arbitrary
+    } yield Address(address)
+
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
         siret <- genSiret
+        address <- genAddress
     } yield Company(
-        id, siret, OffsetDateTime.now(), name, "42 rue du Test", Some("37500")
+        id, siret, OffsetDateTime.now(), name, address, Some("37500")
     )
 
     def genDraftReport = for {
@@ -88,7 +93,7 @@ object Fixtures {
 
     def genReportCompany = for {
         name <- arbString.arbitrary
-        address <- arbString.arbitrary
+        address <- genAddress
         siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
     } yield ReportCompany(name, address, postalCode.toString, siret)

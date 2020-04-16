@@ -43,7 +43,7 @@ class CompanyAccessController @Inject()(
       case (company, level) => Map(
           "companySiret"      -> company.siret.value,
           "companyName"       -> company.name,
-          "companyAddress"    -> company.address,
+          "companyAddress"    -> company.address.value,
           "level"             -> level.value
       )
     }))

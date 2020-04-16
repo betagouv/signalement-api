@@ -8,7 +8,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.SIRET
+import utils.{Address, SIRET}
 import models._
 import utils.Constants.Departments
 
@@ -25,11 +25,11 @@ class CompanyRepository @Inject()(
     def siret = column[SIRET]("siret", O.Unique)
     def creationDate = column[OffsetDateTime]("creation_date")
     def name = column[String]("name")
-    def address = column[String]("address")
+    def address = column[Address]("address")
     def postalCode = column[Option[String]]("postal_code")
     def department = column[Option[String]]("department")
 
-    type CompanyData = (UUID, SIRET, OffsetDateTime, String, String, Option[String], Option[String])
+    type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String])
 
     def constructCompany: CompanyData => Company = {
       case (id, siret, creationDate, name, address, postalCode, _) => Company(id, siret, creationDate, name, address, postalCode)
