@@ -6,8 +6,18 @@ import play.api.libs.json.{Json, OFormat}
 import utils.EmailAddress
 
 
+case class DraftSubscription (
+                          departments: List[String],
+                          categories: List[ReportCategory]
+                        )
+
+
+object DraftSubscription {
+  implicit val draftSubscriptionFormat: OFormat[DraftSubscription] = Json.format[DraftSubscription]
+}
+
 case class Subscription (
-                          id: Option[UUID],
+                          id: UUID,
                           userId: Option[UUID],
                           email: Option[EmailAddress],
                           departments: List[String],
@@ -16,8 +26,6 @@ case class Subscription (
 
 
 object Subscription {
-
   implicit val subscriptionFormat: OFormat[Subscription] = Json.format[Subscription]
-
 }
 

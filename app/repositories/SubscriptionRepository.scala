@@ -32,12 +32,12 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def constructSubscription: SubscriptionData => Subscription = {
       case (id, userId, email, departments, categories) => {
-        Subscription(Some(id), userId, email, departments, categories.map(ReportCategory.fromValue(_)))
+        Subscription(id, userId, email, departments, categories.map(ReportCategory.fromValue(_)))
       }
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, userId, email, departments, categories) => (id.get, userId, email, departments, categories.map(_.value))
+      case Subscription(id, userId, email, departments, categories) => (id, userId, email, departments, categories.map(_.value))
     }
 
     def * =
@@ -66,6 +66,9 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     db.run(querySubscription.update(subscription))
       .map(_ => subscription)
   }
+
+  def delete(subscriptionId: UUID): Future[Int] = db
+    .run(subscriptionTableQuery.filter(_.id === subscriptionId).delete)
 
   def listSubscribeUserMails(department: String, category: Option[ReportCategory]): Future[List[EmailAddress]] = db
     .run(

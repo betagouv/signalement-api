@@ -83,5 +83,7 @@ POST        /api/rating                                 controllers.RatingContro
 # Subscription API
 GET         /api/subscriptions                          controllers.SubscriptionController.getSubscriptions
 POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
+DELETE      /api/subscriptions/:subscriptionId          controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
+
 
 GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
