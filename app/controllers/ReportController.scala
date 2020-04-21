@@ -109,9 +109,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
           events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
-          result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
+          result <- if (!events.exists(_._1.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
-          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
+          } else if (events.exists(_._1.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
             Future(Conflict)
           } else {
             reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
@@ -217,12 +217,19 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           events <- eventRepository.getEvents(report.flatMap(_.companyId), Some(id), filter)
         } yield {
           report match {
-            case Some(_) => Ok(Json.toJson(events.filter(event =>
-              request.identity.userRole match {
-                case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event.action
-                case _ => true
-              }
-            )))
+            case Some(_) => Ok(Json.toJson(
+              events.filter(event =>
+                request.identity.userRole match {
+                  case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+                  case _ => true
+                }
+              )
+              .map { case (event, user) => (event, user.map(u => Json.obj(
+                "firstName" -> u.firstName,
+                "lastName"  -> u.lastName,
+                "role"      -> u.userRole.name
+              )))}
+            ))
             case None => NotFound
           }
         }
