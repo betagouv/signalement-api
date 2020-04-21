@@ -42,7 +42,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       runWeeklyNotificationTask(LocalDate.now)
     }
 
-    runDailyNotificationTask(LocalDate.now, Some(ReportCategory.COVID))
+    runDailyNotificationTask(LocalDate.now, Some(ReportCategory.Covid))
   }
 
   def runWeeklyNotificationTask(taskDate: LocalDate) = {

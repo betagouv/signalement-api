@@ -3,12 +3,13 @@ package models
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 
 case class DraftSubscription (
                           departments: List[String],
-                          categories: List[ReportCategory]
+                          categories: List[ReportCategory],
+                          sirets: List[SIRET]
                         )
 
 
@@ -21,7 +22,8 @@ case class Subscription (
                           userId: Option[UUID],
                           email: Option[EmailAddress],
                           departments: List[String],
-                          categories: List[ReportCategory]
+                          categories: List[ReportCategory],
+                          sirets: List[SIRET]
                         )
 
 

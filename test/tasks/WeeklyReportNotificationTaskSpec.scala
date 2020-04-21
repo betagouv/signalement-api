@@ -54,9 +54,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
 
   val user = Fixtures.genDgccrfUser.sample.get
   val userWithoutReport = Fixtures.genDgccrfUser.sample.get
-  val officeSubscription = Subscription(Some(UUID.randomUUID()), None, Some(officeEmail), List(department1, department2, martinique), List.empty)
-  val userSubscription = Subscription(Some(UUID.randomUUID()), Some(user.id), None, List(department1, guadeloupe), List.empty)
-  val userSubscriptionWithoutReport = Subscription(Some(UUID.randomUUID()), Some(userWithoutReport.id), None, List(department3), List.empty)
+  val officeSubscription = Subscription(UUID.randomUUID(), None, Some(officeEmail), List(department1, department2, martinique), List.empty, List.empty)
+  val userSubscription = Subscription(UUID.randomUUID(), Some(user.id), None, List(department1, guadeloupe), List.empty, List.empty)
+  val userSubscriptionWithoutReport = Subscription(UUID.randomUUID(), Some(userWithoutReport.id), None, List(department3), List.empty, List.empty)
 
   val company = Fixtures.genCompany.sample.get
   val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"))

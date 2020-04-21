@@ -6,7 +6,7 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.EmailAddress
+import utils.{EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,22 +26,23 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
+    def sirets = column[List[SIRET]]("sirets")
     def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
 
-    type SubscriptionData = (UUID, Option[UUID], Option[EmailAddress], List[String], List[String])
+    type SubscriptionData = (UUID, Option[UUID], Option[EmailAddress], List[String], List[String], List[SIRET])
 
     def constructSubscription: SubscriptionData => Subscription = {
-      case (id, userId, email, departments, categories) => {
-        Subscription(id, userId, email, departments, categories.map(ReportCategory.fromValue(_)))
+      case (id, userId, email, departments, categories, sirets) => {
+        Subscription(id, userId, email, departments, categories.map(ReportCategory.fromValue(_)), sirets)
       }
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, userId, email, departments, categories) => (id, userId, email, departments, categories.map(_.value))
+      case Subscription(id, userId, email, departments, categories, sirets) => (id, userId, email, departments, categories.map(_.value), sirets)
     }
 
     def * =
-      (id, userId, email, departments, categories) <> (constructSubscription, extractSubscription.lift)
+      (id, userId, email, departments, categories, sirets) <> (constructSubscription, extractSubscription.lift)
   }
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
@@ -52,6 +53,13 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .run(subscriptionTableQuery += subscription)
     .map(_ => subscription)
 
+
+  def get(id: UUID): Future[Option[Subscription]] = db
+    .run(
+      subscriptionTableQuery
+      .filter(_.id === id)
+      .result.headOption
+    )
 
   def list(userId: UUID): Future[List[Subscription]] = db
     .run(

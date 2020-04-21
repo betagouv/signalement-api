@@ -82,7 +82,9 @@ POST        /api/rating                                 controllers.RatingContro
 
 # Subscription API
 GET         /api/subscriptions                          controllers.SubscriptionController.getSubscriptions
-POST        /api/subscriptions                          controllers.SubscriptionController.subscribe
+POST        /api/subscriptions                          controllers.SubscriptionController.createSubscription
+PUT         /api/subscriptions/:subscriptionId          controllers.SubscriptionController.updateSubscription(subscriptionId: java.util.UUID)
+GET         /api/subscriptions/:subscriptionId          controllers.SubscriptionController.getSubscription(subscriptionId: java.util.UUID)
 DELETE      /api/subscriptions/:subscriptionId          controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
 
 
