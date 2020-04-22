@@ -30,7 +30,8 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
           None,
           draftSubscription.departments,
           draftSubscription.categories,
-          draftSubscription.sirets
+          draftSubscription.sirets,
+          draftSubscription.frequency
         )
       ).flatMap(subscription => Future.successful(Ok(Json.toJson(subscription))))
     )
@@ -47,7 +48,8 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
               subscription.copy(
                 departments = draftSubscription.departments,
                 categories = draftSubscription.categories,
-                sirets = draftSubscription.sirets
+                sirets = draftSubscription.sirets,
+                frequency = draftSubscription.frequency
               )).map(Some(_))).getOrElse(Future(None))
         } yield if (updatedSubscription.isDefined) Ok(Json.toJson(updatedSubscription)) else Unauthorized
     )
