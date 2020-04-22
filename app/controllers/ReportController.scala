@@ -224,11 +224,14 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                   case _ => true
                 }
               )
-              .map { case (event, user) => (event, user.map(u => Json.obj(
-                "firstName" -> u.firstName,
-                "lastName"  -> u.lastName,
-                "role"      -> u.userRole.name
-              )))}
+              .map { case (event, user) => Json.obj(
+                "data" -> event,
+                "user"  -> user.map(u => Json.obj(
+                  "firstName" -> u.firstName,
+                  "lastName"  -> u.lastName,
+                  "role"      -> u.userRole.name
+                ))
+              )}
             ))
             case None => NotFound
           }
