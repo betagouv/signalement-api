@@ -90,7 +90,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv) ex
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {
-    eventRepository.getEvents(None, Some(reportUUID), EventFilter(action = Some(action))).map(_.head._1) must eventActionMatcher(action).await
+    eventRepository.getEvents(None, Some(reportUUID), EventFilter(action = Some(action))).map(_.head) must eventActionMatcher(action).await
   }
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>

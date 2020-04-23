@@ -109,9 +109,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
           events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
-          result <- if (!events.exists(_._1.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
+          result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
-          } else if (events.exists(_._1.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
+          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
             Future(Conflict)
           } else {
             reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
@@ -214,7 +214,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEvents(report.flatMap(_.companyId), Some(id), filter)
+          events <- eventRepository.getEventsWithUsers(report.flatMap(_.companyId), Some(id), filter)
         } yield {
           report match {
             case Some(_) => Ok(Json.toJson(

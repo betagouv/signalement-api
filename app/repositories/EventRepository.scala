@@ -70,7 +70,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val us
         .delete
     )
 
-  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+  private def getRawEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter) =
     eventTableQuery
       .filterIf(companyId.isDefined && reportId.isDefined) { case table =>
         (table.reportId === reportId).getOrElse(false) || (table.reportId.isEmpty && table.companyId === companyId).getOrElse(false)
@@ -83,11 +83,22 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val us
       .filterOpt(filter.action) {
         case (table, action) => table.action === action.value
       }
+
+  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[Event]] = db.run {
+    getRawEvents(companyId, reportId, filter)
+      .sortBy(_.creationDate.desc)
+      .to[List]
+      .result
+  }
+
+  def getEventsWithUsers(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+    getRawEvents(companyId, reportId, filter)
       .joinLeft(userTableQuery).on(_.userId === _.id)
       .sortBy(_._1.creationDate.desc)
       .to[List]
       .result
   }
+
   def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(eventTableQuery.filter(

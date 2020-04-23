@@ -238,10 +238,7 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(None, Some(neverRequestedReport.id), EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(None, Some(neverRequestedFinalReport.id), EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(None, Some(alreadyRequestedReport.id), EventFilter(None)) returns Future(
-    List((
-      Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(companyId), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT),
-      None
-    ))
+    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(companyId), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT))
   )
 
   class FakeModule extends AbstractModule with ScalaModule {
