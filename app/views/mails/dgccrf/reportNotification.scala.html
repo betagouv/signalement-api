@@ -32,7 +32,7 @@
             <li>
                 Départements :
                 @if(subscription.departments.length > 0) {
-                    @subscription.departments.reduce((d1, d2) => s"$d1 - $d2" )
+                    @subscription.departments.mkString(" - ")
                 } else {
                     Tous
                 }

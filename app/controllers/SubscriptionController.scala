@@ -51,7 +51,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
                 sirets = draftSubscription.sirets,
                 frequency = draftSubscription.frequency
               )).map(Some(_))).getOrElse(Future(None))
-        } yield if (updatedSubscription.isDefined) Ok(Json.toJson(updatedSubscription)) else Unauthorized
+        } yield if (updatedSubscription.isDefined) Ok(Json.toJson(updatedSubscription)) else NotFound
     )
   }
 
@@ -63,7 +63,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
 
   def getSubscription(uuid: UUID) = SecuredAction(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
     subscriptionRepository.get(uuid).flatMap(subscription =>
-      subscription.filter(s => s.userId == Some(request.identity.id)).map(s => Future(Ok(Json.toJson(s)))).getOrElse(Future(Unauthorized))
+      subscription.filter(s => s.userId == Some(request.identity.id)).map(s => Future(Ok(Json.toJson(s)))).getOrElse(Future(NotFound))
     )
   }
 
@@ -71,6 +71,6 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
     for {
       subscriptions <- subscriptionRepository.list(request.identity.id)
       deletedCount <- subscriptions.filter(_.id == uuid).headOption.map(subscription => subscriptionRepository.delete(subscription.id)).getOrElse(Future(0))
-    } yield if (deletedCount > 0) Ok else Unauthorized
+    } yield if (deletedCount > 0) Ok else NotFound
   }
 }
