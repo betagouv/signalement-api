@@ -6,7 +6,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json._
 import slick.jdbc.JdbcProfile
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
 @Singleton
-class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
+class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -53,7 +53,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
       (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
-  val reportTableQuery = TableQuery[reportRepository.ReportTable]
+  val userTableQuery = TableQuery[userRepository.UserTable]
 
   val eventTableQuery = TableQuery[EventTable]
   
@@ -70,7 +70,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
         .delete
     )
 
-  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[Event]] = db.run {
+  private def getRawEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter) =
     eventTableQuery
       .filterIf(companyId.isDefined && reportId.isDefined) { case table =>
         (table.reportId === reportId).getOrElse(false) || (table.reportId.isEmpty && table.companyId === companyId).getOrElse(false)
@@ -83,10 +83,22 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val re
       .filterOpt(filter.action) {
         case (table, action) => table.action === action.value
       }
+
+  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[Event]] = db.run {
+    getRawEvents(companyId, reportId, filter)
       .sortBy(_.creationDate.desc)
       .to[List]
       .result
   }
+
+  def getEventsWithUsers(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+    getRawEvents(companyId, reportId, filter)
+      .joinLeft(userTableQuery).on(_.userId === _.id)
+      .sortBy(_._1.creationDate.desc)
+      .to[List]
+      .result
+  }
+
   def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(eventTableQuery.filter(
