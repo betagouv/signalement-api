@@ -1,7 +1,7 @@
 package tasks
 
 import java.net.URI
-import java.time.LocalDate
+import java.time.{LocalDate, Period}
 import java.util.UUID
 
 import models._
@@ -20,8 +20,8 @@ import scala.concurrent.duration.Duration
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
   override def is =
     s2"""
-         When daily reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runDailyNotificationTask(runningDate, Some(ReportCategory.COVID)), Duration.Inf))}
-         And a mail is sent to the subscribed user                                       ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement dans la catégorie COVID-19 (coronavirus) pour le département $covidDept", views.html.mails.dgccrf.reportNotification(Seq(covidReport), covidDept, Some(ReportCategory.COVID), runningDate.minusDays(1)).toString)}
+         When daily reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf))}
+         And a mail is sent to the subscribed user                                       ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement", views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString)}
     """
 }
 
@@ -46,10 +46,10 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
 
   val covidEmail = Fixtures.genEmailAddress("covid", "abo").sample.get
 
-  val covidSubscription = Subscription(Some(UUID.randomUUID()), None, Some(covidEmail), List(covidDept), List(ReportCategory.COVID))
+  val covidSubscription = Subscription(UUID.randomUUID(), None, Some(covidEmail), List(covidDept), List(ReportCategory.Covid), List.empty, Period.ofDays(1))
 
   val company = Fixtures.genCompany.sample.get
-  val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.COVID.value)
+  val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.Covid.value)
 
   override def setupData = {
     Await.result(
