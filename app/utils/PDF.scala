@@ -1,5 +1,6 @@
 package utils
 
+import java.net.URI
 import java.util.UUID
 import java.time.OffsetDateTime
 
@@ -13,7 +14,7 @@ import com.itextpdf.kernel.pdf.{PdfDocument, PdfWriter}
 
 
 object PDF {
-    def Ok(htmlDocuments: List[HtmlFormat.Appendable], tmpDirectory: String, websiteUrl: String)
+    def Ok(htmlDocuments: List[HtmlFormat.Appendable], tmpDirectory: String, websiteUrl: URI)
         (implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
         val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
         val pdf = new PdfDocument(new PdfWriter(tmpFileName))
@@ -21,10 +22,9 @@ object PDF {
         val converterProperties = new ConverterProperties
         val dfp = new DefaultFontProvider(true, true, true)
         converterProperties.setFontProvider(dfp)
-        converterProperties.setBaseUri(websiteUrl)
+        converterProperties.setBaseUri(websiteUrl.toString())
 
         HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
-
         play.api.mvc.Results.Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
     }
 }

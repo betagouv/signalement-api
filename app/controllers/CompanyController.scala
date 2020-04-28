@@ -90,7 +90,7 @@ class CompanyController @Inject()(
             ))
           )
           if (!htmlDocuments.isEmpty) {
-            PDF.Ok(htmlDocuments, configuration.get[String]("play.tmpDirectory"), configuration.get[String]("play.application.url"))
+            PDF.Ok(htmlDocuments, configuration.get[String]("play.tmpDirectory"), configuration.get[URI]("play.application.url"))
           } else {
             NotFound
           }

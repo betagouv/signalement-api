@@ -1,0 +1,95 @@
+@import java.net.URI
+@(report: Report)(implicit websiteUrl: URI)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="viewport" content="width=device-width" />
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Détail du signalement @report.id</title>
+
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
+
+    </head>
+    <body>
+        <div style="display: block; page-break-after: always">
+            <div class="logo-marianne">
+                <img src='@routes.Assets.versioned("images/logo-marianne.png")'/>
+            </div>
+            <div class="logo-sc">
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
+            </div>
+
+            <div class="content mt-3">
+                <h2>Détail du signalement @report.id</h2>
+            </div>
+            <div>
+                <h3>Problème</h3>
+                @report.category
+                <ul>
+                @report.subcategories.map{subcat =>
+                    <li>
+                        @subcat
+                    </li>
+                }
+                </ul>
+                <h3>Description</h3>
+                <ul>
+                @report.details.map{input =>
+                    <li>
+                        @input.label @input.value
+                    </li>
+                }
+                </ul>
+                <h3>Entreprise</h3>
+                <dl>
+                @report.companySiret.map{siret =>
+                    <dt>SIRET</dt>
+                    <dd>
+                        @siret
+                    </dd>
+                }
+                @report.companyName.map{name => 
+                    <dt>Nom</dt>
+                    <dd>@name</dd>
+                }
+                @report.companyAddress.map{address =>
+                    <dt>Adresse</dt>
+                    <dd>
+                        @address
+                    </dd>
+                }
+                @report.websiteURL.map{url =>
+                    <dt>Site web</dt>
+                    <dd>
+                        @url
+                    </dd>
+                }
+                </dl>
+                <h3>Consommateur</h3>
+                <dl>
+                    <dt>Nom</dt>
+                    <dd>
+                        @report.lastName
+                    </dd>
+                    <dt>Prénom</dt>
+                    <dd>
+                        @report.firstName
+                    </dd>
+                    <dt>Adresse email</dt>
+                    <dd>
+                        @report.email
+                    </dd>
+                    <dt>Accord pour contact</dt>
+                    <dd>
+                        @if(report.contactAgreement) { Oui } else { Non }
+                    </dd>
+                </dl>
+            </div>
+            <div class="footer text-center">
+                <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
+            </div>
+        </div>
+    </body>
+</html>

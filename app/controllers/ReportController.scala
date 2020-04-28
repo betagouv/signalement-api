@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URI
 import java.util.UUID
 
 import akka.stream.alpakka.s3.MultipartUploadResult
@@ -17,7 +18,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
-import utils.SIRET
+import utils.{PDF, SIRET}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -39,6 +40,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
@@ -170,7 +172,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     })
   }
 
-  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def getReport(uuid: String, toPDF: Int) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
@@ -187,7 +189,16 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           }
         reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
       } yield updatedReport
-              .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+              .map(report =>
+                if (toPDF == 0)
+                  Ok(Json.toJson(ReportWithFiles(report, reportFiles)))
+                else
+                  PDF.Ok(
+                    List(views.html.pdfs.report(report)),
+                    configuration.get[String]("play.tmpDirectory"),
+                    websiteUrl
+                  )
+              )
               .getOrElse(NotFound)
     }
   }
