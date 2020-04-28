@@ -172,7 +172,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     })
   }
 
-  def getReport(uuid: String, toPDF: Int) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def getReport(uuid: String, toPDF: Int = 0) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
