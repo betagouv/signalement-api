@@ -26,7 +26,8 @@ DELETE       /api/reports/files/:uuid/:filename         controllers.ReportContro
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
 GET          /api/reports/siret/:siret/count            controllers.ReportController.getReportCountBySiret(siret: String)
 
-GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid, pdf: Int?=0)
+GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
+GET          /api/reports/:uuid/download                controllers.ReportController.reportAsPDF(uuid)
 DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
 
 POST         /api/reports                               controllers.ReportController.createReport()

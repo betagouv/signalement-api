@@ -172,7 +172,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     })
   }
 
-  def getReport(uuid: String, toPDF: Int = 0) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
@@ -189,10 +189,23 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           }
         reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
       } yield updatedReport
+              .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+              .getOrElse(NotFound)
+    }
+  }
+
+  def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => for {
+        report        <- reportRepository.getReport(id)
+        proLevel      <- getProLevel(request.identity, report)
+      } yield report
+              .filter(_ =>
+                              request.identity.userRole == UserRoles.DGCCRF
+                          ||  request.identity.userRole == UserRoles.Admin
+                          ||  proLevel != AccessLevel.NONE)
               .map(report =>
-                if (toPDF == 0)
-                  Ok(Json.toJson(ReportWithFiles(report, reportFiles)))
-                else
                   PDF.Ok(
                     List(views.html.pdfs.report(report)),
                     configuration.get[String]("play.tmpDirectory"),
