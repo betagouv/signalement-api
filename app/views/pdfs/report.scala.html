@@ -101,6 +101,11 @@
                         <td>@e.getDescription</td>
                     </tr>
                 }
+                <tr>
+                    <td>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</td>
+                    <td>Création du signalement</td>
+                    <td></td>
+                </tr>
                 </table>
             </div>
             <div class="footer text-center">
