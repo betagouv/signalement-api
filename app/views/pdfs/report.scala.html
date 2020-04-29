@@ -1,5 +1,5 @@
 @import java.net.URI
-@(report: Report, events: List[(Event, Option[User])])(implicit websiteUrl: URI)
+@(report: Report, events: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -107,6 +107,19 @@
                     <td></td>
                 </tr>
                 </table>
+            </div>
+            <div>
+                <h3>Pièces jointes</h3>
+                @if(files.isEmpty) {
+                    <span>Aucune pièce jointe n'est associée à ce signalement.</span>
+                } else {
+                Pièces jointes :
+                <ul>
+                    @files.map{f =>
+                    <li>@f.filename</li>
+                    }
+                </ul>
+                }
             </div>
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
