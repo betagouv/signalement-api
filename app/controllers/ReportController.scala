@@ -199,6 +199,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
+        events        <- eventRepository.getEventsWithUsers(None, Some(id), EventFilter())
         proLevel      <- getProLevel(request.identity, report)
       } yield report
               .filter(_ =>
@@ -207,7 +208,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           ||  proLevel != AccessLevel.NONE)
               .map(report =>
                   PDF.Ok(
-                    List(views.html.pdfs.report(report)),
+                    List(views.html.pdfs.report(report, events)),
                     configuration.get[String]("play.tmpDirectory"),
                     websiteUrl
                   )

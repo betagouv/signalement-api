@@ -17,12 +17,15 @@ case class Event(
                   eventType: EventTypeValue,
                   action: ActionEventValue,
                   details: JsValue = Json.obj()
-                )
+                ) {
+
+  def formattedDate = this.creationDate.map(_.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))).getOrElse("—")
+  def getDescription = this.details.as[JsObject].value.get("description").getOrElse("")
+}
 
 object Event {
 
   implicit val eventFormat: OFormat[Event] = Json.format[Event]
   def stringToDetailsJsValue(value: String): JsValue = Json.obj("description" -> value)
   def jsValueToString(jsValue: Option[JsValue]) = jsValue.flatMap(_.as[JsObject].value.get("description").map(_.toString))
-
 }

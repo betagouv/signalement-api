@@ -1,5 +1,5 @@
 @import java.net.URI
-@(report: Report)(implicit websiteUrl: URI)
+@(report: Report, events: List[(Event, Option[User])])(implicit websiteUrl: URI)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -14,15 +14,14 @@
     </head>
     <body>
         <div style="display: block; page-break-after: always">
-            <div class="logo-marianne">
+            <div>
                 <img src='@routes.Assets.versioned("images/logo-marianne.png")'/>
-            </div>
-            <div class="logo-sc">
                 <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
             </div>
 
             <div class="content mt-3">
-                <h2>Détail du signalement @report.id</h2>
+                <h2>Détail du signalement</h2>
+                <small>Identifiant unique : @report.id</small>
             </div>
             <div>
                 <h3>Problème</h3>
@@ -86,6 +85,23 @@
                         @if(report.contactAgreement) { Oui } else { Non }
                     </dd>
                 </dl>
+            </div>
+            <div>
+                <h3>Historique</h3>
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Action</th>
+                        <th>Description</th>
+                    </tr>
+                @events.map{case (e, u) =>
+                    <tr>
+                        <td>@e.formattedDate</td>
+                        <td>@e.action.value</td>
+                        <td>@e.getDescription</td>
+                    </tr>
+                }
+                </table>
             </div>
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
