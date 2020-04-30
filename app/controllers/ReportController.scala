@@ -214,15 +214,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEvents(report.flatMap(_.companyId), Some(id), filter)
+          events <- eventRepository.getEventsWithUsers(report.flatMap(_.companyId), Some(id), filter)
         } yield {
           report match {
-            case Some(_) => Ok(Json.toJson(events.filter(event =>
-              request.identity.userRole match {
-                case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event.action
-                case _ => true
-              }
-            )))
+            case Some(_) => Ok(Json.toJson(
+              events.filter(event =>
+                request.identity.userRole match {
+                  case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+                  case _ => true
+                }
+              )
+              .map { case (event, user) => Json.obj(
+                "data" -> event,
+                "user"  -> user.map(u => Json.obj(
+                  "firstName" -> u.firstName,
+                  "lastName"  -> u.lastName,
+                  "role"      -> u.userRole.name
+                ))
+              )}
+            ))
             case None => NotFound
           }
         }

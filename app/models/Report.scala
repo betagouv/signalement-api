@@ -195,10 +195,26 @@ object ReportAction {
 sealed case class ReportCategory(value: String)
 
 object ReportCategory {
-  val COVID = ReportCategory("COVID-19 (coronavirus)")
+  val Covid = ReportCategory("COVID-19 (coronavirus)")
+  val CafeRestaurant = ReportCategory("Café / Restaurant")
+  val AchatMagasin = ReportCategory("Achat / Magasin")
+  val Service = ReportCategory("Services aux particuliers")
+  val TelEauGazElec = ReportCategory("Téléphonie / Eau-Gaz-Electricité")
+  val BanqueAssuranceMutuelle = ReportCategory("Banque / Assurance / Mutuelle")
+  val ProduitsObjets = ReportCategory("Produits / Objets")
+  val TravauxRenovations = ReportCategory("Travaux / Rénovation")
+  val VoyageLoisirs = ReportCategory("Voyage / Loisirs")
+  val Immobilier = ReportCategory("Immobilier")
+  val Sante = ReportCategory("Secteur de la santé")
+  val VoitureVehicule = ReportCategory("Voiture / Véhicule")
+  val Animaux = ReportCategory("Animaux")
+  val DemarchesAdministratives = ReportCategory("Démarches administratives")
 
   def fromValue(v: String) = {
-    List(COVID).find(_.value == v).head
+    List(
+      Covid, CafeRestaurant, AchatMagasin, Service, TelEauGazElec, BanqueAssuranceMutuelle, ProduitsObjets,
+      TravauxRenovations, VoyageLoisirs, Immobilier, Sante, VoitureVehicule, Animaux, DemarchesAdministratives
+    ).find(_.value == v).head
   }
 
   implicit val reads = new Reads[ReportCategory] {

@@ -1,7 +1,7 @@
 @import java.time.LocalDate
 @import utils.EmailAddress
 @import java.net.URI
-@(reports: Seq[Report], department: String, category: Option[ReportCategory], startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(subscription: Subscription, reports: Seq[Report], startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
     <p>
@@ -13,7 +13,43 @@
                 @n nouveaux signalements ont été déposés
             }
         }
-        sur SignalConso @category.map(c => s"dans la catégorie ${c.value} ")pour le département @department.
+        sur SignalConso pour les critères suivants :
+        <ul>
+            <li>
+                Catégories :
+                @if(subscription.categories.length > 0) {
+                    <ul>
+                        @subscription.categories.map { category =>
+                            <li>
+                                @category.value
+                            </li>
+                        }
+                    </ul>
+                } else {
+                    Toutes
+                }
+            </li>
+            <li>
+                Départements :
+                @if(subscription.departments.length > 0) {
+                    @subscription.departments.mkString(" - ")
+                } else {
+                    Tous
+                }
+            </li>
+            @if(subscription.sirets.length > 0) {
+                <li>
+                    Numéros SIRET :
+                    <ul>
+                        @subscription.sirets.map { siret =>
+                            <li>
+                                @siret.value
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
+        </ul>
     </p>
 
     @if(reports.length > 0) {
@@ -29,7 +65,7 @@
             }
             </div>
 
-            @reports.zipWithIndex.map { case(report, index) =>
+            @reports.sortBy(_.creationDate).reverse.zipWithIndex.map { case(report, index) =>
                 @if(index < 20) {
                     <div style="border-bottom: 2px solid #898989;
                         padding-top: 20px;

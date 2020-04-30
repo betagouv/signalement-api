@@ -9,16 +9,20 @@ case class SIRET(value: String) {
 
 object SIRET {
   def apply(value: String) = new SIRET(value.replaceAll("\\s", ""))
-  implicit val EmailColumnType = MappedColumnType.base[SIRET, String](
+  implicit val siretColumnType = MappedColumnType.base[SIRET, String](
     _.value,
     SIRET(_)
   )
-  implicit val emailWrites = new Writes[SIRET] {
+  implicit val siretListColumnType = MappedColumnType.base[List[SIRET], List[String]](
+    _.map(_.value),
+    _.map(SIRET(_))
+  )
+  implicit val siretWrites = new Writes[SIRET] {
     def writes(o: SIRET): JsValue = {
       JsString(o.value)
     }
   }
-  implicit val emailReads = new Reads[SIRET] {
+  implicit val siretReads = new Reads[SIRET] {
     def reads(json: JsValue): JsResult[SIRET] = json.validate[String].map(SIRET(_))
   }
 }
