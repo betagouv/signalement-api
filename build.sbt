@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
   "com.iheart" %% "ficus" % "1.4.7",
 
   "com.norbitltd" %% "spoiwo" % "1.7.0",
-  "com.itextpdf" % "itext7-core" % "7.1.10",
+  "com.itextpdf" % "itext7-core" % "7.1.11",
   "com.itextpdf" % "html2pdf" % "3.0.0",
 
   specs2 % Test,
