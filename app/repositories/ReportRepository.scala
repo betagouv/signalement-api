@@ -311,19 +311,16 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     )
 
   def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
-
-    implicit val getCompanyWithNbReports = GetResult(r => CompanyWithNbReports(r.nextString, r.nextString, r.nextString, r.nextString, r.nextInt))
+    val q = db.run(companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
+        .groupBy(_._1)
+        .map{ case (grouped, all) => (grouped, all.map(_._2).size) }
+        .to[List]
+        .sortBy(_._2.desc)
+        .result)
 
     for {
-      res <- db.run(
-      sql"""select company_siret, company_postal_code, company_name, company_address, count(*)
-        from reports
-        group by company_siret, company_postal_code, company_name, company_address
-        order by count(*) desc
-        """.as[(CompanyWithNbReports)]
-      )
+      res <- q.map(_.map{case (company, cnt) => CompanyWithNbReports(company, cnt)})
     } yield {
-
       PaginatedResult(
         totalCount = res.length,
         entities = res.drop(offset.toInt).take(limit).toList,
