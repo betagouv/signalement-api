@@ -209,7 +209,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         "Actions DGCCRF", leftAlignmentColumn,
         (report, _, events, _) =>
           events.filter(event => event.eventType == Constants.EventType.DGCCRF)
-          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.details.as[JsObject].value.get("description").getOrElse("")}")
+          .map(event => s"Le ${event.creationDate.get.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}")
           .mkString("\n"),
         available = requestedBy.userRole == UserRoles.DGCCRF
       ),

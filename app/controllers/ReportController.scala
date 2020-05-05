@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URI
 import java.util.UUID
 
 import akka.stream.alpakka.s3.MultipartUploadResult
@@ -14,7 +15,7 @@ import play.api.{Configuration, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, S3Service, PDFService}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.SIRET
@@ -31,6 +32,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
+                                 pdfService: PDFService,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration)
@@ -39,6 +41,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
+  implicit val websiteUrl = configuration.get[URI]("play.application.url")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
@@ -188,6 +191,28 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
       } yield updatedReport
               .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+              .getOrElse(NotFound)
+    }
+  }
+
+  def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => for {
+        report        <- reportRepository.getReport(id)
+        events        <- eventRepository.getEventsWithUsers(None, Some(id), EventFilter())
+        reportFiles   <- reportRepository.retrieveReportFiles(id)
+        proLevel      <- getProLevel(request.identity, report)
+      } yield report
+              .filter(_ =>
+                              request.identity.userRole == UserRoles.DGCCRF
+                          ||  request.identity.userRole == UserRoles.Admin
+                          ||  proLevel != AccessLevel.NONE)
+              .map(report =>
+                  pdfService.Ok(
+                    List(views.html.pdfs.report(report, events, reportFiles))
+                  )
+              )
               .getOrElse(NotFound)
     }
   }
