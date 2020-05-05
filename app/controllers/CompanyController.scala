@@ -12,9 +12,10 @@ import play.api.Configuration
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
+import services.PDFService
 import utils.silhouette.auth.{AuthEnv, WithRole, WithPermission}
 import utils.Constants.{ActionEvent, EventType}
-import utils.{EmailAddress, SIRET, PDF}
+import utils.{EmailAddress, SIRET}
 
 
 @Singleton
@@ -24,6 +25,7 @@ class CompanyController @Inject()(
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
+                                val pdfService: PDFService,
                                 val silhouette: Silhouette[AuthEnv],
                                 val configuration: Configuration
                               )(implicit ec: ExecutionContext)
@@ -90,7 +92,7 @@ class CompanyController @Inject()(
             ))
           )
           if (!htmlDocuments.isEmpty) {
-            PDF.Ok(htmlDocuments, configuration.get[String]("play.tmpDirectory"), configuration.get[URI]("play.application.url"))
+            pdfService.Ok(htmlDocuments)
           } else {
             NotFound
           }

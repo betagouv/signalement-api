@@ -15,10 +15,10 @@ import play.api.{Configuration, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, S3Service, PDFService}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
-import utils.{PDF, SIRET}
+import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -32,6 +32,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
+                                 pdfService: PDFService,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration)
@@ -208,10 +209,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           ||  request.identity.userRole == UserRoles.Admin
                           ||  proLevel != AccessLevel.NONE)
               .map(report =>
-                  PDF.Ok(
-                    List(views.html.pdfs.report(report, events, reportFiles)),
-                    configuration.get[String]("play.tmpDirectory"),
-                    websiteUrl
+                  pdfService.Ok(
+                    List(views.html.pdfs.report(report, events, reportFiles))
                   )
               )
               .getOrElse(NotFound)
