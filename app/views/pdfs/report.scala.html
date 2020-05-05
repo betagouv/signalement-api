@@ -9,17 +9,14 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Détail du signalement @report.id</title>
 
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
-
     </head>
     <body>
-        <div style="display: block; page-break-after: always">
+        <div>
             <div>
-                <img src='@routes.Assets.versioned("images/logo-marianne.png")'/>
-                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
+                <img src='@routes.Assets.versioned("images/logo-marianne.png")' height="1.8cm"/>
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
             </div>
-
-            <div class="content mt-3">
+            <div>
                 <h2>Détail du signalement</h2>
                 <small>Identifiant unique : @report.id</small>
             </div>
@@ -121,8 +118,8 @@
                 </ul>
                 }
             </div>
-            <div class="footer text-center">
-                <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
+            <div>
+                <img src='@routes.Assets.versioned("images/logo-ministere.png")' style="display: block; margin: 0 auto;" height="1cm"/>
             </div>
         </div>
     </body>
