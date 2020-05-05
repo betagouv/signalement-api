@@ -1,11 +1,6 @@
 package controllers
 
-
-import java.io.{ByteArrayInputStream, File}
 import java.net.URI
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
-import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
-import com.itextpdf.kernel.pdf.{PdfDocument, PdfWriter}
 
 import java.time.OffsetDateTime
 import javax.inject.{Inject, Singleton}
@@ -17,6 +12,7 @@ import play.api.Configuration
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
+import services.PDFService
 import utils.silhouette.auth.{AuthEnv, WithRole, WithPermission}
 import utils.Constants.{ActionEvent, EventType}
 import utils.{EmailAddress, SIRET}
@@ -29,6 +25,7 @@ class CompanyController @Inject()(
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
+                                val pdfService: PDFService,
                                 val silhouette: Silhouette[AuthEnv],
                                 val configuration: Configuration
                               )(implicit ec: ExecutionContext)
@@ -95,17 +92,7 @@ class CompanyController @Inject()(
             ))
           )
           if (!htmlDocuments.isEmpty) {
-            val tmpFileName = s"${configuration.get[String]("play.tmpDirectory")}/courriers_${OffsetDateTime.now.toString}.pdf";
-            val pdf = new PdfDocument(new PdfWriter(tmpFileName))
-
-            val converterProperties = new ConverterProperties
-            val dfp = new DefaultFontProvider(true, true, true)
-            converterProperties.setFontProvider(dfp)
-            converterProperties.setBaseUri(configuration.get[String]("play.application.url"))
-
-            HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
-
-            Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+            pdfService.Ok(htmlDocuments)
           } else {
             NotFound
           }
