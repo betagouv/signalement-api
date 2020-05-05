@@ -40,7 +40,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.application.url")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
