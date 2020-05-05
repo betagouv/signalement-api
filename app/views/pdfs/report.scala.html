@@ -1,4 +1,6 @@
 @import java.net.URI
+@import java.time.LocalDateTime
+@import java.time.format.DateTimeFormatter
 @(report: Report, events: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
 
 <!doctype html>
@@ -18,7 +20,10 @@
             </div>
             <div>
                 <h2>Détail du signalement</h2>
-                <small>Identifiant unique : @report.id</small>
+                <small>
+                    Identifiant unique : @report.id<br>
+                    Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
+                </small>
             </div>
             <div>
                 <h3>Problème</h3>
@@ -34,7 +39,7 @@
                 <ul>
                 @report.details.map{input =>
                     <li>
-                        @input.label @input.value
+                        @Html(input.label) @input.value
                     </li>
                 }
                 </ul>
