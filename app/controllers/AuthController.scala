@@ -4,10 +4,13 @@ import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
+import akka.actor.ActorRef
+import akka.pattern.ask
+import actors.EmailActor
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import javax.inject.{Inject, Singleton}
+import javax.inject.{Inject, Named, Singleton}
 import models.{AuthToken, User, UserLogin}
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
@@ -16,6 +19,7 @@ import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
 import utils.EmailAddress
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -24,7 +28,7 @@ class AuthController @Inject()(
                                 userRepository: UserRepository,
                                 authTokenRepository: AuthTokenRepository,
                                 userService: UserService,
-                                mailerService: MailerService,
+                                @Named("email-actor") emailActor: ActorRef,
                                 configuration: Configuration,
                                 credentialsProvider: CredentialsProvider
                               )(implicit ec: ExecutionContext)
@@ -32,6 +36,7 @@ class AuthController @Inject()(
 
   val logger: Logger = Logger(this.getClass())
 
+  implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
@@ -85,7 +90,7 @@ class AuthController @Inject()(
 
 
   private def sendResetPasswordMail(user: User, authToken: AuthToken) = {
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = configuration.get[EmailAddress]("play.mail.from"),
       recipients = Seq(user.email),
       subject = "Votre mot de passe SignalConso",

@@ -3,7 +3,7 @@ package controllers
 import java.util.UUID
 
 import actors.ReportsExtractActor
-import akka.actor._
+import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
