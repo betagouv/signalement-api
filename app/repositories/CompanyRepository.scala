@@ -71,6 +71,9 @@ class CompanyRepository @Inject()(
     db.run(queryCompany.update(company))
       .map(_ => company)
   }
+
+  def fetchCompany(id: UUID) =
+    db.run(companyTableQuery.filter(_.id === id).result.headOption)
   
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)

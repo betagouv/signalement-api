@@ -172,6 +172,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         ).map(Some(_))
         case _ => Future(None)
       }
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
     } yield updatedReport
 
   def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumer, userUUID: UUID): Future[Option[Report]] =
@@ -240,11 +241,23 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       s3Delete <- reportFile.map(f => s3Service.delete(bucketName, f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
+  private def removeAccessToken(companyId: UUID) = {
+    for {
+      company <- companyRepository.fetchCompany(companyId)
+      reports <- company.map(c => reportRepository.getReports(c.id)).getOrElse(Future(Nil))
+      cnt       <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
+    } yield {
+      logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
+      Unit
+    }
+  }
+
   def deleteReport(id: UUID) =
     for {
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
       _ <- reportRepository.delete(id)
+      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
     } yield {
       report.isDefined
     }
