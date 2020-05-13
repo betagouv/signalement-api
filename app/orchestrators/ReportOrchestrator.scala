@@ -60,7 +60,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
     companyRepository.fetchAdmins(company).flatMap(admins => {
       if (admins.nonEmpty) {
-        mailerService.sendEmail(
+        emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
           recipients = admins.map(_.email),
           subject = "Nouveau signalement",
@@ -117,7 +117,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         subject = s"Nouveau signalement [${report.category}]",
         bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
       )
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(report.email),
         subject = "Votre signalement",
@@ -292,7 +292,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
       subject = "L'entreprise a pris connaissance de votre signalement",
@@ -318,14 +318,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
     Some(user.email).filter(_.value != "").foreach(email =>
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
         subject = "Votre réponse au signalement",
         bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
       subject = "L'entreprise a répondu à votre signalement",
@@ -336,7 +336,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       ).toString,
       attachments = mailerService.attachmentSeqForWorkflowStepN(4)
     )
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
       subject = s"Un professionnel a répondu à un signalement [${report.category}]",
