@@ -62,14 +62,15 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
     )
   }
 
-  def mailMustHaveBeenSent(blindRecipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
-        Seq.empty,
-        blindRecipients,
+        recipients,
+        null,
         subject,
-        bodyHtml
+        bodyHtml,
+        null
       )
   }
 }
