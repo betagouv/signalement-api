@@ -5,7 +5,10 @@ import java.time.temporal.ChronoUnit
 import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, Period}
 
 import akka.actor.ActorSystem
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
+import akka.actor.ActorRef
+import akka.pattern.ask
+import actors.EmailActor
 import models.{Report, ReportCategory, Subscription}
 import play.api.{Configuration, Logger}
 import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
@@ -20,10 +23,12 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
                                        reportRepository: ReportRepository,
                                        subscriptionRepository: SubscriptionRepository,
                                        mailerService: MailerService,
+                                       @Named("email-actor") emailActor: ActorRef,
                                        configuration: Configuration)
                                       (implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
+  implicit val timeout: akka.util.Timeout = 5.seconds
 
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
@@ -79,7 +84,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
 
       logger.debug(s"sendMailReportNotification $email - abonnement ${subscription.id} - ${reports.length} signalements")
 
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
         subject = s"[SignalConso] ${

@@ -83,10 +83,10 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipients,
-        null,
+        Nil,
         subject,
         bodyHtml,
-        null
+        Nil
       )
   }
 }

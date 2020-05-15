@@ -7,8 +7,11 @@ import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetDateTime}
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.actor.ActorRef
+import akka.pattern.ask
+import actors.EmailActor
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
 import models.Event._
 import models._
 import play.api.{Configuration, Logger}
@@ -30,6 +33,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
                              eventRepository: EventRepository,
                              userRepository: UserRepository,
                              mailerService: MailerService,
+                             @Named("email-actor") emailActor: ActorRef,
                              s3Service: S3Service,
                              val silhouette: Silhouette[AuthEnv],
                              val silhouetteAPIKey: Silhouette[APIKeyEnv],
@@ -40,6 +44,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   val logger: Logger = Logger(this.getClass)
 
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
+  implicit val timeout: akka.util.Timeout = 5.seconds
 
   val startTime = LocalTime.of(configuration.get[Int]("play.tasks.reminder.start.hour"), configuration.get[Int]("play.tasks.reminder.start.minute"), 0)
   val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours
@@ -48,7 +53,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
 
   val startDate = if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime) else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
-
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
     logger.debug(s"initialDelay - ${initialDelay}");
@@ -120,7 +124,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
   def remindReportByMail(report: Report, adminMails: List[EmailAddress], reportEventsMap: Map[UUID, List[Event]]) = {
     val expirationDate = OffsetDateTime.now.plus(mailReminderDelay.multipliedBy(2 - extractEventsWithAction(report.id, reportEventsMap, RELANCE).length))
     eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = adminMails,
         subject = "Nouveau signalement",
@@ -142,7 +146,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(generateNoReadingEvent(report))
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_NON_CONSULTE))
     } yield {
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(report.email),
         subject = "L'entreprise n'a pas souhaité consulter votre signalement",
@@ -158,7 +162,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       newEvent <- eventRepository.createEvent(generateReadingNoActionEvent(report))
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_CONSULTE_IGNORE))
     } yield {
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(report.email),
         subject = "L'entreprise n'a pas répondu au signalement",

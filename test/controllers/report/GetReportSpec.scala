@@ -131,12 +131,12 @@ trait GetReportSpec extends Spec with GetReportContext {
     someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(ReportWithFiles(report, List.empty))
   }
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = Nil) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(application.configuration.get[String]("play.mail.from")),
         Seq(recipient),
-        null,
+        Nil,
         subject,
         bodyHtml,
         attachments

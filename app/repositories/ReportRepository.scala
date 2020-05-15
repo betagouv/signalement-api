@@ -210,6 +210,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .delete
   }
 
+  def getReports(companyId: UUID) = db.run {
+    reportTableQuery
+      .filter(_.companyId === companyId)
+      .to[List]
+      .result
+  }
+
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery
         .filterOpt(filter.email) {

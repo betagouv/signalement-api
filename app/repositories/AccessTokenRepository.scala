@@ -108,6 +108,10 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
     )
 
+  def removePendingTokens(company: Company): Future[Int] = db.run(
+    fetchCompanyValidTokens(company).delete
+  )
+
   def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
     db.run(AccessTokenTableQuery
       .filter(
