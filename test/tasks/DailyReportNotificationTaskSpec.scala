@@ -67,10 +67,10 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipients,
-        null,
+        Nil,
         subject,
         bodyHtml,
-        null
+        Nil
       )
   }
 }

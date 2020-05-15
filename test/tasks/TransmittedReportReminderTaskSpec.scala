@@ -134,12 +134,12 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
   val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, RELANCE).sample.get
   val transmittedEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, ENVOI_SIGNALEMENT).sample.get
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = Nil) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         Seq(recipient),
-        null,
+        Nil,
         subject,
         bodyHtml,
         attachments
