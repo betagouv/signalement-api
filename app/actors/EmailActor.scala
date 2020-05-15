@@ -18,9 +18,9 @@ object EmailActor {
 
   case class EmailRequest(
     from: EmailAddress, recipients: Seq[EmailAddress],
-    blindRecipients: Seq[EmailAddress] = Seq.empty,
     subject: String, bodyHtml: String,
-    attachments: Seq[Attachment] = Seq.empty
+    blindRecipients: Seq[EmailAddress] = null,
+    attachments: Seq[Attachment] = null
   )
 }
 

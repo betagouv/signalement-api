@@ -4,7 +4,10 @@ import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
+import akka.actor.ActorRef
+import akka.pattern.ask
+import actors.EmailActor
 import models.Event._
 import models.ReportResponse._
 import models._
@@ -17,6 +20,7 @@ import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
 import utils.{Constants, EmailAddress}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
@@ -28,6 +32,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    userRepository: UserRepository,
                                    websiteRepository: WebsiteRepository,
                                    mailerService: MailerService,
+                                   @Named("email-actor") emailActor: ActorRef,
                                    s3Service: S3Service,
                                    configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) {
@@ -37,6 +42,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
+  implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
@@ -54,7 +60,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
     companyRepository.fetchAdmins(company).flatMap(admins => {
       if (admins.nonEmpty) {
-        mailerService.sendEmail(
+        emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
           recipients = admins.map(_.email),
           subject = "Nouveau signalement",
@@ -105,13 +111,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         else Future(report)
       }
     } yield {
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
         subject = s"Nouveau signalement [${report.category}]",
         bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
       )
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(report.email),
         subject = "Votre signalement",
@@ -286,7 +292,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
       subject = "L'entreprise a pris connaissance de votre signalement",
@@ -312,14 +318,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
     Some(user.email).filter(_.value != "").foreach(email =>
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
         subject = "Votre réponse au signalement",
         bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
       subject = "L'entreprise a répondu à votre signalement",
@@ -330,7 +336,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       ).toString,
       attachments = mailerService.attachmentSeqForWorkflowStepN(4)
     )
-    mailerService.sendEmail(
+    emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
       subject = s"Un professionnel a répondu à un signalement [${report.category}]",
