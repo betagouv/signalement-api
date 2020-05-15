@@ -148,6 +148,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       }
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now.minusDays(7)))
         .map(report => reportRepository.update(report.copy(
           status = report.initialStatus()
         )).map(Some(_))).getOrElse(Future(reportWithNewData))
@@ -167,7 +168,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(OffsetDateTime.now()),
             Constants.EventType.ADMIN,
             Constants.ActionEvent.MODIFICATION_COMMERCANT,
-            stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress}")
+            stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress.getOrElse("Adresse non renseignée")}")
           )
         ).map(Some(_))
         case _ => Future(None)
