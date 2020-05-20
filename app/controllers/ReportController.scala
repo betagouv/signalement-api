@@ -60,7 +60,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     request.body.validate[ReportCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportCompany => reportOrchestrator.updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id).map{
-            case Some(_) => Ok
+            case Some(report) => Ok(Json.toJson(report))
             case None => NotFound
           }
     )
