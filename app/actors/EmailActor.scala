@@ -12,6 +12,7 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
+import scala.concurrent.duration._
 
 object EmailActor {
   def props = Props[EmailActor]
@@ -20,7 +21,8 @@ object EmailActor {
     from: EmailAddress, recipients: Seq[EmailAddress],
     subject: String, bodyHtml: String,
     blindRecipients: Seq[EmailAddress] = Seq.empty,
-    attachments: Seq[Attachment] = Seq.empty
+    attachments: Seq[Attachment] = Seq.empty,
+    times: Int = 0
   )
 }
 
@@ -40,8 +42,17 @@ class EmailActor @Inject()(configuration: Configuration,
   }
   override def receive = {
     case req: EmailRequest => {
-      mailerService.sendEmail(req.from, req.recipients, req.blindRecipients, req.subject, req.bodyHtml, req.attachments)
-      logger.debug(s"Sent email to ${req.recipients}")
+
+      try {
+        mailerService.sendEmail(req.from, req.recipients, req.blindRecipients, req.subject, req.bodyHtml, req.attachments)
+        logger.debug(s"Sent email to ${req.recipients}")
+      } catch {
+        case e: Exception =>
+          logger.error(e.getMessage, e)
+          if (req.times < 5) {
+            context.system.scheduler.scheduleOnce(1 minute, self, req.copy(times = req.times + 1))
+          }
+      }
     }
     case _ => logger.debug("Could not handle request")
   }
