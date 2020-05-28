@@ -49,8 +49,8 @@ class EmailActor @Inject()(configuration: Configuration,
       } catch {
         case e: Exception =>
           logger.error(e.getMessage, e)
-          if (req.times < 5) {
-            context.system.scheduler.scheduleOnce(1 minute, self, req.copy(times = req.times + 1))
+          if (req.times < 2) {
+            context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
           }
       }
     }
