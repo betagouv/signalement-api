@@ -66,22 +66,18 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
   }
   override def receive = {
     case ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) =>
-      try {
-        for {
-          // FIXME: We might want to move the random name generation
-          // in a common place if we want to reuse it for other async files
-          asyncFile     <- asyncFileRepository.create(requestedBy)
-          tmpPath       <- {
-            sender() ! Unit
-            genTmpFile(requestedBy, restrictToCompany, filters)
-          }
-          remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-          _             <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-        } yield {
-          logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
+      for {
+        // FIXME: We might want to move the random name generation
+        // in a common place if we want to reuse it for other async files
+        asyncFile     <- asyncFileRepository.create(requestedBy)
+        tmpPath       <- {
+          sender() ! Unit
+          genTmpFile(requestedBy, restrictToCompany, filters)
         }
-      } catch {
-        case e: Exception => logger.error(e.getMessage, e)
+        remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
+        _             <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
+      } yield {
+        logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
       }
     case _ => logger.debug("Could not handle request")
   }
