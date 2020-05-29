@@ -128,7 +128,9 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       Future(false)
     } else db.run(DBIO.seq(
         companyRepository.upsertUserAccess(token.companyId.get, user.id, token.companyLevel.get),
-        AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
+        AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
+        // FIXME: is this the right place to do that ?
+        AccessTokenTableQuery.filter(_.companyId === token.companyId).filter(_.emailedTo.isEmpty).map(_.valid).update(false)
       ).transactionally)
       .map(_ => true)
   }

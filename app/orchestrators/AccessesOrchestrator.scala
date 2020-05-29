@@ -100,13 +100,13 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
             }
   }
 
-  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap{
       case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
 
-  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
       _ <- companyRepository.setUserLevel(company, user, level)
     } yield {
@@ -136,7 +136,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                         ))
      } yield token.token
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
       val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
       emailActor ? EmailActor.EmailRequest(

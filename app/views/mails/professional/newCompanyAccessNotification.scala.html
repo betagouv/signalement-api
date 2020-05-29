@@ -1,4 +1,4 @@
-@(company: Company, invitedBy: User)
+@(company: Company, invitedBy: Option[User])
 
 @views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise @$company.name sur SignalConso") {
     <p>
@@ -6,7 +6,11 @@
     </p>
 
     <p>
-        @invitedBy.fullName vous a donné accès à l'entreprise @company.name sur SignalConso.
+    @if(invitedBy.isDefined) {
+        @invitedBy.map(_.fullName) vous a donné accès à l'entreprise @company.name sur SignalConso.
+    } else {
+        Vous avez été invité à accéder au compte de l'entreprise @company.name sur SignalConso.
+    }
         Vous pouvez dès à présent vous connecter et accéder à cette entreprise avec votre compte pré-existant.
     </p>
 

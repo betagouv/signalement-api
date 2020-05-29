@@ -72,7 +72,7 @@ class CompanyAccessController @Inject()(
     request.body.validate[AccessInvitation].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       invitation => accessesOrchestrator
-                    .addUserOrInvite(request.company, invitation.email, invitation.level, request.identity)
+                    .addUserOrInvite(request.company, invitation.email, invitation.level, Some(request.identity))
                     .map(_ => Ok)
     )
   }
@@ -105,6 +105,28 @@ class CompanyAccessController @Inject()(
     } yield token.flatMap(t => company.map(c => 
       Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))
     )).getOrElse(NotFound)
+  }
+
+  case class ActivationLinkRequest(token: String, email: EmailAddress)
+
+  def sendActivationLink(siret: String) = SecuredAction.async(parse.json) { implicit request =>
+    implicit val reads = Json.reads[ActivationLinkRequest]
+    request.body.validate[ActivationLinkRequest].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      activationLinkRequest =>
+        for {
+          company <- companyRepository.findBySiret(SIRET(siret))
+          isValid <- company.map(c =>
+                        accessTokenRepository
+                          .fetchActivationCode(c)
+                          .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
+                      )
+                      .getOrElse(Future(false))
+          sent <- if (isValid)
+                    accessesOrchestrator.sendInvitation(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None).map(_ => true)
+                  else Future(false)
+        } yield if (sent) Ok else NotFound
+    )
   }
 
   case class AcceptTokenRequest(token: String)
