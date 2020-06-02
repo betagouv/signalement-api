@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 
 import javax.inject.{Inject, Singleton}
 import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellVerticalAlignment}
+import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellStyleInheritance, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -258,14 +258,14 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
           paginatedReports.entities.map(report =>
-            Row().withCellValues(reportColumns.map(
+            Row().withCells(reportColumns.map(
               _.extract(
                 report,
                 reportFilesMap.getOrElse(report.id, Nil),
                 reportEventsMap.getOrElse(report.id, Nil),
                 report.companyId.flatMap(companyAdminsMap.get(_)).getOrElse(Nil)
               )
-            ))
+            ).map(StringCell(_, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet)))
           )
         )
         .withColumns(reportColumns.map(_.column))
