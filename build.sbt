@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "2.0.0",
-  "com.amazonaws" % "aws-java-sdk-s3" % "1.11.775",
+  "com.amazonaws" % "aws-java-sdk-s3" % "1.11.793",
 
   "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-password-bcrypt" % playSilhouetteVersion,
