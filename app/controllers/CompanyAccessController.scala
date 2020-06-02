@@ -6,6 +6,7 @@ import repositories._
 import models._
 import orchestrators.AccessesOrchestrator
 import play.api.libs.json._
+import play.api.Logger
 import scala.concurrent.{ExecutionContext, Future}
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.AuthEnv
@@ -22,6 +23,7 @@ class CompanyAccessController @Inject()(
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
 
+  val logger: Logger = Logger(this.getClass())
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     for {
       userAccesses <- companyRepository.fetchUsersWithLevel(request.company)
@@ -109,7 +111,7 @@ class CompanyAccessController @Inject()(
 
   case class ActivationLinkRequest(token: String, email: EmailAddress)
 
-  def sendActivationLink(siret: String) = SecuredAction.async(parse.json) { implicit request =>
+  def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
     implicit val reads = Json.reads[ActivationLinkRequest]
     request.body.validate[ActivationLinkRequest].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
