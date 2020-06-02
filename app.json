@@ -67,6 +67,9 @@
     "REPORT_TASK_INTERVAL": {
       "value": "1"
     },
+    "S3_ACCESS_KEY_ID": {
+      "required": true
+    },
     "S3_SECRET_ACCESS_KEY": {
       "required": true
     },
