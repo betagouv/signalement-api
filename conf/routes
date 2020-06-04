@@ -74,7 +74,8 @@ POST        /api/account/dgccrf/invitation              controllers.AccountContr
 GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
 POST        /api/companies/activation-document          controllers.CompanyController.getActivationDocument
 POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
+GET         /api/companies/find                         controllers.CompanyController.findCompany(q: String)
+GET         /api/companies/search                       controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)
 

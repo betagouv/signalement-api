@@ -9,7 +9,8 @@ trait PostgresProfile extends ExPostgresProfile
   with PgPlayJsonSupport
   with PgArraySupport
   with PgDate2Support
-  with PgAggFuncSupport{
+  with PgAggFuncSupport
+  with PgSearchSupport {
 
   def pgjson = "jsonb"
 
@@ -18,7 +19,9 @@ trait PostgresProfile extends ExPostgresProfile
   object MyAPI extends API
     with ArrayImplicits
     with JsonImplicits
-    with DateTimeImplicits {
+    with DateTimeImplicits
+    with SearchImplicits
+    with SearchAssistants {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
