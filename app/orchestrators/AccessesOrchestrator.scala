@@ -114,7 +114,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         from = mailFrom,
         recipients = Seq(user.email),
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
-        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
+        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy).toString
       )
       logger.debug(s"User ${user.id} may now access company ${company.id}")
       ()

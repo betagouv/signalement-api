@@ -1,4 +1,5 @@
-@(company: Company, invitedBy: Option[User])
+@import java.net.URI
+@(websiteUrl: URI, company: Company, invitedBy: Option[User])
 
 @views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise @$company.name sur SignalConso") {
     <p>
@@ -11,7 +12,7 @@
     } else {
         Votre compte a été rattaché à l'entreprise @company.name sur SignalConso.
     }
-        Vous pouvez dès à présent vous connecter et accéder à cette entreprise avec votre compte pré-existant.
+        Vous pouvez dès à présent <a href="@websiteUrl">vous connecter</a> et accéder à cette entreprise avec votre compte pré-existant.
     </p>
 
     <p>Cordialement,</p>
