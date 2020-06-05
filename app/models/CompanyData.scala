@@ -6,8 +6,8 @@ import play.api.libs.json.{Json, OFormat}
 import utils.{Address, SIRET}
 
 case class CompanyData (
+                         id: UUID,
                          siret: String,
-                         denominationUniteLegale: String,
                          dateDernierTraitementEtablissement: String,
                          complementAdresseEtablissement: String,
                          numeroVoieEtablissement: String,
@@ -20,10 +20,11 @@ case class CompanyData (
                          distributionSpecialeEtablissement: String,
                          codeCommuneEtablissement: String,
                          codeCedexEtablissement: String,
-                         libelleCedexEtablissement: String
+                         libelleCedexEtablissement: String,
+                         denominationUsuelleEtablissement: String
                        ) {
 
-  def toSearchResult = CompanySearchResult(SIRET(siret), denominationUniteLegale, Address(libelleVoieEtablissement), Some(codePostalEtablissement))
+  def toSearchResult = CompanySearchResult(SIRET(siret), denominationUsuelleEtablissement, Address(libelleVoieEtablissement), Some(codePostalEtablissement))
 }
 
 

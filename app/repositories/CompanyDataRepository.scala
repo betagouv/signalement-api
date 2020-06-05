@@ -20,9 +20,9 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   import PostgresProfile.api._
   import dbConfig._
 
-  class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "company_data") {
+  class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "etablissements") {
+    def id = column[UUID]("id", O.PrimaryKey)
     def siret = column[String]("siret")
-    def denominationUniteLegale = column[String]("denominationunitelegale")
     def dateDernierTraitementEtablissement = column[String]("datederniertraitementetablissement")
     def complementAdresseEtablissement = column[String]("complementadresseetablissement")
     def numeroVoieEtablissement = column[String]("numerovoieetablissement")
@@ -36,11 +36,12 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def codeCommuneEtablissement = column[String]("codecommuneetablissement")
     def codeCedexEtablissement = column[String]("codecedexetablissement")
     def libelleCedexEtablissement = column[String]("libellecedexetablissement")
+    def denominationUsuelleEtablissement = column[String]("denominationusuelleetablissement")
 
     def * = (
-      siret, denominationUniteLegale, dateDernierTraitementEtablissement, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
+      id, siret, dateDernierTraitementEtablissement, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
-      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
+      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
 
   val companyDataTableQuery = TableQuery[CompanyDataTable]
@@ -48,7 +49,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   def search(q: String, postalCode: String): Future[List[CompanyData]] =
     db.run(companyDataTableQuery
-      .filter( c => {toTsVector(c.denominationUniteLegale) @@ plainToTsQuery(q.bind)})
+      .filter( c => {toTsVector(c.denominationUsuelleEtablissement) @@ plainToTsQuery(q.bind)})
       .filter(_.codePostalEtablissement === postalCode)
       .to[List].result)
 }
