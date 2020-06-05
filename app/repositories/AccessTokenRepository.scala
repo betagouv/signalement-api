@@ -134,6 +134,14 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .map(_ => true)
   }
 
+  def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] = {
+    db.run(DBIO.seq(
+      companyRepository.upsertUserAccess(company.id, user.id, level),
+      AccessTokenTableQuery.filter(_.companyId === company.id).filter(_.emailedTo.isEmpty).map(_.valid).update(false)
+    ).transactionally)
+    .map(_ => Unit)
+  }
+
   def invalidateToken(token: AccessToken): Future[Int] =
     db.run(AccessTokenTableQuery
             .filter(_.id === token.id)

@@ -108,7 +108,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
-      _ <- companyRepository.setUserLevel(company, user, level)
+      _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
     } yield {
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
