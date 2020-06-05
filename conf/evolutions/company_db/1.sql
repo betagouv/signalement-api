@@ -1,6 +1,9 @@
 # --- !Ups
 
-CREATE TABLE company_data (
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS etablissements  (
+    id UUID DEFAULT UUID_GENERATE_V4(),
     siren VARCHAR,
     nic VARCHAR,
     siret VARCHAR,
@@ -11,36 +14,7 @@ CREATE TABLE company_data (
     activitePrincipaleRegistreMetiersEtablissement VARCHAR,
     dateDernierTraitementEtablissement VARCHAR,
     etablissementSiege VARCHAR,
-    etatAdministratifUniteLegale VARCHAR,
-    statutDiffusionUniteLegale VARCHAR,
-    unitePurgeeUniteLegale VARCHAR,
-    dateCreationUniteLegale VARCHAR,
-    categorieJuridiqueUniteLegale VARCHAR,
-    denominationUniteLegale VARCHAR,
-    sigleUniteLegale VARCHAR,
-    denominationUsuelle1UniteLegale VARCHAR,
-    denominationUsuelle2UniteLegale VARCHAR,
-    denominationUsuelle3UniteLegale VARCHAR,
-    sexeUniteLegale VARCHAR,
-    nomUniteLegale VARCHAR,
-    nomUsageUniteLegale VARCHAR,
-    prenom1UniteLegale VARCHAR,
-    prenom2UniteLegale VARCHAR,
-    prenom3UniteLegale VARCHAR,
-    prenom4UniteLegale VARCHAR,
-    prenomUsuelUniteLegale VARCHAR,
-    pseudonymeUniteLegale VARCHAR,
-    activitePrincipaleUniteLegale VARCHAR,
-    nomenclatureActivitePrincipaleUniteLegale VARCHAR,
-    identifiantAssociationUniteLegale VARCHAR,
-    economieSocialeSolidaireUniteLegale VARCHAR,
-    caractereEmployeurUniteLegale VARCHAR,
-    trancheEffectifsUniteLegale VARCHAR,
-    anneeEffectifsUniteLegale VARCHAR,
-    nicSiegeUniteLegale VARCHAR,
-    dateDernierTraitementUniteLegale VARCHAR,
-    categorieEntreprise VARCHAR,
-    anneeCategorieEntreprise VARCHAR,
+    nombrePeriodesEtablissement VARCHAR,
     complementAdresseEtablissement VARCHAR,
     numeroVoieEtablissement VARCHAR,
     indiceRepetitionEtablissement VARCHAR,
@@ -69,6 +43,7 @@ CREATE TABLE company_data (
     libelleCedex2Etablissement VARCHAR,
     codePaysEtranger2Etablissement VARCHAR,
     libellePaysEtranger2Etablissement VARCHAR,
+    dateDebut VARCHAR,
     etatAdministratifEtablissement VARCHAR,
     enseigne1Etablissement VARCHAR,
     enseigne2Etablissement VARCHAR,
@@ -80,5 +55,3 @@ CREATE TABLE company_data (
 );
 
 # --- !Downs
-
-DROP TABLE company_data;
