@@ -125,7 +125,7 @@ class CompanyAccessController @Inject()(
                       )
                       .getOrElse(Future(false))
           sent <- if (isValid)
-                    accessesOrchestrator.sendInvitation(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None).map(_ => true)
+                    accessesOrchestrator.addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None).map(_ => true)
                   else Future(false)
         } yield if (sent) Ok else NotFound
     )
