@@ -9,29 +9,29 @@ case class CompanyData (
                          id: UUID,
                          siret: String,
                          dateDernierTraitementEtablissement: String,
-                         complementAdresseEtablissement: String,
-                         numeroVoieEtablissement: String,
-                         indiceRepetitionEtablissement: String,
-                         typeVoieEtablissement: String,
-                         libelleVoieEtablissement: String,
-                         codePostalEtablissement: String,
-                         libelleCommuneEtablissement: String,
-                         libelleCommuneEtrangerEtablissement: String,
-                         distributionSpecialeEtablissement: String,
-                         codeCommuneEtablissement: String,
-                         codeCedexEtablissement: String,
-                         libelleCedexEtablissement: String,
-                         denominationUsuelleEtablissement: String
+                         complementAdresseEtablissement: Option[String],
+                         numeroVoieEtablissement: Option[String],
+                         indiceRepetitionEtablissement: Option[String],
+                         typeVoieEtablissement: Option[String],
+                         libelleVoieEtablissement: Option[String],
+                         codePostalEtablissement: Option[String],
+                         libelleCommuneEtablissement: Option[String],
+                         libelleCommuneEtrangerEtablissement: Option[String],
+                         distributionSpecialeEtablissement: Option[String],
+                         codeCommuneEtablissement: Option[String],
+                         codeCedexEtablissement: Option[String],
+                         libelleCedexEtablissement: Option[String],
+                         denominationUsuelleEtablissement: Option[String]
                        ) {
 
-  def toSearchResult = CompanySearchResult(SIRET(siret), denominationUsuelleEtablissement, Address(libelleVoieEtablissement), Some(codePostalEtablissement))
+  def toSearchResult = CompanySearchResult(SIRET(siret), denominationUsuelleEtablissement, libelleVoieEtablissement.map(Address(_)), codePostalEtablissement)
 }
 
 
 case class CompanySearchResult (
                     siret: SIRET,
-                    name: String,
-                    address: Address,
+                    name: Option[String],
+                    address: Option[Address],
                     postalCode: Option[String]
                   )
 
