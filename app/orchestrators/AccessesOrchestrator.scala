@@ -100,21 +100,21 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
             }
   }
 
-  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap{
       case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
 
-  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
-      _ <- companyRepository.setUserLevel(company, user, level)
+      _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
     } yield {
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(user.email),
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
-        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
+        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy).toString
       )
       logger.debug(s"User ${user.id} may now access company ${company.id}")
       ()
@@ -136,7 +136,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                         ))
      } yield token.token
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
       val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
       emailActor ? EmailActor.EmailRequest(
