@@ -37,6 +37,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                  configuration: Configuration)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
 
   import PostgresProfile.api._
   import dbConfig._
@@ -229,10 +230,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           case(table, companyName) => table.companyName like s"${companyName}%"
         }
         .filterOpt(filter.start) {
-          case(table, start) => table.creationDate >= OffsetDateTime.of(start, LocalTime.MIN, OffsetDateTime.now.getOffset)
+          case(table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
         .filterOpt(filter.end) {
-          case(table, end) => table.creationDate < OffsetDateTime.of(end, LocalTime.MAX, OffsetDateTime.now.getOffset)
+          case(table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
         }
         .filterOpt(filter.category) {
           case(table, category) => table.category === category
