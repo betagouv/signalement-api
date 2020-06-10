@@ -4,13 +4,14 @@ import java.time.OffsetDateTime
 
 import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
+import com.github.tminglei.slickpg.trgm.PgTrgmSupport
 
 trait PostgresProfile extends ExPostgresProfile
   with PgPlayJsonSupport
   with PgArraySupport
   with PgDate2Support
   with PgAggFuncSupport
-  with PgSearchSupport {
+  with PgTrgmSupport {
 
   def pgjson = "jsonb"
 
@@ -20,8 +21,7 @@ trait PostgresProfile extends ExPostgresProfile
     with ArrayImplicits
     with JsonImplicits
     with DateTimeImplicits
-    with SearchImplicits
-    with SearchAssistants {
+    with PgTrgmImplicits {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 

@@ -49,7 +49,9 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   def search(q: String, postalCode: String): Future[List[CompanyData]] =
     db.run(companyDataTableQuery
-      .filter( c => {toTsVector(c.denominationUsuelleEtablissement) @@ plainToTsQuery(q.bind)})
       .filter(_.codePostalEtablissement === postalCode)
+      .filter(c => (c.denominationUsuelleEtablissement <-> q) <= 0.5.bind)
+      .sortBy(_.denominationUsuelleEtablissement <-> q)
+      .take(20)
       .to[List].result)
 }
