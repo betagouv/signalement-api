@@ -42,7 +42,7 @@ class CompanyController @Inject()(
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
-  def findCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def searchRegisteredCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       companies <- q match {
         case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
