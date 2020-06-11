@@ -54,8 +54,8 @@ class CompanyController @Inject()(
 
   def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompany $postalCode $q")
-    companyDataRepository.search(q, postalCode).map(companyDataList =>
-      Ok(Json.toJson(companyDataList.map(_.toSearchResult)))
+    companyDataRepository.search(q, postalCode).map(results =>
+      Ok(Json.toJson(results.map(result => result._1.toSearchResult.copy(name = result._2.denominationUniteLegale))))
     )
   }
 
