@@ -50,7 +50,7 @@ object Constants {
       "Signalement transmis",
       Map(
         UserRoles.DGCCRF -> Some("Traitement en cours"),
-        UserRoles.Pro -> Some("En attente de réponse")
+        UserRoles.Pro -> Some("A répondre")
       )
     )
     object PROMESSE_ACTION extends ReportStatusValue(
