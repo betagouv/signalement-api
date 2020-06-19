@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.2.6",
   "com.iheart" %% "ficus" % "1.4.7",
 
-  "com.norbitltd" %% "spoiwo" % "1.7.0",
+  "com.norbitltd" %% "spoiwo" % "1.8.0",
   "com.itextpdf" % "itext7-core" % "7.1.11",
   "com.itextpdf" % "html2pdf" % "3.0.0",
 
