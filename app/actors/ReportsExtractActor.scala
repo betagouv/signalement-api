@@ -231,7 +231,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     for {
       paginatedReports <- reportRepository.getReports(
         0,
-        10000,
+        100000,
         ReportFilter(
           filters.departments,
           None,
