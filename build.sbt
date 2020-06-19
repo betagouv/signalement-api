@@ -9,7 +9,7 @@ lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion        = "4.0.2"
 val slickPgVersion          = "0.19.0"
-val playMailerVersion       = "8.0.0"
+val playMailerVersion       = "8.0.1"
 val playSilhouetteVersion   = "6.1.1"
 
 libraryDependencies ++= Seq(
