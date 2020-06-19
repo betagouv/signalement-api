@@ -2,7 +2,6 @@ import argparse
 from collections import OrderedDict
 import csv
 import psycopg2
-from psycopg2.extras import execute_batch
 
 # "Etablissements" file
 SIRET_FIELDS = ['siren', 'nic', 'siret', 'statutDiffusionEtablissement', 'dateCreationEtablissement', 'trancheEffectifsEtablissement', 'anneeEffectifsEtablissement', 'activitePrincipaleRegistreMetiersEtablissement', 'dateDernierTraitementEtablissement', 'etablissementSiege', 'nombrePeriodesEtablissement', 'complementAdresseEtablissement', 'numeroVoieEtablissement', 'indiceRepetitionEtablissement', 'typeVoieEtablissement', 'libelleVoieEtablissement', 'codePostalEtablissement', 'libelleCommuneEtablissement', 'libelleCommuneEtrangerEtablissement', 'distributionSpecialeEtablissement', 'codeCommuneEtablissement', 'codeCedexEtablissement', 'libelleCedexEtablissement', 'codePaysEtrangerEtablissement', 'libellePaysEtrangerEtablissement', 'complementAdresse2Etablissement', 'numeroVoie2Etablissement', 'indiceRepetition2Etablissement', 'typeVoie2Etablissement', 'libelleVoie2Etablissement', 'codePostal2Etablissement', 'libelleCommune2Etablissement', 'libelleCommuneEtranger2Etablissement', 'distributionSpeciale2Etablissement', 'codeCommune2Etablissement', 'codeCedex2Etablissement', 'libelleCedex2Etablissement', 'codePaysEtranger2Etablissement', 'libellePaysEtranger2Etablissement', 'dateDebut', 'etatAdministratifEtablissement', 'enseigne1Etablissement', 'enseigne2Etablissement', 'enseigne3Etablissement', 'denominationUsuelleEtablissement', 'activitePrincipaleEtablissement', 'nomenclatureActivitePrincipaleEtablissement', 'caractereEmployeurEtablissement']
@@ -15,6 +14,10 @@ def iter_csv(path):
 def update_sirets_diff(path):
     for d in iter_csv(path):
         updates = OrderedDict((k, v) for k, v in d.items() if k in SIRET_FIELDS)
+        if not updates['denominationUsuelleEtablissement']:
+            updates['denominationUsuelleEtablissement'] = updates['denominationUniteLegale']
+        if not updates['activitePrincipaleEtablissement']:
+            updates['activitePrincipaleEtablissement'] = updates['activitePrincipaleUniteLegale']
         yield f"""
             INSERT INTO etablissements ({",".join(updates)})
             VALUES ({",".join(f"%({k})s" for k in updates)})
