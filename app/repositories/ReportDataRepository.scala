@@ -51,7 +51,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           .to[List]
           .result)
       _ <- {
-        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1, Some(e._2.toMinutes), e._3))))
+        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes), e._3))))
       }
     } yield Unit
   }
@@ -70,7 +70,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           .to[List]
           .result)
       _ <- {
-        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1, e._2, Some(e._3.toMinutes)))))
+        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes)))))
       }
     } yield Unit
   }

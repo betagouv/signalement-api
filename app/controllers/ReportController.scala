@@ -1,5 +1,6 @@
 package controllers
 
+import java.net.URI
 import java.util.UUID
 
 import akka.stream.alpakka.s3.MultipartUploadResult
@@ -14,7 +15,7 @@ import play.api.{Configuration, Logger}
 import play.core.parsers.Multipart
 import play.core.parsers.Multipart.FileInfo
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, S3Service, PDFService}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.SIRET
@@ -31,6 +32,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  userRepository: UserRepository,
                                  mailerService: MailerService,
                                  s3Service: S3Service,
+                                 pdfService: PDFService,
                                  val silhouette: Silhouette[AuthEnv],
                                  val silhouetteAPIKey: Silhouette[APIKeyEnv],
                                  configuration: Configuration)
@@ -39,26 +41,13 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
+  implicit val websiteUrl = configuration.get[URI]("play.application.url")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
       .filter(_.status.getValueWithUserRole(user.userRole).isDefined)
       .flatMap(_.companyId).map(companyRepository.getUserLevel(_, user))
       .getOrElse(Future(AccessLevel.NONE))
-
-  def createEvent(uuid: String) = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-    request.body.validate[Event].fold(
-      errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      event => {
-        Try(UUID.fromString(uuid)) match {
-          case Failure(_) => Future.successful(PreconditionFailed)
-          case Success(id) => reportOrchestrator
-                                .newEvent(id, event, request.identity)
-                                .map(_.map(event => Ok(Json.toJson(event))).getOrElse(NotFound))
-        }
-      }
-    )
-  }
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[DraftReport].fold(
@@ -71,7 +60,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     request.body.validate[ReportCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportCompany => reportOrchestrator.updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id).map{
-            case Some(_) => Ok
+            case Some(report) => Ok(Json.toJson(report))
             case None => NotFound
           }
     )
@@ -104,11 +93,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       )
   }
 
+  def createReportAction(uuid: String) = SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
+    request.body.validate[ReportAction].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      reportAction =>
+        for {
+          report <- reportRepository.getReport(UUID.fromString(uuid))
+          newEvent <- report.filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
+            .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity).map(Some(_))).getOrElse(Future(None))
+        } yield newEvent
+          .map(e => Ok(Json.toJson(e)))
+          .getOrElse(NotFound)
+    )
+  }
+
   def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[ReviewOnReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
-          events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
+          events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
           result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
           } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
@@ -192,6 +195,28 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
+  def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) => for {
+        report        <- reportRepository.getReport(id)
+        events        <- eventRepository.getEventsWithUsers(None, Some(id), EventFilter())
+        reportFiles   <- reportRepository.retrieveReportFiles(id)
+        proLevel      <- getProLevel(request.identity, report)
+      } yield report
+              .filter(_ =>
+                              request.identity.userRole == UserRoles.DGCCRF
+                          ||  request.identity.userRole == UserRoles.Admin
+                          ||  proLevel != AccessLevel.NONE)
+              .map(report =>
+                  pdfService.Ok(
+                    List(views.html.pdfs.report(report, events, reportFiles))
+                  )
+              )
+              .getOrElse(NotFound)
+    }
+  }
+
   def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
@@ -214,15 +239,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEvents(id, filter)
+          events <- eventRepository.getEventsWithUsers(report.flatMap(_.companyId), Some(id), filter)
         } yield {
           report match {
-            case Some(_) => Ok(Json.toJson(events.filter(event =>
-              request.identity.userRole match {
-                case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event.action
-                case _ => true
-              }
-            )))
+            case Some(_) => Ok(Json.toJson(
+              events.filter(event =>
+                request.identity.userRole match {
+                  case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+                  case _ => true
+                }
+              )
+              .map { case (event, user) => Json.obj(
+                "data" -> event,
+                "user"  -> user.map(u => Json.obj(
+                  "firstName" -> u.firstName,
+                  "lastName"  -> u.lastName,
+                  "role"      -> u.userRole.name
+                ))
+              )}
+            ))
             case None => NotFound
           }
         }

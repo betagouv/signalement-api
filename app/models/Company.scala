@@ -3,7 +3,7 @@ package models
 import java.time.OffsetDateTime
 import java.util.UUID
 import play.api.libs.json._
-import utils.SIRET
+import utils.{Address, SIRET}
 
 
 sealed case class AccessLevel(value: String)
@@ -36,6 +36,21 @@ case class Company(
                   siret: SIRET,
                   creationDate: OffsetDateTime,
                   name: String,
-                  address: String,
+                  address: Address,
                   postalCode: Option[String],
+                ) {
+  def shortId = this.id.toString.substring(0, 13).toUpperCase
+}
+
+object Company {
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+}
+
+case class CompanyAddress(
+                  address: Address,
+                  postalCode: String,
                 )
+
+object CompanyAddress {
+  implicit val companyAddressFormat: OFormat[CompanyAddress] = Json.format[CompanyAddress]
+}

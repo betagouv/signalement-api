@@ -41,13 +41,22 @@ object Fixtures {
         randInt <- Gen.choose(0, 1000000)
     } yield SIRET("000000000" + randInt takeRight 9)
 
+    val genAddress = for {
+        address <- arbString.arbitrary
+    } yield Address(address)
+
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
         siret <- genSiret
+        address <- genAddress
     } yield Company(
-        id, siret, OffsetDateTime.now(), name, "42 rue du Test", Some("37500")
+        id, siret, OffsetDateTime.now(), name, address, Some("37500")
     )
+
+    val genWebsiteURL = for {
+        randInt <- Gen.choose(0, 1000000)
+    } yield URL(s"https://www.example${randInt}.com")
 
     def genDraftReport = for {
         category <- arbString.arbitrary
@@ -57,9 +66,10 @@ object Fixtures {
         email <- genEmailAddress(firstName, lastName)
         contactAgreement <- arbitrary[Boolean]
         company <- genCompany
+        websiteURL <- genWebsiteURL
     } yield DraftReport(
-        category, List(subcategory), List(), company.name, company.address, company.postalCode.map(_.substring(0, 2)).get, company.siret,
-        firstName, lastName, email, contactAgreement, false, List.empty
+        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        Some(websiteURL), firstName, lastName, email, contactAgreement, false, List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -72,8 +82,8 @@ object Fixtures {
         contactAgreement <- arbitrary[Boolean]
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        id, category, List(subcategory), List(), Some(company.id), company.name, company.address, company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
+        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        None, None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
     def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
@@ -88,7 +98,7 @@ object Fixtures {
 
     def genReportCompany = for {
         name <- arbString.arbitrary
-        address <- arbString.arbitrary
+        address <- genAddress
         siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
     } yield ReportCompany(name, address, postalCode.toString, siret)
@@ -100,6 +110,7 @@ object Fixtures {
 
     def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
         id <- arbitrary[UUID]
+        companyId <- arbitrary[UUID]
         details <- arbString.arbitrary
-    } yield Event(Some(id), Some(reportId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+    } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
 }

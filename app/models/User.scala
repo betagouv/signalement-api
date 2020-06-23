@@ -71,8 +71,9 @@ object UserPermission extends Enumeration {
       updateReport,
       deleteReport,
       deleteFile,
-      createEvent,
+      createReportAction,
       activateAccount,
+      updateCompany,
       editDocuments,
       subscribeReports,
       inviteDGCCRF = Value
@@ -106,7 +107,7 @@ object UserRoles {
     "DGCCRF",
     Seq(
       UserPermission.listReports,
-      UserPermission.createEvent,
+      UserPermission.createReportAction,
       UserPermission.subscribeReports
     )
   )
@@ -115,7 +116,7 @@ object UserRoles {
     "Professionnel",
     Seq(
       UserPermission.listReports,
-      UserPermission.createEvent
+      UserPermission.createReportAction
     )
   )
 

@@ -21,7 +21,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Configuration, Logger}
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, S3Service, PDFService}
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
@@ -45,7 +45,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration]) {
+        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[UserRepository], mock[MailerService], mock[S3Service], mock[PDFService], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 

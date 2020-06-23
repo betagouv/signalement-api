@@ -23,42 +23,43 @@
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
         }
+        case _ if report.companyId.isDefined => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Que va-t-il se passer ?
+            </p>
+            <p>
+                <b>L'entreprise va être informée de votre signalement pour qu'elle puisse corriger le problème.</b>
+            </p>
+            <p>
+                Dès que l'entreprise aura lu le signalement, vous recevrez un email.
+            </p>
+            <p>
+                <b>Attention : En raison des circonstances exceptionnelles liées au COVID-19, le délai de transmission des signalements aux entreprises
+                    peut être fortement rallongé.</b>
+                <br/>Les entreprises ont un délai de deux mois pour créer leur compte et consulter votre signalement.
+            </p>
+            <p>
+                Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
+            </p>
+            <p>
+                Que l'entreprise lise ou non votre signalement,
+                <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
+            </p>
+        }
         case _ => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
-
-            @if(report.status == TRAITEMENT_EN_COURS) {
-                <p>
-                    Que va-t-il se passer ?
-                </p>
-                <p>
-                    <b>L'entreprise va être informée de votre signalement pour qu'elle puisse corriger le problème.</b>
-                </p>
-
-                <p>
-                    Dès que l'entreprise aura lu le signalement, vous recevrez un email.
-                    En moyenne l'entreprise met 8 jours pour lire le signalement.
-                </p>
-                <p>
-                    Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
-                </p>
-
-                <p>
-                    Que l'entreprise lise ou non votre signalement,
-                    <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
-                </p>
-            } else {
-                <p>
-                    Les enquêteurs de la répression des fraudes sont informés de votre signalement.
-                </p>
-                <p>
-                    <b>Attention : en raison des circonstances exceptionnelles liées au COVID-19, il nous est techniquement impossible d’envoyer votre signalement à l’entreprise.</b>
-                </p>
-                <p>
-                    Nous vous tiendrons au courant dès que l’envoi aura pu se faire. 
-                </p>
-            }
+            <p>
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise qui gère le site internet,
+                sauf si cette dernière est française et identifiable par l'équipe de SignalConso.
+            </p>
+            <p>
+                Dans tous les cas les enquêteurs de la répression des fraudes en seront informés.
+            </p>
         }
     }
 
@@ -109,8 +110,14 @@
 
         <b>Entreprise</b>
         <br/>
-        @report.companyAddress
+        @if(report.companyAddress.isDefined) {
+        @report.companyAddress.get
         <br/>
+        }
+        @if(report.websiteURL.isDefined) {
+        Site internet : @report.shortURL.get
+        <br/>
+        }
 
         <br />
         <b>Consommateur</b>

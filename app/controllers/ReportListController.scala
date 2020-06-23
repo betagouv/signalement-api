@@ -3,7 +3,7 @@ package controllers
 import java.util.UUID
 
 import actors.ReportsExtractActor
-import akka.actor._
+import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
@@ -15,7 +15,7 @@ import repositories._
 import services.{MailerService, S3Service}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 import utils.{DateUtils, SIRET}
 
 import scala.concurrent.duration._
@@ -57,7 +57,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                   end: Option[String],
                   category: Option[String],
                   status: Option[String],
-                  details: Option[String]
+                  details: Option[String],
+                  hasCompany: Option[Boolean]
 
   ) = SecuredAction.async { implicit request =>
 
@@ -70,7 +71,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
     val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseEndDate(end)
+    val endDate = DateUtils.parseDate(end)
 
     val filter = ReportFilter(
       departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
@@ -85,7 +86,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
-      }
+      },
+      hasCompany
     )
 
     for {
@@ -125,22 +127,6 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       }
     )
   }
-
-  def confirmContactByPostOnReportList() = SecuredAction(WithPermission(UserPermission.createEvent)).async(parse.json) { implicit request =>
-
-    import ReportListObjects.ReportList
-
-    request.body.validate[ReportList](Json.reads[ReportList]).fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      reportList => {
-        logger.debug(s"confirmContactByPostOnReportList ${reportList.reportIds}")
-        reportOrchestrator.markBatchPosted(request.identity, reportList.reportIds).map(events => Ok)
-      }
-    )
-  }
-
 }
 
 object ReportListObjects {

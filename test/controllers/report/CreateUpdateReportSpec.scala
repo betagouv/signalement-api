@@ -30,18 +30,18 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a dom tom department                                          ${step(draftReport = draftReport.copy(companyPostalCode = Departments.CollectivitesOutreMer(0)))}
-         When create the report                                         ${step(createReport())}
-         Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
+          a dom tom department                                              ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
+         When create the report                                             ${step(createReport())}
+         Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
+         And send a mail to admins                                          ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
+         And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
+          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.ALL(0))))}
           an employee consumer                                            ${step(draftReport = draftReport.copy(employeeConsumer = true))}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
@@ -50,25 +50,24 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     """
 }
 
-object CreateReportForProWithoutAccountFromEligibleDepartment extends CreateUpdateReportSpec {
+object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has no account                             ${step(draftReport = draftReport.copy(companySiret = anotherCompany.siret))}
-          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
-         When create the report                                         ${step(createReport())}
-         Then create the report with reportStatusList "A_TRAITER"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.A_TRAITER)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
-         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
+          a professional who has no account                                   ${step(draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret)))}
+         When create the report                                               ${step(createReport())}
+         Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
+         And send a mail to admins                                            ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
+         And no event is created                                              ${eventMustNotHaveBeenCreated(report.id, List.empty)}
+         And send an acknowledgment mail to the consumer                      ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 
-object CreateReportForProWithActivatedAccountFromEligibleDepartment extends CreateUpdateReportSpec {
+object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = existingCompany.siret))}
-          an experimentation department                                 ${step(draftReport = draftReport.copy(companyPostalCode = Departments.ALL(0)))}
+          a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = Some(existingCompany.siret)))}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
@@ -98,8 +97,8 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
          Given a preexisting report                                     ${step(report = existingReport)}
          When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanySameSiret))}
          Then the report contains updated info                          ${checkReport(report.copy(
-                                                                          companyName = reportCompanySameSiret.name,
-                                                                          companyAddress = reportCompanySameSiret.address,
+                                                                          companyName = Some(reportCompanySameSiret.name),
+                                                                          companyAddress = Some(reportCompanySameSiret.address),
                                                                           companyPostalCode = Some(reportCompanySameSiret.postalCode),
                                                                           companySiret = Some(reportCompanySameSiret.siret)
                                                                         ))}
@@ -113,11 +112,11 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
          When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanyAnotherSiret))}
          Then the report contains updated info and the status is reset  ${checkReport(report.copy(
                                                                           companyId = Some(anotherCompany.id),
-                                                                          companyName = reportCompanyAnotherSiret.name,
-                                                                          companyAddress = reportCompanyAnotherSiret.address,
+                                                                          companyName = Some(reportCompanyAnotherSiret.name),
+                                                                          companyAddress = Some(reportCompanyAnotherSiret.address),
                                                                           companyPostalCode = Some(reportCompanyAnotherSiret.postalCode),
                                                                           companySiret = Some(reportCompanyAnotherSiret.siret),
-                                                                          status = ReportStatus.A_TRAITER
+                                                                          status = ReportStatus.TRAITEMENT_EN_COURS
                                                                         ))}
     """
 }
@@ -203,12 +202,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     dbReport.get must beEqualTo(reportData)
   }
 
-  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = null) = {
+  def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = Nil) = {
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
         Seq(recipient),
-        null,
+        Nil,
         subject,
         bodyHtml,
         attachments
@@ -221,11 +220,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       id = reports.head.id,
       creationDate = reports.head.creationDate,
       companyId = reports.head.companyId,
+      websiteId = reports.head.websiteId,
       status = status
     )
     report = reports.head
     reports.length must beEqualTo(1) and
       (report.companyId must beSome) and
+      (report.websiteId must beSome) and
       (report must beEqualTo(expectedReport))
   }
 
@@ -233,5 +234,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     val events = Await.result(eventRepository.list, Duration.Inf).toList
     events.length must beEqualTo(1) and
       (events.head.action must beEqualTo(action))
+  }
+
+  def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) = {
+    val events = Await.result(eventRepository.getEvents(None, Some(reportUUID), EventFilter()), Duration.Inf)
+    events.length must beEqualTo(existingEvents.length)
   }
 }

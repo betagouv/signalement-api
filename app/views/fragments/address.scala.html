@@ -1,6 +1,7 @@
-@(address: String)
+@import utils.Address
+@(address: Address)
 
-@address.split(" - ").filter(_.trim != "FRANCE").map { ligne =>
+@address.value.split(" - ").map { ligne =>
     <span>
         @ligne
     </span>

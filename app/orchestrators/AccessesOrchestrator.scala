@@ -2,7 +2,10 @@ package orchestrators
 
 import java.net.URI
 
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
+import akka.actor.ActorRef
+import akka.pattern.ask
+import actors.EmailActor
 import models._
 import play.api.{Configuration, Logger}
 import repositories._
@@ -11,12 +14,14 @@ import java.util.UUID
 
 import utils.{EmailAddress, SIRET}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    userRepository: UserRepository,
                                    mailerService: MailerService,
+                                   @Named("email-actor") emailActor: ActorRef,
                                    configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) {
 
@@ -24,6 +29,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
   val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[URI]("play.website.url")
+  implicit val timeout: akka.util.Timeout = 5.seconds
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -94,21 +100,21 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
             }
   }
 
-  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def addUserOrInvite(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap{
       case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
 
-  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: User) =
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
-      _ <- companyRepository.setUserLevel(company, user, level)
+      _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
     } yield {
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(user.email),
         subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
-        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(company, invitedBy).toString
+        bodyHtml = views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy).toString
       )
       logger.debug(s"User ${user.id} may now access company ${company.id}")
       ()
@@ -130,10 +136,10 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                         ))
      } yield token.token
 
-  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: User): Future[Unit] =
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map(tokenCode => {
       val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
         subject = s"Rejoignez l'entreprise ${company.name} sur SignalConso",
@@ -148,7 +154,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       token <- accessTokenRepository.createToken(TokenKind.DGCCRF_ACCOUNT, randomToken, tokenDuration, None, None, Some(email))
     } yield {
       val invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
-      mailerService.sendEmail(
+      emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
         subject = "Votre accès DGCCRF sur SignalConso",
