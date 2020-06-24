@@ -34,6 +34,7 @@ case class CompanyData (
   def toSearchResult = CompanySearchResult(
     SIRET(siret),
     denominationUsuelleEtablissement,
+    enseigne1Etablissement,
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 - $a2")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement
@@ -51,6 +52,7 @@ case class CompanyUnitData (
 case class CompanySearchResult (
                                  siret: SIRET,
                                  name: Option[String],
+                                 brand: Option[String],
                                  address: Option[Address],
                                  postalCode: Option[String],
                                  activityLabel: String

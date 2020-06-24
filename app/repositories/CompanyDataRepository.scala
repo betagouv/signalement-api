@@ -58,20 +58,18 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   val companyDataTableQuery = TableQuery[CompanyDataTable]
   val companyUnitDataTableQuery = TableQuery[CompanyUnitDataTable]
 
-  private val least = SimpleFunction.ternary[Option[Double], Option[Double], Option[Double], Option[Double]]("least")
+  private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
-  def search(q: String, postalCode: String): Future[List[(CompanyData, CompanyUnitData)]] =
+  def search(q: String, postalCode: String): Future[List[CompanyData]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
       .filter(result => least(
-        result._1.denominationUsuelleEtablissement <-> q,
-        result._1.enseigne1Etablissement <-> q,
-        result._2.denominationUniteLegale <-> q
+        result.denominationUsuelleEtablissement <-> q,
+        result.enseigne1Etablissement <-> q
       ).map(dist => dist < 0.75).getOrElse(false))
       .sortBy(result => least(
-        result._1.denominationUsuelleEtablissement <-> q,
-        result._1.enseigne1Etablissement <-> q,
-        result._2.denominationUniteLegale <-> q)
+        result.denominationUsuelleEtablissement <-> q,
+        result.enseigne1Etablissement <-> q)
       )
       .take(10)
       .to[List].result)
