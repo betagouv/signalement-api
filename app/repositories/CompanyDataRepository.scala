@@ -38,12 +38,13 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def codeCedexEtablissement = column[Option[String]]("codecedexetablissement")
     def libelleCedexEtablissement = column[Option[String]]("libellecedexetablissement")
     def denominationUsuelleEtablissement = column[Option[String]]("denominationusuelleetablissement")
+    def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
 
     def * = (
       id, siret, siren, dateDernierTraitementEtablissement, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
-      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
+      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
 
   class CompanyUnitDataTable(tag: Tag) extends Table[CompanyUnitData](tag, "uniteslegales") {
@@ -57,11 +58,21 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   val companyDataTableQuery = TableQuery[CompanyDataTable]
   val companyUnitDataTableQuery = TableQuery[CompanyUnitDataTable]
 
+  private val least = SimpleFunction.ternary[Option[Double], Option[Double], Option[Double], Option[Double]]("least")
+
   def search(q: String, postalCode: String): Future[List[(CompanyData, CompanyUnitData)]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
-      .join(companyUnitDataTableQuery).on(_.siren === _.siren)
-      .sortBy(_._2.denominationUniteLegale <-> q)
+      .filter(result => least(
+        result._1.denominationUsuelleEtablissement <-> q,
+        result._1.enseigne1Etablissement <-> q,
+        result._2.denominationUniteLegale <-> q
+      ).map(dist => dist < 0.75).getOrElse(false))
+      .sortBy(result => least(
+        result._1.denominationUsuelleEtablissement <-> q,
+        result._1.enseigne1Etablissement <-> q,
+        result._2.denominationUniteLegale <-> q)
+      )
       .take(10)
       .to[List].result)
 }

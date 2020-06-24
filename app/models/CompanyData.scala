@@ -23,6 +23,7 @@ case class CompanyData (
                          codeCedexEtablissement: Option[String],
                          libelleCedexEtablissement: Option[String],
                          denominationUsuelleEtablissement: Option[String],
+                         enseigne1Etablissement: Option[String],
                          activitePrincipaleEtablissement: String
                        ) {
 
@@ -41,10 +42,10 @@ case class CompanyData (
 }
 
 case class CompanyUnitData (
-                         id: UUID,
-                         siren: String,
-                         denominationUniteLegale: Option[String]
-                       )
+                             id: UUID,
+                             siren: String,
+                             denominationUniteLegale: Option[String]
+                           )
 
 
 case class CompanySearchResult (
