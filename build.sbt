@@ -35,7 +35,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-persistence" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-crypto-jca" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
-  "net.codingwell" %% "scala-guice" % "4.2.7",
+  "net.codingwell" %% "scala-guice" % "4.2.10",
   "com.iheart" %% "ficus" % "1.4.7",
 
   "com.norbitltd" %% "spoiwo" % "1.8.0",
