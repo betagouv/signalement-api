@@ -80,6 +80,17 @@ class AccountController @Inject()(
       email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
     )
   }
+  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>
+    for {
+      accessToken <- accessTokenRepository.fetchPendingTokensDGCCRF
+    } yield Ok(Json.toJson(accessToken.map(t =>
+      Json.obj(
+        "email" -> t.emailedTo,
+        "tokenCreation" -> t.creationDate,
+        "tokenExpiration" -> t.expirationDate
+      ))
+    ))
+  }
   def fetchTokenInfo(token: String) = UnsecuredAction.async { implicit request =>
     for {
       accessToken <- accessTokenRepository.findToken(token)

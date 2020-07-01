@@ -70,6 +70,7 @@ GET         /api/account/token                          controllers.AccountContr
 POST        /api/account/password                       controllers.AccountController.changePassword
 POST        /api/account/activation                     controllers.AccountController.activateAccount
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
+GET         /api/account/dgccrf/pending                 controllers.AccountController.fetchPendingDGCCRF
 
 # Company details API
 GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
