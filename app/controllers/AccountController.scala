@@ -91,6 +91,17 @@ class AccountController @Inject()(
       ))
     ))
   }
+  def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>
+    for {
+      users <- userRepository.list(UserRoles.DGCCRF)
+    } yield Ok(Json.toJson(users.map(u =>
+      Json.obj(
+        "email" -> u.email,
+        "firstName" -> u.firstName,
+        "lastName" -> u.lastName
+      ))
+    ))
+  }
   def fetchTokenInfo(token: String) = UnsecuredAction.async { implicit request =>
     for {
       accessToken <- accessTokenRepository.findToken(token)
