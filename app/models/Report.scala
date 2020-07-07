@@ -26,7 +26,8 @@ case class DraftReport(
                         email: EmailAddress,
                         contactAgreement: Boolean,
                         employeeConsumer: Boolean,
-                        fileIds: List[UUID]
+                        fileIds: List[UUID],
+                        tags: List[String] = Nil
                       ) {
 
   def generateReport: Report = {
@@ -76,7 +77,8 @@ case class Report(
                    email: EmailAddress,
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
-                   status: ReportStatusValue
+                   status: ReportStatusValue,
+                   tags: List[String] = Nil
                  ) {
 
   def initialStatus() = {
