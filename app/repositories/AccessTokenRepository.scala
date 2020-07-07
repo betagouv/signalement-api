@@ -122,6 +122,16 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
     )
 
+  def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
+    db.run(AccessTokenTableQuery
+      .filter(
+        _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.valid)
+      .filter(_.kind === TokenKind.DGCCRF_ACCOUNT)
+      .to[List]
+      .result
+    )
+
   def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] = {
     if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
       logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")

@@ -62,6 +62,12 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
+  def list(role: UserRole): Future[Seq[User]] =
+    db
+    .run(userTableQuery
+    .filter(_.role === role.name)
+    .result)
+
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
