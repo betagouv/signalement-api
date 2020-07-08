@@ -17,7 +17,7 @@ GET          /api/stats/reports/responsed/delay                 controllers.Stat
 POST         /api/stats/reports                                 controllers.StatisticController.updateReportData()
 
 # Reports list API
-GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean])
+GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
 POST         /api/reports/extract                       controllers.ReportListController.extractReports()
 
 # Report API

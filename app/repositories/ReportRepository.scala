@@ -27,7 +27,8 @@ case class ReportFilter(
                          statusList: Seq[ReportStatusValue] = List(),
                          details: Option[String] = None,
                          employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Option[Boolean] = None
+                         hasCompany: Option[Boolean] = None,
+                         tags: Seq[String] = Nil
                        )
 
 @Singleton
@@ -244,6 +245,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
           case table => table.status.inSet(filter.statusList.map(_.defaultValue))
+        }
+        .filterIf(!filter.tags.isEmpty) {
+          case table => table.tags @& filter.tags.toList.bind
         }
         .filterOpt(filter.details) {
           case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"

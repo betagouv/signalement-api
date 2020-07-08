@@ -49,7 +49,8 @@ case class DraftReport(
       email,
       contactAgreement,
       employeeConsumer,
-      NA
+      NA,
+      tags
     )
     report.copy(status = report.initialStatus)
   }
@@ -109,7 +110,8 @@ object Report {
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
-        "websiteURL" -> report.websiteURL
+        "websiteURL" -> report.websiteURL,
+        "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
         case (_, _) => Json.obj(
