@@ -1,6 +1,6 @@
 -- !Ups
 
-ALTER TABLE reports ADD COLUMN tags VARCHAR[] DEFAULT '{}'::varchar[];
+ALTER TABLE reports ADD COLUMN tags TEXT[] DEFAULT '{}'::TEXT[];
 
 -- !Downs
 
