@@ -228,18 +228,18 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     reportRepository.count(Some(SIRET(siret))).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
   }
 
-  def getEvents(uuid: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+  def getEvents(reportId: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     val filter = eventType match {
       case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
       case None => EventFilter()
     }
 
-    Try(UUID.fromString(uuid)) match {
+    Try(UUID.fromString(reportId)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEventsWithUsers(report.flatMap(_.companyId), Some(id), filter)
+          events <- eventRepository.getEventsWithUsers(None, Some(id), filter)
         } yield {
           report match {
             case Some(_) => Ok(Json.toJson(
@@ -262,6 +262,37 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           }
         }
       }}
+  }
+
+  def getCompanyEvents(siret: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    val filter = eventType match {
+      case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
+      case None => EventFilter()
+    }
+    for {
+      company <- companyRepository.findBySiret(SIRET(siret))
+      events <- company.map(_.id).map(id => eventRepository.getEventsWithUsers(Some(id), None, filter).map(Some(_))).getOrElse(Future(None))
+    } yield {
+      company match {
+        case Some(_) => Ok(Json.toJson(
+          events.get.filter(event =>
+            request.identity.userRole match {
+              case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+              case _ => true
+            }
+          )
+          .map { case (event, user) => Json.obj(
+            "data" -> event,
+            "user"  -> user.map(u => Json.obj(
+              "firstName" -> u.firstName,
+              "lastName"  -> u.lastName,
+              "role"      -> u.userRole.name
+            ))
+          )}
+        ))
+        case None => NotFound
+      }
+    }
   }
 
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
