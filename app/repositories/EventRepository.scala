@@ -70,13 +70,8 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val us
         .delete
     )
 
-  private def getRawEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter) =
+  private def getRawEvents(filter: EventFilter) =
     eventTableQuery
-      .filterIf(companyId.isDefined && reportId.isDefined) { case table =>
-        (table.reportId === reportId).getOrElse(false) || (table.reportId.isEmpty && table.companyId === companyId).getOrElse(false)
-      }
-      .filterIf(companyId.isEmpty){ table => (table.reportId === reportId).getOrElse(false)}
-      .filterIf(reportId.isEmpty){ table => (table.companyId === companyId).getOrElse(false)}
       .filterOpt(filter.eventType) {
         case (table, eventType) => table.eventType === eventType.value
       }
@@ -84,15 +79,26 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val us
         case (table, action) => table.action === action.value
       }
 
-  def getEvents(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[Event]] = db.run {
-    getRawEvents(companyId, reportId, filter)
+  def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]] = db.run {
+    getRawEvents(filter)
+      .filter(_.reportId === reportId)
       .sortBy(_.creationDate.desc)
       .to[List]
       .result
   }
 
-  def getEventsWithUsers(companyId: Option[UUID], reportId: Option[UUID], filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
-    getRawEvents(companyId, reportId, filter)
+  def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+    getRawEvents(filter)
+      .filter(_.reportId === reportId)
+      .joinLeft(userTableQuery).on(_.userId === _.id)
+      .sortBy(_._1.creationDate.desc)
+      .to[List]
+      .result
+  }
+
+  def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+    getRawEvents(filter)
+      .filter(_.companyId === companyId)
       .joinLeft(userTableQuery).on(_.userId === _.id)
       .sortBy(_._1.creationDate.desc)
       .to[List]

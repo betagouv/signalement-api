@@ -111,7 +111,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     request.body.validate[ReviewOnReportResponse].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
-          events <- eventRepository.getEvents(None, Some(UUID.fromString(uuid)), EventFilter())
+          events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
           result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
             Future(Forbidden)
           } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
@@ -200,8 +200,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
-        events        <- eventRepository.getEventsWithUsers(None, Some(id), EventFilter())
-        companyEvents <- report.map(r => eventRepository.getEventsWithUsers(r.companyId, None, EventFilter())).getOrElse(Future(List.empty))
+        events        <- eventRepository.getEventsWithUsers(id, EventFilter())
+        companyEvents <- report.map(r => eventRepository.getEventsWithUsers(r.companyId.get, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
       } yield report
@@ -240,7 +240,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => {
         for {
           report <- reportRepository.getReport(id)
-          events <- eventRepository.getEventsWithUsers(None, Some(id), filter)
+          events <- eventRepository.getEventsWithUsers(id, filter)
         } yield {
           report match {
             case Some(_) => Ok(Json.toJson(
@@ -272,7 +272,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
     for {
       company <- companyRepository.findBySiret(SIRET(siret))
-      events <- company.map(_.id).map(id => eventRepository.getEventsWithUsers(Some(id), None, filter).map(Some(_))).getOrElse(Future(None))
+      events <- company.map(_.id).map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_))).getOrElse(Future(None))
     } yield {
       company match {
         case Some(_) => Ok(Json.toJson(

@@ -235,9 +235,9 @@ trait GetReportContext extends Mockito {
   mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
   mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
-  mockEventRepository.getEvents(None, Some(neverRequestedReport.id), EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(None, Some(neverRequestedFinalReport.id), EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(None, Some(alreadyRequestedReport.id), EventFilter(None)) returns Future(
+  mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
+  mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
+  mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
     List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(companyId), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.ENVOI_SIGNALEMENT))
   )
 
