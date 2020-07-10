@@ -165,7 +165,7 @@ object Constants {
     object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
 
     object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
+    object ENVOI_SIGNALEMENT extends ActionEventValue("Première consultation du signalement par le professionnel")
     object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
     object REVIEW_ON_REPORT_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
@@ -176,7 +176,7 @@ object Constants {
 
     object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
-    object EMAIL_TRANSMISSION extends ActionEventValue("Envoi email d'information de transmission")
+    object EMAIL_TRANSMISSION extends ActionEventValue("Email « signalement consulté » envoyé au consommateur")
     object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
     object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
