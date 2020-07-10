@@ -1,7 +1,7 @@
 @import java.net.URI
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
-@(report: Report, events: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
+@(report: Report, events: List[(Event, Option[User])], companyEvents: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -87,7 +87,7 @@
                 }
             </div>
             <div>
-                <h2>Historique</h2>
+                <h2>Historique du signalement</h2>
                 @events.map{case (e, u) =>
                     <p>
                         <span class="note">@e.formattedDate</span>
@@ -103,6 +103,20 @@
                     <b>Création du signalement</b>
                 </p>
             </div>
+            @if(report.companyId.isDefined) {
+                <div>
+                    <h2>Historique de l'entreprise</h2>
+                    @companyEvents.map{case (e, u) =>
+                    <p>
+                        <span class="note">@e.formattedDate</span>
+                        <br />
+                        <b>@e.action.value</b>
+                        <br />
+                        @e.getDescription
+                    </p>
+                    }
+                </div>
+            }
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
             </div>

@@ -201,6 +201,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
         events        <- eventRepository.getEventsWithUsers(None, Some(id), EventFilter())
+        companyEvents <- report.map(r => eventRepository.getEventsWithUsers(r.companyId, None, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
       } yield report
@@ -210,7 +211,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                           ||  proLevel != AccessLevel.NONE)
               .map(report =>
                   pdfService.Ok(
-                    List(views.html.pdfs.report(report, events, reportFiles))
+                    List(views.html.pdfs.report(report, events, companyEvents, reportFiles))
                   )
               )
               .getOrElse(NotFound)
