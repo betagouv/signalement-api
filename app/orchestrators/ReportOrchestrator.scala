@@ -75,7 +75,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
-            Constants.ActionEvent.CONTACT_EMAIL,
+            Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
             stringToDetailsJsValue(s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${admins.map(_.email).mkString(", ")} )")
           )
         ).flatMap(event =>
@@ -110,6 +110,17 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
         else Future(report)
       }
+      _ <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          company.map(_.id),
+          None,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+        )
+      )
     } yield {
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
@@ -173,7 +184,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(userUUID),
             Some(OffsetDateTime.now()),
             Constants.EventType.ADMIN,
-            Constants.ActionEvent.MODIFICATION_COMMERCANT,
+            Constants.ActionEvent.REPORT_COMPANY_CHANGE,
             stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress.getOrElse("Adresse non renseignée")}")
           )
         ).map(Some(_))
@@ -203,7 +214,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
             Some(userUUID),
             Some(OffsetDateTime.now()),
             Constants.EventType.ADMIN,
-            Constants.ActionEvent.MODIFICATION_CONSO,
+            Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
             stringToDetailsJsValue(
               s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
                 s"- Accord pour contact : ${if (report.contactAgreement) "oui" else "non"}"
@@ -217,7 +228,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
       eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
-        if(!events.exists(_.action == Constants.ActionEvent.ENVOI_SIGNALEMENT)) {
+        if(!events.exists(_.action == Constants.ActionEvent.REPORT_READING_BY_PRO)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
           Future(report)
@@ -279,8 +290,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(userUUID),
           Some(OffsetDateTime.now()),
           Constants.EventType.PRO,
-          Constants.ActionEvent.ENVOI_SIGNALEMENT,
-          stringToDetailsJsValue("Première consultation du détail du signalement par le professionnel")
+          Constants.ActionEvent.REPORT_READING_BY_PRO
         )
       )
       updatedReport <-
@@ -306,11 +316,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(UUID.randomUUID()),
           Some(report.id),
           report.companyId,
-          Some(userUUID),
+          None,
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_TRANSMISSION,
-          stringToDetailsJsValue("Envoi email au consommateur d'information de transmission")
+          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
       newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
@@ -363,7 +372,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         case (Some(r), Some(event)) => reportRepository.update(
           r.copy(
             status = event.action match {
-              case CONTACT_COURRIER => TRAITEMENT_EN_COURS
+              case POST_ACCOUNT_ACTIVATION_DOC => TRAITEMENT_EN_COURS
               case _ => r.status
             })
         ).map(Some(_))
@@ -371,7 +380,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       }
     } yield {
       newEvent.foreach(event => event.action match {
-        case ENVOI_SIGNALEMENT => notifyConsumerOfReportTransmission(report.get, user.id)
+        case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get, user.id)
         case _ => ()
       })
       newEvent
@@ -388,7 +397,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(user.id),
           Some(OffsetDateTime.now()),
           EventType.PRO,
-          ActionEvent.REPONSE_PRO_SIGNALEMENT,
+          ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
         )
       )
@@ -408,11 +417,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           Some(UUID.randomUUID()),
           Some(report.id),
           updatedReport.companyId,
-          Some(user.id),
+          None,
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_REPONSE_PRO,
-          stringToDetailsJsValue("Envoi email au consommateur de la réponse du professionnel")
+          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+        )
+      )
+      - <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          updatedReport.companyId,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )
       )
     } yield {
@@ -452,7 +471,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         None,
         Some(OffsetDateTime.now()),
         EventType.CONSO,
-        ActionEvent.REVIEW_ON_REPORT_RESPONSE,
+        ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         stringToDetailsJsValue(
           s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"

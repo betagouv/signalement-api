@@ -166,7 +166,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).map(e =>
             e.details.validate[ReportResponse].get.consumerDetails
           ))
           .getOrElse("")
@@ -176,7 +176,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).flatMap(e =>
             e.details.validate[ReportResponse].get.dgccrfDetails
           ))
           .getOrElse("")

@@ -112,9 +112,9 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       review => for {
           events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
-          result <- if (!events.exists(_.action == ActionEvent.REPONSE_PRO_SIGNALEMENT)) {
+          result <- if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
             Future(Forbidden)
-          } else if (events.exists(_.action == ActionEvent.REVIEW_ON_REPORT_RESPONSE)) {
+          } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
             Future(Conflict)
           } else {
             reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
@@ -201,7 +201,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
         events        <- eventRepository.getEventsWithUsers(id, EventFilter())
-        companyEvents <- report.map(r => eventRepository.getEventsWithUsers(r.companyId.get, EventFilter())).getOrElse(Future(List.empty))
+        companyEvents <- report.map(r => eventRepository.getCompanyEventsWithUsers(r.companyId.get, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
       } yield report
@@ -246,7 +246,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
             case Some(_) => Ok(Json.toJson(
               events.filter(event =>
                 request.identity.userRole match {
-                  case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+                  case UserRoles.Pro => List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
                   case _ => true
                 }
               )
@@ -278,7 +278,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         case Some(_) => Ok(Json.toJson(
           events.get.filter(event =>
             request.identity.userRole match {
-              case UserRoles.Pro => List(REPONSE_PRO_SIGNALEMENT, ENVOI_SIGNALEMENT) contains event._1.action
+              case UserRoles.Pro => List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
               case _ => true
             }
           )

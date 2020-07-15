@@ -17,7 +17,7 @@ import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.{ActionEvent, ReportStatus}
-import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_EMAIL, RELANCE}
+import utils.Constants.ActionEvent.{ActionEventValue, EMAIL_PRO_NEW_REPORT, EMAIL_PRO_REMIND_NO_READING}
 import utils.Constants.EventType.{EventTypeValue, PRO}
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.EmailAddress
@@ -33,7 +33,7 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "TRAITEMENT_EN_COURS" created more than 7 days    ${step(setupReport(report))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.RELANCE)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email, "Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2))).toString)}
     """
@@ -63,7 +63,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.RELANCE)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay)).toString)}
     """
@@ -97,7 +97,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWith
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.NON_CONSULTE)}
+         Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.REPORT_CLOSED_BY_NO_READING)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(report.id, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(report.email,"L'entreprise n'a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(report).toString, mailerService.attachmentSeqForWorkflowStepN(3))}
    """
@@ -136,7 +136,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
     status = TRAITEMENT_EN_COURS
   )
 
-  val reminderEvent = Fixtures.genEventForReport(onGoingReport.id, PRO, RELANCE).sample.get
+  val reminderEvent = Fixtures.genEventForReport(onGoingReport.id, PRO, EMAIL_PRO_REMIND_NO_READING).sample.get
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = Nil) = {
     there was one(mailerService)

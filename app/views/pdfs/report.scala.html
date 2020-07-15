@@ -88,7 +88,12 @@
             </div>
             <div>
                 <h2>Historique du signalement</h2>
-                @events.map{case (e, u) =>
+                <p>
+                    <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
+                    <br />
+                    <b>Création du signalement</b>
+                </p>
+                @events.sortBy(_._1.creationDate).map{case (e, u) =>
                     <p>
                         <span class="note">@e.formattedDate</span>
                         <br />
@@ -97,16 +102,11 @@
                         @e.getDescription
                     </p>
                 }
-                <p>
-                    <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
-                    <br />
-                    <b>Création du signalement</b>
-                </p>
             </div>
             @if(report.companyId.isDefined) {
                 <div>
                     <h2>Historique de l'entreprise</h2>
-                    @companyEvents.map{case (e, u) =>
+                    @companyEvents.sortBy(_._1.creationDate).map{case (e, u) =>
                     <p>
                         <span class="note">@e.formattedDate</span>
                         <br />

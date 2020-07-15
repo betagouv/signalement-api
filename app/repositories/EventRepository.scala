@@ -99,6 +99,7 @@ class EventRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val us
   def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
     getRawEvents(filter)
       .filter(_.companyId === companyId)
+      .filter(!_.reportId.isDefined)
       .joinLeft(userTableQuery).on(_.userId === _.id)
       .sortBy(_._1.creationDate.desc)
       .to[List]

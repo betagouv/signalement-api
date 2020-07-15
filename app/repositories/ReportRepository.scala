@@ -9,7 +9,7 @@ import play.api.Configuration
 import repositories._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
-import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
+import utils.Constants.ActionEvent.REPORT_COMPANY_CHANGE
 import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.{Address, DateUtils, EmailAddress, SIRET, URL}

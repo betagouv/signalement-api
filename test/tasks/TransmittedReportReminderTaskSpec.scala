@@ -14,7 +14,7 @@ import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
-import utils.Constants.ActionEvent.{ActionEventValue, ENVOI_SIGNALEMENT, RELANCE}
+import utils.Constants.ActionEvent.{ActionEventValue, REPORT_READING_BY_PRO, EMAIL_PRO_REMIND_NO_READING}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS, TRAITEMENT_EN_COURS}
 import utils.Constants.{ActionEvent, ReportStatus}
@@ -31,7 +31,7 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
          Given an event "ENVOI_SIGNALEMENT" created more than 7 days                  ${step(setupEvent(event))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.RELANCE)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(14)).toString)}
     """
@@ -61,7 +61,7 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(setupReport(transmittedReport))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.RELANCE)}
+         Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(transmittedReport)}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(transmittedReport, OffsetDateTime.now.plusDays(7)).toString)}
     """
@@ -93,7 +93,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
-         Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.CONSULTE_IGNORE)}
+         Then an event "CONSULTE_IGNORE" is created                                   ${eventMustHaveBeenCreatedWithAction(transmittedReport.id, ActionEvent.REPORT_CLOSED_BY_NO_ACTION)}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(transmittedReport.id, ReportStatus.SIGNALEMENT_CONSULTE_IGNORE)}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(transmittedReport.email,"L'entreprise n'a pas répondu au signalement", views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
    """
@@ -131,8 +131,8 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv) exte
     status = SIGNALEMENT_TRANSMIS
   )
 
-  val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, RELANCE).sample.get
-  val transmittedEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, ENVOI_SIGNALEMENT).sample.get
+  val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, EMAIL_PRO_REMIND_NO_READING).sample.get
+  val transmittedEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, REPORT_READING_BY_PRO).sample.get
 
   def mailMustHaveBeenSent(recipient: EmailAddress, subject: String, bodyHtml: String, attachments: Seq[Attachment] = Nil) = {
     there was one(mailerService)

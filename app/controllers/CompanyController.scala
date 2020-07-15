@@ -57,7 +57,7 @@ class CompanyController @Inject()(
       eventsMap <- eventRepository.fetchEvents(accesses.map {case (_, c) => c.id})
     } yield Ok(
       Json.toJson(accesses.map {case (t, c) =>
-          (c, t, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.CONTACT_COURRIER).headOption).flatMap(_.creationDate))
+          (c, t, eventsMap.get(c.id).flatMap(_.filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption).flatMap(_.creationDate))
         }.filter {case (c, t, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
           case (c, t, lastNotice) =>
             Json.obj(
@@ -102,7 +102,7 @@ class CompanyController @Inject()(
   }
 
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
-    val lastContact = events.filter(e => List(ActionEvent.CONTACT_COURRIER, ActionEvent.RELANCE).contains(e.action))
+    val lastContact = events.filter(e => List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action))
                         .sortBy(_.creationDate).reverse.headOption
     val report = reports.sortBy(_.creationDate).reverse.headOption
     if (lastContact.isDefined)
@@ -137,8 +137,7 @@ class CompanyController @Inject()(
               Some(request.identity.id),
               Some(OffsetDateTime.now()),
               EventType.PRO,
-              ActionEvent.CONTACT_COURRIER,
-              Json.obj()
+              ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
             )
           )
         })).map(_ => Ok)

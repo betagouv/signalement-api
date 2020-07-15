@@ -36,7 +36,7 @@ class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespo
          Given a report with a response                               ${step(reportId = reportWithResponse.id)}
          When post a review                                          ${step(someResult = Some(postReview(reviewOnReportResponse)))}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
-         And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(ActionEvent.REVIEW_ON_REPORT_RESPONSE)}
+         And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPORT_REVIEW_ON_RESPONSE)}
     """
 }
 
@@ -60,11 +60,11 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv) extends Spe
   val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
 
   val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
-  val responseEvent = Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT).sample.get
+  val responseEvent = Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
 
   val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
-  val responseWithReviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPONSE_PRO_SIGNALEMENT).sample.get
-  val reviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REVIEW_ON_REPORT_RESPONSE).sample.get
+  val responseWithReviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
+  val reviewEvent = Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_REVIEW_ON_RESPONSE).sample.get
 
   val reviewOnReportResponse = Fixtures.genReviewOnReportResponse.sample.get
 
