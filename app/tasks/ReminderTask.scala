@@ -73,19 +73,19 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
       )
       onGoingReportsMailReminders <- Future.sequence(
-        extractReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, now, EMAIL_PRO_NEW_REPORT)
-          .map(reportWithAdmins => remindReportByMail(reportWithAdmins._1, reportWithAdmins._2.map(_.email), reportEventsMap))
+        extractUnreadReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => remindUnreadReportByMail(reportWithAdmins._1, reportWithAdmins._2.map(_.email), reportEventsMap))
       )
       closedUnreadWithAccessReports <- Future.sequence(
         extractUnreadWithAccessReports(onGoingReportsWithAdmins, reportEventsMap, now)
           .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
       )
       transmittedReportsMailReminders <- Future.sequence(
-        extractReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, now, REPORT_READING_BY_PRO)
-          .map(reportWithAdmins => remindReportByMail(reportWithAdmins._1, reportWithAdmins._2.map(_.email), reportEventsMap))
+        extractTransmittedReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => remindTransmittedReportByMail(reportWithAdmins._1, reportWithAdmins._2.map(_.email), reportEventsMap))
       )
       closedByNoAction <- Future.sequence(
-        extractUnreadWithAccessReports(transmittedReportsWithAdmins, reportEventsMap, now)
+        extractTransmittedWithAccessReports(transmittedReportsWithAdmins, reportEventsMap, now)
           .map(reportWithAdmins => closeTransmittedReportByNoAction(reportWithAdmins._1))
       )
     } yield {
@@ -108,11 +108,11 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       .filter(reportWithAdmins => reportWithAdmins._1.creationDate.toLocalDateTime.isBefore(now.minus(noAccessReadingDelay)))
   }
 
-  def extractReportsToRemindByMail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime, previousAction: ActionEventValue) = {
+  def extractUnreadReportsToRemindByMail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
     reportsWithAdmins
       .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING).length == 0)
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
-      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, previousAction)
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_NEW_REPORT)
         .headOption.flatMap(_.creationDate).getOrElse(reportWithAdmins._1.creationDate).toLocalDateTime.isBefore(now.minusDays(7))) :::
       reportsWithAdmins
         .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING).length == 1)
@@ -121,14 +121,62 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
           .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
   }
 
-  def remindReportByMail(report: Report, adminMails: List[EmailAddress], reportEventsMap: Map[UUID, List[Event]]) = {
+  def remindUnreadReportByMail(report: Report, adminMails: List[EmailAddress], reportEventsMap: Map[UUID, List[Event]]) = {
     val expirationDate = OffsetDateTime.now.plus(mailReminderDelay.multipliedBy(2 - extractEventsWithAction(report.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING).length))
-    eventRepository.createEvent(generateReminderEvent(report)).map { newEvent =>
+    eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        Some(report.id),
+        report.companyId,
+        None,
+        Some(OffsetDateTime.now()),
+        SYSTEM,
+        EMAIL_PRO_REMIND_NO_READING,
+        stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
+      )
+    ).map { newEvent =>
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = adminMails,
         subject = "Nouveau signalement",
-        bodyHtml = views.html.mails.professional.reportReminder(report, expirationDate).toString
+        bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
+      )
+      Reminder(report.id, ReminderValue.RemindReportByMail)
+    }
+  }
+
+  def extractTransmittedReportsToRemindByMail(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithAdmins
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length == 0)
+      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, REPORT_READING_BY_PRO)
+        .headOption.flatMap(_.creationDate).getOrElse(reportWithAdmins._1.creationDate).toLocalDateTime.isBefore(now.minusDays(7))) :::
+      reportsWithAdmins
+        .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length == 1)
+        .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
+        .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION)
+          .head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false))
+  }
+
+  def remindTransmittedReportByMail(report: Report, adminMails: List[EmailAddress], reportEventsMap: Map[UUID, List[Event]]) = {
+    val expirationDate = OffsetDateTime.now.plus(mailReminderDelay.multipliedBy(2 - extractEventsWithAction(report.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length))
+    eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        Some(report.id),
+        report.companyId,
+        None,
+        Some(OffsetDateTime.now()),
+        SYSTEM,
+        EMAIL_PRO_REMIND_NO_ACTION,
+        stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
+      )
+    ).map { newEvent =>
+      emailActor ? EmailActor.EmailRequest(
+        from = configuration.get[EmailAddress]("play.mail.from"),
+        recipients = adminMails,
+        subject = "Signalement en attente de réponse",
+        bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
       )
       Reminder(report.id, ReminderValue.RemindReportByMail)
     }
@@ -179,6 +227,13 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
+  def extractTransmittedWithAccessReports(reportsWithAdmins: List[(Report, List[User])], reportEventsMap: Map[UUID, List[Event]], now: LocalDateTime) = {
+    reportsWithAdmins
+      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
+      .filter(reportWithAdmins => extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION)
+        .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay))).getOrElse(false)).length == 2)
+  }
+
   def closeTransmittedReportByNoAction(report: Report) = {
     for {
       _ <- eventRepository.createEvent(
@@ -217,17 +272,6 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
     }
   }
 
-
-  private def generateReminderEvent(report: Report): Event = Event(
-    Some(UUID.randomUUID()),
-    Some(report.id),
-    report.companyId,
-    None,
-    Some(OffsetDateTime.now()),
-    SYSTEM,
-    EMAIL_PRO_REMIND_NO_READING,
-    stringToDetailsJsValue(s"Ajout d'un évènement de relance")
-  )
 
   case class Reminder(
                      reportId: UUID,

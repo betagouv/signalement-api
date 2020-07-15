@@ -35,7 +35,7 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email, "Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2))).toString)}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email, "Nouveau signalement", views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2))).toString)}
     """
   }
 }
@@ -65,7 +65,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
          When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf))}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.EMAIL_PRO_REMIND_NO_READING)}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(report)}
-         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportReminder(report, runningDateTime.plus(mailReminderDelay)).toString)}
+         And a mail is sent to the professional                                       ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString)}
     """
   }
 }
