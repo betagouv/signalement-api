@@ -134,13 +134,15 @@
         }
     </div>
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">Comprendre SignalConso</div>
-        <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
-    </div>
+    @if(!report.employeeConsumer) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">Comprendre SignalConso</div>
+            <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
+        </div>
+    }
 }
