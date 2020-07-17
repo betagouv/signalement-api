@@ -141,7 +141,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
-  var draftReport = Fixtures.genDraftReport.sample.get.copy()
+  var draftReport = Fixtures.genDraftReport.sample.get
   var report = draftReport.generateReport
   val proUser = Fixtures.genProUser.sample.get
 
