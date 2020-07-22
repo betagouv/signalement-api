@@ -1,0 +1,38 @@
+body, div {
+    font-family: 'Arial', sans-serif;
+    font-size: 12px;
+}
+
+h2 {
+    color: #53657d;
+    margin-bottom: 8px;
+}
+
+ul {
+    padding: 0 5px;
+    margin-top: 0;
+    list-style-type: none;
+}
+
+.note {
+    color: #53657d;
+}
+
+.mt-5 {
+    margin-top: 24px;
+}
+
+.footer {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    height: 100%;
+}
+
+.footer > img {
+    height: 1cm;
+}
+
+.text-center {
+    text-align: center;
+}

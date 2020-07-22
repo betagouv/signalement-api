@@ -1,28 +1,31 @@
 package orchestrators
 
 import java.net.URI
+import java.time.OffsetDateTime
+import java.util.UUID
 
-import javax.inject.{Inject, Named}
+import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import actors.EmailActor
+import javax.inject.{Inject, Named}
+import models.Event.stringToDetailsJsValue
 import models._
 import play.api.{Configuration, Logger}
 import repositories._
 import services.MailerService
-import java.util.UUID
-
+import utils.Constants.{ActionEvent, EventType}
 import utils.{EmailAddress, SIRET}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
-                                   accessTokenRepository: AccessTokenRepository,
-                                   userRepository: UserRepository,
-                                   mailerService: MailerService,
-                                   @Named("email-actor") emailActor: ActorRef,
-                                   configuration: Configuration)
+                                     accessTokenRepository: AccessTokenRepository,
+                                     userRepository: UserRepository,
+                                     eventRepository: EventRepository,
+                                     mailerService: MailerService,
+                                     @Named("email-actor") emailActor: ActorRef,
+                                     configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -81,6 +84,18 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       applied     <- (for { u <- user; t <- accessToken }
                         yield accessTokenRepository.applyCompanyToken(t, u)).getOrElse(Future(false))
       _           <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
+      _           <-  accessToken.map(t => eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          None,
+          t.companyId,
+          user.map(_.id),
+          Some(OffsetDateTime.now()),
+          EventType.PRO,
+          ActionEvent.ACCOUNT_ACTIVATION,
+          stringToDetailsJsValue(s"Email du compte : ${t.emailedTo.getOrElse("")}")
+        )
+      )).getOrElse(Future(None))
     } yield applied
   }
 
