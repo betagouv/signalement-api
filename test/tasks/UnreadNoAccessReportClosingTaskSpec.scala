@@ -15,7 +15,7 @@ import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.{ActionEvent, ReportStatus}
-import utils.Constants.ActionEvent.{ActionEventValue, CONTACT_COURRIER, RELANCE}
+import utils.Constants.ActionEvent.{ActionEventValue, POST_ACCOUNT_ACTIVATION_DOC, EMAIL_PRO_REMIND_NO_READING}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.EmailAddress
@@ -31,7 +31,7 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
        Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and expired reading delay   ${step(setupReport(report))}
        When remind task run                                                         ${step(Await.result(reminderTask.runTask(runningDateTime), Duration.Inf))}
-       Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.NON_CONSULTE)}
+       Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(report.id, ActionEvent.REPORT_CLOSED_BY_NO_READING)}
        And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(report.id, ReportStatus.SIGNALEMENT_NON_CONSULTE)}
        And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(report.email, "L'entreprise n'a pas souhaité consulter votre signalement", views.html.mails.consumer.reportClosedByNoReading(report).toString, mailerService.attachmentSeqForWorkflowStepN(3))}
     """
@@ -90,7 +90,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv) ex
   }
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) = {
-    eventRepository.getEvents(None, Some(reportUUID), EventFilter(action = Some(action))).map(_.head) must eventActionMatcher(action).await
+    eventRepository.getEvents(reportUUID, EventFilter(action = Some(action))).map(_.head) must eventActionMatcher(action).await
   }
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>
@@ -98,7 +98,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv) ex
   }
 
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) = {
-    eventRepository.getEvents(None, Some(reportUUID), EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
+    eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
   }
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) = {

@@ -19,8 +19,8 @@ case class Event(
                   details: JsValue = Json.obj()
                 ) {
 
-  def formattedDate = this.creationDate.map(_.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))).getOrElse("—")
-  def getDescription = this.details.as[JsObject].value.get("description").getOrElse("")
+  def formattedDate = this.creationDate.map(_.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))).getOrElse("—")
+  def getDescription = this.details.as[JsObject].value.get("description").getOrElse("").toString.replaceAll("^\"|\"$", "");
 }
 
 object Event {
