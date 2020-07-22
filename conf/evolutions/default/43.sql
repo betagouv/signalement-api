@@ -4,7 +4,7 @@ UPDATE events SET action = 'Envoi du courrier d''activation' WHERE action = 'Env
 UPDATE events SET action = 'Première consultation du signalement par le professionnel' WHERE action = 'Envoi du signalement';
 UPDATE events SET action = 'Email « Accusé de réception » envoyé au consommateur' WHERE action = 'Envoi email accusé de réception';
 UPDATE events SET action = 'Email « Nouveau signalement » envoyé au professionnel' WHERE action = 'Envoi d''un email';
-UPDATE events SET action = 'Email « Signalement consulté » envoyé au consommateur' WHERE action = 'Envoi email d''information de transmission';
+UPDATE events SET action = 'Email « Signalement consulté » envoyé au consommateur' WHERE action = 'Envoi email d''information de transmission';
 UPDATE events SET action = 'Email « L''entreprise a répondu à votre signalement » envoyé au consommateur' WHERE action = 'Envoi email de la réponse pro';
 UPDATE events SET action = 'Email « Nouveau signalement non consulté » envoyé au professionnel' WHERE action = 'Relance';
 
