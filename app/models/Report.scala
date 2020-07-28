@@ -26,7 +26,8 @@ case class DraftReport(
                         email: EmailAddress,
                         contactAgreement: Boolean,
                         employeeConsumer: Boolean,
-                        fileIds: List[UUID]
+                        fileIds: List[UUID],
+                        tags: List[String] = Nil
                       ) {
 
   def generateReport: Report = {
@@ -48,7 +49,8 @@ case class DraftReport(
       email,
       contactAgreement,
       employeeConsumer,
-      NA
+      NA,
+      tags
     )
     report.copy(status = report.initialStatus)
   }
@@ -76,7 +78,8 @@ case class Report(
                    email: EmailAddress,
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
-                   status: ReportStatusValue
+                   status: ReportStatusValue,
+                   tags: List[String] = Nil
                  ) {
 
   def initialStatus() = {
@@ -107,7 +110,8 @@ object Report {
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
-        "websiteURL" -> report.websiteURL
+        "websiteURL" -> report.websiteURL,
+        "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
         case (_, _) => Json.obj(
