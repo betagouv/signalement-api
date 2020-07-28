@@ -1,7 +1,7 @@
 @import java.net.URI
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
-@(report: Report, events: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
+@(report: Report, events: List[(Event, Option[User])], companyEvents: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -11,6 +11,8 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Détail du signalement @report.id</title>
 
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/report.css")">
+
     </head>
     <body>
         <div>
@@ -18,113 +20,105 @@
                 <img src='@routes.Assets.versioned("images/logo-marianne.png")' height="1.8cm"/>
                 <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
             </div>
-            <div>
-                <h2>Détail du signalement</h2>
+            <div class="mt-5">
                 <small>
                     Identifiant unique : @report.id<br>
                     Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
             <div>
-                <h3>Problème</h3>
-                @report.category
+                <h2>Type de signalement</h2>
                 <ul>
-                @report.subcategories.map{subcat =>
                     <li>
-                        @subcat
+                        @report.category
                     </li>
-                }
+                    @report.subcategories.map{subcat =>
+                        <li>
+                            @subcat
+                        </li>
+                    }
                 </ul>
-                <h3>Description</h3>
+                <h2>Détail du signalement</h2>
                 <ul>
-                @report.details.map{input =>
-                    <li>
-                        @Html(input.label) @input.value
-                    </li>
-                }
+                    @report.details.map{input =>
+                        <li>
+                            <b>@Html(input.label)</b> @input.value
+                        </li>
+                    }
                 </ul>
-                <h3>Entreprise</h3>
-                <dl>
+                <h2>Entreprise</h2>
                 @report.companySiret.map{siret =>
-                    <dt>SIRET</dt>
-                    <dd>
-                        @siret
-                    </dd>
-                }
-                @report.companyName.map{name => 
-                    <dt>Nom</dt>
-                    <dd>@name</dd>
+                    <div>
+                        <b>@siret</b>
+                    </div>
                 }
                 @report.companyAddress.map{address =>
-                    <dt>Adresse</dt>
-                    <dd>
-                        @address
-                    </dd>
+                    <div>
+                        @views.html.fragments.address(address)
+                    </div>
                 }
                 @report.websiteURL.map{url =>
-                    <dt>Site web</dt>
-                    <dd>
+                    <div>
                         @url
-                    </dd>
+                    </div>
                 }
-                </dl>
-                <h3>Consommateur</h3>
-                <dl>
-                    <dt>Nom</dt>
-                    <dd>
-                        @report.lastName
-                    </dd>
-                    <dt>Prénom</dt>
-                    <dd>
-                        @report.firstName
-                    </dd>
-                    <dt>Adresse email</dt>
-                    <dd>
-                        @report.email
-                    </dd>
-                    <dt>Accord pour contact</dt>
-                    <dd>
-                        @if(report.contactAgreement) { Oui } else { Non }
-                    </dd>
-                </dl>
+                <h2>Consommateur</h2>
+                @if(!report.contactAgreement) {
+                    <div class="note">Le consommateur souhaite rester anonyme</div>
+                }
+                <div>
+                    <b>@report.firstName @report.lastName</b>
+                </div>
+                <div>
+                    @report.email
+                </div>
             </div>
             <div>
-                <h3>Historique</h3>
-                <table>
-                    <tr>
-                        <th>Date</th>
-                        <th>Action</th>
-                        <th>Description</th>
-                    </tr>
-                @events.map{case (e, u) =>
-                    <tr>
-                        <td>@e.formattedDate</td>
-                        <td>@e.action.value</td>
-                        <td>@e.getDescription</td>
-                    </tr>
-                }
-                <tr>
-                    <td>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</td>
-                    <td>Création du signalement</td>
-                    <td></td>
-                </tr>
-                </table>
-            </div>
-            <div>
-                <h3>Pièces jointes</h3>
+                <h2>Pièces jointes</h2>
                 @if(files.isEmpty) {
                     <span>Aucune pièce jointe n'est associée à ce signalement.</span>
                 } else {
-                Pièces jointes :
-                <ul>
+                    Pièces jointes :
+                    <ul>
                     @files.map{f =>
-                    <li>@f.filename</li>
+                        <li>@f.filename</li>
                     }
-                </ul>
+                    </ul>
                 }
             </div>
             <div>
-                <img src='@routes.Assets.versioned("images/logo-ministere.png")' style="display: block; margin: 0 auto;" height="1cm"/>
+                <h2>Historique du signalement</h2>
+                <p>
+                    <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
+                    <br />
+                    <b>Création du signalement</b>
+                </p>
+                @events.sortBy(_._1.creationDate).map{case (e, u) =>
+                    <p>
+                        <span class="note">@e.formattedDate</span>
+                        <br />
+                        <b>@e.action.value</b>
+                        <br />
+                        @e.getDescription
+                    </p>
+                }
+            </div>
+            @if(report.companyId.isDefined) {
+                <div>
+                    <h2>Historique de l'entreprise</h2>
+                    @companyEvents.sortBy(_._1.creationDate).map{case (e, u) =>
+                    <p>
+                        <span class="note">@e.formattedDate</span>
+                        <br />
+                        <b>@e.action.value</b>
+                        <br />
+                        @e.getDescription
+                    </p>
+                    }
+                </div>
+            }
+            <div class="footer text-center">
+                <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
             </div>
         </div>
     </body>
