@@ -17,3 +17,4 @@ UPDATE events SET action = 'Envoi d''un email' WHERE action = 'Email « Nouveau
 UPDATE events SET action = 'Envoi email d''information de transmission' WHERE action = 'Email « Signalement consulté » envoyé au consommateur';
 UPDATE events SET action = 'Envoi email de la réponse pro' WHERE action = 'Email « L''entreprise a répondu à votre signalement » envoyé au consommateur';
 UPDATE events SET action = 'Relance' WHERE action = 'Email « Nouveau signalement non consulté » envoyé au professionnel';
+
