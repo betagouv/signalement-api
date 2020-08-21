@@ -8,6 +8,7 @@ import javax.inject.{Inject, Named}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import actors.EmailActor
+import actors.UploadActor
 import models.Event._
 import models.ReportResponse._
 import models._
@@ -33,6 +34,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    websiteRepository: WebsiteRepository,
                                    mailerService: MailerService,
                                    @Named("email-actor") emailActor: ActorRef,
+                                   @Named("upload-actor") uploadActor: ActorRef,
                                    s3Service: S3Service,
                                    configuration: Configuration)
                                    (implicit val executionContext: ExecutionContext) {
@@ -237,6 +239,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } else {
       Future(report)
     }
+  }
+
+  def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] = {
+    (uploadActor ? UploadActor.Request(filename, file, origin)).mapTo[Future[ReportFile]].flatten
   }
 
   def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {

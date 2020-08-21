@@ -5,6 +5,7 @@ import java.util.UUID
 
 import akka.stream.alpakka.s3.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
+import java.nio.file.Paths
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
@@ -42,6 +43,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   val BucketName = configuration.get[String]("play.buckets.report")
   implicit val websiteUrl = configuration.get[URI]("play.application.url")
+  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
@@ -123,7 +125,23 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     )
   }
 
-  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
+  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
+    request.body
+      .file("reportFile")
+      .map { reportFile =>
+        val filename = Paths.get(reportFile.filename).getFileName
+        val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_${filename}")
+        reportFile.ref.copyTo(tmpFile)
+        reportOrchestrator.saveReportFile(
+          filename.toString,
+          tmpFile,
+          request.body.dataParts.get("reportFileOrigin").map(o => ReportFileOrigin(o.head)).getOrElse(ReportFileOrigin.CONSUMER)
+        ).map(file => Ok(Json.toJson(file)))
+      }
+      .getOrElse(Future(InternalServerError("Echec de l'upload")))
+  }
+
+  def uploadReportFileOld = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
     val maybeUploadResult =
       request.body.file("reportFile").map {
         case FilePart(key, filename, contentType, multipartUploadResult, _, _) =>
