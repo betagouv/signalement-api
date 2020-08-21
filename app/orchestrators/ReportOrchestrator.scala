@@ -249,7 +249,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           None,
           OffsetDateTime.now(),
           filename,
-          filename, // FIXME
+          file.getName(),
           origin
         )
       )
