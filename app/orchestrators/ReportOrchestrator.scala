@@ -242,7 +242,21 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   }
 
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] = {
-    (uploadActor ? UploadActor.Request(filename, file, origin)).mapTo[Future[ReportFile]].flatten
+    for {
+      reportFile <- reportRepository.createFile(
+        ReportFile(
+          UUID.randomUUID,
+          None,
+          OffsetDateTime.now(),
+          filename,
+          filename, // FIXME
+          origin
+        )
+      )
+    } yield {
+      uploadActor ! UploadActor.Request(reportFile, file)
+      reportFile
+    }
   }
 
   def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {
