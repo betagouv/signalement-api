@@ -97,6 +97,9 @@
   "buildpacks": [
     {
       "url": "heroku/scala"
+    },
+    {
+      "url": "https://github.com/riskmethods/heroku-buildpack-clamav"
     }
   ]
 }
