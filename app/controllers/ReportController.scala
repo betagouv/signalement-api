@@ -3,18 +3,13 @@ package controllers
 import java.net.URI
 import java.util.UUID
 
-import akka.stream.alpakka.s3.MultipartUploadResult
 import com.mohiva.play.silhouette.api.Silhouette
 import java.nio.file.Paths
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
 import play.api.libs.json.{JsError, Json}
-import play.api.libs.streams.Accumulator
-import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Configuration, Logger}
-import play.core.parsers.Multipart
-import play.core.parsers.Multipart.FileInfo
 import repositories._
 import services.{MailerService, S3Service, PDFService}
 import utils.Constants.ActionEvent._
@@ -139,34 +134,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         ).map(file => Ok(Json.toJson(file)))
       }
       .getOrElse(Future(InternalServerError("Echec de l'upload")))
-  }
-
-  def uploadReportFileOld = UnsecuredAction.async(parse.multipartFormData(handleFilePartAwsUploadResult)) { request =>
-    val maybeUploadResult =
-      request.body.file("reportFile").map {
-        case FilePart(key, filename, contentType, multipartUploadResult, _, _) =>
-          (multipartUploadResult, filename)
-      }
-
-    maybeUploadResult.fold(Future(InternalServerError("Echec de l'upload"))) {
-      maybeUploadResult =>
-        reportOrchestrator
-        .addReportFile(
-          maybeUploadResult._2,
-          maybeUploadResult._1.key,
-          request.body.dataParts.get("reportFileOrigin").map(o => ReportFileOrigin(o.head)).getOrElse(ReportFileOrigin.CONSUMER)
-        )
-        .map(file => Ok(Json.toJson(file)))
-      }
-  }
-
-  private def handleFilePartAwsUploadResult: Multipart.FilePartHandler[MultipartUploadResult] = {
-    case FileInfo(partName, filename, contentType, dispositionType) =>
-      val accumulator = Accumulator(s3Service.upload(BucketName, s"${UUID.randomUUID}_${filename}"))
-
-      accumulator map { multipartUploadResult =>
-        FilePart(partName, filename, contentType, multipartUploadResult)
-      }
   }
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>

@@ -55,8 +55,9 @@ class UploadActor @Inject()(configuration: Configuration,
   }
 
   def av_scan(file: java.io.File) = {
-    val scanOutput = Seq("clamscan", "--remove", file.toString).!!
-    logger.debug(scanOutput)
+    val stdout = new StringBuilder
+    val status = Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
+    logger.debug(stdout.toString)
     file.exists
   }
 }
