@@ -39,6 +39,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   val BucketName = configuration.get[String]("play.buckets.report")
   implicit val websiteUrl = configuration.get[URI]("play.application.url")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
+  val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
   private def getProLevel(user: User, report: Option[Report]) =
     report
@@ -123,6 +124,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
     request.body
       .file("reportFile")
+      .filter(f => allowedExtensions.contains(f.filename.toLowerCase.toString.split("\\.").last))
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
         val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_${filename}")
