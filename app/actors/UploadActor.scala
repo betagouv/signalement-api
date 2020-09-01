@@ -33,6 +33,7 @@ class UploadActor @Inject()(configuration: Configuration,
 
   val BucketName = configuration.get[String]("play.buckets.report")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
+  val avScanEnabled = configuration.get[Boolean]("play.upload.avScanEnabled")
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() = {
@@ -43,7 +44,7 @@ class UploadActor @Inject()(configuration: Configuration,
   }
   override def receive = {
     case Request(reportFile: ReportFile, file: java.io.File) => {
-      if (av_scan(file)) {
+      if (!avScanEnabled || av_scan(file)) {
         FileIO.fromPath(file.toPath)
               .to(s3Service.upload(BucketName, reportFile.storageFilename))
               .run()
