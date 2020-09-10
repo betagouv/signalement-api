@@ -72,12 +72,12 @@ select count(1) "Nb avis des 60 derniers jours sur les pages d'info",
 from ratings
 where creation_date >= 'now'::timestamp - '60 days'::interval;
 
---  avis sur les pages d'info dispatché par actions (avis des 60 derniers jours)
-select category "Catégorie", count(1) "Nb avis des 60 derniers jours sur les pages d'info",
+--  avis sur les pages d'info dispatché par actions (avis des 200 derniers jours)
+select category "Catégorie", count(1) "Nb avis des 200 derniers jours sur les pages d'info",
 ((count(1) filter ( where  positive = true))::numeric / count(1) * 100)::numeric(5,2) "% avis positif",
 ((count(1) filter ( where  positive = false))::numeric / count(1) * 100)::numeric(5,2) "% avis négatif"
 from ratings
-where creation_date >= 'now'::timestamp - '60 days'::interval
+where creation_date >= 'now'::timestamp - '200 days'::interval
 group by category;
 
 \o

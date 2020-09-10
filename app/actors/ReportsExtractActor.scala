@@ -37,7 +37,8 @@ object ReportsExtractActor {
                         category: Option[String],
                         status: Option[String],
                         details: Option[String],
-                        hasCompany: Option[Boolean])
+                        hasCompany: Option[Boolean],
+                        tags: List[String] = Nil)
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
@@ -166,7 +167,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).map(e =>
             e.details.validate[ReportResponse].get.consumerDetails
           ))
           .getOrElse("")
@@ -176,7 +177,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).flatMap(e =>
             e.details.validate[ReportResponse].get.dgccrfDetails
           ))
           .getOrElse("")
@@ -231,7 +232,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     for {
       paginatedReports <- reportRepository.getReports(
         0,
-        10000,
+        100000,
         ReportFilter(
           filters.departments,
           None,
@@ -246,7 +247,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany
+          filters.hasCompany,
+          filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
