@@ -27,25 +27,30 @@ case class CompanyData (
                          activitePrincipaleEtablissement: String
                        ) {
 
-  def voie = Option(Seq(numeroVoieEtablissement, typeVoieEtablissement, libelleVoieEtablissement).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 $a2"))
+  def voie =
+    Option(Seq(
+      numeroVoieEtablissement,
+      typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
+      libelleVoieEtablissement
+    ).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 $a2"))
 
   def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 $a2"))
 
-  def toSearchResult = CompanySearchResult(
+  def toSearchResult(activityLabel: Option[String]) = CompanySearchResult(
     SIRET(siret),
     denominationUsuelleEtablissement,
     enseigne1Etablissement,
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 - $a2")).map(Address(_)),
     codePostalEtablissement,
-    activitePrincipaleEtablissement
+    activitePrincipaleEtablissement,
+    activityLabel
   )
 
 }
 
-case class CompanyUnitData (
-                             id: UUID,
-                             siren: String,
-                             denominationUniteLegale: Option[String]
+case class CompanyActivity (
+                             code: String,
+                             label: String
                            )
 
 
@@ -55,9 +60,57 @@ case class CompanySearchResult (
                                  brand: Option[String],
                                  address: Option[Address],
                                  postalCode: Option[String],
-                                 activityLabel: String
+                                 activityCode: String,
+                                 activityLabel: Option[String]
                                )
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
+}
+
+object TypeVoies {
+  val values = Seq(
+    ("ALL", "Allée"),
+    ("AV", "Avenue"),
+    ("BD", "Boulevard"),
+    ("CAR", "Carrefour"),
+    ("CHE", "Chemin"),
+    ("CHS", "Chaussée"),
+    ("CITE", "Cité"),
+    ("COR", "Corniche"),
+    ("CRS", "Cours"),
+    ("DOM", "Domaine"),
+    ("DSC", "Descente"),
+    ("ECA", "Ecart"),
+    ("ESP", "Esplanade"),
+    ("FG", "Faubourg"),
+    ("GR", "Grande Rue"),
+    ("HAM", "Hameau"),
+    ("HLE", "Halle"),
+    ("IMP", "Impasse"),
+    ("LD", "Lieu dit"),
+    ("LOT", "Lotissement"),
+    ("MAR", "Marché"),
+    ("MTE", "Montée"),
+    ("PAS", "Passage"),
+    ("PL", "Place"),
+    ("PLN", "Plaine"),
+    ("PLT", "Plateau"),
+    ("PRO", "Promenade"),
+    ("PRV", "Parvis"),
+    ("QUA", "Quartier"),
+    ("QUAI", "Quai"),
+    ("RES", "Résidence"),
+    ("RLE", "Ruelle"),
+    ("ROC", "Rocade"),
+    ("RPT", "Rond Point"),
+    ("RTE", "Route"),
+    ("RUE", "Rue"),
+    ("SEN", "Sente - Sentier"),
+    ("SQ", "Square"),
+    ("TPL", "Terre-plein"),
+    ("TRA", "Traverse"),
+    ("VLA", "Villa"),
+    ("VLGE", "Village")
+  )
 }

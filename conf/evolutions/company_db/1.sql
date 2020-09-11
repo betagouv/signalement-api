@@ -54,4 +54,10 @@ CREATE TABLE IF NOT EXISTS etablissements  (
     caractereEmployeurEtablissement VARCHAR
 );
 
+
+CREATE TABLE IF NOT EXISTS activites (
+    code VARCHAR,
+    libelle VARCHAR
+)
+
 # --- !Downs

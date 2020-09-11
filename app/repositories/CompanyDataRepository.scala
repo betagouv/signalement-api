@@ -47,20 +47,19 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
 
-  class CompanyUnitDataTable(tag: Tag) extends Table[CompanyUnitData](tag, "uniteslegales") {
-    def id = column[UUID]("id", O.PrimaryKey)
-    def siren = column[String]("siren")
-    def denominationUniteLegale = column[Option[String]]("denominationunitelegale")
+  class CompanyActivityTable(tag: Tag) extends Table[CompanyActivity](tag, "activites") {
+    def code = column[String]("code")
+    def libelle = column[String]("libelle")
 
-    def * = (id, siren, denominationUniteLegale) <> (CompanyUnitData.tupled, CompanyUnitData.unapply)
+    def * = (code, libelle) <> (CompanyActivity.tupled, CompanyActivity.unapply)
   }
 
   val companyDataTableQuery = TableQuery[CompanyDataTable]
-  val companyUnitDataTableQuery = TableQuery[CompanyUnitDataTable]
+  val companyActivityTableQuery = TableQuery[CompanyActivityTable]
 
   private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
-  def search(q: String, postalCode: String): Future[List[CompanyData]] =
+  def search(q: String, postalCode: String): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
       .filter(result => least(
@@ -72,5 +71,12 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
         result.enseigne1Etablissement <-> q)
       )
       .take(10)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
+
+  def searchBySiret(siret: String): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siret === siret)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result.headOption)
 }
