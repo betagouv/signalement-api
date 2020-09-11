@@ -15,6 +15,7 @@ import utils.silhouette.auth.{AuthEnv, WithPermission}
 import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.json.JsonValidationError
 
 @Singleton
 class AccountController @Inject()(
@@ -34,6 +35,7 @@ class AccountController @Inject()(
 
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  implicit val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
     request.body.validate[PasswordChange].fold(
@@ -77,7 +79,9 @@ class AccountController @Inject()(
       errors => {
         Future.successful(BadRequest(JsError.toJson(errors)))
       },
-      email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
+      email => if (email.value.endsWith(ccrfEmailSuffix))
+                  accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
+               else Future(Forbidden(s"Email invalide. Email acceptés : *${ccrfEmailSuffix}"))
     )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>
