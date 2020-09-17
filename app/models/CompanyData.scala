@@ -32,15 +32,16 @@ case class CompanyData (
       numeroVoieEtablissement,
       typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
       libelleVoieEtablissement
-    ).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 $a2"))
+    ).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
 
-  def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 $a2"))
+
+  def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
 
   def toSearchResult(activityLabel: Option[String]) = CompanySearchResult(
     SIRET(siret),
     denominationUsuelleEtablissement,
-    enseigne1Etablissement,
-    Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.reduce((a1, a2) => s"$a1 - $a2")).map(Address(_)),
+    enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
+    Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement,
     activityLabel
