@@ -180,6 +180,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def companiesToActivate(): Future[List[(AccessToken, Company)]] =
     db.run(AccessTokenTableQuery
       .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .filter(_._1.creationDate < OffsetDateTime.now.minus(java.time.Duration.ofDays(1)))
       .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_._1.valid)
       .filter(_._1.kind === TokenKind.COMPANY_INIT)
