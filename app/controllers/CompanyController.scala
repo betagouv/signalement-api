@@ -1,41 +1,48 @@
 package controllers
 
 import java.net.URI
-
 import java.time.OffsetDateTime
-import javax.inject.{Inject, Singleton}
 import java.util.UUID
-import repositories._
-import models._
-import orchestrators.AccessesOrchestrator
-import play.api.Configuration
-import play.api.libs.json._
-import scala.concurrent.{ExecutionContext, Future}
+
 import com.mohiva.play.silhouette.api.Silhouette
+import javax.inject.{Inject, Singleton}
+import models._
+import play.api.libs.json._
+import play.api.libs.ws._
+import play.api.{Configuration, Logger}
+import repositories._
 import services.PDFService
-import utils.silhouette.auth.{AuthEnv, WithRole, WithPermission}
 import utils.Constants.{ActionEvent, EventType}
+import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 import utils.{EmailAddress, SIRET}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
 class CompanyController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
+                                val companyDataRepository: CompanyDataRepository,
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
                                 val pdfService: PDFService,
                                 val silhouette: Silhouette[AuthEnv],
-                                val configuration: Configuration
+                                val configuration: Configuration,
+                                ws: WSClient
                               )(implicit ec: ExecutionContext)
  extends BaseCompanyController {
+
+
+  val logger: Logger = Logger(this.getClass)
+
   val reportReminderByPostDelay = java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
   val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
-  def findCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def searchRegisteredCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       companies <- q match {
         case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
@@ -43,6 +50,20 @@ class CompanyController @Inject()(
         case q => companyRepository.findByName(q)
       }
     } yield Ok(Json.toJson(companies))
+  }
+
+  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompany $postalCode $q")
+    companyDataRepository.search(q, postalCode).map(results =>
+      Ok(Json.toJson(results.map(result => result._1.toSearchResult(result._2.map(_.label)))))
+    )
+  }
+
+  def searchCompanyBySiret(siret: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompanyBySiret $siret")
+    companyDataRepository.searchBySiret(siret).map(results =>
+      Ok(Json.toJson(results.map(result => result._1.toSearchResult(result._2.map(_.label)))))
+    )
   }
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
