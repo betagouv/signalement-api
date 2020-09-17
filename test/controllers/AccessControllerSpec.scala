@@ -168,7 +168,7 @@ The invitation workflow should
         "id"                -> invitationToken.id.toString,
         "level"             -> "member",
         "emailedTo"         -> invitedEmail,
-        "expirationDate"    -> invitationToken.expirationDate.get.toString
+        "expirationDate"    -> invitationToken.expirationDate.get.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
       )))
     )
   }
