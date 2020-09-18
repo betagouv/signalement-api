@@ -16,6 +16,9 @@
     "BUCKETS_REPORT": {
       "required": true
     },
+    "COMPANY_DATABASE_URL": {
+      "required": true
+    },
     "EVOLUTIONS_AUTO_APPLY": {
       "required": true
     },
