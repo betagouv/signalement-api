@@ -27,6 +27,7 @@ case class DraftReport(
                         contactAgreement: Boolean,
                         employeeConsumer: Boolean,
                         fileIds: List[UUID],
+                        contractualDispute: Boolean,
                         tags: List[String] = Nil
                       ) {
 
@@ -50,6 +51,7 @@ case class DraftReport(
       contactAgreement,
       employeeConsumer,
       NA,
+      contractualDispute,
       tags
     )
     report.copy(status = report.initialStatus)
@@ -79,6 +81,7 @@ case class Report(
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
                    status: ReportStatusValue,
+                   contractualDispute: Boolean,
                    tags: List[String] = Nil
                  ) {
 
