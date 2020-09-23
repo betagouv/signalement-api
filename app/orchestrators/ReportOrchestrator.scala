@@ -135,11 +135,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         recipients = Seq(report.email),
         subject = "Votre signalement",
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filterNot(_ => report.employeeConsumer) ++
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filterNot(_ => report.employeeConsumer || report.consumerActionsId.isDefined) ++
           Seq(
             AttachmentFile("LetteRecommandee_Modele.txt", environment.getFile("/appfiles/registeredPostTemplate.txt")),
             AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), List.empty, files)), "application/pdf")
-          ).filter(_ => report.contractualDispute)
+          ).filter(_ => report.consumerActionsId.isDefined)
       )
       logger.debug(s"Report ${report.id} created")
       report

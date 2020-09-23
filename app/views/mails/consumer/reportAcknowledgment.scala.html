@@ -1,7 +1,8 @@
 @import utils.EmailAddress
-@(report: Report, files: List[ReportFile])
-
 @import utils.Constants.ReportStatus._
+@import java.net.URI
+@(report: Report, files: List[ReportFile])(implicit websiteUrl: URI)
+
 
 @views.html.mails.layout("Votre signalement") {
 
@@ -21,6 +22,23 @@
             </p>
             <p>
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
+            </p>
+        }
+        case _ if report.consumerActionsId.isDefined => {
+            <p>
+                Vous avez signalé un problème personnel avec l’entreprise @report.companyName sur SignalConso.
+            </p>
+            <p>
+                Pour augmenter vos chances d’obtenir réparation, vous pouvez dès aujourd’hui envoyer un recommandé au service client de l’entreprise, en y joignant les deux documents ci-joint :
+            </p>
+            <ul>
+                <li>une lettre type à compléter</li>
+                <li>votre signalement au format PDF</li>
+            </ul>
+            <p style="text-align: center; padding: 20px">
+                <a href="@websiteUrl.resolve(s"/litige/${report.consumerActionsId.get}")" class="btn">
+                    Découvrir mes démarches
+                </a>
             </p>
         }
         case _ if report.companyId.isDefined => {
@@ -69,72 +87,74 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">Détail du signalement</div>
+    @if(!report.consumerActionsId.isDefined) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">Détail du signalement</div>
 
-        <b>Problème</b>
-        <br/>
-        @report.category
-        <br />
-        @report.subcategories.map {subcategory =>
-            @subcategory
+            <b>Problème</b>
+            <br/>
+            @report.category
             <br />
-        }
-
-        <br />
-        <b>Description</b>
-        <br/>
-        @report.details.map { detailInputValue =>
-            @Html(detailInputValue.label) @Html(detailInputValue.value)
-            <br/>
-        }
-
-        @if(files.length > 0) {
-            <br/>
-            Pièces jointes :
-            <ul>
-            @files.map { file =>
-                <li>
-                    @file.filename
-                </li>
+            @report.subcategories.map { subcategory =>
+                @subcategory
+                <br />
             }
-            </ul>
-        } else {
+
             <br />
-        }
-
-        <b>Entreprise</b>
-        <br/>
-        @if(report.companyAddress.isDefined) {
-        @report.companyAddress.get
-        <br/>
-        }
-        @if(report.websiteURL.isDefined) {
-        Site internet : @report.shortURL.get
-        <br/>
-        }
-
-        <br />
-        <b>Consommateur</b>
-        <br/>
-        Nom : @report.lastName
-        <br />
-        Prénom : @report.firstName
-        <br />
-        Email : @report.email
-        <br/>
-        @if(!report.employeeConsumer) {
-            Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            <b>Description</b>
             <br/>
-        }
-    </div>
+            @report.details.map { detailInputValue =>
+                @Html(detailInputValue.label) @Html(detailInputValue.value)
+                <br/>
+            }
 
-    @if(!report.employeeConsumer) {
+            @if(files.length > 0) {
+                <br/>
+                Pièces jointes :
+                <ul>
+                @files.map { file =>
+                    <li>
+                        @file.filename
+                    </li>
+                }
+                </ul>
+            } else {
+                <br />
+            }
+
+            <b>Entreprise</b>
+            <br/>
+            @if(report.companyAddress.isDefined) {
+                @report.companyAddress.get
+                <br/>
+            }
+            @if(report.websiteURL.isDefined) {
+                Site internet : @report.shortURL.get
+                <br/>
+            }
+
+            <br />
+            <b>Consommateur</b>
+            <br/>
+            Nom : @report.lastName
+            <br />
+            Prénom : @report.firstName
+            <br />
+            Email : @report.email
+            <br/>
+            @if(!report.employeeConsumer) {
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+                <br/>
+            }
+        </div>
+    }
+
+    @if(!report.employeeConsumer && !report.consumerActionsId.isDefined) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;
