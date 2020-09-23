@@ -1,7 +1,7 @@
 -- !Ups
 
-ALTER TABLE reports ADD COLUMN contractual_dispute BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE reports ADD COLUMN consumer_actions_id VARCHAR;
 
 -- !Downs
 
-ALTER TABLE reports DROP COLUMN contractual_dispute;
+ALTER TABLE reports DROP COLUMN consumer_actions_id;
