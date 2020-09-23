@@ -11,6 +11,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
 import models._
 import play.api.{Configuration, Logger}
+import play.api.libs.json.Json
 import repositories._
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 import utils.{Address, EmailAddress, EmailSubjects, SIRET}
@@ -96,42 +97,42 @@ class AdminController @Inject()(reportRepository: ReportRepository,
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  private def genContent(templateRef: String): Option[EmailContent] = {
-    templateRef match {
-      case "reset_password" => Some(EmailContent(EmailSubjects.RESET_PASSWORD, views.html.mails.resetPassword(genUser, genAuthToken)))
-      case "new_company_access" => {
-        val company = genCompany
-        Some(EmailContent(EmailSubjects.NEW_COMPANY_ACCESS(company.name), views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, None)))
-      }
-      case "pro_access_invitation" => {
-        val company = genCompany
-        Some(EmailContent(
-          EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
-          views.html.mails.professional.companyAccessInvitation(dummyURL, company, None)
-        ))
-      }
-      case "dgccrf_access_link" => Some(EmailContent(EmailSubjects.DGCCRF_ACCESS_LINK, views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc"))))
-      case "pro_report_notification" => Some(EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport)))
-      case "admin_report_notification" => {
-        val report = genReport
-        Some(EmailContent(EmailSubjects.ADMIN_NEW_REPORT(report.category), views.html.mails.professional.reportNotification(report)))
-      }
-      case "consumer_report_ack" => Some(EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil)))
-      case "report_transmitted" => Some(EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport)))
-      case "report_ack_pro" => Some(EmailContent(EmailSubjects.REPORT_ACK_PRO, views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser)))
-      case "report_ack_pro_consumer" => Some(EmailContent(EmailSubjects.REPORT_ACK_PRO_CONSUMER, views.html.mails.consumer.reportToConsumerAcknowledgmentPro(genReport, genReportResponse, websiteUrl.resolve(s"/suivi-des-signalements/abc/avis"))))
-      case "report_ack_pro_admin" => Some(EmailContent(EmailSubjects.REPORT_ACK_PRO_ADMIN("test cat"), views.html.mails.admin.reportToAdminAcknowledgmentPro(genReport, genReportResponse)))
-      case "report_unread_reminder" => Some(EmailContent(EmailSubjects.REPORT_UNREAD_REMINDER, views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10))))
-      case "report_transmitted_reminder" => Some(EmailContent(EmailSubjects.REPORT_TRANSMITTED_REMINDER, views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10))))
-      case "report_closed_no_reading" => Some(EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport)))
-      case "report_closed_no_action" => Some(EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport)))
-      case "report_notif_dgccrf" => Some(EmailContent(EmailSubjects.REPORT_NOTIF_DGCCRF(1), views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))))
-      case _ => None
-    }
-  }
+  val availableEmails = Map[String, () => EmailContent](
+    "reset_password" -> (() => EmailContent(EmailSubjects.RESET_PASSWORD, views.html.mails.resetPassword(genUser, genAuthToken))),
+    "new_company_access" -> (() => {
+      val company = genCompany
+      EmailContent(EmailSubjects.NEW_COMPANY_ACCESS(company.name), views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, None))
+    }),
+    "pro_access_invitation" -> (() => {
+      val company = genCompany
+      EmailContent(
+        EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
+        views.html.mails.professional.companyAccessInvitation(dummyURL, company, None)
+      )
+    }),
+    "dgccrf_access_link" -> (() => EmailContent(EmailSubjects.DGCCRF_ACCESS_LINK, views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc")))),
+    "pro_report_notification" -> (() => EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))),
+    "admin_report_notification" -> (() => {
+      val report = genReport
+      EmailContent(EmailSubjects.ADMIN_NEW_REPORT(report.category), views.html.mails.professional.reportNotification(report))
+    }),
+    "consumer_report_ack" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))),
+    "report_transmitted" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))),
+    "report_ack_pro" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO, views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser))),
+    "report_ack_pro_consumer" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_CONSUMER, views.html.mails.consumer.reportToConsumerAcknowledgmentPro(genReport, genReportResponse, websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")))),
+    "report_ack_pro_admin" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_ADMIN("test cat"), views.html.mails.admin.reportToAdminAcknowledgmentPro(genReport, genReportResponse))),
+    "report_unread_reminder" -> (() => EmailContent(EmailSubjects.REPORT_UNREAD_REMINDER, views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10)))),
+    "report_transmitted_reminder" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED_REMINDER, views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10)))),
+    "report_closed_no_reading" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport))),
+    "report_closed_no_action" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport))),
+    "report_notif_dgccrf" -> (() => EmailContent(EmailSubjects.REPORT_NOTIF_DGCCRF(1), views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))))
+  )
 
+  def getEmailCodes = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    Future(Ok(Json.toJson(availableEmails.keys)))
+  }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    Future(genContent(templateRef).map{case EmailContent(subject, body) =>
+    Future(availableEmails.get(templateRef).map(_.apply).map{case EmailContent(subject, body) =>
       emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
           recipients = Seq(EmailAddress(to)),

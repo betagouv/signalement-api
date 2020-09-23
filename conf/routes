@@ -42,6 +42,8 @@ GET          /api/companies/:siret/events               controllers.ReportContro
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
 # Admin API
+
+GET          /api/admin/test-email                      controllers.AdminController.getEmailCodes
 POST         /api/admin/test-email                      controllers.AdminController.sendTestEmail(templateRef, to)
 
 # Async files API
