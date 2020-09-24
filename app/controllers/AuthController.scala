@@ -17,7 +17,7 @@ import play.api.libs.json.{JsError, JsPath, Json}
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
-import utils.EmailAddress
+import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -93,7 +93,7 @@ class AuthController @Inject()(
     emailActor ? EmailActor.EmailRequest(
       from = configuration.get[EmailAddress]("play.mail.from"),
       recipients = Seq(user.email),
-      subject = "Votre mot de passe SignalConso",
+      subject = EmailSubjects.RESET_PASSWORD,
       bodyHtml = views.html.mails.resetPassword(user, authToken).toString
     )
     logger.debug(s"Sent password reset to ${user.email}")
