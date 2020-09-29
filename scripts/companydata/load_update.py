@@ -13,11 +13,11 @@ def iter_csv(path):
 
 def update_sirets_diff(path):
     for d in iter_csv(path):
+        if not d['denominationUsuelleEtablissement']:
+            d['denominationUsuelleEtablissement'] = d['denominationUniteLegale']
+        if not d['activitePrincipaleEtablissement']:
+            d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
         updates = OrderedDict((k, v) for k, v in d.items() if k in SIRET_FIELDS)
-        if not updates['denominationUsuelleEtablissement']:
-            updates['denominationUsuelleEtablissement'] = updates['denominationUniteLegale']
-        if not updates['activitePrincipaleEtablissement']:
-            updates['activitePrincipaleEtablissement'] = updates['activitePrincipaleUniteLegale']
         yield f"""
             INSERT INTO etablissements ({",".join(updates)})
             VALUES ({",".join(f"%({k})s" for k in updates)})
