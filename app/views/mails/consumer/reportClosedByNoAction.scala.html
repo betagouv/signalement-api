@@ -1,6 +1,6 @@
-@(report: Report)
-
+@import java.net.URI
 @import utils.Constants.ReportStatus._
+@(report: Report)(implicit websiteUrl: URI)
 
 @views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
     <p>
@@ -24,17 +24,35 @@
         L'entreprise n'a pas souhaité répondre à votre signalement.
     </p>
 
-    <p>
-        <b>
-            Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement.
-            Ils peuvent décider de contrôler ou de surveiller l'entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
-        </b>
-    </p>
+    @if(report.consumerActionsId.isEmpty) {
+        <p>
+            <b>
+                Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement.
+                Ils peuvent décider de contrôler ou de surveiller l'entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
+            </b>
+        </p>
 
-    <p>
-        Si vous retournez dans cette entreprise et constatez que le problème n'a pas été corrigé, faites un nouveau signalement.
-        Savoir que la situation perdure est un élément important pour les enquêteurs.
-    </p>
+        <p>
+            Si vous retournez dans cette entreprise et constatez que le problème n'a pas été corrigé, faites un nouveau signalement.
+            Savoir que la situation perdure est un élément important pour les enquêteurs.
+        </p>
+    } else {
+        <p>
+            Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation :
+        </p>
+        <ul>
+            <li>Vous pouvez dès aujourd’hui envoyer un recommandé au service client de l’entreprise</li>
+            <li>Si c’est déjà fait et que vous n’avez pas obtenu de réponse depuis deux mois, vous pouvez contacter le médiateur de l’entreprise.</li>
+        </ul>
+        <p style="text-align: center; padding: 20px">
+            <a href="@websiteUrl.resolve(s"/litige/${report.consumerActionsId.get}")" class="btn">
+                Découvrir mes démarches
+            </a>
+        </p>
+        <p>
+            <i>Si vous avez déjà obtenu répération concernant votre litige, vous pouvez ignorer ce message.</i>
+        </p>
+    }
 
     <p>À bientôt sur SignalConso !</p>
 
@@ -42,15 +60,17 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">
-            Comprendre SignalConso
+    @if(report.needWorkflowAttachment) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">
+                Comprendre SignalConso
+            </div>
+            <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
         </div>
-        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
-    </div>
+    }
 }

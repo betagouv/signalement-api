@@ -26,7 +26,9 @@
         }
         case _ if report.consumerActionsId.isDefined => {
             <p>
-                Vous avez signalé un problème individuel (litige) avec l’entreprise @report.companyName sur SignalConso.
+                Vous avez signalé un problème individuel (litige)
+                    @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
+                sur SignalConso.
             </p>
             <p>
                 Pour augmenter vos chances de trouver une solution ou obtenir réparation, vous pouvez dès aujourd’hui envoyer un recommandé au service client de l’entreprise, en y joignant les deux documents ci-joint :
@@ -157,7 +159,7 @@
         </div>
     }
 
-    @if(!report.employeeConsumer && !report.consumerActionsId.isDefined) {
+    @if(report.needWorkflowAttachment) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;

@@ -92,6 +92,8 @@ case class Report(
   }
 
   def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+
+  def needWorkflowAttachment() = !employeeConsumer && consumerActionsId.isEmpty
 }
 
 object Report {
