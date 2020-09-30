@@ -55,6 +55,7 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
+    consumerActionsId = None,
     status = utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
   )
 
