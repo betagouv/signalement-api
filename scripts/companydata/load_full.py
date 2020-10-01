@@ -27,7 +27,7 @@ def iter_queries(path):
             """
         elif args.type == SIREN:
             d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
-            d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
+            # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
             updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
             query = f"""
                 UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
