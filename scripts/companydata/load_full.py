@@ -30,7 +30,7 @@ def iter_queries(path):
             d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
             updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
             query = f"""
-                UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s
+                UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
             """
         yield query, updates
 
