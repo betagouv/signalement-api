@@ -49,7 +49,7 @@ case class DraftReport(
       contactAgreement,
       employeeConsumer,
       NA,
-      tags
+      tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
     )
     report.copy(status = report.initialStatus)
   }
