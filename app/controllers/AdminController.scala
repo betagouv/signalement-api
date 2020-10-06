@@ -20,6 +20,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import java.time.LocalDate
 
+import utils.Constants.Tags
+
 
 @Singleton
 class AdminController @Inject()(reportRepository: ReportRepository,
@@ -55,7 +57,6 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
-    consumerActionsId = None,
     status = utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
   )
 
@@ -118,6 +119,7 @@ class AdminController @Inject()(reportRepository: ReportRepository,
       EmailContent(EmailSubjects.ADMIN_NEW_REPORT(report.category), views.html.mails.professional.reportNotification(report))
     }),
     "consumer_report_ack" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))),
+    "consumer_report_ack_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport.copy(tags = List(Tags.ContractualDispute)), Nil))),
     "report_transmitted" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))),
     "report_ack_pro" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO, views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser))),
     "report_ack_pro_consumer" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_CONSUMER, views.html.mails.consumer.reportToConsumerAcknowledgmentPro(genReport, genReportResponse, websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")))),
@@ -125,7 +127,9 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     "report_unread_reminder" -> (() => EmailContent(EmailSubjects.REPORT_UNREAD_REMINDER, views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10)))),
     "report_transmitted_reminder" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED_REMINDER, views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10)))),
     "report_closed_no_reading" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport))),
+    "report_closed_no_reading_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport.copy(tags = List(Tags.ContractualDispute))))),
     "report_closed_no_action" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport))),
+    "report_closed_no_action_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport.copy(tags = List(Tags.ContractualDispute))))),
     "report_notif_dgccrf" -> (() => EmailContent(EmailSubjects.REPORT_NOTIF_DGCCRF(1), views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))))
   )
 
