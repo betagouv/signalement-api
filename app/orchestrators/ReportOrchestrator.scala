@@ -137,7 +137,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
         attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
           Seq(
-            AttachmentFile("LetteRecommandee_Modele.txt", environment.getFile("/appfiles/registeredPostTemplate.txt")),
             AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), List.empty, files)), "application/pdf")
           ).filter(_ => report.consumerActionsId.isDefined)
       )
