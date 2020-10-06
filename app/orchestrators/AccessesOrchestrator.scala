@@ -45,7 +45,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       userRepository
       .create(User(
         UUID.randomUUID, draftUser.password, email,
-        draftUser.firstName, draftUser.lastName, role))
+        draftUser.firstName, draftUser.lastName, role, None))
       .map(u => {
         log(s"User with id ${u.id} created through token ${accessToken.id}")
         u

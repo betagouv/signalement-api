@@ -80,7 +80,8 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     email = EmailAddress("text@example.com"),
     firstName = "Jeanne",
     lastName = "Dupont",
-    userRole = UserRoles.Admin
+    userRole = UserRoles.Admin,
+    lastEmailValidation = None
   )
 
   private def genAuthToken = AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now.plusDays(10))
