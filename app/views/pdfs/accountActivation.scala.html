@@ -1,6 +1,6 @@
 @import utils.EmailAddress
 @import java.net.URI
-@(company: Company, creationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(company: Company, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit websiteUrl: URI, contactAddress: EmailAddress)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -76,7 +76,7 @@
                 </p>
 
                 <p class="mt-3">
-                    Ce code expirera le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")). Nous vous invitons à procéder à l’activation de votre compte avant cette date. 
+                    Ce code expirera le @expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")). Nous vous invitons à procéder à l’activation de votre compte avant cette date.
                 </p>
 
                 <p>

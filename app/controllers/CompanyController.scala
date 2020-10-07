@@ -159,6 +159,7 @@ class CompanyController @Inject()(
       views.html.pdfs.accountActivation(
         company,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
+        report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
         activationKey
       )
   }
