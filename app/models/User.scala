@@ -28,6 +28,10 @@ case class User (
                  lastEmailValidation: Option[OffsetDateTime]
                ) extends Identity {
   def fullName = s"${firstName} ${lastName}"
+  def shouldValidateEmail = {
+    if (userRole == UserRoles.DGCCRF) lastEmailValidation.filter(_.isBefore(OffsetDateTime.now.minusDays(90))).isDefined
+    else false
+  }
 }
 
 object User {

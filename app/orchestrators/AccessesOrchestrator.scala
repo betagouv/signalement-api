@@ -18,6 +18,7 @@ import utils.{EmailAddress, EmailSubjects, SIRET}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import java.time.Period
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                      accessTokenRepository: AccessTokenRepository,
@@ -177,6 +178,32 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       )
       logger.debug(s"Sent DGCCRF account invitation to ${email}")
       Unit
+    }
+  }
+
+  def sendEmailValidation(user: User): Future[Unit] = {
+    for {
+      token <- accessTokenRepository.createToken(TokenKind.VALIDATE_EMAIL, randomToken, Some(Period.ofDays(1)), None, None, Some(user.email))
+    } yield {
+      val validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
+      emailActor ? EmailActor.EmailRequest(
+        from = mailFrom,
+        recipients = Seq(user.email),
+        subject = EmailSubjects.VALIDATE_EMAIL,
+        bodyHtml = views.html.mails.validateEmail(validationUrl).toString
+      )
+      logger.debug(s"Sent email validation to ${user.email}")
+      Unit
+    }
+  }
+
+  def validateEmail(token: AccessToken): Future[Boolean] = {
+    for {
+      u <- userRepository.findByLogin(token.emailedTo.map(_.toString).get)
+      applied <- u.map(accessTokenRepository.useEmailValidationToken(token, _)).getOrElse(Future(false))
+    } yield {
+      logger.debug(s"Validated email ${token.emailedTo.get}")
+      applied
     }
   }
 }

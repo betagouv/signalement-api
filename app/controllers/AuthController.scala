@@ -14,6 +14,7 @@ import javax.inject.{Inject, Named, Singleton}
 import models.{AuthToken, User, UserLogin}
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
+import orchestrators.AccessesOrchestrator
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
@@ -25,6 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class AuthController @Inject()(
                                 val silhouette: Silhouette[AuthEnv],
+                                accessesOrchestrator: AccessesOrchestrator,
                                 userRepository: UserRepository,
                                 authTokenRepository: AuthTokenRepository,
                                 userService: UserService,
@@ -50,6 +52,7 @@ class AuthController @Inject()(
           response <- if (attempts > 15) Future(Forbidden) else
                       credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
                         userService.retrieve(loginInfo).flatMap {
+                          case Some(user) if user.shouldValidateEmail => accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
                           case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
                             silhouette.env.eventBus.publish(LoginEvent(user, request))
                             silhouette.env.authenticatorService.init(authenticator).map { token =>
@@ -68,7 +71,6 @@ class AuthController @Inject()(
       }
     )
   }
-
 
   def forgotPassword = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[String]((JsPath \ "login").read[String]).fold(

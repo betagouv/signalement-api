@@ -113,4 +113,19 @@ class AccountController @Inject()(
       Ok(Json.toJson(TokenInfo(t.token, t.kind, None, t.emailedTo)))
     ).getOrElse(NotFound)
   }
+  def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>
+    request.body.validate[String]((JsPath \ "token").read[String]).fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      token =>
+        for {
+          accessToken <- accessTokenRepository.findToken(token)
+          applied     <- accessToken.filter(_.kind == TokenKind.VALIDATE_EMAIL)
+                                    .map(
+                                      accessesOrchestrator.validateEmail(_).map(_ => true)
+                                    ).getOrElse(Future(false))
+        } yield if (applied) Ok else NotFound
+    )
+  }
 }
