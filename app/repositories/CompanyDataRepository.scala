@@ -24,7 +24,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def id = column[UUID]("id", O.PrimaryKey)
     def siret = column[String]("siret")
     def siren = column[String]("siren")
-    def dateDernierTraitementEtablissement = column[String]("datederniertraitementetablissement")
+    def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
     def complementAdresseEtablissement = column[Option[String]]("complementadresseetablissement")
     def numeroVoieEtablissement = column[Option[String]]("numerovoieetablissement")
     def indiceRepetitionEtablissement = column[Option[String]]("indicerepetitionetablissement")
@@ -62,6 +62,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   def search(q: String, postalCode: String): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
       .filter(result => least(
         result.denominationUsuelleEtablissement <-> q,
         result.enseigne1Etablissement <-> q
@@ -77,6 +78,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   def searchBySiret(siret: String): Future[Option[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)
 }
