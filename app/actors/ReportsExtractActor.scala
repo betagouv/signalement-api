@@ -31,6 +31,7 @@ object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
 
   case class RawFilters(departments: List[String],
+                        email: Option[String],
                         siret: Option[String],
                         start: Option[String],
                         end: Option[String],
@@ -235,7 +236,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         100000,
         ReportFilter(
           filters.departments,
-          None,
+          filters.email,
           restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
           None,
           startDate,
