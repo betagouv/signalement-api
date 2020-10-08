@@ -1,7 +1,7 @@
 package controllers
 
 import java.net.URI
-import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.{Silhouette, LoginEvent, LoginInfo}
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
@@ -121,11 +121,15 @@ class AccountController @Inject()(
       token =>
         for {
           accessToken <- accessTokenRepository.findToken(token)
-          applied     <- accessToken.filter(_.kind == TokenKind.VALIDATE_EMAIL)
-                                    .map(
-                                      accessesOrchestrator.validateEmail(_).map(_ => true)
-                                    ).getOrElse(Future(false))
-        } yield if (applied) Ok else NotFound
+          oUser       <- accessToken.filter(_.kind == TokenKind.VALIDATE_EMAIL)
+                                    .map(accessesOrchestrator.validateEmail(_)).getOrElse(Future(None))
+          authToken   <- oUser.map(user =>
+            silhouette.env.authenticatorService.create(LoginInfo(CredentialsProvider.ID, user.email.toString)).flatMap { authenticator =>
+              silhouette.env.eventBus.publish(LoginEvent(user, request))
+              silhouette.env.authenticatorService.init(authenticator).map(Some(_))
+            }
+          ).getOrElse(Future(None))
+        } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
     )
   }
 }

@@ -197,13 +197,13 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
     }
   }
 
-  def validateEmail(token: AccessToken): Future[Boolean] = {
+  def validateEmail(token: AccessToken): Future[Option[User]] = {
     for {
       u <- userRepository.findByLogin(token.emailedTo.map(_.toString).get)
-      applied <- u.map(accessTokenRepository.useEmailValidationToken(token, _)).getOrElse(Future(false))
+      _ <- u.map(accessTokenRepository.useEmailValidationToken(token, _)).getOrElse(Future(false))
     } yield {
       logger.debug(s"Validated email ${token.emailedTo.get}")
-      applied
+      u
     }
   }
 }
