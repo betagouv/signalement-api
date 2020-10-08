@@ -11,7 +11,7 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Named, Singleton}
-import models.{AuthToken, User, UserLogin}
+import models._
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
 import orchestrators.AccessesOrchestrator
@@ -41,6 +41,7 @@ class AuthController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  implicit val dgccrfEmailValidation = java.time.Period.parse(configuration.get[String]("play.tokens.dgccrfEmailValidation"))
 
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[UserLogin].fold(
@@ -52,7 +53,9 @@ class AuthController @Inject()(
           response <- if (attempts > 15) Future(Forbidden) else
                       credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
                         userService.retrieve(loginInfo).flatMap {
-                          case Some(user) if user.shouldValidateEmail => accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
+                          case Some(user) if (user.userRole == UserRoles.DGCCRF
+                                           && user.lastEmailValidation.filter(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))).isDefined)
+                                          => accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
                           case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
                             silhouette.env.eventBus.publish(LoginEvent(user, request))
                             silhouette.env.authenticatorService.init(authenticator).map { token =>
