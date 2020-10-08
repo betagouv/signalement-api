@@ -46,7 +46,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       userRepository
       .create(User(
         UUID.randomUUID, draftUser.password, email,
-        draftUser.firstName, draftUser.lastName, role, None))
+        draftUser.firstName, draftUser.lastName, role, Some(OffsetDateTime.now)))
       .map(u => {
         log(s"User with id ${u.id} created through token ${accessToken.id}")
         u
@@ -91,7 +91,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
           None,
           t.companyId,
           user.map(_.id),
-          Some(OffsetDateTime.now()),
+          Some(OffsetDateTime.now),
           EventType.PRO,
           ActionEvent.ACCOUNT_ACTIVATION,
           stringToDetailsJsValue(s"Email du compte : ${t.emailedTo.getOrElse("")}")
