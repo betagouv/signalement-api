@@ -36,23 +36,23 @@ body, div {
 
 .logo-marianne {
     position: absolute;
-    top: 0cm;
-    text-align: center;
+    left: 0.5cm;
+    top: 0.7cm;
     width: 100%;
 }
 
 .logo-marianne > img {
-    height: 1.8cm;
+    height: 3.2cm;
 }
 
 .logo-sc {
     position: absolute;
-    top: 2.5cm;
-    left: 3.2cm;
+    left: 14.85cm;
+    top: 0.7cm;
 }
 
 .logo-sc > img {
-    height: 1.7cm;
+    height: 1.5cm;
 }
 
 .sender {
@@ -83,6 +83,8 @@ body, div {
 .content {
     position: absolute;
     top: 8cm;
+    left: 0.5cm;
+    right: 0.5cm;
     float: left;
     text-align: justify;
 }
