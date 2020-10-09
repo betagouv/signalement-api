@@ -221,7 +221,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_READING,
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
       )
       Reminder(report.id, ReminderValue.CloseUnreadReport)
     }
@@ -266,7 +266,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }

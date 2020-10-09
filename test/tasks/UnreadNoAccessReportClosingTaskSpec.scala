@@ -1,5 +1,6 @@
 package tasks
 
+import java.net.URI
 import java.time.{LocalDate, LocalDateTime, OffsetDateTime, ZoneOffset}
 import java.util.UUID
 
@@ -10,12 +11,13 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
+import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.{ActionEvent, ReportStatus}
-import utils.Constants.ActionEvent.{ActionEventValue, POST_ACCOUNT_ACTIVATION_DOC, EMAIL_PRO_REMIND_NO_READING}
+import utils.Constants.ActionEvent.{ActionEventValue, EMAIL_PRO_REMIND_NO_READING, POST_ACCOUNT_ACTIVATION_DOC}
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.{ReportStatusValue, TRAITEMENT_EN_COURS}
 import utils.EmailAddress
@@ -54,6 +56,8 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
 
 
 abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with Mockito with FutureMatchers {
+
+  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
 
   implicit val ec = ee.executionContext
 

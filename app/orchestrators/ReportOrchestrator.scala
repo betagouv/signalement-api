@@ -12,9 +12,10 @@ import models.Event._
 import models.ReportResponse._
 import models._
 import play.api.libs.json.Json
-import play.api.{Configuration, Logger}
+import play.api.libs.mailer.{AttachmentData, AttachmentFile}
+import play.api.{Configuration, Environment, Logger}
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
@@ -29,12 +30,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    eventRepository: EventRepository,
-                                   userRepository: UserRepository,
                                    websiteRepository: WebsiteRepository,
                                    mailerService: MailerService,
+                                   pdfService: PDFService,
                                    @Named("email-actor") emailActor: ActorRef,
                                    s3Service: S3Service,
-                                   configuration: Configuration)
+                                   configuration: Configuration,
+                                   environment: Environment)
                                    (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -110,7 +112,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
         else Future(report)
       }
-      _ <- eventRepository.createEvent(
+      event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -133,7 +135,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_ACK,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filterNot(_ => report.employeeConsumer)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
+          Seq(
+            AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), List.empty, files)), "application/pdf")
+          ).filter(_ => report.isContractualDispute)
       )
       logger.debug(s"Report ${report.id} created")
       report
