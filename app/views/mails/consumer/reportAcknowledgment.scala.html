@@ -1,7 +1,8 @@
 @import utils.EmailAddress
-@(report: Report, files: List[ReportFile])
-
 @import utils.Constants.ReportStatus._
+@import java.net.URI
+@(report: Report, files: List[ReportFile])(implicit websiteUrl: URI)
+
 
 @views.html.mails.layout("Votre signalement") {
 
@@ -21,6 +22,24 @@
             </p>
             <p>
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
+            </p>
+        }
+        case _ if report.isContractualDispute => {
+            <p>
+                Vous avez signalé un problème individuel (litige)
+                    @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
+                sur SignalConso.
+            </p>
+            <p>
+                Pour augmenter vos chances de trouver une solution ou obtenir réparation, nous vous conseillons de commencer des démarches individuelles en parallèle.
+            </p>
+            <p>
+                Vous trouverez en pièce jointe votre signalement au format PDF qui vous sera utile.
+            </p>
+            <p style="text-align: center; padding: 20px">
+                <a href="@websiteUrl.resolve("/litige")" class="btn">
+                    Commencer mes démarches
+                </a>
             </p>
         }
         case _ if report.companyId.isDefined => {
@@ -69,72 +88,74 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">Détail du signalement</div>
+    @if(!report.isContractualDispute) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">Détail du signalement</div>
 
-        <b>Problème</b>
-        <br/>
-        @report.category
-        <br />
-        @report.subcategories.map {subcategory =>
-            @subcategory
+            <b>Problème</b>
+            <br/>
+            @report.category
             <br />
-        }
-
-        <br />
-        <b>Description</b>
-        <br/>
-        @report.details.map { detailInputValue =>
-            @Html(detailInputValue.label) @Html(detailInputValue.value)
-            <br/>
-        }
-
-        @if(files.length > 0) {
-            <br/>
-            Pièces jointes :
-            <ul>
-            @files.map { file =>
-                <li>
-                    @file.filename
-                </li>
+            @report.subcategories.map { subcategory =>
+                @subcategory
+                <br />
             }
-            </ul>
-        } else {
+
             <br />
-        }
-
-        <b>Entreprise</b>
-        <br/>
-        @if(report.companyAddress.isDefined) {
-        @report.companyAddress.get
-        <br/>
-        }
-        @if(report.websiteURL.isDefined) {
-        Site internet : @report.shortURL.get
-        <br/>
-        }
-
-        <br />
-        <b>Consommateur</b>
-        <br/>
-        Nom : @report.lastName
-        <br />
-        Prénom : @report.firstName
-        <br />
-        Email : @report.email
-        <br/>
-        @if(!report.employeeConsumer) {
-            Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            <b>Description</b>
             <br/>
-        }
-    </div>
+            @report.details.map { detailInputValue =>
+                @Html(detailInputValue.label) @Html(detailInputValue.value)
+                <br/>
+            }
 
-    @if(!report.employeeConsumer) {
+            @if(files.length > 0) {
+                <br/>
+                Pièces jointes :
+                <ul>
+                @files.map { file =>
+                    <li>
+                        @file.filename
+                    </li>
+                }
+                </ul>
+            } else {
+                <br />
+            }
+
+            <b>Entreprise</b>
+            <br/>
+            @if(report.companyAddress.isDefined) {
+                @report.companyAddress.get
+                <br/>
+            }
+            @if(report.websiteURL.isDefined) {
+                Site internet : @report.shortURL.get
+                <br/>
+            }
+
+            <br />
+            <b>Consommateur</b>
+            <br/>
+            Nom : @report.lastName
+            <br />
+            Prénom : @report.firstName
+            <br />
+            Email : @report.email
+            <br/>
+            @if(!report.employeeConsumer) {
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+                <br/>
+            }
+        </div>
+    }
+
+    @if(report.needWorkflowAttachment) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;

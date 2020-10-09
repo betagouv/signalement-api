@@ -29,8 +29,6 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
                                  companyRepository: CompanyRepository,
                                  reportRepository: ReportRepository,
                                  eventRepository: EventRepository,
-                                 userRepository: UserRepository,
-                                 mailerService: MailerService,
                                  s3Service: S3Service,
                                  pdfService: PDFService,
                                  val silhouette: Silhouette[AuthEnv],
@@ -196,6 +194,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {

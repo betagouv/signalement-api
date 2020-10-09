@@ -68,11 +68,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[SIRET], Option[UUID], Option[URL], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, List[String])
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[SIRET], Option[UUID], Option[URL],
+      OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, List[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
-        Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId, 
+      case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
+      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
+        Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId,
           websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), tags)
     }
 
