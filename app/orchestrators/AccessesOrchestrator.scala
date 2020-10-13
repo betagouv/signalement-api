@@ -18,7 +18,7 @@ import utils.{EmailAddress, EmailSubjects, SIRET}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import java.time.Period
+import java.time.Duration
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                      accessTokenRepository: AccessTokenRepository,
@@ -181,7 +181,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
 
   def sendEmailValidation(user: User): Future[Unit] = {
     for {
-      token <- accessTokenRepository.createToken(TokenKind.VALIDATE_EMAIL, randomToken, Some(Period.ofDays(1)), None, None, Some(user.email))
+      token <- accessTokenRepository.createToken(TokenKind.VALIDATE_EMAIL, randomToken, Some(Duration.ofHours(1)), None, None, Some(user.email))
     } yield {
       val validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
       emailActor ? EmailActor.EmailRequest(
