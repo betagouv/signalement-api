@@ -259,19 +259,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {
-    reportRepository.createFile(
-      ReportFile(
-        UUID.randomUUID,
-        None,
-        OffsetDateTime.now(),
-        filename,
-        storageFilename,
-        origin
-      )
-    )
-  }
-
   def removeReportFile(id: UUID) =
     for {
       reportFile <- reportRepository.getFile(id)
