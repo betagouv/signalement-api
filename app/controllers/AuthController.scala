@@ -54,7 +54,7 @@ class AuthController @Inject()(
                       credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
                         userService.retrieve(loginInfo).flatMap {
                           case Some(user) if (user.userRole == UserRoles.DGCCRF
-                                           && user.lastEmailValidation.filter(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))).isDefined)
+                                           && user.lastEmailValidation.exists(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))))
                                           => accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
                           case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
                             silhouette.env.eventBus.publish(LoginEvent(user, request))

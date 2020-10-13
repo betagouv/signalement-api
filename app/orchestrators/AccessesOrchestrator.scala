@@ -162,7 +162,6 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
       logger.debug(s"Token sent to ${email} for company ${company.id}")
-      Unit
     })
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] = {
@@ -177,7 +176,6 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
       )
       logger.debug(s"Sent DGCCRF account invitation to ${email}")
-      Unit
     }
   }
 
@@ -193,7 +191,6 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
         bodyHtml = views.html.mails.validateEmail(validationUrl).toString
       )
       logger.debug(s"Sent email validation to ${user.email}")
-      Unit
     }
   }
 
