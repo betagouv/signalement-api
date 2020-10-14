@@ -27,7 +27,7 @@ object Fixtures {
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
-    } yield User(id, password, email, firstName, lastName, userRole)
+    } yield User(id, password, email, firstName, lastName, userRole, None)
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")

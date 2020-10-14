@@ -5,6 +5,7 @@ object EmailSubjects {
     val NEW_COMPANY_ACCESS = (companyName: String) => s"Vous avez maintenant accès à l'entreprise ${companyName} sur SignalConso"
     val COMPANY_ACCESS_INVITATION = (companyName: String) => s"Rejoignez l'entreprise ${companyName} sur SignalConso"
     val DGCCRF_ACCESS_LINK = "Votre accès DGCCRF sur SignalConso"
+    val VALIDATE_EMAIL = "Veuillez valider cette adresse email"
     val NEW_REPORT = "Nouveau signalement"
     val ADMIN_NEW_REPORT = (category: String) => s"Nouveau signalement [${category}]"
     val REPORT_ACK = "Votre signalement"

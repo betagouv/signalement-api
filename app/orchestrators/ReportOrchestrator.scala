@@ -8,6 +8,7 @@ import javax.inject.{Inject, Named}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import actors.EmailActor
+import actors.UploadActor
 import models.Event._
 import models.ReportResponse._
 import models._
@@ -34,6 +35,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    mailerService: MailerService,
                                    pdfService: PDFService,
                                    @Named("email-actor") emailActor: ActorRef,
+                                   @Named("upload-actor") uploadActor: ActorRef,
                                    s3Service: S3Service,
                                    configuration: Configuration,
                                    environment: Environment)
@@ -244,17 +246,22 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {
-    reportRepository.createFile(
-      ReportFile(
-        UUID.randomUUID,
-        None,
-        OffsetDateTime.now(),
-        filename,
-        storageFilename,
-        origin
+  def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] = {
+    for {
+      reportFile <- reportRepository.createFile(
+        ReportFile(
+          UUID.randomUUID,
+          None,
+          OffsetDateTime.now(),
+          filename,
+          file.getName(),
+          origin
+        )
       )
-    )
+    } yield {
+      uploadActor ! UploadActor.Request(reportFile, file)
+      reportFile
+    }
   }
 
   def removeReportFile(id: UUID) =
