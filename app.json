@@ -16,6 +16,9 @@
     "BUCKETS_REPORT": {
       "required": true
     },
+    "COMPANY_DATABASE_URL": {
+      "required": true
+    },
     "EVOLUTIONS_AUTO_APPLY": {
       "required": true
     },
@@ -80,7 +83,7 @@
       "required": true
     },
     "WEBSITE_URL": {
-      "value": "https://signalement-app-pr-312.herokuapp.com"
+      "value": "https://signalement-app-pr-416.herokuapp.com"
     }
   },
   "formation": {

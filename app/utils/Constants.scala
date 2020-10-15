@@ -130,12 +130,14 @@ object Constants {
     object CONSO extends EventTypeValue("CONSO")
     object DGCCRF extends EventTypeValue("DGCCRF")
     object ADMIN extends EventTypeValue("ADMIN")
+    object SYSTEM extends EventTypeValue("SYSTEM")
 
     val eventTypes = Seq(
       PRO,
       CONSO,
       DGCCRF,
-      ADMIN
+      ADMIN,
+      SYSTEM
     )
 
     def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
@@ -160,28 +162,39 @@ object Constants {
       implicit val actionEventValueWriter = Json.writes[ActionEventValue]
     }
 
+    @Deprecated
     object A_CONTACTER extends ActionEventValue("À contacter")
+    @Deprecated
     object HORS_PERIMETRE extends ActionEventValue("Hors périmètre")
-    object CONTACT_EMAIL extends ActionEventValue("Envoi d'un email")
-
-    object CONTACT_COURRIER extends ActionEventValue("Envoi d'un courrier")
-    object ENVOI_SIGNALEMENT extends ActionEventValue("Envoi du signalement")
-    object REPONSE_PRO_SIGNALEMENT extends ActionEventValue("Réponse du professionnel au signalement")
-    object REVIEW_ON_REPORT_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
+    @Deprecated
     object RETOUR_COURRIER extends ActionEventValue("Retour de courrier")
+    @Deprecated
     object REPONSE_PRO_CONTACT extends ActionEventValue("Réponse du professionnel au contact")
-    object NON_CONSULTE extends ActionEventValue("Signalement non consulté")
-    object CONSULTE_IGNORE extends ActionEventValue("Signalement consulté ignoré")
-    object RELANCE extends ActionEventValue("Relance")
-
-    object EMAIL_AR extends ActionEventValue("Envoi email accusé de réception")
+    @Deprecated
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
-    object EMAIL_TRANSMISSION extends ActionEventValue("Envoi email d'information de transmission")
-    object EMAIL_REPONSE_PRO extends ActionEventValue("Envoi email de la réponse pro")
 
-    object MODIFICATION_COMMERCANT extends ActionEventValue("Modification du commerçant")
-    object MODIFICATION_CONSO extends ActionEventValue("Modification du consommateur")
+    object POST_ACCOUNT_ACTIVATION_DOC extends ActionEventValue("Envoi du courrier d'activation")
+    object ACCOUNT_ACTIVATION extends ActionEventValue("Activation d'un compte")
 
+    object REPORT_READING_BY_PRO extends ActionEventValue("Première consultation du signalement par le professionnel")
+    object REPORT_PRO_RESPONSE extends ActionEventValue("Réponse du professionnel au signalement")
+    object REPORT_REVIEW_ON_RESPONSE extends ActionEventValue("Avis du consommateur sur la réponse du professionnel")
+    object REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Signalement non consulté")
+    object REPORT_CLOSED_BY_NO_ACTION extends ActionEventValue("Signalement consulté ignoré")
+
+    object EMAIL_CONSUMER_ACKNOWLEDGMENT extends ActionEventValue("Email « Accusé de réception » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_READING extends ActionEventValue("Email « Signalement consulté » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_RESPONSE extends ActionEventValue("Email « L'entreprise a répondu à votre signalement » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Email « L'entreprise n'a pas souhaité consulter votre signalement » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION extends ActionEventValue("Email « L'entreprise n'a pas répondu au signalement » envoyé au consommateur")
+
+    object EMAIL_PRO_NEW_REPORT extends ActionEventValue("Email « Nouveau signalement » envoyé au professionnel")
+    object EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT extends ActionEventValue("Email « Accusé de réception de la réponse » envoyé au professionnel")
+    object EMAIL_PRO_REMIND_NO_READING extends ActionEventValue("Email « Nouveau signalement non consulté » envoyé au professionnel")
+    object EMAIL_PRO_REMIND_NO_ACTION extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
+
+    object REPORT_COMPANY_CHANGE extends ActionEventValue("Modification du commerçant")
+    object REPORT_CONSUMER_CHANGE extends ActionEventValue("Modification du consommateur")
     object COMMENT extends ActionEventValue("Ajout d'un commentaire")
     object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par le consommateur")
     object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par l'entreprise")
@@ -190,20 +203,25 @@ object Constants {
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
-      CONTACT_EMAIL,
-      CONTACT_COURRIER,
-      ENVOI_SIGNALEMENT,
-      REPONSE_PRO_SIGNALEMENT,
-      REVIEW_ON_REPORT_RESPONSE,
-      NON_CONSULTE,
-      CONSULTE_IGNORE,
-      RELANCE,
-      EMAIL_AR,
+      POST_ACCOUNT_ACTIVATION_DOC,
+      ACCOUNT_ACTIVATION,
+      REPORT_READING_BY_PRO,
+      REPORT_PRO_RESPONSE,
+      REPORT_REVIEW_ON_RESPONSE,
+      REPORT_CLOSED_BY_NO_READING,
+      REPORT_CLOSED_BY_NO_ACTION,
+      EMAIL_CONSUMER_ACKNOWLEDGMENT,
+      EMAIL_CONSUMER_REPORT_READING,
+      EMAIL_CONSUMER_REPORT_RESPONSE,
+      EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING,
+      EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION,
+      EMAIL_PRO_NEW_REPORT,
+      EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT,
+      EMAIL_PRO_REMIND_NO_READING,
+      EMAIL_PRO_REMIND_NO_ACTION,
       EMAIL_NON_PRISE_EN_COMPTE,
-      EMAIL_TRANSMISSION,
-      EMAIL_REPONSE_PRO,
-      MODIFICATION_COMMERCANT,
-      MODIFICATION_CONSO,
+      REPORT_COMPANY_CHANGE,
+      REPORT_CONSUMER_CHANGE,
       COMMENT,
       CONSUMER_ATTACHMENTS,
       PROFESSIONAL_ATTACHMENTS,
@@ -260,4 +278,7 @@ object Constants {
     }
   }
 
+  object Tags {
+    val ContractualDispute = "Litige contractuel"
+  }
 }
