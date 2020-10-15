@@ -12,9 +12,10 @@ object TokenKind {
   val COMPANY_INIT = TokenKind("COMPANY_INIT")
   val COMPANY_JOIN = TokenKind("COMPANY_JOIN")
   val DGCCRF_ACCOUNT = TokenKind("DGCCRF_ACCOUNT")
+  val VALIDATE_EMAIL = TokenKind("VALIDATE_EMAIL")
 
   def fromValue(v: String) = {
-    List(COMPANY_INIT, COMPANY_JOIN, DGCCRF_ACCOUNT).find(_.value == v).head
+    List(COMPANY_INIT, COMPANY_JOIN, DGCCRF_ACCOUNT, VALIDATE_EMAIL).find(_.value == v).head
   }
   implicit val reads = new Reads[TokenKind] {
     def reads(json: JsValue): JsResult[TokenKind] = json.validate[String].map(fromValue(_))

@@ -41,6 +41,11 @@ GET          /api/companies/:siret/events               controllers.ReportContro
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
+# Admin API
+
+GET          /api/admin/test-email                      controllers.AdminController.getEmailCodes
+POST         /api/admin/test-email                      controllers.AdminController.sendTestEmail(templateRef, to)
+
 # Async files API
 GET         /api/async-files                            controllers.AsyncFileController.listAsyncFiles
 
@@ -73,12 +78,15 @@ POST        /api/account/activation                     controllers.AccountContr
 POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
 GET         /api/account/dgccrf/pending                 controllers.AccountController.fetchPendingDGCCRF
 GET         /api/account/dgccrf/users                   controllers.AccountController.fetchDGCCRFUsers
+POST        /api/account/validate-email                 controllers.AccountController.validateEmail
 
 # Company details API
 GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
 POST        /api/companies/activation-document          controllers.CompanyController.getActivationDocument
 POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET         /api/companies/search                       controllers.CompanyController.findCompany(q: String)
+GET         /api/companies/search/registered            controllers.CompanyController.searchRegisteredCompany(q: String)
+GET         /api/companies/search/:siret                controllers.CompanyController.searchCompanyBySiret(siret: String)
+GET         /api/companies/search                       controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)
 
