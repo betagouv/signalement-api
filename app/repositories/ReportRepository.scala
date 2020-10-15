@@ -57,7 +57,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def companySiret = column[Option[SIRET]]("company_siret")
     def websiteId = column[Option[UUID]]("website_id")
     def websiteURL = column[Option[URL]]("website_url")
-    def creationDate= column[OffsetDateTime]("creation_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")
     def lastName = column[String]("last_name")
     def email = column[EmailAddress]("email")

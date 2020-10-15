@@ -189,4 +189,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchActivationToken(company).map(_.map(_.token))
+
+  def useEmailValidationToken(token: AccessToken, user: User) =
+    db.run(DBIO.seq(
+      userRepository.userTableQuery.filter(_.id === user.id).map(_.lastEmailValidation).update(Some(OffsetDateTime.now)),
+      AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
+    ).transactionally)
+    .map(_ => true)
 }
