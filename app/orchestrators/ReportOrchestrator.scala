@@ -93,7 +93,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
-      website <- draftReport.websiteURL.map(websiteRepository.getOrCreate(_).map(Some(_))).getOrElse(Future(None))
+      website <- draftReport.websiteURL.flatMap(_.getHost).map(websiteRepository.getOrCreate(_).map(Some(_))).getOrElse(Future(None))
       company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
         siret,
         Company(

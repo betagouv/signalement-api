@@ -1,0 +1,9 @@
+-- !Ups
+
+ALTER TABLE websites ADD COLUMN kind VARCHAR NOT NULL DEFAULT 'DEFAULT';
+ALTER TABLE websites ADD COLUMN host VARCHAR;
+
+-- !Downs
+
+ALTER TABLE websites DROP COLUMN kind;
+ALTER TABLE websites DROP COLUMN host;

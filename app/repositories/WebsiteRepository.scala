@@ -9,6 +9,7 @@ import play.api.Logger
 import slick.jdbc.JdbcProfile
 
 import models._
+import util.Try
 import utils.URL
 
 @Singleton
@@ -20,23 +21,27 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
   import PostgresProfile.api._
   import dbConfig._
 
+  implicit val WebsiteKindColumnType = MappedColumnType.base[WebsiteKind, String](_.value, WebsiteKind.fromValue(_))
+
   class WebsiteTable(tag: Tag) extends Table[Website](tag, "websites") {
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
-    def url = column[URL]("url")
+    def host = column[String]("host")
     def companyId = column[Option[UUID]]("company_id")
-    def * = (id, creationDate, url, companyId) <> (Website.tupled, Website.unapply)
+    def kind = column[WebsiteKind]("kind")
+    def * = (id, creationDate, host, companyId, kind) <> (Website.tupled, Website.unapply)
   }
 
   val websiteTableQuery = TableQuery[WebsiteTable]
 
-  def getOrCreate(url: URL): Future[Website] =
-    db.run(websiteTableQuery.filter(_.url === url).result.headOption).flatMap(
+  def getOrCreate(host: String) =
+    db.run(websiteTableQuery.filter(_.host === host).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(websiteTableQuery returning websiteTableQuery += Website(
         UUID.randomUUID(),
         OffsetDateTime.now,
-        url,
-        companyId = None
+        host,
+        companyId = None,
+        kind = WebsiteKind.DEFAULT
       )))
     )
 }
