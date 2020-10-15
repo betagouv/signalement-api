@@ -31,13 +31,15 @@ object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
 
   case class RawFilters(departments: List[String],
+                        email: Option[String],
                         siret: Option[String],
                         start: Option[String],
                         end: Option[String],
                         category: Option[String],
                         status: Option[String],
                         details: Option[String],
-                        hasCompany: Option[Boolean])
+                        hasCompany: Option[Boolean],
+                        tags: List[String] = Nil)
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
@@ -234,7 +236,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         100000,
         ReportFilter(
           filters.departments,
-          None,
+          filters.email,
           restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
           None,
           startDate,
@@ -246,7 +248,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany
+          filters.hasCompany,
+          filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))

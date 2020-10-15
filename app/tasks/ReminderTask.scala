@@ -22,7 +22,7 @@ import utils.Constants.EventType.{CONSO, PRO, SYSTEM}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
+import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -138,7 +138,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = adminMails,
-        subject = "Nouveau signalement",
+        subject = EmailSubjects.REPORT_UNREAD_REMINDER,
         bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
       )
       Reminder(report.id, ReminderValue.RemindReportByMail)
@@ -175,7 +175,7 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = adminMails,
-        subject = "Signalement en attente de réponse",
+        subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
         bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
       )
       Reminder(report.id, ReminderValue.RemindReportByMail)
@@ -219,9 +219,9 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(report.email),
-        subject = "L'entreprise n'a pas souhaité consulter votre signalement",
+        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
       )
       Reminder(report.id, ReminderValue.CloseUnreadReport)
     }
@@ -264,9 +264,9 @@ class ReminderTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(report.email),
-        subject = "L'entreprise n'a pas répondu au signalement",
+        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }

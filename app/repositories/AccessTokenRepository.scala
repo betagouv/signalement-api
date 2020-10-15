@@ -180,6 +180,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def companiesToActivate(): Future[List[(AccessToken, Company)]] =
     db.run(AccessTokenTableQuery
       .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .filter(_._1.creationDate < OffsetDateTime.now.withHour(0).withMinute(0).withSecond(0).withNano(0))
       .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_._1.valid)
       .filter(_._1.kind === TokenKind.COMPANY_INIT)
@@ -188,4 +189,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchActivationToken(company).map(_.map(_.token))
+
+  def useEmailValidationToken(token: AccessToken, user: User) =
+    db.run(DBIO.seq(
+      userRepository.userTableQuery.filter(_.id === user.id).map(_.lastEmailValidation).update(Some(OffsetDateTime.now)),
+      AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
+    ).transactionally)
+    .map(_ => true)
 }

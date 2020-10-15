@@ -1,7 +1,8 @@
 @import java.net.URI
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
-@(report: Report, events: List[(Event, Option[User])], companyEvents: List[(Event, Option[User])], files: List[ReportFile])(implicit websiteUrl: URI)
+@(report: Report, events: List[(Event, Option[User])], companyEvents: List[(Event, Option[User])], files: List[ReportFile])(
+        implicit websiteUrl: URI, userRoleOpt: Option[UserRole] = None)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -22,7 +23,7 @@
             </div>
             <div class="mt-5">
                 <small>
-                    Identifiant unique : @report.id<br>
+                    Identifiant unique : @report.id<br>@userRoleOpt
                     Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
@@ -86,27 +87,15 @@
                     </ul>
                 }
             </div>
-            <div>
-                <h2>Historique du signalement</h2>
-                <p>
-                    <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
-                    <br />
-                    <b>Création du signalement</b>
-                </p>
-                @events.sortBy(_._1.creationDate).map{case (e, u) =>
-                    <p>
-                        <span class="note">@e.formattedDate</span>
-                        <br />
-                        <b>@e.action.value</b>
-                        <br />
-                        @e.getDescription
-                    </p>
-                }
-            </div>
-            @if(report.companyId.isDefined) {
+            @if(userRoleOpt.isDefined) {
                 <div>
-                    <h2>Historique de l'entreprise</h2>
-                    @companyEvents.sortBy(_._1.creationDate).map{case (e, u) =>
+                    <h2>Historique du signalement</h2>
+                    <p>
+                        <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
+                        <br />
+                        <b>Création du signalement</b>
+                    </p>
+                    @events.sortBy(_._1.creationDate).map { case (e, u) =>
                     <p>
                         <span class="note">@e.formattedDate</span>
                         <br />
@@ -116,6 +105,20 @@
                     </p>
                     }
                 </div>
+                @if(report.companyId.isDefined) {
+                    <div>
+                        <h2>Historique de l'entreprise</h2>
+                        @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
+                        <p>
+                            <span class="note">@e.formattedDate</span>
+                            <br />
+                            <b>@e.action.value</b>
+                            <br />
+                            @e.getDescription
+                        </p>
+                        }
+                    </div>
+                }
             }
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>

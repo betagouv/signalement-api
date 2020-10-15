@@ -278,4 +278,7 @@ object Constants {
     }
   }
 
+  object Tags {
+    val ContractualDispute = "Litige contractuel"
+  }
 }
