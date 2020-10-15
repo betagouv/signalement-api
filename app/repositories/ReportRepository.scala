@@ -9,7 +9,7 @@ import play.api.Configuration
 import repositories._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.{GetResult, JdbcProfile}
-import utils.Constants.ActionEvent.MODIFICATION_COMMERCANT
+import utils.Constants.ActionEvent.REPORT_COMPANY_CHANGE
 import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.{Address, DateUtils, EmailAddress, SIRET, URL}
@@ -27,7 +27,8 @@ case class ReportFilter(
                          statusList: Seq[ReportStatusValue] = List(),
                          details: Option[String] = None,
                          employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Option[Boolean] = None
+                         hasCompany: Option[Boolean] = None,
+                         tags: Seq[String] = Nil
                        )
 
 @Singleton
@@ -56,34 +57,37 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def companySiret = column[Option[SIRET]]("company_siret")
     def websiteId = column[Option[UUID]]("website_id")
     def websiteURL = column[Option[URL]]("website_url")
-    def creationDate= column[OffsetDateTime]("creation_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")
     def lastName = column[String]("last_name")
     def email = column[EmailAddress]("email")
     def contactAgreement = column[Boolean]("contact_agreement")
     def employeeConsumer = column[Boolean]("employee_consumer")
     def status = column[String]("status")
+    def tags = column[List[String]]("tags")
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[SIRET], Option[UUID], Option[URL], OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String)
+    type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[SIRET], Option[UUID], Option[URL],
+      OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, List[String])
 
     def constructReport: ReportData => Report = {
-      case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
-        Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId, 
-          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status))
+      case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
+      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
+        Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId,
+          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), tags)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) =>
+      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
         (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue)
+          websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, tags)
     }
 
     def * =
       (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-        websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status) <> (constructReport, extractReport.lift)
+        websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) <> (constructReport, extractReport.lift)
   }
 
   implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
@@ -243,6 +247,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
           case table => table.status.inSet(filter.statusList.map(_.defaultValue))
+        }
+        .filterIf(!filter.tags.isEmpty) {
+          case table => table.tags @& filter.tags.toList.bind
         }
         .filterOpt(filter.details) {
           case(table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
