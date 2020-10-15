@@ -9,7 +9,7 @@ case class CompanyData (
                          id: UUID,
                          siret: String,
                          siren: String,
-                         dateDernierTraitementEtablissement: String,
+                         dateDernierTraitementEtablissement: Option[String],
                          complementAdresseEtablissement: Option[String],
                          numeroVoieEtablissement: Option[String],
                          indiceRepetitionEtablissement: Option[String],

@@ -1,0 +1,18 @@
+@import java.net.URI
+@(validationUrl: URI)
+
+@views.html.mails.layout("Confirmez votre adresse email SignalConso") {
+    <p>
+        Bonjour,
+    </p>
+    <p>
+        Pour confirmer votre email utilisateur sur SignalConso veuillez cliquer sur le lien suivant : @validationUrl
+    </p>
+    <p>
+        ATTENTION : Ce lien n'est valable que 24 heures après l'envoi de cet e-mail
+    </p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

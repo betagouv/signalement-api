@@ -14,10 +14,11 @@ import play.api.{Configuration, Logger}
 import repositories._
 import services.MailerService
 import utils.Constants.{ActionEvent, EventType}
-import utils.{EmailAddress, SIRET}
+import utils.{EmailAddress, EmailSubjects, SIRET}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import java.time.Duration
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
                                      accessTokenRepository: AccessTokenRepository,
@@ -45,7 +46,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       userRepository
       .create(User(
         UUID.randomUUID, draftUser.password, email,
-        draftUser.firstName, draftUser.lastName, role))
+        draftUser.firstName, draftUser.lastName, role, Some(OffsetDateTime.now)))
       .map(u => {
         log(s"User with id ${u.id} created through token ${accessToken.id}")
         u
@@ -90,7 +91,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
           None,
           t.companyId,
           user.map(_.id),
-          Some(OffsetDateTime.now()),
+          Some(OffsetDateTime.now),
           EventType.PRO,
           ActionEvent.ACCOUNT_ACTIVATION,
           stringToDetailsJsValue(s"Email du compte : ${t.emailedTo.getOrElse("")}")
@@ -128,7 +129,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(user.email),
-        subject = s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso",
+        subject = EmailSubjects.NEW_COMPANY_ACCESS(company.name),
         bodyHtml = views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy).toString
       )
       logger.debug(s"User ${user.id} may now access company ${company.id}")
@@ -157,11 +158,10 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
-        subject = s"Rejoignez l'entreprise ${company.name} sur SignalConso",
+        subject = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
       logger.debug(s"Token sent to ${email} for company ${company.id}")
-      Unit
     })
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] = {
@@ -172,11 +172,35 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
-        subject = "Votre accès DGCCRF sur SignalConso",
+        subject = EmailSubjects.DGCCRF_ACCESS_LINK,
         bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
       )
       logger.debug(s"Sent DGCCRF account invitation to ${email}")
-      Unit
+    }
+  }
+
+  def sendEmailValidation(user: User): Future[Unit] = {
+    for {
+      token <- accessTokenRepository.createToken(TokenKind.VALIDATE_EMAIL, randomToken, Some(Duration.ofHours(1)), None, None, Some(user.email))
+    } yield {
+      val validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
+      emailActor ? EmailActor.EmailRequest(
+        from = mailFrom,
+        recipients = Seq(user.email),
+        subject = EmailSubjects.VALIDATE_EMAIL,
+        bodyHtml = views.html.mails.validateEmail(validationUrl).toString
+      )
+      logger.debug(s"Sent email validation to ${user.email}")
+    }
+  }
+
+  def validateEmail(token: AccessToken): Future[Option[User]] = {
+    for {
+      u <- userRepository.findByLogin(token.emailedTo.map(_.toString).get)
+      _ <- u.map(accessTokenRepository.useEmailValidationToken(token, _)).getOrElse(Future(false))
+    } yield {
+      logger.debug(s"Validated email ${token.emailedTo.get}")
+      u
     }
   }
 }
