@@ -4,11 +4,10 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json._
-import play.api.data.validation.ValidationError
+import play.api.libs.json.{Json, OFormat, Writes, _}
 import utils.Constants.ActionEvent.ActionEventValue
-import play.api.libs.json.{Json, OFormat, Writes}
 import utils.Constants.ReportStatus._
+import utils.Constants.Tags
 import utils.{Address, EmailAddress, SIRET, URL}
 
 
@@ -26,7 +25,8 @@ case class DraftReport(
                         email: EmailAddress,
                         contactAgreement: Boolean,
                         employeeConsumer: Boolean,
-                        fileIds: List[UUID]
+                        fileIds: List[UUID],
+                        tags: List[String] = Nil
                       ) {
 
   def generateReport: Report = {
@@ -48,7 +48,8 @@ case class DraftReport(
       email,
       contactAgreement,
       employeeConsumer,
-      NA
+      NA,
+      tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
     )
     report.copy(status = report.initialStatus)
   }
@@ -76,7 +77,8 @@ case class Report(
                    email: EmailAddress,
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
-                   status: ReportStatusValue
+                   status: ReportStatusValue,
+                   tags: List[String] = Nil
                  ) {
 
   def initialStatus() = {
@@ -86,6 +88,10 @@ case class Report(
   }
 
   def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+
+  def isContractualDispute() = tags.contains(Tags.ContractualDispute)
+
+  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute
 }
 
 object Report {
@@ -107,7 +113,8 @@ object Report {
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
-        "websiteURL" -> report.websiteURL
+        "websiteURL" -> report.websiteURL,
+        "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
         case (_, _) => Json.obj(

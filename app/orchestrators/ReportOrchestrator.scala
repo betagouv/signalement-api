@@ -8,17 +8,19 @@ import javax.inject.{Inject, Named}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import actors.EmailActor
+import actors.UploadActor
 import models.Event._
 import models.ReportResponse._
 import models._
 import play.api.libs.json.Json
-import play.api.{Configuration, Logger}
+import play.api.libs.mailer.{AttachmentData, AttachmentFile}
+import play.api.{Configuration, Environment, Logger}
 import repositories._
-import services.{MailerService, S3Service}
+import services.{MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
-import utils.{Constants, EmailAddress}
+import utils.{Constants, EmailAddress, EmailSubjects}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,12 +31,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
                                    eventRepository: EventRepository,
-                                   userRepository: UserRepository,
                                    websiteRepository: WebsiteRepository,
                                    mailerService: MailerService,
+                                   pdfService: PDFService,
                                    @Named("email-actor") emailActor: ActorRef,
+                                   @Named("upload-actor") uploadActor: ActorRef,
                                    s3Service: S3Service,
-                                   configuration: Configuration)
+                                   configuration: Configuration,
+                                   environment: Environment)
                                    (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -63,7 +67,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
           recipients = admins.map(_.email),
-          subject = "Nouveau signalement",
+          subject = EmailSubjects.NEW_REPORT,
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
         val user = admins.head     // We must chose one as Event links to a single User
@@ -110,7 +114,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
         else Future(report)
       }
-      _ <- eventRepository.createEvent(
+      event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -125,15 +129,18 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
-        subject = s"Nouveau signalement [${report.category}]",
+        subject = EmailSubjects.ADMIN_NEW_REPORT(report.category),
         bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
       )
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(report.email),
-        subject = "Votre signalement",
+        subject = EmailSubjects.REPORT_ACK,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filterNot(_ => report.employeeConsumer)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
+          Seq(
+            AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), List.empty, files)), "application/pdf")
+          ).filter(_ => report.isContractualDispute)
       )
       logger.debug(s"Report ${report.id} created")
       report
@@ -239,17 +246,22 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     }
   }
 
-  def addReportFile(filename: String, storageFilename: String, origin: ReportFileOrigin) = {
-    reportRepository.createFile(
-      ReportFile(
-        UUID.randomUUID,
-        None,
-        OffsetDateTime.now(),
-        filename,
-        storageFilename,
-        origin
+  def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] = {
+    for {
+      reportFile <- reportRepository.createFile(
+        ReportFile(
+          UUID.randomUUID,
+          None,
+          OffsetDateTime.now(),
+          filename,
+          file.getName(),
+          origin
+        )
       )
-    )
+    } yield {
+      uploadActor ! UploadActor.Request(reportFile, file)
+      reportFile
+    }
   }
 
   def removeReportFile(id: UUID) =
@@ -306,7 +318,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
-      subject = "L'entreprise a pris connaissance de votre signalement",
+      subject = EmailSubjects.REPORT_TRANSMITTED,
       bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
       attachments = mailerService.attachmentSeqForWorkflowStepN(3)
     )
@@ -331,14 +343,14 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
-        subject = "Votre réponse au signalement",
+        subject = EmailSubjects.REPORT_ACK_PRO,
         bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
       )
     )
     emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(report.email),
-      subject = "L'entreprise a répondu à votre signalement",
+      subject = EmailSubjects.REPORT_ACK_PRO_CONSUMER,
       bodyHtml = views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
         report,
         reportResponse,
@@ -349,7 +361,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
-      subject = s"Un professionnel a répondu à un signalement [${report.category}]",
+      subject = EmailSubjects.REPORT_ACK_PRO_ADMIN(report.category),
       bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
   }

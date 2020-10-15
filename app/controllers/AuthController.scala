@@ -11,13 +11,14 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Named, Singleton}
-import models.{AuthToken, User, UserLogin}
+import models._
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
+import orchestrators.AccessesOrchestrator
 import repositories.{AuthTokenRepository, UserRepository}
 import services.MailerService
 import utils.silhouette.auth.{AuthEnv, UserService}
-import utils.EmailAddress
+import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,6 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class AuthController @Inject()(
                                 val silhouette: Silhouette[AuthEnv],
+                                accessesOrchestrator: AccessesOrchestrator,
                                 userRepository: UserRepository,
                                 authTokenRepository: AuthTokenRepository,
                                 userService: UserService,
@@ -39,6 +41,7 @@ class AuthController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  implicit val dgccrfEmailValidation = java.time.Period.parse(configuration.get[String]("play.tokens.dgccrfEmailValidation"))
 
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[UserLogin].fold(
@@ -50,6 +53,9 @@ class AuthController @Inject()(
           response <- if (attempts > 15) Future(Forbidden) else
                       credentialsProvider.authenticate(Credentials(data.login, data.password)).flatMap { loginInfo =>
                         userService.retrieve(loginInfo).flatMap {
+                          case Some(user) if (user.userRole == UserRoles.DGCCRF
+                                           && user.lastEmailValidation.exists(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))))
+                                          => accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
                           case Some(user) => silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
                             silhouette.env.eventBus.publish(LoginEvent(user, request))
                             silhouette.env.authenticatorService.init(authenticator).map { token =>
@@ -68,7 +74,6 @@ class AuthController @Inject()(
       }
     )
   }
-
 
   def forgotPassword = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[String]((JsPath \ "login").read[String]).fold(
@@ -93,7 +98,7 @@ class AuthController @Inject()(
     emailActor ? EmailActor.EmailRequest(
       from = configuration.get[EmailAddress]("play.mail.from"),
       recipients = Seq(user.email),
-      subject = "Votre mot de passe SignalConso",
+      subject = EmailSubjects.RESET_PASSWORD,
       bodyHtml = views.html.mails.resetPassword(user, authToken).toString
     )
     logger.debug(s"Sent password reset to ${user.email}")

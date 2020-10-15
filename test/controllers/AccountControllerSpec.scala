@@ -125,10 +125,19 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         companyRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
       }
 
+      "send an invalid DGCCRF invitation" in {
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+            .withAuthenticator[AuthEnv](identLoginInfo)
+            .withJsonBody(Json.obj("email" -> "user@example.com"))
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(403)
+      }
+
       "send a DGCCRF invitation" in {
         val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
             .withAuthenticator[AuthEnv](identLoginInfo)
-            .withJsonBody(Json.obj("email" -> "user@dgccrf"))
+            .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
 
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(200)
@@ -136,7 +145,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
 
       "activate the DGCCF user" in {
         val ccrfUser = Fixtures.genUser.sample.get
-        val ccrfToken = Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf")), Duration.Inf).head
+        val ccrfToken = Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf.gouv.fr")), Duration.Inf).head
         val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
           .withJsonBody(Json.obj(
             "draftUser" -> Json.obj(
@@ -150,7 +159,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        val createdUser = Await.result(userRepository.findByLogin("user@dgccrf"), Duration.Inf)
+        val createdUser = Await.result(userRepository.findByLogin("user@dgccrf.gouv.fr"), Duration.Inf)
         createdUser.get.userRole must beEqualTo(UserRoles.DGCCRF)
       }
     }
