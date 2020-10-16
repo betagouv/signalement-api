@@ -89,9 +89,11 @@
                         <br />
 
                         @if(report.companyAddress.isDefined) {
-                        <b>Entreprise</b>
+                        <b>
+                            Entreprise @report.companySiret.getOrElse("")
+                        </b>
                         <p style="text-align: center;">
-                        @views.html.fragments.address(report.companyAddress.get)
+                            @views.html.fragments.address(report.companyAddress.get)
                         </p>
                         }
                         @if(report.websiteURL.isDefined) {
