@@ -6,7 +6,7 @@ import repositories.PostgresProfile.api._
 
 case class URL(value: String) {
   override def toString = value
-  def getHost = Try(new java.net.URL(value)).toOption.map(url => url.getHost)
+  def getHost = Try(new java.net.URL(value)).toOption.map(url => url.getHost.toLowerCase())
 }
 
 object URL {

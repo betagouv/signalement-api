@@ -24,6 +24,7 @@ class CompanyController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val companyDataRepository: CompanyDataRepository,
+                                val websiteRepository: WebsiteRepository,
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
@@ -63,6 +64,14 @@ class CompanyController @Inject()(
     logger.debug(s"searchCompanyBySiret $siret")
     companyDataRepository.searchBySiret(siret).map(results =>
       Ok(Json.toJson(results.map(result => result._1.toSearchResult(result._2.map(_.label)))))
+    )
+  }
+
+  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
+    websiteRepository.fetchCompany(url).map(result =>
+      Ok(Json.toJson(result.toList.map(c =>
+        CompanySearchResult(c.siret, Some(c.name), None, Some(c.address), c.postalCode, "", None)
+      )))
     )
   }
 

@@ -13,7 +13,7 @@ import util.Try
 import utils.URL
 
 @Singleton
-class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
+class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val companyRepository: CompanyRepository)
                                      (implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
@@ -44,4 +44,12 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)
         kind = WebsiteKind.DEFAULT
       )))
     )
+
+  def fetchCompany(url: String) =
+    Try(new java.net.URL(url)).toOption.map(_.getHost).map(host =>
+      for {
+        website <- db.run(websiteTableQuery.filter(_.host === host).result.headOption)
+        company <- website.flatMap(_.companyId).map(companyRepository.fetchCompany(_)).getOrElse(Future(None))
+      } yield company
+    ).getOrElse(Future(None))
 }
