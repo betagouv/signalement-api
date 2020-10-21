@@ -45,11 +45,12 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
       )))
     )
 
-  def fetchCompany(url: String) =
-    Try(new java.net.URL(url)).toOption.map(_.getHost).map(host =>
+  def fetchCompany(url: String) = {
+    URL(url).getHost.map(host =>
       for {
         website <- db.run(websiteTableQuery.filter(_.host === host).result.headOption)
         company <- website.flatMap(_.companyId).map(companyRepository.fetchCompany(_)).getOrElse(Future(None))
       } yield company
     ).getOrElse(Future(None))
+  }
 }

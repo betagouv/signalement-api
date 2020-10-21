@@ -89,7 +89,7 @@ POST        /api/companies/activation-document          controllers.CompanyContr
 POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET         /api/companies/search/registered            controllers.CompanyController.searchRegisteredCompany(q: String)
 GET         /api/companies/search/:siret                controllers.CompanyController.searchCompanyBySiret(siret: String)
-GET         /api/companies/search/url                   controllers.CompanyController.searchCompanyByWebsite(url: String)
+GET         /api/companies/search-url                   controllers.CompanyController.searchCompanyByWebsite(url: String)
 GET         /api/companies/search                       controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
 PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)

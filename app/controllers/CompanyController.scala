@@ -68,6 +68,7 @@ class CompanyController @Inject()(
   }
 
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompanyByWebsite $url")
     websiteRepository.fetchCompany(url).map(result =>
       Ok(Json.toJson(result.toList.map(c =>
         CompanySearchResult(c.siret, Some(c.name), None, Some(c.address), c.postalCode, "", None)
