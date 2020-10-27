@@ -28,7 +28,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
     val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 
     val converterProperties = new ConverterProperties
-    val dfp = new DefaultFontProvider(true, true, true)
+    val dfp = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(websiteUrl.toString())
 
