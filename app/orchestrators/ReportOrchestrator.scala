@@ -93,7 +93,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
     for {
-      website <- draftReport.websiteURL.flatMap(_.getHost).map(websiteRepository.getOrCreate(_).map(Some(_))).getOrElse(Future(None))
       company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
         siret,
         Company(
@@ -105,15 +104,12 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           draftReport.companyPostalCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      report <- reportRepository.create(
-        draftReport.generateReport.copy(companyId = company.map(_.id), websiteId = website.map(_.id))
-      )
+      website <- company.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(websiteRepository.addCompanyWebsite(_, c.id).map(Some(_))))).getOrElse(Future(None))
+      report <- reportRepository.create(draftReport.generateReport.copy(companyId = company.map(_.id), websiteId = website.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
-      report <- {
-        if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
-        else Future(report)
-      }
+      report <- if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
+                else Future(report)
       event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),

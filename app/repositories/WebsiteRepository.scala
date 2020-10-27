@@ -34,23 +34,24 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
 
   val websiteTableQuery = TableQuery[WebsiteTable]
 
-  def getOrCreate(host: String) =
-    db.run(websiteTableQuery.filter(_.host === host).result.headOption).flatMap(
+  def addCompanyWebsite(host: String, companyId: UUID) =
+    db.run(websiteTableQuery.filter(_.host === host).filter(_.companyId === companyId).result.headOption).flatMap(
       _.map(Future(_)).getOrElse(db.run(websiteTableQuery returning websiteTableQuery += Website(
         UUID.randomUUID(),
         OffsetDateTime.now,
         host,
-        companyId = None,
+        Some(companyId),
         kind = WebsiteKind.DEFAULT
       )))
     )
 
-  def fetchCompany(url: String) = {
+  def searchCompaniesByHost(url: String) = {
     URL(url).getHost.map(host =>
       for {
-        website <- db.run(websiteTableQuery.filter(_.host === host).result.headOption)
-        company <- website.flatMap(_.companyId).map(companyRepository.fetchCompany(_)).getOrElse(Future(None))
-      } yield company
-    ).getOrElse(Future(None))
+        websites <- db.run(websiteTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id).filter(_._1.host === host).result)
+      } yield {
+        websites.map(_._2).distinct
+      }
+    ).getOrElse(Future(Nil))
   }
 }
