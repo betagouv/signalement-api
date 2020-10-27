@@ -8,6 +8,16 @@
     src: url("/assets/fonts/OCR-B 10 BT.ttf") format("ttf");
 }
 
+@font-face {
+    font-family: "Arial";
+    src: url("/assets/fonts/arial.ttf") format("ttf");
+}
+@font-face {
+    font-family: "Arial";
+    src: url("/assets/fonts/arial-Bold.ttf") format("ttf");
+    font-weight: bold;
+}
+
 body, div {
     font-family: 'Arial', sans-serif;
     font-size: 13px;
