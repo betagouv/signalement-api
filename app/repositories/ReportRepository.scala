@@ -100,16 +100,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def filename = column[String]("filename")
     def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
+    def avOutput = column[String]("av_output")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
     type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin)
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename, storageFilename, origin) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin)
+      case (id, reportId, creationDate, filename, storageFilename, origin) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin, None)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin) => (id, reportId, creationDate, filename, storageFilename, origin)
+      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput) => (id, reportId, creationDate, filename, storageFilename, origin)
     }
 
     def * =
@@ -323,6 +324,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       fileTableQuery
         .filter(_.id === uuid)
         .delete
+    )
+
+  def setAvOutput(fileId: UUID, output: String) = db
+    .run(
+      fileTableQuery
+        .filter(_.id === fileId)
+        .map(_.avOutput)
+        .update(output)
     )
 
   def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {

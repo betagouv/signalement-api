@@ -255,7 +255,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           OffsetDateTime.now(),
           filename,
           file.getName(),
-          origin
+          origin,
+          None
         )
       )
     } yield {

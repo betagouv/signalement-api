@@ -23,7 +23,8 @@ case class ReportFile(
                  creationDate: OffsetDateTime,
                  filename: String,
                  storageFilename: String,
-                 origin: ReportFileOrigin
+                 origin: ReportFileOrigin,
+                 avOutput: Option[String]
                  )
 object ReportFile {
   implicit val fileFormat: OFormat[ReportFile] = Json.format[ReportFile]
