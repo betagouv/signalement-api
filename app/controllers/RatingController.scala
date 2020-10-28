@@ -28,7 +28,7 @@ class RatingController @Inject()(ratingRepository: RatingRepository,
           rating.copy(
             id = Some(UUID.randomUUID()),
             creationDate = Some(OffsetDateTime.now()))
-        ).flatMap(rating => Future.successful(Ok(Json.toJson(rating))))
+        ).map(rating => Ok(Json.toJson(rating)))
       }
     )
   }
