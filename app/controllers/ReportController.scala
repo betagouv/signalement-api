@@ -181,7 +181,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
-    implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
+    implicit def writer = new Writes[Report] {
       def writes(report: Report) =
         Json.obj(
           "id" -> report.id,
@@ -198,7 +198,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
-        reportRepository.getReport(id).flatMap(report => report.map(r => Future(Ok(Json.toJson(r)))).getOrElse(Future(NotFound)))
+        reportRepository.getReport(id).map(report => report.map(r => Ok(Json.toJson(r))).getOrElse(NotFound))
     }
   }
 
@@ -234,7 +234,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
-    reportRepository.count(Some(SIRET(siret))).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
+    reportRepository.count(Some(SIRET(siret))).map(count => Ok(Json.obj("siret" -> siret, "count" -> count)))
   }
 
   def getEvents(reportId: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
@@ -315,8 +315,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
-    reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).flatMap( paginatedReports => {
-      Future.successful(Ok(Json.toJson(paginatedReports)))
+    reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).map( paginatedReports => {
+      Ok(Json.toJson(paginatedReports))
     })
 
   }
