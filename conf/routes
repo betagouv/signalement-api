@@ -24,7 +24,6 @@ POST         /api/reports/extract                       controllers.ReportListCo
 GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
 DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
 POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
-GET          /api/reports/siret/:siret/count            controllers.ReportController.getReportCountBySiret(siret: String)
 
 GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
 GET          /api/reports/:uuid/download                controllers.ReportController.reportAsPDF(uuid)
@@ -40,6 +39,10 @@ GET          /api/reports/:uuid/events                  controllers.ReportContro
 GET          /api/companies/:siret/events               controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
 
 GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
+
+# Report API for externals SI
+GET          /api/ext/reports/siret/:siret/count        controllers.ReportController.getReportCountBySiret(siret: String)
+GET          /api/ext/reports/:uuid                     controllers.ReportController.getReportToExternal(uuid)
 
 # Admin API
 

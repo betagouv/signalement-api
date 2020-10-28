@@ -1,17 +1,17 @@
 package controllers
 
 import java.net.URI
+import java.nio.file.Paths
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
-import java.nio.file.Paths
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, Json, Writes}
 import play.api.{Configuration, Logger}
 import repositories._
-import services.{MailerService, S3Service, PDFService}
+import services.{PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.SIRET
@@ -177,6 +177,28 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       } yield updatedReport
               .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
               .getOrElse(NotFound)
+    }
+  }
+
+  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
+    implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
+      def writes(report: Report) =
+        Json.obj(
+          "id" -> report.id,
+          "category" -> report.category,
+          "subcategories" -> report.subcategories,
+          "siret" -> report.companySiret,
+          "firstName" -> report.firstName,
+          "lastName" -> report.lastName,
+          "email" -> report.email,
+          "contactAgreement" -> report.contactAgreement,
+          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption
+      )
+    }
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) =>
+        reportRepository.getReport(id).flatMap(report => report.map(r => Future(Ok(Json.toJson(r)))).getOrElse(Future(NotFound)))
     }
   }
 
