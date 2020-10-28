@@ -187,7 +187,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
         events        <- eventRepository.getEventsWithUsers(id, EventFilter())
-        companyEvents <- report.map(r => eventRepository.getCompanyEventsWithUsers(r.companyId.get, EventFilter())).getOrElse(Future(List.empty))
+        companyEvents <- report.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
       } yield report
