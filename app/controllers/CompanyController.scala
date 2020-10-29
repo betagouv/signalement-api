@@ -70,9 +70,9 @@ class CompanyController @Inject()(
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompaniesByHost $url")
     websiteRepository.searchCompaniesByHost(url).map(result =>
-      Ok(Json.toJson(result.toList.map(c =>
-        CompanySearchResult(c.siret, Some(c.name), None, Some(c.address), c.postalCode, "", None)
-      )))
+      Ok(Json.toJson(result.toList.map {case (w: Website, c: Company) =>
+        CompanySearchResult(c.siret, Some(c.name), None, Some(c.address), c.postalCode, "", None, kind = w.kind)
+      }))
     )
   }
 

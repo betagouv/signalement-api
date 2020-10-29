@@ -47,11 +47,7 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
 
   def searchCompaniesByHost(url: String) = {
     URL(url).getHost.map(host =>
-      for {
-        websites <- db.run(websiteTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id).filter(_._1.host === host).result)
-      } yield {
-        websites.map(_._2).distinct
-      }
+      db.run(websiteTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id).filter(_._1.host === host).result)
     ).getOrElse(Future(Nil))
   }
 }
