@@ -100,21 +100,21 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def filename = column[String]("filename")
     def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
-    def avOutput = column[String]("av_output")
+    def avOutput = column[Option[String]]("av_output")
     def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
 
-    type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin)
+    type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename, storageFilename, origin) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin, None)
+      case (id, reportId, creationDate, filename, storageFilename, origin, avOutput) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput) => (id, reportId, creationDate, filename, storageFilename, origin)
+      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput) => (id, reportId, creationDate, filename, storageFilename, origin, avOutput)
     }
 
     def * =
-      (id, reportId, creationDate, filename, storageFilename, origin) <> (constructFile, extractFile.lift)
+      (id, reportId, creationDate, filename, storageFilename, origin, avOutput) <> (constructFile, extractFile.lift)
   }
 
   val reportTableQuery = TableQuery[ReportTable]
@@ -331,7 +331,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       fileTableQuery
         .filter(_.id === fileId)
         .map(_.avOutput)
-        .update(output)
+        .update(Some(output))
     )
 
   def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
