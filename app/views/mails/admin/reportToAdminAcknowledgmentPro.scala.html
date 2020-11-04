@@ -55,6 +55,11 @@
             Site internet : @report.shortURL.get
         </li>
     }
+    @if(report.vendor.isDefined) {
+        <li>
+            Vendeur : @report.vendor.get
+        </li>
+    }
     </ul>
     <ul>
         <li>
