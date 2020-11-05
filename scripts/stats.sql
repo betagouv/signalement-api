@@ -80,14 +80,14 @@ from ratings
 where creation_date >= 'now'::timestamp - '200 days'::interval
 group by category;
 
--- % signalements internets (signalements des 60 derniers jours)
-select count(1) "Nb signalements des 60 derniers jours",
+-- % signalements internets (signalements des 30 derniers jours)
+select count(1) "Nb signalements des 30 derniers jours",
        ((count(*) filter ( where website_url is not null ))::numeric / count(1)::numeric * 100)::numeric(5,2) "% signalement internet",
        ((count(*) filter ( where website_url is not null and company_id is not null ))::numeric / count(1)::numeric * 100)::numeric(5,2) "% signalement internet avec entreprise identifiée",
        ((count(*) filter ( where website_url is not null and company_id is not null and exists(
                select * from events e where e.report_id = reports.id and e.action = 'Modification du commerçant'
            )))::numeric / count(1)::numeric * 100)::numeric(5,2) "% signalement internet avec entreprise identifiée par admin"
 from reports
-where creation_date >= 'now'::timestamp - '60 days'::interval;
+where creation_date >= 'now'::timestamp - '30 days'::interval;
 
 \o

@@ -1,17 +1,17 @@
 package controllers
 
 import java.net.URI
+import java.nio.file.Paths
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
-import java.nio.file.Paths
 import javax.inject.Inject
 import models._
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, Json, Writes}
 import play.api.{Configuration, Logger}
 import repositories._
-import services.{MailerService, S3Service, PDFService}
+import services.{PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
 import utils.SIRET
@@ -181,6 +181,28 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
+  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
+    implicit def writer = new Writes[Report] {
+      def writes(report: Report) =
+        Json.obj(
+          "id" -> report.id,
+          "category" -> report.category,
+          "subcategories" -> report.subcategories,
+          "siret" -> report.companySiret,
+          "firstName" -> report.firstName,
+          "lastName" -> report.lastName,
+          "email" -> report.email,
+          "contactAgreement" -> report.contactAgreement,
+          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption
+      )
+    }
+    Try(UUID.fromString(uuid)) match {
+      case Failure(_) => Future.successful(PreconditionFailed)
+      case Success(id) =>
+        reportRepository.getReport(id).map(report => report.map(r => Ok(Json.toJson(r))).getOrElse(NotFound))
+    }
+  }
+
   def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 
     Try(UUID.fromString(uuid)) match {
@@ -188,7 +210,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
       case Success(id) => for {
         report        <- reportRepository.getReport(id)
         events        <- eventRepository.getEventsWithUsers(id, EventFilter())
-        companyEvents <- report.map(r => eventRepository.getCompanyEventsWithUsers(r.companyId.get, EventFilter())).getOrElse(Future(List.empty))
+        companyEvents <- report.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
       } yield report
@@ -213,7 +235,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
-    reportRepository.count(Some(SIRET(siret))).flatMap(count => Future(Ok(Json.obj("siret" -> siret, "count" -> count))))
+    reportRepository.count(Some(SIRET(siret))).map(count => Ok(Json.obj("siret" -> siret, "count" -> count)))
   }
 
   def getEvents(reportId: String, eventType: Option[String]) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
@@ -294,8 +316,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
     val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
 
-    reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).flatMap( paginatedReports => {
-      Future.successful(Ok(Json.toJson(paginatedReports)))
+    reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).map( paginatedReports => {
+      Ok(Json.toJson(paginatedReports))
     })
 
   }

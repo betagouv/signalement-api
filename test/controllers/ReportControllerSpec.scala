@@ -65,7 +65,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count")
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
@@ -80,7 +80,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2")
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
@@ -97,7 +97,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
           mockReportRepository.count(Some(siretFixture)) returns Future(5)
 
-          val request = FakeRequest("GET", s"/api/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq")
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
