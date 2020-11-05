@@ -5,6 +5,7 @@ ALTER TABLE websites ADD COLUMN host VARCHAR;
 ALTER TABLE websites ALTER COLUMN url DROP NOT NULL;
 
 ALTER TABLE reports ADD COLUMN vendor VARCHAR;
+UPDATE reports SET tags = tags || '{Internet}'::text[] WHERE website_url IS NOT NULL AND NOT(tags && '{Internet}'::text[]);
 
 -- !Downs
 
