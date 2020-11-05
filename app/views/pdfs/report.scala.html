@@ -63,6 +63,12 @@
                         @url
                     </div>
                 }
+                @report.vendor.map {vendor =>
+                    <div>
+                        <h2>Vendeur</h2>
+                        <div>@vendor</div>
+                    </div>
+                }
                 <h2>Consommateur</h2>
                 @if(!report.contactAgreement) {
                     <div class="note">Le consommateur souhaite rester anonyme</div>

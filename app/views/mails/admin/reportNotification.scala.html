@@ -35,6 +35,11 @@
             Site internet : @report.shortURL.get
         </li>
     }
+    @if(report.vendor.isDefined) {
+        <li>
+            Nom du vendeur : @report.vendor.get
+        </li>
+    }
     </ul>
     <ul>
         <li>

@@ -102,6 +102,12 @@
                         Site internet : @report.shortURL.get
                         </p>
                         }
+                        @if(report.vendor.isDefined) {
+                        <b>Nom du vendeur</b>
+                        <p style="text-align: center;">
+                        Nom du vendeur : @report.vendor.get
+                        </p>
+                        }
 
                     </div>
                 }

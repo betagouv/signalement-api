@@ -64,30 +64,31 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def contactAgreement = column[Boolean]("contact_agreement")
     def employeeConsumer = column[Boolean]("employee_consumer")
     def status = column[String]("status")
+    def vendor = column[Option[String]]("vendor")
     def tags = column[List[String]]("tags")
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
     type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[SIRET], Option[UUID], Option[URL],
-      OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, List[String])
+      OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, Option[String], List[String])
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
+      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
         Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companySiret, websiteId,
-          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), tags)
+          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), vendor, tags)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) =>
+      websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
         (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companySiret,
-          websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, tags)
+          websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, vendor, tags)
     }
 
     def * =
       (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companySiret,
-        websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, tags) <> (constructReport, extractReport.lift)
+        websiteId, websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) <> (constructReport, extractReport.lift)
   }
 
   implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))

@@ -26,6 +26,7 @@ case class DraftReport(
                         contactAgreement: Boolean,
                         employeeConsumer: Boolean,
                         fileIds: List[UUID],
+                        vendor: Option[String] = None,
                         tags: List[String] = Nil
                       ) {
 
@@ -49,6 +50,7 @@ case class DraftReport(
       contactAgreement,
       employeeConsumer,
       NA,
+      vendor,
       tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
     )
     report.copy(status = report.initialStatus)
@@ -78,6 +80,7 @@ case class Report(
                    contactAgreement: Boolean,
                    employeeConsumer: Boolean,
                    status: ReportStatusValue,
+                   vendor: Option[String] = None,
                    tags: List[String] = Nil
                  ) {
 
@@ -114,6 +117,7 @@ object Report {
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
         "websiteURL" -> report.websiteURL,
+        "vendor" -> report.vendor,
         "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()

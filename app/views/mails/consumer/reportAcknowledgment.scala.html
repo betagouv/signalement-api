@@ -138,6 +138,10 @@
                 Site internet : @report.shortURL.get
                 <br/>
             }
+            @if(report.vendor.isDefined) {
+                Nom du vendeur : @report.vendor.get
+                <br/>
+            }
 
             <br />
             <b>Consommateur</b>
