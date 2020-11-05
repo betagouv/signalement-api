@@ -138,6 +138,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Vendeur (marketplace)", centerAlignmentColumn,
+        (report, _, _, _) => report.vendor.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Catégorie", leftAlignmentColumn,
         (report, _, _, _) => report.category
       ),

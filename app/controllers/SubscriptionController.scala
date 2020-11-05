@@ -33,7 +33,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
           draftSubscription.sirets,
           draftSubscription.frequency
         )
-      ).flatMap(subscription => Future.successful(Ok(Json.toJson(subscription))))
+      ).map(subscription => Ok(Json.toJson(subscription)))
     )
   }
 
@@ -56,14 +56,12 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
   }
 
   def getSubscriptions = SecuredAction(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
-    subscriptionRepository.list(request.identity.id).flatMap(subscriptions =>
-      Future(Ok(Json.toJson(subscriptions)))
-    )
+    subscriptionRepository.list(request.identity.id).map(subscriptions => Ok(Json.toJson(subscriptions)))
   }
 
   def getSubscription(uuid: UUID) = SecuredAction(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
-    subscriptionRepository.get(uuid).flatMap(subscription =>
-      subscription.filter(s => s.userId == Some(request.identity.id)).map(s => Future(Ok(Json.toJson(s)))).getOrElse(Future(NotFound))
+    subscriptionRepository.get(uuid).map(subscription =>
+      subscription.filter(s => s.userId == Some(request.identity.id)).map(s => Ok(Json.toJson(s))).getOrElse(NotFound)
     )
   }
 
