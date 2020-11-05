@@ -138,7 +138,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
     reportRepository.getFile(UUID.fromString(uuid)).map(_ match {
-      case Some(file) if file.filename == filename => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
+      case Some(file) if file.avOutput.isEmpty => Conflict("Analyse antivirus en cours, veuillez réessayer d'ici 30 secondes")  // HTTP 409
+      case Some(file) if (file.filename == filename && file.avOutput.isDefined) => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
       case _ => NotFound
     })
   }
