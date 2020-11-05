@@ -182,24 +182,39 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
-    implicit def writer = new Writes[Report] {
+    implicit def reportFilewriter = new Writes[ReportFile] {
+      def writes(reportFile: ReportFile) =
+        Json.obj(
+          "id" -> reportFile.id,
+          "filename"-> reportFile.filename
+        )
+    }
+    implicit def reportWriter = new Writes[Report] {
       def writes(report: Report) =
         Json.obj(
           "id" -> report.id,
           "category" -> report.category,
           "subcategories" -> report.subcategories,
           "siret" -> report.companySiret,
+          "postalCode" -> report.companyPostalCode,
+          "websiteURL" -> report.websiteURL,
           "firstName" -> report.firstName,
           "lastName" -> report.lastName,
           "email" -> report.email,
           "contactAgreement" -> report.contactAgreement,
-          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption
+          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption,
       )
     }
+    implicit def writer = Json.writes[ReportWithFiles]
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
-        reportRepository.getReport(id).map(report => report.map(r => Ok(Json.toJson(r))).getOrElse(NotFound))
+        for {
+          report        <- reportRepository.getReport(id)
+          reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+        } yield report
+          .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))))
+          .getOrElse(NotFound)
     }
   }
 
