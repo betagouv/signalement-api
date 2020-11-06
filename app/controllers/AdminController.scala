@@ -115,16 +115,11 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     }),
     "dgccrf_access_link" -> (() => EmailContent(EmailSubjects.DGCCRF_ACCESS_LINK, views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc")))),
     "pro_report_notification" -> (() => EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))),
-    "admin_report_notification" -> (() => {
-      val report = genReport
-      EmailContent(EmailSubjects.ADMIN_NEW_REPORT(report.category), views.html.mails.professional.reportNotification(report))
-    }),
     "consumer_report_ack" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))),
     "consumer_report_ack_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport.copy(tags = List(Tags.ContractualDispute)), Nil))),
     "report_transmitted" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))),
     "report_ack_pro" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO, views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser))),
     "report_ack_pro_consumer" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_CONSUMER, views.html.mails.consumer.reportToConsumerAcknowledgmentPro(genReport, genReportResponse, websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")))),
-    "report_ack_pro_admin" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_ADMIN("test cat"), views.html.mails.admin.reportToAdminAcknowledgmentPro(genReport, genReportResponse))),
     "report_unread_reminder" -> (() => EmailContent(EmailSubjects.REPORT_UNREAD_REMINDER, views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10)))),
     "report_transmitted_reminder" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED_REMINDER, views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10)))),
     "report_closed_no_reading" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport))),
