@@ -124,12 +124,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     } yield {
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
-        recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
-        subject = EmailSubjects.ADMIN_NEW_REPORT(report.category),
-        bodyHtml = views.html.mails.admin.reportNotification(report, files).toString
-      )
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_ACK,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
@@ -354,12 +348,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
       ).toString,
       attachments = mailerService.attachmentSeqForWorkflowStepN(4)
-    )
-    emailActor ? EmailActor.EmailRequest(
-      from = mailFrom,
-      recipients = configuration.get[List[EmailAddress]]("play.mail.contactRecipients"),
-      subject = EmailSubjects.REPORT_ACK_PRO_ADMIN(report.category),
-      bodyHtml = views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponse).toString
     )
   }
 

@@ -37,9 +37,6 @@
     "MAIL_FROM": {
       "required": true
     },
-    "MAIL_CONTACT_RECIPIENTS": {
-      "required": false
-    },
     "MAILER_HOST": {
       "required": true
     },
