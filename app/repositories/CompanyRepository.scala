@@ -28,18 +28,19 @@ class CompanyRepository @Inject()(
     def address = column[Address]("address")
     def postalCode = column[Option[String]]("postal_code")
     def department = column[Option[String]]("department")
+    def activityCode = column[Option[String]]("activity_code")
 
-    type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String])
+    type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
 
     def constructCompany: CompanyData => Company = {
-      case (id, siret, creationDate, name, address, postalCode, _) => Company(id, siret, creationDate, name, address, postalCode)
+      case (id, siret, creationDate, name, address, postalCode, _, activityCode) => Company(id, siret, creationDate, name, address, postalCode, activityCode)
     }
 
     def extractCompany: PartialFunction[Company, CompanyData] = {
-      case Company(id, siret, creationDate, name, address, postalCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten  )
+      case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten  , activityCode)
     }
 
-    def * = (id, siret, creationDate, name, address, postalCode, department) <> (constructCompany, extractCompany.lift)
+    def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
   }
 
   val companyTableQuery = TableQuery[CompanyTable]

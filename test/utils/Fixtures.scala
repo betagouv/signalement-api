@@ -51,7 +51,7 @@ object Fixtures {
         siret <- genSiret
         address <- genAddress
     } yield Company(
-        id, siret, OffsetDateTime.now(), name, address, Some("37500")
+        id, siret, OffsetDateTime.now(), name, address, Some("37500"), None
     )
 
     val genWebsiteURL = for {
@@ -69,7 +69,7 @@ object Fixtures {
         websiteURL <- genWebsiteURL
     } yield DraftReport(
         category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        Some(websiteURL), firstName, lastName, email, contactAgreement, false, List.empty
+        None, Some(websiteURL), firstName, lastName, email, contactAgreement, false, List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -101,7 +101,7 @@ object Fixtures {
         address <- genAddress
         siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
-    } yield ReportCompany(name, address, postalCode.toString, siret)
+    } yield ReportCompany(name, address, postalCode.toString, siret, None)
 
     def genReviewOnReportResponse = for {
         positive <- arbitrary[Boolean]

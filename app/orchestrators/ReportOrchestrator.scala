@@ -101,7 +101,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           OffsetDateTime.now,
           draftReport.companyName.get,
           draftReport.companyAddress.get,
-          draftReport.companyPostalCode
+          draftReport.companyPostalCode,
+          draftReport.companyActivityCode
         )
       ).map(Some(_))).getOrElse(Future(None))
       website <- company.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(websiteRepository.addCompanyWebsite(_, c.id).map(Some(_))))).getOrElse(Future(None))
@@ -147,7 +148,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           OffsetDateTime.now,
           reportCompany.name,
           reportCompany.address,
-          Some(reportCompany.postalCode)
+          Some(reportCompany.postalCode),
+          reportCompany.activityCode
         )
       )
       reportWithNewData <- existingReport match {

@@ -38,6 +38,7 @@ case class Company(
                   name: String,
                   address: Address,
                   postalCode: Option[String],
+                  activityCode: Option[String]
                 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
