@@ -63,18 +63,20 @@ class CompanyController @Inject()(
   def searchCompanyBySiret(siret: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompanyBySiret $siret")
     companyDataRepository.searchBySiret(siret).map(results =>
-      Ok(Json.toJson(results.map(result => result._1.toSearchResult(result._2.map(_.label)))))
+      Ok(Json.toJson(results.map{case (company, activity) => company.toSearchResult(activity.map(_.label))}))
     )
   }
 
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompaniesByHost $url")
-    websiteRepository.searchCompaniesByHost(url).map(result =>
-      Ok(Json.toJson(result.toList.map {case (w: Website, c: Company) =>
-        CompanySearchResult(c.siret, Some(c.name), None, Some(c.address), c.postalCode, "", None, kind = w.kind)
-      }))
-    )
+    for {
+      companiesByHost <- websiteRepository.searchCompaniesByHost(url)
+      results <- Future.sequence(companiesByHost.map { case (_, company) => companyDataRepository.searchBySiret(company.siret.toString) })
+    }
+      yield
+        Ok(Json.toJson(results.flatten.map { case (company, activity) => company.toSearchResult(activity.map(_.label)) }))
   }
+
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {

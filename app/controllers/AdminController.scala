@@ -73,7 +73,8 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     creationDate = OffsetDateTime.now,
     name = "Test Entreprise",
     address = Address("3 rue des Champs 75015 Paris"),
-    postalCode = Some("75015")
+    postalCode = Some("75015"),
+    activityCode = None
   )
 
   private def genUser = User(

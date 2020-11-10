@@ -19,6 +19,7 @@ case class DraftReport(
                         companyAddress: Option[Address],
                         companyPostalCode: Option[String],
                         companySiret: Option[SIRET],
+                        companyActivityCode: Option[String],
                         websiteURL: Option[URL],
                         firstName: String,
                         lastName: String,
@@ -175,7 +176,8 @@ case class ReportCompany(
                           name: String,
                           address: Address,
                           postalCode: String,
-                          siret: SIRET
+                          siret: SIRET,
+                          activityCode: Option[String]
                         )
 
 object ReportCompany {
