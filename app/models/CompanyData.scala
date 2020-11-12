@@ -64,7 +64,7 @@ case class CompanySearchResult (
                                  postalCode: Option[String],
                                  activityCode: String,
                                  activityLabel: Option[String],
-                                 kind: WebsiteKind = WebsiteKind.DEFAULT
+                                 kind: WebsiteKind
                                )
 
 object CompanySearchResult {
