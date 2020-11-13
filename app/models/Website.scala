@@ -10,9 +10,10 @@ sealed case class WebsiteKind(value: String)
 object WebsiteKind {
   val DEFAULT = WebsiteKind("DEFAULT")
   val MARKETPLACE = WebsiteKind("MARKETPLACE")
+  val PENDING = WebsiteKind("PENDING")
 
   def fromValue(v: String) = {
-    List(MARKETPLACE, DEFAULT).find(_.value == v).head
+    List(MARKETPLACE, DEFAULT, PENDING).find(_.value == v).head
   }
   implicit val reads = new Reads[WebsiteKind] {
     def reads(json: JsValue): JsResult[WebsiteKind] = json.validate[String].map(fromValue(_))

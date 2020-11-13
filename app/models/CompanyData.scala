@@ -37,14 +37,15 @@ case class CompanyData (
 
   def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
 
-  def toSearchResult(activityLabel: Option[String]) = CompanySearchResult(
+  def toSearchResult(activityLabel: Option[String], kind: WebsiteKind = WebsiteKind.DEFAULT) = CompanySearchResult(
     SIRET(siret),
     denominationUsuelleEtablissement,
     enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement,
-    activityLabel
+    activityLabel,
+    kind
   )
 
 }
@@ -63,7 +64,7 @@ case class CompanySearchResult (
                                  postalCode: Option[String],
                                  activityCode: String,
                                  activityLabel: Option[String],
-                                 kind: WebsiteKind = WebsiteKind.DEFAULT
+                                 kind: WebsiteKind
                                )
 
 object CompanySearchResult {

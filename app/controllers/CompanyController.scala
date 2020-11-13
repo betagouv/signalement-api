@@ -71,10 +71,12 @@ class CompanyController @Inject()(
     logger.debug(s"searchCompaniesByHost $url")
     for {
       companiesByHost <- websiteRepository.searchCompaniesByHost(url)
-      results <- Future.sequence(companiesByHost.map { case (_, company) => companyDataRepository.searchBySiret(company.siret.toString) })
+      results <- Future.sequence(companiesByHost.map { case (website, company) =>
+        companyDataRepository.searchBySiret(company.siret.toString).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
+      })
     }
       yield
-        Ok(Json.toJson(results.flatten.map { case (company, activity) => company.toSearchResult(activity.map(_.label)) }))
+        Ok(Json.toJson(results.flatten))
   }
 
 

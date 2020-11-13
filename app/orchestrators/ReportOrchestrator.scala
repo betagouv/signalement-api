@@ -106,7 +106,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       ).map(Some(_))).getOrElse(Future(None))
       website <- company.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(websiteRepository.addCompanyWebsite(_, c.id).map(Some(_))))).getOrElse(Future(None))
-      report <- reportRepository.create(draftReport.generateReport.copy(companyId = company.map(_.id), websiteId = website.map(_.id)))
+      report <- reportRepository.create(draftReport.generateReport.copy(companyId = company.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
