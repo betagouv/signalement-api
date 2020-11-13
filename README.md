@@ -37,16 +37,16 @@ Si elle n'est pas active, il faut configurer un serveur de mails à travers les 
 Lancer l'application en local :
 
 ```bash
-sbt "run -Dconfig.resource=application.local.conf"
+sbt "run -Dconfig.file=application.local.conf"
 
 # alternative
-sbt "run -Dconfig.resource=application.local.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
+sbt "run -Dconfig.file=application.local.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
 ```
 
 Remarques:
 
 - les guillemets après la commande `sbt` sont nécessaires pour que sbt sache où commence la sous-commande
-- on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.resource=application.local.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
+- on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.file=application.local.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
 
