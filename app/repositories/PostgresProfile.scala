@@ -5,6 +5,7 @@ import java.time.OffsetDateTime
 import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
+import models.WebsiteKind
 
 trait PostgresProfile extends ExPostgresProfile
   with PgPlayJsonSupport
@@ -24,6 +25,9 @@ trait PostgresProfile extends ExPostgresProfile
     with PgTrgmImplicits {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
+
+    implicit val websiteKindListTypeMapper = new SimpleArrayJdbcType[String]("text")
+      .mapTo[WebsiteKind](WebsiteKind.fromValue(_), _.value).to(_.toList)
 
     val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 

@@ -5,15 +5,18 @@ import java.util.UUID
 import play.api.libs.json._
 import utils.URL
 
-sealed case class WebsiteKind(value: String)
+sealed case class WebsiteKind(value: String, isExlusive: Boolean)
 
 object WebsiteKind {
-  val DEFAULT = WebsiteKind("DEFAULT")
-  val MARKETPLACE = WebsiteKind("MARKETPLACE")
-  val PENDING = WebsiteKind("PENDING")
+  val DEFAULT = WebsiteKind("DEFAULT", false)
+  val MARKETPLACE = WebsiteKind("MARKETPLACE", true)
+  val PENDING = WebsiteKind("PENDING", false)
+  val EXCLUSIVE = WebsiteKind("EXCLUSIVE", true)
+
+  val values = List(DEFAULT, MARKETPLACE, PENDING, EXCLUSIVE)
 
   def fromValue(v: String) = {
-    List(MARKETPLACE, DEFAULT, PENDING).find(_.value == v).head
+    values.find(_.value == v).head
   }
   implicit val reads = new Reads[WebsiteKind] {
     def reads(json: JsValue): JsResult[WebsiteKind] = json.validate[String].map(fromValue(_))
@@ -27,6 +30,6 @@ case class Website(
   id: UUID,
   creationDate: OffsetDateTime,
   host: String,
-  companyId: Option[UUID],
+  companyId: UUID,
   kind: WebsiteKind
 )
