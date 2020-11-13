@@ -41,13 +41,18 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
         OffsetDateTime.now,
         host,
         Some(companyId),
-        kind = WebsiteKind.DEFAULT
+        kind = WebsiteKind.PENDING
       )))
     )
 
   def searchCompaniesByHost(url: String) = {
     URL(url).getHost.map(host =>
-      db.run(websiteTableQuery.join(companyRepository.companyTableQuery).on(_.companyId === _.id).filter(_._1.host === host).result)
+      db.run(websiteTableQuery
+        .filter(_.host === host)
+        .filterNot(_.kind === WebsiteKind.PENDING)
+        .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+        .result
+      )
     ).getOrElse(Future(Nil))
   }
 }
