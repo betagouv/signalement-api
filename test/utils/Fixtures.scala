@@ -83,7 +83,7 @@ object Fixtures {
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
         id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        None, None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
+        None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
     def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
