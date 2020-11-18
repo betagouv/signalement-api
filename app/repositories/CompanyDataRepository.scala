@@ -1,6 +1,5 @@
 package repositories
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -8,8 +7,7 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 import slick.jdbc.JdbcProfile
-import utils.Constants.Departments
-import utils.{Address, SIRET}
+import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,8 +20,8 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "etablissements") {
     def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[String]("siret")
-    def siren = column[String]("siren")
+    def siret = column[SIRET]("siret")
+    def siren = column[SIREN]("siren")
     def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
     def complementAdresseEtablissement = column[Option[String]]("complementadresseetablissement")
     def numeroVoieEtablissement = column[Option[String]]("numerovoieetablissement")
@@ -75,9 +73,16 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiret(siret: String): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiret(siret: SIRET): Future[Option[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result.headOption)
+
+  def searchBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === siren)
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)
