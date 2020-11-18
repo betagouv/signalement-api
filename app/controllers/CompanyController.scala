@@ -70,8 +70,8 @@ class CompanyController @Inject()(
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompaniesByHost $url")
     for {
-      companiesByHost <- websiteRepository.searchCompaniesByHost(url)
-      results <- Future.sequence(companiesByHost.map { case (website, company) =>
+      companiesByUrl <- websiteRepository.searchCompaniesByUrl(url)
+      results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository.searchBySiret(company.siret.toString).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
       })
     }
