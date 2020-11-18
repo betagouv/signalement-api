@@ -23,6 +23,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def siret = column[SIRET]("siret")
     def siren = column[SIREN]("siren")
     def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
+    def etablissementSiege = column[Option[Boolean]]("etablissementsiege")
     def complementAdresseEtablissement = column[Option[String]]("complementadresseetablissement")
     def numeroVoieEtablissement = column[Option[String]]("numerovoieetablissement")
     def indiceRepetitionEtablissement = column[Option[String]]("indicerepetitionetablissement")
@@ -40,7 +41,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
 
     def * = (
-      id, siret, siren, dateDernierTraitementEtablissement, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
+      id, siret, siren, dateDernierTraitementEtablissement, etablissementSiege, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
       codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
