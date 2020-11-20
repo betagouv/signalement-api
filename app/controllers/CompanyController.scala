@@ -64,8 +64,8 @@ class CompanyController @Inject()(
 
     for {
       companiesWithActivity <- identity.replaceAll("\\s", "") match {
-        case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiret(SIRET(q))
-        case q => SIREN.pattern.r.findFirstIn(q).map(siren => companyDataRepository.searchBySiren(SIREN(siren))).getOrElse(Future(None))
+        case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
+        case q => SIREN.pattern.r.findFirstIn(q).map(siren => companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))).getOrElse(Future(List.empty))
       }
     } yield Ok(Json.toJson(companiesWithActivity.map{case (company, activity) => company.toSearchResult(activity.map(_.label))}))
   }
@@ -77,9 +77,7 @@ class CompanyController @Inject()(
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository.searchBySiret(company.siret).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
       })
-    }
-      yield
-        Ok(Json.toJson(results.flatten))
+    } yield Ok(Json.toJson(results.flatten))
   }
 
 

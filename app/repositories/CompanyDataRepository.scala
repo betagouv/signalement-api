@@ -23,7 +23,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def siret = column[SIRET]("siret")
     def siren = column[SIREN]("siren")
     def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
-    def etablissementSiege = column[Option[Boolean]]("etablissementsiege")
+    def etablissementSiege = column[Option[String]]("etablissementsiege")
     def complementAdresseEtablissement = column[Option[String]]("complementadresseetablissement")
     def numeroVoieEtablissement = column[Option[String]]("numerovoieetablissement")
     def indiceRepetitionEtablissement = column[Option[String]]("indicerepetitionetablissement")
@@ -74,17 +74,26 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiret(siret: SIRET): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiret(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
-      .to[List].result.headOption)
+      .to[List].result)
 
-  def searchBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiretWithHeadOffice(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
-      .filter(_.siren === siren)
+      .filter(_.siren === SIREN(siret))
+      .filter(company => company.siret === siret || company.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
-      .to[List].result.headOption)
+      .to[List].result)
+
+  def searchHeadOfficeBySiren(siren: SIREN): Future[List[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === siren)
+      .filter(_.etablissementSiege === "true")
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result)
 }

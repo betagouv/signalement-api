@@ -10,7 +10,7 @@ case class CompanyData (
                          siret: SIRET,
                          siren: SIREN,
                          dateDernierTraitementEtablissement: Option[String],
-                         etablissementSiege: Option[Boolean],
+                         etablissementSiege: Option[String], //TODO change after updating table column type
                          complementAdresseEtablissement: Option[String],
                          numeroVoieEtablissement: Option[String],
                          indiceRepetitionEtablissement: Option[String],
@@ -42,7 +42,7 @@ case class CompanyData (
     siret,
     denominationUsuelleEtablissement,
     enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
-    etablissementSiege.getOrElse(false),
+    etablissementSiege.map(_.toBoolean).getOrElse(false),
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement,

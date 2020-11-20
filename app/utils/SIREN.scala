@@ -10,6 +10,8 @@ case class SIREN(value: String) {
 object SIREN {
   def apply(value: String) = new SIREN(value.replaceAll("\\s", ""))
 
+  def apply(siret: SIRET) = new SIREN(siret.value.substring(0, 9))
+
   def pattern = "[0-9]{9}"
 
   implicit val sirenColumnType = MappedColumnType.base[SIREN, String](
