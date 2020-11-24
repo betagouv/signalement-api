@@ -62,12 +62,16 @@ class CompanyController @Inject()(
   def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { implicit request =>
     logger.debug(s"searchCompanyByIdentity $identity")
 
-    for {
-      companiesWithActivity <- identity.replaceAll("\\s", "") match {
+    (identity.replaceAll("\\s", "") match {
         case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
-        case q => SIREN.pattern.r.findFirstIn(q).map(siren => companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))).getOrElse(Future(List.empty))
-      }
-    } yield Ok(Json.toJson(companiesWithActivity.map{case (company, activity) => company.toSearchResult(activity.map(_.label))}))
+        case q => SIREN.pattern.r.findFirstIn(q).map(siren =>
+          for {
+            headOffice <- companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))
+            companies <- headOffice.map(company => Future(List(company))).getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
+          } yield companies
+        ).getOrElse(Future(List.empty))
+      }).map(companiesWithActivity => Ok(Json.toJson(companiesWithActivity.map{case (company, activity) => company.toSearchResult(activity.map(_.label))})))
+
   }
 
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>

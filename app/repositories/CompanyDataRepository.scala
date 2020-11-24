@@ -89,11 +89,19 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchHeadOfficeBySiren(siren: SIREN): Future[List[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiren(siren: SIREN): Future[List[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === siren)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .take(10)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result)
+
+  def searchHeadOfficeBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siren === siren)
       .filter(_.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
-      .to[List].result)
+      .to[List].result.headOption)
 }
