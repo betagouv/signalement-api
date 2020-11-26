@@ -2,6 +2,7 @@ import argparse
 from collections import OrderedDict
 import csv
 import psycopg2
+import psycopg2.extras
 
 # See https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/
 
