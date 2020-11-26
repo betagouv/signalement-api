@@ -36,7 +36,7 @@ def iter_queries(path):
                     UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
                 """
             yield query, updates
-        else
+        else:
             break
 
 def run(pg_uri, source_csv):
