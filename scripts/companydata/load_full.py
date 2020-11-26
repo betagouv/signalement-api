@@ -38,7 +38,7 @@ def iter_queries(path):
                 query = f"""
                     UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
                 """
-            yield query, updates
+            yield updates
         else:
             break
 
@@ -46,9 +46,12 @@ def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    queries = [i[0] for i in iter_queries(source_csv)]
-    data = [i[1] for i in iter_queries(source_csv)]
-    psycopg2.extras.execute_batch(cur, queries, data)
+
+    query = f"""
+        UPDATE etablissements SET denominationUsuelleEtablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+    """
+
+    psycopg2.extras.execute_batch(cur, query, iter_queries(source_csv))
     print(cur.rowcount)
     conn.close()
 
