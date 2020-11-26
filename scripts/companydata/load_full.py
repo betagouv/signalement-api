@@ -41,7 +41,7 @@ def run(pg_uri, source_csv):
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     for query, data in iter_queries(source_csv):
-        cur.execute(query, data)
+        cur.executemany(query, data)
         print(cur.rowcount)
     conn.close()
 
