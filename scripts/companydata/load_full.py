@@ -52,7 +52,7 @@ def run(pg_uri, source_csv):
     """
     data = iter_queries(source_csv)
 
-    psycopg2.extras.execute_batch(cur, query, data)
+    psycopg2.extras.execute_batch(cur, query, list(data.items()))
     print(cur.rowcount)
     conn.close()
 
