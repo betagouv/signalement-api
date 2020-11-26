@@ -40,9 +40,9 @@ def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    print(iter_queries(source_csv))
-    query, updates = iter_queries(source_csv)
-    cur.executemany(query, updates)
+    queries = [i[0] for i in iter_queries(source_csv)]
+    data = [i[1] for i in iter_queries(source_csv)]
+    cur.executemany(queries, data)
     print(cur.rowcount)
     conn.close()
 
