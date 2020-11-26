@@ -19,8 +19,10 @@ def iter_csv(path):
 def iter_queries(path):
     def isset(v):
         return v and v != 'false'
-    for (i, d) in iter_csv(path):
-        if i < 10000:
+    count = 0
+    for d in iter_csv(path):
+        count = count + 1
+        if count < 10000:
             if args.type == SIRET:
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
                 query = f"""
