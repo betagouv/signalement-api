@@ -13,28 +13,31 @@ FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadr
 
 def iter_csv(path):
     with open(path) as csvfile:
-        reader = csv.DictReader(csvfile, nrows=10000)
+        reader = csv.DictReader(csvfile)
         yield from reader
 
 def iter_queries(path):
     def isset(v):
         return v and v != 'false'
-    for d in iter_csv(path):
-        if args.type == SIRET:
-            updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
-            query = f"""
-                INSERT INTO etablissements ({",".join(updates)})
-                VALUES ({",".join(f"%({k})s" for k in updates)})
-                ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
-            """
-        elif args.type == SIREN:
-            d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
-            # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
-            updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
-            query = f"""
-                UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
-            """
-        yield query, updates
+    for (i, d) in iter_csv(path):
+        if i < 10000
+            if args.type == SIRET:
+                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
+                query = f"""
+                    INSERT INTO etablissements ({",".join(updates)})
+                    VALUES ({",".join(f"%({k})s" for k in updates)})
+                    ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
+                """
+            elif args.type == SIREN:
+                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
+                # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
+                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
+                query = f"""
+                    UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+                """
+            yield query, updates
+        else
+            break
 
 def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
