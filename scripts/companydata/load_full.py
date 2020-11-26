@@ -42,7 +42,7 @@ def run(pg_uri, source_csv):
     cur = conn.cursor()
     queries = [i[0] for i in iter_queries(source_csv)]
     data = [i[1] for i in iter_queries(source_csv)]
-    cur.executemany(queries, data)
+    cur.execute_batch(cur, queries, data)
     print(cur.rowcount)
     conn.close()
 
