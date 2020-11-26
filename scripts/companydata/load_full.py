@@ -40,9 +40,9 @@ def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    for query, data in iter_queries(source_csv):
-        cur.executemany(query, data)
-        print(cur.rowcount)
+    query, updates = iter_queries(source_csv)
+    cur.executemany(query, updates)
+    print(cur.rowcount)
     conn.close()
 
 parser = argparse.ArgumentParser(description='Intégrer le fichier des établissements (mise à jour ou base complète).')
