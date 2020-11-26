@@ -13,7 +13,7 @@ FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadr
 
 def iter_csv(path):
     with open(path) as csvfile:
-        reader = csv.DictReader(csvfilenn rows=10000)
+        reader = csv.DictReader(csvfile, nrows=10000)
         yield from reader
 
 def iter_queries(path):
