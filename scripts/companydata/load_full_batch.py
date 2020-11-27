@@ -29,11 +29,11 @@ def iter_queries(path):
         count = count + 1
         if count < 10000:
             if args.type == SIRET:
-                updates = OrderedDict((k, v) for k, v in d.items())
+                updates = d #OrderedDict((k, v) for k, v in d.items())
             elif args.type == SIREN:
                 d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
-                updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
-            yield list(updates.items())
+                updates = d #OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
+            yield updates
         else:
             break
 
