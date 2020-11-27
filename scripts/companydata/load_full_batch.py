@@ -10,7 +10,7 @@ from datetime import datetime
 SIREN = 'siren'
 SIRET = 'siret'
 
-PAGE_SIZE = 10000
+PAGE_SIZE = 100000
 
 # DB etablissements fields
 FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
