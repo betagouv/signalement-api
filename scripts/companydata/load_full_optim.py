@@ -10,6 +10,8 @@ from datetime import datetime
 SIREN = 'siren'
 SIRET = 'siret'
 
+PAGE_SIZE = 10000
+
 # DB fields
 FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
 
@@ -23,25 +25,32 @@ def iter_queries(path):
         return v and v != 'false'
     count = 0
     for d in iter_csv(path):
+        d =  {k.lower(): v for k, v in d.items()}
         count = count + 1
         if count < 10000:
             if args.type == SIRET:
-                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
-                query = f"""
-                    INSERT INTO etablissements ({",".join(updates)})
-                    VALUES ({",".join(f"%({k})s" for k in updates)})
-                    ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
-                """
+                updates = OrderedDict((k, v) for k, v in d.items())
             elif args.type == SIREN:
-                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
+                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or (d['prenomUsuelUniteLegale'] + ' ' + d['nomUsageUniteLegale'])
                 # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
-                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
-                query = f"""
-                    UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
-                """
+                updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
             yield updates
         else:
             break
+
+def eval_query:
+    if args.type == SIRET:
+        return f"""
+            INSERT INTO etablissements ({",".join(FIELDS)})
+            VALUES ({",".join(f"%({k})s" for k in updates)})
+            ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS)}
+        """
+        return query
+    elif args.type == SIREN:
+        return f"""
+            UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)}
+            WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+        """
 
 def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
@@ -52,15 +61,12 @@ def run(pg_uri, source_csv):
 
     data = [{
                 **line,
-            } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
+            } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
 
-    # print(data)
+    print(data)
 
-    query = """
-        UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
-    """
 
-    psycopg2.extras.execute_batch(cur, query, data)
+    psycopg2.extras.execute_batch(cur, query, data, page_size = PAGE_SIZE)
     print(cur.rowcount)
 
     print(datetime.now())
