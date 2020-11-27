@@ -51,7 +51,7 @@ def run(pg_uri, source_csv):
 
     for query, data in iter_queries(source_csv):
         cur.execute(query, data)
-        print(cur.rowcount)
+        #print(cur.rowcount)
 
     print(datetime.now())
 
