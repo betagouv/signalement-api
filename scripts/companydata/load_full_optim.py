@@ -10,8 +10,6 @@ from datetime import datetime
 SIREN = 'siren'
 SIRET = 'siret'
 
-PAGE_SIZE = 15000
-
 # DB fields
 FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
 
@@ -35,7 +33,7 @@ def iter_queries(path):
                     ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
                 """
             elif args.type == SIREN:
-                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or (d['prenomUsuelUniteLegale'] + ' ' + d['nomUsageUniteLegale'])
+                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
                 # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
                 query = f"""
@@ -56,7 +54,7 @@ def run(pg_uri, source_csv):
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    print(data)
+    # print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
