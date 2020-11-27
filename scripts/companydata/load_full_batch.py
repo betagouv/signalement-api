@@ -33,7 +33,7 @@ def iter_queries(path):
             elif args.type == SIREN:
                 d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
                 updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
-            yield updates.items()
+            yield list(updates.items())
         else:
             break
 
