@@ -33,7 +33,7 @@ def iter_queries(path):
                     ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
                 """
             elif args.type == SIREN:
-                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
+                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or ['prenomUsuelUniteLegale'] + ' ' + ['nomUsageUniteLegale']
                 # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
                 query = f"""
@@ -54,7 +54,7 @@ def run(pg_uri, source_csv):
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    # print(data)
+    print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
