@@ -33,7 +33,8 @@ def iter_queries(path):
                     ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
                 """
             elif args.type == SIREN:
-                d['denominationUsuelleEtablissement'] = (d['denominationUniteLegale'] + ' ' + d['denominationUniteLegale']) or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or (d['prenomUsuelUniteLegale'] + ' ' + d['nomUsageUniteLegale'])
+                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or (d['prenomUsuelUniteLegale'] + ' ' + d['nomUsageUniteLegale'])
+                d['test'] = (d['denominationUsuelleEtablissement'] + ' ' + d['denominationUsuelleEtablissement'])
                 # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
                 query = f"""
