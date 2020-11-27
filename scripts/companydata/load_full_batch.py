@@ -33,7 +33,7 @@ def iter_queries(path):
             elif args.type == SIREN:
                 d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
                 updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
-            yield updates
+            yield updates.items()
         else:
             break
 
@@ -58,8 +58,10 @@ def run(pg_uri, source_csv):
 
     print(datetime.now())
 
+    #    data = [{ **line } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
     #psycopg2.extras.execute_batch(cur, filter(lambda elem: 'denominationusuelleetablissement' in elem.keys(), iter_queries(source_csv).items()), data, page_size = PAGE_SIZE)
-    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv).items(), page_size = PAGE_SIZE)
+
+    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv), page_size = PAGE_SIZE)
 
     print(cur.rowcount)
 
