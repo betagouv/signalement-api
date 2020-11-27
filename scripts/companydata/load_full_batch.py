@@ -28,7 +28,7 @@ def iter_queries(path):
         if args.type == SIRET:
             updates = d #OrderedDict((k, v) for k, v in d.items())
         elif args.type == SIREN:
-            d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
+            d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + (d['nomusageunitelegale'] or d['nomunitelegale']))
             if isset(d['denominationusuelleetablissement']):
                 updates = d
         yield updates
