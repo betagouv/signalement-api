@@ -26,7 +26,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
                                    companyRepository: CompanyRepository,
                                    accessTokenRepository: AccessTokenRepository,
@@ -91,31 +90,47 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
+  def updateAssociation(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
+    (for {
+      host <- hostOpt
+      company <- companyOpt
+    } yield for {
+      company <- companyRepository.getOrCreate(company.siret, company)
+      website <- websiteRepository.create(Website(host = host, companyId = company.id))
+    } yield {
+      website
+    }) match {
+      case Some(f) => f.map(Some(_))
+      case None    => Future.successful(None)
+    }
+  }
+
+  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
+    val companyOpt = for {
+      siret <- draftReport.companySiret
+      name <- draftReport.companyName
+      address <- draftReport.companyAddress
+    } yield {
+      Company(
+        siret = siret,
+        name = name,
+        address = address,
+        postalCode = draftReport.companyPostalCode,
+        activityCode = draftReport.companyActivityCode,
+      )
+    }
     for {
-      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
-        siret,
-        Company(
-          UUID.randomUUID(),
-          siret,
-          OffsetDateTime.now,
-          draftReport.companyName.get,
-          draftReport.companyAddress.get,
-          draftReport.companyPostalCode,
-          draftReport.companyActivityCode
-        )
-      ).map(Some(_))).getOrElse(Future(None))
-      website <- company.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(websiteRepository.addCompanyWebsite(_, c.id).map(Some(_))))).getOrElse(Future(None))
-      report <- reportRepository.create(draftReport.generateReport.copy(companyId = company.map(_.id)))
+      _ <- updateAssociation(draftReport.websiteURL.flatMap(_.getHost), companyOpt)
+      report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
-      report <- if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
-                else Future(report)
+      report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get)
+      else Future(report)
       event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
-          company.map(_.id),
+          companyOpt.map(_.id),
           None,
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -136,6 +151,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       logger.debug(s"Report ${report.id} created")
       report
     }
+  }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
