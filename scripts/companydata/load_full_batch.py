@@ -22,14 +22,12 @@ def iter_csv(path):
 
 def iter_queries(path):
     def isset(v):
-        print(v)
-        print(v and v != 'false')
         return v and v != 'false'
-    count = 0
+    #count = 0
     for d in iter_csv(path):
         d =  {k.lower(): v for k, v in d.items()}
-        count = count + 1
-        if count < 10000:
+        #count = count + 1
+        #if count < 10000:
             if args.type == SIRET:
                 updates = d #OrderedDict((k, v) for k, v in d.items())
             elif args.type == SIREN:
@@ -37,8 +35,8 @@ def iter_queries(path):
                 if isset(d['denominationusuelleetablissement']):
                     updates = d
             yield updates
-        else:
-            break
+        #else:
+        #    break
 
 def eval_query():
     if args.type == SIRET:
