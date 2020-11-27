@@ -3,6 +3,7 @@ from collections import OrderedDict
 import csv
 import psycopg2
 import psycopg2.extras
+from datetime import datetime
 
 # See https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/
 
@@ -47,11 +48,13 @@ def run(pg_uri, source_csv):
     conn.set_session(autocommit=True)
     cur = conn.cursor()
 
+    print(datetime.now())
+
     data = [{
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    print(data)
+    # print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
@@ -59,7 +62,11 @@ def run(pg_uri, source_csv):
 
     psycopg2.extras.execute_batch(cur, query, data)
     print(cur.rowcount)
+
+    print(datetime.now())
     conn.close()
+
+
 
 parser = argparse.ArgumentParser(description='Intégrer le fichier des établissements (mise à jour ou base complète).')
 parser.add_argument('--pg-uri', required=True,
