@@ -42,13 +42,13 @@ def eval_query():
     if args.type == SIRET:
         return f"""
             INSERT INTO etablissements ({",".join(FIELDS)})
-            VALUES ({",".join(f"%({k})s" for k in updates)})
+            VALUES ({",".join(f"%({k})s" for k in FIELDS)})
             ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS)}
         """
         return query
     elif args.type == SIREN:
         return f"""
-            UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)}
+            UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in ['denominationusuelleetablissement'])}
             WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
         """
 
