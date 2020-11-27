@@ -23,11 +23,11 @@ def iter_csv(path):
 def iter_queries(path):
     def isset(v):
         return v and v != 'false'
-    #count = 0
+    count = 0
     for d in iter_csv(path):
         d =  {k.lower(): v for k, v in d.items()}
-        #count = count + 1
-        #if count < 10000:
+        count = count + 1
+        if count < 10000:
             if args.type == SIRET:
                 updates = d #OrderedDict((k, v) for k, v in d.items())
             elif args.type == SIREN:
@@ -35,8 +35,8 @@ def iter_queries(path):
                 if isset(d['denominationusuelleetablissement']):
                     updates = d
             yield updates
-        #else:
-        #    break
+        else:
+            break
 
 def eval_query():
     if args.type == SIRET:
@@ -58,9 +58,6 @@ def run(pg_uri, source_csv):
     cur = conn.cursor()
 
     print(datetime.now())
-
-    #    data = [{ **line } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
-    #psycopg2.extras.execute_batch(cur, filter(lambda elem: 'denominationusuelleetablissement' in elem.keys(), iter_queries(source_csv).items()), data, page_size = PAGE_SIZE)
 
     psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv), page_size = PAGE_SIZE)
 
