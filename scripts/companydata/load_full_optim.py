@@ -38,7 +38,7 @@ def iter_queries(path):
         else:
             break
 
-def eval_query:
+def eval_query():
     if args.type == SIRET:
         return f"""
             INSERT INTO etablissements ({",".join(FIELDS)})
@@ -66,7 +66,7 @@ def run(pg_uri, source_csv):
     print(data)
 
 
-    psycopg2.extras.execute_batch(cur, query, data, page_size = PAGE_SIZE)
+    psycopg2.extras.execute_batch(cur, eval_query(), data, page_size = PAGE_SIZE)
     print(cur.rowcount)
 
     print(datetime.now())
