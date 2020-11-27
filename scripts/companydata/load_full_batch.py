@@ -59,7 +59,7 @@ def run(pg_uri, source_csv):
     print(datetime.now())
 
     #psycopg2.extras.execute_batch(cur, filter(lambda elem: 'denominationusuelleetablissement' in elem.keys(), iter_queries(source_csv).items()), data, page_size = PAGE_SIZE)
-    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv), page_size = PAGE_SIZE)
+    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv).items(), page_size = PAGE_SIZE)
 
     print(cur.rowcount)
 
