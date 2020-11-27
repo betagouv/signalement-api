@@ -49,7 +49,7 @@ def eval_query():
 def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
+    cur = conn.cursor("updates_cursor")
 
     print(datetime.now())
 
