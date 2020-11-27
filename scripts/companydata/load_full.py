@@ -38,7 +38,7 @@ def iter_queries(path):
                 query = f"""
                     UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
                 """
-            yield updates.items()
+            yield list(updates.items())
         else:
             break
 
