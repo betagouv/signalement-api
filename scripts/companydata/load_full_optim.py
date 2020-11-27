@@ -61,7 +61,7 @@ def run(pg_uri, source_csv):
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
     """
 
-    psycopg2.extras.execute_batch(cur, query, data, page_size = PAGE_SIZE)
+    psycopg2.extras.execute_batch(cur, query, data)
     print(cur.rowcount)
 
     print(datetime.now())
