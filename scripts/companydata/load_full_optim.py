@@ -2,6 +2,7 @@ import argparse
 from collections import OrderedDict
 import csv
 import psycopg2
+import psycopg2.extras
 from datetime import datetime
 
 # See https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/
@@ -38,7 +39,7 @@ def iter_queries(path):
                 query = f"""
                     UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
                 """
-            yield query, updates
+            yield updates
         else:
             break
 
@@ -49,13 +50,23 @@ def run(pg_uri, source_csv):
 
     print(datetime.now())
 
-    for query, data in iter_queries(source_csv):
-        cur.execute(query, data)
-        print(cur.rowcount)
+    data = [{
+                **line,
+            } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
+
+    # print(data)
+
+    query = """
+        UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+    """
+
+    psycopg2.extras.execute_batch(cur, query, data)
+    print(cur.rowcount)
 
     print(datetime.now())
-
     conn.close()
+
+
 
 parser = argparse.ArgumentParser(description='Intégrer le fichier des établissements (mise à jour ou base complète).')
 parser.add_argument('--pg-uri', required=True,
@@ -68,3 +79,5 @@ parser.add_argument('--type', required=True, choices=(SIREN, SIRET),
 if __name__ == "__main__":
     args = parser.parse_args()
     run(args.pg_uri, args.source)
+
+
