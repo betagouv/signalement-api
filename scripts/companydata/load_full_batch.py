@@ -54,7 +54,7 @@ def run(pg_uri, source_csv):
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    # print(data)
+    print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
