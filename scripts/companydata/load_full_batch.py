@@ -24,7 +24,7 @@ def iter_queries(path):
     count = 0
     for d in iter_csv(path):
         count = count + 1
-        if count < 10000:
+        if count < 1000000:
             if args.type == SIRET:
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
                 query = f"""
@@ -54,7 +54,7 @@ def run(pg_uri, source_csv):
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    print(data)
+    #print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
