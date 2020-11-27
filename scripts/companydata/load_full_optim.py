@@ -10,6 +10,8 @@ from datetime import datetime
 SIREN = 'siren'
 SIRET = 'siret'
 
+PAGE_SIZE = 5000
+
 # DB fields
 FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
 
@@ -34,7 +36,6 @@ def iter_queries(path):
                 """
             elif args.type == SIREN:
                 d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale'] or (d['prenomUsuelUniteLegale'] + ' ' + d['nomUsageUniteLegale'])
-                d['test'] = (d['denominationUsuelleEtablissement'] + ' ' + d['denominationUsuelleEtablissement'])
                 # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
                 updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
                 query = f"""
@@ -55,13 +56,12 @@ def run(pg_uri, source_csv):
                 **line,
             } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
-    print(data)
 
     query = """
         UPDATE etablissements SET denominationusuelleetablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
     """
 
-    #psycopg2.extras.execute_batch(cur, query, data)
+    psycopg2.extras.execute_batch(cur, query, data, page_size = PAGE_SIZE)
     print(cur.rowcount)
 
     print(datetime.now())
