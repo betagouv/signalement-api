@@ -47,13 +47,15 @@ def run(pg_uri, source_csv):
     conn.set_session(autocommit=True)
     cur = conn.cursor()
 
-    query = f"""
+    data = [{
+                **line,
+            } for line in iter_queries(source_csv)]
+
+    print(data)
+
+    query = """
         UPDATE etablissements SET denominationUsuelleEtablissement = %(denominationUsuelleEtablissement)s WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
     """
-    data = iter_queries(source_csv)
-
-    for data in iter_queries(source_csv):
-        print(data)
 
     psycopg2.extras.execute_batch(cur, query, data)
     print(cur.rowcount)
