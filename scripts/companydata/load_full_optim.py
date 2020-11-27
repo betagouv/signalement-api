@@ -12,7 +12,7 @@ SIRET = 'siret'
 
 PAGE_SIZE = 10000
 
-# DB fields
+# DB etablissements fields
 FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
 
 def iter_csv(path):
@@ -23,20 +23,14 @@ def iter_csv(path):
 def iter_queries(path):
     def isset(v):
         return v and v != 'false'
-    count = 0
     for d in iter_csv(path):
         d =  {k.lower(): v for k, v in d.items()}
-        count = count + 1
-        if count < 10000:
-            if args.type == SIRET:
-                updates = OrderedDict((k, v) for k, v in d.items())
-            elif args.type == SIREN:
-                d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
-                # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
-                updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
-            yield updates
-        else:
-            break
+        if args.type == SIRET:
+            updates = OrderedDict((k, v) for k, v in d.items())
+        elif args.type == SIREN:
+            d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + d['nomusageunitelegale'])
+            updates = OrderedDict((k, v) for k, v in d.items() if k in FIELDS and isset(v))
+        yield updates
 
 def eval_query():
     if args.type == SIRET:
@@ -59,19 +53,13 @@ def run(pg_uri, source_csv):
 
     print(datetime.now())
 
-    data = [{
-                **line,
-            } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
-
-    print(data)
-
+    data = [{ **line } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
 
     psycopg2.extras.execute_batch(cur, eval_query(), data, page_size = PAGE_SIZE)
     print(cur.rowcount)
 
     print(datetime.now())
     conn.close()
-
 
 
 parser = argparse.ArgumentParser(description='Intégrer le fichier des établissements (mise à jour ou base complète).')
