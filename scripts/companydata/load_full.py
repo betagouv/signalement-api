@@ -49,7 +49,7 @@ def run(pg_uri, source_csv):
 
     data = [{
                 **line,
-            } for line in iter_queries(source_csv) if line['denominationUsuelleEtablissement'] ]
+            } for line in iter_queries(source_csv) if 'denominationUsuelleEtablissement' in line.keys() ]
 
     print(data)
 
