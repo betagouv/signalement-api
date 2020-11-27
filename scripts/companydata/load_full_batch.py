@@ -22,6 +22,8 @@ def iter_csv(path):
 
 def iter_queries(path):
     def isset(v):
+        print(v)
+        print(v and v != 'false')
         return v and v != 'false'
     count = 0
     for d in iter_csv(path):
@@ -58,8 +60,6 @@ def run(pg_uri, source_csv):
     cur = conn.cursor()
 
     print(datetime.now())
-
-    print(iter_queries(source_csv))
 
     #    data = [{ **line } for line in iter_queries(source_csv) if 'denominationusuelleetablissement' in line.keys() ]
     #psycopg2.extras.execute_batch(cur, filter(lambda elem: 'denominationusuelleetablissement' in elem.keys(), iter_queries(source_csv).items()), data, page_size = PAGE_SIZE)
