@@ -121,11 +121,11 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
   val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
   val lastYearReports = lastYearReportsToProcess ::: lastYearReportsReadByPro
 
-  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
-  val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
-  val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
-  val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
-  val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusDays(31)))
+  val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
 
   val lastMonthReportsWithResponse = lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
   val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction

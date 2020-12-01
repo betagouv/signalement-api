@@ -14,10 +14,9 @@ import repositories._
 import services.PDFService
 import utils.Constants.{ActionEvent, EventType}
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{EmailAddress, SIRET}
+import utils.{EmailAddress, SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
-
 
 @Singleton
 class CompanyController @Inject()(
@@ -60,11 +59,19 @@ class CompanyController @Inject()(
     )
   }
 
-  def searchCompanyBySiret(siret: String) = UnsecuredAction.async { implicit request =>
-    logger.debug(s"searchCompanyBySiret $siret")
-    companyDataRepository.searchBySiret(siret).map(results =>
-      Ok(Json.toJson(results.map{case (company, activity) => company.toSearchResult(activity.map(_.label))}))
-    )
+  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompanyByIdentity $identity")
+
+    (identity.replaceAll("\\s", "") match {
+        case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
+        case q => SIREN.pattern.r.findFirstIn(q).map(siren =>
+          for {
+            headOffice <- companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))
+            companies <- headOffice.map(company => Future(List(company))).getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
+          } yield companies
+        ).getOrElse(Future(List.empty))
+      }).map(companiesWithActivity => Ok(Json.toJson(companiesWithActivity.map{case (company, activity) => company.toSearchResult(activity.map(_.label))})))
+
   }
 
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
@@ -72,11 +79,9 @@ class CompanyController @Inject()(
     for {
       companiesByUrl <- websiteRepository.searchCompaniesByUrl(url)
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-        companyDataRepository.searchBySiret(company.siret.toString).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
+        companyDataRepository.searchBySiret(company.siret).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
       })
-    }
-      yield
-        Ok(Json.toJson(results.flatten))
+    } yield Ok(Json.toJson(results.flatten))
   }
 
 

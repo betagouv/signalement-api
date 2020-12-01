@@ -9,6 +9,9 @@ case class SIRET(value: String) {
 
 object SIRET {
   def apply(value: String) = new SIRET(value.replaceAll("\\s", ""))
+
+  def pattern = "[0-9]{14}"
+
   implicit val siretColumnType = MappedColumnType.base[SIRET, String](
     _.value,
     SIRET(_)
