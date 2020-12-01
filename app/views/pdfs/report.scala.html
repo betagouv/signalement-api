@@ -1,8 +1,16 @@
 @import java.net.URI
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
-@(report: Report, events: List[(Event, Option[User])], companyEvents: List[(Event, Option[User])], files: List[ReportFile])(
-        implicit websiteUrl: URI, userRoleOpt: Option[UserRole] = None)
+
+@(
+        report: Report,
+        events: List[(Event, Option[User])],
+        responseOption: Option[ReportResponse],
+        companyEvents: List[(Event, Option[User])],
+        files: List[ReportFile]
+)(
+        implicit websiteUrl: URI, userRoleOpt: Option[UserRole] = None
+)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -47,6 +55,33 @@
                         </li>
                     }
                 </ul>
+
+                @responseOption.map { response =>
+                    <div>
+                        <h2>Réponse du professionnel</h2>
+
+                        <div>
+                            <b>
+                            @response.responseType match {
+                                case ReportResponseType.ACCEPTED => {
+                                    Signalement pris en compte
+                                }
+                                case ReportResponseType.REJECTED => {
+                                    Signalement infondé
+                                }
+                                case ReportResponseType.NOT_CONCERNED => {
+                                    Etablissement non concerné par le signalement
+                                }
+                            }
+                            </b>
+                        </div>
+
+                        <p>@response.consumerDetails</p>
+                        <p>@response.dgccrfDetails</p>
+                    </div>
+                }
+
+
                 <h2>Entreprise</h2>
                 @report.companySiret.map{siret =>
                     <div>
