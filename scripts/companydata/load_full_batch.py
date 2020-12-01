@@ -54,7 +54,7 @@ def run(pg_uri, source_csv):
 
     print(datetime.now())
 
-    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv), page_size = PAGE_SIZE)
+    psycopg2.extras.execute_batch(cur, eval_query(), iter_queries(source_csv), page_size = args.page_size or PAGE_SIZE)
 
     print(cur.rowcount)
 
@@ -69,6 +69,8 @@ parser.add_argument('--source', required=True,
                     help='Fichier CSV source')
 parser.add_argument('--type', required=True, choices=(SIREN, SIRET),
                     help='SIREN: stock unités légale / SIRET: stock établissements')
+parser.add_argument('--page_size', required=False),
+                    help='Valeur par défaut 20000')
 
 if __name__ == "__main__":
     args = parser.parse_args()
