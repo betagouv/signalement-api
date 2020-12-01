@@ -69,7 +69,7 @@ parser.add_argument('--source', required=True,
                     help='Fichier CSV source')
 parser.add_argument('--type', required=True, choices=(SIREN, SIRET),
                     help='SIREN: stock unités légale / SIRET: stock établissements')
-parser.add_argument('--page_size', required=False,
+parser.add_argument('--page_size', required=False, type=int,
                     help='Valeur par défaut 20000')
 
 if __name__ == "__main__":
