@@ -44,7 +44,7 @@ def eval_query():
     elif args.type == SIREN:
         return f"""
             UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in ['denominationusuelleetablissement'])}
-            WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+            WHERE siren = %(siren)s AND (denominationusuelleetablissement = '') IS NOT FALSE;
         """
 
 def run(pg_uri, source_csv):
