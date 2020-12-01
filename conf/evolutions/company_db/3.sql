@@ -6,6 +6,5 @@ CREATE INDEX IF NOT EXISTS etab_cp_idx ON etablissements USING GIN (codepostalet
 CREATE INDEX IF NOT EXISTS etab_siret_idx ON etablissements USING GIN (siret);
 CREATE INDEX IF NOT EXISTS etab_siren_idx ON etablissements USING GIN (siren);
 
-ALTER TABLE etablissements ALTER COLUMN etablissementsiege TYPE BOOLEAN USING etablissementsiege::BOOLEAN;
 
 # --- !Downs
