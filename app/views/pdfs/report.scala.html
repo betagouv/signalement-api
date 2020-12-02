@@ -17,104 +17,99 @@
     </head>
     <body>
         <div>
-            <div>
-                <img src='@routes.Assets.versioned("images/logo-marianne.png")' height="1.8cm"/>
+            <div class="logo-marianne">
+                <img src='@routes.Assets.versioned("images/gouv.svg")'/>
+            </div>
+            <div class="logo-sc">
                 <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
             </div>
-            <div class="mt-5">
+            <div class="references">
                 <small>
                     Identifiant unique : @report.id<br>
                     Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
-            <div>
-                <h2>Type de signalement</h2>
-                <ul>
-                    <li>
-                        @report.category
-                    </li>
-                    @report.subcategories.map{subcat =>
-                        <li>
-                            @subcat
-                        </li>
-                    }
-                </ul>
-                <h2>Détail du signalement</h2>
-                <ul>
-                    @report.details.map{input =>
-                        <li>
-                            <b>@Html(input.label)</b> @input.value
-                        </li>
-                    }
-                </ul>
-                <h2>Entreprise</h2>
-                @report.companySiret.map{siret =>
-                    <div>
-                        <b>@siret</b>
-                    </div>
-                }
-                @report.companyAddress.map{address =>
-                    <div>
-                        @views.html.fragments.address(address)
-                    </div>
-                }
-                @report.websiteURL.map{url =>
-                    <div>
-                        @url
-                    </div>
-                }
-                @report.vendor.map {vendor =>
-                    <div>
-                        <h2>Vendeur</h2>
-                        <div>@vendor</div>
-                    </div>
-                }
-                <h2>Consommateur</h2>
-                @if(!report.contactAgreement) {
-                    <div class="note">Le consommateur souhaite rester anonyme</div>
-                }
+            <div class="content">
                 <div>
-                    <b>@report.firstName @report.lastName</b>
-                </div>
-                <div>
-                    @report.email
-                </div>
-            </div>
-            <div>
-                <h2>Pièces jointes</h2>
-                @if(files.isEmpty) {
-                    <span>Aucune pièce jointe n'est associée à ce signalement.</span>
-                } else {
-                    Pièces jointes :
+                    <h2>Type de signalement</h2>
                     <ul>
-                    @files.map{f =>
-                        <li>@f.filename</li>
-                    }
+                        <li>
+                            @report.category
+                        </li>
+                        @report.subcategories.map{subcat =>
+                            <li>
+                                @subcat
+                            </li>
+                        }
                     </ul>
-                }
-            </div>
-            @if(userRoleOpt.isDefined) {
+                    <h2>Détail du signalement</h2>
+                    <ul>
+                        @report.details.map{input =>
+                            <li>
+                                <b>@Html(input.label)</b> @input.value
+                            </li>
+                        }
+                    </ul>
+                    <h2>Entreprise</h2>
+                    @report.companySiret.map{siret =>
+                        <div>
+                            <b>@siret</b>
+                        </div>
+                    }
+                    @report.companyAddress.map{address =>
+                        <div>
+                            @views.html.fragments.address(address)
+                        </div>
+                    }
+                    @report.companyCountry.map{country =>
+                        <div>
+                            @country.name
+                        </div>
+                    }
+                    @report.websiteURL.map{url =>
+                        <div>
+                            @url
+                        </div>
+                    }
+                    @report.vendor.map {vendor =>
+                        <div>
+                            <h2>Vendeur</h2>
+                            <div>@vendor</div>
+                        </div>
+                    }
+                    <h2>Consommateur</h2>
+                    @if(!report.contactAgreement) {
+                        <div class="note">Le consommateur souhaite rester anonyme</div>
+                    }
+                    <div>
+                        <b>@report.firstName @report.lastName</b>
+                    </div>
+                    <div>
+                        @report.email
+                    </div>
+                </div>
                 <div>
-                    <h2>Historique du signalement</h2>
-                    <p>
-                        <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
-                        <br />
-                        <b>Création du signalement</b>
-                    </p>
-                    @events.sortBy(_._1.creationDate).map { case (e, u) =>
-                    <p>
-                        <span class="note">@e.formattedDate</span>
-                        <br />
-                        <b>@e.action.value</b>
-                        <br />
-                        @e.getDescription
-                    </p>
+                    <h2>Pièces jointes</h2>
+                    @if(files.isEmpty) {
+                        <span>Aucune pièce jointe n'est associée à ce signalement.</span>
+                    } else {
+                        Pièces jointes :
+                        <ul>
+                        @files.map{f =>
+                            <li>@f.filename</li>
+                        }
+                        </ul>
                     }
                 </div>
-                @if(report.companyId.isDefined) {
+                @if(userRoleOpt.isDefined) {
                     <div>
-                        <h2>Historique de l'entreprise</h2>
-                        @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
+                        <h2>Historique du signalement</h2>
+                        <p>
+                            <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
+                            <br />
+                            <b>Création du signalement</b>
+                        </p>
+                        @events.sortBy(_._1.creationDate).map { case (e, u) =>
                         <p>
                             <span class="note">@e.formattedDate</span>
                             <br />
@@ -124,8 +119,22 @@
                         </p>
                         }
                     </div>
+                    @if(report.companyId.isDefined) {
+                        <div>
+                            <h2>Historique de l'entreprise</h2>
+                            @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
+                            <p>
+                                <span class="note">@e.formattedDate</span>
+                                <br />
+                                <b>@e.action.value</b>
+                                <br />
+                                @e.getDescription
+                            </p>
+                            }
+                        </div>
+                    }
                 }
-            }
+            </div>
             <div class="footer text-center">
                 <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
             </div>

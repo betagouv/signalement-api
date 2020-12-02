@@ -3,6 +3,43 @@ body, div {
     font-size: 12px;
 }
 
+.logo-marianne {
+    position: absolute;
+    left: 0.5cm;
+    top: 0.7cm;
+    width: 100%;
+}
+
+.logo-marianne > img {
+    height: 3.2cm;
+}
+
+.logo-sc {
+    position: absolute;
+    left: 14.85cm;
+    top: 0.7cm;
+}
+
+.logo-sc > img {
+    height: 1.5cm;
+}
+
+.references {
+    position: absolute;
+    right: 0.5cm;
+    top: 3cm;
+    text-align: right;
+}
+
+.content {
+    position: absolute;
+    top: 4.5cm;
+    left: 0.5cm;
+    right: 0.5cm;
+    float: left;
+    text-align: justify;
+}
+
 h2 {
     color: #53657d;
     margin-bottom: 8px;
