@@ -1,6 +1,6 @@
 package repositories
 
-import models.WebsiteKind
+import models.{Website, WebsiteKind}
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -60,10 +60,10 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   def e2 = websiteRepository.searchCompaniesByUrl(s"http://${pendingWebsite.host}") must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(Seq((marketplaceWebsite, marketplaceCompany))).await
   def e4 = websiteRepository.searchCompaniesByUrl(s"http://${exclusiveWebsite.host}") must beEqualTo(Seq((exclusiveWebsite, exclusiveCompany))).await
-  def e5 = websiteRepository.create(defaultWebsite.host, defaultCompany.id) must beEqualTo(defaultWebsite).await
-  def e6 = websiteRepository.create(exclusiveWebsite.host, defaultCompany.id) must beEqualTo(exclusiveWebsite).await
+  def e5 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(defaultWebsite).await
+  def e6 = websiteRepository.create(Website(host = exclusiveWebsite.host, companyId = defaultCompany.id)) must beEqualTo(exclusiveWebsite).await
   def e7 = {
-    val newWebsite = websiteRepository.create(newHost, defaultCompany.id)
+    val newWebsite = websiteRepository.create(Website(host = newHost, companyId = defaultCompany.id))
     newWebsite.map(w => (w.host, w.companyId, w.kind)) must beEqualTo(newHost, defaultCompany.id, WebsiteKind.PENDING).await
   }
 }
