@@ -8,7 +8,7 @@ import play.api.libs.json.{Json, OFormat, Writes, _}
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{Address, EmailAddress, SIRET, URL}
+import utils.{Address, Country, EmailAddress, SIRET, URL}
 
 
 case class DraftReport(
@@ -18,6 +18,7 @@ case class DraftReport(
                         companyName: Option[String],
                         companyAddress: Option[Address],
                         companyPostalCode: Option[String],
+                        companyCountry: Option[Country],
                         companySiret: Option[SIRET],
                         companyActivityCode: Option[String],
                         websiteURL: Option[URL],
@@ -41,6 +42,7 @@ case class DraftReport(
       companyName,
       companyAddress,
       companyPostalCode,
+      companyCountry,
       companySiret,
       websiteURL,
       OffsetDateTime.now(),
@@ -70,6 +72,7 @@ case class Report(
                    companyName: Option[String],
                    companyAddress: Option[Address],
                    companyPostalCode: Option[String],
+                   companyCountry: Option[Country],
                    companySiret: Option[SIRET],
                    websiteURL: Option[URL],
                    creationDate: OffsetDateTime,

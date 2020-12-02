@@ -1,6 +1,7 @@
 package utils
 
-import play.api.libs.json.Json
+import play.api.libs.json._
+import repositories.PostgresProfile.api._
 
 sealed case class Country(code: String, name: String, european: Boolean = false)
 
@@ -204,7 +205,6 @@ object Country {
   val Zambie = Country("ZMB", "Zambie")
   val Zimbabwe = Country("ZWE", "Zimbabwé")
 
-
   val countries = List(Afghanistan, AfriqueDuSud, Albanie, Algerie, Allemagne, Andorre, Angola, AntiguaEtBarbuda, ArabieSaoudite, Argentine, Armenie,
     Australie, Autriche, Azerbaidjan, Bahamas, Bahrein, Bangladesh, Barbade, Belgique, Belize, Benin, Bhoutan, Bielorussie, Birmanie, Bolivie,
     BosnieHerzegovine, Botswana, Bresil, Brunei, Bulgarie, Burkina, Burundi, Cambodge, Cameroun, Canada, CapVert, Centrafrique, Chili, Chine,
@@ -223,5 +223,15 @@ object Country {
 
   val europeanCountries = countries.filter(_.european)
 
-  implicit val CountryFormat = Json.format[Country]
+  def fromName(name: String) = {
+    countries.find(_.name == name).head
+  }
+
+  implicit val reads = new Reads[Country] {
+    def reads(json: JsValue): JsResult[Country] = json.validate[String].map(fromName(_))
+  }
+  implicit val writes = Json.writes[Country]
+
+  implicit val CountryColumnType = MappedColumnType.base[Country, String](_.name, Country.fromName(_))
+
 }
