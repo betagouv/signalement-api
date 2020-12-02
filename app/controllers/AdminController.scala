@@ -14,12 +14,13 @@ import play.api.{Configuration, Logger}
 import play.api.libs.json.Json
 import repositories._
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{Address, EmailAddress, EmailSubjects, SIRET}
+import utils.{Address, Country, EmailAddress, EmailSubjects, SIRET}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import java.time.LocalDate
 
+import utils.Constants.ReportStatus.NA
 import utils.Constants.Tags
 
 
@@ -117,7 +118,20 @@ class AdminController @Inject()(reportRepository: ReportRepository,
     "dgccrf_access_link" -> (() => EmailContent(EmailSubjects.DGCCRF_ACCESS_LINK, views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc")))),
     "pro_report_notification" -> (() => EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))),
     "consumer_report_ack" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))),
-    "consumer_report_ack_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport.copy(tags = List(Tags.ContractualDispute)), Nil))),
+    "consumer_report_ack_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(tags = List(Tags.ContractualDispute)), Nil))),
+    "consumer_report_ack_case_euro" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Italie)), Nil))),
+    "consumer_report_ack_case_euro_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Islande), tags = List(Tags.ContractualDispute)), Nil))),
+    "consumer_report_ack_case_andorre" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Andorre)), Nil))),
+    "consumer_report_ack_case_euro_suisse_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Suisse), tags = List(Tags.ContractualDispute)), Nil))),
+    "consumer_report_ack_case_abroad_default" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Bahamas)), Nil))),
+    "consumer_report_ack_case_abroad_default_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Mexique), tags = List(Tags.ContractualDispute)), Nil))),
     "report_transmitted" -> (() => EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))),
     "report_ack_pro" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO, views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser))),
     "report_ack_pro_consumer" -> (() => EmailContent(EmailSubjects.REPORT_ACK_PRO_CONSUMER, views.html.mails.consumer.reportToConsumerAcknowledgmentPro(genReport, genReportResponse, websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")))),
