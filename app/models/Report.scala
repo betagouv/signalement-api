@@ -128,7 +128,7 @@ object Report {
           "lastName" -> report.lastName,
           "email" -> report.email
         )
-      })
+      }) ++ (report.companyCountry.map(c => Json.obj("companyCountry" -> c.name)).getOrElse(Json.obj()))
   }
 }
 
