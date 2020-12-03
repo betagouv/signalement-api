@@ -93,3 +93,13 @@ object Website {
     (JsPath \ "kind").write[WebsiteKind]
   )((w: Website) => (w.id, w.creationDate, w.host, w.companyId, w.kind))
 }
+
+object WebsiteCompanyFormat {
+
+  implicit def websiteCompany: Writes[(Website, Company)] = new Writes[(Website, Company)] {
+    def writes(website: (Website, Company)) = {
+      val form_json = Json.toJson(website._1).as[JsObject]
+      form_json + ("company" -> Json.toJson(website._2))
+    }
+  }
+}

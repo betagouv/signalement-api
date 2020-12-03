@@ -5,17 +5,17 @@ import java.util.UUID
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
 import models.{Company, UserRoles, Website, WebsiteCreate, WebsiteKind, WebsiteUpdate, WebsiteUpdateCompany}
-import orchestrators.WebsiteOrchestrator
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import repositories.{CompanyRepository, WebsiteRepository}
 import utils.silhouette.auth.{AuthEnv, WithRole}
-
+import cats.data.OptionT
 import scala.concurrent.{ExecutionContext, Future}
+import models.WebsiteCompanyFormat._
+import cats.implicits._
 
 @Singleton
 class WebsiteController @Inject()(
-  val websiteOrchestrator: WebsiteOrchestrator,
   val websiteRepository: WebsiteRepository,
   val companyRepository: CompanyRepository,
   val silhouette: Silhouette[AuthEnv]
@@ -26,25 +26,24 @@ class WebsiteController @Inject()(
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       websites <- websiteRepository.list()
-      websitesWithCompanies <- websiteOrchestrator.toJsonWithCompany(websites)
     } yield {
-      Ok(Json.toJson(websitesWithCompanies))
+      Ok(Json.toJson(websites))
     }
   }
 
   def update(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
     request.body.validate[WebsiteUpdate].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      websiteUpdate =>
-        for {
-          websiteOption <- websiteRepository.find(uuid)
-          updatedWebsiteOption <- websiteOption.map(website => {
-            websiteRepository.update(websiteUpdate.mergeIn(website)).map(Some(_))
-          }).getOrElse(Future(None))
-          websiteWithCompanyJson <- websiteOrchestrator.toJsonWithCompany(updatedWebsiteOption)
-        } yield {
-          websiteWithCompanyJson.map(Ok(_)).getOrElse(NotFound)
+      websiteUpdate => {
+        (for {
+          website <- OptionT(websiteRepository.find(uuid))
+          updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
+          company <- OptionT(companyRepository.fetchCompany(website.companyId))
+        } yield (updatedWebsite, company)).value.map {
+          case None => NotFound
+          case Some(result) => Ok(Json.toJson(result))
         }
+      }
     )
   }
 
@@ -52,21 +51,19 @@ class WebsiteController @Inject()(
     request.body.validate[WebsiteUpdateCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       websiteUpdate =>
-        for {
-          websiteOption <- websiteRepository.find(uuid)
-          company <- companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
+        (for {
+          website <- OptionT(websiteRepository.find(uuid))
+          company <- OptionT.liftF(companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
             siret = websiteUpdate.companySiret,
             name = websiteUpdate.companyName,
             address = websiteUpdate.companyAddress,
             postalCode = websiteUpdate.companyPostalCode,
             activityCode = websiteUpdate.companyActivityCode,
-          ))
-          updatedWebsite <- websiteOption.map(website =>
-            websiteRepository.update(website.copy(companyId = company.id)).map(Some(_))
-          ).getOrElse(Future(None))
-          websiteWithCompany <- websiteOrchestrator.toJsonWithCompany(updatedWebsite)
-        } yield {
-          websiteWithCompany.map(Ok(_)).getOrElse(InternalServerError)
+          )))
+          websiteUpdate <- OptionT.liftF(websiteRepository.update(website.copy(companyId = company.id)))
+        } yield (websiteUpdate, company)).value.map {
+          case None => NotFound
+          case Some(result) => Ok(Json.toJson(result))
         }
     )
   }
@@ -88,9 +85,8 @@ class WebsiteController @Inject()(
             kind = WebsiteKind.DEFAULT,
             companyId = company.id,
           ))
-          websiteWithCompany <- websiteOrchestrator.toJsonWithCompany(website)
         } yield {
-          websiteWithCompany.map(Ok(_)).getOrElse(InternalServerError)
+          Ok(Json.toJson(website, company))
         }
     )
   }

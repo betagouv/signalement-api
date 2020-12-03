@@ -64,8 +64,10 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
     ).getOrElse(Future(Nil))
   }
 
-  def list() = db.run(websiteTableQuery.result)
+  def list() = db.run(websiteTableQuery
+    .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+    .to[List].result
+  )
 
   def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
-
 }
