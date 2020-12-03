@@ -60,7 +60,6 @@
                     <div>
                         <h2>Réponse du professionnel</h2>
 
-                        <div>
                             <b>
                             @response.responseType match {
                                 case ReportResponseType.ACCEPTED => {
@@ -74,10 +73,12 @@
                                 }
                             }
                             </b>
-                        </div>
-
-                        <p>@response.consumerDetails</p>
-                        <p>@response.dgccrfDetails</p>
+                        <div>@response.consumerDetails</div>
+                        @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
+                            <br/>
+                            <b>Informations complémentaires pour la DGCCRF</b>
+                            <div>@details</div>
+                        }
                     </div>
                 }
 
