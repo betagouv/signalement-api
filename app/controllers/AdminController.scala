@@ -1,7 +1,6 @@
 package controllers
 
 import java.net.URI
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -13,11 +12,12 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import models._
+import play.api.libs.json.JsError
+import repositories._
 import play.api.libs.json.Json
 import play.api.Configuration
 import play.api.Logger
 import utils.Constants.ReportStatus.NA
-import utils.Constants.Tags
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 import utils.EmailAddress
@@ -28,9 +28,20 @@ import utils._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import java.time.LocalDate
+
+import services.MailerService
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.Tags
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class AdminController @Inject() (
+    reportRepository: ReportRepository,
+    eventRepository: EventRepository,
+    mailerService: MailerService,
     val configuration: Configuration,
     val silhouette: Silhouette[AuthEnv],
     @Named("email-actor") emailActor: ActorRef
@@ -305,4 +316,68 @@ class AdminController @Inject() (
           .getOrElse(NotFound)
       )
   }
+
+  def sendProAckToConsumer = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    import AdminObjects.ReportList
+    request.body
+      .validate[ReportList](Json.reads[ReportList])
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        results => {
+          for {
+            reports <- reportRepository.getReportsByIds(results.reportIds)
+            eventsMap <- eventRepository.prefetchReportsEvents(reports)
+          } yield reports.foreach { report =>
+            eventsMap
+              .get(report.id)
+              .map(_.find(_.action == REPORT_PRO_RESPONSE))
+              .flatten
+              .map { responseEvent =>
+                emailActor ? EmailActor.EmailRequest(
+                  from = mailFrom,
+                  recipients = Seq(report.email),
+                  subject = EmailSubjects.REPORT_ACK_PRO_CONSUMER,
+                  bodyHtml = views.html.mails.consumer
+                    .reportToConsumerAcknowledgmentPro(
+                      report,
+                      responseEvent.details.as[ReportResponse],
+                      configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
+                    )
+                    .toString,
+                  attachments = mailerService.attachmentSeqForWorkflowStepN(4)
+                )
+              }
+              .getOrElse()
+          }
+          Future(Ok)
+        }
+      )
+  }
+
+  def sendNewReportToPro = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    import AdminObjects.ReportList
+    request.body
+      .validate[ReportList](Json.reads[ReportList])
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        results => {
+          reportRepository
+            .getReportsByIds(results.reportIds)
+            .map(_.foreach { report =>
+              emailActor ? EmailActor.EmailRequest(
+                from = mailFrom,
+                recipients = Seq(report.email),
+                subject = EmailSubjects.NEW_REPORT,
+                bodyHtml = views.html.mails.professional.reportNotification(report).toString,
+                attachments = mailerService.attachmentSeqForWorkflowStepN(4)
+              )
+            })
+          Future(Ok)
+        }
+      )
+  }
+}
+
+object AdminObjects {
+  case class ReportList(reportIds: List[UUID])
 }
