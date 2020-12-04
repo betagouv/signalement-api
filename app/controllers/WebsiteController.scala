@@ -10,6 +10,7 @@ import play.api.libs.json.{JsError, Json}
 import repositories.{CompanyRepository, WebsiteRepository}
 import utils.silhouette.auth.{AuthEnv, WithRole}
 import cats.data.OptionT
+
 import scala.concurrent.{ExecutionContext, Future}
 import models.WebsiteCompanyFormat._
 import cats.implicits._
@@ -50,21 +51,30 @@ class WebsiteController @Inject()(
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
     request.body.validate[WebsiteUpdateCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      websiteUpdate =>
-        (for {
-          website <- OptionT(websiteRepository.find(uuid))
-          company <- OptionT.liftF(companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
-            siret = websiteUpdate.companySiret,
-            name = websiteUpdate.companyName,
-            address = websiteUpdate.companyAddress,
-            postalCode = websiteUpdate.companyPostalCode,
-            activityCode = websiteUpdate.companyActivityCode,
-          )))
-          websiteUpdate <- OptionT.liftF(websiteRepository.update(website.copy(companyId = company.id)))
-        } yield (websiteUpdate, company)).value.map {
-          case None => NotFound
-          case Some(result) => Ok(Json.toJson(result))
-        }
+      websiteUpdate => {
+        val companyFuture = companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
+          siret = websiteUpdate.companySiret,
+          name = websiteUpdate.companyName,
+          address = websiteUpdate.companyAddress,
+          postalCode = websiteUpdate.companyPostalCode,
+          activityCode = websiteUpdate.companyActivityCode,
+        ))
+        val websiteFuture = websiteRepository.find(uuid)
+        for {
+          websiteOpt <- websiteFuture
+          company <- companyFuture
+          result <- if (company.siret == websiteUpdate.companySiret) {
+            Future.successful(Conflict)
+          } else {
+            websiteOpt
+              .map(website => websiteRepository
+                .update(website.copy(companyId = company.id))
+                .map(updated => Ok(Json.toJson((updated, company))))
+              )
+              .getOrElse(Future.successful(NotFound))
+          }
+        } yield result
+      }
     )
   }
 
