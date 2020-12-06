@@ -53,15 +53,20 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
       .flatMap(_.map(Future(_))
       .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite)))
 
-  def searchCompaniesByUrl(url: String) = {
-    URL(url).getHost.map(host =>
-      db.run(websiteTableQuery
-        .filter(_.host === host)
-        .filterNot(_.kind === WebsiteKind.PENDING)
-        .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
-        .result
+  def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) = {
+    db.run(websiteTableQuery
+      .filter(_.host === host)
+      .filter(w =>
+        kinds.fold(true.bind)(w.kind.inSet(_))
       )
-    ).getOrElse(Future(Nil))
+      .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .result
+    )
+  }
+
+  def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None
+  ) = {
+    URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
   }
 
   def list() = db.run(websiteTableQuery

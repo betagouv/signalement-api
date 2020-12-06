@@ -38,6 +38,10 @@ class WebsiteController @Inject()(
       websiteUpdate => {
         (for {
           website <- OptionT(websiteRepository.find(uuid))
+          _ <- OptionT.liftF(
+            if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
+            else Future.successful()
+          )
           updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
           company <- OptionT(companyRepository.fetchCompany(website.companyId))
         } yield (updatedWebsite, company)).value.map {
@@ -48,34 +52,46 @@ class WebsiteController @Inject()(
     )
   }
 
+  private[this] def unvalidateOtherWebsites(updatedWebsite: Website) = {
+    for {
+      websitesWithSameHost <- websiteRepository.searchCompaniesByHost(updatedWebsite.host).map(websites => websites
+        .map(_._1)
+        .filter(_.id != updatedWebsite.id)
+        .filter(_.kind == WebsiteKind.DEFAULT)
+      )
+      unvalidatedWebsites <- Future.sequence(websitesWithSameHost.map(website => websiteRepository.update(website.copy(kind = WebsiteKind.PENDING))))
+    } yield {
+      unvalidatedWebsites
+    }
+  }
+
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
     request.body.validate[WebsiteUpdateCompany].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       websiteUpdate => {
-        val companyFuture = companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
+        val newCompanyFuture = companyRepository.getOrCreate(websiteUpdate.companySiret, Company(
           siret = websiteUpdate.companySiret,
           name = websiteUpdate.companyName,
           address = websiteUpdate.companyAddress,
           postalCode = websiteUpdate.companyPostalCode,
           activityCode = websiteUpdate.companyActivityCode,
         ))
-        val websiteFuture = websiteRepository.find(uuid)
-        for {
-          websiteOpt <- websiteFuture
-          company <- companyFuture
-          result <- if (company.siret == websiteUpdate.companySiret) {
+        (for {
+          website <- OptionT(websiteRepository.find(uuid))
+          otherAssociatedCompaniesIds <- OptionT.liftF(websiteRepository.searchCompaniesByHost(website.host).map(_.map(_._2.siret)))
+          newCompany <- OptionT.liftF(newCompanyFuture)
+          result <- OptionT.liftF(if (otherAssociatedCompaniesIds.contains(websiteUpdate.companySiret)) {
             Future.successful(Conflict)
           } else {
-            websiteOpt
-              .map(website => websiteRepository
-                .update(website.copy(companyId = company.id))
-                .map(updated => Ok(Json.toJson((updated, company))))
-              )
-              .getOrElse(Future.successful(NotFound))
-          }
-        } yield result
-      }
-    )
+            websiteRepository
+              .update(website.copy(companyId = newCompany.id, kind = WebsiteKind.DEFAULT))
+              .map(updated => Ok(Json.toJson((updated, newCompany))))
+          })
+        } yield result).value.map {
+          case None => NotFound
+          case Some(result) => result
+        }
+      })
   }
 
   def create() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
