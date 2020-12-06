@@ -22,7 +22,6 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val defaultWebsite = Fixtures.genWebsite.sample.get.copy(companyId = defaultCompany.id, kind = WebsiteKind.DEFAULT)
   val marketplaceWebsite = Fixtures.genWebsite.sample.get.copy(companyId = marketplaceCompany.id, kind = WebsiteKind.MARKETPLACE)
   val pendingWebsite = Fixtures.genWebsite.sample.get.copy(companyId = pendingCompany.id, kind = WebsiteKind.PENDING)
-  val exclusiveWebsite = Fixtures.genWebsite.sample.get.copy(companyId = exclusiveCompany.id, kind = WebsiteKind.EXCLUSIVE)
 
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
@@ -35,7 +34,6 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       _ <-  websiteRepository.create(defaultWebsite)
       _ <-  websiteRepository.create(marketplaceWebsite)
       _ <-  websiteRepository.create(pendingWebsite)
-      _ <-  websiteRepository.create(exclusiveWebsite)
     } yield Unit,
       Duration.Inf)
   }
@@ -59,9 +57,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   def e1 = websiteRepository.searchCompaniesByUrl(s"http://${defaultWebsite.host}") must beEqualTo(Seq((defaultWebsite, defaultCompany))).await
   def e2 = websiteRepository.searchCompaniesByUrl(s"http://${pendingWebsite.host}") must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(Seq((marketplaceWebsite, marketplaceCompany))).await
-  def e4 = websiteRepository.searchCompaniesByUrl(s"http://${exclusiveWebsite.host}") must beEqualTo(Seq((exclusiveWebsite, exclusiveCompany))).await
   def e5 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(defaultWebsite).await
-  def e6 = websiteRepository.create(Website(host = exclusiveWebsite.host, companyId = defaultCompany.id)) must beEqualTo(exclusiveWebsite).await
   def e7 = {
     val newWebsite = websiteRepository.create(Website(host = newHost, companyId = defaultCompany.id))
     newWebsite.map(w => (w.host, w.companyId, w.kind)) must beEqualTo(newHost, defaultCompany.id, WebsiteKind.PENDING).await

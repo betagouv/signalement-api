@@ -48,7 +48,7 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
   def create(newWebsite: Website) =
     db.run(websiteTableQuery
       .filter(_.host === newWebsite.host)
-      .filter(website => (website.kind === WebsiteKind.values.filter(_.isExlusive).bind.any) || (website.companyId === newWebsite.companyId))
+      .filter(website => (website.kind === WebsiteKind.values.filter(_.isExclusive).bind.any) || (website.companyId === newWebsite.companyId))
       .result.headOption)
       .flatMap(_.map(Future(_))
       .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite)))

@@ -7,15 +7,14 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.{Address, SIRET}
 
-sealed case class WebsiteKind(value: String, isExlusive: Boolean)
+sealed case class WebsiteKind(value: String, isExclusive: Boolean)
 
 object WebsiteKind {
-  val DEFAULT = WebsiteKind("DEFAULT", false)
+  val DEFAULT = WebsiteKind("DEFAULT", true)
   val MARKETPLACE = WebsiteKind("MARKETPLACE", true)
   val PENDING = WebsiteKind("PENDING", false)
-  val EXCLUSIVE = WebsiteKind("EXCLUSIVE", true)
 
-  val values = List(DEFAULT, MARKETPLACE, PENDING, EXCLUSIVE)
+  val values = List(DEFAULT, MARKETPLACE, PENDING)
 
   def fromValue(v: String) = {
     values.find(_.value == v).head
