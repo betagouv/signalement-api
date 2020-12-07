@@ -4,22 +4,4 @@ UPDATE websites
 SET kind = 'DEFAULT'
 WHERE kind = 'EXCLUSIVE';
 
-DROP TYPE IF EXISTS WebsiteKind;
-CREATE TYPE WebsiteKind AS ENUM ('DEFAULT','MARKETPLACE','PENDING');
-
-ALTER TABLE websites ALTER kind DROP DEFAULT;
-
-ALTER TABLE websites
-ALTER COLUMN kind TYPE WebsiteKind USING kind::WebsiteKind;
-
-ALTER TABLE websites ALTER kind SET DEFAULT 'DEFAULT'::WebsiteKind;
-
 -- !Downs
-
-ALTER TABLE websites ALTER kind DROP DEFAULT;
-
-ALTER TABLE websites ALTER COLUMN kind TYPE VARCHAR;
-
-DROP TYPE IF EXISTS WebsiteKind;
-
-ALTER TABLE websites ALTER kind SET DEFAULT 'DEFAULT';
