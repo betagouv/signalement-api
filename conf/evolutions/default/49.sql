@@ -4,7 +4,7 @@ UPDATE websites
 SET kind = 'DEFAULT'
 WHERE kind = 'EXCLUSIVE';
 
-CREATE TYPE WebsiteKind AS ENUM ('DEFAULT','MARKETPLACE','PENDING');
+CREATE TYPE IF NOT EXISTS WebsiteKind AS ENUM ('DEFAULT','MARKETPLACE','PENDING');
 
 ALTER TABLE websites alter kind drop default;
 
