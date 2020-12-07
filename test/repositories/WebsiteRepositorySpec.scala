@@ -46,11 +46,9 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
     retrieve default website                                            $e1
     retrieve marketplace website                                        $e2
     not retrieve pending website                                        $e3
-    retrieve exclusive website                                          $e4
 
  Adding new website on company should
     if the website is already define for the company, return existing website       $e5
-    if the website is already define and is exclusive, return existing website      $e6
     else add new website with pending kind                                          $e7
  """
 
