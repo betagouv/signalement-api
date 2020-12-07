@@ -17,7 +17,6 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val defaultCompany = Fixtures.genCompany.sample.get
   val marketplaceCompany = Fixtures.genCompany.sample.get
   val pendingCompany = Fixtures.genCompany.sample.get
-  val exclusiveCompany = Fixtures.genCompany.sample.get
 
   val defaultWebsite = Fixtures.genWebsite.sample.get.copy(companyId = defaultCompany.id, kind = WebsiteKind.DEFAULT)
   val marketplaceWebsite = Fixtures.genWebsite.sample.get.copy(companyId = marketplaceCompany.id, kind = WebsiteKind.MARKETPLACE)
@@ -30,7 +29,6 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       _ <-  companyRepository.getOrCreate(defaultCompany.siret, defaultCompany)
       _ <-  companyRepository.getOrCreate(marketplaceCompany.siret, marketplaceCompany)
       _ <-  companyRepository.getOrCreate(pendingCompany.siret, pendingCompany)
-      _ <-  companyRepository.getOrCreate(exclusiveCompany.siret, exclusiveCompany)
       _ <-  websiteRepository.create(defaultWebsite)
       _ <-  websiteRepository.create(marketplaceWebsite)
       _ <-  websiteRepository.create(pendingWebsite)
@@ -53,7 +51,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
  """
 
   def e1 = websiteRepository.searchCompaniesByUrl(s"http://${defaultWebsite.host}") must beEqualTo(Seq((defaultWebsite, defaultCompany))).await
-  def e2 = websiteRepository.searchCompaniesByUrl(s"http://${pendingWebsite.host}") must beEqualTo(Seq.empty).await
+  def e2 = websiteRepository.searchCompaniesByUrl(s"http://${pendingWebsite.host}", Some(Seq(WebsiteKind.MARKETPLACE))) must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(Seq((marketplaceWebsite, marketplaceCompany))).await
   def e5 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(defaultWebsite).await
   def e7 = {
