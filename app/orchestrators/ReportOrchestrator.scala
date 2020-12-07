@@ -90,7 +90,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def updateAssociation(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
+  private[this] def createWebsite(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
     (for {
       host <- hostOpt
       company <- companyOpt
@@ -120,7 +120,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       )
     }
     for {
-      _ <- updateAssociation(draftReport.websiteURL.flatMap(_.getHost), companyOpt)
+      _ <- createWebsite(draftReport.websiteURL.flatMap(_.getHost), companyOpt)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)

@@ -76,11 +76,7 @@ case class Website(
   host: String,
   companyId: UUID,
   kind: WebsiteKind = WebsiteKind.PENDING
-) {
-  def toJsonWithCompany(company: Option[Company]): JsObject = {
-    Json.toJson(this).as[JsObject].deepMerge(Json.obj("company" -> company))
-  }
-}
+)
 
 object Website {
 
@@ -95,10 +91,8 @@ object Website {
 
 object WebsiteCompanyFormat {
 
-  implicit def websiteCompany: Writes[(Website, Company)] = new Writes[(Website, Company)] {
-    def writes(website: (Website, Company)) = {
-      val form_json = Json.toJson(website._1).as[JsObject]
-      form_json + ("company" -> Json.toJson(website._2))
-    }
+  implicit def websiteCompany: Writes[(Website, Company)] = (website: (Website, Company)) => {
+    val form_json = Json.toJson(website._1).as[JsObject]
+    form_json + ("company" -> Json.toJson(website._2))
   }
 }
