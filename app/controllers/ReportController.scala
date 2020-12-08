@@ -14,7 +14,7 @@ import repositories._
 import services.{PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
-import utils.SIRET
+import utils.{Constants, SIRET}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -195,6 +195,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           "id" -> report.id,
           "category" -> report.category,
           "subcategories" -> report.subcategories,
+          "details" -> report.details,
           "siret" -> report.companySiret,
           "postalCode" -> report.companyPostalCode,
           "websiteURL" -> report.websiteURL,
@@ -202,6 +203,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
           "lastName" -> report.lastName,
           "email" -> report.email,
           "contactAgreement" -> report.contactAgreement,
+          "description" -> report.details.filter(d => d.label.matches("Quel est le problème.*")).map(_.value).headOption,
           "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption,
       )
     }
@@ -228,17 +230,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         companyEvents <- report.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
-      } yield report
-              .filter(_ =>
-                              request.identity.userRole == UserRoles.DGCCRF
-                          ||  request.identity.userRole == UserRoles.Admin
-                          ||  proLevel != AccessLevel.NONE)
-              .map(report =>
-                  pdfService.Ok(
-                    List(views.html.pdfs.report(report, events, companyEvents, reportFiles))
-                  )
-              )
-              .getOrElse(NotFound)
+      } yield {
+        val responseOption = events
+          .map(_._1)
+          .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+          .map(_.details)
+          .map(_.as[ReportResponse])
+
+        report
+          .filter(_ =>
+            request.identity.userRole == UserRoles.DGCCRF
+              ||  request.identity.userRole == UserRoles.Admin
+              ||  proLevel != AccessLevel.NONE)
+          .map(report =>
+            pdfService.Ok(
+              List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
+            )
+          )
+          .getOrElse(NotFound)
+      }
     }
   }
 

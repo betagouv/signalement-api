@@ -26,20 +26,19 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-
 class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
-                                   companyRepository: CompanyRepository,
-                                   accessTokenRepository: AccessTokenRepository,
-                                   eventRepository: EventRepository,
-                                   websiteRepository: WebsiteRepository,
-                                   mailerService: MailerService,
-                                   pdfService: PDFService,
-                                   @Named("email-actor") emailActor: ActorRef,
-                                   @Named("upload-actor") uploadActor: ActorRef,
-                                   s3Service: S3Service,
-                                   configuration: Configuration,
-                                   environment: Environment)
-                                   (implicit val executionContext: ExecutionContext) {
+  companyRepository: CompanyRepository,
+  accessTokenRepository: AccessTokenRepository,
+  eventRepository: EventRepository,
+  websiteRepository: WebsiteRepository,
+  mailerService: MailerService,
+  pdfService: PDFService,
+  @Named("email-actor") emailActor: ActorRef,
+  @Named("upload-actor") uploadActor: ActorRef,
+  s3Service: S3Service,
+  configuration: Configuration,
+  environment: Environment)
+  (implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
@@ -54,11 +53,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       existingToken <- accessTokenRepository.fetchActivationToken(company)
       _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
       token         <- existingToken.map(Future(_)).getOrElse(
-                        accessTokenRepository.createToken(
-                          TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
-                          Some(company), Some(AccessLevel.ADMIN)
-                        )
-                       )
+        accessTokenRepository.createToken(
+          TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
+          Some(company), Some(AccessLevel.ADMIN)
+        )
+      )
     } yield token.token
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
@@ -91,9 +90,24 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] =
+  private[this] def createWebsite(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
+    (for {
+      company <- companyOpt
+      host <- hostOpt
+    } yield for {
+      company <- companyRepository.getOrCreate(company.siret, company)
+      website <- websiteRepository.create(Website(host = host, companyId = company.id))
+    } yield {
+      website
+    }) match {
+      case Some(f) => f.map(Some(_))
+      case None    => Future.successful(None)
+    }
+  }
+
+  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
     for {
-      company <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
+      companyOpt <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
         siret,
         Company(
           UUID.randomUUID(),
@@ -105,17 +119,17 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           draftReport.companyActivityCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      website <- company.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(websiteRepository.addCompanyWebsite(_, c.id).map(Some(_))))).getOrElse(Future(None))
-      report <- reportRepository.create(draftReport.generateReport.copy(companyId = company.map(_.id), websiteId = website.map(_.id)))
+      website <- companyOpt.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(host => websiteRepository.create(Website(host = host, companyId = c.id)).map(Some(_))))).getOrElse(Future(None))
+      report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
-      report <- if (report.status == TRAITEMENT_EN_COURS && company.isDefined) notifyProfessionalOfNewReport(report, company.get)
-                else Future(report)
+      report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get)
+      else Future(report)
       event <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
-          company.map(_.id),
+          companyOpt.map(_.id),
           None,
           Some(OffsetDateTime.now()),
           Constants.EventType.CONSO,
@@ -130,12 +144,13 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
         attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
           Seq(
-            AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), List.empty, files)), "application/pdf")
+            AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
           ).filter(_ => report.isContractualDispute)
       )
       logger.debug(s"Report ${report.id} created")
       report
     }
+  }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
@@ -227,7 +242,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   def handleReportView(report: Report, user: User): Future[Report] = {
     if (user.userRole == UserRoles.Pro) {
       eventRepository.getEvents(report.id, EventFilter(None)).flatMap(events =>
-        if(!events.exists(_.action == Constants.ActionEvent.REPORT_READING_BY_PRO)) {
+        if (!events.exists(_.action == Constants.ActionEvent.REPORT_READING_BY_PRO)) {
           manageFirstViewOfReportByPro(report, user.id)
         } else {
           Future(report)
@@ -268,7 +283,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     for {
       company <- companyRepository.fetchCompany(companyId)
       reports <- company.map(c => reportRepository.getReports(c.id)).getOrElse(Future(Nil))
-      cnt       <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
+      cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
       Unit
@@ -357,15 +372,15 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     for {
       report <- reportRepository.getReport(reportId)
       newEvent <- report match {
-          case Some(r) => eventRepository.createEvent(
-            draftEvent.copy(
-              id = Some(UUID.randomUUID()),
-              creationDate = Some(OffsetDateTime.now()),
-              reportId = Some(r.id),
-              companyId = r.companyId,
-              userId = Some(user.id)
-            )).map(Some(_))
-          case _ => Future(None)
+        case Some(r) => eventRepository.createEvent(
+          draftEvent.copy(
+            id = Some(UUID.randomUUID()),
+            creationDate = Some(OffsetDateTime.now()),
+            reportId = Some(r.id),
+            companyId = r.companyId,
+            userId = Some(user.id)
+          )).map(Some(_))
+        case _ => Future(None)
       }
       updatedReport: Option[Report] <- (report, newEvent) match {
         case (Some(r), Some(event)) => reportRepository.update(

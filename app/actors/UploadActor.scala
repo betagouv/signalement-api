@@ -44,6 +44,9 @@ class UploadActor @Inject()(configuration: Configuration,
   }
   override def receive = {
     case Request(reportFile: ReportFile, file: java.io.File) => {
+      if (!avScanEnabled) {
+        reportRepository.setAvOutput(reportFile.id, "Scan is disabled")
+      }
       if (!avScanEnabled || av_scan(reportFile, file)) {
         FileIO.fromPath(file.toPath)
               .to(s3Service.upload(BucketName, reportFile.storageFilename))

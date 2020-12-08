@@ -1,6 +1,5 @@
 package repositories
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -8,8 +7,7 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 import slick.jdbc.JdbcProfile
-import utils.Constants.Departments
-import utils.{Address, SIRET}
+import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,9 +20,10 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "etablissements") {
     def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[String]("siret")
-    def siren = column[String]("siren")
+    def siret = column[SIRET]("siret")
+    def siren = column[SIREN]("siren")
     def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
+    def etablissementSiege = column[Option[String]]("etablissementsiege")
     def complementAdresseEtablissement = column[Option[String]]("complementadresseetablissement")
     def numeroVoieEtablissement = column[Option[String]]("numerovoieetablissement")
     def indiceRepetitionEtablissement = column[Option[String]]("indicerepetitionetablissement")
@@ -42,7 +41,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
 
     def * = (
-      id, siret, siren, dateDernierTraitementEtablissement, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
+      id, siret, siren, dateDernierTraitementEtablissement, etablissementSiege, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
       codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
@@ -75,9 +74,33 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiret(siret: String): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiret(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result)
+
+  def searchBySiretWithHeadOffice(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === SIREN(siret))
+      .filter(company => company.siret === siret || company.etablissementSiege === "true")
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result)
+
+  def searchBySiren(siren: SIREN): Future[List[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === siren)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .take(10)
+      .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
+      .to[List].result)
+
+  def searchHeadOfficeBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+    db.run(companyDataTableQuery
+      .filter(_.siren === siren)
+      .filter(_.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)

@@ -3,8 +3,8 @@ package utils
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import models._
 import models.Event._
+import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -83,7 +83,7 @@ object Fixtures {
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
         id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        None, None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
+        None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
     def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
@@ -113,4 +113,12 @@ object Fixtures {
         companyId <- arbitrary[UUID]
         details <- arbString.arbitrary
     } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+
+    def genWebsite() = for {
+        id <- arbitrary[UUID]
+        companyId <- arbitrary[UUID]
+        websiteUrl <- genWebsiteURL
+        kind <- Gen.oneOf(WebsiteKind.values)
+    } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, companyId, kind)
+
 }

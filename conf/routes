@@ -3,106 +3,114 @@
 # ~~~~
 
 # Static pages
-GET          /api                                       controllers.StaticController.api
+GET           /api                                                   controllers.StaticController.api
 
 # Statistics API
-GET          /api/stats/reports/count                           controllers.StatisticController.getReportCount()
-GET          /api/stats/reports/count/monthly                   controllers.StatisticController.getMonthlyReportCount()
-GET          /api/stats/reports/read/percentage                 controllers.StatisticController.getReportReadByProPercentage()
-GET          /api/stats/reports/read/percentage/monthly         controllers.StatisticController.getMonthlyReportReadByProPercentage()
-GET          /api/stats/reports/read/delay                      controllers.StatisticController.getReportReadMedianDelay()
-GET          /api/stats/reports/responsed/percentage            controllers.StatisticController.getReportWithResponsePercentage()
-GET          /api/stats/reports/responsed/percentage/monthly    controllers.StatisticController.getMonthlyReportWithResponsePercentage()
-GET          /api/stats/reports/responsed/delay                 controllers.StatisticController.getReportWithResponseMedianDelay()
-POST         /api/stats/reports                                 controllers.StatisticController.updateReportData()
+GET           /api/stats/reports/count                               controllers.StatisticController.getReportCount()
+GET           /api/stats/reports/count/monthly                       controllers.StatisticController.getMonthlyReportCount()
+GET           /api/stats/reports/read/percentage                     controllers.StatisticController.getReportReadByProPercentage()
+GET           /api/stats/reports/read/percentage/monthly             controllers.StatisticController.getMonthlyReportReadByProPercentage()
+GET           /api/stats/reports/read/delay                          controllers.StatisticController.getReportReadMedianDelay()
+GET           /api/stats/reports/responsed/percentage                controllers.StatisticController.getReportWithResponsePercentage()
+GET           /api/stats/reports/responsed/percentage/monthly        controllers.StatisticController.getMonthlyReportWithResponsePercentage()
+GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReportWithResponseMedianDelay()
+POST          /api/stats/reports                                     controllers.StatisticController.updateReportData()
 
 # Reports list API
-GET          /api/reports                               controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
-POST         /api/reports/extract                       controllers.ReportListController.extractReports()
+GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], siret: Option[String], companyName: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
+POST          /api/reports/extract                                   controllers.ReportListController.extractReports()
 
 # Report API
-GET          /api/reports/files/:uuid/:filename         controllers.ReportController.downloadReportFile(uuid, filename)
-DELETE       /api/reports/files/:uuid/:filename         controllers.ReportController.deleteReportFile(uuid, filename)
-POST         /api/reports/files                         controllers.ReportController.uploadReportFile()
+GET           /api/reports/files/:uuid/:filename                     controllers.ReportController.downloadReportFile(uuid, filename)
+DELETE        /api/reports/files/:uuid/:filename                     controllers.ReportController.deleteReportFile(uuid, filename)
+POST          /api/reports/files                                     controllers.ReportController.uploadReportFile()
 
-GET          /api/reports/:uuid                         controllers.ReportController.getReport(uuid)
-GET          /api/reports/:uuid/download                controllers.ReportController.reportAsPDF(uuid)
-DELETE       /api/reports/:uuid                         controllers.ReportController.deleteReport(uuid)
+GET           /api/reports/:uuid                                     controllers.ReportController.getReport(uuid)
+GET           /api/reports/:uuid/download                            controllers.ReportController.reportAsPDF(uuid)
+DELETE        /api/reports/:uuid                                     controllers.ReportController.deleteReport(uuid)
 
-POST         /api/reports                               controllers.ReportController.createReport()
-POST         /api/reports/:uuid/response                controllers.ReportController.reportResponse(uuid)
-POST         /api/reports/:uuid/response/review         controllers.ReportController.reviewOnReportResponse(uuid)
-POST         /api/reports/:uuid/company                 controllers.ReportController.updateReportCompany(uuid)
-POST         /api/reports/:uuid/consumer                controllers.ReportController.updateReportConsumer(uuid)
-POST         /api/reports/:uuid/action                  controllers.ReportController.createReportAction(uuid)
-GET          /api/reports/:uuid/events                  controllers.ReportController.getEvents(uuid, eventType: Option[String])
-GET          /api/companies/:siret/events               controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
+POST          /api/reports                                           controllers.ReportController.createReport()
+POST          /api/reports/:uuid/response                            controllers.ReportController.reportResponse(uuid)
+POST          /api/reports/:uuid/response/review                     controllers.ReportController.reviewOnReportResponse(uuid)
+POST          /api/reports/:uuid/company                             controllers.ReportController.updateReportCompany(uuid)
+POST          /api/reports/:uuid/consumer                            controllers.ReportController.updateReportConsumer(uuid)
+POST          /api/reports/:uuid/action                              controllers.ReportController.createReportAction(uuid)
+GET           /api/reports/:uuid/events                              controllers.ReportController.getEvents(uuid, eventType: Option[String])
+GET           /api/companies/:siret/events                           controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
 
-GET          /api/nbReportsGroupByCompany               controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
+GET           /api/nbReportsGroupByCompany                           controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
 # Report API for externals SI
-GET          /api/ext/reports/siret/:siret/count        controllers.ReportController.getReportCountBySiret(siret: String)
-GET          /api/ext/reports/:uuid                     controllers.ReportController.getReportToExternal(uuid)
+GET           /api/ext/reports/siret/:siret/count                    controllers.ReportController.getReportCountBySiret(siret: String)
+GET           /api/ext/reports/:uuid                                 controllers.ReportController.getReportToExternal(uuid)
 
 # Admin API
 
 GET          /api/admin/test-email                      controllers.AdminController.getEmailCodes
 POST         /api/admin/test-email                      controllers.AdminController.sendTestEmail(templateRef, to)
+POST         /api/admin/emails/proAckToConsumer         controllers.AdminController.sendProAckToConsumer
+POST         /api/admin/emails/newReportToPro           controllers.AdminController.sendNewReportToPro
 
 # Async files API
-GET         /api/async-files                            controllers.AsyncFileController.listAsyncFiles
+GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles
 
 # Events API
 
 # Constants API
-GET         /api/constants/reportStatus                 controllers.ConstantController.getReportStatus()
+GET           /api/constants/reportStatus                            controllers.ConstantController.getReportStatus()
 
 # Authentication API
-POST	    /api/authenticate                           controllers.AuthController.authenticate
-POST	    /api/authenticate/password/forgot           controllers.AuthController.forgotPassword
-POST	    /api/authenticate/password/reset            controllers.AuthController.resetPassword(token: java.util.UUID)
+POST          /api/authenticate                                      controllers.AuthController.authenticate
+POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword
+POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
 
 # Accesses API
-GET         /api/accesses/connected-user                controllers.CompanyAccessController.myCompanies()
-GET         /api/accesses/:siret                        controllers.CompanyAccessController.listAccesses(siret: String)
-GET         /api/accesses/:siret/pending                controllers.CompanyAccessController.listPendingTokens(siret: String)
-PUT         /api/accesses/:siret/:userId                controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
-DELETE      /api/accesses/:siret/:userId                controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
-GET         /api/accesses/:siret/token                  controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
-POST        /api/accesses/:siret/send-activation-link   controllers.CompanyAccessController.sendActivationLink(siret: String)
-POST        /api/accesses/:siret/token/accept           controllers.CompanyAccessController.acceptToken(siret: String)
-DELETE      /api/accesses/:siret/token/:tokenId         controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
-POST        /api/accesses/:siret/invitation             controllers.CompanyAccessController.sendInvitation(siret: String)
+GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()
+GET           /api/accesses/:siret                                   controllers.CompanyAccessController.listAccesses(siret: String)
+GET           /api/accesses/:siret/pending                           controllers.CompanyAccessController.listPendingTokens(siret: String)
+PUT           /api/accesses/:siret/:userId                           controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)
+DELETE        /api/accesses/:siret/:userId                           controllers.CompanyAccessController.removeAccess(siret: String, userId: java.util.UUID)
+GET           /api/accesses/:siret/token                             controllers.CompanyAccessController.fetchTokenInfo(siret: String, token: String)
+POST          /api/accesses/:siret/send-activation-link              controllers.CompanyAccessController.sendActivationLink(siret: String)
+POST          /api/accesses/:siret/token/accept                      controllers.CompanyAccessController.acceptToken(siret: String)
+DELETE        /api/accesses/:siret/token/:tokenId                    controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
+POST          /api/accesses/:siret/invitation                        controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
-GET         /api/account/token                          controllers.AccountController.fetchTokenInfo(token: String)
-POST        /api/account/password                       controllers.AccountController.changePassword
-POST        /api/account/activation                     controllers.AccountController.activateAccount
-POST        /api/account/dgccrf/invitation              controllers.AccountController.sendDGCCRFInvitation
-GET         /api/account/dgccrf/pending                 controllers.AccountController.fetchPendingDGCCRF
-GET         /api/account/dgccrf/users                   controllers.AccountController.fetchDGCCRFUsers
-POST        /api/account/validate-email                 controllers.AccountController.validateEmail
+GET           /api/account/token                                     controllers.AccountController.fetchTokenInfo(token: String)
+POST          /api/account/password                                  controllers.AccountController.changePassword
+POST          /api/account/activation                                controllers.AccountController.activateAccount
+POST          /api/account/dgccrf/invitation                         controllers.AccountController.sendDGCCRFInvitation
+GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF
+GET           /api/account/dgccrf/users                              controllers.AccountController.fetchDGCCRFUsers
+POST          /api/account/validate-email                            controllers.AccountController.validateEmail
 
 # Company details API
-GET         /api/companies/to-activate                  controllers.CompanyController.companiesToActivate
-POST        /api/companies/activation-document          controllers.CompanyController.getActivationDocument
-POST        /api/companies/companies-posted             controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET         /api/companies/search/registered            controllers.CompanyController.searchRegisteredCompany(q: String)
-GET         /api/companies/search/:siret                controllers.CompanyController.searchCompanyBySiret(siret: String)
-GET         /api/companies/search-url                   controllers.CompanyController.searchCompanyByWebsite(url: String)
-GET         /api/companies/search                       controllers.CompanyController.searchCompany(q: String, postalCode: String)
-GET         /api/companies/:siret                       controllers.CompanyController.companyDetails(siret)
-PUT         /api/companies/:siret/address               controllers.CompanyController.updateCompanyAddress(siret)
+GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
+POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
+POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
+GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
+GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
+GET           /api/companies/search-url                              controllers.CompanyController.searchCompanyByWebsite(url: String)
+GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
+GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
+PUT           /api/companies/:siret/address                          controllers.CompanyController.updateCompanyAddress(siret)
 
 # Rating API
-POST        /api/rating                                 controllers.RatingController.rate
+POST          /api/rating                                            controllers.RatingController.rate
 
 # Subscription API
-GET         /api/subscriptions                          controllers.SubscriptionController.getSubscriptions
-POST        /api/subscriptions                          controllers.SubscriptionController.createSubscription
-PUT         /api/subscriptions/:subscriptionId          controllers.SubscriptionController.updateSubscription(subscriptionId: java.util.UUID)
-GET         /api/subscriptions/:subscriptionId          controllers.SubscriptionController.getSubscription(subscriptionId: java.util.UUID)
-DELETE      /api/subscriptions/:subscriptionId          controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
+GET           /api/subscriptions                                     controllers.SubscriptionController.getSubscriptions
+POST          /api/subscriptions                                     controllers.SubscriptionController.createSubscription
+PUT           /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.updateSubscription(subscriptionId: java.util.UUID)
+GET           /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.getSubscription(subscriptionId: java.util.UUID)
+DELETE        /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
 
+# Websites API
+GET           /api/websites                                          controllers.WebsiteController.fetchWithCompanies
+PUT           /api/websites/:id/company                              controllers.WebsiteController.updateCompany(id: java.util.UUID)
+PUT           /api/websites/:id                                      controllers.WebsiteController.update(id: java.util.UUID)
+PUT           /api/websites                                          controllers.WebsiteController.create
+DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
-GET         /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)
