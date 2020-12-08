@@ -13,7 +13,6 @@ import cats.data.OptionT
 
 import scala.concurrent.{ExecutionContext, Future}
 import models.WebsiteCompanyFormat._
-import cats.implicits._
 
 @Singleton
 class WebsiteController @Inject()(
