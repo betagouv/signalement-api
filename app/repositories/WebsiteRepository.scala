@@ -14,10 +14,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val companyRepository: CompanyRepository)
-                                     (implicit ec: ExecutionContext) {
+  (implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+
   import PostgresProfile.api._
   import dbConfig._
 
@@ -29,39 +30,49 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
     def host = column[String]("host")
     def companyId = column[UUID]("company_id")
     def kind = column[WebsiteKind]("kind")
-    def * = (id, creationDate, host, companyId, kind) <> (Website.tupled, Website.unapply)
+    def * = (id, creationDate, host, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
   }
 
   val websiteTableQuery = TableQuery[WebsiteTable]
 
-  def create(website: Website): Future[Website] = db
-    .run(websiteTableQuery += website)
-    .map(_ => website)
+  def find(id: UUID): Future[Option[Website]] = db
+    .run(websiteTableQuery.filter(_.id === id).to[List].result.headOption)
 
+  def update(website: Website): Future[Website] = {
+    val query = for (refWebsite <- websiteTableQuery if refWebsite.id === website.id)
+      yield refWebsite
+    db.run(query.update(website))
+      .map(_ => website)
+  }
 
-  def addCompanyWebsite(host: String, companyId: UUID) =
+  def create(newWebsite: Website) =
     db.run(websiteTableQuery
-      .filter(_.host === host)
-      .filter(website => (website.kind === WebsiteKind.values.filter(_.isExlusive).bind.any) || (website.companyId === companyId))
+      .filter(_.host === newWebsite.host)
+      .filter(website => (website.kind === WebsiteKind.values.filter(_.isExclusive).bind.any) || (website.companyId === newWebsite.companyId))
       .result.headOption)
       .flatMap(_.map(Future(_))
-        .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += Website(
-          UUID.randomUUID(),
-          OffsetDateTime.now,
-          host,
-          companyId,
-          kind = WebsiteKind.PENDING
-        )))
-      )
+      .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite)))
 
-  def searchCompaniesByUrl(url: String) = {
-    URL(url).getHost.map(host =>
-      db.run(websiteTableQuery
-        .filter(_.host === host)
-        .filterNot(_.kind === WebsiteKind.PENDING)
-        .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
-        .result
+  def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) = {
+    db.run(websiteTableQuery
+      .filter(_.host === host)
+      .filter(w =>
+        kinds.fold(true.bind)(w.kind.inSet(_))
       )
-    ).getOrElse(Future(Nil))
+      .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .result
+    )
   }
+
+  def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None
+  ) = {
+    URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
+  }
+
+  def list() = db.run(websiteTableQuery
+    .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+    .to[List].result
+  )
+
+  def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
 }

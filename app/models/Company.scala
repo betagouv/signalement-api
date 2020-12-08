@@ -32,9 +32,9 @@ case class UserAccess(
 )
 
 case class Company(
-                  id: UUID,
+                  id: UUID = UUID.randomUUID(),
                   siret: SIRET,
-                  creationDate: OffsetDateTime,
+                  creationDate: OffsetDateTime = OffsetDateTime.now,
                   name: String,
                   address: Address,
                   postalCode: Option[String],
