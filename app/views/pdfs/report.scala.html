@@ -59,29 +59,27 @@
                         }
                     </ul>
                     @responseOption.map { response =>
-                        <div>
-                            <h2>Réponse du professionnel</h2>
+                        <h2>Réponse du professionnel</h2>
 
-                            <b>
-                                @response.responseType match {
-                                    case ReportResponseType.ACCEPTED => {
-                                        Signalement pris en compte
-                                    }
-                                    case ReportResponseType.REJECTED => {
-                                        Signalement infondé
-                                    }
-                                    case ReportResponseType.NOT_CONCERNED => {
-                                        Etablissement non concerné par le signalement
-                                    }
+                        <b>
+                            @response.responseType match {
+                                case ReportResponseType.ACCEPTED => {
+                                    Signalement pris en compte
                                 }
-                            </b>
-                            <div>@response.consumerDetails</div>
-                            @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
-                                <br/>
-                                <b>Informations complémentaires pour la DGCCRF</b>
-                                <div>@details</div>
+                                case ReportResponseType.REJECTED => {
+                                    Signalement infondé
+                                }
+                                case ReportResponseType.NOT_CONCERNED => {
+                                    Etablissement non concerné par le signalement
+                                }
                             }
-                        </div>
+                        </b>
+                        <div>@response.consumerDetails</div>
+                        @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
+                            <br/>
+                            <b>Informations complémentaires pour la DGCCRF</b>
+                            <div>@details</div>
+                        }
                     }
                     <h2>Entreprise</h2>
                     @report.companySiret.map{siret =>
