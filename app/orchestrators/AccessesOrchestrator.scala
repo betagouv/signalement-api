@@ -21,6 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.time.Duration
 
 class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
+                                     val companyDataRepository: CompanyDataRepository,
                                      accessTokenRepository: AccessTokenRepository,
                                      userRepository: UserRepository,
                                      eventRepository: EventRepository,
@@ -121,6 +122,17 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
       case None       => sendInvitation(company, email, level, invitedBy)
     }
+
+  def addUserOrInvite(sirets: List[SIRET], email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
+    for {
+      companiesData <- Future.sequence(sirets.map(companyDataRepository.searchBySiret(_)))
+      companies <- {
+        Future.sequence(companiesData.flatten.map {
+          case (companyData, activity) => companyRepository.getOrCreate(companyData.siret, companyData.toSearchResult(activity.map(_.label)).toCompany)
+        })
+      }
+      _ <- Future.sequence(companies.map(company => addUserOrInvite(company, email, level, invitedBy)))
+    } yield ()
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
