@@ -4,10 +4,7 @@ body, div {
 }
 
 .logo-marianne {
-    position: absolute;
-    left: 0.5cm;
-    top: 0.7cm;
-    width: 100%;
+    float: left;
 }
 
 .logo-marianne > img {
@@ -15,9 +12,7 @@ body, div {
 }
 
 .logo-sc {
-    position: absolute;
-    left: 14.85cm;
-    top: 0.7cm;
+    text-align: right;
 }
 
 .logo-sc > img {
@@ -25,19 +20,11 @@ body, div {
 }
 
 .references {
-    position: absolute;
-    right: 0.5cm;
-    top: 3cm;
     text-align: right;
 }
 
 .content {
-    position: absolute;
-    top: 4.5cm;
-    left: 0.5cm;
-    right: 0.5cm;
-    float: left;
-    text-align: justify;
+    margin-top: 2cm;
 }
 
 h2 {

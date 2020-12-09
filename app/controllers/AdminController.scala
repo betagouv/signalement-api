@@ -1,29 +1,27 @@
 package controllers
 
-import akka.actor.ActorRef
-import akka.pattern.ask
 import java.net.URI
-import java.time.OffsetDateTime
+import java.time.{LocalDate, OffsetDateTime}
 import java.util.UUID
 
 import actors.EmailActor
+import akka.actor.ActorRef
+import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
 import models._
-import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsError, Json}
+import play.api.{Configuration, Logger}
 import repositories._
-import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{Address, Country, EmailAddress, EmailSubjects, SIRET}
+import services.MailerService
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ReportStatus.NA
+import utils.Constants.Tags
+import utils.silhouette.auth.{AuthEnv, WithRole}
+import utils._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import java.time.LocalDate
-
-import utils.Constants.ReportStatus.NA
-import services.MailerService
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.Tags
 
 
 @Singleton

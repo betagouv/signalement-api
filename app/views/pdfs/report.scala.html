@@ -26,7 +26,7 @@
     <body>
         <div>
             <div class="logo-marianne">
-                <img src='@routes.Assets.versioned("images/gouv.svg")'/>
+                <img src='@routes.Assets.versioned("images/gouv.png")'/>
             </div>
             <div class="logo-sc">
                 <img src='@routes.Assets.versioned("images/logo-signal-conso.png")' height="1.7cm"/>
@@ -58,24 +58,10 @@
                             </li>
                         }
                     </ul>
-                    <h2>Entreprise</h2>
-                    @report.companySiret.map{siret =>
-                        <div>
-                            <b>@siret</b>
-                        </div>
-                    }
-                    @report.companyAddress.map{address =>
-                        <div>
-                            @views.html.fragments.address(address)
-                        </div>
-                    }
-                </ul>
-
-                @responseOption.map { response =>
-                    <div>
+                    @responseOption.map { response =>
                         <h2>Réponse du professionnel</h2>
 
-                            <b>
+                        <b>
                             @response.responseType match {
                                 case ReportResponseType.ACCEPTED => {
                                     Signalement pris en compte
@@ -87,19 +73,25 @@
                                     Etablissement non concerné par le signalement
                                 }
                             }
-                            </b>
+                        </b>
                         <div>@response.consumerDetails</div>
                         @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
                             <br/>
                             <b>Informations complémentaires pour la DGCCRF</b>
                             <div>@details</div>
                         }
-                    </div>
-                }
-
-
-                <h2>Entreprise</h2>
-                @report.companySiret.map{siret =>
+                    }
+                    <h2>Entreprise</h2>
+                    @report.companySiret.map{siret =>
+                        <div>
+                            <b>@siret</b>
+                        </div>
+                    }
+                    @report.companyAddress.map{address =>
+                        <div>
+                            @views.html.fragments.address(address)
+                        </div>
+                    }
                     @report.companyCountry.map{country =>
                         <div>
                             @country.name
