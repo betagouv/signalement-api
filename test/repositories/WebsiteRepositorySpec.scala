@@ -47,6 +47,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
 
  Adding new website on company should
     if the website is already define for the company, return existing website       $e5
+    if the website is already define and is exclusive, return existing website      $e6
     else add new website with pending kind                                          $e7
  """
 
@@ -54,6 +55,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   def e2 = websiteRepository.searchCompaniesByUrl(s"http://${pendingWebsite.host}", Some(Seq(WebsiteKind.MARKETPLACE))) must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(Seq((marketplaceWebsite, marketplaceCompany))).await
   def e5 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(defaultWebsite).await
+  def e6 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(defaultWebsite).await
   def e7 = {
     val newWebsite = websiteRepository.create(Website(host = newHost, companyId = defaultCompany.id))
     newWebsite.map(w => (w.host, w.companyId, w.kind)) must beEqualTo(newHost, defaultCompany.id, WebsiteKind.PENDING).await

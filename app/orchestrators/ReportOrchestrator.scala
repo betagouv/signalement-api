@@ -90,21 +90,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  private[this] def createWebsite(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
-    (for {
-      company <- companyOpt
-      host <- hostOpt
-    } yield for {
-      company <- companyRepository.getOrCreate(company.siret, company)
-      website <- websiteRepository.create(Website(host = host, companyId = company.id))
-    } yield {
-      website
-    }) match {
-      case Some(f) => f.map(Some(_))
-      case None    => Future.successful(None)
-    }
-  }
-
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
     for {
       companyOpt <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
