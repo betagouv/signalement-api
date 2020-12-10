@@ -19,6 +19,7 @@ case class ReportFilter(
                          email: Option[String] = None,
                          siret: Option[String] = None,
                          companyName: Option[String] = None,
+                         companyCountries: Seq[String] = List(),
                          start: Option[LocalDate] = None,
                          end: Option[LocalDate] = None,
                          category: Option[String] = None,
@@ -232,6 +233,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterOpt(filter.companyName) {
           case(table, companyName) => table.companyName like s"${companyName}%"
+        }
+        .filterIf(filter.companyCountries.nonEmpty) {
+          case table => table.companyCountry
+            .map(country => country.inSet(filter.companyCountries.map(Country.fromName)))
+            .getOrElse(false)
         }
         .filterOpt(filter.start) {
           case(table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime

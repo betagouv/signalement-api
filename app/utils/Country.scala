@@ -13,7 +13,7 @@ object Country {
   val Algerie = Country("DZA", "Algerie")
   val Allemagne = Country("DEU", "Allemagne",european = true)
   val Andorre = Country("AND", "Andorre", transfer = true)
-  val Angola = Country("AGO", "")
+  val Angola = Country("AGO", "Angola")
   val AntiguaEtBarbuda = Country("ATG", "Antigua-et-Barbuda")
   val ArabieSaoudite = Country("SAU", "Arabie saoudite")
   val Argentine = Country("ARG", "Argentine")
