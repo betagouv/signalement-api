@@ -59,7 +59,7 @@ case class DraftReport(
   }
 }
 object DraftReport {
-  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined)
+  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined)
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
