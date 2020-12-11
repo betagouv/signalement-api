@@ -240,21 +240,21 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         0,
         100000,
         ReportFilter(
-          filters.departments,
-          filters.email,
-          restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
-          None,
-          startDate,
-          endDate,
-          filters.category,
-          statusList,
-          filters.details,
-          requestedBy.userRole match {
+          departments = filters.departments,
+          email = filters.email,
+          siretSiren = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
+          companyName = None,
+          start = startDate,
+          end = endDate,
+          category = filters.category,
+          statusList = statusList,
+          details = filters.details,
+          employeeConsumer = requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany,
-          filters.tags
+          hasCompany = filters.hasCompany,
+          tags = filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))

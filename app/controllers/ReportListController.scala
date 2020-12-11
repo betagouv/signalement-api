@@ -75,21 +75,21 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val endDate = DateUtils.parseDate(end)
 
     val filter = ReportFilter(
-      departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      email,
-      siret,
-      companyName,
-      startDate,
-      endDate,
-      category,
-      getStatusListForValueWithUserRole(status, request.identity.userRole),
-      details,
-      request.identity.userRole match {
+      departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      email = email,
+      siretSiren = siret,
+      companyName = companyName,
+      start = startDate,
+      end = endDate,
+      category = category,
+      statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
+      details = details,
+      employeeConsumer = request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
       },
-      hasCompany,
-      tags
+      hasCompany = hasCompany,
+      tags = tags
     )
 
     for {
@@ -100,7 +100,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            company.map(c => filter.copy(siret=Some(c.siret.value)))
+                            company.map(c => filter.copy(siretSiren=Some(c.siret.value)))
                                    .getOrElse(filter))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
