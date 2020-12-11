@@ -48,8 +48,6 @@ GET           /api/ext/reports/:uuid                                 controllers
 
 GET          /api/admin/test-email                      controllers.AdminController.getEmailCodes
 POST         /api/admin/test-email                      controllers.AdminController.sendTestEmail(templateRef, to)
-POST         /api/admin/emails/proAckToConsumer         controllers.AdminController.sendProAckToConsumer
-POST         /api/admin/emails/newReportToPro           controllers.AdminController.sendNewReportToPro
 
 # Async files API
 GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles
