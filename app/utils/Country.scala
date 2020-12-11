@@ -222,6 +222,10 @@ object Country {
     Zambie, Zimbabwe)
 
 
+  def fromCode(code: String) = {
+    countries.find(_.code == code).head
+  }
+
   def fromName(name: String) = {
     countries.find(_.name == name).head
   }

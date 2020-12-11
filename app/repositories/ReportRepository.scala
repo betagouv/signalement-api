@@ -236,7 +236,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterIf(filter.companyCountries.nonEmpty) {
           case table => table.companyCountry
-            .map(country => country.inSet(filter.companyCountries.map(Country.fromName)))
+            .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
             .getOrElse(false)
         }
         .filterOpt(filter.start) {
