@@ -134,7 +134,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
         email = None,
         siret = None,
         companyName = None,
-        companyCountries = Seq(),
+        companyCountries = None,
         start = None,
         end = None,
         category = None,
