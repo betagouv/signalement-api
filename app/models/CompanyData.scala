@@ -68,7 +68,15 @@ case class CompanySearchResult (
                                  activityCode: String,
                                  activityLabel: Option[String],
                                  kind: WebsiteKind
-                               )
+                               ) {
+  def toCompany = Company(
+    siret = siret,
+    name = name.getOrElse(""),
+    address = address.getOrElse(Address("")),
+    postalCode = postalCode,
+    activityCode =Some(activityCode)
+  )
+}
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]

@@ -72,6 +72,7 @@ GET           /api/accesses/:siret/token                             controllers
 POST          /api/accesses/:siret/send-activation-link              controllers.CompanyAccessController.sendActivationLink(siret: String)
 POST          /api/accesses/:siret/token/accept                      controllers.CompanyAccessController.acceptToken(siret: String)
 DELETE        /api/accesses/:siret/token/:tokenId                    controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
+POST          /api/accesses/grouped/invitations                      controllers.CompanyAccessController.sendGroupedInvitations()
 POST          /api/accesses/:siret/invitation                        controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
