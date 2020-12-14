@@ -122,7 +122,11 @@ class AdminController @Inject()(val configuration: Configuration,
       genReport.copy(status = NA, companyCountry = Some(Country.Islande), tags = List(Tags.ContractualDispute)), Nil))),
     "consumer_report_ack_case_andorre" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
       genReport.copy(status = NA, companyCountry = Some(Country.Andorre)), Nil))),
-    "consumer_report_ack_case_euro_suisse_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+    "consumer_report_ack_case_andorre_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Andorre), tags = List(Tags.ContractualDispute)), Nil))),
+    "consumer_report_ack_case_suisse" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
+      genReport.copy(status = NA, companyCountry = Some(Country.Suisse)), Nil))),
+    "consumer_report_ack_case_suisse_and_dispute" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
       genReport.copy(status = NA, companyCountry = Some(Country.Suisse), tags = List(Tags.ContractualDispute)), Nil))),
     "consumer_report_ack_case_abroad_default" -> (() => EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(
       genReport.copy(status = NA, companyCountry = Some(Country.Bahamas)), Nil))),

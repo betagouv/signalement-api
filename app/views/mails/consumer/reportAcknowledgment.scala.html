@@ -42,6 +42,12 @@
                         <a href="https://www.europe-consommateurs.eu/fr/une-question-une-reclamation">https://www.europe-consommateurs.eu/fr/une-question-une-reclamation</a>
                     </p>
                 }
+                case Some(country) if country == Country.Andorre => {
+                    <p>
+                        Nous vous invitons à faire votre signalement directement auprès du service du commerce et de la consommation d’Andorre :
+                        <a href="https://www.comerc.ad/reclamacions/?id=fr">https://www.comerc.ad/reclamacions/?id=fr</a>
+                    </p>
+                }
                 case Some(country) if Country.countries.filter(_.transfer).contains(country) => {
                     <p>
                         Par contre les enquêteurs de la répression des fraudes vont le transférer aux autorités compétentes de ce pays.
