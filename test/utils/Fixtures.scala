@@ -39,7 +39,7 @@ object Fixtures {
 
     val genSiret = for {
         randInt <- Gen.choose(0, 1000000)
-    } yield SIRET("000000000" + randInt takeRight 9)
+    } yield SIRET("000000000" + randInt takeRight 14)
 
     val genAddress = for {
         address <- arbString.arbitrary
