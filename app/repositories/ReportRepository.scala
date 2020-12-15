@@ -228,8 +228,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterOpt(filter.siretSiren) {
           case(table, siretSiren) => {
-            if(siretSiren.length == 9) {
-              table.companySiret.map(_.asColumnOf[String] like s"${siretSiren}_____%")
+            if(siretSiren.matches(SIREN.pattern)) {
+              table.companySiret.map(_.asColumnOf[String] like s"${siretSiren}_____")
             } else {
               table.companySiret === SIRET(siretSiren)
             }
