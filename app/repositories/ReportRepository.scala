@@ -10,7 +10,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
-import utils.{Address, Country, EmailAddress, SIRET, URL}
+import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
 
 import scala.concurrent.{ExecutionContext, Future}
 
