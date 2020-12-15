@@ -3,6 +3,30 @@ body, div {
     font-size: 12px;
 }
 
+.logo-marianne {
+    float: left;
+}
+
+.logo-marianne > img {
+    height: 3.2cm;
+}
+
+.logo-sc {
+    text-align: right;
+}
+
+.logo-sc > img {
+    height: 1.5cm;
+}
+
+.references {
+    text-align: right;
+}
+
+.content {
+    margin-top: 2cm;
+}
+
 h2 {
     color: #53657d;
     margin-bottom: 8px;

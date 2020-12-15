@@ -113,6 +113,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Pays", centerAlignmentColumn,
+        (report, _, _, _) => report.companyCountry.map(_.name).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Siret", centerAlignmentColumn,
         (report, _, _, _) => report.companySiret.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -244,6 +249,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           filters.email,
           restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
           None,
+          Seq(),
           startDate,
           endDate,
           filters.category,
@@ -253,8 +259,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany,
-          filters.tags
+          hasCompany = filters.hasCompany,
+          tags = filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))

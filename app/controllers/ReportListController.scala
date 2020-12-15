@@ -53,6 +53,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                   email: Option[String],
                   siret: Option[String],
                   companyName: Option[String],
+                  companyCountries: Option[String],
                   start: Option[String],
                   end: Option[String],
                   category: Option[String],
@@ -79,6 +80,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       email,
       siret,
       companyName,
+      companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
       startDate,
       endDate,
       category,
@@ -88,8 +90,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         case UserRoles.Pro => Some(false)
         case _ => None
       },
-      hasCompany,
-      tags
+      hasCompany = hasCompany,
+      tags = tags
     )
 
     for {
@@ -100,7 +102,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            company.map(c => filter.copy(siret=Some(c.siret.value)))
+                            company.map(c => filter.copy(siretSiren=Some(c.siret.value)))
                                    .getOrElse(filter))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {

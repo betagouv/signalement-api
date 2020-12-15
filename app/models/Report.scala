@@ -8,7 +8,7 @@ import play.api.libs.json.{Json, OFormat, Writes, _}
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{Address, EmailAddress, SIRET, URL}
+import utils.{Address, Country, EmailAddress, SIRET, URL}
 
 
 case class DraftReport(
@@ -18,6 +18,7 @@ case class DraftReport(
                         companyName: Option[String],
                         companyAddress: Option[Address],
                         companyPostalCode: Option[String],
+                        companyCountry: Option[Country],
                         companySiret: Option[SIRET],
                         companyActivityCode: Option[String],
                         websiteURL: Option[URL],
@@ -41,6 +42,7 @@ case class DraftReport(
       companyName,
       companyAddress,
       companyPostalCode,
+      companyCountry,
       companySiret,
       websiteURL,
       OffsetDateTime.now(),
@@ -57,7 +59,7 @@ case class DraftReport(
   }
 }
 object DraftReport {
-  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined)
+  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined)
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
@@ -70,6 +72,7 @@ case class Report(
                    companyName: Option[String],
                    companyAddress: Option[Address],
                    companyPostalCode: Option[String],
+                   companyCountry: Option[Country],
                    companySiret: Option[SIRET],
                    websiteURL: Option[URL],
                    creationDate: OffsetDateTime,
@@ -125,7 +128,7 @@ object Report {
           "lastName" -> report.lastName,
           "email" -> report.email
         )
-      })
+      }) ++ (report.companyCountry.map(c => Json.obj("companyCountry" -> c.name)).getOrElse(Json.obj()))
   }
 }
 
