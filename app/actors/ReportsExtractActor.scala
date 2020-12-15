@@ -113,6 +113,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Pays", centerAlignmentColumn,
+        (report, _, _, _) => report.companyCountry.map(_.name).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Siret", centerAlignmentColumn,
         (report, _, _, _) => report.companySiret.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -240,16 +245,17 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         0,
         100000,
         ReportFilter(
-          departments = filters.departments,
-          email = filters.email,
-          siretSiren = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
-          companyName = None,
-          start = startDate,
-          end = endDate,
-          category = filters.category,
-          statusList = statusList,
-          details = filters.details,
-          employeeConsumer = requestedBy.userRole match {
+          filters.departments,
+          filters.email,
+          restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
+          None,
+          Seq(),
+          startDate,
+          endDate,
+          filters.category,
+          statusList,
+          filters.details,
+          requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
           },

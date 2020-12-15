@@ -68,7 +68,7 @@ object Fixtures {
         company <- genCompany
         websiteURL <- genWebsiteURL
     } yield DraftReport(
-        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
         None, Some(websiteURL), firstName, lastName, email, contactAgreement, false, List.empty
     )
 
@@ -82,7 +82,7 @@ object Fixtures {
         contactAgreement <- arbitrary[Boolean]
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
         None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 

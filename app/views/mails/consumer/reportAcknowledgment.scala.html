@@ -1,6 +1,7 @@
 @import utils.EmailAddress
 @import utils.Constants.ReportStatus._
 @import java.net.URI
+@import utils.Country
 @(report: Report, files: List[ReportFile])(implicit websiteUrl: URI)
 
 
@@ -23,6 +24,51 @@
             <p>
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
+        }
+        case NA if report.companyCountry.isDefined => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Vous avez indiqué que l’entreprise est une entreprise étrangère (@report.companyCountry.get.name).
+            </p>
+            <p>
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
+            </p>
+            @report.companyCountry match {
+                case Some(country) if Country.countries.filter(_.european).contains(country) => {
+                    <p>
+                        Nous vous invitons à faire votre signalement directement auprès du Centre Européen des Consommateurs. Il vous apportera une assistance pour régler votre problème.
+                        <a href="https://www.europe-consommateurs.eu/fr/une-question-une-reclamation">https://www.europe-consommateurs.eu/fr/une-question-une-reclamation</a>
+                    </p>
+                }
+                case Some(country) if country == Country.Andorre => {
+                    <p>
+                        Nous vous invitons à faire votre signalement directement auprès du service du commerce et de la consommation d’Andorre :
+                        <a href="https://www.comerc.ad/reclamacions/?id=fr">https://www.comerc.ad/reclamacions/?id=fr</a>
+                    </p>
+                }
+                case Some(country) if Country.countries.filter(_.transfer).contains(country) => {
+                    <p>
+                        Par contre les enquêteurs de la répression des fraudes vont le transférer aux autorités compétentes de ce pays.
+                    </p>
+                }
+                case _ => {
+                    <p>
+                        Nous vous invitons à faire votre signalement auprès d'econsumer.gov afin d’aider les autorités internationales à lutter contre la fraude.
+                        <a href="https://www.econsumer.gov/fr">https://www.econsumer.gov/fr</a>
+                    </p>
+                }
+            }
+            @if(report.isContractualDispute && report.websiteURL.isDefined) {
+                <p>
+                    Vous avez payé avec votre carte bancaire ?
+                </p>
+                <p>
+                    Grâce à la procédure de charge-back vous pouvez être remboursé gratuitement suite à un achat effectué en ligne :
+                    <a href="https://www.economie.gouv.fr/particuliers/procedure-chargeback">https://www.economie.gouv.fr/particuliers/procedure-chargeback</a>
+                </p>
+            }
         }
         case _ if report.isContractualDispute => {
             <p>
@@ -73,7 +119,7 @@
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise qui gère le site internet,
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise,
                 sauf si cette dernière est française et identifiable par l'équipe de SignalConso.
             </p>
             <p>

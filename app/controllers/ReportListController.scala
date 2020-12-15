@@ -53,6 +53,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
                   email: Option[String],
                   siret: Option[String],
                   companyName: Option[String],
+                  companyCountries: Option[String],
                   start: Option[String],
                   end: Option[String],
                   category: Option[String],
@@ -75,16 +76,17 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val endDate = DateUtils.parseDate(end)
 
     val filter = ReportFilter(
-      departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      email = email,
-      siretSiren = siret,
-      companyName = companyName,
-      start = startDate,
-      end = endDate,
-      category = category,
-      statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-      details = details,
-      employeeConsumer = request.identity.userRole match {
+      departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      email,
+      siret,
+      companyName,
+      companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      startDate,
+      endDate,
+      category,
+      getStatusListForValueWithUserRole(status, request.identity.userRole),
+      details,
+      request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
       },
