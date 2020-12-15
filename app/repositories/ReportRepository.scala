@@ -10,14 +10,14 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
-import utils.{Address, EmailAddress, SIRET, URL}
+import utils.{Address, EmailAddress, SIREN, SIRET, URL}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ReportFilter(
                          departments: Seq[String] = List(),
                          email: Option[String] = None,
-                         siret: Option[String] = None,
+                         siretSiren: Option[String] = None,
                          companyName: Option[String] = None,
                          start: Option[LocalDate] = None,
                          end: Option[LocalDate] = None,
@@ -226,8 +226,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.email) {
           case(table, email) => table.email === EmailAddress(email)
         }
-        .filterOpt(filter.siret) {
-          case(table, siret) => table.companySiret === SIRET(siret)
+        .filterOpt(filter.siretSiren) {
+          case(table, siretSiren) => {
+            if(siretSiren.matches(SIREN.pattern)) {
+              table.companySiret.map(_.asColumnOf[String] like s"${siretSiren}_____")
+            } else {
+              table.companySiret === SIRET(siretSiren)
+            }
+          }
         }
         .filterOpt(filter.companyName) {
           case(table, companyName) => table.companyName like s"${companyName}%"
