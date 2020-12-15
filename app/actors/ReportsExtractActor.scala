@@ -259,8 +259,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany,
-          filters.tags
+          hasCompany = filters.hasCompany,
+          tags = filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))

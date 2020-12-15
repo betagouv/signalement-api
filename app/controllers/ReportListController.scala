@@ -90,8 +90,8 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
         case UserRoles.Pro => Some(false)
         case _ => None
       },
-      hasCompany,
-      tags
+      hasCompany = hasCompany,
+      tags = tags
     )
 
     for {
@@ -102,7 +102,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            company.map(c => filter.copy(siret=Some(c.siret.value)))
+                            company.map(c => filter.copy(siretSiren=Some(c.siret.value)))
                                    .getOrElse(filter))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {

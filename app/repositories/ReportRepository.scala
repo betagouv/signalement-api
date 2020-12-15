@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class ReportFilter(
                          departments: Seq[String] = List(),
                          email: Option[String] = None,
-                         siret: Option[String] = None,
+                         siretSiren: Option[String] = None,
                          companyName: Option[String] = None,
                          companyCountries: Seq[String] = List(),
                          start: Option[LocalDate] = None,
@@ -228,8 +228,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.email) {
           case(table, email) => table.email === EmailAddress(email)
         }
-        .filterOpt(filter.siret) {
-          case(table, siret) => table.companySiret === SIRET(siret)
+        .filterOpt(filter.siretSiren) {
+          case(table, siretSiren) => {
+            if(siretSiren.matches(SIREN.pattern)) {
+              table.companySiret.map(_.asColumnOf[String] like s"${siretSiren}_____")
+            } else {
+              table.companySiret === SIRET(siretSiren)
+            }
+          }
         }
         .filterOpt(filter.companyName) {
           case(table, companyName) => table.companyName like s"${companyName}%"
