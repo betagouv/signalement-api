@@ -38,11 +38,11 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchCompany(user: User, siret: Option[String]): Future[Company] = {
+  def fetchCompany(user: User, siret: Option[String]): Future[Option[Company]] = {
     for {
       accesses <- companyRepository.fetchCompaniesWithLevel(user)
     } yield {
-      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).head
+      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).headOption
     }
   }
 
@@ -77,7 +77,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val filter = ReportFilter(
       departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
       email,
-      siret,
+      None,
       companyName,
       startDate,
       endDate,
@@ -95,13 +95,14 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     for {
       company <- Some(request.identity)
                   .filter(_.userRole == UserRoles.Pro)
-                  .map(u => fetchCompany(u, siret).map(Some(_)))
+                  .map(u => fetchCompany(u, siret))
                   .getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
                             company.map(c => filter.copy(siret=Some(c.siret.value)))
-                                   .getOrElse(filter))
+                                   .getOrElse(filter)
+      )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
       Ok(Json.toJson(paginatedReports.copy(entities = paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil))))))
@@ -115,7 +116,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       filters =>
       for {
         restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                                fetchCompany(request.identity, filters.siret).map(Some(_))
+                                fetchCompany(request.identity, filters.siret)
                             else
                                 Future(None)
       } yield {
