@@ -25,10 +25,6 @@
   </appender>
 
   <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-    <options>
-      <dsn>${?SENTRY_DSN}</dsn>
-    </options>
-    <minimumEventLevel>WARN</minimumEventLevel>
   </appender>
 
   <logger name="play" level="INFO" />
