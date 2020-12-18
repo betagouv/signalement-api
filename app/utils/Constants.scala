@@ -175,6 +175,7 @@ object Constants {
 
     object POST_ACCOUNT_ACTIVATION_DOC extends ActionEventValue("Envoi du courrier d'activation")
     object ACCOUNT_ACTIVATION extends ActionEventValue("Activation d'un compte")
+    object ACTIVATION_DOC_RETURNED extends ActionEventValue("Courrier d'activation retourné")
 
     object REPORT_READING_BY_PRO extends ActionEventValue("Première consultation du signalement par le professionnel")
     object REPORT_PRO_RESPONSE extends ActionEventValue("Réponse du professionnel au signalement")
@@ -205,6 +206,7 @@ object Constants {
       HORS_PERIMETRE,
       POST_ACCOUNT_ACTIVATION_DOC,
       ACCOUNT_ACTIVATION,
+      ACTIVATION_DOC_RETURNED,
       REPORT_READING_BY_PRO,
       REPORT_PRO_RESPONSE,
       REPORT_REVIEW_ON_RESPONSE,
