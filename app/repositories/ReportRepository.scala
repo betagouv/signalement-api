@@ -383,4 +383,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filter(_.companyId inSet companiesIds)
         .to[List].result
     )
+
+  def getWebsiteReportsWithoutCompany: Future[List[Report]] = db
+    .run(
+      reportTableQuery
+        .filter(_.websiteURL.isDefined)
+        .filter(_.companyId.isEmpty)
+        .to[List].result
+    )
 }

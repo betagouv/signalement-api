@@ -2,22 +2,23 @@ package controllers
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.implicits._
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
-import models.{Company, UserRoles, Website, WebsiteCreate, WebsiteKind, WebsiteUpdate, WebsiteUpdateCompany}
+import models.WebsiteCompanyFormat._
+import models._
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
-import repositories.{CompanyRepository, WebsiteRepository}
+import repositories.{CompanyRepository, ReportRepository, WebsiteRepository}
 import utils.silhouette.auth.{AuthEnv, WithRole}
-import cats.data.OptionT
 
 import scala.concurrent.{ExecutionContext, Future}
-import models.WebsiteCompanyFormat._
-import cats.implicits._
 
 @Singleton
 class WebsiteController @Inject()(
   val websiteRepository: WebsiteRepository,
+  val reportRepository: ReportRepository,
   val companyRepository: CompanyRepository,
   val silhouette: Silhouette[AuthEnv]
 )(implicit ec: ExecutionContext) extends BaseController {
@@ -26,10 +27,16 @@ class WebsiteController @Inject()(
 
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      websites <- websiteRepository.list()
+      websites <- websiteRepository.list
     } yield {
       Ok(Json.toJson(websites))
     }
+  }
+
+  def fetchUnregisteredHost() = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    reportRepository.getWebsiteReportsWithoutCompany.map(reports => Ok(Json.toJson(
+      reports.groupBy(_.websiteURL.flatMap(_.getHost)).map{ case(key, sameHostReports) => Json.obj("host" -> key, "count" -> sameHostReports.length)}
+    )))
   }
 
   def update(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
