@@ -44,7 +44,7 @@ libraryDependencies ++= Seq(
 
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
 
   "io.sentry" % "sentry-logback" % "1.7.30",
 
