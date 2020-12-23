@@ -66,7 +66,7 @@ The fetch unregistered host endpoint should
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost.toString)
+    val request = FakeRequest(GET, routes.WebsiteController.fetchUnregisteredHost(None, None, None).toString)
                   .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
