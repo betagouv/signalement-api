@@ -11,6 +11,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import repositories.{CompanyRepository, ReportRepository, WebsiteRepository}
+import utils.DateUtils
 import utils.silhouette.auth.{AuthEnv, WithRole}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,10 +34,18 @@ class WebsiteController @Inject()(
     }
   }
 
-  def fetchUnregisteredHost() = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
-    reportRepository.getWebsiteReportsWithoutCompany.map(reports => Ok(Json.toJson(
-      reports.groupBy(_.websiteURL.flatMap(_.getHost)).map{ case(key, sameHostReports) => Json.obj("host" -> key, "count" -> sameHostReports.length)}
-    )))
+  def fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    reportRepository.getWebsiteReportsWithoutCompany(DateUtils.parseDate(start), DateUtils.parseDate(end))
+      .map(reports => Ok(Json.toJson(
+        reports
+          .groupBy(_.websiteURL.flatMap(_.getHost))
+          .filterKeys(key => (key, q) match {
+            case (None, _) => false
+            case (_, None) => true
+            case (Some(key), Some(q)) => key.contains(q)
+          })
+          .map{ case(key, sameHostReports) => Json.obj("host" -> key, "count" -> sameHostReports.length)}
+      )))
   }
 
   def update(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
