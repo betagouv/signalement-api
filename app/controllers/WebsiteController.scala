@@ -2,6 +2,10 @@ package controllers
 
 import java.util.UUID
 
+import actors.WebsitesExtractActor
+import actors.WebsitesExtractActor.RawFilters
+import akka.actor.ActorRef
+import akka.pattern.ask
 import cats.data.OptionT
 import cats.implicits._
 import com.mohiva.play.silhouette.api.Silhouette
@@ -14,6 +18,7 @@ import repositories.{CompanyRepository, ReportRepository, WebsiteRepository}
 import utils.DateUtils
 import utils.silhouette.auth.{AuthEnv, WithRole}
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -21,9 +26,11 @@ class WebsiteController @Inject()(
   val websiteRepository: WebsiteRepository,
   val reportRepository: ReportRepository,
   val companyRepository: CompanyRepository,
+  @Named("websites-extract-actor") websitesExtractActor: ActorRef,
   val silhouette: Silhouette[AuthEnv]
 )(implicit ec: ExecutionContext) extends BaseController {
 
+  implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
@@ -39,13 +46,15 @@ class WebsiteController @Inject()(
       .map(reports => Ok(Json.toJson(
         reports
           .groupBy(_.websiteURL.flatMap(_.getHost))
-          .filterKeys(key => (key, q) match {
-            case (None, _) => false
-            case (_, None) => true
-            case (Some(key), Some(q)) => key.contains(q)
-          })
-          .map{ case(key, sameHostReports) => Json.obj("host" -> key, "count" -> sameHostReports.length)}
+          .collect { case (Some(host), reports) if q.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
+          .map{ case(host, count) => Json.obj("host" -> host, "count" -> count)}
       )))
+  }
+
+  def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    logger.debug(s"Requesting websites for user ${request.identity.email}")
+    websitesExtractActor ? WebsitesExtractActor.ExtractRequest(request.identity, RawFilters(q, start, end))
+    Future(Ok)
   }
 
   def update(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
