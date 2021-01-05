@@ -91,7 +91,7 @@ class WebsitesExtractActor @Inject()(configuration: Configuration,
       val targetFilename = s"sites-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
       val extractSheet = Sheet(name = "Sites non identifiés")
         .withRows(
-          Row(style = headerStyle).withCellValues("Nombre de signalement", "Nom de l'hôte") ::
+          Row(style = headerStyle).withCellValues("Nombre de signalement", "Nom du site") ::
             hostsWithCount.toList.sortBy(_._2)(Ordering.Int.reverse).map { case (host, count) =>
               Row().withCells(
                 StringCell(s"$count", None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet),
@@ -105,7 +105,7 @@ class WebsitesExtractActor @Inject()(configuration: Configuration,
         .withRows(
           List(
             Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
-            filters.query.map(q => Row().withCellValues("Nom de l'hôte", q)),
+            filters.query.map(q => Row().withCellValues("Nom du site", q)),
             (startDate, DateUtils.parseDate(filters.end)) match {
               case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
               case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
