@@ -330,7 +330,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
-  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
+  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
     // valeurs par défaut
