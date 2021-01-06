@@ -108,6 +108,8 @@ DELETE        /api/subscriptions/:subscriptionId                     controllers
 
 # Websites API
 GET           /api/websites                                          controllers.WebsiteController.fetchWithCompanies
+GET           /api/websites/unregistered                             controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/websites/unregistered/extract                     controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                              controllers.WebsiteController.updateCompany(id: java.util.UUID)
 PUT           /api/websites/:id                                      controllers.WebsiteController.update(id: java.util.UUID)
 PUT           /api/websites                                          controllers.WebsiteController.create
