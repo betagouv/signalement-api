@@ -47,21 +47,21 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReports(
-    offset: Option[Long],
-    limit: Option[Int],
-    departments: Option[String],
-    email: Option[String],
-    websiteURL: Option[String],
-    siret: Option[String],
-    companyName: Option[String],
-    companyCountries: Option[String],
-    start: Option[String],
-    end: Option[String],
-    category: Option[String],
-    status: Option[String],
-    details: Option[String],
-    hasCompany: Option[Boolean],
-    tags: List[String]
+                  offset: Option[Long],
+                  limit: Option[Int],
+                  departments: Option[String],
+                  email: Option[String],
+                  siret: Option[String],
+                  companyName: Option[String],
+                  companyCountries: Option[String],
+                  start: Option[String],
+                  end: Option[String],
+                  category: Option[String],
+                  status: Option[String],
+                  details: Option[String],
+                  hasCompany: Option[Boolean],
+                  tags: List[String]
+
   ) = SecuredAction.async { implicit request =>
 
     // valeurs par défaut
@@ -76,18 +76,17 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     val endDate = DateUtils.parseDate(end)
 
     val filter = ReportFilter(
-      departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      email = email,
-      websiteURL = websiteURL,
-      siretSiren = siret,
-      companyName = companyName,
-      companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      start = startDate,
-      end = endDate,
-      category = category,
-      statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-      details = details,
-      employeeConsumer = request.identity.userRole match {
+      departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      email,
+      siret,
+      companyName,
+      companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      startDate,
+      endDate,
+      category,
+      getStatusListForValueWithUserRole(status, request.identity.userRole),
+      details,
+      request.identity.userRole match {
         case UserRoles.Pro => Some(false)
         case _ => None
       },
