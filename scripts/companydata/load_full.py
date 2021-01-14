@@ -2,7 +2,6 @@ import argparse
 from collections import OrderedDict
 import csv
 import psycopg2
-from datetime import datetime
 
 # See https://www.data.gouv.fr/fr/datasets/base-sirene-des-entreprises-et-de-leurs-etablissements-siren-siret/
 
@@ -20,41 +19,30 @@ def iter_csv(path):
 def iter_queries(path):
     def isset(v):
         return v and v != 'false'
-    count = 0
     for d in iter_csv(path):
-        count = count + 1
-        if count < 10000:
-            if args.type == SIRET:
-                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
-                query = f"""
-                    INSERT INTO etablissements ({",".join(updates)})
-                    VALUES ({",".join(f"%({k})s" for k in updates)})
-                    ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
-                """
-            elif args.type == SIREN:
-                d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
-                # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
-                updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
-                query = f"""
-                    UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
-                """
-            yield query, updates
-        else:
-            break
+        if args.type == SIRET:
+            updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and v)
+            query = f"""
+                INSERT INTO etablissements ({",".join(updates)})
+                VALUES ({",".join(f"%({k})s" for k in updates)})
+                ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in updates)}
+            """
+        elif args.type == SIREN:
+            d['denominationUsuelleEtablissement'] = d['denominationUniteLegale'] or d['denominationUsuelle1UniteLegale'] or d['denominationUsuelle2UniteLegale'] or d['denominationUsuelle3UniteLegale']
+            # d['activitePrincipaleEtablissement'] = d['activitePrincipaleUniteLegale']
+            updates = OrderedDict((k, v) for k, v in d.items() if k.lower() in FIELDS and isset(v))
+            query = f"""
+                UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in updates)} WHERE siren = %(siren)s AND denominationusuelleetablissement IS NULL
+            """
+        yield query, updates
 
 def run(pg_uri, source_csv):
     conn = psycopg2.connect(pg_uri)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-
-    print(datetime.now())
-
     for query, data in iter_queries(source_csv):
         cur.execute(query, data)
-        #print(cur.rowcount)
-
-    print(datetime.now())
-
+        print(cur.rowcount)
     conn.close()
 
 parser = argparse.ArgumentParser(description='Intégrer le fichier des établissements (mise à jour ou base complète).')
