@@ -131,6 +131,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
         offset = None,
         limit = None,
         departments = None,
+        websiteURL = None,
         email = None,
         siret = None,
         companyName = None,

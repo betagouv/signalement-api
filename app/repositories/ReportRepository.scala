@@ -15,20 +15,21 @@ import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ReportFilter(
-                         departments: Seq[String] = List(),
-                         email: Option[String] = None,
-                         siretSiren: Option[String] = None,
-                         companyName: Option[String] = None,
-                         companyCountries: Seq[String] = List(),
-                         start: Option[LocalDate] = None,
-                         end: Option[LocalDate] = None,
-                         category: Option[String] = None,
-                         statusList: Seq[ReportStatusValue] = List(),
-                         details: Option[String] = None,
-                         employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Option[Boolean] = None,
-                         tags: Seq[String] = Nil
-                       )
+  departments: Seq[String] = List(),
+  email: Option[String] = None,
+  websiteURL: Option[String] = None,
+  siretSiren: Option[String] = None,
+  companyName: Option[String] = None,
+  companyCountries: Seq[String] = List(),
+  start: Option[LocalDate] = None,
+  end: Option[LocalDate] = None,
+  category: Option[String] = None,
+  statusList: Seq[ReportStatusValue] = List(),
+  details: Option[String] = None,
+  employeeConsumer: Option[Boolean] = None,
+  hasCompany: Option[Boolean] = None,
+  tags: Seq[String] = Nil
+)
 
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
@@ -228,10 +229,13 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.email) {
           case(table, email) => table.email === EmailAddress(email)
         }
+        .filterOpt(filter.websiteURL) {
+          case(table, websiteURL) => table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+        }
         .filterOpt(filter.siretSiren) {
           case(table, siretSiren) => {
             if(siretSiren.matches(SIREN.pattern)) {
-              table.companySiret.map(_.asColumnOf[String] like s"${siretSiren}_____")
+              table.companySiret.map(_.asColumnOf[String]) like s"${siretSiren}_____"
             } else {
               table.companySiret === SIRET(siretSiren)
             }
