@@ -224,6 +224,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
   }
 
+  def getByWebsitesURL(websitesURL: List[String]): Future[List[Report]] = db.run {
+    reportTableQuery.filter(_.websiteURL inSet websitesURL.map(URL(_)))
+      .to[List].result
+  }
+
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery
         .filterOpt(filter.email) {
@@ -388,7 +393,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .to[List].result
     )
 
-  def getWebsiteReportsWithoutCompany(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
+  def getWebsiteReportsWithoutCompany(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.websiteURL.isDefined)

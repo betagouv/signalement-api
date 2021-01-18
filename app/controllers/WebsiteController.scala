@@ -36,8 +36,20 @@ class WebsiteController @Inject()(
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       websites <- websiteRepository.list
+      reports <- reportRepository.getByWebsitesURL(websites.map(_._1.host))
+      countByHostAndCompany = reports
+        .groupBy(_.websiteURL)
+        .collect { case (Some(websiteURL), reports) => (
+          websiteURL.value,
+          reports.groupBy(_.companyId).collect { case (Some(companyId), reports) => (companyId, reports.length) }
+        )}
+
+      websitesWithCount = websites.map { case (website, company) => {
+        val count = countByHostAndCompany.get(website.host).map(_.getOrElse(company.id, 0)).getOrElse(0)
+        (website, company, count)
+      }}
     } yield {
-      Ok(Json.toJson(websites))
+      Ok(Json.toJson(websitesWithCount))
     }
   }
 
@@ -47,7 +59,7 @@ class WebsiteController @Inject()(
         reports
           .groupBy(_.websiteURL.flatMap(_.getHost))
           .collect { case (Some(host), reports) if q.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
-          .map{ case(host, count) => Json.obj("host" -> host, "count" -> count)}
+          .map { case (host, count) => Json.obj("host" -> host, "count" -> count) }
       )))
   }
 

@@ -36,7 +36,11 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
   val websiteTableQuery = TableQuery[WebsiteTable]
 
   def find(id: UUID): Future[Option[Website]] = db
-    .run(websiteTableQuery.filter(_.id === id).to[List].result.headOption)
+    .run(websiteTableQuery.filter(_.id === id).result.headOption)
+
+  def findByIds(ids: Iterable[UUID]): Future[List[Website]] = {
+    db.run(websiteTableQuery.filter(_.id inSet ids).to[List].result)
+  }
 
   def update(website: Website): Future[Website] = {
     val query = for (refWebsite <- websiteTableQuery if refWebsite.id === website.id)
