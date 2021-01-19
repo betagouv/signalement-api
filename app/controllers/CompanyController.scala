@@ -96,28 +96,26 @@ class CompanyController @Inject()(
     for {
       accesses <- accessTokenRepository.companiesToActivate()
       eventsMap <- eventRepository.fetchEvents(accesses.map { case (_, c) => c.id })
-    } yield Ok(
+    } yield {
+      Ok(
       Json.toJson(accesses.map { case (t, c) =>
         (c, t,
           eventsMap.get(c.id).flatMap(
-            _.filter(e =>
-              e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-                && e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
-            ).headOption
+            _.filter(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption
           ).flatMap(_.creationDate),
           eventsMap.get(c.id).flatMap(
             _.filter(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED).headOption
           ).flatMap(_.creationDate),
         )
       }.filter { case (c, t, lastNotice, lastRequirement) => lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay)))).isEmpty }.map {
-        case (c, t, lastNotice, lastRequirement) =>
+        case (c, t, lastNotice, _) =>
           Json.obj(
             "company" -> Json.toJson(c),
             "lastNotice" -> lastNotice,
             "tokenCreation" -> t.creationDate
           )
       })
-    )
+    )}
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
