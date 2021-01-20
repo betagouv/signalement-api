@@ -49,7 +49,7 @@ def iter_queries(path):
             updates = d #OrderedDict((k, v) for k, v in d.items())
         elif args.type == SIREN: # UniteLegale
             d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + (d['nomusageunitelegale'] or d['nomunitelegale']))
-            d['etatadministratifetablissement'] = 'A' if (d['etatadministratifunitelegale'] == 'A') else 'F'
+            d['etatadministratifetablissement'] = 'F' if (d['etatadministratifunitelegale'] == 'C') else d['etatadministratifunitelegale']
             if isset(d['denominationusuelleetablissement']):
                 updates = d
         yield updates
