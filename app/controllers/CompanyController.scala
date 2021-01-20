@@ -100,6 +100,7 @@ class CompanyController @Inject()(
       Ok(
       Json.toJson(accesses.map { case (t, c) =>
         (c, t,
+          eventsMap.get(c.id).map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)).getOrElse(0),
           eventsMap.get(c.id).flatMap(
             _.filter(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption
           ).flatMap(_.creationDate),
@@ -107,8 +108,9 @@ class CompanyController @Inject()(
             _.filter(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED).headOption
           ).flatMap(_.creationDate),
         )
-      }.filter { case (c, t, lastNotice, lastRequirement) => lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay)))).isEmpty }.map {
-        case (c, t, lastNotice, _) =>
+      }.filter { case (c, t, noticeCount, lastNotice, lastRequirement) =>
+        lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))))).isEmpty }.map {
+        case (c, t, _, lastNotice, _) =>
           Json.obj(
             "company" -> Json.toJson(c),
             "lastNotice" -> lastNotice,
@@ -205,7 +207,7 @@ class CompanyController @Inject()(
         updatedCompany <- company.map(c =>
           companyRepository.update(c.copy(address = companyAddressUpdate.address, postalCode = Some(companyAddressUpdate.postalCode))).map(Some(_))
         ).getOrElse(Future(None))
-        _ <- updatedCompany.filter(_.address != company.map(_.address)).map(c =>
+        _ <- updatedCompany.filter(c => Some(c.address) != company.map(_.address)).map(c =>
           eventRepository.createEvent(
             Event(
               Some(UUID.randomUUID()),

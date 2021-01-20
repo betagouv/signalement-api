@@ -15,7 +15,8 @@ import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.{AccessTokenRepository, CompanyRepository, EventRepository, _}
-import utils.Constants.{ActionEvent, EventType}
+import utils.Constants.ActionEvent._
+import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv
 import utils.{AppSpec, Fixtures}
 
@@ -35,35 +36,92 @@ class BaseCompanyControllerSpec(implicit ee: ExecutionEnv) extends Specification
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
-  val tokenCreation = OffsetDateTime.now.minusMonths(1)
-  val expiredLastNotice = OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1)
+  val defaultTokenCreationDate = OffsetDateTime.now.minusMonths(1)
 
   val adminUser = Fixtures.genAdminUser.sample.get
-  val company = Fixtures.genCompany.sample.get
-  val companyWithSentDoc = Fixtures.genCompany.sample.get
-  val companyWithExpiredSentDoc = Fixtures.genCompany.sample.get
-  val companyWithRequiredDoc = Fixtures.genCompany.sample.get
+
+  var companyCases: Seq[(Company, Option[OffsetDateTime], OffsetDateTime)] = Seq()
+
+  def initCase = {
+    val company = Fixtures.genCompany.sample.get
+    for {
+      c <- companyRepository.getOrCreate(company.siret, company)
+      a <- accessTokenRepository.createToken(TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", Some(tokenDuration), Some(company), Some(AccessLevel.ADMIN), None, defaultTokenCreationDate)
+    } yield (c, a)
+  }
+
+  def setupCaseNewCompany = {
+    for {
+      (c, a) <- initCase
+    } yield (companyCases = companyCases:+(c, None, defaultTokenCreationDate))
+  }
+
+  def setupCaseCompanyNotifiedOnce = {
+    for {
+      (c, a) <- initCase
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minusDays(1))
+        ))
+    } yield ()
+  }
+
+  def setupCaseCompanyNotifiedOnceLongerThanDelay = {
+    for {
+      (c, a) <- initCase
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+        ))
+    } yield (companyCases = companyCases:+(c, None, defaultTokenCreationDate))
+  }
+
+  def setupCaseCompanyNotifiedTwice = {
+    for {
+      (c, a) <- initCase
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+        ))
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+        ))
+    } yield ()
+  }
+
+  def setupCaseCompanyNotifiedTwiceLongerThanDelay = {
+    for {
+      (c, a) <- initCase
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2))
+        ))
+      _ <- eventRepository.createEvent(
+        Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(
+          creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+        ))
+    } yield ()
+  }
+
+  def setupCaseCompanyNoticeRequired = {
+    for {
+      (c, a) <- initCase
+      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(creationDate = Some(OffsetDateTime.now.minusDays(2))))
+      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED).sample.get.copy(creationDate = Some(OffsetDateTime.now.minusDays(1))))
+    } yield (companyCases = companyCases:+(c, None, defaultTokenCreationDate))
+  }
 
   override def setupData = {
     Await.result(for {
       _ <- userRepository.create(adminUser)
+      _ <- setupCaseNewCompany
+      _ <- setupCaseCompanyNotifiedOnce
+      _ <- setupCaseCompanyNotifiedOnceLongerThanDelay
+      _ <- setupCaseCompanyNotifiedTwice
+      _ <- setupCaseCompanyNoticeRequired
 
-      _ <- companyRepository.getOrCreate(company.siret, company)
-      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", Some(tokenDuration), Some(company), Some(AccessLevel.ADMIN), None, tokenCreation)
-
-      _ <- companyRepository.getOrCreate(companyWithSentDoc.siret, companyWithSentDoc)
-      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", Some(tokenDuration), Some(companyWithSentDoc), Some(AccessLevel.ADMIN), None, tokenCreation)
-      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(companyWithSentDoc.id, EventType.ADMIN, ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(creationDate = Some(OffsetDateTime.now.minusDays(1))))
-
-      _ <- companyRepository.getOrCreate(companyWithExpiredSentDoc.siret, companyWithExpiredSentDoc)
-      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", Some(tokenDuration), Some(companyWithExpiredSentDoc), Some(AccessLevel.ADMIN), None, tokenCreation)
-      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(companyWithExpiredSentDoc.id, EventType.ADMIN, ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(creationDate = Some(expiredLastNotice)))
-
-      _ <- companyRepository.getOrCreate(companyWithRequiredDoc.siret, companyWithRequiredDoc)
-      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", Some(tokenDuration), Some(companyWithRequiredDoc), Some(AccessLevel.ADMIN), None, tokenCreation)
-      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(companyWithRequiredDoc.id, EventType.ADMIN, ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).sample.get.copy(creationDate = Some(OffsetDateTime.now.minusDays(2))))
-      _ <- eventRepository.createEvent(Fixtures.genEventForCompany(companyWithRequiredDoc.id, EventType.ADMIN, ActionEvent.ACTIVATION_DOC_REQUIRED).sample.get.copy(creationDate = Some(OffsetDateTime.now.minusDays(1))))
-    } yield Unit,
+      } yield Unit,
     Duration.Inf)
   }
   override def configureFakeModule(): AbstractModule = {
@@ -96,11 +154,7 @@ The companies to activate endpoint should
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
-    content must haveCompaniesToActivate(
-      aCompanyToActivate(company, None, tokenCreation),
-      aCompanyToActivate(companyWithExpiredSentDoc, Some(expiredLastNotice), tokenCreation),
-      aCompanyToActivate(companyWithRequiredDoc, None, tokenCreation),
-    )
+    content must haveCompaniesToActivate(companyCases.map(c => aCompanyToActivate(c._1, c._2, c._3)):_*)
   }
 
   def aCompanyToActivate(company: Company, lastNotice: Option[OffsetDateTime], tokenCreation: OffsetDateTime): Matcher[String] = {
