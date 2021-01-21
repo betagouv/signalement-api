@@ -39,11 +39,12 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def denominationUsuelleEtablissement = column[Option[String]]("denominationusuelleetablissement")
     def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
+    def etatAdministratifEtablissement = column[String]("etatadministratifetablissement")
 
     def * = (
       id, siret, siren, dateDernierTraitementEtablissement, etablissementSiege, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
-      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
+      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement, etatAdministratifEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
   }
 
   class CompanyActivityTable(tag: Tag) extends Table[CompanyActivity](tag, "activites") {
