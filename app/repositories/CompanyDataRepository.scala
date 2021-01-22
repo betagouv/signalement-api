@@ -63,6 +63,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(_.etatAdministratifEtablissement === "A")
       .filter(result => least(
         result.denominationUsuelleEtablissement <-> q,
         result.enseigne1Etablissement <-> q
@@ -79,6 +80,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(_.etatAdministratifEtablissement === "A")
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
@@ -87,6 +89,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(_.siren === SIREN(siret))
       .filter(company => company.siret === siret || company.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(_.etatAdministratifEtablissement === "A")
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
@@ -94,6 +97,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     db.run(companyDataTableQuery
       .filter(_.siren === siren)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(_.etatAdministratifEtablissement === "A")
       .take(10)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
@@ -103,6 +107,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(_.siren === siren)
       .filter(_.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(_.etatAdministratifEtablissement === "A")
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)
 }
