@@ -38,13 +38,10 @@ class WebsiteController @Inject()(
       websites <- websiteRepository.list
       reports <- reportRepository.getWithWebsites()
       countByHostAndCompany = reports
-        .groupBy(_.websiteURL.map(_.getHost))
-        .collect { case (Some(websiteURL), reports) => (
-          websiteURL,
-          reports.groupBy(_.companyId).collect { case (Some(companyId), reports) => (companyId, reports.length) }
-        )}
+        .groupBy(report => (report.websiteURL.flatMap(_.getHost), report.companyId))
+        .collect { case ((Some(websiteURL), Some(companyId)), reports) => ((websiteURL, companyId), reports.length)}
       websitesWithCount = websites.map { case (website, company) => {
-        val count = countByHostAndCompany.get(Some(website.host)).map(_.getOrElse(company.id, 0)).getOrElse(0)
+        val count = countByHostAndCompany.get(website.host, company.id).getOrElse(0)
         (website, company, count)
       }}
     } yield {
