@@ -224,11 +224,6 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
   }
 
-  def getByWebsitesURL(websitesURL: List[String]): Future[List[Report]] = db.run {
-    reportTableQuery.filter(_.websiteURL inSet websitesURL.map(URL(_)))
-      .to[List].result
-  }
-  
   def getWithWebsites(): Future[List[Report]] = db.run {
     reportTableQuery
       .filter(_.websiteURL.isDefined)
