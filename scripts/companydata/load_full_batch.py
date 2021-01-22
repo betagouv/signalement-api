@@ -35,6 +35,8 @@ FIELDS = [
     'etatadministratifetablissement'
 ]
 
+FIELDS_EXCEPT_NAME = list(filter(lambda x: x != 'denominationusuelleetablissement', FIELDS))
+
 def iter_csv(path):
     with open(path) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -59,14 +61,12 @@ def eval_query():
         return f"""
             INSERT INTO etablissements ({",".join(FIELDS)})
             VALUES ({",".join(f"%({k})s" for k in FIELDS)})
-            ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS)}
+            ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS_EXCEPT_NAME)},
+            denominationusuelleetablissement=COALESCE(NULLIF(%(denominationusuelleetablissement)s, ''), %(denominationusuelleetablissement)s, etablissements.denominationusuelleetablissement)
         """
         return query
     elif args.type == SIREN: # UniteLegale
         return f"""
-            UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in ['etatadministratifetablissement'])}
-            WHERE siren = %(siren)s AND (etatadministratifetablissement = '') IS NOT FALSE;
-
             UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in ['denominationusuelleetablissement'])}
             WHERE siren = %(siren)s AND (denominationusuelleetablissement = '') IS NOT FALSE;
         """
@@ -99,5 +99,6 @@ parser.add_argument('--page_size', required=False, type=int,
 if __name__ == "__main__":
     args = parser.parse_args()
     run(args.pg_uri, args.source)
+
 
 
