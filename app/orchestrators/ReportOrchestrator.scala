@@ -20,7 +20,7 @@ import services.{MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
-import utils.{Constants, EmailAddress, EmailSubjects}
+import utils.{Constants, EmailAddress, EmailSubjects, URL}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,6 +31,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   accessTokenRepository: AccessTokenRepository,
   eventRepository: EventRepository,
   websiteRepository: WebsiteRepository,
+  reportedPhoneRepository: ReportedPhoneRepository,
   mailerService: MailerService,
   pdfService: PDFService,
   @Named("email-actor") emailActor: ActorRef,
@@ -51,8 +52,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(company)
-      _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
-      token         <- existingToken.map(Future(_)).getOrElse(
+      _ <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
+      token <- existingToken.map(Future(_)).getOrElse(
         accessTokenRepository.createToken(
           TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
           Some(company), Some(AccessLevel.ADMIN)
@@ -69,7 +70,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           subject = EmailSubjects.NEW_REPORT,
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
-        val user = admins.head     // We must chose one as Event links to a single User
+        val user = admins.head // We must chose one as Event links to a single User
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
@@ -101,8 +102,25 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       website
     }) match {
       case Some(f) => f.map(Some(_))
-      case None    => Future.successful(None)
+      case None => Future.successful(None)
     }
+  }
+
+  private[this] def createReportedPhone(companyOpt: Option[Company], phoneOpt: Option[String]): Future[Option[ReportedPhone]] = {
+    val creationOpt = for {
+      company <- companyOpt
+      phone <- phoneOpt
+    } yield reportedPhoneRepository.create(ReportedPhone(phone = phone, companyId = company.id))
+    creationOpt.map(_.map(Some(_))).getOrElse(Future(None))
+  }
+
+  private[this] def createReportedWebsite(companyOpt: Option[Company], websiteURLOpt: Option[URL]): Future[Option[Website]] = {
+    val creationOpt = for {
+      company <- companyOpt
+      websiteUrl <- websiteURLOpt
+      host <- websiteUrl.getHost
+    } yield websiteRepository.create(Website(host = host, companyId = company.id))
+    creationOpt.map(_.map(Some(_))).getOrElse(Future(None))
   }
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
@@ -119,7 +137,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           draftReport.companyActivityCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      website <- companyOpt.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(host => websiteRepository.create(Website(host = host, companyId = c.id)).map(Some(_))))).getOrElse(Future(None))
+      website <- createReportedWebsite(companyOpt, draftReport.websiteURL)
+      phone <- createReportedPhone(companyOpt, draftReport.phone)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)

@@ -12,25 +12,26 @@ import utils.{Address, Country, EmailAddress, SIRET, URL}
 
 
 case class DraftReport(
-                        category: String,
-                        subcategories: List[String],
-                        details: List[DetailInputValue],
-                        companyName: Option[String],
-                        companyAddress: Option[Address],
-                        companyPostalCode: Option[String],
-                        companyCountry: Option[Country],
-                        companySiret: Option[SIRET],
-                        companyActivityCode: Option[String],
-                        websiteURL: Option[URL],
-                        firstName: String,
-                        lastName: String,
-                        email: EmailAddress,
-                        contactAgreement: Boolean,
-                        employeeConsumer: Boolean,
-                        fileIds: List[UUID],
-                        vendor: Option[String] = None,
-                        tags: List[String] = Nil
-                      ) {
+  category: String,
+  subcategories: List[String],
+  details: List[DetailInputValue],
+  companyName: Option[String],
+  companyAddress: Option[Address],
+  companyPostalCode: Option[String],
+  companyCountry: Option[Country],
+  companySiret: Option[SIRET],
+  companyActivityCode: Option[String],
+  websiteURL: Option[URL],
+  phone: Option[String],
+  firstName: String,
+  lastName: String,
+  email: EmailAddress,
+  contactAgreement: Boolean,
+  employeeConsumer: Boolean,
+  fileIds: List[UUID],
+  vendor: Option[String] = None,
+  tags: List[String] = Nil
+) {
 
   def generateReport: Report = {
     val report = Report(
@@ -45,6 +46,7 @@ case class DraftReport(
       companyCountry,
       companySiret,
       websiteURL,
+      phone,
       OffsetDateTime.now(),
       firstName,
       lastName,
@@ -64,27 +66,28 @@ object DraftReport {
 }
 
 case class Report(
-                   id: UUID,
-                   category: String,
-                   subcategories: List[String],
-                   details: List[DetailInputValue],
-                   companyId: Option[UUID],
-                   companyName: Option[String],
-                   companyAddress: Option[Address],
-                   companyPostalCode: Option[String],
-                   companyCountry: Option[Country],
-                   companySiret: Option[SIRET],
-                   websiteURL: Option[URL],
-                   creationDate: OffsetDateTime,
-                   firstName: String,
-                   lastName: String,
-                   email: EmailAddress,
-                   contactAgreement: Boolean,
-                   employeeConsumer: Boolean,
-                   status: ReportStatusValue,
-                   vendor: Option[String] = None,
-                   tags: List[String] = Nil
-                 ) {
+  id: UUID,
+  category: String,
+  subcategories: List[String],
+  details: List[DetailInputValue],
+  companyId: Option[UUID],
+  companyName: Option[String],
+  companyAddress: Option[Address],
+  companyPostalCode: Option[String],
+  companyCountry: Option[Country],
+  companySiret: Option[SIRET],
+  websiteURL: Option[URL],
+  phone: Option[String],
+  creationDate: OffsetDateTime,
+  firstName: String,
+  lastName: String,
+  email: EmailAddress,
+  contactAgreement: Boolean,
+  employeeConsumer: Boolean,
+  status: ReportStatusValue,
+  vendor: Option[String] = None,
+  tags: List[String] = Nil
+) {
 
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT
@@ -119,6 +122,7 @@ object Report {
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
         "websiteURL" -> report.websiteURL,
+        "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
