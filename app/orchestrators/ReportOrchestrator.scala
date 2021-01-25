@@ -91,27 +91,15 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  private[this] def createWebsite(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
-    (for {
-      company <- companyOpt
-      host <- hostOpt
-    } yield for {
-      company <- companyRepository.getOrCreate(company.siret, company)
-      website <- websiteRepository.create(Website(host = host, companyId = company.id))
-    } yield {
-      website
-    }) match {
-      case Some(f) => f.map(Some(_))
-      case None => Future.successful(None)
-    }
-  }
-
   private[this] def createReportedPhone(companyOpt: Option[Company], phoneOpt: Option[String]): Future[Option[ReportedPhone]] = {
     val creationOpt = for {
       company <- companyOpt
       phone <- phoneOpt
     } yield reportedPhoneRepository.create(ReportedPhone(phone = phone, companyId = company.id))
-    creationOpt.map(_.map(Some(_))).getOrElse(Future(None))
+    creationOpt match {
+      case Some(f) => f.map(Some(_))
+      case None => Future(None)
+    }
   }
 
   private[this] def createReportedWebsite(companyOpt: Option[Company], websiteURLOpt: Option[URL]): Future[Option[Website]] = {
@@ -120,7 +108,10 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
     } yield websiteRepository.create(Website(host = host, companyId = company.id))
-    creationOpt.map(_.map(Some(_))).getOrElse(Future(None))
+    creationOpt  match {
+      case Some(f) => f.map(Some(_))
+      case None => Future(None)
+    }
   }
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
@@ -137,8 +128,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           draftReport.companyActivityCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      website <- createReportedWebsite(companyOpt, draftReport.websiteURL)
-      phone <- createReportedPhone(companyOpt, draftReport.phone)
+      _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
+      _ <- createReportedPhone(companyOpt, draftReport.phone)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
