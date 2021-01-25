@@ -23,7 +23,7 @@ class ReportedPhoneRepository @Inject()(dbConfigProvider: DatabaseConfigProvider
 
   implicit val ReportedPhoneStatusColumnType = MappedColumnType.base[ReportedPhoneStatus, String](_.value, ReportedPhoneStatus.fromValue)
 
-  class ReportedPhoneTable(tag: Tag) extends Table[ReportedPhone](tag, "websites") {
+  class ReportedPhoneTable(tag: Tag) extends Table[ReportedPhone](tag, "reported_phones") {
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
     def phone = column[String]("phone")
