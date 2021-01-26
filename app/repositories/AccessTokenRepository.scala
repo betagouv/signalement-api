@@ -40,11 +40,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def createToken(
       kind: TokenKind, token: String, validity: Option[java.time.temporal.TemporalAmount],
-      company: Option[Company], level: Option[AccessLevel], emailedTo: Option[EmailAddress] = None
+      company: Option[Company], level: Option[AccessLevel], emailedTo: Option[EmailAddress] = None, creationDate: OffsetDateTime = OffsetDateTime.now
     ): Future[AccessToken] =
     db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
-      creationDate = OffsetDateTime.now,
+      creationDate = creationDate,
       kind = kind,
       token = token,
       valid = true,
