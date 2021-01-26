@@ -114,6 +114,11 @@ object Fixtures {
         details <- arbString.arbitrary
     } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
 
+    def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+        id <- arbitrary[UUID]
+        details <- arbString.arbitrary
+    } yield Event(Some(id), None, Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+
     def genWebsite() = for {
         id <- arbitrary[UUID]
         companyId <- arbitrary[UUID]
