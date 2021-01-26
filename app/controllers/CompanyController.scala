@@ -24,6 +24,7 @@ class CompanyController @Inject()(
                                 val companyRepository: CompanyRepository,
                                 val companyDataRepository: CompanyDataRepository,
                                 val websiteRepository: WebsiteRepository,
+                                val reportedPhoneRepository: ReportedPhoneRepository,
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
@@ -79,11 +80,24 @@ class CompanyController @Inject()(
     for {
       companiesByUrl <- websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-        companyDataRepository.searchBySiret(company.siret).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
+        companyDataRepository.searchBySiret(company.siret).map(_.map {
+          case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind)
+        })
       })
     } yield Ok(Json.toJson(results.flatten))
   }
 
+  def searchCompanyByPhone(phone: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompanyByPhone $phone")
+    for {
+      companiesByUrl <- reportedPhoneRepository.searchCompaniesByPhone(phone, Some(Seq(ReportedPhoneStatus.VALIDATED)))
+      results <- Future.sequence(companiesByUrl.map { case (phone, company) =>
+        companyDataRepository.searchBySiret(company.siret).map(_.map {
+          case (company, activity) => company.toSearchResult(activity.map(_.label))
+        })
+      })
+    } yield Ok(Json.toJson(results.flatten))
+  }
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
@@ -98,12 +112,11 @@ class CompanyController @Inject()(
     } yield Ok(
       Json.toJson(accesses.map {case (t, c) =>
           (c, t, eventsMap.get(c.id).flatMap(
-              _.filter(e =>
+              _.find(e =>
                 e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-                && e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
-              ).headOption
+                  && e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))))
             ).flatMap(_.creationDate))
-        }.filter {case (c, t, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
+        }.filter {case (c, t, lastNotice) => !lastNotice.exists(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay)))}.map {
           case (c, t, lastNotice) =>
             Json.obj(
               "company" -> Json.toJson(c),
@@ -131,8 +144,8 @@ class CompanyController @Inject()(
           val htmlDocuments = companies.flatMap(c =>
             activationCodesMap.get(c.id).map(getHtmlDocumentForCompany(
               c,
-              reportsMap.get(c.id).getOrElse(Nil),
-              eventsMap.get(c.id).getOrElse(Nil),
+              reportsMap.getOrElse(c.id, Nil),
+              eventsMap.getOrElse(c.id, Nil),
               _
             ))
           )
@@ -148,7 +161,7 @@ class CompanyController @Inject()(
 
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
     val lastContact = events.filter(e =>
-                              e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
+                              e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
                               && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action))
                         .sortBy(_.creationDate).reverse.headOption
     val report = reports.sortBy(_.creationDate).reverse.headOption

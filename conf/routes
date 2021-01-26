@@ -92,6 +92,7 @@ POST          /api/companies/companies-posted                        controllers
 GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
 GET           /api/companies/search-url                              controllers.CompanyController.searchCompanyByWebsite(url: String)
+GET           /api/companies/search-phone                            controllers.CompanyController.searchCompanyByPhone(phone: String)
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
 PUT           /api/companies/:siret/address                          controllers.CompanyController.updateCompanyAddress(siret)
