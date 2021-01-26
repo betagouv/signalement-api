@@ -91,8 +91,13 @@ object Website {
 
 object WebsiteCompanyFormat {
 
-  implicit def websiteCompany: Writes[(Website, Company)] = (website: (Website, Company)) => {
-    val form_json = Json.toJson(website._1).as[JsObject]
-    form_json + ("company" -> Json.toJson(website._2))
+  implicit def websiteCompany: Writes[(Website, Company)] = (tuple: (Website, Company)) => {
+    val website_json = Json.toJson(tuple._1).as[JsObject]
+    website_json + ("company" -> Json.toJson(tuple._2))
+  }
+
+  implicit def websiteCompanyCount: Writes[(Website, Company, Int)] = (tuple: (Website, Company, Int)) => {
+    val website_json = Json.toJson(tuple._1).as[JsObject]
+    website_json + ("company" -> Json.toJson(tuple._2)) + ("count" -> Json.toJson(tuple._3))
   }
 }
