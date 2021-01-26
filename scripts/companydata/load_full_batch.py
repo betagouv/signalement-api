@@ -62,7 +62,7 @@ def eval_query():
             INSERT INTO etablissements ({",".join(FIELDS)})
             VALUES ({",".join(f"%({k})s" for k in FIELDS)})
             ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS_EXCEPT_NAME)},
-            denominationusuelleetablissement=COALESCE(NULLIF(%(denominationusuelleetablissement)s, ''), %(denominationusuelleetablissement)s, etablissements.denominationusuelleetablissement)
+            denominationusuelleetablissement=COALESCE(NULLIF(%(denominationusuelleetablissement)s, ''), etablissements.denominationusuelleetablissement)
         """
         return query
     elif args.type == SIREN: # UniteLegale
