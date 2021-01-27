@@ -116,4 +116,14 @@ PUT           /api/websites/:id                                      controllers
 PUT           /api/websites                                          controllers.WebsiteController.create
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
+
+# Reported phones API
+GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchWithCompanies
+GET           /api/reported-phones/unregistered                      controllers.ReportedPhoneController.fetchUnregisteredPhones(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/reported-phones/unregistered/extract              controllers.ReportedPhoneController.extractUnregisteredPhones(q: Option[String], start: Option[String], end: Option[String])
+PUT           /api/reported-phones/:id/company                       controllers.ReportedPhoneController.updateCompany(id: java.util.UUID)
+PUT           /api/reported-phones/:id                               controllers.ReportedPhoneController.update(id: java.util.UUID)
+PUT           /api/reported-phones                                   controllers.ReportedPhoneController.create
+DELETE        /api/reported-phones/:id                               controllers.ReportedPhoneController.remove(id: java.util.UUID)
+
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)

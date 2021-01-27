@@ -65,7 +65,7 @@ class WebsiteController @Inject()(
           website <- OptionT(websiteRepository.find(uuid))
           _ <- OptionT.liftF(
             if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
-            else Future.successful(Unit)
+            else Future.successful()
           )
           updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
           company <- OptionT(companyRepository.fetchCompany(website.companyId))
