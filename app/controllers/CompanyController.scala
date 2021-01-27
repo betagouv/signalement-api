@@ -6,6 +6,7 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Singleton}
+import models.Event.stringToDetailsJsValue
 import models._
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -108,23 +109,29 @@ class CompanyController @Inject()(
   def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       accesses <- accessTokenRepository.companiesToActivate()
-      eventsMap <- eventRepository.fetchEvents(accesses.map {case (_, c) => c.id})
-    } yield Ok(
-      Json.toJson(accesses.map {case (t, c) =>
-          (c, t, eventsMap.get(c.id).flatMap(
-              _.find(e =>
-                e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-                  && e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))))
-            ).flatMap(_.creationDate))
-        }.filter {case (c, t, lastNotice) => !lastNotice.exists(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay)))}.map {
-          case (c, t, lastNotice) =>
-            Json.obj(
-              "company" -> Json.toJson(c),
-              "lastNotice" -> lastNotice,
-              "tokenCreation" -> t.creationDate
-            )
+      eventsMap <- eventRepository.fetchEvents(accesses.map { case (_, c) => c.id })
+    } yield {
+      Ok(
+      Json.toJson(accesses.map { case (t, c) =>
+        (c, t,
+          eventsMap.get(c.id).map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)).getOrElse(0),
+          eventsMap.get(c.id).flatMap(
+            _.filter(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption
+          ).flatMap(_.creationDate),
+          eventsMap.get(c.id).flatMap(
+            _.filter(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED).headOption
+          ).flatMap(_.creationDate),
+        )
+      }.filter { case (c, t, noticeCount, lastNotice, lastRequirement) =>
+        lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))))).isEmpty }.map {
+        case (c, t, _, lastNotice, _) =>
+          Json.obj(
+            "company" -> Json.toJson(c),
+            "lastNotice" -> lastNotice,
+            "tokenCreation" -> t.creationDate
+          )
       })
-    )
+    )}
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
@@ -207,12 +214,39 @@ class CompanyController @Inject()(
   }
 
   def updateCompanyAddress(siret: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
-    request.body.validate[CompanyAddress].fold(
+    request.body.validate[CompanyAddressUpdate].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      companyAddress => for {
+      companyAddressUpdate => for {
         company <- companyRepository.findBySiret(SIRET(siret))
         updatedCompany <- company.map(c =>
-          companyRepository.update(c.copy(address = companyAddress.address, postalCode = Some(companyAddress.postalCode))).map(Some(_))
+          companyRepository.update(c.copy(address = companyAddressUpdate.address, postalCode = Some(companyAddressUpdate.postalCode))).map(Some(_))
+        ).getOrElse(Future(None))
+        _ <- updatedCompany.filter(c => Some(c.address) != company.map(_.address)).map(c =>
+          eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(c.id),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.PRO,
+              ActionEvent.COMPANY_ADDRESS_CHANGE,
+              stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
+            )
+          )
+        ).getOrElse(Future(None))
+        _ <- updatedCompany.filter(_ => companyAddressUpdate.activationDocumentRequired).map(c =>
+          eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(c.id),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.PRO,
+              ActionEvent.ACTIVATION_DOC_REQUIRED
+            )
+          )
         ).getOrElse(Future(None))
       } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
     )

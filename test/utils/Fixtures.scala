@@ -58,6 +58,10 @@ object Fixtures {
         randInt <- Gen.choose(0, 1000000)
     } yield URL(s"https://www.example${randInt}.com")
 
+    val genReportedPhone = for {
+        randInt <- Gen.choose(0, 999999999)
+    } yield randInt.toString
+
     def genDraftReport = for {
         category <- arbString.arbitrary
         subcategory <- arbString.arbitrary
@@ -113,6 +117,11 @@ object Fixtures {
         companyId <- arbitrary[UUID]
         details <- arbString.arbitrary
     } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+
+    def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+        id <- arbitrary[UUID]
+        details <- arbString.arbitrary
+    } yield Event(Some(id), None, Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
 
     def genWebsite() = for {
         id <- arbitrary[UUID]

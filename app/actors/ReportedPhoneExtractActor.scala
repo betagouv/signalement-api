@@ -88,10 +88,10 @@ class ReportedPhonesExtractActor @Inject()(configuration: Configuration,
         .groupBy(_.phone)
         .collect { case (Some(host), reports) if filters.query.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
 
-      val targetFilename = s"sites-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
-      val extractSheet = Sheet(name = "Sites non identifiés")
+      val targetFilename = s"telephones-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
+      val extractSheet = Sheet(name = "Téléphones non identifiés")
         .withRows(
-          Row(style = headerStyle).withCellValues("Nombre de signalement", "Nom du site") ::
+          Row(style = headerStyle).withCellValues("Nombre de signalement", "Numéro de téléphone") ::
             hostsWithCount.toList.sortBy(_._2)(Ordering.Int.reverse).map { case (host, count) =>
               Row().withCells(
                 StringCell(s"$count", None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet),
@@ -105,7 +105,7 @@ class ReportedPhonesExtractActor @Inject()(configuration: Configuration,
         .withRows(
           List(
             Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
-            filters.query.map(q => Row().withCellValues("Nom du site", q)),
+            filters.query.map(q => Row().withCellValues("Numéro de téléphone", q)),
             (startDate, DateUtils.parseDate(filters.end)) match {
               case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
               case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
@@ -127,7 +127,7 @@ class ReportedPhonesExtractActor @Inject()(configuration: Configuration,
   }
 
   def saveRemotely(localPath: Path, remoteName: String) = {
-    val remotePath = s"reportedPhone-extracts/${remoteName}"
+    val remotePath = s"reported-phones-extracts/${remoteName}"
     s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }

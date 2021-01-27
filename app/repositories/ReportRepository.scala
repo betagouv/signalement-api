@@ -15,20 +15,21 @@ import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
 import scala.concurrent.{ExecutionContext, Future}
 
 case class ReportFilter(
-  departments: Seq[String] = List(),
-  email: Option[String] = None,
-  websiteURL: Option[String] = None,
-  siretSiren: Option[String] = None,
-  companyName: Option[String] = None,
-  companyCountries: Seq[String] = List(),
-  start: Option[LocalDate] = None,
-  end: Option[LocalDate] = None,
-  category: Option[String] = None,
-  statusList: Seq[ReportStatusValue] = List(),
-  details: Option[String] = None,
-  employeeConsumer: Option[Boolean] = None,
-  hasCompany: Option[Boolean] = None,
-  tags: Seq[String] = Nil
+                         departments: Seq[String] = List(),
+                         email: Option[String] = None,
+                         websiteURL: Option[String] = None,
+                         phone: Option[String] = None,
+                         siretSiren: Option[String] = None,
+                         companyName: Option[String] = None,
+                         companyCountries: Seq[String] = List(),
+                         start: Option[LocalDate] = None,
+                         end: Option[LocalDate] = None,
+                         category: Option[String] = None,
+                         statusList: Seq[ReportStatusValue] = List(),
+                         details: Option[String] = None,
+                         employeeConsumer: Option[Boolean] = None,
+                         hasCompany: Option[Boolean] = None,
+                         tags: Seq[String] = Nil
 )
 
 @Singleton
@@ -246,6 +247,18 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
   }
 
+  def getWithWebsites(): Future[List[Report]] = db.run {
+    reportTableQuery
+      .filter(_.websiteURL.isDefined)
+      .to[List].result
+  }
+
+  def getWithPhones(): Future[List[Report]] = db.run {
+    reportTableQuery
+      .filter(_.phone.isDefined)
+      .to[List].result
+  }
+
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery
         .filterOpt(filter.email) {
@@ -253,6 +266,9 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
         .filterOpt(filter.websiteURL) {
           case(table, websiteURL) => table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+        }
+        .filterOpt(filter.phone) {
+          case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
         }
         .filterOpt(filter.siretSiren) {
           case(table, siretSiren) => {
@@ -410,7 +426,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .to[List].result
     )
 
-  def getWebsiteReportsWithoutCompany(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
+  def getWebsiteReportsWithoutCompany(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.websiteURL.isDefined)

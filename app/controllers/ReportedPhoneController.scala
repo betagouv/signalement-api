@@ -33,11 +33,20 @@ class ReportedPhoneController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
+
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       reportedPhones <- reportedPhoneRepository.list
+      reports <- reportRepository.getWithPhones()
+      countByPhoneAndCompany = reports
+        .groupBy(report => (report.phone, report.companyId))
+        .collect { case ((Some(phone), Some(companyId)), reports) => ((phone, companyId), reports.length)}
+      phonesWithCount = reportedPhones.map { case (reportedPhone, company) => {
+        val count = countByPhoneAndCompany.get(reportedPhone.phone, company.id).getOrElse(0)
+        (reportedPhone, company, count)
+      }}
     } yield {
-      Ok(Json.toJson(reportedPhones))
+      Ok(Json.toJson(phonesWithCount))
     }
   }
 

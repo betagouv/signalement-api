@@ -32,7 +32,9 @@ object ReportsExtractActor {
 
   case class RawFilters(departments: List[String],
                         email: Option[String],
-                        siret: Option[String],
+                        websiteURL: Option[String] = None,
+                        phone: Option[String] = None,
+                        siretSiren: Option[String] = None,
                         start: Option[String],
                         end: Option[String],
                         category: Option[String],
@@ -143,6 +145,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Téléphone de l'entreprise", centerAlignmentColumn,
+        (report, _, _, _) => report.phone.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Vendeur (marketplace)", centerAlignmentColumn,
         (report, _, _, _) => report.vendor.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -247,8 +254,9 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         ReportFilter(
           departments = filters.departments,
           email = filters.email,
-          websiteURL = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
-          siretSiren = None,
+          websiteURL = filters.websiteURL,
+          siretSiren = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siretSiren),
+          phone = filters.phone,
           companyName = None,
           companyCountries = Seq(),
           start = startDate,
@@ -296,7 +304,9 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
               case(_) => None
             },
-            filters.siret.map(siret => Row().withCellValues("Siret", siret)),
+            filters.siretSiren.map(siret => Row().withCellValues("Siret", siret)),
+            filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
+            filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
             filters.status.map(status => Row().withCellValues("Statut", status)),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details)),

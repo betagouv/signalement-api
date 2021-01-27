@@ -57,11 +57,11 @@ case class ReportedPhoneUpdate (
   companyId: Option[UUID],
   status: Option[ReportedPhoneStatus]
 ) {
-  def mergeIn(website: ReportedPhone): ReportedPhone = {
-    website.copy(
-      phone = phone.getOrElse(website.phone),
-      companyId = companyId.getOrElse(website.companyId),
-      status = status.getOrElse(website.status),
+  def mergeIn(reportedPhone: ReportedPhone): ReportedPhone = {
+    reportedPhone.copy(
+      phone = phone.getOrElse(reportedPhone.phone),
+      companyId = companyId.getOrElse(reportedPhone.companyId),
+      status = status.getOrElse(reportedPhone.status),
     )
   }
 }
@@ -80,7 +80,7 @@ case class ReportedPhone(
 
 object ReportedPhone {
 
-  implicit val websiteWrites: Writes[ReportedPhone] = (
+  implicit val writes: Writes[ReportedPhone] = (
     (JsPath \ "id").write[UUID] and
     (JsPath \ "creationDate").write[OffsetDateTime] and
     (JsPath \ "phone").write[String] and
@@ -91,8 +91,13 @@ object ReportedPhone {
 
 object ReportedPhoneCompanyFormat {
 
-  implicit def websiteCompany: Writes[(ReportedPhone, Company)] = (website: (ReportedPhone, Company)) => {
-    val form_json = Json.toJson(website._1).as[JsObject]
-    form_json + ("company" -> Json.toJson(website._2))
+  implicit def reportedPhoneCompany: Writes[(ReportedPhone, Company)] = (reportedPhone: (ReportedPhone, Company)) => {
+    val form_json = Json.toJson(reportedPhone._1).as[JsObject]
+    form_json + ("company" -> Json.toJson(reportedPhone._2))
+  }
+
+  implicit def reportedPhoneCompanyCount: Writes[(ReportedPhone, Company, Int)] = (tuple: (ReportedPhone, Company, Int)) => {
+    val reportedPhone_json = Json.toJson(tuple._1).as[JsObject]
+    reportedPhone_json + ("company" -> Json.toJson(tuple._2)) + ("count" -> Json.toJson(tuple._3))
   }
 }
