@@ -27,17 +27,17 @@ class ReportedPhoneController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchUnregisteredPhones(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
-    reportRepository.getPhoneReportsWithoutCompany(DateUtils.parseDate(start), DateUtils.parseDate(end))
+  def fetchPhonesWithSIRET(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    reportRepository.getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
       .map(reports => Ok(Json.toJson(
         reports
-          .groupBy(_.phone)
-          .collect { case (Some(phone), reports) if q.map(phone.contains(_)).getOrElse(true) => (phone, reports.length) }
-          .map{ case(phone, count) => Json.obj("phone" -> phone, "count" -> count)}
+          .groupBy(report => (report.phone, report.companySiret))
+          .collect { case ((Some(phone), siretOpt), reports) if q.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt), reports.length) }
+          .map{ case((phone, siretOpt), count) => Json.obj("phone" -> phone, "siret" -> siretOpt, "count" -> count)}
       )))
   }
 
-  def extractUnregisteredPhones(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+  def extractPhonesWithSIRET(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
     reportedPhonesExtractActor ? ReportedPhonesExtractActor.ExtractRequest(request.identity, RawFilters(q, start, end))
     Future(Ok)

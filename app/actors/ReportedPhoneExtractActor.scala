@@ -83,7 +83,7 @@ class ReportedPhonesExtractActor @Inject()(configuration: Configuration,
     val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    reportRepository.getPhoneReportsWithoutCompany(startDate, endDate).map{ reports =>
+    reportRepository.getPhoneReports(startDate, endDate).map{ reports =>
       val hostsWithCount = reports
         .groupBy(_.phone)
         .collect { case (Some(host), reports) if filters.query.map(host.contains(_)).getOrElse(true) => (host, reports.length) }

@@ -65,7 +65,7 @@ The fetch unregistered phone endpoint should
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchUnregisteredPhones(None, None, None).toString)
+    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchPhonesWithSIRET(None, None, None).toString)
                   .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)

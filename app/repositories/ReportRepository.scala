@@ -440,11 +440,10 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .to[List].result
     )
 
-  def getPhoneReportsWithoutCompany(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
+  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.phone.isDefined)
-        .filter(_.companyId.isEmpty)
         .filterOpt(start) {
           case(table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
