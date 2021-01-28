@@ -12,7 +12,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.{CompanyRepository, _}
 import utils.silhouette.auth.AuthEnv
-import utils.{AppSpec, Fixtures}
+import utils.{AppSpec, Fixtures, SIRET}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -25,18 +25,15 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv) extends Specifi
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val company = Fixtures.genCompany.sample.get
-  val reportedPhone1 = Fixtures.genReportedPhone.sample.get
-  val reportedPhone2 = Fixtures.genReportedPhone.sample.get
-  val reportedPhoneWithCompany = Fixtures.genReportedPhone.sample.get
+  val reportedPhone = Fixtures.genReportedPhone.sample.get
 
   override def setupData = {
     Await.result(for {
       _ <- userRepository.create(adminUser)
       c <- companyRepository.getOrCreate(company.siret, company)
-      _ <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone1)).generateReport)
-      _ <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone2)).generateReport)
-      _ <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone2)).generateReport)
-      _ <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhoneWithCompany)))
+      _ <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)).generateReport)
+      _ <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
+      _ <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
     } yield Unit,
     Duration.Inf)
   }
@@ -60,19 +57,19 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv) extends Specifi
 
 class FetchUnregisteredPhoneSpec(implicit ee: ExecutionEnv) extends BaseReportedPhoneControllerSpec { override def is = s2"""
 
-The fetch unregistered phone endpoint should
-  list reportedPhone reports count with no company group by phone $e1
+The fetch phone group  SIRET endpoint should
+  list reportedPhone reports count group by phone and SIRET $e1
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchPhonesWithSIRET(None, None, None).toString)
+    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchPhonesGroupBySIRET(None, None, None).toString)
                   .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must haveCountsByPhone(
-      aCountByPhone(reportedPhone1, 1),
-      aCountByPhone(reportedPhone2, 2)
+      aCountByPhone(reportedPhone, 1),
+      aCountByPhoneAndSIRET(reportedPhone, company.siret, 2)
     )
   }
 
@@ -80,7 +77,12 @@ The fetch unregistered phone endpoint should
     /("phone").andHave(phone) and
       /("count").andHave(count)
 
-  def haveCountsByPhone(countsByPhone : Matcher[String]*): Matcher[String] =
-    have(allOf(countsByPhone:_*))
+  def aCountByPhoneAndSIRET(phone: String, siret: SIRET, count: Int): Matcher[String] =
+    /("phone").andHave(phone) and
+      /("siret").andHave(siret.toString) and
+      /("count").andHave(count)
+
+  def haveCountsByPhone(phoneMatchers : Matcher[String]*): Matcher[String] =
+    have(allOf(phoneMatchers:_*))
 }
 
