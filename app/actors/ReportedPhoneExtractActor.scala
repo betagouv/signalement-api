@@ -85,17 +85,18 @@ class ReportedPhonesExtractActor @Inject()(configuration: Configuration,
 
     reportRepository.getPhoneReports(startDate, endDate).map{ reports =>
       val hostsWithCount = reports
-        .groupBy(_.phone)
-        .collect { case (Some(host), reports) if filters.query.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
+        .groupBy(report => (report.phone, report.companySiret))
+        .collect { case ((Some(phone), siretOpt), reports) if filters.query.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt), reports.length) }
 
-      val targetFilename = s"telephones-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
-      val extractSheet = Sheet(name = "Téléphones non identifiés")
+      val targetFilename = s"telephones-signales-${Random.alphanumeric.take(12).mkString}.xlsx"
+      val extractSheet = Sheet(name = "Téléphones signalés")
         .withRows(
-          Row(style = headerStyle).withCellValues("Nombre de signalement", "Numéro de téléphone") ::
-            hostsWithCount.toList.sortBy(_._2)(Ordering.Int.reverse).map { case (host, count) =>
+          Row(style = headerStyle).withCellValues("Numéro de téléphone", "SIRET", "Nombre de signalement") ::
+            hostsWithCount.toList.sortBy(_._2)(Ordering.Int.reverse).map { case ((host, siretOpt), count) =>
               Row().withCells(
+                StringCell(host, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet),
+                StringCell(siretOpt.map(_.value).getOrElse(""), None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet),
                 StringCell(s"$count", None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet),
-                  StringCell(host, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet)
               )
             }
         )
