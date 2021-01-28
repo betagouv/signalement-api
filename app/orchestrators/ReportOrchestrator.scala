@@ -4,16 +4,15 @@ import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Named}
+import actors.{EmailActor, UploadActor}
 import akka.actor.ActorRef
 import akka.pattern.ask
-import actors.EmailActor
-import actors.UploadActor
+import javax.inject.{Inject, Named}
 import models.Event._
 import models.ReportResponse._
 import models._
 import play.api.libs.json.Json
-import play.api.libs.mailer.{AttachmentData, AttachmentFile}
+import play.api.libs.mailer.AttachmentData
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, PDFService, S3Service}
@@ -31,7 +30,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   accessTokenRepository: AccessTokenRepository,
   eventRepository: EventRepository,
   websiteRepository: WebsiteRepository,
-  reportedPhoneRepository: ReportedPhoneRepository,
   mailerService: MailerService,
   pdfService: PDFService,
   @Named("email-actor") emailActor: ActorRef,
@@ -91,17 +89,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  private[this] def createReportedPhone(companyOpt: Option[Company], phoneOpt: Option[String]): Future[Option[ReportedPhone]] = {
-    val creationOpt = for {
-      company <- companyOpt
-      phone <- phoneOpt
-    } yield reportedPhoneRepository.create(ReportedPhone(phone = phone, companyId = company.id))
-    creationOpt match {
-      case Some(f) => f.map(Some(_))
-      case None => Future(None)
-    }
-  }
-
   private[this] def createReportedWebsite(companyOpt: Option[Company], websiteURLOpt: Option[URL]): Future[Option[Website]] = {
     val creationOpt = for {
       company <- companyOpt
@@ -129,7 +116,6 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         )
       ).map(Some(_))).getOrElse(Future(None))
       _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
-      _ <- createReportedPhone(companyOpt, draftReport.phone)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)

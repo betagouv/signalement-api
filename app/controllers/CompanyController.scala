@@ -25,7 +25,6 @@ class CompanyController @Inject()(
                                 val companyRepository: CompanyRepository,
                                 val companyDataRepository: CompanyDataRepository,
                                 val websiteRepository: WebsiteRepository,
-                                val reportedPhoneRepository: ReportedPhoneRepository,
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
@@ -83,18 +82,6 @@ class CompanyController @Inject()(
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository.searchBySiret(company.siret).map(_.map {
           case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind)
-        })
-      })
-    } yield Ok(Json.toJson(results.flatten))
-  }
-
-  def searchCompanyByPhone(phone: String) = UnsecuredAction.async { implicit request =>
-    logger.debug(s"searchCompanyByPhone $phone")
-    for {
-      companiesByUrl <- reportedPhoneRepository.searchCompaniesByPhone(phone, Some(Seq(ReportedPhoneStatus.VALIDATED)))
-      results <- Future.sequence(companiesByUrl.map { case (phone, company) =>
-        companyDataRepository.searchBySiret(company.siret).map(_.map {
-          case (company, activity) => company.toSearchResult(activity.map(_.label))
         })
       })
     } yield Ok(Json.toJson(results.flatten))
