@@ -117,7 +117,7 @@ DELETE        /api/websites/:id                                      controllers
 
 
 # Reported phones API
-GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchPhonesWithSIRET(q: Option[String], start: Option[String], end: Option[String])
-GET           /api/reported-phones/extract                           controllers.ReportedPhoneController.extractPhonesWithSIRET(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/reported-phones/extract                           controllers.ReportedPhoneController.extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
 
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)
