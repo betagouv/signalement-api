@@ -8,12 +8,15 @@ GET           /api                                                   controllers
 # Statistics API
 GET           /api/stats/reports/count                               controllers.StatisticController.getReportCount()
 GET           /api/stats/reports/count/monthly                       controllers.StatisticController.getMonthlyReportCount()
+GET           /api/stats/reports/forwarded/percentage                controllers.StatisticController.getReportForwardedToProPercentage()
 GET           /api/stats/reports/read/percentage                     controllers.StatisticController.getReportReadByProPercentage()
+GET           /api/stats/reports/forwarded/percentage/monthly        controllers.StatisticController.getMonthlyReportForwardedToProPercentage()
 GET           /api/stats/reports/read/percentage/monthly             controllers.StatisticController.getMonthlyReportReadByProPercentage()
 GET           /api/stats/reports/read/delay                          controllers.StatisticController.getReportReadMedianDelay()
 GET           /api/stats/reports/responsed/percentage                controllers.StatisticController.getReportWithResponsePercentage()
 GET           /api/stats/reports/responsed/percentage/monthly        controllers.StatisticController.getMonthlyReportWithResponsePercentage()
 GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReportWithResponseMedianDelay()
+GET           /api/stats/reports/website/percentage                  controllers.StatisticController.getReportWithWebsitePercentage()
 POST          /api/stats/reports                                     controllers.StatisticController.updateReportData()
 
 # Reports list API
