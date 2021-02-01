@@ -4,7 +4,7 @@ import java.time.Period
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
-import utils.{EmailAddress, SIRET}
+import utils.{Country, EmailAddress, SIRET}
 
 
 case class DraftSubscription(
@@ -12,6 +12,7 @@ case class DraftSubscription(
   categories: List[ReportCategory],
   sirets: List[SIRET],
   tags: List[String],
+  countries: List[Country],
   frequency: Period
 )
 
@@ -26,6 +27,7 @@ case class Subscription(
   departments: List[String],
   categories: List[ReportCategory],
   tags: List[String],
+  countries: List[Country],
   sirets: List[SIRET],
   frequency: Period
 )

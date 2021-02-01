@@ -31,6 +31,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
           draftSubscription.departments,
           draftSubscription.categories,
           draftSubscription.tags,
+          draftSubscription.countries,
           draftSubscription.sirets,
           draftSubscription.frequency
         )
@@ -50,6 +51,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
                 departments = draftSubscription.departments,
                 categories = draftSubscription.categories,
                 tags = draftSubscription.tags,
+                countries = draftSubscription.countries,
                 sirets = draftSubscription.sirets,
                 frequency = draftSubscription.frequency
               )).map(Some(_))).getOrElse(Future(None))
