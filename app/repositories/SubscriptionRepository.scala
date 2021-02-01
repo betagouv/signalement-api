@@ -7,7 +7,7 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.{EmailAddress, SIRET}
+import utils.{Country, EmailAddress, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,24 +28,35 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
     def tags = column[List[String]]("tags")
+    def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
     def frequency = column[Period]("frequency")
 
-    type SubscriptionData = (UUID, Option[UUID], Option[EmailAddress], List[String], List[String], List[SIRET], Period)
+    type SubscriptionData = (UUID, Option[UUID], Option[EmailAddress], List[String], List[String], List[String], List[Country], List[SIRET], Period)
 
     def constructSubscription: SubscriptionData => Subscription = {
-      case (id, userId, email, departments, categories, sirets, frequency) => {
-        Subscription(id, userId, email, departments, categories.map(ReportCategory.fromValue(_)), sirets, frequency)
+      case (id, userId, email, departments, categories, tags, countries, sirets, frequency) => {
+        Subscription(
+          id = id,
+          userId = userId,
+          email = email,
+          departments = departments,
+          categories = categories.map(ReportCategory.fromValue),
+          tags = tags,
+          countries = countries,
+          sirets = sirets,
+          frequency = frequency
+        )
       }
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, userId, email, departments, categories, tags, sirets, frequency) => (id, userId, email, departments, categories.map(_.value), sirets, frequency)
+      case Subscription(id, userId, email, departments, categories, tags, countries, sirets, frequency) => (id, userId, email, departments, categories.map(_.value), tags, countries, sirets, frequency)
     }
 
     def * =
-      (id, userId, email, departments, categories, tags, sirets, frequency) <> (constructSubscription, extractSubscription.lift)
+      (id, userId, email, departments, categories, tags, countries, sirets, frequency) <> (constructSubscription, extractSubscription.lift)
   }
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
