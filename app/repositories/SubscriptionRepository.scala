@@ -27,6 +27,7 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
+    def tags = column[List[String]]("tags")
     def sirets = column[List[SIRET]]("sirets")
     def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
     def frequency = column[Period]("frequency")
@@ -40,11 +41,11 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, userId, email, departments, categories, sirets, frequency) => (id, userId, email, departments, categories.map(_.value), sirets, frequency)
+      case Subscription(id, userId, email, departments, categories, tags, sirets, frequency) => (id, userId, email, departments, categories.map(_.value), sirets, frequency)
     }
 
     def * =
-      (id, userId, email, departments, categories, sirets, frequency) <> (constructSubscription, extractSubscription.lift)
+      (id, userId, email, departments, categories, tags, sirets, frequency) <> (constructSubscription, extractSubscription.lift)
   }
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]

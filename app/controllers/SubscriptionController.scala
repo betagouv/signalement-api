@@ -30,6 +30,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
           None,
           draftSubscription.departments,
           draftSubscription.categories,
+          draftSubscription.tags,
           draftSubscription.sirets,
           draftSubscription.frequency
         )
@@ -43,11 +44,12 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
       draftSubscription =>
         for {
           subscriptions <- subscriptionRepository.list(request.identity.id)
-          updatedSubscription <- subscriptions.filter(_.id == uuid).headOption
+          updatedSubscription <- subscriptions.find(_.id == uuid)
             .map(subscription => subscriptionRepository.update(
               subscription.copy(
                 departments = draftSubscription.departments,
                 categories = draftSubscription.categories,
+                tags = draftSubscription.tags,
                 sirets = draftSubscription.sirets,
                 frequency = draftSubscription.frequency
               )).map(Some(_))).getOrElse(Future(None))
@@ -68,7 +70,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
   def removeSubscription(uuid: UUID) = SecuredAction(WithPermission(UserPermission.subscribeReports)).async { implicit request =>
     for {
       subscriptions <- subscriptionRepository.list(request.identity.id)
-      deletedCount <- subscriptions.filter(_.id == uuid).headOption.map(subscription => subscriptionRepository.delete(subscription.id)).getOrElse(Future(0))
+      deletedCount <- subscriptions.find(_.id == uuid).map(subscription => subscriptionRepository.delete(subscription.id)).getOrElse(Future(0))
     } yield if (deletedCount > 0) Ok else NotFound
   }
 }
