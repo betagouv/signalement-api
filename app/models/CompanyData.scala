@@ -5,28 +5,29 @@ import java.util.UUID
 import play.api.libs.json.{Json, OFormat}
 import utils.{Address, SIREN, SIRET}
 
-case class CompanyData (
-                         id: UUID,
-                         siret: SIRET,
-                         siren: SIREN,
-                         dateDernierTraitementEtablissement: Option[String],
-                         etablissementSiege: Option[String], //TODO change after updating table column type
-                         complementAdresseEtablissement: Option[String],
-                         numeroVoieEtablissement: Option[String],
-                         indiceRepetitionEtablissement: Option[String],
-                         typeVoieEtablissement: Option[String],
-                         libelleVoieEtablissement: Option[String],
-                         codePostalEtablissement: Option[String],
-                         libelleCommuneEtablissement: Option[String],
-                         libelleCommuneEtrangerEtablissement: Option[String],
-                         distributionSpecialeEtablissement: Option[String],
-                         codeCommuneEtablissement: Option[String],
-                         codeCedexEtablissement: Option[String],
-                         libelleCedexEtablissement: Option[String],
-                         denominationUsuelleEtablissement: Option[String],
-                         enseigne1Etablissement: Option[String],
-                         activitePrincipaleEtablissement: String
-                       ) {
+case class CompanyData(
+  id: UUID,
+  siret: SIRET,
+  siren: SIREN,
+  dateDernierTraitementEtablissement: Option[String],
+  etablissementSiege: Option[String], //TODO change after updating table column type
+  complementAdresseEtablissement: Option[String],
+  numeroVoieEtablissement: Option[String],
+  indiceRepetitionEtablissement: Option[String],
+  typeVoieEtablissement: Option[String],
+  libelleVoieEtablissement: Option[String],
+  codePostalEtablissement: Option[String],
+  libelleCommuneEtablissement: Option[String],
+  libelleCommuneEtrangerEtablissement: Option[String],
+  distributionSpecialeEtablissement: Option[String],
+  codeCommuneEtablissement: Option[String],
+  codeCedexEtablissement: Option[String],
+  libelleCedexEtablissement: Option[String],
+  denominationUsuelleEtablissement: Option[String],
+  enseigne1Etablissement: Option[String],
+  activitePrincipaleEtablissement: String,
+  etatAdministratifEtablissement: String
+) {
 
   def voie =
     Option(Seq(

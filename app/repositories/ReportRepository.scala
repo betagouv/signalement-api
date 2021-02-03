@@ -182,11 +182,14 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 
-  def countWithStatus(statusList: List[ReportStatusValue], cutoff: Option[Duration]) = db
+  def countWithStatus(statusList: List[ReportStatusValue], cutoff: Option[Duration], withWebsite: Option[Boolean] = None) = db
     .run(
       baseStatReportTableQuery
         .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
         .filter(_.status inSet statusList.map(_.defaultValue))
+        .filterOpt(withWebsite) {
+          case(table, withWebsite) => table.websiteURL.isDefined === withWebsite
+        }
         .length
         .result
     )
