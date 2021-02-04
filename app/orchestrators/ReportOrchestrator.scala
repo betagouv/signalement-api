@@ -141,7 +141,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
           Seq(
             AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
-          ).filter(_ => report.isContractualDispute)
+          ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
       )
       logger.debug(s"Report ${report.id} created")
       report
