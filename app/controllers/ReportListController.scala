@@ -8,41 +8,35 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
 import models._
-import orchestrators.ReportOrchestrator
+import play.api.Logger
 import play.api.libs.json.{JsError, Json}
-import play.api.{Configuration, Logger}
 import repositories._
-import services.{MailerService, S3Service}
 import utils.Constants.ReportStatus._
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{DateUtils, SIRET}
+import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.{DateUtils, SIREN}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
-                                     reportRepository: ReportRepository,
+class ReportListController @Inject()(reportRepository: ReportRepository,
                                      companyRepository: CompanyRepository,
-                                     eventRepository: EventRepository,
-                                     userRepository: UserRepository,
-                                     mailerService: MailerService,
-                                     s3Service: S3Service,
+                                     companyDataRepository: CompanyDataRepository,
                                      @Named("reports-extract-actor") reportsExtractActor: ActorRef,
                                      val silhouette: Silhouette[AuthEnv],
-                                     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                     configuration: Configuration)
+                                     val silhouetteAPIKey: Silhouette[APIKeyEnv])
                                     (implicit val executionContext: ExecutionContext) extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchCompany(user: User, siret: Option[String]): Future[Company] = {
+  def fetchProSiretSiren(user: User): Future[Some[List[String]]] = {
     for {
-      accesses <- companyRepository.fetchCompaniesWithLevel(user)
+      companiesWithLevel <- companyRepository.fetchCompaniesWithLevel(user)
+      headOfficesSiret <- companyDataRepository.searchHeadOffices(companiesWithLevel.map(_._1.siret))
     } yield {
-      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).head
+      Some(companiesWithLevel.map(_._1).map(company => headOfficesSiret.find(_ == company.siret).map(s => SIREN(s).value).getOrElse(company.siret.value)))
     }
   }
 
@@ -79,7 +73,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
       email = email,
       websiteURL = websiteURL,
-      siretSiren = siret,
+      siretSirenList = siret.map(List(_)),
       companyName = companyName,
       companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
       start = startDate,
@@ -96,15 +90,14 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     )
 
     for {
-      company <- Some(request.identity)
+      siretSirenList <- Some(request.identity)
                   .filter(_.userRole == UserRoles.Pro)
-                  .map(u => fetchCompany(u, siret).map(Some(_)))
+                  .map(u => fetchProSiretSiren(u))
                   .getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            company.map(c => filter.copy(siretSiren=Some(c.siret.value)))
-                                   .getOrElse(filter))
+                            siretSirenList.map(l => filter.copy(siretSirenList = Some(l))).getOrElse(filter))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
       Ok(Json.toJson(paginatedReports.copy(entities = paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil))))))
@@ -117,15 +110,15 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       filters =>
       for {
-        restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                                fetchCompany(request.identity, filters.siret).map(Some(_))
-                            else
-                                Future(None)
+        restrictToSiretSirenList <- if (request.identity.userRole == UserRoles.Pro)
+                            fetchProSiretSiren(request.identity)
+                          else
+                            Future(None)
       } yield {
         logger.debug(s"Requesting report for user ${request.identity.email}")
         reportsExtractActor ? ReportsExtractActor.ExtractRequest(
           request.identity,
-          restrictToCompany,
+          restrictToSiretSirenList,
           filters
         )
         Ok

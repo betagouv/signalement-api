@@ -32,7 +32,7 @@ object ReportsExtractActor {
 
   case class RawFilters(departments: List[String],
                         email: Option[String],
-                        siret: Option[String],
+                        siretSirenList: Option[List[String]],
                         start: Option[String],
                         end: Option[String],
                         category: Option[String],
@@ -40,7 +40,7 @@ object ReportsExtractActor {
                         details: Option[String],
                         hasCompany: Option[Boolean],
                         tags: List[String] = Nil)
-  case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
+  case class ExtractRequest(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters)
 }
 
 @Singleton
@@ -67,14 +67,14 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   }
   override def receive = {
-    case ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) =>
+    case ExtractRequest(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
         asyncFile     <- asyncFileRepository.create(requestedBy)
         tmpPath       <- {
           sender() ! Unit
-          genTmpFile(requestedBy, restrictToCompany, filters)
+          genTmpFile(requestedBy, restrictToSiretSirenList, filters)
         }
         remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _             <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
@@ -233,7 +233,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters) = {
+  def genTmpFile(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters) = {
     val startDate = DateUtils.parseDate(filters.start)
     val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -248,7 +248,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           departments = filters.departments,
           email = filters.email,
           websiteURL = None,
-          siretSiren = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
+          siretSirenList = restrictToSiretSirenList.map(l => Some(l)).getOrElse(filters.siretSirenList),
           companyName = None,
           companyCountries = Seq(),
           start = startDate,
@@ -296,7 +296,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
               case(_) => None
             },
-            filters.siret.map(siret => Row().withCellValues("Siret", siret)),
+            filters.siretSirenList.map(l => Row().withCellValues("Siret", l.mkString(","))),
             filters.status.map(status => Row().withCellValues("Statut", status)),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details)),

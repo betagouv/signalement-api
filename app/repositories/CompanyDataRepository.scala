@@ -90,6 +90,16 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
+  def searchHeadOffices(sirets: List[SIRET]): Future[List[SIRET]] =
+    db.run(companyDataTableQuery
+      .filter(_.siret inSetBind sirets)
+      .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
+      .filter(_.etablissementSiege === "true")
+      .map(_.siret)
+      .to[List].result
+    )
+
   def searchBySiretWithHeadOffice(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.siren === SIREN(siret))
