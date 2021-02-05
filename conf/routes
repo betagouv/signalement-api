@@ -20,7 +20,7 @@ GET           /api/stats/reports/website/percentage                  controllers
 POST          /api/stats/reports                                     controllers.StatisticController.updateReportData()
 
 # Reports list API
-GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], siret: Option[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
+    GET           /api/reports                                       controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], siret: Option[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
 POST          /api/reports/extract                                   controllers.ReportListController.extractReports()
 
 # Report API
@@ -117,5 +117,10 @@ PUT           /api/websites/:id/company                              controllers
 PUT           /api/websites/:id                                      controllers.WebsiteController.update(id: java.util.UUID)
 PUT           /api/websites                                          controllers.WebsiteController.create
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
+
+
+# Reported phones API
+GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
+GET           /api/reported-phones/extract                           controllers.ReportedPhoneController.extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
 
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)

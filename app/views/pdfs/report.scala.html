@@ -102,6 +102,11 @@
                             @url
                         </div>
                     }
+                    @report.phone.map{phone =>
+                        <div>
+                            @phone
+                        </div>
+                    }
                     @report.vendor.map {vendor =>
                         <div>
                             <h2>Vendeur</h2>
