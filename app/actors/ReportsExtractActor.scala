@@ -32,6 +32,8 @@ object ReportsExtractActor {
 
   case class RawFilters(departments: List[String],
                         email: Option[String],
+                        websiteURL: Option[String] = None,
+                        phone: Option[String] = None,
                         siretSirenList: Option[List[String]],
                         start: Option[String],
                         end: Option[String],
@@ -143,6 +145,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Téléphone de l'entreprise", centerAlignmentColumn,
+        (report, _, _, _) => report.phone.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Vendeur (marketplace)", centerAlignmentColumn,
         (report, _, _, _) => report.vendor.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -248,6 +255,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           departments = filters.departments,
           email = filters.email,
           websiteURL = None,
+          phone = filters.phone,
           siretSirenList = restrictToSiretSirenList.map(l => Some(l)).getOrElse(filters.siretSirenList),
           companyName = None,
           companyCountries = Seq(),
@@ -297,6 +305,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
               case(_) => None
             },
             filters.siretSirenList.map(l => Row().withCellValues("Siret", l.mkString(","))),
+            filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
+            filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
             filters.status.map(status => Row().withCellValues("Statut", status)),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details)),

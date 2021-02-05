@@ -18,6 +18,7 @@ case class ReportFilter(
                          departments: Seq[String] = List(),
                          email: Option[String] = None,
                          websiteURL: Option[String] = None,
+                         phone: Option[String] = None,
                          siretSirenList: Option[List[String]] = None,
                          companyName: Option[String] = None,
                          companyCountries: Seq[String] = List(),
@@ -57,6 +58,7 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def companyCountry = column[Option[Country]]("company_country")
     def companySiret = column[Option[SIRET]]("company_siret")
     def websiteURL = column[Option[URL]]("website_url")
+    def phone = column[Option[String]]("phone")
     def creationDate = column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")
     def lastName = column[String]("last_name")
@@ -69,26 +71,47 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
 
-    type ReportData = (UUID, String, List[String], List[String], Option[UUID], Option[String], Option[Address], Option[String], Option[Country], Option[SIRET], Option[URL],
-      OffsetDateTime, String, String, EmailAddress, Boolean, Boolean, String, Option[String], List[String])
+    type ReportData = (
+      UUID,
+      String,
+      List[String],
+      List[String],
+      Option[UUID],
+      Option[String],
+      Option[Address],
+      Option[String],
+      Option[Country],
+      Option[SIRET],
+      Option[URL],
+      Option[String],
+      OffsetDateTime,
+      String,
+      String,
+      EmailAddress,
+      Boolean,
+      Boolean,
+      String,
+      Option[String],
+      List[String]
+    )
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-      websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
+      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
         Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), vendor, tags)
+          websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), vendor, tags)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-      websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
+      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
         (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-          websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, vendor, tags)
+          websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, vendor, tags)
     }
 
     def * =
       (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        websiteURL, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) <> (constructReport, extractReport.lift)
+        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) <> (constructReport, extractReport.lift)
   }
 
   implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
@@ -235,6 +258,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .to[List].result
   }
 
+  def getWithPhones(): Future[List[Report]] = db.run {
+    reportTableQuery
+      .filter(_.phone.isDefined)
+      .to[List].result
+  }
+
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery
         .filterOpt(filter.email) {
@@ -243,8 +272,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.websiteURL) {
           case(table, websiteURL) => table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
         }
+        .filterOpt(filter.phone) {
+          case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+        }
         .filterOpt(filter.siretSirenList) {
-          case(table, siretSirenList) => {
+          case (table, siretSirenList) => {
             table.companySiret.map(siret =>
               (siret inSetBind siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
                 (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siretSirenList.filter(_.matches(SIREN.pattern)).distinct)
@@ -403,6 +435,19 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       reportTableQuery
         .filter(_.websiteURL.isDefined)
         .filter(_.companyId.isEmpty)
+        .filterOpt(start) {
+          case(table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        }
+        .filterOpt(end) {
+          case(table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        }
+        .to[List].result
+    )
+
+  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
+    .run(
+      reportTableQuery
+        .filter(_.phone.isDefined)
         .filterOpt(start) {
           case(table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
