@@ -22,17 +22,12 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
-                                     reportRepository: ReportRepository,
+class ReportListController @Inject()(reportRepository: ReportRepository,
                                      companyRepository: CompanyRepository,
-                                     eventRepository: EventRepository,
-                                     userRepository: UserRepository,
-                                     mailerService: MailerService,
-                                     s3Service: S3Service,
                                      @Named("reports-extract-actor") reportsExtractActor: ActorRef,
                                      val silhouette: Silhouette[AuthEnv],
-                                     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                     configuration: Configuration)
+                                     val silhouetteAPIKey: Silhouette[APIKeyEnv]
+                                    )
                                     (implicit val executionContext: ExecutionContext) extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -52,6 +47,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
     departments: Option[String],
     email: Option[String],
     websiteURL: Option[String],
+    phone: Option[String],
     siret: Option[String],
     companyName: Option[String],
     companyCountries: Option[String],
@@ -79,6 +75,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
       email = email,
       websiteURL = websiteURL,
+      phone = phone,
       siretSiren = siret,
       companyName = companyName,
       companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
@@ -118,7 +115,7 @@ class ReportListController @Inject()(reportOrchestrator: ReportOrchestrator,
       filters =>
       for {
         restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                                fetchCompany(request.identity, filters.siret).map(Some(_))
+                                fetchCompany(request.identity, filters.siretSiren).map(Some(_))
                             else
                                 Future(None)
       } yield {

@@ -4,23 +4,22 @@ import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Named}
+import actors.{EmailActor, UploadActor}
 import akka.actor.ActorRef
 import akka.pattern.ask
-import actors.EmailActor
-import actors.UploadActor
+import javax.inject.{Inject, Named}
 import models.Event._
 import models.ReportResponse._
 import models._
 import play.api.libs.json.Json
-import play.api.libs.mailer.{AttachmentData, AttachmentFile}
+import play.api.libs.mailer.AttachmentData
 import play.api.{Configuration, Environment, Logger}
 import repositories._
 import services.{MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
-import utils.{Constants, EmailAddress, EmailSubjects}
+import utils.{Constants, EmailAddress, EmailSubjects, URL}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,8 +50,8 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(company)
-      _             <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
-      token         <- existingToken.map(Future(_)).getOrElse(
+      _ <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
+      token <- existingToken.map(Future(_)).getOrElse(
         accessTokenRepository.createToken(
           TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
           Some(company), Some(AccessLevel.ADMIN)
@@ -69,7 +68,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           subject = EmailSubjects.NEW_REPORT,
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
-        val user = admins.head     // We must chose one as Event links to a single User
+        val user = admins.head // We must chose one as Event links to a single User
         eventRepository.createEvent(
           Event(
             Some(UUID.randomUUID()),
@@ -90,18 +89,15 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
     })
   }
 
-  private[this] def createWebsite(hostOpt: Option[String], companyOpt: Option[Company]): Future[Option[Website]] = {
-    (for {
+  private[this] def createReportedWebsite(companyOpt: Option[Company], websiteURLOpt: Option[URL]): Future[Option[Website]] = {
+    val creationOpt = for {
       company <- companyOpt
-      host <- hostOpt
-    } yield for {
-      company <- companyRepository.getOrCreate(company.siret, company)
-      website <- websiteRepository.create(Website(host = host, companyId = company.id))
-    } yield {
-      website
-    }) match {
+      websiteUrl <- websiteURLOpt
+      host <- websiteUrl.getHost
+    } yield websiteRepository.create(Website(host = host, companyId = company.id))
+    creationOpt  match {
       case Some(f) => f.map(Some(_))
-      case None    => Future.successful(None)
+      case None => Future(None)
     }
   }
 
@@ -119,7 +115,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
           draftReport.companyActivityCode
         )
       ).map(Some(_))).getOrElse(Future(None))
-      website <- companyOpt.flatMap(c => draftReport.websiteURL.flatMap(url => url.getHost.map(host => websiteRepository.create(Website(host = host, companyId = c.id)).map(Some(_))))).getOrElse(Future(None))
+      _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
       files <- reportRepository.retrieveReportFiles(report.id)
@@ -145,7 +141,7 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
         attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
           Seq(
             AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
-          ).filter(_ => report.isContractualDispute)
+          ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
       )
       logger.debug(s"Report ${report.id} created")
       report

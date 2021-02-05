@@ -80,11 +80,12 @@ class CompanyController @Inject()(
     for {
       companiesByUrl <- websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-        companyDataRepository.searchBySiret(company.siret).map(_.map { case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind) })
+        companyDataRepository.searchBySiret(company.siret).map(_.map {
+          case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind)
+        })
       })
     } yield Ok(Json.toJson(results.flatten))
   }
-
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
@@ -137,8 +138,8 @@ class CompanyController @Inject()(
           val htmlDocuments = companies.flatMap(c =>
             activationCodesMap.get(c.id).map(getHtmlDocumentForCompany(
               c,
-              reportsMap.get(c.id).getOrElse(Nil),
-              eventsMap.get(c.id).getOrElse(Nil),
+              reportsMap.getOrElse(c.id, Nil),
+              eventsMap.getOrElse(c.id, Nil),
               _
             ))
           )
@@ -154,7 +155,7 @@ class CompanyController @Inject()(
 
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
     val lastContact = events.filter(e =>
-                              e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
+                              e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
                               && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action))
                         .sortBy(_.creationDate).reverse.headOption
     val report = reports.sortBy(_.creationDate).reverse.headOption
