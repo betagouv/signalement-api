@@ -40,7 +40,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def denominationUsuelleEtablissement = column[Option[String]]("denominationusuelleetablissement")
     def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
-    def etatAdministratifEtablissement = column[String]("etatadministratifetablissement")
+    def etatAdministratifEtablissement = column[Option[String]]("etatadministratifetablissement")
 
     def * = (
       id, siret, siren, dateDernierTraitementEtablissement, etablissementSiege, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
@@ -61,8 +61,8 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
-  private[this] def filterClosedEtablissements(row: CompanyDataTable): Rep[Boolean] = {
-    row.etatAdministratifEtablissement =!= "F"
+  private[this] def filterClosedEtablissements(row: CompanyDataTable): Rep[Option[Boolean]] = {
+    row.etatAdministratifEtablissement =!= "F" || row.etatAdministratifEtablissement.isEmpty
   }
 
   def search(q: String, postalCode: String): Future[List[(CompanyData, Option[CompanyActivity])]] =

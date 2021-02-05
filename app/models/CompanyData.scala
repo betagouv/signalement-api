@@ -26,7 +26,7 @@ case class CompanyData(
   denominationUsuelleEtablissement: Option[String],
   enseigne1Etablissement: Option[String],
   activitePrincipaleEtablissement: String,
-  etatAdministratifEtablissement: String
+  etatAdministratifEtablissement: Option[String]
 ) {
 
   def voie =
