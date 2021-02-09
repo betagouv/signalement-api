@@ -27,7 +27,7 @@ jobs:
         POSTGRES_DB: test_signalconso
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: circleci/postgres:11.6-ram
+    - image: circleci/postgres:10.6-ram
       name: pg2
       environment:
         POSTGRES_USER: signalconso_company
