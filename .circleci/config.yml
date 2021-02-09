@@ -26,6 +26,11 @@ jobs:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
 
+    install_dependencies: &install_dependencies
+      run:
+        name: Installing Dependencies
+        command: sudo apt-get install postgresql-client
+
     working_directory: ~/repo
 
     steps:
