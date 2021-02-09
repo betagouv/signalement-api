@@ -92,14 +92,18 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     )
 
     for {
-      siretSirenList <- Some(request.identity)
+      restrictTo <- Some(request.identity)
                   .filter(_.userRole == UserRoles.Pro)
                   .map(u => fetchProSiretSiren(u))
                   .getOrElse(Future(None))
       paginatedReports <- reportRepository.getReports(
                             offsetNormalized,
                             limitNormalized,
-                            siretSirenList.map(l => filter.copy(siretSirenList = Some(l))).getOrElse(filter))
+                            filter.copy(siretSirenList = (restrictTo, filter.siretSirenList) match {
+                              case (Some(restrictToList), Some(filterList)) => Some(restrictToList.intersect(filterList))
+                              case (Some(restrictToList), _) => Some(restrictToList)
+                              case (_, listOpt) => listOpt
+                            }))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
       Ok(Json.toJson(paginatedReports.copy(entities = paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil))))))

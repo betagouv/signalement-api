@@ -256,7 +256,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           email = filters.email,
           websiteURL = None,
           phone = filters.phone,
-          siretSirenList = restrictToSiretSirenList.map(l => Some(l)).getOrElse(filters.siretSirenList),
+          siretSirenList = (restrictToSiretSirenList, filters.siretSirenList) match {
+            case (Some(restrictToList), Some(filterList)) => Some(restrictToList.intersect(filterList))
+            case (Some(restrictToList), _) => Some(restrictToList)
+            case (_, listOpt) => listOpt
+          },
           companyName = None,
           companyCountries = Seq(),
           start = startDate,
