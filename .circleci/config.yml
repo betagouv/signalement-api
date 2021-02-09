@@ -26,13 +26,6 @@ jobs:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
 
-    # See https://circleci.com/docs/2.0/postgres-config/
-    - image: circleci/postgres:10.7-ram
-      name: pg2
-      environment:
-        POSTGRES_USER: signalconso_company
-        POSTGRES_DB: test_company
-
     working_directory: ~/repo
 
     steps:
@@ -45,7 +38,7 @@ jobs:
         # fallback to using the latest cache if no exact match is found
         - v2-dependencies--
 
-    - run: cat /dev/null | sbt test:compile
+    - run: cat /dev/null | sbt test:compile | sudo -u postgres psql -p 5432 -c "create database test_company;"
 
     - save_cache:
         paths:
