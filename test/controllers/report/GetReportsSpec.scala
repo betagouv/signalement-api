@@ -63,7 +63,7 @@ class GetReportsByProUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
 class GetReportsByAnotherProUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
   override def is =
     s2"""
-         Given an authenticated pro user not concened by reports      ${step(someLoginInfo = Some(loginInfo(anotherProUser)))}
+         Given an authenticated pro user not concerned by reports      ${step(someLoginInfo = Some(loginInfo(anotherProUser)))}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
          No reports are rendered                                      ${noReportsMustBeRenderedForUserRole(UserRoles.Pro)}
     """
