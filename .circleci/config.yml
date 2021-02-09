@@ -38,11 +38,12 @@ jobs:
         # fallback to using the latest cache if no exact match is found
         - v2-dependencies--
 
-    - run: cat /dev/null |
-        sbt test:compile |
-        sudo apt-get update |
-        sudo apt-get install postgresql-client |
-        psql -p 5432 -c "create database test_company;"
+  - checkout
+
+    - run: sudo apt-get update
+    - run: sudo apt-get install postgresql-client-10.6
+    - run: whoami
+    - run: psql -p 5432 -c "create database test_company;"
 
     - save_cache:
         paths:
