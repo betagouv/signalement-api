@@ -39,7 +39,7 @@ jobs:
         - v2-dependencies--
 
     - run: sudo apt-get update
-    - run: sudo apt-get install postgresql-client-10.6
+    - run: sudo apt-get install postgresql-client
     - run: whoami
     - run: psql -p 5432 -c "create database test_company;"
 
