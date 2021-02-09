@@ -27,7 +27,7 @@ jobs:
         POSTGRES_DB: test_signalconso
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: circleci/postgres:10.6-ram
+    - image: circleci/postgres:9.6.2-alpine
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_company
