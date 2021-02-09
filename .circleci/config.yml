@@ -13,7 +13,7 @@ jobs:
         TEST_PGUSER: signalconso
         TEST_PGHOST: localhost
         TEST_PGDATABASE: test_signalconso
-        TEST_COMPANY_PGUSER: signalconso_company
+        TEST_COMPANY_PGUSER: signalconso
         TEST_COMPANY_PGHOST: localhost
         TEST_COMPANY_PGDATABASE: test_company
         # Customize the JVM maximum heap limit
