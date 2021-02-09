@@ -41,7 +41,7 @@ jobs:
     - run: sudo apt-get update
     - run: sudo apt-get install postgresql-client
     - run: whoami
-    - run: psql -p 5432 -c "create database test_company;"
+    - run: psql -d postgresql://signalconso@test_signalconso -p 5432 -c "create database test_company;"
 
     - save_cache:
         paths:
