@@ -75,6 +75,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
 
@@ -83,6 +84,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
   val proAdminUser = Fixtures.genProUser.sample.get
   val anotherProUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
+  val companyData = Fixtures.genCompanyData(Some(company)).sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
 
   val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
@@ -99,6 +101,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
       admin <- userRepository.create(proAdminUser)
       anotherAdmin <- userRepository.create(anotherProUser)
       company <- companyRepository.getOrCreate(company.siret, company)
+      companyData <- companyDataRepository.create(companyData)
       anotherCompany <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
       _ <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
       _ <- companyRepository.setUserLevel(anotherCompany, anotherAdmin, AccessLevel.ADMIN)

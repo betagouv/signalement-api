@@ -54,6 +54,14 @@ object Fixtures {
         id, siret, OffsetDateTime.now(), name, address, Some("37500"), None
     )
 
+    def genCompanyData(company: Option[Company] = None) = for {
+        id <- arbitrary[UUID]
+        siret <- genSiret
+        denom <- arbString.arbitrary
+    } yield CompanyData(
+        id, company.map(_.siret).getOrElse(siret), SIREN(company.map(_.siret).getOrElse(siret)), None, None, None, None, None, None, None, None, None, None, None, None, None, None, Some(denom), None, "", None
+    )
+
     val genWebsiteURL = for {
         randInt <- Gen.choose(0, 1000000)
     } yield URL(s"https://www.example${randInt}.com")

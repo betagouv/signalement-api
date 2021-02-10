@@ -33,6 +33,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   private lazy val company_database = injector.instanceOf[DBApi].database("company_db")
 
   def setupData() {}
+  def cleanupData() {}
 
   def beforeAll(): Unit = {
     Evolutions.applyEvolutions(database)
@@ -42,6 +43,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   def afterAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
     Evolutions.cleanupEvolutions(company_database)
+    cleanupData()
     app.stop
   }
 }

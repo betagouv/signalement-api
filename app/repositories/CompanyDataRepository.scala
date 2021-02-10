@@ -65,6 +65,16 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     row.etatAdministratifEtablissement.getOrElse("A") =!= "F"
   }
 
+  def create(companyData: CompanyData): Future[CompanyData] = db
+    .run(companyDataTableQuery += companyData)
+    .map(_ => companyData)
+
+  def delete(id: UUID): Future[Int] = db.run {
+    companyDataTableQuery
+      .filter(_.id === id)
+      .delete
+  }
+
   def search(q: String, postalCode: String): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
