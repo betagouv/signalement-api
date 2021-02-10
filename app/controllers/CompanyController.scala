@@ -121,6 +121,25 @@ class CompanyController @Inject()(
     )}
   }
 
+  def viewableCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+    for {
+      companiesWithAccess <- companyRepository.fetchCompaniesWithLevel(request.identity)
+      headOfficesSiret <- companyDataRepository.searchHeadOffices(companiesWithAccess.map(_._1.siret))
+      companiesForHeadOffices <- Future.sequence(companiesWithAccess.map(_._1.siret).intersect(headOfficesSiret).map(siret => companyDataRepository.searchBySiren(SIREN(siret), true)))
+      companiesWithoutHeadOffice <- Future.sequence(companiesWithAccess.map(_._1.siret).diff(headOfficesSiret).map(siret => companyDataRepository.searchBySiret(siret, true)))
+    } yield {
+      Ok(Json.toJson(
+        companiesForHeadOffices.flatten
+          .union(companiesWithoutHeadOffice.flatten)
+          .map(_._1)
+          .distinct
+          .map(c => ViewableCompany(
+            c.siret, c.codePostalEtablissement, c.etatAdministratifEtablissement.map(_ == "F").getOrElse(false)
+          ))
+      ))
+    }
+  }
+
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
     import CompanyObjects.CompanyList
     request.body.validate[CompanyList](Json.reads[CompanyList]).fold(

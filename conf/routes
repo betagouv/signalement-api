@@ -20,7 +20,7 @@ GET           /api/stats/reports/website/percentage                  controllers
 POST          /api/stats/reports                                     controllers.StatisticController.updateReportData()
 
 # Reports list API
-    GET           /api/reports                                       controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], siret: Option[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
+GET           /api/reports                                       controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], siret: Option[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
 POST          /api/reports/extract                                   controllers.ReportListController.extractReports()
 
 # Report API
@@ -89,6 +89,7 @@ GET           /api/account/dgccrf/users                              controllers
 POST          /api/account/validate-email                            controllers.AccountController.validateEmail
 
 # Company details API
+GET           /api/companies/connected-user                          controllers.CompanyController.viewableCompanies
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
