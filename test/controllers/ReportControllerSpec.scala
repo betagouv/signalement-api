@@ -58,7 +58,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
   "getReportCountBySiret" should {
 
-    val siretFixture = Fixtures.genSiret.sample.get
+    val siretFixture = Fixtures.genSiret().sample.get
 
     "return unauthorized when there no X-Api-Key header" should {
 

@@ -32,17 +32,16 @@ class BaseViewableCompaniesSpec(implicit ee: ExecutionEnv) extends Specification
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
   val headOfficeCompany = Fixtures.genCompany.sample.get
-  val subsidiaryCompany = Fixtures.genCompany.sample.get
+  val subsidiaryCompany = Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
 
   val headOfficeCompanyData = Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get.copy(siren = SIREN(headOfficeCompany.siret))
+  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
   val subsidiaryClosedCompanyData = Fixtures.genCompanyData().sample.get.copy(siren = SIREN(headOfficeCompany.siret), etatAdministratifEtablissement = Some("F"))
 
   val companyWithoutAccess = Fixtures.genCompany.sample.get
   val companyWithoutAccessData = Fixtures.genCompanyData(Some(companyWithoutAccess)).sample.get
 
   override def setupData = {
-    logger.debug("setupData")
     Await.result(for {
       _ <- userRepository.create(proUserWithAccessToHeadOffice)
       _ <- userRepository.create(proUserWithAccessToSubsidiary)
@@ -63,7 +62,6 @@ class BaseViewableCompaniesSpec(implicit ee: ExecutionEnv) extends Specification
     Duration.Inf)
   }
   override def cleanupData = {
-    logger.debug("cleanupData")
     Await.result(for {
       _ <- companyDataRepository.delete(headOfficeCompanyData.id)
       _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
