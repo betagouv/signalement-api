@@ -91,6 +91,7 @@ POST          /api/account/validate-email                            controllers
 # Company details API
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
+POST          /api/companies/undelivered-document                    controllers.CompanyController.handleUndeliveredDocument
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)

@@ -153,6 +153,27 @@ class CompanyController @Inject()(
     )
   }
 
+  def handleUndeliveredDocument() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    request.body.validate[UndeliveredDocument].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      undeliveredDocument => {
+        eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(undeliveredDocument.id),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.ADMIN,
+              ActionEvent.ACTIVATION_DOC_RETURNED
+            )
+        ).map(e => Ok(Json.toJson(e)))
+      }
+    )
+  }
+
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
     val lastContact = events.filter(e =>
                               e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
