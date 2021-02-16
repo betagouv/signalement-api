@@ -59,3 +59,4 @@ mappings in Universal ++=
     (x => x -> ("appfiles/" + x.getName))
 
 javaOptions in Test += "-Dconfig.resource=test.application.conf"
+javaOptions += "-Dakka.http.parsing.max-uri-length=16k"
