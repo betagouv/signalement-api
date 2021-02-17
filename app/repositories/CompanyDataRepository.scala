@@ -92,13 +92,15 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiret(siret: SIRET, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySirets(sirets: List[SIRET], includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
-      .filter(_.siret === siret)
+      .filter(_.siret.inSet(sirets))
       .filter(_.denominationUsuelleEtablissement.isDefined)
-      .filterIf(!includeClosed)(filterClosedEtablissements(_))
+      .filterIf(!includeClosed)(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
+
+  def searchBySiret(siret: SIRET, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret))
 
   def searchHeadOffices(sirets: List[SIRET]): Future[List[SIRET]] =
     db.run(companyDataTableQuery
@@ -118,14 +120,15 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiren(siren: SIREN, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySirens(sirens: List[SIREN], includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
-      .filter(_.siren === siren)
+      .filter(_.siren.inSet(sirens))
       .filter(_.denominationUsuelleEtablissement.isDefined)
-      .filterIf(!includeClosed)(filterClosedEtablissements(_))
-      .take(10)
+      .filterIf(!includeClosed)(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
+
+  def searchBySiren(siren: SIREN, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirens(List(siren))
 
   def searchHeadOfficeBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
