@@ -1,27 +1,42 @@
 package models
 
-import java.time.Period
+import java.time.{OffsetDateTime, Period}
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
 import utils.{Country, EmailAddress, SIRET}
 
 
-case class DraftSubscription(
+case class SubscriptionCreation(
   departments: List[String],
   categories: List[ReportCategory],
   sirets: List[SIRET],
   tags: List[String],
-  countries: List[Country],
+  countries: List[String],
   frequency: Period
 )
 
-object DraftSubscription {
-  implicit val draftSubscriptionFormat: OFormat[DraftSubscription] = Json.format[DraftSubscription]
+object SubscriptionCreation {
+
+  implicit val subscriptionCreationFormat: OFormat[SubscriptionCreation] = Json.format[SubscriptionCreation]
+}
+
+case class SubscriptionUpdate(
+  departments: Option[List[String]],
+  categories: Option[List[ReportCategory]],
+  sirets: Option[List[SIRET]],
+  tags: Option[List[String]],
+  countries: Option[List[String]],
+  frequency: Option[Period],
+)
+
+object SubscriptionUpdate {
+  implicit val subscriptionUpdateFormat: OFormat[SubscriptionUpdate] = Json.format[SubscriptionUpdate]
 }
 
 case class Subscription(
-  id: UUID,
+  id: UUID = UUID.randomUUID,
+  creationDate: OffsetDateTime = OffsetDateTime.now,
   userId: Option[UUID],
   email: Option[EmailAddress],
   departments: List[String],
