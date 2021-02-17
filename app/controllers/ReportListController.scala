@@ -33,10 +33,10 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
 
   def fetchProSiretSiren(user: User): Future[Some[List[String]]] = {
     for {
-      companiesWithLevel <- companyRepository.fetchCompaniesWithLevel(user)
-      headOfficesSiret <- companyDataRepository.searchHeadOffices(companiesWithLevel.map(_._1.siret))
+      companiesWithLevel <- companyRepository.fetchCompaniesWithLevel(user).map(_.map(_._1))
+      headOfficesSiret <- companyDataRepository.searchHeadOffices(companiesWithLevel.map(_.siret))
     } yield {
-      Some(companiesWithLevel.map(_._1).map(company => headOfficesSiret.find(_ == company.siret).map(s => SIREN(s).value).getOrElse(company.siret.value)))
+      Some(companiesWithLevel.map(company => headOfficesSiret.find(_ == company.siret).map(s => SIREN(s).value).getOrElse(company.siret.value)))
     }
   }
 
