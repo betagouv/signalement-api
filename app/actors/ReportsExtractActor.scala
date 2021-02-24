@@ -34,7 +34,7 @@ object ReportsExtractActor {
                         email: Option[String],
                         websiteURL: Option[String] = None,
                         phone: Option[String] = None,
-                        siretSirenList: Option[List[String]],
+                        siretSirenList: List[String] = Nil,
                         start: Option[String],
                         end: Option[String],
                         category: Option[String],
@@ -42,7 +42,7 @@ object ReportsExtractActor {
                         details: Option[String],
                         hasCompany: Option[Boolean],
                         tags: List[String] = Nil)
-  case class ExtractRequest(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters)
+  case class ExtractRequest(requestedBy: User, filters: RawFilters)
 }
 
 @Singleton
@@ -69,14 +69,14 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   }
   override def receive = {
-    case ExtractRequest(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters) =>
+    case ExtractRequest(requestedBy: User, filters: RawFilters) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
         asyncFile     <- asyncFileRepository.create(requestedBy)
         tmpPath       <- {
           sender() ! Unit
-          genTmpFile(requestedBy, restrictToSiretSirenList, filters)
+          genTmpFile(requestedBy, filters)
         }
         remotePath    <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _             <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
@@ -107,7 +107,6 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ReportColumn(
         "Département", centerAlignmentColumn,
         (report, _, _, _) => report.companyPostalCode.map(Departments.fromPostalCode(_)).flatten.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Code postal", centerAlignmentColumn,
@@ -122,7 +121,6 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ReportColumn(
         "Siret", centerAlignmentColumn,
         (report, _, _, _) => report.companySiret.map(_.value).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom de l'entreprise", leftAlignmentColumn,
@@ -240,7 +238,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, restrictToSiretSirenList: Option[List[String]], filters: RawFilters) = {
+  def genTmpFile(requestedBy: User, filters: RawFilters) = {
     val startDate = DateUtils.parseDate(filters.start)
     val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -256,11 +254,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
           email = filters.email,
           websiteURL = None,
           phone = filters.phone,
-          siretSirenList = (restrictToSiretSirenList, filters.siretSirenList) match {
-            case (Some(restrictToList), Some(filterList)) => Some(restrictToList.intersect(filterList))
-            case (Some(restrictToList), _) => Some(restrictToList)
-            case (_, listOpt) => listOpt
-          },
+          siretSirenList = filters.siretSirenList,
           companyName = None,
           companyCountries = Seq(),
           start = startDate,
@@ -308,7 +302,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
               case(_) => None
             },
-            filters.siretSirenList.map(l => Row().withCellValues("Siret", l.mkString(","))),
+            Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
             filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
             filters.status.map(status => Row().withCellValues("Statut", status)),

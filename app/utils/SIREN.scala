@@ -8,11 +8,16 @@ case class SIREN(value: String) {
 }
 
 object SIREN {
+
+  val length = 9
+
   def apply(value: String) = new SIREN(value.replaceAll("\\s", ""))
 
   def apply(siret: SIRET) = new SIREN(siret.value.substring(0, 9))
 
-  def pattern = "[0-9]{9}"
+  def pattern = s"[0-9]{$length}"
+
+  def isValid(siren: String): Boolean = siren.matches(SIREN.pattern)
 
   implicit val sirenColumnType = MappedColumnType.base[SIREN, String](
     _.value,

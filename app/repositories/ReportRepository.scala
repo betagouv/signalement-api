@@ -19,7 +19,7 @@ case class ReportFilter(
                          email: Option[String] = None,
                          websiteURL: Option[String] = None,
                          phone: Option[String] = None,
-                         siretSirenList: Option[List[String]] = None,
+                         siretSirenList: List[String] = List(),
                          companyName: Option[String] = None,
                          companyCountries: Seq[String] = List(),
                          start: Option[LocalDate] = None,
@@ -275,11 +275,11 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.phone) {
           case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
         }
-        .filterOpt(filter.siretSirenList) {
-          case (table, siretSirenList) => {
+        .filterIf(filter.siretSirenList.nonEmpty) {
+          case table => {
             table.companySiret.map(siret =>
-              (siret inSetBind siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
-                (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siretSirenList.filter(_.matches(SIREN.pattern)).distinct)
+              (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
+                (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList.filter(_.matches(SIREN.pattern)).distinct)
             ).getOrElse(false)
           }
         }
