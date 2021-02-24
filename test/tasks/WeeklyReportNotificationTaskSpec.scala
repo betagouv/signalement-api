@@ -11,7 +11,7 @@ import org.specs2.matcher.FutureMatchers
 import play.api.Configuration
 import repositories._
 import services.MailerService
-import utils.{AppSpec, EmailAddress, Fixtures}
+import utils.{AppSpec, Country, EmailAddress, Fixtures}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -19,9 +19,10 @@ import scala.concurrent.duration.Duration
 class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNotificationTaskSpec {
   override def is =
     s2"""
-         When weekly reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf))}
-         A mail is sent to the subscribed user                                            ${mailMustHaveBeenSent(Seq(user.email), s"[SignalConso] 3 nouveaux signalements", views.html.mails.dgccrf.reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7)).toString)}
-         And a mail is sent to the subscribed office                                      ${mailMustHaveBeenSent(Seq(officeEmail), s"[SignalConso] 3 nouveaux signalements", views.html.mails.dgccrf.reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7)).toString)}
+      When weekly reportNotificationTask task run ${step(Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf))}
+      A mail is sent to the subscribed user       ${mailMustHaveBeenSent(Seq(user.email), s"[SignalConso] 3 nouveaux signalements", views.html.mails.dgccrf.reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7)).toString)}
+      A mail is sent to the subscribed user       ${mailMustHaveBeenSent(Seq(user.email), s"[SignalConso] Un nouveau signalement", views.html.mails.dgccrf.reportNotification(userSubscription, Seq(reportArgentine), runningDate.minusDays(7)).toString)}
+      And a mail is sent to the subscribed office ${mailMustHaveBeenSent(Seq(officeEmail), s"[SignalConso] 3 nouveaux signalements", views.html.mails.dgccrf.reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7)).toString)}
     """
 }
 
@@ -72,6 +73,18 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
     sirets = List.empty,
     frequency = Period.ofDays(7)
   )
+
+  val userSubscriptionCountries = Subscription(
+    userId = Some(user.id),
+    email = None,
+    departments = List.empty,
+    categories = List.empty,
+    tags = List.empty,
+    countries = List(Country.Tunisie, Country.Argentine),
+    sirets = List.empty,
+    frequency = Period.ofDays(7)
+  )
+
   val userSubscriptionWithoutReport = Subscription(
     userId = Some(user.id),
     email = None,
@@ -88,6 +101,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
   val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"), creationDate = OffsetDateTime.now.minusDays(2))
   val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department2 + "000"), creationDate = OffsetDateTime.now.minusDays(3))
   val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(guadeloupe + "00"), creationDate = OffsetDateTime.now.minusDays(4))
+  val reportArgentine = Fixtures.genReportForCompany(company).sample.get.copy(companyCountry = Some(Country.Argentine), creationDate = OffsetDateTime.now.minusDays(4))
 
   override def setupData = {
     Await.result(
@@ -98,7 +112,9 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
         _ <- reportRepository.create(report12)
         _ <- reportRepository.create(report2)
         _ <- reportRepository.create(reportGuadeloupe)
+        _ <- reportRepository.create(reportArgentine)
         _ <- subscriptionRepository.create(userSubscription)
+        _ <- subscriptionRepository.create(userSubscriptionCountries)
         _ <- subscriptionRepository.create(officeSubscription)
         _ <- subscriptionRepository.create(userSubscriptionWithoutReport)
       } yield Unit,
