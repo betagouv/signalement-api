@@ -91,7 +91,6 @@ POST          /api/account/validate-email                            controllers
 # Company details API
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
-POST          /api/companies/undelivered-document                    controllers.CompanyController.handleUndeliveredDocument
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
@@ -99,6 +98,7 @@ GET           /api/companies/search-url                              controllers
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
 PUT           /api/companies/:siret/address                          controllers.CompanyController.updateCompanyAddress(siret)
+POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
 # Rating API
 POST          /api/rating                                            controllers.RatingController.rate

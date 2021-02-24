@@ -153,27 +153,6 @@ class CompanyController @Inject()(
     )
   }
 
-  def handleUndeliveredDocument() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
-    request.body.validate[UndeliveredDocument].fold(
-      errors => {
-        Future.successful(BadRequest(JsError.toJson(errors)))
-      },
-      undeliveredDocument => {
-        eventRepository.createEvent(
-            Event(
-              Some(UUID.randomUUID()),
-              None,
-              Some(undeliveredDocument.id),
-              Some(request.identity.id),
-              Some(OffsetDateTime.now()),
-              EventType.ADMIN,
-              ActionEvent.ACTIVATION_DOC_RETURNED
-            )
-        ).map(e => Ok(Json.toJson(e)))
-      }
-    )
-  }
-
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
     val lastContact = events.filter(e =>
                               e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
@@ -257,6 +236,32 @@ class CompanyController @Inject()(
           )
         ).getOrElse(Future(None))
       } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
+    )
+  }
+
+  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    request.body.validate[UndeliveredDocument].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      undeliveredDocument => {
+        for {
+          company <- companyRepository.findBySiret(SIRET(siret))
+          event <- company.map(c =>
+            eventRepository.createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                None,
+                Some(c.id),
+                Some(request.identity.id),
+                Some(OffsetDateTime.now()),
+                EventType.ADMIN,
+                ActionEvent.ACTIVATION_DOC_RETURNED
+              )
+            ).map(Some(_))
+          ).getOrElse(Future(None))
+        } yield event.map(e => Ok(Json.toJson(e))).getOrElse(NotFound)
+      }
     )
   }
 }
