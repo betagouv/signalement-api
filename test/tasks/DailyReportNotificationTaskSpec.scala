@@ -46,7 +46,16 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
 
   val covidEmail = Fixtures.genEmailAddress("covid", "abo").sample.get
 
-  val covidSubscription = Subscription(UUID.randomUUID(), None, Some(covidEmail), List(covidDept), List(ReportCategory.Covid), List.empty, Period.ofDays(1))
+  val covidSubscription = Subscription(
+    userId = None,
+    email = Some(covidEmail),
+    departments = List(covidDept),
+    categories = List(ReportCategory.Covid),
+    tags = List.empty,
+    countries = List.empty,
+    sirets = List.empty,
+    frequency = Period.ofDays(1)
+  )
 
   val company = Fixtures.genCompany.sample.get
   val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.Covid.value)

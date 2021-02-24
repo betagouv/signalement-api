@@ -51,9 +51,37 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
   val officeEmail = Fixtures.genEmailAddress("directe", "limousin").sample.get
 
   val user = Fixtures.genDgccrfUser.sample.get
-  val officeSubscription = Subscription(UUID.randomUUID(), None, Some(officeEmail), List(department1, department2, martinique), List.empty, List.empty, Period.ofDays(7))
-  val userSubscription = Subscription(UUID.randomUUID(), Some(user.id), None, List(department1, guadeloupe), List.empty, List.empty, Period.ofDays(7))
-  val userSubscriptionWithoutReport = Subscription(UUID.randomUUID(), Some(user.id), None, List(department3), List.empty, List.empty, Period.ofDays(7))
+  val officeSubscription = Subscription(
+    userId = None,
+    email = Some(officeEmail),
+    departments = List(department1, department2, martinique),
+    categories = List.empty,
+    tags = List.empty,
+    countries = List.empty,
+    sirets = List.empty,
+    frequency = Period.ofDays(7)
+  )
+
+  val userSubscription = Subscription(
+    userId = Some(user.id),
+    email = None,
+    departments = List(department1, guadeloupe),
+    categories = List.empty,
+    tags = List.empty,
+    countries = List.empty,
+    sirets = List.empty,
+    frequency = Period.ofDays(7)
+  )
+  val userSubscriptionWithoutReport = Subscription(
+    userId = Some(user.id),
+    email = None,
+    departments = List(department3),
+    categories = List.empty,
+    tags = List.empty,
+    countries = List.empty,
+    sirets = List.empty,
+    frequency = Period.ofDays(7)
+  )
 
   val company = Fixtures.genCompany.sample.get
   val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"), creationDate = OffsetDateTime.now.minusDays(1))
