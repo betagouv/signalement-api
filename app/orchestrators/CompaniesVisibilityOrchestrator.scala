@@ -23,12 +23,10 @@ class CompaniesVisibilityOrchestrator @Inject()(
     for {
       authorizedSirets <- companyRepository.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
       headOfficeSirets <- companyDataRepository.searchHeadOffices(authorizedSirets)
-      companiesForHeadOffices <- Future.sequence(authorizedSirets.intersect(headOfficeSirets)
-        .map(s => companyDataRepository.searchBySiren(SIREN(s), includeClosed = true)))
-      companiesWithoutHeadOffice <- Future.sequence(authorizedSirets.diff(headOfficeSirets)
-        .map(s => companyDataRepository.searchBySiret(s, includeClosed = true)))
+      companiesForHeadOffices <- companyDataRepository.searchBySirens(authorizedSirets.intersect(headOfficeSirets).map(SIREN.apply), includeClosed = true)
+      companiesWithoutHeadOffice <- companyDataRepository.searchBySirets(authorizedSirets.diff(headOfficeSirets), includeClosed = true)
     } yield {
-      companiesForHeadOffices.union(companiesWithoutHeadOffice).flatMap(_.map(_._1)).distinct
+      companiesForHeadOffices.union(companiesWithoutHeadOffice).map(_._1).distinct
     }
   }
 

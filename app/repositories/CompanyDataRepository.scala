@@ -66,8 +66,8 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   }
 
   def create(companyData: CompanyData): Future[CompanyData] = db
-    .run(companyDataTableQuery += companyData)
-    .map(_ => companyData)
+      .run(companyDataTableQuery += companyData)
+      .map(_ => companyData)
 
   def delete(id: UUID): Future[Int] = db.run {
     companyDataTableQuery
@@ -94,7 +94,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   def searchBySirets(sirets: List[SIRET], includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
-      .filter(_.siret.inSet(sirets))
+      .filter(_.siret inSetBind sirets)
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .filterIf(!includeClosed)(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
@@ -122,7 +122,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   def searchBySirens(sirens: List[SIREN], includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
-      .filter(_.siren.inSet(sirens))
+      .filter(_.siren inSetBind sirens)
       .filter(_.denominationUsuelleEtablissement.isDefined)
       .filterIf(!includeClosed)(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
