@@ -92,6 +92,8 @@ class AdminController @Inject()(val configuration: Configuration,
     userId = None,
     email = None,
     departments = List("75"),
+    countries = Nil,
+    tags = Nil,
     categories = Nil,
     sirets = Nil,
     frequency = java.time.Period.ofDays(1)
