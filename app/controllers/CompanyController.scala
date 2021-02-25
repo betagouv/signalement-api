@@ -2,6 +2,7 @@ package controllers
 
 import java.net.URI
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
@@ -256,7 +257,8 @@ class CompanyController @Inject()(
                 Some(request.identity.id),
                 Some(OffsetDateTime.now()),
                 EventType.ADMIN,
-                ActionEvent.ACTIVATION_DOC_RETURNED
+                ActionEvent.ACTIVATION_DOC_RETURNED,
+                stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
               )
             ).map(Some(_))
           ).getOrElse(Future(None))
