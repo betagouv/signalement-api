@@ -36,7 +36,11 @@ class BaseViewableCompaniesSpec(implicit ee: ExecutionEnv) extends Specification
 
   val headOfficeCompanyData = Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
   val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
-  val subsidiaryClosedCompanyData = Fixtures.genCompanyData().sample.get.copy(siren = SIREN(headOfficeCompany.siret), etatAdministratifEtablissement = Some("F"))
+  val subsidiaryClosedCompanyData = Fixtures.genCompanyData().sample.get.copy(
+    siret = SIRET(SIREN(headOfficeCompany.siret).value + "00020"),
+    siren = SIREN(headOfficeCompany.siret),
+    etatAdministratifEtablissement = Some("F")
+  )
 
   val companyWithoutAccess = Fixtures.genCompany.sample.get
   val companyWithoutAccessData = Fixtures.genCompanyData(Some(companyWithoutAccess)).sample.get
