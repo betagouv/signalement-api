@@ -56,3 +56,9 @@ case class CompanyAddressUpdate(
 object CompanyAddressUpdate {
   implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]
 }
+
+case class UndeliveredDocument(returnedDate: OffsetDateTime)
+
+object UndeliveredDocument {
+  implicit val format: OFormat[UndeliveredDocument] = Json.format[UndeliveredDocument]
+}
