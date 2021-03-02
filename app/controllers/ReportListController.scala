@@ -86,7 +86,7 @@ class ReportListController @Inject()(
     )
 
     for {
-      sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSirensSirets(siretSirenList, request.identity)
+      sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSiretSirenList(siretSirenList, request.identity)
       paginatedReports <- reportRepository.getReports(
         offsetNormalized,
         limitNormalized,
@@ -104,7 +104,7 @@ class ReportListController @Inject()(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       filters =>
         for {
-          sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSirensSirets(filters.siretSirenList, request.identity)
+          sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSiretSirenList(filters.siretSirenList, request.identity)
         } yield {
           logger.debug(s"Requesting report for user ${request.identity.email}")
           reportsExtractActor ? ReportsExtractActor.ExtractRequest(

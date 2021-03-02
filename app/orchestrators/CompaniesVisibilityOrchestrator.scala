@@ -8,7 +8,7 @@ import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class SirensSirets(sirens: List[SIREN], sirets: List[SIRET]) {
+case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
   def toList() = sirens.map(_.value).union(sirets.map(_.value))
 }
 
@@ -30,7 +30,7 @@ class CompaniesVisibilityOrchestrator @Inject()(
     }
   }
 
-  def fetchViewableSirensSirets(user: User): Future[SirensSirets] = {
+  def fetchViewableSiretsSirens(user: User): Future[SiretsSirens] = {
     for {
       authorizedSirets <- companyRepository.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
       authorizedHeadofficeSirens <- companyDataRepository.searchBySirets(authorizedSirets, includeClosed = true)
@@ -40,37 +40,37 @@ class CompaniesVisibilityOrchestrator @Inject()(
           .map(_.siren)
         )
     } yield {
-      removeRedundantSirets(SirensSirets(authorizedHeadofficeSirens, authorizedSirets))
+      removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
     }
   }
 
-  def filterUnauthorizedSirensSirets(sirensSirets: List[String], user: User): Future[List[String]] = {
+  def filterUnauthorizedSiretSirenList(siretSirenList: List[String], user: User): Future[List[String]] = {
     if (user.userRole == UserRoles.Pro) {
-      val formattedSirensSirets = formatSirensSiretsList(sirensSirets)
-      fetchViewableSirensSirets(user).map(allowed => {
-        if (sirensSirets.isEmpty)
+      val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
+      fetchViewableSiretsSirens(user).map(allowed => {
+        if (siretSirenList.isEmpty)
           allowed.toList()
-        else SirensSirets(
-          sirets = formattedSirensSirets.sirets.filter(wanted => allowed.sirens.contains(SIREN(wanted)) || allowed.sirets.contains(wanted)),
-          sirens = allowed.sirens.intersect(formattedSirensSirets.sirens),
+        else SiretsSirens(
+          sirets = formattedSiretsSirens.sirets.filter(wanted => allowed.sirens.contains(SIREN(wanted)) || allowed.sirets.contains(wanted)),
+          sirens = allowed.sirens.intersect(formattedSiretsSirens.sirens),
         ).toList()
       })
     } else {
-      Future(sirensSirets)
+      Future(siretSirenList)
     }
   }
 
-  private[this] def removeRedundantSirets(id: SirensSirets): SirensSirets = {
-    SirensSirets(
+  private[this] def removeRedundantSirets(id: SiretsSirens): SiretsSirens = {
+    SiretsSirens(
       id.sirens,
       id.sirets.filter(siret => !id.sirens.contains(SIREN(siret)))
     )
   }
 
-  private[this] def formatSirensSiretsList(siretsSirens: List[String]): SirensSirets = {
-    SirensSirets(
-      sirens = siretsSirens.filter(SIREN.isValid).map(SIREN.apply),
-      sirets = siretsSirens.filter(SIRET.isValid).map(SIRET.apply)
+  private[this] def formatSiretSirenList(siretSirenList: List[String]): SiretsSirens = {
+    SiretsSirens(
+      sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.apply),
+      sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
     )
   }
 }
