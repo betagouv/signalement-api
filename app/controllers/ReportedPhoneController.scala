@@ -31,9 +31,15 @@ class ReportedPhoneController @Inject()(
     reportRepository.getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
       .map(reports => Ok(Json.toJson(
         reports
-          .groupBy(report => (report.phone, report.companySiret))
-          .collect { case ((Some(phone), siretOpt), reports) if q.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt), reports.length) }
-          .map{ case((phone, siretOpt), count) => Json.obj("phone" -> phone, "siret" -> siretOpt, "count" -> count)}
+          .groupBy(report => (report.phone, report.companySiret, report.companyName, report.category))
+          .collect { case ((Some(phone), siretOpt, companyNameOpt, category), reports) if q.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt, companyNameOpt, category), reports.length) }
+          .map{ case((phone, siretOpt, companyNameOpt, category), count) => Json.obj(
+            "phone" -> phone,
+            "siret" -> siretOpt,
+            "companyName" -> companyNameOpt,
+            "category" -> category,
+            "count" -> count
+          )}
       )))
   }
 
