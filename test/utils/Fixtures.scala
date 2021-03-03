@@ -3,8 +3,8 @@ package utils
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import models._
 import models.Event._
+import models._
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -27,7 +27,7 @@ object Fixtures {
         lastName <- genLastName
         userRole <- Gen.oneOf(UserRoles.userRoles)
         email <- genEmailAddress(firstName, lastName)
-    } yield User(id, password, email, firstName, lastName, userRole)
+    } yield User(id, password, email, firstName, lastName, userRole, None)
 
     val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
     val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -39,7 +39,7 @@ object Fixtures {
 
     val genSiret = for {
         randInt <- Gen.choose(0, 1000000)
-    } yield SIRET("000000000" + randInt takeRight 9)
+    } yield SIRET("000000000" + randInt takeRight 14)
 
     val genAddress = for {
         address <- arbString.arbitrary
@@ -51,12 +51,16 @@ object Fixtures {
         siret <- genSiret
         address <- genAddress
     } yield Company(
-        id, siret, OffsetDateTime.now(), name, address, Some("37500")
+        id, siret, OffsetDateTime.now(), name, address, Some("37500"), None
     )
 
     val genWebsiteURL = for {
         randInt <- Gen.choose(0, 1000000)
     } yield URL(s"https://www.example${randInt}.com")
+
+    val genReportedPhone = for {
+        randInt <- Gen.choose(0, 999999999)
+    } yield randInt.toString
 
     def genDraftReport = for {
         category <- arbString.arbitrary
@@ -68,8 +72,8 @@ object Fixtures {
         company <- genCompany
         websiteURL <- genWebsiteURL
     } yield DraftReport(
-        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
-        Some(websiteURL), firstName, lastName, email, contactAgreement, false, List.empty
+        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
+        None, Some(websiteURL), None, firstName, lastName, email, contactAgreement, false, List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -82,7 +86,7 @@ object Fixtures {
         contactAgreement <- arbitrary[Boolean]
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), Some(company.siret),
+        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
         None, None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
     )
 
@@ -101,7 +105,7 @@ object Fixtures {
         address <- genAddress
         siret <- genSiret
         postalCode <- Gen.choose(10000, 99999)
-    } yield ReportCompany(name, address, postalCode.toString, siret)
+    } yield ReportCompany(name, address, postalCode.toString, siret, None)
 
     def genReviewOnReportResponse = for {
         positive <- arbitrary[Boolean]
@@ -113,4 +117,17 @@ object Fixtures {
         companyId <- arbitrary[UUID]
         details <- arbString.arbitrary
     } yield Event(Some(id), Some(reportId), Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+
+    def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
+        id <- arbitrary[UUID]
+        details <- arbString.arbitrary
+    } yield Event(Some(id), None, Some(companyId), None, Some(OffsetDateTime.now()), eventType, actionEvent, stringToDetailsJsValue(details))
+
+    def genWebsite() = for {
+        id <- arbitrary[UUID]
+        companyId <- arbitrary[UUID]
+        websiteUrl <- genWebsiteURL
+        kind <- Gen.oneOf(WebsiteKind.values)
+    } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, companyId, kind)
+
 }

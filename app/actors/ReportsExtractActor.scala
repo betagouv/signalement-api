@@ -31,13 +31,17 @@ object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
 
   case class RawFilters(departments: List[String],
-                        siret: Option[String],
+                        email: Option[String],
+                        websiteURL: Option[String] = None,
+                        phone: Option[String] = None,
+                        siretSiren: Option[String] = None,
                         start: Option[String],
                         end: Option[String],
                         category: Option[String],
                         status: Option[String],
                         details: Option[String],
-                        hasCompany: Option[Boolean])
+                        hasCompany: Option[Boolean],
+                        tags: List[String] = Nil)
   case class ExtractRequest(requestedBy: User, restrictToCompany: Option[Company], filters: RawFilters)
 }
 
@@ -111,6 +115,11 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Pays", centerAlignmentColumn,
+        (report, _, _, _) => report.companyCountry.map(_.name).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Siret", centerAlignmentColumn,
         (report, _, _, _) => report.companySiret.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -133,6 +142,16 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ReportColumn(
         "Site web de l'entreprise", centerAlignmentColumn,
         (report, _, _, _) => report.websiteURL.map(_.value).getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Téléphone de l'entreprise", centerAlignmentColumn,
+        (report, _, _, _) => report.phone.getOrElse(""),
+        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Vendeur (marketplace)", centerAlignmentColumn,
+        (report, _, _, _) => report.vendor.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -166,7 +185,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).map(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).map(e =>
             e.details.validate[ReportResponse].get.consumerDetails
           ))
           .getOrElse("")
@@ -176,7 +195,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         (report, _, events, _) =>
           Some(report.status)
           .filter(List(ReportStatus.PROMESSE_ACTION, ReportStatus.SIGNALEMENT_MAL_ATTRIBUE, ReportStatus.SIGNALEMENT_INFONDE) contains _ )
-          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPONSE_PRO_SIGNALEMENT).flatMap(e =>
+          .flatMap(_ => events.find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE).flatMap(e =>
             e.details.validate[ReportResponse].get.dgccrfDetails
           ))
           .getOrElse("")
@@ -233,20 +252,24 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         0,
         100000,
         ReportFilter(
-          filters.departments,
-          None,
-          restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siret),
-          None,
-          startDate,
-          endDate,
-          filters.category,
-          statusList,
-          filters.details,
-          requestedBy.userRole match {
+          departments = filters.departments,
+          email = filters.email,
+          websiteURL = filters.websiteURL,
+          siretSiren = restrictToCompany.map(c => Some(c.siret.value)).getOrElse(filters.siretSiren),
+          phone = filters.phone,
+          companyName = None,
+          companyCountries = Seq(),
+          start = startDate,
+          end = endDate,
+          category = filters.category,
+          statusList = statusList,
+          details = filters.details,
+          employeeConsumer = requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          filters.hasCompany
+          hasCompany = filters.hasCompany,
+          tags = filters.tags
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
@@ -281,7 +304,9 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
               case(_) => None
             },
-            filters.siret.map(siret => Row().withCellValues("Siret", siret)),
+            filters.siretSiren.map(siret => Row().withCellValues("Siret", siret)),
+            filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
+            filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
             filters.status.map(status => Row().withCellValues("Statut", status)),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details)),

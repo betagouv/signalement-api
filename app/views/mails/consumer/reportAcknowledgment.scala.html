@@ -1,7 +1,9 @@
 @import utils.EmailAddress
-@(report: Report, files: List[ReportFile])
-
 @import utils.Constants.ReportStatus._
+@import java.net.URI
+@import utils.Country
+@(report: Report, files: List[ReportFile])(implicit websiteUrl: URI)
+
 
 @views.html.mails.layout("Votre signalement") {
 
@@ -14,7 +16,7 @@
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Vous avez indiqué être employé de l'entreprise que vous avez signalée.
+                Vous avez indiqué être employé(e) de l'entreprise que vous avez signalée.
             </p>
             <p>
                 Afin de garantir la sécurité de votre emploi, votre signalement ne sera pas envoyé à l'entreprise.
@@ -22,6 +24,62 @@
             <p>
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
+        }
+        case NA if report.companyCountry.isDefined => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Vous avez indiqué que l’entreprise est une entreprise étrangère (@report.companyCountry.get.name).
+            </p>
+            <p>
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
+            </p>
+            @report.companyCountry match {
+                case Some(country) if Country.countries.filter(_.european).contains(country) => {
+                    <p>
+                        Nous vous invitons à faire votre signalement directement auprès du Centre Européen des Consommateurs. Il vous apportera une assistance pour régler votre problème.
+                        <a href="https://www.europe-consommateurs.eu/fr/une-question-une-reclamation">https://www.europe-consommateurs.eu/fr/une-question-une-reclamation</a>
+                    </p>
+                }
+                case Some(country) if country == Country.Andorre => {
+                    <p>
+                        Nous vous invitons à faire votre signalement directement auprès du service du commerce et de la consommation d’Andorre :
+                        <a href="https://www.comerc.ad/reclamacions/?id=fr">https://www.comerc.ad/reclamacions/?id=fr</a>
+                    </p>
+                }
+                case Some(country) if Country.countries.filter(_.transfer).contains(country) => {
+                    <p>
+                        Par contre les enquêteurs de la répression des fraudes vont le transférer aux autorités compétentes de ce pays.
+                    </p>
+                }
+                case _ => {
+                    <p>
+                        Nous vous invitons à faire votre signalement auprès d'econsumer.gov afin d’aider les autorités internationales à lutter contre la fraude.
+                        <a href="https://www.econsumer.gov/fr">https://www.econsumer.gov/fr</a>
+                    </p>
+                }
+            }
+            @views.html.fragments.chargeBack(report)
+        }
+        case _ if report.isContractualDispute && report.companyId.isDefined => {
+            <p>
+                Vous avez signalé un problème individuel (litige)
+                    @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
+                sur SignalConso.
+            </p>
+            <p>
+                Pour augmenter vos chances de trouver une solution ou obtenir réparation, nous vous conseillons de commencer des démarches individuelles en parallèle.
+            </p>
+            <p>
+                Vous trouverez en pièce jointe votre signalement au format PDF qui vous sera utile.
+            </p>
+            <p style="text-align: center; padding: 20px">
+                <a href="@websiteUrl.resolve("/litige")" class="btn">
+                    Commencer mes démarches
+                </a>
+            </p>
+            @views.html.fragments.chargeBack(report)
         }
         case _ if report.companyId.isDefined => {
             <p>
@@ -42,7 +100,7 @@
                 <br/>Les entreprises ont un délai de deux mois pour créer leur compte et consulter votre signalement.
             </p>
             <p>
-                Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé de son refus.
+                Si, malgré nos relances, l'entreprise ne souhaite pas consulter votre signalement, vous serez informé(e) de son refus.
             </p>
             <p>
                 Que l'entreprise lise ou non votre signalement,
@@ -54,7 +112,7 @@
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise qui gère le site internet,
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à l'entreprise,
                 sauf si cette dernière est française et identifiable par l'équipe de SignalConso.
             </p>
             <p>
@@ -69,78 +127,86 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">Détail du signalement</div>
+    @if(!report.isContractualDispute) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">Détail du signalement</div>
 
-        <b>Problème</b>
-        <br/>
-        @report.category
-        <br />
-        @report.subcategories.map {subcategory =>
-            @subcategory
+            <b>Problème</b>
+            <br/>
+            @report.category
             <br />
-        }
-
-        <br />
-        <b>Description</b>
-        <br/>
-        @report.details.map { detailInputValue =>
-            @Html(detailInputValue.label) @Html(detailInputValue.value)
-            <br/>
-        }
-
-        @if(files.length > 0) {
-            <br/>
-            Pièces jointes :
-            <ul>
-            @files.map { file =>
-                <li>
-                    @file.filename
-                </li>
+            @report.subcategories.map { subcategory =>
+                @subcategory
+                <br />
             }
-            </ul>
-        } else {
+
             <br />
-        }
-
-        <b>Entreprise</b>
-        <br/>
-        @if(report.companyAddress.isDefined) {
-        @report.companyAddress.get
-        <br/>
-        }
-        @if(report.websiteURL.isDefined) {
-        Site internet : @report.shortURL.get
-        <br/>
-        }
-
-        <br />
-        <b>Consommateur</b>
-        <br/>
-        Nom : @report.lastName
-        <br />
-        Prénom : @report.firstName
-        <br />
-        Email : @report.email
-        <br/>
-        @if(!report.employeeConsumer) {
-            Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+            <b>Description</b>
             <br/>
-        }
-    </div>
+            @report.details.map { detailInputValue =>
+                @Html(detailInputValue.label) @Html(detailInputValue.value)
+                <br/>
+            }
 
-    <div style="padding-bottom: 0.5em">
-        <div style="font-weight: bold;
-            text-align: center;
-            border-top: 1px solid #D3D3D3;
-            border-bottom: 1px solid #D3D3D3;
-            padding: 10px 0;
-            margin: 10px">Comprendre SignalConso</div>
-        <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
-    </div>
+            @if(files.length > 0) {
+                <br/>
+                Pièces jointes :
+                <ul>
+                @files.map { file =>
+                    <li>
+                        @file.filename
+                    </li>
+                }
+                </ul>
+            } else {
+                <br />
+            }
+
+            <b>Entreprise</b>
+            <br/>
+            @if(report.companyAddress.isDefined) {
+                @report.companyAddress.get
+                <br/>
+            }
+            @if(report.websiteURL.isDefined) {
+                Site internet : @report.shortURL.get
+                <br/>
+            }
+            @if(report.vendor.isDefined) {
+                Nom du vendeur : @report.vendor.get
+                <br/>
+            }
+
+            <br />
+            <b>Consommateur</b>
+            <br/>
+            Nom : @report.lastName
+            <br />
+            Prénom : @report.firstName
+            <br />
+            Email : @report.email
+            <br/>
+            @if(!report.employeeConsumer) {
+                Accord pour contact : @if(report.contactAgreement) {oui} else {non}
+                <br/>
+            }
+        </div>
+    }
+
+    @if(report.needWorkflowAttachment) {
+        <div style="padding-bottom: 0.5em">
+            <div style="font-weight: bold;
+                text-align: center;
+                border-top: 1px solid #D3D3D3;
+                border-bottom: 1px solid #D3D3D3;
+                padding: 10px 0;
+                margin: 10px">Comprendre SignalConso</div>
+            <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
+        </div>
+    }
 }

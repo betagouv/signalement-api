@@ -40,11 +40,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def createToken(
       kind: TokenKind, token: String, validity: Option[java.time.temporal.TemporalAmount],
-      company: Option[Company], level: Option[AccessLevel], emailedTo: Option[EmailAddress] = None
+      company: Option[Company], level: Option[AccessLevel], emailedTo: Option[EmailAddress] = None, creationDate: OffsetDateTime = OffsetDateTime.now
     ): Future[AccessToken] =
     db.run(AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
       id = UUID.randomUUID(),
-      creationDate = OffsetDateTime.now,
+      creationDate = creationDate,
       kind = kind,
       token = token,
       valid = true,
@@ -122,6 +122,16 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       .result
     )
 
+  def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
+    db.run(AccessTokenTableQuery
+      .filter(
+        _.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.valid)
+      .filter(_.kind === TokenKind.DGCCRF_ACCOUNT)
+      .to[List]
+      .result
+    )
+
   def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] = {
     if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
       logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
@@ -170,6 +180,7 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def companiesToActivate(): Future[List[(AccessToken, Company)]] =
     db.run(AccessTokenTableQuery
       .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .filter(_._1.creationDate < OffsetDateTime.now.withHour(0).withMinute(0).withSecond(0).withNano(0))
       .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
       .filter(_._1.valid)
       .filter(_._1.kind === TokenKind.COMPANY_INIT)
@@ -178,4 +189,11 @@ class AccessTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchActivationToken(company).map(_.map(_.token))
+
+  def useEmailValidationToken(token: AccessToken, user: User) =
+    db.run(DBIO.seq(
+      userRepository.userTableQuery.filter(_.id === user.id).map(_.lastEmailValidation).update(Some(OffsetDateTime.now)),
+      AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
+    ).transactionally)
+    .map(_ => true)
 }

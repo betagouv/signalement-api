@@ -49,6 +49,30 @@
                     </ul>
                 </li>
             }
+            @if(subscription.tags.length > 0) {
+                <li>
+                    Tags :
+                    <ul>
+                        @subscription.tags.map { tag =>
+                            <li>
+                                @tag
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
+            @if(subscription.countries.length > 0) {
+                <li>
+                    Pays :
+                    <ul>
+                        @subscription.countries.map { country =>
+                            <li>
+                                @country.name
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
         </ul>
     </p>
 
@@ -89,15 +113,23 @@
                         <br />
 
                         @if(report.companyAddress.isDefined) {
-                        <b>Entreprise</b>
+                        <b>
+                            Entreprise @report.companySiret.getOrElse("")
+                        </b>
                         <p style="text-align: center;">
-                        @views.html.fragments.address(report.companyAddress.get)
+                            @views.html.fragments.address(report.companyAddress.get)
                         </p>
                         }
                         @if(report.websiteURL.isDefined) {
                         <b>Site web</b>
                         <p style="text-align: center;">
                         Site internet : @report.shortURL.get
+                        </p>
+                        }
+                        @if(report.vendor.isDefined) {
+                        <b>Nom du vendeur</b>
+                        <p style="text-align: center;">
+                        Nom du vendeur : @report.vendor.get
                         </p>
                         }
 

@@ -1,9 +1,9 @@
 @import utils.Address
 @(address: Address)
 
-@address.value.split(" - ").map { ligne =>
+@address.value.split(" - ").filterNot(_.isEmpty).map { ligne =>
     <span>
-        @ligne
+        @(ligne)
     </span>
     <br/>
 }

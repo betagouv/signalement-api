@@ -14,7 +14,7 @@ import play.api.{Configuration, Logger}
 import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
 import services.MailerService
 import utils.Constants.Departments
-import utils.EmailAddress
+import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -71,7 +71,9 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
           reports.entities
             .filter(report => subscription._1.departments.isEmpty || subscription._1.departments.map(Some(_)).contains(report.companyPostalCode.flatMap(Departments.fromPostalCode(_))))
             .filter(report => subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category))
-            .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret)),
+            .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret))
+            .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyCountry))
+            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.map(Some(_)).exists(x => report.tags.contains(x))),
           taskDate.minus(period)
         )
       })
@@ -87,12 +89,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
-        subject = s"[SignalConso] ${
-          reports.length match {
-            case 1 => "Un nouveau signalement"
-            case n => s"${reports.length} nouveaux signalements"
-          }
-        }",
+        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length),
         bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
       )
     }

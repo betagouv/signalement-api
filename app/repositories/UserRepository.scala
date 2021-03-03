@@ -34,18 +34,19 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def firstName = column[String]("firstname")
     def lastName = column[String]("lastname")
     def role = column[String]("role")
+    def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
 
-    type UserData = (UUID, String, EmailAddress, String, String, String)
+    type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
 
     def constructUser: UserData => User = {
-      case (id, password, email, firstName, lastName, role) => User(id, password, email, firstName, lastName, UserRoles.withName(role))
+      case (id, password, email, firstName, lastName, role, lastEmailValidation) => User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
     }
 
     def extractUser: PartialFunction[User, UserData] = {
-      case User(id, password, email, firstName, lastName, role) => (id, password, email, firstName, lastName, role.name)
+      case User(id, password, email, firstName, lastName, role, lastEmailValidation) => (id, password, email, firstName, lastName, role.name, lastEmailValidation)
     }
 
-    def * = (id, password, email, firstName, lastName, role) <> (constructUser, extractUser.lift)
+    def * = (id, password, email, firstName, lastName, role, lastEmailValidation) <> (constructUser, extractUser.lift)
   }
 
   class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
@@ -61,6 +62,12 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   val authAttemptTableQuery = TableQuery[AuthAttempTable]
   
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
+
+  def list(role: UserRole): Future[Seq[User]] =
+    db
+    .run(userTableQuery
+    .filter(_.role === role.name)
+    .result)
 
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))

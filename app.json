@@ -1,7 +1,7 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql"
+    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_companies.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql && psql $DATABASE_URL < ./test/scripts/insert_company_accesses.sql"
   },
   "env": {
     "APPLICATION_HOST": {
@@ -14,6 +14,9 @@
       "required": true
     },
     "BUCKETS_REPORT": {
+      "required": true
+    },
+    "COMPANY_DATABASE_URL": {
       "required": true
     },
     "EVOLUTIONS_AUTO_APPLY": {
@@ -33,9 +36,6 @@
     },
     "MAIL_FROM": {
       "required": true
-    },
-    "MAIL_CONTACT_RECIPIENTS": {
-      "required": false
     },
     "MAILER_HOST": {
       "required": true
@@ -80,7 +80,7 @@
       "required": true
     },
     "WEBSITE_URL": {
-      "value": "https://signalement-app-pr-312.herokuapp.com"
+      "value": "https://signalement-app-pr-416.herokuapp.com"
     }
   },
   "formation": {

@@ -35,6 +35,22 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
     reportRepository.monthlyCount.map(monthlyStats => Ok(Json.toJson(monthlyStats)))
   }
 
+  def getReportForwardedToProPercentage = UserAwareAction.async { implicit request =>
+    for {
+      count <- reportRepository.countWithStatus(
+        ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+        cutoff
+      )
+      baseCount <- reportRepository.countWithStatus(
+        ReportStatus.reportStatusList.toList,
+        cutoff
+      )
+    } yield
+      Ok(Json.obj(
+        "value" -> count * 100 / baseCount
+      ))
+  }
+
   def getReportReadByProPercentage = UserAwareAction.async { implicit request =>
     for {
       count <- reportRepository.countWithStatus(
@@ -48,6 +64,21 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
     } yield
       Ok(Json.obj(
         "value" -> count * 100 / baseCount
+      ))
+  }
+
+  def getMonthlyReportForwardedToProPercentage = UserAwareAction.async { implicit request =>
+    for {
+      monthlyCounts <- reportRepository.countMonthlyWithStatus(ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList)
+      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(ReportStatus.reportStatusList.toList)
+    } yield
+      Ok(Json.toJson(
+        monthlyBaseCounts.map(
+          monthlyBaseCount => MonthlyStat(
+            monthlyCounts.find(_.yearMonth == monthlyBaseCount.yearMonth).map(_.value).getOrElse(0) * 100 / monthlyBaseCount.value,
+            monthlyBaseCount.yearMonth
+          )
+        )
       ))
   }
 
@@ -94,6 +125,23 @@ class StatisticController @Inject()(reportRepository: ReportRepository,
             monthlyBaseCount.yearMonth
           )
         )
+      ))
+  }
+
+  def getReportWithWebsitePercentage = UserAwareAction.async { implicit request =>
+    for {
+      count <- reportRepository.countWithStatus(
+        ReportStatus.reportStatusList.toList,
+        cutoff,
+        Some(true)
+      )
+      baseCount <- reportRepository.countWithStatus(
+        ReportStatus.reportStatusList.toList,
+        cutoff
+      )
+    } yield
+      Ok(Json.obj(
+        "value" -> count * 100 / baseCount
       ))
   }
 
