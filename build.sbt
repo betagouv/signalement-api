@@ -7,10 +7,11 @@ scalaVersion := "2.12.10"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
-val playSlickVersion        = "4.0.2"
-val slickPgVersion          = "0.19.3"
+val playSlickVersion        = "5.0.0"
+val slickPgVersion          = "0.19.5"
 val playMailerVersion       = "8.0.1"
-val playSilhouetteVersion   = "6.1.1"
+val playSilhouetteVersion   = "7.0.0"
+val AkkaHttpVersion = "10.1.12"
 
 libraryDependencies ++= Seq(
   guice,
@@ -18,7 +19,7 @@ libraryDependencies ++= Seq(
   ws,
   ehcache,
 
-  "org.postgresql" % "postgresql" % "42.2.18",
+  "org.postgresql" % "postgresql" % "42.2.19",
   "com.typesafe.play" %% "play-slick" %  playSlickVersion,
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
   "com.github.tminglei" %% "slick-pg" % slickPgVersion,
@@ -28,6 +29,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "2.0.2",
+  "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",
 
   "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
@@ -39,16 +42,16 @@ libraryDependencies ++= Seq(
   "com.iheart" %% "ficus" % "1.5.0",
 
   "com.norbitltd" %% "spoiwo" % "1.8.0",
-  "com.itextpdf" % "itext7-core" % "7.1.13",
-  "com.itextpdf" % "html2pdf" % "3.0.2",
+  "com.itextpdf" % "itext7-core" % "7.1.14",
+  "com.itextpdf" % "html2pdf" % "3.0.3",
 
   specs2 % Test,
-  "org.specs2" %% "specs2-matcher-extra" % "4.10.6" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+  "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
 
-  "io.sentry" % "sentry-logback" % "1.7.30",
+  "io.sentry" % "sentry-logback" % "4.2.0",
 
-  "org.typelevel" %% "cats-core" % "2.1.1"
+  "org.typelevel" %% "cats-core" % "2.4.2"
 
 )
 
