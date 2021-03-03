@@ -82,19 +82,14 @@ group by category;
 
 -- % signalements internets (signalements des 30 derniers jours)
 select count(1) "Nb signalements des 30 derniers jours",
-
        ((count(*) filter ( where website_url is not null ))::numeric / count(1)::numeric * 100)::numeric(5,2) "% signalement internet",
-
        ((count(*) filter ( where website_url is not null and company_id is not null and not exists(
                select * from events e where e.report_id = reports.id and e.action = 'Modification du commerçant'
            )))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprise ident par conso parmi les sign internets",
-
        ((count(*) filter ( where website_url is not null and company_id is not null and exists(
                select * from events e where e.report_id = reports.id and e.action = 'Modification du commerçant'
            )))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprise ident par admin parmi les sign internets",
-
        ((count(*) filter ( where website_url is not null and company_id is null ))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprise non ident parmi les sign internets",
-
        ((count(*) filter ( where website_url is not null and company_id is null and company_country is not null) )::numeric / (count(*) filter ( where website_url is not null and company_id is null ) )::numeric * 100)::numeric(5,2) "% sign etranger parmi les sign internets entreprise non ident"
 from reports
 where creation_date >= 'now'::timestamp - '30 days'::interval;
