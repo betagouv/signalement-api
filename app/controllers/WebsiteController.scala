@@ -7,7 +7,6 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.OptionT
-import cats.implicits._
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
 import models.WebsiteCompanyFormat._
