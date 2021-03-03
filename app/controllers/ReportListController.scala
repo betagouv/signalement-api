@@ -99,8 +99,7 @@ class ReportListController @Inject()(
   }
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
-    implicit val reads = Json.reads[ReportsExtractActor.RawFilters]
-    request.body.validate[ReportsExtractActor.RawFilters].fold(
+    request.body.validate[ReportFilterBody].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       filters =>
         for {

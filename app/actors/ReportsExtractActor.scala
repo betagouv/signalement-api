@@ -1,48 +1,33 @@
 package actors
 
-import akka.actor._
-import akka.stream.scaladsl.FileIO
-import akka.stream.Materializer
-import play.api.{Configuration, Logger}
-import play.api.libs.json.JsObject
 import java.nio.file.{Path, Paths}
-import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-import javax.inject.{Inject, Singleton}
+import akka.actor._
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
+import com.google.inject.AbstractModule
 import com.norbitltd.spoiwo.model._
 import com.norbitltd.spoiwo.model.enums.{CellFill, CellHorizontalAlignment, CellStyleInheritance, CellVerticalAlignment}
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
-import com.google.inject.AbstractModule
-import play.api.libs.concurrent.AkkaGuiceSupport
 import controllers.routes
+import javax.inject.{Inject, Singleton}
 import models._
+import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.{Configuration, Logger}
 import repositories._
 import services.S3Service
-import utils.Constants
 import utils.Constants.{Departments, ReportStatus}
-import utils.DateUtils
-import java.util.UUID
+import utils.{Constants, DateUtils}
+
+import scala.concurrent.ExecutionContext
+import scala.util.Random
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]
 
-  case class RawFilters(departments: List[String],
-                        email: Option[String],
-                        websiteURL: Option[String] = None,
-                        phone: Option[String] = None,
-                        siretSirenList: List[String] = Nil,
-                        start: Option[String],
-                        end: Option[String],
-                        category: Option[String],
-                        status: Option[String],
-                        details: Option[String],
-                        hasCompany: Option[Boolean],
-                        tags: List[String] = Nil)
-  case class ExtractRequest(requestedBy: User, filters: RawFilters)
+  case class ExtractRequest(requestedBy: User, filters: ReportFilterBody)
 }
 
 @Singleton
@@ -69,7 +54,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   }
   override def receive = {
-    case ExtractRequest(requestedBy: User, filters: RawFilters) =>
+    case ExtractRequest(requestedBy: User, filters: ReportFilterBody) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
@@ -238,7 +223,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: RawFilters) = {
+  def genTmpFile(requestedBy: User, filters: ReportFilterBody) = {
     val startDate = DateUtils.parseDate(filters.start)
     val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -247,27 +232,16 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
     val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
     for {
       paginatedReports <- reportRepository.getReports(
-        0,
-        100000,
-        ReportFilter(
-          departments = filters.departments,
-          email = filters.email,
-          websiteURL = None,
-          phone = filters.phone,
-          siretSirenList = filters.siretSirenList,
-          companyName = None,
-          companyCountries = Seq(),
+        offset = 0,
+        limit = 100000,
+        filter = filters.toReportFilter(
           start = startDate,
           end = endDate,
-          category = filters.category,
-          statusList = statusList,
-          details = filters.details,
           employeeConsumer = requestedBy.userRole match {
             case UserRoles.Pro => Some(false)
             case _ => None
           },
-          hasCompany = filters.hasCompany,
-          tags = filters.tags
+          statusList = statusList
         )
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))

@@ -14,24 +14,6 @@ import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ReportFilter(
-                         departments: Seq[String] = List(),
-                         email: Option[String] = None,
-                         websiteURL: Option[String] = None,
-                         phone: Option[String] = None,
-                         siretSirenList: List[String] = List(),
-                         companyName: Option[String] = None,
-                         companyCountries: Seq[String] = List(),
-                         start: Option[LocalDate] = None,
-                         end: Option[LocalDate] = None,
-                         category: Option[String] = None,
-                         statusList: Seq[ReportStatusValue] = List(),
-                         details: Option[String] = None,
-                         employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Option[Boolean] = None,
-                         tags: Seq[String] = Nil
-)
-
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                  accessTokenRepository: AccessTokenRepository,
