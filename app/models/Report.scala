@@ -12,25 +12,26 @@ import utils.{Address, Country, EmailAddress, SIRET, URL}
 
 
 case class DraftReport(
-                        category: String,
-                        subcategories: List[String],
-                        details: List[DetailInputValue],
-                        companyName: Option[String],
-                        companyAddress: Option[Address],
-                        companyPostalCode: Option[String],
-                        companyCountry: Option[Country],
-                        companySiret: Option[SIRET],
-                        companyActivityCode: Option[String],
-                        websiteURL: Option[URL],
-                        firstName: String,
-                        lastName: String,
-                        email: EmailAddress,
-                        contactAgreement: Boolean,
-                        employeeConsumer: Boolean,
-                        fileIds: List[UUID],
-                        vendor: Option[String] = None,
-                        tags: List[String] = Nil
-                      ) {
+  category: String,
+  subcategories: List[String],
+  details: List[DetailInputValue],
+  companyName: Option[String],
+  companyAddress: Option[Address],
+  companyPostalCode: Option[String],
+  companyCountry: Option[Country],
+  companySiret: Option[SIRET],
+  companyActivityCode: Option[String],
+  websiteURL: Option[URL],
+  phone: Option[String],
+  firstName: String,
+  lastName: String,
+  email: EmailAddress,
+  contactAgreement: Boolean,
+  employeeConsumer: Boolean,
+  fileIds: List[UUID],
+  vendor: Option[String] = None,
+  tags: List[String] = Nil
+) {
 
   def generateReport: Report = {
     val report = Report(
@@ -45,6 +46,7 @@ case class DraftReport(
       companyCountry,
       companySiret,
       websiteURL,
+      phone,
       OffsetDateTime.now(),
       firstName,
       lastName,
@@ -59,32 +61,33 @@ case class DraftReport(
   }
 }
 object DraftReport {
-  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined)
+  implicit val draftReportReads = Json.reads[DraftReport].filter(draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined || draft.phone.isDefined)
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
 case class Report(
-                   id: UUID,
-                   category: String,
-                   subcategories: List[String],
-                   details: List[DetailInputValue],
-                   companyId: Option[UUID],
-                   companyName: Option[String],
-                   companyAddress: Option[Address],
-                   companyPostalCode: Option[String],
-                   companyCountry: Option[Country],
-                   companySiret: Option[SIRET],
-                   websiteURL: Option[URL],
-                   creationDate: OffsetDateTime,
-                   firstName: String,
-                   lastName: String,
-                   email: EmailAddress,
-                   contactAgreement: Boolean,
-                   employeeConsumer: Boolean,
-                   status: ReportStatusValue,
-                   vendor: Option[String] = None,
-                   tags: List[String] = Nil
-                 ) {
+  id: UUID,
+  category: String,
+  subcategories: List[String],
+  details: List[DetailInputValue],
+  companyId: Option[UUID],
+  companyName: Option[String],
+  companyAddress: Option[Address],
+  companyPostalCode: Option[String],
+  companyCountry: Option[Country],
+  companySiret: Option[SIRET],
+  websiteURL: Option[URL],
+  phone: Option[String],
+  creationDate: OffsetDateTime,
+  firstName: String,
+  lastName: String,
+  email: EmailAddress,
+  contactAgreement: Boolean,
+  employeeConsumer: Boolean,
+  status: ReportStatusValue,
+  vendor: Option[String] = None,
+  tags: List[String] = Nil
+) {
 
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT
@@ -119,6 +122,7 @@ object Report {
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
         "websiteURL" -> report.websiteURL,
+        "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
@@ -213,9 +217,11 @@ object ReportCategory {
   val CafeRestaurant = ReportCategory("Café / Restaurant")
   val AchatMagasin = ReportCategory("Achat / Magasin")
   val Service = ReportCategory("Services aux particuliers")
-  val TelEauGazElec = ReportCategory("Téléphonie / Eau-Gaz-Electricité")
+  val EauGazElec = ReportCategory("Eau / Gaz / Electricité")
+  val TelFaiMedias = ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
   val BanqueAssuranceMutuelle = ReportCategory("Banque / Assurance / Mutuelle")
   val ProduitsObjets = ReportCategory("Produits / Objets")
+  val Internet = ReportCategory("Internet (hors achats)")
   val TravauxRenovations = ReportCategory("Travaux / Rénovation")
   val VoyageLoisirs = ReportCategory("Voyage / Loisirs")
   val Immobilier = ReportCategory("Immobilier")
@@ -226,8 +232,22 @@ object ReportCategory {
 
   def fromValue(v: String) = {
     List(
-      Covid, CafeRestaurant, AchatMagasin, Service, TelEauGazElec, BanqueAssuranceMutuelle, ProduitsObjets,
-      TravauxRenovations, VoyageLoisirs, Immobilier, Sante, VoitureVehicule, Animaux, DemarchesAdministratives
+      Covid,
+      CafeRestaurant,
+      AchatMagasin,
+      Service,
+      EauGazElec,
+      TelFaiMedias,
+      BanqueAssuranceMutuelle,
+      ProduitsObjets,
+      Internet,
+      TravauxRenovations,
+      VoyageLoisirs,
+      Immobilier,
+      Sante,
+      VoitureVehicule,
+      Animaux,
+      DemarchesAdministratives,
     ).find(_.value == v).head
   }
 

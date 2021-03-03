@@ -47,11 +47,18 @@ object Company {
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
 }
 
-case class CompanyAddress(
+case class CompanyAddressUpdate(
                   address: Address,
                   postalCode: String,
+                  activationDocumentRequired: Boolean = false
                 )
 
-object CompanyAddress {
-  implicit val companyAddressFormat: OFormat[CompanyAddress] = Json.format[CompanyAddress]
+object CompanyAddressUpdate {
+  implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]
+}
+
+case class UndeliveredDocument(returnedDate: OffsetDateTime)
+
+object UndeliveredDocument {
+  implicit val format: OFormat[UndeliveredDocument] = Json.format[UndeliveredDocument]
 }
