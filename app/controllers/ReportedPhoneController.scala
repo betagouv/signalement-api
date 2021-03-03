@@ -27,7 +27,7 @@ class ReportedPhoneController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+  def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     reportRepository.getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
       .map(reports => Ok(Json.toJson(
         reports
