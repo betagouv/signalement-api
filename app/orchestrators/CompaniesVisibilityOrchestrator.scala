@@ -19,9 +19,9 @@ class CompaniesVisibilityOrchestrator @Inject()(
   environment: Environment
 )(implicit val executionContext: ExecutionContext) {
 
-  def fetchViewableCompanies(user: User): Future[List[CompanyData]] = {
+  def fetchViewableCompanies(pro: User): Future[List[CompanyData]] = {
     for {
-      authorizedSirets <- companyRepository.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
+      authorizedSirets <- companyRepository.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
       headOfficeSirets <- companyDataRepository.searchHeadOffices(authorizedSirets)
       companiesForHeadOffices <- companyDataRepository.searchBySirens(authorizedSirets.intersect(headOfficeSirets).map(SIREN.apply), includeClosed = true)
       companiesWithoutHeadOffice <- companyDataRepository.searchBySirets(authorizedSirets.diff(headOfficeSirets), includeClosed = true)
