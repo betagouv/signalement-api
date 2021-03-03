@@ -7,7 +7,6 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.OptionT
-import cats.implicits._
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
 import models.WebsiteCompanyFormat._
@@ -36,8 +35,16 @@ class WebsiteController @Inject()(
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       websites <- websiteRepository.list
+      reports <- reportRepository.getWithWebsites()
+      countByHostAndCompany = reports
+        .groupBy(report => (report.websiteURL.flatMap(_.getHost), report.companyId))
+        .collect { case ((Some(websiteURL), Some(companyId)), reports) => ((websiteURL, companyId), reports.length)}
+      websitesWithCount = websites.map { case (website, company) => {
+        val count = countByHostAndCompany.get(website.host, company.id).getOrElse(0)
+        (website, company, count)
+      }}
     } yield {
-      Ok(Json.toJson(websites))
+      Ok(Json.toJson(websitesWithCount))
     }
   }
 
@@ -47,7 +54,7 @@ class WebsiteController @Inject()(
         reports
           .groupBy(_.websiteURL.flatMap(_.getHost))
           .collect { case (Some(host), reports) if q.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
-          .map{ case(host, count) => Json.obj("host" -> host, "count" -> count)}
+          .map { case (host, count) => Json.obj("host" -> host, "count" -> count) }
       )))
   }
 
@@ -65,7 +72,7 @@ class WebsiteController @Inject()(
           website <- OptionT(websiteRepository.find(uuid))
           _ <- OptionT.liftF(
             if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
-            else Future.successful()
+            else Future.successful(Unit)
           )
           updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
           company <- OptionT(companyRepository.fetchCompany(website.companyId))

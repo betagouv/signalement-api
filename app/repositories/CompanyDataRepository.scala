@@ -15,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+
   import PostgresProfile.api._
   import dbConfig._
 
@@ -39,15 +40,17 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def denominationUsuelleEtablissement = column[Option[String]]("denominationusuelleetablissement")
     def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
+    def etatAdministratifEtablissement = column[Option[String]]("etatadministratifetablissement")
 
     def * = (
       id, siret, siren, dateDernierTraitementEtablissement, etablissementSiege, complementAdresseEtablissement, numeroVoieEtablissement, indiceRepetitionEtablissement, typeVoieEtablissement,
       libelleVoieEtablissement, codePostalEtablissement, libelleCommuneEtablissement, libelleCommuneEtrangerEtablissement, distributionSpecialeEtablissement,
-      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement)<> (CompanyData.tupled, CompanyData.unapply)
+      codeCommuneEtablissement, codeCedexEtablissement, libelleCedexEtablissement, denominationUsuelleEtablissement, enseigne1Etablissement, activitePrincipaleEtablissement, etatAdministratifEtablissement) <> (CompanyData.tupled, CompanyData.unapply)
   }
 
   class CompanyActivityTable(tag: Tag) extends Table[CompanyActivity](tag, "activites") {
     def code = column[String]("code")
+
     def libelle = column[String]("libelle")
 
     def * = (code, libelle) <> (CompanyActivity.tupled, CompanyActivity.unapply)
@@ -58,10 +61,15 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 
   private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
+  private[this] def filterClosedEtablissements(row: CompanyDataTable): Rep[Option[Boolean]] = {
+    row.etatAdministratifEtablissement =!= "F" || row.etatAdministratifEtablissement.isEmpty
+  }
+
   def search(q: String, postalCode: String): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(companyDataTableQuery
       .filter(_.codePostalEtablissement === postalCode)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
       .filter(result => least(
         result.denominationUsuelleEtablissement <-> q,
         result.enseigne1Etablissement <-> q
@@ -78,6 +86,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     db.run(companyDataTableQuery
       .filter(_.siret === siret)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
@@ -86,6 +95,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(_.siren === SIREN(siret))
       .filter(company => company.siret === siret || company.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
@@ -93,6 +103,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     db.run(companyDataTableQuery
       .filter(_.siren === siren)
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
       .take(10)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
@@ -102,6 +113,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(_.siren === siren)
       .filter(_.etablissementSiege === "true")
       .filter(_.denominationUsuelleEtablissement.isDefined)
+      .filter(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)
 }

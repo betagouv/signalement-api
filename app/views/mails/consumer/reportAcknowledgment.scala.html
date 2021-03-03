@@ -62,7 +62,7 @@
             }
             @views.html.fragments.chargeBack(report)
         }
-        case _ if report.isContractualDispute => {
+        case _ if report.isContractualDispute && report.companyId.isDefined => {
             <p>
                 Vous avez signalé un problème individuel (litige)
                     @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))

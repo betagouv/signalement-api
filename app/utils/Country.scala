@@ -237,4 +237,8 @@ object Country {
 
   implicit val CountryColumnType = MappedColumnType.base[Country, String](_.name, Country.fromName(_))
 
+  implicit val countryListColumnType = MappedColumnType.base[List[Country], List[String]](
+    _.map(_.name),
+    _.map(Country.fromName)
+  )
 }

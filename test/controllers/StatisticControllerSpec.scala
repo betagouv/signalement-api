@@ -27,7 +27,8 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     s2"""it should
          return reports count                               ${getReportCount}
          return monthly reports count                       ${getMonthlyReportCount}
-         return reports read by pro percentage              ${getReportWithResponsePercentage}
+         return reports read by pro percentage              ${getReportReadByProPercentage}
+         return reports forwarded to pro percentage         ${getReportForwardedToProPercentage}
          return monthly reports read by pro percentage      ${getMonthlyReportWithResponsePercentage}
          return reports with response percentage            ${getReportWithResponsePercentage}
          return monthly reports with response percentage    ${getMonthlyReportWithResponsePercentage}
@@ -66,7 +67,15 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
-    content must /("value" -> reportsReadByProCutoff.length * 100 / (lastYearReports ::: lastMonthReports).length)
+    content must /("value" -> reportsReadByProCutoff.length * 100 / reportsForwardedToProCutoff.length)
+  }
+
+  def getReportForwardedToProPercentage =  {
+    val request = FakeRequest(GET, routes.StatisticController.getReportForwardedToProPercentage().toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    content must /("value" -> reportsForwardedToProCutoff.length * 100 / (lastYearReports ::: lastMonthReports).length)
   }
 
   def getMonthlyReportReadByProPercentage =  {
@@ -116,20 +125,26 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
   val lastYearReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+  val lastYearReportsNotForwarded = Fixtures.genReportsForCompanyWithStatus(company, NA).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1))) :::
+    Fixtures.genReportsForCompanyWithStatus(company, EMPLOYEE_REPORT).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
 
   val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
   val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
-  val lastYearReports = lastYearReportsToProcess ::: lastYearReportsReadByPro
+  val lastYearReportsForwardedToPro = lastYearReportsToProcess ::: lastYearReportsReadByPro
+  val lastYearReports = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
 
   val lastMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, PROMESSE_ACTION).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+  val lastMonthReportsNotForwarded = Fixtures.genReportsForCompanyWithStatus(company, NA).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1))) :::
+    Fixtures.genReportsForCompanyWithStatus(company, EMPLOYEE_REPORT).sample.get.map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
 
   val lastMonthReportsWithResponse = lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned
   val lastMonthReportsReadByPro = lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction
-  val lastMonthReports = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
+  val lastMonthReportsForwardedToPro = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
+  val lastMonthReports = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
 
   val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, TRAITEMENT_EN_COURS).sample.get
   val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_TRANSMIS).sample.get
@@ -137,13 +152,15 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv) extends Specif
   val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_INFONDE).sample.get
   val currentMonthReportsNotConcerned = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_MAL_ATTRIBUE).sample.get
   val currentMonthReportsClosedByNoAction = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get
+  val currentMonthReportsNotForwarded = Fixtures.genReportsForCompanyWithStatus(company, NA).sample.get ::: Fixtures.genReportsForCompanyWithStatus(company, EMPLOYEE_REPORT).sample.get
 
   val currentMonthReportsWithResponse = currentMonthReportsAccepted ::: currentMonthReportsRejected ::: currentMonthReportsNotConcerned
   val currentMonthReportsReadByPro = currentMonthReportsWithResponse ::: currentMonthReportsClosedByNoAction
-  val currentMonthReports = currentMonthReportsToProcess ::: currentMonthReportsSend ::: currentMonthReportsReadByPro
+  val currentMonthReports = currentMonthReportsToProcess ::: currentMonthReportsSend ::: currentMonthReportsReadByPro ::: currentMonthReportsNotForwarded
 
   val reportsWithResponseCutoff = lastYearReportsWithResponse ::: lastMonthReportsWithResponse
   val reportsReadByProCutoff = lastYearReportsReadByPro ::: lastMonthReportsReadByPro
+  val reportsForwardedToProCutoff = lastYearReportsForwardedToPro ::: lastMonthReportsForwardedToPro
   val reportsClosedByNoActionCutoff = lastYearReportsClosedByNoAction ::: lastMonthReportsClosedByNoAction
 
   val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports

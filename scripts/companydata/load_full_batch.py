@@ -13,7 +13,29 @@ SIRET = 'siret'
 PAGE_SIZE = 20000
 
 # DB etablissements fields
-FIELDS = ['siret', 'siren', 'datederniertraitementetablissement', 'complementadresseetablissement', 'numerovoieetablissement', 'indicerepetitionetablissement', 'typevoieetablissement', 'libellevoieetablissement', 'codepostaletablissement', 'libellecommuneetablissement', 'libellecommuneetrangeretablissement', 'distributionspecialeetablissement', 'codecommuneetablissement', 'codecedexetablissement', 'libellecedexetablissement', 'denominationusuelleetablissement', 'enseigne1etablissement', 'activiteprincipaleetablissement']
+FIELDS = [
+    'siret',
+    'siren',
+    'datederniertraitementetablissement',
+    'complementadresseetablissement',
+    'numerovoieetablissement',
+    'indicerepetitionetablissement',
+    'typevoieetablissement',
+    'libellevoieetablissement',
+    'codepostaletablissement',
+    'libellecommuneetablissement',
+    'libellecommuneetrangeretablissement',
+    'distributionspecialeetablissement',
+    'codecommuneetablissement',
+    'codecedexetablissement',
+    'libellecedexetablissement',
+    'denominationusuelleetablissement',
+    'enseigne1etablissement',
+    'activiteprincipaleetablissement',
+    'etatadministratifetablissement'
+]
+
+FIELDS_EXCEPT_NAME = list(filter(lambda x: x != 'denominationusuelleetablissement', FIELDS))
 
 def iter_csv(path):
     with open(path) as csvfile:
@@ -25,23 +47,25 @@ def iter_queries(path):
         return v and v != 'false'
     for d in iter_csv(path):
         d =  {k.lower(): v for k, v in d.items()}
-        if args.type == SIRET:
+        if args.type == SIRET: # Etablissement
             updates = d #OrderedDict((k, v) for k, v in d.items())
-        elif args.type == SIREN:
+        elif args.type == SIREN: # UniteLegale
             d['denominationusuelleetablissement'] = d['denominationunitelegale'] or d['denominationusuelle1unitelegale'] or d['denominationusuelle2unitelegale'] or d['denominationusuelle3unitelegale'] or (d['prenomusuelunitelegale'] + ' ' + (d['nomusageunitelegale'] or d['nomunitelegale']))
+            d['etatadministratifetablissement'] = 'F' if (d['etatadministratifunitelegale'] == 'C') else d['etatadministratifunitelegale']
             if isset(d['denominationusuelleetablissement']):
                 updates = d
         yield updates
 
 def eval_query():
-    if args.type == SIRET:
+    if args.type == SIRET: # Etablissement
         return f"""
             INSERT INTO etablissements ({",".join(FIELDS)})
             VALUES ({",".join(f"%({k})s" for k in FIELDS)})
-            ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS)}
+            ON CONFLICT(siret) DO UPDATE SET {",".join(f"{k}=%({k})s" for k in FIELDS_EXCEPT_NAME)},
+            denominationusuelleetablissement=COALESCE(NULLIF(%(denominationusuelleetablissement)s, ''), etablissements.denominationusuelleetablissement)
         """
         return query
-    elif args.type == SIREN:
+    elif args.type == SIREN: # UniteLegale
         return f"""
             UPDATE etablissements SET {",".join(f"{k}=%({k})s" for k in ['denominationusuelleetablissement'])}
             WHERE siren = %(siren)s AND (denominationusuelleetablissement = '') IS NOT FALSE;
@@ -75,5 +99,6 @@ parser.add_argument('--page_size', required=False, type=int,
 if __name__ == "__main__":
     args = parser.parse_args()
     run(args.pg_uri, args.source)
+
 
 
