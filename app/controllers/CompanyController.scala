@@ -2,10 +2,12 @@ package controllers
 
 import java.net.URI
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Singleton}
+import models.Event.stringToDetailsJsValue
 import models._
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -14,16 +16,16 @@ import repositories._
 import services.PDFService
 import utils.Constants.{ActionEvent, EventType}
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{EmailAddress, SIRET}
+import utils.{EmailAddress, SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
-
 
 @Singleton
 class CompanyController @Inject()(
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val companyDataRepository: CompanyDataRepository,
+                                val websiteRepository: WebsiteRepository,
                                 val accessTokenRepository: AccessTokenRepository,
                                 val eventRepository: EventRepository,
                                 val reportRepository: ReportRepository,
@@ -59,11 +61,31 @@ class CompanyController @Inject()(
     )
   }
 
-  def searchCompanyBySiret(siret: String) = UnsecuredAction.async { implicit request =>
-    logger.debug(s"searchCompanyBySiret $siret")
-    companyDataRepository.searchBySiret(siret).map(results =>
-      Ok(Json.toJson(results.map(result => result._1.toSearchResult(result._2.map(_.label)))))
-    )
+  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompanyByIdentity $identity")
+
+    (identity.replaceAll("\\s", "") match {
+        case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
+        case q => SIREN.pattern.r.findFirstIn(q).map(siren =>
+          for {
+            headOffice <- companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))
+            companies <- headOffice.map(company => Future(List(company))).getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
+          } yield companies
+        ).getOrElse(Future(List.empty))
+      }).map(companiesWithActivity => Ok(Json.toJson(companiesWithActivity.map{case (company, activity) => company.toSearchResult(activity.map(_.label))})))
+
+  }
+
+  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
+    logger.debug(s"searchCompaniesByHost $url")
+    for {
+      companiesByUrl <- websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
+      results <- Future.sequence(companiesByUrl.map { case (website, company) =>
+        companyDataRepository.searchBySiret(company.siret).map(_.map {
+          case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind)
+        })
+      })
+    } yield Ok(Json.toJson(results.flatten))
   }
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
@@ -75,24 +97,29 @@ class CompanyController @Inject()(
   def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       accesses <- accessTokenRepository.companiesToActivate()
-      eventsMap <- eventRepository.fetchEvents(accesses.map {case (_, c) => c.id})
-    } yield Ok(
-      Json.toJson(accesses.map {case (t, c) =>
-          (c, t, eventsMap.get(c.id).flatMap(
-              _.filter(e =>
-                e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-                && e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
-              ).headOption
-            ).flatMap(_.creationDate))
-        }.filter {case (c, t, lastNotice) => lastNotice.filter(_.isAfter(OffsetDateTime.now.minus(reportReminderByPostDelay))).isEmpty}.map {
-          case (c, t, lastNotice) =>
-            Json.obj(
-              "company" -> Json.toJson(c),
-              "lastNotice" -> lastNotice,
-              "tokenCreation" -> t.creationDate
-            )
+      eventsMap <- eventRepository.fetchEvents(accesses.map { case (_, c) => c.id })
+    } yield {
+      Ok(
+      Json.toJson(accesses.map { case (t, c) =>
+        (c, t,
+          eventsMap.get(c.id).map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)).getOrElse(0),
+          eventsMap.get(c.id).flatMap(
+            _.filter(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption
+          ).flatMap(_.creationDate),
+          eventsMap.get(c.id).flatMap(
+            _.filter(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED).headOption
+          ).flatMap(_.creationDate),
+        )
+      }.filter { case (c, t, noticeCount, lastNotice, lastRequirement) =>
+        lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))))).isEmpty }.map {
+        case (c, t, _, lastNotice, _) =>
+          Json.obj(
+            "company" -> Json.toJson(c),
+            "lastNotice" -> lastNotice,
+            "tokenCreation" -> t.creationDate
+          )
       })
-    )
+    )}
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
@@ -112,8 +139,8 @@ class CompanyController @Inject()(
           val htmlDocuments = companies.flatMap(c =>
             activationCodesMap.get(c.id).map(getHtmlDocumentForCompany(
               c,
-              reportsMap.get(c.id).getOrElse(Nil),
-              eventsMap.get(c.id).getOrElse(Nil),
+              reportsMap.getOrElse(c.id, Nil),
+              eventsMap.getOrElse(c.id, Nil),
               _
             ))
           )
@@ -129,7 +156,7 @@ class CompanyController @Inject()(
 
   def getHtmlDocumentForCompany(company: Company, reports: List[Report], events: List[Event], activationKey: String) = {
     val lastContact = events.filter(e =>
-                              e.creationDate.filter(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay))).isDefined
+                              e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
                               && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action))
                         .sortBy(_.creationDate).reverse.headOption
     val report = reports.sortBy(_.creationDate).reverse.headOption
@@ -144,6 +171,7 @@ class CompanyController @Inject()(
       views.html.pdfs.accountActivation(
         company,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
+        report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
         activationKey
       )
   }
@@ -174,14 +202,68 @@ class CompanyController @Inject()(
   }
 
   def updateCompanyAddress(siret: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
-    request.body.validate[CompanyAddress].fold(
+    request.body.validate[CompanyAddressUpdate].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      companyAddress => for {
+      companyAddressUpdate => for {
         company <- companyRepository.findBySiret(SIRET(siret))
         updatedCompany <- company.map(c =>
-          companyRepository.update(c.copy(address = companyAddress.address, postalCode = Some(companyAddress.postalCode))).map(Some(_))
+          companyRepository.update(c.copy(address = companyAddressUpdate.address, postalCode = Some(companyAddressUpdate.postalCode))).map(Some(_))
+        ).getOrElse(Future(None))
+        _ <- updatedCompany.filter(c => Some(c.address) != company.map(_.address)).map(c =>
+          eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(c.id),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.PRO,
+              ActionEvent.COMPANY_ADDRESS_CHANGE,
+              stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
+            )
+          )
+        ).getOrElse(Future(None))
+        _ <- updatedCompany.filter(_ => companyAddressUpdate.activationDocumentRequired).map(c =>
+          eventRepository.createEvent(
+            Event(
+              Some(UUID.randomUUID()),
+              None,
+              Some(c.id),
+              Some(request.identity.id),
+              Some(OffsetDateTime.now()),
+              EventType.PRO,
+              ActionEvent.ACTIVATION_DOC_REQUIRED
+            )
+          )
         ).getOrElse(Future(None))
       } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
+    )
+  }
+
+  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    request.body.validate[UndeliveredDocument].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      undeliveredDocument => {
+        for {
+          company <- companyRepository.findBySiret(SIRET(siret))
+          event <- company.map(c =>
+            eventRepository.createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                None,
+                Some(c.id),
+                Some(request.identity.id),
+                Some(OffsetDateTime.now()),
+                EventType.ADMIN,
+                ActionEvent.ACTIVATION_DOC_RETURNED,
+                stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+              )
+            ).map(Some(_))
+          ).getOrElse(Future(None))
+        } yield event.map(e => Ok(Json.toJson(e))).getOrElse(NotFound)
+      }
     )
   }
 }

@@ -14,7 +14,7 @@ import repositories._
 import services.{PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
-import utils.SIRET
+import utils.{Constants, SIRET}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
 
@@ -138,7 +138,8 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
     reportRepository.getFile(UUID.fromString(uuid)).map(_ match {
-      case Some(file) if file.filename == filename => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
+      case Some(file) if file.avOutput.isEmpty => Conflict("Analyse antivirus en cours, veuillez réessayer d'ici 30 secondes")  // HTTP 409
+      case Some(file) if (file.filename == filename && file.avOutput.isDefined) => Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
       case _ => NotFound
     })
   }
@@ -181,24 +182,41 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
   }
 
   def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
-    implicit def writer = new Writes[Report] {
+    implicit def reportFilewriter = new Writes[ReportFile] {
+      def writes(reportFile: ReportFile) =
+        Json.obj(
+          "id" -> reportFile.id,
+          "filename"-> reportFile.filename
+        )
+    }
+    implicit def reportWriter = new Writes[Report] {
       def writes(report: Report) =
         Json.obj(
           "id" -> report.id,
           "category" -> report.category,
           "subcategories" -> report.subcategories,
+          "details" -> report.details,
           "siret" -> report.companySiret,
+          "postalCode" -> report.companyPostalCode,
+          "websiteURL" -> report.websiteURL,
           "firstName" -> report.firstName,
           "lastName" -> report.lastName,
           "email" -> report.email,
           "contactAgreement" -> report.contactAgreement,
-          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption
+          "description" -> report.details.filter(d => d.label.matches("Quel est le problème.*")).map(_.value).headOption,
+          "effectiveDate" -> report.details.filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*")).map(_.value).headOption,
       )
     }
+    implicit def writer = Json.writes[ReportWithFiles]
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
-        reportRepository.getReport(id).map(report => report.map(r => Ok(Json.toJson(r))).getOrElse(NotFound))
+        for {
+          report        <- reportRepository.getReport(id)
+          reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+        } yield report
+          .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))))
+          .getOrElse(NotFound)
     }
   }
 
@@ -212,17 +230,25 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
         companyEvents <- report.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
         proLevel      <- getProLevel(request.identity, report)
-      } yield report
-              .filter(_ =>
-                              request.identity.userRole == UserRoles.DGCCRF
-                          ||  request.identity.userRole == UserRoles.Admin
-                          ||  proLevel != AccessLevel.NONE)
-              .map(report =>
-                  pdfService.Ok(
-                    List(views.html.pdfs.report(report, events, companyEvents, reportFiles))
-                  )
-              )
-              .getOrElse(NotFound)
+      } yield {
+        val responseOption = events
+          .map(_._1)
+          .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+          .map(_.details)
+          .map(_.as[ReportResponse])
+
+        report
+          .filter(_ =>
+            request.identity.userRole == UserRoles.DGCCRF
+              ||  request.identity.userRole == UserRoles.Admin
+              ||  proLevel != AccessLevel.NONE)
+          .map(report =>
+            pdfService.Ok(
+              List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
+            )
+          )
+          .getOrElse(NotFound)
+      }
     }
   }
 
@@ -304,7 +330,7 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     }
   }
 
-  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction.async { implicit request =>
+  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
     // valeurs par défaut

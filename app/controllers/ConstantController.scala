@@ -2,11 +2,10 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject._
-import models.UserRoles
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus.reportStatusList
+import utils.Country
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,6 +19,10 @@ class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit
     Future.successful(Ok(Json.toJson(
       reportStatusList.flatMap(_.getValueWithUserRole(request.identity.userRole)).distinct
     )))
+  }
+
+  def getCountries = UnsecuredAction.async {
+    Future(Ok(Json.toJson(Country.countries)))
   }
 
 }

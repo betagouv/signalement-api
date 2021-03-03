@@ -33,7 +33,6 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
           a dom tom department                                              ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
-         And send a mail to admins                                          ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
@@ -45,7 +44,6 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
           an employee consumer                                            ${step(draftReport = draftReport.copy(employeeConsumer = true))}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
-         And send a mail to admins                                        ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
@@ -57,7 +55,6 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
           a professional who has no account                                   ${step(draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret)))}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
-         And send a mail to admins                                            ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT)}
          And send an acknowledgment mail to the consumer                      ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
@@ -70,7 +67,6 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
           a professional who has an activated account                   ${step(draftReport = draftReport.copy(companySiret = Some(existingCompany.siret)))}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
-         And send a mail to admins                                      ${mailMustHaveBeenSent(contactEmail,s"Nouveau signalement [${draftReport.category}]", views.html.mails.admin.reportNotification(report, Nil)(FakeRequest()).toString)}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT)}
          And create an event "EMAIL_PRO_NEW_REPORT"                     ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_PRO_NEW_REPORT)}
@@ -221,13 +217,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       id = reports.head.id,
       creationDate = reports.head.creationDate,
       companyId = reports.head.companyId,
-      websiteId = reports.head.websiteId,
       status = status
     )
     report = reports.head
     reports.length must beEqualTo(1) and
       (report.companyId must beSome) and
-      (report.websiteId must beSome) and
       (report must beEqualTo(expectedReport))
   }
 

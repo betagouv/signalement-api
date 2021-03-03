@@ -3,29 +3,31 @@ package models
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat}
-import utils.{Address, SIRET}
+import utils.{Address, SIREN, SIRET}
 
-case class CompanyData (
-                         id: UUID,
-                         siret: String,
-                         siren: String,
-                         dateDernierTraitementEtablissement: Option[String],
-                         complementAdresseEtablissement: Option[String],
-                         numeroVoieEtablissement: Option[String],
-                         indiceRepetitionEtablissement: Option[String],
-                         typeVoieEtablissement: Option[String],
-                         libelleVoieEtablissement: Option[String],
-                         codePostalEtablissement: Option[String],
-                         libelleCommuneEtablissement: Option[String],
-                         libelleCommuneEtrangerEtablissement: Option[String],
-                         distributionSpecialeEtablissement: Option[String],
-                         codeCommuneEtablissement: Option[String],
-                         codeCedexEtablissement: Option[String],
-                         libelleCedexEtablissement: Option[String],
-                         denominationUsuelleEtablissement: Option[String],
-                         enseigne1Etablissement: Option[String],
-                         activitePrincipaleEtablissement: String
-                       ) {
+case class CompanyData(
+  id: UUID,
+  siret: SIRET,
+  siren: SIREN,
+  dateDernierTraitementEtablissement: Option[String],
+  etablissementSiege: Option[String], //TODO change after updating table column type
+  complementAdresseEtablissement: Option[String],
+  numeroVoieEtablissement: Option[String],
+  indiceRepetitionEtablissement: Option[String],
+  typeVoieEtablissement: Option[String],
+  libelleVoieEtablissement: Option[String],
+  codePostalEtablissement: Option[String],
+  libelleCommuneEtablissement: Option[String],
+  libelleCommuneEtrangerEtablissement: Option[String],
+  distributionSpecialeEtablissement: Option[String],
+  codeCommuneEtablissement: Option[String],
+  codeCedexEtablissement: Option[String],
+  libelleCedexEtablissement: Option[String],
+  denominationUsuelleEtablissement: Option[String],
+  enseigne1Etablissement: Option[String],
+  activitePrincipaleEtablissement: String,
+  etatAdministratifEtablissement: Option[String]
+) {
 
   def voie =
     Option(Seq(
@@ -37,14 +39,16 @@ case class CompanyData (
 
   def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
 
-  def toSearchResult(activityLabel: Option[String]) = CompanySearchResult(
-    SIRET(siret),
+  def toSearchResult(activityLabel: Option[String], kind: WebsiteKind = WebsiteKind.DEFAULT) = CompanySearchResult(
+    siret,
     denominationUsuelleEtablissement,
     enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
+    etablissementSiege.map(_.toBoolean).getOrElse(false),
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement,
-    activityLabel
+    activityLabel,
+    kind
   )
 
 }
@@ -59,11 +63,21 @@ case class CompanySearchResult (
                                  siret: SIRET,
                                  name: Option[String],
                                  brand: Option[String],
+                                 isHeadOffice: Boolean,
                                  address: Option[Address],
                                  postalCode: Option[String],
                                  activityCode: String,
-                                 activityLabel: Option[String]
-                               )
+                                 activityLabel: Option[String],
+                                 kind: WebsiteKind
+                               ) {
+  def toCompany = Company(
+    siret = siret,
+    name = name.getOrElse(""),
+    address = address.getOrElse(Address("")),
+    postalCode = postalCode,
+    activityCode =Some(activityCode)
+  )
+}
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]

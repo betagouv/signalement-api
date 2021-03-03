@@ -60,7 +60,6 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString)}
-        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseAccepted).toString)}
     """
 }
 
@@ -75,7 +74,6 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_INFONDE)}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString)}
-        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseRejected).toString)}
     """
 }
 
@@ -90,7 +88,6 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.SIGNALEMENT_MAL_ATTRIBUE)}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString)}
-        And an acknowledgment email is sent to admins                            ${mailMustHaveBeenSent(contactEmail,s"Un professionnel a répondu à un signalement [${reportFixture.category}]", views.html.mails.admin.reportToAdminAcknowledgmentPro(report, reportResponseNotConcerned).toString)}
     """
 }
 
@@ -124,7 +121,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
 
-  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", "123_fichier.jpg", ReportFileOrigin.PROFESSIONAL)
+  val reportResponseFile = ReportFile(UUID.randomUUID(), None, OffsetDateTime.now, "fichier.jpg", "123_fichier.jpg", ReportFileOrigin.PROFESSIONAL, None)
 
   val reportResponseAccepted = ReportResponse(ReportResponseType.ACCEPTED, "details for consumer", Some("details for dgccrf"), List(reportResponseFile.id))
   val reportResponseRejected = ReportResponse(ReportResponseType.REJECTED, "details for consumer", Some("details for dgccrf"), List.empty)

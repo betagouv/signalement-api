@@ -1,7 +1,7 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql"
+    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_companies.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql && psql $DATABASE_URL < ./test/scripts/insert_company_accesses.sql"
   },
   "env": {
     "APPLICATION_HOST": {
@@ -36,9 +36,6 @@
     },
     "MAIL_FROM": {
       "required": true
-    },
-    "MAIL_CONTACT_RECIPIENTS": {
-      "required": false
     },
     "MAILER_HOST": {
       "required": true
