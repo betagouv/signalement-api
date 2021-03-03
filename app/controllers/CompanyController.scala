@@ -2,6 +2,7 @@ package controllers
 
 import java.net.URI
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Silhouette
@@ -249,6 +250,33 @@ class CompanyController @Inject()(
           )
         ).getOrElse(Future(None))
       } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
+    )
+  }
+
+  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    request.body.validate[UndeliveredDocument].fold(
+      errors => {
+        Future.successful(BadRequest(JsError.toJson(errors)))
+      },
+      undeliveredDocument => {
+        for {
+          company <- companyRepository.findBySiret(SIRET(siret))
+          event <- company.map(c =>
+            eventRepository.createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                None,
+                Some(c.id),
+                Some(request.identity.id),
+                Some(OffsetDateTime.now()),
+                EventType.ADMIN,
+                ActionEvent.ACTIVATION_DOC_RETURNED,
+                stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+              )
+            ).map(Some(_))
+          ).getOrElse(Future(None))
+        } yield event.map(e => Ok(Json.toJson(e))).getOrElse(NotFound)
+      }
     )
   }
 }

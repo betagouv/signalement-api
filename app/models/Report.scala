@@ -217,9 +217,11 @@ object ReportCategory {
   val CafeRestaurant = ReportCategory("Café / Restaurant")
   val AchatMagasin = ReportCategory("Achat / Magasin")
   val Service = ReportCategory("Services aux particuliers")
-  val TelEauGazElec = ReportCategory("Téléphonie / Eau-Gaz-Electricité")
+  val EauGazElec = ReportCategory("Eau / Gaz / Electricité")
+  val TelFaiMedias = ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
   val BanqueAssuranceMutuelle = ReportCategory("Banque / Assurance / Mutuelle")
   val ProduitsObjets = ReportCategory("Produits / Objets")
+  val Internet = ReportCategory("Internet (hors achats)")
   val TravauxRenovations = ReportCategory("Travaux / Rénovation")
   val VoyageLoisirs = ReportCategory("Voyage / Loisirs")
   val Immobilier = ReportCategory("Immobilier")
@@ -230,8 +232,22 @@ object ReportCategory {
 
   def fromValue(v: String) = {
     List(
-      Covid, CafeRestaurant, AchatMagasin, Service, TelEauGazElec, BanqueAssuranceMutuelle, ProduitsObjets,
-      TravauxRenovations, VoyageLoisirs, Immobilier, Sante, VoitureVehicule, Animaux, DemarchesAdministratives
+      Covid,
+      CafeRestaurant,
+      AchatMagasin,
+      Service,
+      EauGazElec,
+      TelFaiMedias,
+      BanqueAssuranceMutuelle,
+      ProduitsObjets,
+      Internet,
+      TravauxRenovations,
+      VoyageLoisirs,
+      Immobilier,
+      Sante,
+      VoitureVehicule,
+      Animaux,
+      DemarchesAdministratives,
     ).find(_.value == v).head
   }
 

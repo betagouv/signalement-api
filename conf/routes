@@ -99,6 +99,7 @@ GET           /api/companies/search-url                              controllers
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
 PUT           /api/companies/:siret/address                          controllers.CompanyController.updateCompanyAddress(siret)
+POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
 # Rating API
 POST          /api/rating                                            controllers.RatingController.rate
