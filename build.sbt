@@ -7,10 +7,11 @@ scalaVersion := "2.12.10"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
-val playSlickVersion        = "4.0.2"
+val playSlickVersion        = "5.0.0"
 val slickPgVersion          = "0.19.5"
 val playMailerVersion       = "8.0.1"
 val playSilhouetteVersion   = "6.1.1"
+val AkkaHttpVersion = "10.1.12"
 
 libraryDependencies ++= Seq(
   guice,
@@ -28,6 +29,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "2.0.2",
+  "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",
 
   "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
