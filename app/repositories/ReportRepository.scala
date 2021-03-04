@@ -14,24 +14,6 @@ import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ReportFilter(
-                         departments: Seq[String] = List(),
-                         email: Option[String] = None,
-                         websiteURL: Option[String] = None,
-                         phone: Option[String] = None,
-                         siretSiren: Option[String] = None,
-                         companyName: Option[String] = None,
-                         companyCountries: Seq[String] = List(),
-                         start: Option[LocalDate] = None,
-                         end: Option[LocalDate] = None,
-                         category: Option[String] = None,
-                         statusList: Seq[ReportStatusValue] = List(),
-                         details: Option[String] = None,
-                         employeeConsumer: Option[Boolean] = None,
-                         hasCompany: Option[Boolean] = None,
-                         tags: Seq[String] = Nil
-)
-
 @Singleton
 class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                  accessTokenRepository: AccessTokenRepository,
@@ -148,6 +130,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   private val companyTableQuery = companyRepository.companyTableQuery
 
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
+
+  private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
@@ -273,13 +257,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.phone) {
           case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
         }
-        .filterOpt(filter.siretSiren) {
-          case(table, siretSiren) => {
-            if(siretSiren.matches(SIREN.pattern)) {
-              table.companySiret.map(_.asColumnOf[String]) like s"${siretSiren}_____"
-            } else {
-              table.companySiret === SIRET(siretSiren)
-            }
+        .filterIf(filter.siretSirenList.nonEmpty) {
+          case table => {
+            table.companySiret.map(siret =>
+              (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
+                (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList.filter(_.matches(SIREN.pattern)).distinct)
+            ).getOrElse(false)
           }
         }
         .filterOpt(filter.companyName) {

@@ -8,9 +8,8 @@ import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ReportListController
 import models._
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher, JsonType}
+import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher}
 import org.specs2.mutable.Specification
-import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.contentAsJson
@@ -18,7 +17,7 @@ import play.mvc.Http.Status
 import repositories._
 import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
-import utils.{AppSpec, Fixtures}
+import utils.{AppSpec, Fixtures, SIREN}
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
@@ -38,7 +37,7 @@ class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
     s2"""
          Given an authenticated admin user                            ${step(someLoginInfo = Some(loginInfo(adminUser)))}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUserRole(UserRoles.Admin)}
+         Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUser(adminUser)}
     """
 }
 
@@ -47,25 +46,25 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec  
     s2"""
          Given an authenticated dgccrf user                           ${step(someLoginInfo = Some(loginInfo(dgccrfUser)))}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUserRole(UserRoles.DGCCRF)}
+         Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUser(dgccrfUser)}
     """
 }
 
-class GetReportsByProUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
+class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) extends GetReportsSpec  {
   override def is =
     s2"""
-         Given an authenticated pro user                              ${step(someLoginInfo = Some(loginInfo(proAdminUser)))}
-         When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then reports are rendered to the user as a Pro               ${reportsMustBeRenderedForUserRole(UserRoles.Pro)}
+         Given an authenticated pro user who access to the headOffice               ${step(someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice)))}
+         When retrieving reports                                                    ${step(someResult = Some(getReports()))}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${reportsMustBeRenderedForUser(proUserWithAccessToHeadOffice)}
     """
 }
 
-class GetReportsByAnotherProUser(implicit ee: ExecutionEnv) extends GetReportsSpec  {
+class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends GetReportsSpec  {
   override def is =
     s2"""
-         Given an authenticated pro user not concened by reports      ${step(someLoginInfo = Some(loginInfo(anotherProUser)))}
-         When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         No reports are rendered                                      ${noReportsMustBeRenderedForUserRole(UserRoles.Pro)}
+         Given an authenticated pro user who only access to the subsidiary      ${step(someLoginInfo = Some(loginInfo(proUserWithAccessToSubsidiary)))}
+         When retrieving reports                                                ${step(someResult = Some(getReports()))}
+         Then subsidiary reports are rendered to the user as a Pro              ${reportsMustBeRenderedForUser(proUserWithAccessToSubsidiary)}
     """
 }
 
@@ -75,19 +74,25 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val dgccrfUser = Fixtures.genDgccrfUser.sample.get
-  val proAdminUser = Fixtures.genProUser.sample.get
-  val anotherProUser = Fixtures.genProUser.sample.get
-  val company = Fixtures.genCompany.sample.get
-  val anotherCompany = Fixtures.genCompany.sample.get
+  val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
+  val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val reportToProcess = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
-  val reportFromEmployee = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
-  val reportNA = Fixtures.genReportForCompany(company).sample.get.copy(employeeConsumer = false, status = NA)
+  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val subsidiaryCompany = Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+
+  val headOfficeCompanyData = Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
+  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
+
+  val reportToProcessOnHeadOffice = Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+  val reportToProcessOnSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get.copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+  val reportFromEmployeeOnHeadOffice = Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
+  val reportNAOnHeadOffice = Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = NA)
 
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
@@ -96,25 +101,41 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     Await.result(for {
       _ <- userRepository.create(adminUser)
       _ <- userRepository.create(dgccrfUser)
-      admin <- userRepository.create(proAdminUser)
-      anotherAdmin <- userRepository.create(anotherProUser)
-      company <- companyRepository.getOrCreate(company.siret, company)
-      anotherCompany <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
-      _ <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
-      _ <- companyRepository.setUserLevel(anotherCompany, anotherAdmin, AccessLevel.ADMIN)
-      _ <- reportRepository.create(reportToProcess)
-      _ <- reportRepository.create(reportFromEmployee)
-      _ <- reportRepository.create(reportNA)
+      _ <- userRepository.create(proUserWithAccessToHeadOffice)
+      _ <- userRepository.create(proUserWithAccessToSubsidiary)
+
+      _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
+      _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
+
+      _ <- companyRepository.setUserLevel(headOfficeCompany, proUserWithAccessToHeadOffice, AccessLevel.MEMBER)
+      _ <- companyRepository.setUserLevel(subsidiaryCompany, proUserWithAccessToSubsidiary, AccessLevel.MEMBER)
+
+      _ <- companyDataRepository.create(headOfficeCompanyData)
+      _ <- companyDataRepository.create(subsidiaryCompanyData)
+
+      _ <- reportRepository.create(reportToProcessOnHeadOffice)
+      _ <- reportRepository.create(reportToProcessOnSubsidiary)
+      _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
+      _ <- reportRepository.create(reportNAOnHeadOffice)
     } yield Unit,
       Duration.Inf)
   }
+
+  override def cleanupData = {
+    Await.result(for {
+      _ <- companyDataRepository.delete(headOfficeCompanyData.id)
+      _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
+    } yield Unit,
+      Duration.Inf)
+  }
+
   override def configureFakeModule(): AbstractModule = {
     new FakeModule
   }
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser, dgccrfUser, proAdminUser, anotherProUser).map(
+  implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser, dgccrfUser, proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary).map(
     user => loginInfo(user) -> user
   ))
 
@@ -134,7 +155,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
         websiteURL = None,
         phone = None,
         email = None,
-        siret = None,
+        siretSirenList = Nil,
         companyName = None,
         companyCountries = None,
         start = None,
@@ -154,9 +175,9 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
   }
 
-  def reportsMustBeRenderedForUserRole(userRole: UserRole) = {
+  def reportsMustBeRenderedForUser(user: User) = {
 
-    implicit val someUserRole = Some(userRole)
+    implicit val someUserRole = Some(user.userRole)
 
     def aReport(report: Report): Matcher[String] =
       /("report") /("id") andHave(report.id.toString)
@@ -164,28 +185,28 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     def haveReports(reports: Matcher[String]*): Matcher[String] =
       /("entities").andHave(allOf(reports:_*))
 
-     userRole match {
-      case UserRoles.Admin =>
+     (user.userRole, user) match {
+      case (UserRoles.Admin, _) =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 3) and
-          haveReports(aReport(reportFromEmployee), aReport(reportToProcess))
-      case UserRoles.DGCCRF =>
+          /("totalCount" -> 4) and
+          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary), aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice))
+      case (UserRoles.DGCCRF, _) =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 3) and
-          haveReports( aReport(reportFromEmployee), aReport(reportToProcess))
-      case UserRoles.Pro =>
+          /("totalCount" -> 4) and
+          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary), aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice))
+      case (UserRoles.Pro, pro) if pro == proUserWithAccessToHeadOffice =>
+        contentAsJson(Future(someResult.get)).toString must
+          /("totalCount" -> 2) and
+          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
+          not(haveReports(aReport(reportFromEmployeeOnHeadOffice)))
+      case (UserRoles.Pro, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future(someResult.get)).toString must
           /("totalCount" -> 1) and
-          haveReports(aReport(reportToProcess)) and
-          not(haveReports(aReport(reportFromEmployee)))
+          haveReports(aReport(reportToProcessOnSubsidiary)) and
+          not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice)))
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
-  }
-
-  def noReportsMustBeRenderedForUserRole(userRole: UserRole) = {
-    implicit val someUserRole = Some(userRole)
-    someResult must beSome and contentAsJson(Future(someResult.get)) === Json.toJson(PaginatedResult[Report](0, false, List()))
   }
 
 }

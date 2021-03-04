@@ -66,7 +66,7 @@ object DraftReport {
 }
 
 case class Report(
-  id: UUID,
+  id: UUID = UUID.randomUUID(),
   category: String,
   subcategories: List[String],
   details: List[DetailInputValue],

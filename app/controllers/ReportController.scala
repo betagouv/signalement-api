@@ -7,30 +7,33 @@ import java.util.UUID
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import models._
-import orchestrators.ReportOrchestrator
+import orchestrators.{CompaniesVisibilityOrchestrator, ReportOrchestrator}
 import play.api.libs.json.{JsError, Json, Writes}
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.{ActionEvent, EventType}
-import utils.{Constants, SIRET}
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
+import utils.{Constants, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
-                                 companyRepository: CompanyRepository,
-                                 reportRepository: ReportRepository,
-                                 eventRepository: EventRepository,
-                                 s3Service: S3Service,
-                                 pdfService: PDFService,
-                                 val silhouette: Silhouette[AuthEnv],
-                                 val silhouetteAPIKey: Silhouette[APIKeyEnv],
-                                 configuration: Configuration)
-                                (implicit val executionContext: ExecutionContext) extends BaseController {
+class ReportController @Inject()(
+  reportOrchestrator: ReportOrchestrator,
+  companyRepository: CompanyRepository,
+  reportRepository: ReportRepository,
+  eventRepository: EventRepository,
+  companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
+  s3Service: S3Service,
+  pdfService: PDFService,
+  val silhouette: Silhouette[AuthEnv],
+  val silhouetteAPIKey: Silhouette[APIKeyEnv],
+  configuration: Configuration
+)
+  (implicit val executionContext: ExecutionContext) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
@@ -163,21 +166,23 @@ class ReportController @Inject()(reportOrchestrator: ReportOrchestrator,
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
-        report        <- reportRepository.getReport(id)
-        proLevel      <- getProLevel(request.identity, report)
-        updatedReport <- report
-                          .filter(_ =>
-                                  request.identity.userRole == UserRoles.DGCCRF
-                              ||  request.identity.userRole == UserRoles.Admin
-                              ||  proLevel != AccessLevel.NONE)
-                          match {
-                            case Some(r) => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))
-                            case _ => Future(None)
-                          }
-        reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
-      } yield updatedReport
-              .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
-              .getOrElse(NotFound)
+        report <- reportRepository.getReport(id)
+        viewableReport <- if (Seq(UserRoles.DGCCRF, UserRoles.Admin).contains(request.identity.userRole))
+          Future(report)
+        else {
+          companiesVisibilityOrchestrator.fetchViewableCompanies(request.identity)
+            .map(_.map(v => Some(v.siret)))
+            .map(viewableSirets => {
+              report.filter(r => viewableSirets.contains(r.companySiret))
+            })
+        }
+        viewedReport <- viewableReport.map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))).getOrElse(Future(None))
+        reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+      } yield {
+        viewedReport
+          .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+          .getOrElse(NotFound)
+      }
     }
   }
 

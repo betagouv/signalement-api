@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Singleton}
 import models.Event.stringToDetailsJsValue
 import models._
+import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.{Configuration, Logger}
@@ -22,6 +23,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class CompanyController @Inject()(
+                                val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
                                 val userRepository: UserRepository,
                                 val companyRepository: CompanyRepository,
                                 val companyDataRepository: CompanyDataRepository,
@@ -120,6 +122,17 @@ class CompanyController @Inject()(
           )
       })
     )}
+  }
+
+  def viewableCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+    companiesVisibilityOrchestrator.fetchViewableCompanies(request.identity)
+      .map(companies => companies.map(c => ViewableCompany(
+        c.siret,
+        c.codePostalEtablissement,
+        c.etatAdministratifEtablissement.contains("F")
+      )))
+      .map(x => Ok(Json.toJson(x)))
+
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) { implicit request =>
