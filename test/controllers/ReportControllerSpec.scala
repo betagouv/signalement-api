@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import models._
 import net.codingwell.scalaguice.ScalaModule
-import orchestrators.ReportOrchestrator
+import orchestrators.{CompaniesVisibilityOrchestrator, ReportOrchestrator}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -45,7 +45,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[S3Service], mock[PDFService], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration]) {
+        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[CompaniesVisibilityOrchestrator], mock[S3Service], mock[PDFService], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration]) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
