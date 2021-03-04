@@ -11,26 +11,25 @@ import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ReportController
 import models._
 import net.codingwell.scalaguice.ScalaModule
+import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.Spec
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.libs.mailer.{Attachment, AttachmentFile}
+import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
-import repositories._
+import repositories.{CompanyDataRepository, _}
 import services.MailerService
-import tasks.ReminderTaskModule
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
-import utils.{Address, EmailAddress}
-import utils.Fixtures
+import utils.{Address, EmailAddress, Fixtures}
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -186,25 +185,25 @@ trait GetReportContext extends Mockito {
   implicit val ec = ExecutionContext.global
 
   val siretForConcernedPro = Fixtures.genSiret().sample.get
+  // TODO Check why not used
+
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
-  val companyId = UUID.randomUUID
-  val neverRequestedReportUUID = UUID.randomUUID
+  val company = Fixtures.genCompanyData().sample.get
+
   val neverRequestedReport = Report(
-    neverRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
+    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
+    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
   )
 
-  val neverRequestedFinalReportUUID = UUID.randomUUID();
   val neverRequestedFinalReport = Report(
-    neverRequestedFinalReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
+    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
+    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
   )
 
-  val alreadyRequestedReportUUID = UUID.randomUUID();
   val alreadyRequestedReport = Report(
-    alreadyRequestedReportUUID, "category", List("subcategory"), List(), Some(companyId), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(siretForConcernedPro), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
+    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
+    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -222,11 +221,14 @@ trait GetReportContext extends Mockito {
   val mockEventRepository = mock[EventRepository]
   val mockCompanyRepository = mock[CompanyRepository]
   val mockMailerService = mock[MailerService]
+  val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
 
-  mockCompanyRepository.getUserLevel(companyId, concernedProUser) returns Future(AccessLevel.ADMIN)
-  mockCompanyRepository.getUserLevel(companyId, notConcernedProUser) returns Future(AccessLevel.NONE)
-  mockCompanyRepository.getUserLevel(companyId, adminUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(company.id, concernedProUser) returns Future(AccessLevel.ADMIN)
+  mockCompanyRepository.getUserLevel(company.id, notConcernedProUser) returns Future(AccessLevel.NONE)
+  mockCompanyRepository.getUserLevel(company.id, adminUser) returns Future(AccessLevel.NONE)
+
+  companiesVisibilityOrchestrator.fetchViewableCompanies(any[User]) returns Future(List(company))
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
@@ -238,8 +240,9 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
-    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(companyId), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.REPORT_READING_BY_PRO))
+    List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(company.id), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.REPORT_READING_BY_PRO))
   )
+
 
   class FakeModule extends AbstractModule with ScalaModule {
     override def configure() = {
@@ -248,6 +251,7 @@ trait GetReportContext extends Mockito {
       bind[EventRepository].toInstance(mockEventRepository)
       bind[CompanyRepository].toInstance(mockCompanyRepository)
       bind[MailerService].toInstance(mockMailerService)
+      bind[CompaniesVisibilityOrchestrator].toInstance(companiesVisibilityOrchestrator)
     }
   }
 
