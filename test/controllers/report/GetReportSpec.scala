@@ -23,7 +23,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.{CompanyDataRepository, _}
+import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
@@ -219,16 +219,13 @@ trait GetReportContext extends Mockito {
 
   val mockReportRepository = mock[ReportRepository]
   val mockEventRepository = mock[EventRepository]
-  val mockCompanyRepository = mock[CompanyRepository]
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
 
-  mockCompanyRepository.getUserLevel(company.id, concernedProUser) returns Future(AccessLevel.ADMIN)
-  mockCompanyRepository.getUserLevel(company.id, notConcernedProUser) returns Future(AccessLevel.NONE)
-  mockCompanyRepository.getUserLevel(company.id, adminUser) returns Future(AccessLevel.NONE)
-
-  companiesVisibilityOrchestrator.fetchViewableCompanies(any[User]) returns Future(List(company))
+  companiesVisibilityOrchestrator.fetchViewableCompanies(any[User]) answers { pro =>
+   Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())
+  }
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
@@ -243,13 +240,11 @@ trait GetReportContext extends Mockito {
     List(Event(Some(UUID.randomUUID()), Some(alreadyRequestedReport.id), Some(company.id), Some(concernedProUser.id), Some(OffsetDateTime.now()), EventType.PRO, ActionEvent.REPORT_READING_BY_PRO))
   )
 
-
   class FakeModule extends AbstractModule with ScalaModule {
     override def configure() = {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepository].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
-      bind[CompanyRepository].toInstance(mockCompanyRepository)
       bind[MailerService].toInstance(mockMailerService)
       bind[CompaniesVisibilityOrchestrator].toInstance(companiesVisibilityOrchestrator)
     }
