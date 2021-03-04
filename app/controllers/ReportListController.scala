@@ -8,38 +8,31 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Named, Singleton}
 import models._
-import orchestrators.ReportOrchestrator
+import orchestrators.CompaniesVisibilityOrchestrator
+import play.api.Logger
 import play.api.libs.json.{JsError, Json}
-import play.api.{Configuration, Logger}
 import repositories._
-import services.{MailerService, S3Service}
 import utils.Constants.ReportStatus._
+import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
-import utils.{DateUtils, SIRET}
+import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ReportListController @Inject()(reportRepository: ReportRepository,
-                                     companyRepository: CompanyRepository,
-                                     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
-                                     val silhouette: Silhouette[AuthEnv],
-                                     val silhouetteAPIKey: Silhouette[APIKeyEnv]
-                                    )
-                                    (implicit val executionContext: ExecutionContext) extends BaseController {
+class ReportListController @Inject()(
+  reportRepository: ReportRepository,
+  companyRepository: CompanyRepository,
+  companyDataRepository: CompanyDataRepository,
+  reportListOrchestrator: CompaniesVisibilityOrchestrator,
+  @Named("reports-extract-actor") reportsExtractActor: ActorRef,
+  val silhouette: Silhouette[AuthEnv],
+  val silhouetteAPIKey: Silhouette[APIKeyEnv])
+  (implicit val executionContext: ExecutionContext) extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
-
-  def fetchCompany(user: User, siret: Option[String]): Future[Company] = {
-    for {
-      accesses <- companyRepository.fetchCompaniesWithLevel(user)
-    } yield {
-      siret.map(s => accesses.filter(_._1.siret == SIRET(s))).getOrElse(accesses).map(_._1).head
-    }
-  }
 
   def getReports(
     offset: Option[Long],
@@ -48,7 +41,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     email: Option[String],
     websiteURL: Option[String],
     phone: Option[String],
-    siret: Option[String],
+    siretSirenList: List[String],
     companyName: Option[String],
     companyCountries: Option[String],
     start: Option[String],
@@ -76,7 +69,7 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
       email = email,
       websiteURL = websiteURL,
       phone = phone,
-      siretSiren = siret,
+      siretSirenList = siretSirenList,
       companyName = companyName,
       companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
       start = startDate,
@@ -93,15 +86,12 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
     )
 
     for {
-      company <- Some(request.identity)
-                  .filter(_.userRole == UserRoles.Pro)
-                  .map(u => fetchCompany(u, siret).map(Some(_)))
-                  .getOrElse(Future(None))
+      sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSiretSirenList(siretSirenList, request.identity)
       paginatedReports <- reportRepository.getReports(
-                            offsetNormalized,
-                            limitNormalized,
-                            company.map(c => filter.copy(siretSiren=Some(c.siret.value)))
-                                   .getOrElse(filter))
+        offsetNormalized,
+        limitNormalized,
+        filter.copy(siretSirenList = sanitizedSirenSirets)
+      )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield {
       Ok(Json.toJson(paginatedReports.copy(entities = paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil))))))
@@ -109,28 +99,25 @@ class ReportListController @Inject()(reportRepository: ReportRepository,
   }
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
-    implicit val reads = Json.reads[ReportsExtractActor.RawFilters]
-    request.body.validate[ReportsExtractActor.RawFilters].fold(
+    request.body.validate[ReportFilterBody].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       filters =>
-      for {
-        restrictToCompany <- if (request.identity.userRole == UserRoles.Pro)
-                                fetchCompany(request.identity, filters.siretSiren).map(Some(_))
-                            else
-                                Future(None)
-      } yield {
-        logger.debug(s"Requesting report for user ${request.identity.email}")
-        reportsExtractActor ? ReportsExtractActor.ExtractRequest(
-          request.identity,
-          restrictToCompany,
-          filters
-        )
-        Ok
-      }
+        for {
+          sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSiretSirenList(filters.siretSirenList, request.identity)
+        } yield {
+          logger.debug(s"Requesting report for user ${request.identity.email}")
+          reportsExtractActor ? ReportsExtractActor.ExtractRequest(
+            request.identity,
+            filters.copy(siretSirenList = sanitizedSirenSirets)
+          )
+          Ok
+        }
     )
   }
 }
 
 object ReportListObjects {
+
   case class ReportList(reportIds: List[UUID])
+
 }

@@ -13,6 +13,9 @@ jobs:
         TEST_PGUSER: signalconso
         TEST_PGHOST: localhost
         TEST_PGDATABASE: test_signalconso
+        TEST_COMPANY_PGUSER: signalconso
+        TEST_COMPANY_PGHOST: localhost
+        TEST_COMPANY_PGDATABASE: test_company
         # Customize the JVM maximum heap limit
         JVM_OPTS: -Xmx3200m
         TERM: dumb
@@ -35,7 +38,10 @@ jobs:
         # fallback to using the latest cache if no exact match is found
         - v2-dependencies--
 
-    - run: cat /dev/null | sbt test:compile
+    - run: sudo apt-get update
+    - run: sudo apt-get install postgresql-client
+    - run: whoami
+    - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "create database test_company;"
 
     - save_cache:
         paths:

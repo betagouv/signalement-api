@@ -2,22 +2,21 @@ package tasks
 
 import java.net.URI
 import java.time.temporal.ChronoUnit
-import java.time.{DayOfWeek, LocalDate, LocalDateTime, LocalTime, Period}
+import java.time._
 
-import akka.actor.ActorSystem
-import javax.inject.{Inject, Named}
-import akka.actor.ActorRef
-import akka.pattern.ask
 import actors.EmailActor
-import models.{Report, ReportCategory, Subscription}
+import akka.actor.{ActorRef, ActorSystem}
+import akka.pattern.ask
+import javax.inject.{Inject, Named}
+import models.{Report, ReportFilter, Subscription}
 import play.api.{Configuration, Logger}
-import repositories.{ReportFilter, ReportRepository, SubscriptionRepository}
+import repositories.{ReportRepository, SubscriptionRepository}
 import services.MailerService
 import utils.Constants.Departments
 import utils.{EmailAddress, EmailSubjects}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
                                        reportRepository: ReportRepository,
