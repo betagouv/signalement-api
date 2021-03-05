@@ -38,7 +38,7 @@
   <logger name="tasks" level="DEBUG" />
   <logger name="utils" level="DEBUG" />
 
-  <logger name="io.sentry.*" level="DEBUG"/>
+  <logger name="io.sentry" level="DEBUG"/>
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
