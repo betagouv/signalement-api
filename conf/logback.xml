@@ -25,7 +25,9 @@
   </appender>
 
   <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-    <minimumEventLevel>WARN</minimumEventLevel>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+    </filter>
   </appender>
 
   <logger name="play" level="INFO" />
@@ -38,7 +40,9 @@
   <logger name="tasks" level="DEBUG" />
   <logger name="utils" level="DEBUG" />
 
-  <logger name="io.sentry" level="DEBUG"/>
+  <!--
+  <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>
+  -->
 
   <root level="WARN">
     <appender-ref ref="ASYNCSTDOUT" />
