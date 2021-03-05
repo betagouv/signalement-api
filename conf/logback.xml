@@ -25,9 +25,9 @@
   </appender>
 
   <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>WARN</level>
-    </filter>
+    <options>
+      <dsn>${?SENTRY_DSN}</dsn>
+    </options>
   </appender>
 
   <logger name="play" level="INFO" />
