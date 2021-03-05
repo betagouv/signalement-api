@@ -1,6 +1,5 @@
 package utils
 
-import models.UserRoles.Pro
 import models.{UserRole, UserRoles}
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -105,9 +104,10 @@ object Constants {
 
 
     def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) = {
-      value match {
-        case Some(value) => reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value))
-        case None => reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined)
+      (value, userRole) match {
+        case (Some(value), _) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
+        case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined))
+        case (None, _) => None
       }
     }
 

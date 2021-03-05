@@ -59,6 +59,15 @@ class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) exten
     """
 }
 
+class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) extends GetReportsSpec  {
+  override def is =
+    s2"""
+         Given an authenticated pro user                                            ${step(someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice)))}
+         When retrieving reports                                                    ${step(someResult = Some(getReports(Some("badvalue"))))}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered}
+    """
+}
+
 class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends GetReportsSpec  {
   override def is =
     s2"""
@@ -93,6 +102,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
   val reportToProcessOnSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get.copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
   val reportFromEmployeeOnHeadOffice = Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
   val reportNAOnHeadOffice = Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = NA)
+  val allReports = Seq(reportToProcessOnHeadOffice, reportToProcessOnSubsidiary, reportFromEmployeeOnHeadOffice, reportNAOnHeadOffice)
 
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
@@ -146,7 +156,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     }
   }
 
-  def getReports() =  {
+  def getReports(status: Option[String] = None) =  {
     Await.result(
       app.injector.instanceOf[ReportListController].getReports(
         offset = None,
@@ -161,7 +171,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
         start = None,
         end = None,
         category = None,
-        status = None,
+        status = status,
         details = None,
         hasCompany = None,
         tags = Nil
@@ -175,38 +185,44 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv) extends Specification w
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
   }
 
+  def aReport(report: Report): Matcher[String] =
+    /("report") /("id") andHave(report.id.toString)
+
+  def haveReports(reports: Matcher[String]*): Matcher[String] =
+    /("entities").andHave(allOf(reports:_*))
+
   def reportsMustBeRenderedForUser(user: User) = {
 
     implicit val someUserRole = Some(user.userRole)
 
-    def aReport(report: Report): Matcher[String] =
-      /("report") /("id") andHave(report.id.toString)
-
-    def haveReports(reports: Matcher[String]*): Matcher[String] =
-      /("entities").andHave(allOf(reports:_*))
-
-     (user.userRole, user) match {
+    (user.userRole, user) match {
       case (UserRoles.Admin, _) =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 4) and
-          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary), aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice))
+          /("totalCount" -> allReports.length) and
+          haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRoles.DGCCRF, _) =>
         contentAsJson(Future(someResult.get)).toString must
-          /("totalCount" -> 4) and
-          haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary), aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice))
+          /("totalCount" -> allReports.length) and
+          haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRoles.Pro, pro) if pro == proUserWithAccessToHeadOffice =>
         contentAsJson(Future(someResult.get)).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
-          not(haveReports(aReport(reportFromEmployeeOnHeadOffice)))
+          not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportNAOnHeadOffice)))
       case (UserRoles.Pro, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future(someResult.get)).toString must
           /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and
-          not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice)))
+          not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportToProcessOnHeadOffice), aReport(reportNAOnHeadOffice)))
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
+  }
+
+  def noReportsMustBeRendered() = {
+    contentAsJson(Future(someResult.get)).toString must
+      /("totalCount" -> 0) and
+      not(haveReports(allReports.map(report => aReport(report)): _*))
   }
 
 }
