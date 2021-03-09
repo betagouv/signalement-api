@@ -251,11 +251,17 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.email) {
           case(table, email) => table.email === EmailAddress(email)
         }
-        .filterOpt(filter.websiteURL) {
+        .filterOpt(filter.websiteRequired.filter(identity).flatMap(_ => filter.websiteURL)) {
           case(table, websiteURL) => table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
         }
-        .filterOpt(filter.phone) {
+        .filterOpt(filter.phoneRequired.filter(identity).flatMap(_ => filter.phone)) {
           case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+        }
+        .filterOpt(filter.websiteRequired) {
+          case (table, websiteRequired) => table.websiteURL.isDefined === websiteRequired
+        }
+        .filterOpt(filter.phoneRequired) {
+          case (table, phoneRequired) => table.phone.isDefined === phoneRequired
         }
         .filterIf(filter.siretSirenList.nonEmpty) {
           case table => {
