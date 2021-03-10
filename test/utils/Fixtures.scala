@@ -37,9 +37,14 @@ object Fixtures {
     val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
     val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
 
-    val genSiret = for {
-        randInt <- Gen.choose(0, 1000000)
-    } yield SIRET("000000000" + randInt takeRight 14)
+    val genSiren = for {
+        randInt <- Gen.choose(0, 999999999)
+    } yield SIREN("" + randInt takeRight 9)
+
+    def genSiret(siren: Option[SIREN] = None) = for {
+        randInt <- Gen.choose(0, 99999)
+        sirenGen <- genSiren
+    } yield SIRET(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
 
     val genAddress = for {
         address <- arbString.arbitrary
@@ -48,10 +53,18 @@ object Fixtures {
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
-        siret <- genSiret
+        siret <- genSiret()
         address <- genAddress
     } yield Company(
         id, siret, OffsetDateTime.now(), name, address, Some("37500"), None
+    )
+
+    def genCompanyData(company: Option[Company] = None) = for {
+        id <- arbitrary[UUID]
+        siret <- genSiret()
+        denom <- arbString.arbitrary
+    } yield CompanyData(
+        id, company.map(_.siret).getOrElse(siret), SIREN(company.map(_.siret).getOrElse(siret)), None, None, None, None, None, None, None, None, None, None, None, None, None, None, Some(denom), None, "", None
     )
 
     val genWebsiteURL = for {
@@ -103,7 +116,7 @@ object Fixtures {
     def genReportCompany = for {
         name <- arbString.arbitrary
         address <- genAddress
-        siret <- genSiret
+        siret <- genSiret()
         postalCode <- Gen.choose(10000, 99999)
     } yield ReportCompany(name, address, postalCode.toString, siret, None)
 

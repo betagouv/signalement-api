@@ -1,4 +1,4 @@
-package controllers
+package controllers.company
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -7,6 +7,7 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
+import controllers.routes
 import models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher, TraversableMatchers}
@@ -24,7 +25,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Random
 
-class BaseCompanyControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers with JsonMatchers {
+class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers with JsonMatchers {
 
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
@@ -142,7 +143,7 @@ class BaseCompanyControllerSpec(implicit ee: ExecutionEnv) extends Specification
   }
 }
 
-class FetchCompaniesToActivateSpec(implicit ee: ExecutionEnv) extends BaseCompanyControllerSpec { override def is = s2"""
+class FetchCompaniesToActivateSpec(implicit ee: ExecutionEnv) extends BaseFetchCompaniesToActivateSpec { override def is = s2"""
 
 The companies to activate endpoint should
   list companies with activation document to generate $e1
@@ -173,4 +174,3 @@ The companies to activate endpoint should
     have(TraversableMatchers.exactly(companiesToActivate:_*))
 
 }
-

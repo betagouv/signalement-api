@@ -27,13 +27,19 @@ class ReportedPhoneController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+  def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     reportRepository.getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
       .map(reports => Ok(Json.toJson(
         reports
-          .groupBy(report => (report.phone, report.companySiret))
-          .collect { case ((Some(phone), siretOpt), reports) if q.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt), reports.length) }
-          .map{ case((phone, siretOpt), count) => Json.obj("phone" -> phone, "siret" -> siretOpt, "count" -> count)}
+          .groupBy(report => (report.phone, report.companySiret, report.companyName, report.category))
+          .collect { case ((Some(phone), siretOpt, companyNameOpt, category), reports) if q.map(phone.contains(_)).getOrElse(true) => ((phone, siretOpt, companyNameOpt, category), reports.length) }
+          .map{ case((phone, siretOpt, companyNameOpt, category), count) => Json.obj(
+            "phone" -> phone,
+            "siret" -> siretOpt,
+            "companyName" -> companyNameOpt,
+            "category" -> category,
+            "count" -> count
+          )}
       )))
   }
 

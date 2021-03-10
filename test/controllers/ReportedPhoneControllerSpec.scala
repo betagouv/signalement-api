@@ -31,9 +31,9 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv) extends Specifi
     Await.result(for {
       _ <- userRepository.create(adminUser)
       c <- companyRepository.getOrCreate(company.siret, company)
-      _ <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)).generateReport)
-      _ <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
-      _ <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
+      report1 <- reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)).generateReport)
+      report2 <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
+      report3 <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone), category = report2.category))
     } yield Unit,
     Duration.Inf)
   }
@@ -58,11 +58,11 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv) extends Specifi
 class FetchUnregisteredPhoneSpec(implicit ee: ExecutionEnv) extends BaseReportedPhoneControllerSpec { override def is = s2"""
 
 The fetch phone group  SIRET endpoint should
-  list reportedPhone reports count group by phone and SIRET $e1
+  list reportedPhone reports count group by phone, category and SIRET $e1
                                                     """
 
   def e1 = {
-    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchPhonesGroupBySIRET(None, None, None).toString)
+    val request = FakeRequest(GET, routes.ReportedPhoneController.fetchGrouped(None, None, None).toString)
                   .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)

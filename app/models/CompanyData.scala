@@ -2,7 +2,7 @@ package models
 
 import java.util.UUID
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Json, OFormat, Writes}
 import utils.{Address, SIREN, SIRET}
 
 case class CompanyData(
@@ -81,6 +81,16 @@ case class CompanySearchResult (
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
+}
+
+case class ViewableCompany(
+                          siret: SIRET,
+                          postalCode: Option[String],
+                          closed: Boolean
+                          )
+
+object ViewableCompany {
+  implicit val write: Writes[ViewableCompany] = Json.writes[ViewableCompany]
 }
 
 object TypeVoies {
