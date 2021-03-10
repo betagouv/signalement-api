@@ -42,12 +42,6 @@ class ReportController @Inject()(
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
   val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
-  private def getProLevel(user: User, report: Option[Report]) =
-    report
-      .filter(_.status.getValueWithUserRole(user.userRole).isDefined)
-      .flatMap(_.companyId).map(companyRepository.getUserLevel(_, user))
-      .getOrElse(Future(AccessLevel.NONE))
-
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
@@ -81,12 +75,7 @@ class ReportController @Inject()(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       reportResponse => {
         for {
-          report <- reportRepository.getReport(UUID.fromString(uuid))
-          viewableReport <- companiesVisibilityOrchestrator.fetchViewableCompanies(request.identity)
-            .map(_.map(v => Some(v.siret)))
-            .map(viewableSirets => {
-              report.filter(r => viewableSirets.contains(r.companySiret))
-            })
+          viewableReport <- getViewableReportForUser(UUID.fromString(uuid), request.identity)
           updatedReport <- viewableReport.map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
         } yield updatedReport
           .map(r => Ok(Json.toJson(r)))
@@ -169,16 +158,7 @@ class ReportController @Inject()(
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
-        report <- reportRepository.getReport(id)
-        viewableReport <- if (Seq(UserRoles.DGCCRF, UserRoles.Admin).contains(request.identity.userRole))
-          Future(report)
-        else {
-          companiesVisibilityOrchestrator.fetchViewableCompanies(request.identity)
-            .map(_.map(v => Some(v.siret)))
-            .map(viewableSirets => {
-              report.filter(r => viewableSirets.contains(r.companySiret))
-            })
-        }
+        viewableReport <- getViewableReportForUser(UUID.fromString(uuid), request.identity)
         viewedReport <- viewableReport.map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_))).getOrElse(Future(None))
         reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
       } yield {
@@ -233,11 +213,10 @@ class ReportController @Inject()(
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) => for {
-        report        <- reportRepository.getReport(id)
+        viewableReport <- getViewableReportForUser(id, request.identity)
         events        <- eventRepository.getEventsWithUsers(id, EventFilter())
-        companyEvents <- report.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
+        companyEvents <- viewableReport.map(_.companyId).flatten.map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter())).getOrElse(Future(List.empty))
         reportFiles   <- reportRepository.retrieveReportFiles(id)
-        proLevel      <- getProLevel(request.identity, report)
       } yield {
         val responseOption = events
           .map(_._1)
@@ -245,11 +224,7 @@ class ReportController @Inject()(
           .map(_.details)
           .map(_.as[ReportResponse])
 
-        report
-          .filter(_ =>
-            request.identity.userRole == UserRoles.DGCCRF
-              ||  request.identity.userRole == UserRoles.Admin
-              ||  proLevel != AccessLevel.NONE)
+        viewableReport
           .map(report =>
             pdfService.Ok(
               List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
@@ -353,6 +328,22 @@ class ReportController @Inject()(
       Ok(Json.toJson(paginatedReports))
     })
 
+  }
+
+  private def getViewableReportForUser(reportId: UUID, user: User): Future[Option[Report]] = {
+    for {
+      report <- reportRepository.getReport(reportId)
+      viewableReport <-
+        if (Seq(UserRoles.DGCCRF, UserRoles.Admin).contains(user.userRole))
+          Future(report)
+        else {
+          companiesVisibilityOrchestrator.fetchViewableCompanies(user)
+            .map(_.map(v => Some(v.siret)))
+            .map(viewableSirets => {
+              report.filter(r => viewableSirets.contains(r.companySiret))
+            })
+        }
+    } yield viewableReport
   }
 
 
