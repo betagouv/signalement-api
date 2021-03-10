@@ -82,9 +82,12 @@ class ReportController @Inject()(
       reportResponse => {
         for {
           report <- reportRepository.getReport(UUID.fromString(uuid))
-          level <-  getProLevel(request.identity, report)
-          updatedReport <- report.filter(_ => level != AccessLevel.NONE)
-            .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
+          viewableReport <- companiesVisibilityOrchestrator.fetchViewableCompanies(request.identity)
+            .map(_.map(v => Some(v.siret)))
+            .map(viewableSirets => {
+              report.filter(r => viewableSirets.contains(r.companySiret))
+            })
+          updatedReport <- viewableReport.map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_))).getOrElse(Future(None))
         } yield updatedReport
           .map(r => Ok(Json.toJson(r)))
           .getOrElse(NotFound)
