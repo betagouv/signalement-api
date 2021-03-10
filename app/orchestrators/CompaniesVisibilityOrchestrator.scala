@@ -48,12 +48,15 @@ class CompaniesVisibilityOrchestrator @Inject()(
     if (user.userRole == UserRoles.Pro) {
       val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
       fetchViewableSiretsSirens(user).map(allowed => {
-        if (siretSirenList.isEmpty)
-          allowed.toList()
-        else SiretsSirens(
+        val filteredSiretsSirens = SiretsSirens(
           sirets = formattedSiretsSirens.sirets.filter(wanted => allowed.sirens.contains(SIREN(wanted)) || allowed.sirets.contains(wanted)),
           sirens = allowed.sirens.intersect(formattedSiretsSirens.sirens),
         ).toList()
+        if (filteredSiretsSirens.isEmpty) {
+          allowed.toList()
+        } else {
+          filteredSiretsSirens
+        }
       })
     } else {
       Future(siretSirenList)
