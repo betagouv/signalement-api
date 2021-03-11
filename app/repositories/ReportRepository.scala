@@ -10,7 +10,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
-import utils.{Address, Country, EmailAddress, SIREN, SIRET, URL}
+import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -285,8 +285,8 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.hasCompany) {
           case (table, hasCompany) => table.companyId.isDefined === hasCompany
         }
-        .filterIf(filter.statusList.length > 0 && filter.statusList != ReportStatus.reportStatusList) {
-          case table => table.status.inSet(filter.statusList.map(_.defaultValue))
+        .filterOpt(filter.statusList) {
+          case (table, statusList) => table.status.inSet(statusList.map(_.defaultValue))
         }
         .filterIf(!filter.tags.isEmpty) {
           case table => table.tags @& filter.tags.toList.bind
