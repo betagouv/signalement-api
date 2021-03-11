@@ -23,8 +23,8 @@ import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus.{ReportStatusValue, SIGNALEMENT_TRANSMIS}
 import utils.Constants.{ActionEvent, ReportStatus}
-import utils.{AppSpec, EmailAddress, Fixtures}
 import utils.silhouette.auth.AuthEnv
+import utils.{AppSpec, EmailAddress, Fixtures, SIREN}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -63,6 +63,21 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
     """
 }
 
+class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+  override def is =
+    s2"""
+        Given an authenticated pro user which have rights on head office         ${step(someLoginInfo = Some(concernedHeadOfficeProLoginInfo))}
+        When post a response with type "ACCEPTED"                                ${step(someResult = Some(postReportResponse(reportResponseAccepted)))}
+        Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(ActionEvent.REPORT_PRO_RESPONSE)}
+        And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE)}
+        And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT)}
+        And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
+        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(ReportStatus.PROMESSE_ACTION)}
+        And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(reportFixture.email,"L'entreprise a répondu à votre signalement", views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString, mailerService.attachmentSeqForWorkflowStepN(4))}
+        And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(concernedHeadOfficeProUser.email,"Votre réponse au signalement", views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedHeadOfficeProUser).toString)}
+    """
+}
+
 class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
@@ -97,6 +112,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
@@ -105,15 +121,22 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val siretForConcernedPro = Fixtures.genSiret().sample.get
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
-  val companyData = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro)
+  val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro)
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(siretForConcernedPro))).sample.get)
 
-  val reportFixture = Fixtures.genReportForCompany(companyData).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
+  val companyData = Fixtures.genCompanyData(Some(company)).sample.get
+  val headOfficeCompanyData = Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
+
+  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
 
   var reviewUrl = new URI("")
   var report = reportFixture
 
   val concernedProUser = Fixtures.genProUser.sample.get
   val concernedProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedProUser.email.value)
+
+  val concernedHeadOfficeProUser = Fixtures.genProUser.sample.get
+  val concernedHeadOfficeProLoginInfo = LoginInfo(CredentialsProvider.ID, concernedHeadOfficeProUser.email.value)
 
   val notConcernedProUser = Fixtures.genProUser.sample.get
   val notConcernedProLoginInfo = LoginInfo(CredentialsProvider.ID, notConcernedProUser.email.value)
@@ -131,12 +154,21 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     reviewUrl = app.configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${reportFixture.id}/avis")
     Await.result(
       for {
-        company <- companyRepository.getOrCreate(companyData.siret, companyData)
-        admin   <- userRepository.create(concernedProUser)
-        _       <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
-        _       <- userRepository.create(notConcernedProUser)
-        _       <- reportRepository.create(reportFixture)
-        -       <- reportRepository.createFile(reportResponseFile)
+        _ <- userRepository.create(concernedProUser)
+        _ <- userRepository.create(concernedHeadOfficeProUser)
+        _ <- userRepository.create(notConcernedProUser)
+
+        _ <- companyRepository.getOrCreate(company.siret, company)
+        _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
+
+        _ <- companyRepository.setUserLevel(company, concernedProUser, AccessLevel.ADMIN)
+        _ <- companyRepository.setUserLevel(headOfficeCompany, concernedHeadOfficeProUser, AccessLevel.ADMIN)
+
+        _ <- companyDataRepository.create(companyData)
+        _ <- companyDataRepository.create(headOfficeCompanyData)
+
+        _ <- reportRepository.create(reportFixture)
+        - <- reportRepository.createFile(reportResponseFile)
       } yield Unit,
       Duration.Inf
     )
@@ -155,6 +187,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(
     concernedProLoginInfo -> concernedProUser,
+    concernedHeadOfficeProLoginInfo -> concernedHeadOfficeProUser,
     notConcernedProLoginInfo -> notConcernedProUser
   ))
 
