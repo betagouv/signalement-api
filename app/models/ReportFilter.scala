@@ -16,7 +16,7 @@ case class ReportFilter(
   start: Option[LocalDate] = None,
   end: Option[LocalDate] = None,
   category: Option[String] = None,
-  statusList: Seq[ReportStatusValue] = List(),
+  statusList: Option[Seq[ReportStatusValue]] = None,
   details: Option[String] = None,
   employeeConsumer: Option[Boolean] = None,
   hasCompany: Option[Boolean] = None,
@@ -41,7 +41,7 @@ case class ReportFilterBody(
     start: Option[LocalDate],
     end: Option[LocalDate],
     employeeConsumer: Option[Boolean],
-    statusList: Seq[ReportStatusValue]
+    statusList: Option[Seq[ReportStatusValue]]
   ): ReportFilter = {
     ReportFilter(
       departments = departments.getOrElse(Seq()),
