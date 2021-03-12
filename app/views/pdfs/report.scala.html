@@ -92,6 +92,9 @@
                             @views.html.fragments.address(address)
                         </div>
                     }
+                    @if(report.companyPostalCode.isDefined && !report.companyName.isDefined) {
+                        @report.companyPostalCode
+                    }
                     @report.companyCountry.map{country =>
                         <div>
                             @country.name
