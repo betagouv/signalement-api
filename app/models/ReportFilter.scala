@@ -10,6 +10,8 @@ case class ReportFilter(
   email: Option[String] = None,
   websiteURL: Option[String] = None,
   phone: Option[String] = None,
+  websiteExists: Option[Boolean] = None,
+  phoneExists: Option[Boolean] = None,
   siretSirenList: List[String] = List(),
   companyName: Option[String] = None,
   companyCountries: Seq[String] = List(),
