@@ -257,6 +257,12 @@ class ReportRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .filterOpt(filter.phone) {
           case(table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
         }
+        .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) {
+          case (table, websiteRequired) => table.websiteURL.isDefined === websiteRequired
+        }
+        .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) {
+          case (table, phoneRequired) => table.phone.isDefined === phoneRequired
+        }
         .filterIf(filter.siretSirenList.nonEmpty) {
           case table => {
             table.companySiret.map(siret =>
