@@ -224,26 +224,19 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
   }
 
   def genTmpFile(requestedBy: User, filters: ReportFilterBody) = {
-    val startDate = DateUtils.parseDate(filters.start)
-    val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val reportColumns = buildColumns(requestedBy)
     val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
+    val reportFilter = filters.toReportFilter(
+      employeeConsumer = requestedBy.userRole match {
+        case UserRoles.Pro => Some(false)
+        case _ => None
+      },
+      statusList = statusList
+    )
     for {
-      paginatedReports <- reportRepository.getReports(
-        offset = 0,
-        limit = 100000,
-        filter = filters.toReportFilter(
-          start = startDate,
-          end = endDate,
-          employeeConsumer = requestedBy.userRole match {
-            case UserRoles.Pro => Some(false)
-            case _ => None
-          },
-          statusList = statusList
-        )
-      )
+      paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap   <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
@@ -258,7 +251,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
                 report,
                 reportFilesMap.getOrElse(report.id, Nil),
                 reportEventsMap.getOrElse(report.id, Nil),
-                report.companyId.flatMap(companyAdminsMap.get(_)).getOrElse(Nil)
+                report.companyId.flatMap(companyAdminsMap.get).getOrElse(Nil)
               )
             ).map(StringCell(_, None, None, CellStyleInheritance.CellThenRowThenColumnThenSheet)))
           )
@@ -269,8 +262,8 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
         .withRows(
           List(
             Some(Row().withCellValues("Date de l'export", LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss"))))),
-            Some(filters.departments).filter(!_.isEmpty).map(departments => Row().withCellValues("Départment(s)", departments.mkString(","))),
-            (startDate, DateUtils.parseDate(filters.end)) match {
+            Some(filters.departments).filter(_.isDefined).map(departments => Row().withCellValues("Départment(s)", departments.mkString(","))),
+            (reportFilter.start, DateUtils.parseDate(filters.end)) match {
               case (Some(startDate), Some(endDate)) => Some(Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}"))
               case (Some(startDate), _) => Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))

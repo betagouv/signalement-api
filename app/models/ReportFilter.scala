@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import play.api.libs.json.Json
 import utils.Constants.ReportStatus.ReportStatusValue
+import utils.DateUtils
 
 case class ReportFilter(
   departments: Seq[String] = List(),
@@ -30,6 +31,8 @@ case class ReportFilterBody(
   email: Option[String],
   websiteURL: Option[String],
   phone: Option[String],
+  websiteExists: Option[Boolean] = None,
+  phoneExists: Option[Boolean] = None,
   siretSirenList: List[String] = List(),
   start: Option[String],
   end: Option[String],
@@ -40,21 +43,21 @@ case class ReportFilterBody(
   tags: List[String] = Nil
 ) {
   def toReportFilter(
-    start: Option[LocalDate],
-    end: Option[LocalDate],
     employeeConsumer: Option[Boolean],
     statusList: Option[Seq[ReportStatusValue]]
   ): ReportFilter = {
     ReportFilter(
       departments = departments.getOrElse(Seq()),
       email = email,
-      websiteURL = None,
+      websiteURL = websiteURL,
       phone = phone,
+      websiteExists = websiteExists,
+      phoneExists = phoneExists,
       siretSirenList = siretSirenList,
       companyName = None,
       companyCountries = Seq(),
-      start = start,
-      end = end,
+      start = DateUtils.parseDate(start),
+      end = DateUtils.parseDate(start),
       category = category,
       statusList = statusList,
       details = details,
