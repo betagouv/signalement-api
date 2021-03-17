@@ -72,7 +72,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
             .filter(report => subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category))
             .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret))
             .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyCountry))
-            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.map(Some(_)).exists(x => report.tags.contains(x))),
+            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.intersect(report.tags).nonEmpty),
           taskDate.minus(period)
         )
       })
