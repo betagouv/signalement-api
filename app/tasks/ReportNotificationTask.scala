@@ -11,7 +11,7 @@ import javax.inject.{Inject, Named}
 import models.{Report, ReportFilter, Subscription}
 import play.api.{Configuration, Logger}
 import repositories.{ReportRepository, SubscriptionRepository}
-import utils.Constants.Departments
+import utils.Constants.{Departments, Tags}
 import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.ExecutionContext
@@ -86,7 +86,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
-        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length),
+        subject = s"${subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ").getOrElse("")}${EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length)}",
         bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
       )
     }
