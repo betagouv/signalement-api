@@ -15,5 +15,5 @@ object EmailSubjects {
     val REPORT_TRANSMITTED_REMINDER = "Signalement en attente de réponse"
     val REPORT_CLOSED_NO_READING = "L'entreprise n'a pas souhaité consulter votre signalement"
     val REPORT_CLOSED_NO_ACTION = "L'entreprise n'a pas répondu au signalement"
-    val REPORT_NOTIF_DGCCRF = (cnt: Int) => s"[SignalConso] ${if (cnt > 1) s"${cnt} nouveaux signalements" else "Un nouveau signalement"}"
+    val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: Option[String]) => s"[SignalConso] ${additional.getOrElse("")}${if (cnt > 1) s"${cnt} nouveaux signalements" else "Un nouveau signalement"}"
 }

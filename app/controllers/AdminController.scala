@@ -144,7 +144,7 @@ class AdminController @Inject()(val configuration: Configuration,
     "report_closed_no_reading_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport.copy(tags = List(Tags.ContractualDispute))))),
     "report_closed_no_action" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport))),
     "report_closed_no_action_case_dispute" -> (() => EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport.copy(tags = List(Tags.ContractualDispute))))),
-    "report_notif_dgccrf" -> (() => EmailContent(EmailSubjects.REPORT_NOTIF_DGCCRF(1), views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))))
+    "report_notif_dgccrf" -> (() => EmailContent(EmailSubjects.REPORT_NOTIF_DGCCRF(1, None), views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))))
   )
 
   def getEmailCodes = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>

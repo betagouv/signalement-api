@@ -86,7 +86,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
-        subject = s"${subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ").getOrElse("")}${EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length)}",
+        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length, subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ")),
         bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
       )
     }
