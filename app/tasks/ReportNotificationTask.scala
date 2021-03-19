@@ -1,8 +1,8 @@
 package tasks
 
 import java.net.URI
-import java.time.temporal.ChronoUnit
 import java.time._
+import java.time.temporal.ChronoUnit
 
 import actors.EmailActor
 import akka.actor.{ActorRef, ActorSystem}
@@ -11,7 +11,6 @@ import javax.inject.{Inject, Named}
 import models.{Report, ReportFilter, Subscription}
 import play.api.{Configuration, Logger}
 import repositories.{ReportRepository, SubscriptionRepository}
-import services.MailerService
 import utils.Constants.Departments
 import utils.{EmailAddress, EmailSubjects}
 
@@ -21,7 +20,6 @@ import scala.concurrent.duration._
 class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
                                        reportRepository: ReportRepository,
                                        subscriptionRepository: SubscriptionRepository,
-                                       mailerService: MailerService,
                                        @Named("email-actor") emailActor: ActorRef,
                                        configuration: Configuration)
                                       (implicit executionContext: ExecutionContext) {
