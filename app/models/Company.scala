@@ -43,6 +43,27 @@ case class Company(
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
 
+case class CompanyCreation(
+  siret: SIRET,
+  name: String,
+  address: Address,
+  postalCode: Option[String],
+  activityCode: Option[String]
+) {
+  def toCompany(): Company = Company(
+    siret = siret,
+    name = name,
+    address = address,
+    postalCode = postalCode,
+    activityCode = activityCode,
+  )
+}
+
+object CompanyCreation {
+
+  implicit val format: OFormat[CompanyCreation] = Json.format[CompanyCreation]
+}
+
 object Company {
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
 }

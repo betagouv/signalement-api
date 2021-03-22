@@ -46,6 +46,15 @@ class CompanyController @Inject()(
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
+  def create() = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
+    request.body.validate[CompanyCreation].fold(
+      errors => Future.successful(BadRequest(JsError.toJson(errors))),
+      companyCreation => companyRepository
+        .getOrCreate(companyCreation.siret, companyCreation.toCompany())
+        .map(company => Ok(Json.toJson(company)))
+    )
+  }
+
   def searchRegisteredCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       companies <- q match {
