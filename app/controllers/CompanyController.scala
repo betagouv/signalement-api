@@ -223,11 +223,11 @@ class CompanyController @Inject()(
     )
   }
 
-  def updateCompanyAddress(siret: String) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
+  def updateCompanyAddress(id: UUID) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
     request.body.validate[CompanyAddressUpdate].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
       companyAddressUpdate => for {
-        company <- companyRepository.findBySiret(SIRET(siret))
+        company <- companyRepository.fetchCompany(id)
         updatedCompany <- company.map(c =>
           companyRepository.update(c.copy(address = companyAddressUpdate.address, postalCode = Some(companyAddressUpdate.postalCode))).map(Some(_))
         ).getOrElse(Future(None))

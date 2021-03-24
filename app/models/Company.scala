@@ -65,7 +65,13 @@ object CompanyCreation {
 }
 
 object Company {
+
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
+
+  implicit def writes(companyAccessLevel: (Company, AccessLevel)) = {
+    val companyJson = Json.toJson(companyAccessLevel._1).as[JsObject]
+    companyJson + ("level" -> Json.toJson(companyAccessLevel._2))
+  }
 }
 
 case class CompanyAddressUpdate(
