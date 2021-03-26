@@ -1,7 +1,8 @@
 package models
 
-import java.time.OffsetDateTime
+import java.time.{LocalDate, OffsetDateTime}
 import java.util.UUID
+
 import play.api.libs.json._
 import utils.{Address, SIRET}
 
@@ -57,7 +58,7 @@ object CompanyAddressUpdate {
   implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]
 }
 
-case class UndeliveredDocument(returnedDate: OffsetDateTime)
+case class UndeliveredDocument(returnedDate: LocalDate)
 
 object UndeliveredDocument {
   implicit val format: OFormat[UndeliveredDocument] = Json.format[UndeliveredDocument]
