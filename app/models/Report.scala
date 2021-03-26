@@ -101,7 +101,7 @@ case class Report(
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute
+  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
 }
 
 object Report {
