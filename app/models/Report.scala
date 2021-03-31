@@ -219,6 +219,7 @@ object ReportCategory {
   val CafeRestaurant = ReportCategory("Café / Restaurant")
   val AchatMagasin = ReportCategory("Achat / Magasin")
   val Service = ReportCategory("Services aux particuliers")
+  val TelEauGazElec = ReportCategory("Téléphonie / Eau-Gaz-Electricité")
   val EauGazElec = ReportCategory("Eau / Gaz / Electricité")
   val TelFaiMedias = ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
   val BanqueAssuranceMutuelle = ReportCategory("Banque / Assurance / Mutuelle")
@@ -238,6 +239,7 @@ object ReportCategory {
       CafeRestaurant,
       AchatMagasin,
       Service,
+      TelEauGazElec,
       EauGazElec,
       TelFaiMedias,
       BanqueAssuranceMutuelle,
