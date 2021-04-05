@@ -2,6 +2,7 @@ package models
 
 import java.time.OffsetDateTime
 import java.util.UUID
+
 import play.api.libs.json._
 import utils.{Address, SIRET}
 
@@ -68,7 +69,7 @@ object Company {
 
   implicit val companyFormat: OFormat[Company] = Json.format[Company]
 
-  implicit def writes(companyAccessLevel: (Company, AccessLevel)) = {
+  implicit def writes: Writes[(Company, AccessLevel)] = (companyAccessLevel: (Company, AccessLevel)) => {
     val companyJson = Json.toJson(companyAccessLevel._1).as[JsObject]
     companyJson + ("level" -> Json.toJson(companyAccessLevel._2))
   }
