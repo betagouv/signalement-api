@@ -64,8 +64,7 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
     )
   }
 
-  def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None
-  ) = {
+  def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] = {
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
   }
 

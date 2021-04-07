@@ -89,6 +89,7 @@ GET           /api/account/dgccrf/users                              controllers
 POST          /api/account/validate-email                            controllers.AccountController.validateEmail
 
 # Company details API
+POST          /api/companies                                         controllers.CompanyController.create
 GET           /api/companies/connected-user                          controllers.CompanyController.viewableCompanies
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
@@ -98,7 +99,7 @@ GET           /api/companies/search/:identity                        controllers
 GET           /api/companies/search-url                              controllers.CompanyController.searchCompanyByWebsite(url: String)
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
-PUT           /api/companies/:siret/address                          controllers.CompanyController.updateCompanyAddress(siret)
+PUT           /api/companies/:id/address                             controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
 # Rating API
