@@ -110,19 +110,7 @@ The myCompanies endpoint should
                   .withAuthenticator[AuthEnv](loginInfo(user))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    contentAsJson(result) must beEqualTo(
-      Json.parse(
-        s"""
-        [
-          {
-            "companySiret":"${company.siret}",
-            "companyName":"${company.name}",
-            "companyAddress":"${company.address}",
-            "level":"${level.value}"
-          }]
-        """
-      )
-    )
+    contentAsJson(result) must beEqualTo(Json.toJson(Seq((company, level))))
   }
   def checkNotConnected = {
     val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
