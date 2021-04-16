@@ -57,7 +57,7 @@ case class ReportFilterBody(
       companyName = None,
       companyCountries = Seq(),
       start = DateUtils.parseDate(start),
-      end = DateUtils.parseDate(start),
+      end = DateUtils.parseDate(end),
       category = category,
       statusList = statusList,
       details = details,

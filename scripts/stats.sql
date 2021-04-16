@@ -90,7 +90,7 @@ select count(1) "Nb signalements des 30 derniers jours",
                select * from events e where e.report_id = reports.id and e.action = 'Modification du commerçant'
            )))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprise ident par admin parmi les sign internets",
        ((count(*) filter ( where website_url is not null and company_id is null ))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprise non ident par le conso parmi les sign internets",
-       ((count(*) filter ( where website_url is not null and company_id is null and company_country is not null))::numeric / (count(*) filter ( where website_url is not null ))::numeric * 100)::numeric(5,2) "% sign entreprises de pays étrangers ident parmi sign entr non identifiées"
+       ((count(*) filter ( where website_url is not null and company_id is null and company_country is not null))::numeric / (count(*) filter ( where website_url is not null and company_id is null ))::numeric * 100)::numeric(5,2) "% sign entreprises de pays étrangers ident parmi sign entr non identifiées"
 from reports
 where creation_date >= 'now'::timestamp - '30 days'::interval;
 
