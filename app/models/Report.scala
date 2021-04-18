@@ -35,29 +35,26 @@ case class DraftReport(
 
   def generateReport: Report = {
     val report = Report(
-      UUID.randomUUID(),
-      category,
-      subcategories,
-      details,
-      None,
-      companyName,
-      companyAddress,
-      companyPostalCode,
-      companyCountry,
-      companySiret,
-      websiteURL,
-      phone,
-      OffsetDateTime.now(),
-      firstName,
-      lastName,
-      email,
-      contactAgreement,
-      employeeConsumer,
-      NA,
-      vendor,
-      tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
+      category = category,
+      subcategories = subcategories,
+      details = details,
+      companyId = None,
+      companyName = companyName,
+      companyAddress = companyAddress,
+      companyPostalCode = companyPostalCode,
+      companyCountry = companyCountry,
+      companySiret = companySiret,
+      websiteURL = websiteURL,
+      phone = phone,
+      firstName = firstName,
+      lastName = lastName,
+      email = email,
+      contactAgreement = contactAgreement,
+      employeeConsumer = employeeConsumer,
+      vendor = vendor,
+      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
     )
-    report.copy(status = report.initialStatus)
+    report.copy(status = report.initialStatus())
   }
 }
 object DraftReport {
@@ -80,20 +77,20 @@ case class Report(
   companySiret: Option[SIRET],
   websiteURL: Option[URL],
   phone: Option[String],
-  creationDate: OffsetDateTime,
+  creationDate: OffsetDateTime = OffsetDateTime.now(),
   firstName: String,
   lastName: String,
   email: EmailAddress,
   contactAgreement: Boolean,
   employeeConsumer: Boolean,
-  status: ReportStatusValue,
+  status: ReportStatusValue = NA,
   vendor: Option[String] = None,
   tags: List[String] = Nil
 ) {
 
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined && !tags.contains(Tags.DangerousProduct)) TRAITEMENT_EN_COURS
+    else if (companySiret.isDefined && !tags.exists(_.contains(Seq(Tags.ReponseConso, Tags.DangerousProduct)))) TRAITEMENT_EN_COURS
     else NA
   }
 
