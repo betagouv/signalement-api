@@ -28,6 +28,7 @@ case class DraftReport(
   email: EmailAddress,
   contactAgreement: Boolean,
   employeeConsumer: Boolean,
+  forwardToReponseConso: Boolean = false,
   fileIds: List[UUID],
   vendor: Option[String] = None,
   tags: List[String] = Nil
@@ -83,6 +84,7 @@ case class Report(
   email: EmailAddress,
   contactAgreement: Boolean,
   employeeConsumer: Boolean,
+  forwardToReponseConso: Boolean = false,
   status: ReportStatusValue = NA,
   vendor: Option[String] = None,
   tags: List[String] = Nil
@@ -99,6 +101,8 @@ case class Report(
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
   def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
+
+  def sentToEnterprise() = !employeeConsumer && !forwardToReponseConso
 }
 
 object Report {
