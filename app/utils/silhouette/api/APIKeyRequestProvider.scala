@@ -24,7 +24,7 @@ class APIKeyRequestProvider @Inject() (
         request.headers.get(configuration.get[String]("silhouette.apiKeyAuthenticator.headerName")),
         configuration.get[String]("silhouette.apiKeyAuthenticator.sharedSecret")
       ) match {
-        case (Some(headerValue), secretValue) if hasher.matches(headerValue, secretValue) => Some(LoginInfo(id, headerValue))
+        case (Some(headerValue), secretValue) if headerValue == secretValue => Some(LoginInfo(id, headerValue))
         case _ => None
       }
     )
