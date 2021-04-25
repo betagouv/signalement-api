@@ -34,7 +34,7 @@ class WebsiteController @Inject()(
 
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      websites <- websiteRepository.list
+      websites <- websiteRepository.list()
       reports <- reportRepository.getWithWebsites()
       countByHostAndCompany = reports
         .groupBy(report => (report.websiteURL.flatMap(_.getHost), report.companyId))

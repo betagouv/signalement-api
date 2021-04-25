@@ -12,7 +12,7 @@ import com.mohiva.play.silhouette.crypto.{JcaCrypter, JcaCrypterSettings}
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.util._
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
+import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import models.User
@@ -44,7 +44,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[IdentityService[APIKey]].to[ApiKeyService]
 
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator)
-    bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
+    bind[PasswordHasher].toInstance(new BCryptSha256PasswordHasher)
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
