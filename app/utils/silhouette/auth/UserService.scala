@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.services.IdentityService
 import javax.inject.Inject
 import models.User
 import repositories.UserRepository
-import utils.silhouette.Implicits._
+import utils.silhouette.SilhouetteUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,7 +14,7 @@ class UserService @Inject() (userRepository: UserRepository)
                             (implicit val executionContext: ExecutionContext)
   extends IdentityService[User] {
 
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByLogin(loginInfo)
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByLogin(SilhouetteUtils.loginInfo2key(loginInfo))
 
-  def save(user: User): Future[User] = userRepository.update(user).map( _ => user)
+  def save(user: User): Future[User] = userRepository.update(user).map(_ => user)
 }

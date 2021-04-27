@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import javax.inject.Inject
 import play.api.Logger
 import repositories.UserRepository
-import utils.silhouette.Implicits._
+import utils.silhouette.SilhouetteUtils
 import utils.EmailAddress
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,13 +22,13 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val cl
     update(loginInfo, authInfo)
 
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = {
-    userRepository.findByLogin(loginInfo).map {
-      case Some(user) => Some(user.password)
+    userRepository.findByLogin(SilhouetteUtils.loginInfo2key(loginInfo)).map {
+      case Some(user) => Some(SilhouetteUtils.pwd2passwordInfo(user.password))
       case _ => None
     }
   }
 
-  def remove(loginInfo: LoginInfo): Future[Unit] = userRepository.delete(EmailAddress(loginInfo)).map(_ => ())    // FIXME: Is it used ?
+  def remove(loginInfo: LoginInfo): Future[Unit] = userRepository.delete(EmailAddress(SilhouetteUtils.loginInfo2key(loginInfo))).map(_ => ())    // FIXME: Is it used ?
 
   def save(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     find(loginInfo).flatMap {
@@ -37,9 +37,9 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val cl
     }
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    userRepository.findByLogin(loginInfo).map {
+    userRepository.findByLogin(SilhouetteUtils.loginInfo2key(loginInfo)).map {
       case Some(user) => {
-        userRepository.update(user.copy(password = authInfo))
+        userRepository.update(user.copy(password = SilhouetteUtils.passwordInfo2pwd(authInfo)))
         authInfo
       }
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
