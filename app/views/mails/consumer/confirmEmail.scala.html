@@ -1,17 +1,18 @@
 @import utils.EmailAddress
 @import java.net.URI
+@import java.util.UUID
 
-@(report: Report, confirmationToken: AuthToken)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(email: EmailAddress, confirmationToken: UUID)(implicit request: Request[Any], websiteUrl: URI, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Votre mot de passe SignalConso") {
     <p>
-        Bonjour,
+        Bonjour,@@
     </p>
     <p>
         Nous avons bien enregistré votre Signalement. Avant que nous le transmettions au professionnel, vous devez valider
-        votre adresse email @report.email en cliquant sur <a href="">ce lien</a>
+        votre adresse email @email en cliquant sur <a href="@routes.AccountController.validateConsumerEmail(confirmationToken.toString).absoluteURL()(request)">ce lien</a>
         Merci de confirmer que l'email Pour valider votre signalement et l'envoyer au professionnel, me
-        Pour choisir un nouveau de passe d'accès à SignalConso veuillez cliquer sur le lien suivant : @routes.AccountController.resolve(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
+        Pour choisir un nouveau de passe d'accès à SignalConso veuillez cliquer sur le lien suivant :
     </p>
     <p>
         ATTENTION : Ce lien n'est valable que 24 heures après l'envoi de cet e-mail et à condition que vous n'ayez pas effectué une nouvelle demande de réinitialisation de mot de passe.

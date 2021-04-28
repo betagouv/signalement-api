@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentData
 import play.api.{Configuration, Environment, Logger}
 import repositories._
-import services.{MailerService, PDFService, S3Service}
+import services.{MailService, MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
@@ -31,9 +31,9 @@ class ReportOrchestrator @Inject()(
   accessTokenRepository: AccessTokenRepository,
   eventRepository: EventRepository,
   websiteRepository: WebsiteRepository,
-  emailValidationRepository: EmailValidationRepository,
   mailerService: MailerService,
   pdfService: PDFService,
+  emailValidationOrchestrator: EmailValidationOrchestrator,
   @Named("email-actor") emailActor: ActorRef,
   @Named("upload-actor") uploadActor: ActorRef,
   s3Service: S3Service,
@@ -41,13 +41,13 @@ class ReportOrchestrator @Inject()(
   environment: Environment)
   (implicit val executionContext: ExecutionContext) {
 
-  val logger = Logger(this.getClass)
-  val bucketName = configuration.get[String]("play.buckets.report")
-  val mailFrom = configuration.get[EmailAddress]("play.mail.from")
+  val logger        = Logger(this.getClass)
+  val bucketName    = configuration.get[String]("play.buckets.report")
+  val mailFrom      = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
+  implicit val websiteUrl                 = configuration.get[URI]("play.website.url")
 
   private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
@@ -97,7 +97,7 @@ class ReportOrchestrator @Inject()(
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
     } yield websiteRepository.create(Website(host = host, companyId = company.id))
-    creationOpt  match {
+    creationOpt match {
       case Some(f) => f.map(Some(_))
       case None => Future(None)
     }
@@ -120,11 +120,7 @@ class ReportOrchestrator @Inject()(
       _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-      emailValid <- emailValidationRepository.isValidated(report.email)
-      _ <- emailValid match {
-        case true => Future(None)
-        case false =>
-      }
+      _ <- emailValidationOrchestrator.sendEmailConfirmationIfNeeded(report.email)
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get)
       else Future(report)

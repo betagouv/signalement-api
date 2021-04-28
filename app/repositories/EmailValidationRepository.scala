@@ -25,7 +25,7 @@ class EmailValidationRepository @Inject()(
   import PostgresProfile.api._
   import dbConfig._
 
-  class EmailValidationTable(tag: Tag) extends Table[EmailValidation](tag, "email") {
+  class EmailValidationTable(tag: Tag) extends Table[EmailValidation](tag, "emails_validation") {
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
     def email = column[EmailAddress]("email")
@@ -55,14 +55,10 @@ class EmailValidationRepository @Inject()(
     db.run(emailTableQuery.filter(_.email === email).result.headOption).map(_.isDefined)
   }
 
-  def create(newEmailValidation: EmailValidationCreate) =
-    exists(newEmailValidation.email).map {
-      case true => Future.successful(None)
-      case false => {
-        val entity = newEmailValidation.toEntity()
-        db.run(emailTableQuery += entity).map(_ => entity)
-      }
-    }
+  def create(newEmailValidation: EmailValidationCreate): Future[EmailValidation] = {
+    val entity = newEmailValidation.toEntity()
+    db.run(emailTableQuery += entity).map(_ => entity)
+  }
 
   def list(): Future[List[EmailValidation]] = {
     db.run(emailTableQuery.to[List].result)
