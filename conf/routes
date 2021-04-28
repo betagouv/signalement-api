@@ -87,7 +87,7 @@ POST          /api/account/dgccrf/invitation                         controllers
 GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF
 GET           /api/account/dgccrf/users                              controllers.AccountController.fetchDGCCRFUsers
 POST          /api/account/validate-email                            controllers.AccountController.validateEmail
-GET           /api/account/validate-email/consumer                   controllers.AccountController.validateConsumerEmail
+GET           /api/account/validate-email/consumer/:token            controllers.AccountController.validateConsumerEmail(token: String)
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create

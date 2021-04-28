@@ -4,8 +4,8 @@ import java.net.URI
 import java.util.UUID
 
 import cats.data.OptionT
-import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import javax.inject.{Inject, Singleton}
 import models._
@@ -13,25 +13,21 @@ import orchestrators._
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
 import repositories._
-import utils.Constants.{ActionEvent, ReportStatus}
+import utils.{EmailAddress, FrontEndRoute}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.EmailAddress
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.json.JsonValidationError
 
 @Singleton
 class AccountController @Inject()(
   val silhouette: Silhouette[AuthEnv],
   userRepository: UserRepository,
-  companyRepository: CompanyRepository,
   accessTokenRepository: AccessTokenRepository,
   accessesOrchestrator: AccessesOrchestrator,
   emailValidationRepository: EmailValidationRepository,
-  reportRepository: ReportRepository,
-  eventRepository: EventRepository,
   credentialsProvider: CredentialsProvider,
-  configuration: Configuration
+  configuration: Configuration,
+  frontEndRoutes: FrontEndRoute,
 )(implicit ec: ExecutionContext)
   extends BaseController {
 
@@ -137,13 +133,13 @@ class AccountController @Inject()(
     )
   }
 
-  def validateConsumerEmail(token: String) = UnsecuredAction.async(parse.json) { implicit request =>
+  def validateConsumerEmail(token: String) = UnsecuredAction.async { implicit request =>
     (for {
       emailValidation <- OptionT(emailValidationRepository.find(UUID.fromString(token)))
       _ <- OptionT(emailValidationRepository.validate(emailValidation.email))
     } yield emailValidation.email).value.map {
       case None => NotFound
-      case Some(value) => Redirect()
+      case Some(email) => Redirect(frontEndRoutes.emailConfirmed(email.value))
     }
   }
 }

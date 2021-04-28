@@ -21,7 +21,7 @@ object EmailValidation {
 
 case class EmailValidationCreate(
   email: EmailAddress,
-  lastValidationDate: Option[OffsetDateTime],
+  lastValidationDate: Option[OffsetDateTime] = None,
 ) {
   def toEntity(): EmailValidation = {
     EmailValidation(
