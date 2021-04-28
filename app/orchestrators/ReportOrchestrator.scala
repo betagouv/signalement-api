@@ -25,11 +25,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
+class ReportOrchestrator @Inject()(
+  reportRepository: ReportRepository,
   companyRepository: CompanyRepository,
   accessTokenRepository: AccessTokenRepository,
   eventRepository: EventRepository,
   websiteRepository: WebsiteRepository,
+  emailValidationRepository: EmailValidationRepository,
   mailerService: MailerService,
   pdfService: PDFService,
   @Named("email-actor") emailActor: ActorRef,
@@ -118,6 +120,11 @@ class ReportOrchestrator @Inject()(reportRepository: ReportRepository,
       _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
+      emailValid <- emailValidationRepository.isValidated(report.email)
+      _ <- emailValid match {
+        case true => Future(None)
+        case false =>
+      }
       files <- reportRepository.retrieveReportFiles(report.id)
       report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get)
       else Future(report)
