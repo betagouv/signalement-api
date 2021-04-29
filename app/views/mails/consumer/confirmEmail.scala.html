@@ -6,16 +6,11 @@
 
 @views.html.mails.layout("Votre mot de passe SignalConso") {
     <p>
-        Bonjour,@@
+        Bonjour,
     </p>
     <p>
-        Nous avons bien enregistré votre Signalement. Avant que nous le transmettions au professionnel, vous devez valider
+        Nous avons bien enregistré votre Signalement. Avant qu'il soit transmis au professionnel, vous devez valider
         votre adresse email @email en cliquant sur <a href="@routes.AccountController.validateConsumerEmail(confirmationToken.toString).absoluteURL()(request)">ce lien</a>
-        Merci de confirmer que l'email Pour valider votre signalement et l'envoyer au professionnel, me
-        Pour choisir un nouveau de passe d'accès à SignalConso veuillez cliquer sur le lien suivant :
-    </p>
-    <p>
-        ATTENTION : Ce lien n'est valable que 24 heures après l'envoi de cet e-mail et à condition que vous n'ayez pas effectué une nouvelle demande de réinitialisation de mot de passe.
     </p>
 
     <p>
@@ -23,9 +18,8 @@
     </p>
 
     <hr />
-        Cet e-mail vous a été envoyé suite à une demande de modification de mot de passe du compte associé à cette adresse e-mail sur le site @websiteUrl
+        Cet e-mail vous a été envoyé suite du dépot d'un signalement avec cette cette adresse e-mail sur le site @websiteUrl
     <ul>
-        <li>Si ce compte ne vous appartient plus, merci de <a href="mailto:@contactAddress">nous contacter</a></li>
         <li>Si vous n'avez pas effectué cette demande, merci de ne pas tenir compte de cet e-mail.</li>
     </ul>
 }
