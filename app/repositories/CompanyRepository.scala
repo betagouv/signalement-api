@@ -128,9 +128,9 @@ class CompanyRepository @Inject()(
     ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
   }
 
-  def fetchAdmins(company: Company): Future[List[User]] =
+  def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
-      .filter(_._1.companyId === company.id)
+      .filter(_._1.companyId === companyId)
       .filter(_._1.level === AccessLevel.ADMIN)
       .map(_._2)
       .to[List]

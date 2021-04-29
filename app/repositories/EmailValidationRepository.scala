@@ -60,8 +60,8 @@ class EmailValidationRepository @Inject()(
     db.run(emailTableQuery += entity).map(_ => entity)
   }
 
-  def list(): Future[List[EmailValidation]] = {
-    db.run(emailTableQuery.to[List].result)
+  def list(): Future[Seq[EmailValidation]] = {
+    db.run(emailTableQuery.result)
   }
 
   def isValidated(email: EmailAddress): Future[Boolean] = {

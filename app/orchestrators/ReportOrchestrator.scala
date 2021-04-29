@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentData
 import play.api.{Configuration, Environment, Logger}
 import repositories._
-import services.{MailService, MailerService, PDFService, S3Service}
+import services.{MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, EventType}
@@ -49,20 +49,20 @@ class ReportOrchestrator @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl                 = configuration.get[URI]("play.website.url")
 
-  private def genActivationToken(company: Company, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
+  private def genActivationToken(companyId: UUID, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
-      existingToken <- accessTokenRepository.fetchActivationToken(company)
+      existingToken <- accessTokenRepository.fetchActivationToken(companyId)
       _ <- existingToken.map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration)).getOrElse(Future(None))
       token <- existingToken.map(Future(_)).getOrElse(
         accessTokenRepository.createToken(
           TokenKind.COMPANY_INIT, f"${Random.nextInt(1000000)}%06d", tokenDuration,
-          Some(company), Some(AccessLevel.ADMIN)
+          Some(companyId), Some(AccessLevel.ADMIN)
         )
       )
     } yield token.token
 
-  private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] = {
-    companyRepository.fetchAdmins(company).flatMap(admins => {
+  private def notifyProfessionalOfNewReport(report: Report, reportCompanyId: UUID): Future[Report] = {
+    companyRepository.fetchAdmins(reportCompanyId).flatMap(admins => {
       if (admins.nonEmpty) {
         emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
@@ -75,7 +75,7 @@ class ReportOrchestrator @Inject()(
           Event(
             Some(UUID.randomUUID()),
             Some(report.id),
-            Some(company.id),
+            Some(reportCompanyId),
             Some(user.id),
             Some(OffsetDateTime.now()),
             Constants.EventType.PRO,
@@ -86,7 +86,7 @@ class ReportOrchestrator @Inject()(
           reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS))
         )
       } else {
-        genActivationToken(company, tokenDuration).map(_ => report)
+        genActivationToken(reportCompanyId, tokenDuration).map(_ => report)
       }
     })
   }
@@ -101,6 +101,16 @@ class ReportOrchestrator @Inject()(
       case Some(f) => f.map(Some(_))
       case None => Future(None)
     }
+  }
+
+  def handleConsumerEmailValidation(reporterEmail: EmailAddress): Future[Seq[Report]] = {
+    reportRepository.findByEmail(reporterEmail).flatMap(reports => {
+      println("reports.lenght" + reports.length)
+      val reportsF = reports.filter(_.companyId.isDefined).map(report =>
+        notifyProfessionalOfNewReport(report, report.companyId.get)
+      )
+      Future.sequence(reportsF)
+    })
   }
 
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
@@ -120,9 +130,9 @@ class ReportOrchestrator @Inject()(
       _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
       report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-      _ <- emailValidationOrchestrator.sendEmailConfirmationIfNeeded(report.email)
+      isEmailValid <- emailValidationOrchestrator.sendEmailConfirmationIfNeeded(report.email)
       files <- reportRepository.retrieveReportFiles(report.id)
-      report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get)
+      report <- if (isEmailValid && report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get.id)
       else Future(report)
       event <- eventRepository.createEvent(
         Event(
@@ -141,7 +151,7 @@ class ReportOrchestrator @Inject()(
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_ACK,
         bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment) ++
+        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
           Seq(
             AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
           ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
@@ -186,7 +196,7 @@ class ReportOrchestrator @Inject()(
         .filter(_.status == TRAITEMENT_EN_COURS)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
+        .map(r => notifyProfessionalOfNewReport(r, company.id).map(Some(_)))
         .getOrElse(Future(reportWithNewStatus))
       _ <- existingReport match {
         case Some(report) => eventRepository.createEvent(

@@ -28,6 +28,7 @@ class AccountController @Inject()(
   credentialsProvider: CredentialsProvider,
   configuration: Configuration,
   frontEndRoutes: FrontEndRoute,
+  reportOrchestrator: ReportOrchestrator,
 )(implicit ec: ExecutionContext)
   extends BaseController {
 
@@ -121,8 +122,10 @@ class AccountController @Inject()(
       token =>
         for {
           accessToken <- accessTokenRepository.findToken(token)
-          oUser <- accessToken.filter(_.kind == TokenKind.VALIDATE_EMAIL)
-            .map(accessesOrchestrator.validateEmail(_)).getOrElse(Future(None))
+          oUser <- accessToken
+            .filter(_.kind == TokenKind.VALIDATE_EMAIL)
+            .map(accessesOrchestrator.validateEmail)
+            .getOrElse(Future(None))
           authToken <- oUser.map(user =>
             silhouette.env.authenticatorService.create(LoginInfo(CredentialsProvider.ID, user.email.toString)).flatMap { authenticator =>
               silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -137,8 +140,9 @@ class AccountController @Inject()(
     (for {
       emailValidation <- OptionT(emailValidationRepository.find(UUID.fromString(token)))
       _ <- OptionT(emailValidationRepository.validate(emailValidation.email))
+      _ <- OptionT.liftF(reportOrchestrator.handleConsumerEmailValidation(emailValidation.email))
     } yield emailValidation.email).value.map {
-      case None => NotFound
+      case None => Redirect(frontEndRoutes.emailConfirmed())
       case Some(email) => Redirect(frontEndRoutes.emailConfirmed(email.value))
     }
   }
