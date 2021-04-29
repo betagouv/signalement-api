@@ -51,7 +51,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
     Await.result(for {
       _ <- userRepository.create(proUser)
       _ <- companyRepository.getOrCreate(company.siret, company)
-      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company), Some(AccessLevel.ADMIN), None)
+      _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
     } yield Unit,
     Duration.Inf)
   }
@@ -102,8 +102,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val otherCompany = Fixtures.genCompany.sample.get
         val otherToken = Await.result(for {
           _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
-          _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "000000", None, Some(company), Some(AccessLevel.ADMIN), Some(newUser.email))
-          token <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "whatever", None, Some(otherCompany), Some(AccessLevel.ADMIN), Some(newUser.email))
+          _ <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "000000", None, Some(company.id), Some(AccessLevel.ADMIN), Some(newUser.email))
+          token <- accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "whatever", None, Some(otherCompany.id), Some(AccessLevel.ADMIN), Some(newUser.email))
         } yield token,
         Duration.Inf)
         val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
@@ -121,8 +121,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv) extends Specification wit
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        companyRepository.fetchAdmins(company).map(_.length) must beEqualTo(1).await
-        companyRepository.fetchAdmins(otherCompany).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(company.id).map(_.length) must beEqualTo(1).await
+        companyRepository.fetchAdmins(otherCompany.id).map(_.length) must beEqualTo(1).await
       }
 
       "send an invalid DGCCRF invitation" in {
