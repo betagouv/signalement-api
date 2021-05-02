@@ -26,6 +26,14 @@ class EmailValidationOrchestrator @Inject()(
     }
   }
 
+  def isEmailValid(email: EmailAddress): Future[Boolean] = {
+    for {
+      emailValidation <- emailValidationRepository.findByEmail(email)
+    } yield {
+      emailValidation.exists(_.lastValidationDate.isDefined)
+    }
+  }
+
   def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] = {
     for {
       emailValidation <- findOrCreate(email)

@@ -105,7 +105,6 @@ class ReportOrchestrator @Inject()(
 
   def handleConsumerEmailValidation(reporterEmail: EmailAddress): Future[Seq[Report]] = {
     reportRepository.findByEmail(reporterEmail).flatMap(reports => {
-      println("reports.lenght" + reports.length)
       val reportsF = reports.filter(_.companyId.isDefined).map(report =>
         notifyProfessionalOfNewReport(report, report.companyId.get)
       )
@@ -113,51 +112,53 @@ class ReportOrchestrator @Inject()(
     })
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Report] = {
-    for {
-      companyOpt <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
-        siret,
-        Company(
-          UUID.randomUUID(),
+  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Option[Report]] = {
+    emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
+      case true => for {
+        companyOpt <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
           siret,
-          OffsetDateTime.now,
-          draftReport.companyName.get,
-          draftReport.companyAddress.get,
-          draftReport.companyPostalCode,
-          draftReport.companyActivityCode
+          Company(
+            UUID.randomUUID(),
+            siret,
+            OffsetDateTime.now,
+            draftReport.companyName.get,
+            draftReport.companyAddress.get,
+            draftReport.companyPostalCode,
+            draftReport.companyActivityCode
+          )
+        ).map(Some(_))).getOrElse(Future(None))
+        _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
+        report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
+        _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
+        files <- reportRepository.retrieveReportFiles(report.id)
+        report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get.id)
+        else Future(report)
+        event <- eventRepository.createEvent(
+          Event(
+            Some(UUID.randomUUID()),
+            Some(report.id),
+            companyOpt.map(_.id),
+            None,
+            Some(OffsetDateTime.now()),
+            Constants.EventType.CONSO,
+            Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+          )
         )
-      ).map(Some(_))).getOrElse(Future(None))
-      _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
-      report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
-      _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-      isEmailValid <- emailValidationOrchestrator.sendEmailConfirmationIfNeeded(report.email)
-      files <- reportRepository.retrieveReportFiles(report.id)
-      report <- if (isEmailValid && report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined) notifyProfessionalOfNewReport(report, companyOpt.get.id)
-      else Future(report)
-      event <- eventRepository.createEvent(
-        Event(
-          Some(UUID.randomUUID()),
-          Some(report.id),
-          companyOpt.map(_.id),
-          None,
-          Some(OffsetDateTime.now()),
-          Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+      } yield {
+        emailActor ? EmailActor.EmailRequest(
+          from = mailFrom,
+          recipients = Seq(report.email),
+          subject = EmailSubjects.REPORT_ACK,
+          bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
+          attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
+            Seq(
+              AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
+            ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
         )
-      )
-    } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_ACK,
-        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
-          Seq(
-            AttachmentData("Signalement.pdf", pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)), "application/pdf")
-          ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
-      )
-      logger.debug(s"Report ${report.id} created")
-      report
+        logger.debug(s"Report ${report.id} created")
+        Some(report)
+      }
+      case false => Future(None)
     }
   }
 

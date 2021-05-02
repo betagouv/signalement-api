@@ -2,15 +2,15 @@
 @import java.net.URI
 @import java.util.UUID
 
-@(email: EmailAddress, confirmationToken: UUID)(implicit request: Request[Any], websiteUrl: URI, contactAddress: EmailAddress)
+@(email: EmailAddress, confirmationCode: String)(implicit request: Request[Any], websiteUrl: URI, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Votre mot de passe SignalConso") {
     <p>
         Bonjour,
     </p>
     <p>
-        Nous avons bien enregistré votre Signalement. Avant qu'il soit transmis au professionnel, vous devez valider
-        votre adresse email @email en cliquant sur <a href="@routes.AccountController.validateConsumerEmail(confirmationToken.toString).absoluteURL()(request)">ce lien</a>
+        Votre code d'activation SignalConso est:
+        <b><span style="color: rgba(0, 0, 0, 54)">SC-</span>@confirmationCode</b>
     </p>
 
     <p>
@@ -18,7 +18,7 @@
     </p>
 
     <hr />
-        Cet e-mail vous a été envoyé suite du dépot d'un signalement avec cette cette adresse e-mail sur le site @websiteUrl
+    Cet e-mail vous a été envoyé suite du dépot d'un signalement avec cette cette adresse e-mail sur le site @websiteUrl
     <ul>
         <li>Si vous n'avez pas effectué cette demande, merci de ne pas tenir compte de cet e-mail.</li>
     </ul>
