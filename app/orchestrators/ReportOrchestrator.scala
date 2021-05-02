@@ -103,15 +103,6 @@ class ReportOrchestrator @Inject()(
     }
   }
 
-  def handleConsumerEmailValidation(reporterEmail: EmailAddress): Future[Seq[Report]] = {
-    reportRepository.findByEmail(reporterEmail).flatMap(reports => {
-      val reportsF = reports.filter(_.companyId.isDefined).map(report =>
-        notifyProfessionalOfNewReport(report, report.companyId.get)
-      )
-      Future.sequence(reportsF)
-    })
-  }
-
   def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Option[Report]] = {
     emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
       case true => for {

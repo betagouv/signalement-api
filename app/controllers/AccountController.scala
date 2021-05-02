@@ -1,9 +1,7 @@
 package controllers
 
 import java.net.URI
-import java.util.UUID
 
-import cats.data.OptionT
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -13,8 +11,8 @@ import orchestrators._
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
 import repositories._
-import utils.{EmailAddress, FrontEndRoute}
 import utils.silhouette.auth.{AuthEnv, WithPermission}
+import utils.{EmailAddress, FrontEndRoute}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -134,16 +132,5 @@ class AccountController @Inject()(
           ).getOrElse(Future(None))
         } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
     )
-  }
-
-  def validateConsumerEmail(token: String) = UnsecuredAction.async { implicit request =>
-    (for {
-      emailValidation <- OptionT(emailValidationRepository.find(UUID.fromString(token)))
-      _ <- OptionT(emailValidationRepository.validate(emailValidation.email))
-      _ <- OptionT.liftF(reportOrchestrator.handleConsumerEmailValidation(emailValidation.email))
-    } yield emailValidation.email).value.map {
-      case None => Redirect(frontEndRoutes.emailConfirmed())
-      case Some(email) => Redirect(frontEndRoutes.emailConfirmed(email.value))
-    }
   }
 }
