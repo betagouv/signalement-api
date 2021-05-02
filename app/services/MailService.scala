@@ -34,7 +34,7 @@ class MailService @Inject()(
       from = mailFrom,
       recipients = Seq(email.email),
       subject = EmailSubjects.NEW_REPORT,
-      bodyHtml = views.html.mails.consumer.confirmEmail(email.email, email.id).toString
+      bodyHtml = views.html.mails.consumer.confirmEmail(email.email, email.confirmationCode).toString
     )
   }
 }

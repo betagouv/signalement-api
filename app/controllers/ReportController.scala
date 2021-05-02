@@ -9,7 +9,6 @@ import javax.inject.Inject
 import models._
 import orchestrators.{CompaniesVisibilityOrchestrator, ReportOrchestrator}
 import play.api.libs.json.{JsError, Json, Writes}
-import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.{Configuration, Logger}
 import repositories._
 import services.{PDFService, S3Service}
@@ -46,7 +45,7 @@ class ReportController @Inject()(
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body.validate[DraftReport].fold(
       errors => Future.successful(BadRequest(JsError.toJson(errors))),
-      report => reportOrchestrator.newReport(report).map(report => Ok(Json.toJson(report)))
+      report => reportOrchestrator.newReport(report).map(_.map(r => Ok(Json.toJson(r))).getOrElse(Forbidden))
     )
   }
 

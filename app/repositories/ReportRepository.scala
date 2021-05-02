@@ -134,8 +134,6 @@ class ReportRepository @Inject()(
 
   private val companyTableQuery = companyRepository.companyTableQuery
 
-  private val emailTableQuery = emailValidationRepository.emailTableQuery
-
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
 
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
@@ -318,12 +316,10 @@ class ReportRepository @Inject()(
       .filterIf(filter.departments.length > 0) {
         case (report, company) => company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
       }
-      .joinLeft(emailTableQuery).on(_._1.email === _.email)
-      .filter(_._2.map(_.lastValidationDate.isDefined).getOrElse(true))
 
     for {
       reports <- query
-        .map(_._1._1)
+        .map(_._1)
         .sortBy(_.creationDate.desc)
         .drop(offset)
         .take(limit)

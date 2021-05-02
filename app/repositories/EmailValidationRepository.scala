@@ -28,9 +28,12 @@ class EmailValidationRepository @Inject()(
   class EmailValidationTable(tag: Tag) extends Table[EmailValidation](tag, "emails_validation") {
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
+    def confirmationCode = column[String]("confirmation_code")
     def email = column[EmailAddress]("email")
+    def attempts = column[Int]("attempts")
+    def lastAttempt = column[Option[OffsetDateTime]]("last_attempt")
     def lastValidationDate = column[Option[OffsetDateTime]]("last_validation_date")
-    def * = (id, creationDate, email, lastValidationDate) <> ((EmailValidation.apply _).tupled, EmailValidation.unapply)
+    def * = (id, creationDate, confirmationCode, email, attempts, lastAttempt, lastValidationDate) <> ((EmailValidation.apply _).tupled, EmailValidation.unapply)
   }
 
   val emailTableQuery = TableQuery[EmailValidationTable]
@@ -51,12 +54,16 @@ class EmailValidationRepository @Inject()(
     db.run(action)
   }
 
+  def update(email: EmailValidation): Future[Int] = {
+    db.run(emailTableQuery.filter(_.email === email.email).update(email))
+  }
+
   def exists(email: EmailAddress): Future[Boolean] = {
     db.run(emailTableQuery.filter(_.email === email).result.headOption).map(_.isDefined)
   }
 
   def create(newEmailValidation: EmailValidationCreate): Future[EmailValidation] = {
-    val entity = newEmailValidation.toEntity()
+    val entity = newEmailValidation.toEntity
     db.run(emailTableQuery += entity).map(_ => entity)
   }
 
