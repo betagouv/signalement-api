@@ -62,6 +62,17 @@
             }
             @views.html.fragments.chargeBack(report)
         }
+        case NA => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            <p>
+                Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
+            </p>
+            <p>
+                Dans tous les cas les enquêteurs de la répression des fraudes en seront informés.
+                Il est possible qu'ils vous contactent pour avoir des informations complémentaires.
+            </p>
+        }
         case _ if report.isContractualDispute && report.companyId.isDefined => {
             <p>
                 Vous avez signalé un problème individuel (litige)

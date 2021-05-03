@@ -93,7 +93,7 @@ case class Report(
 
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined) TRAITEMENT_EN_COURS
+    else if (companySiret.isDefined && !tags.contains(Tags.DangerousProduct)) TRAITEMENT_EN_COURS
     else NA
   }
 
@@ -101,7 +101,7 @@ case class Report(
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute
+  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
 }
 
 object Report {

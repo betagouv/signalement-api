@@ -19,7 +19,7 @@ import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
-import utils.Constants.{ActionEvent, Departments, ReportStatus}
+import utils.Constants.{ActionEvent, Departments, ReportStatus, Tags}
 import utils.{AppSpec, EmailAddress, Fixtures}
 import utils.silhouette.auth.AuthEnv
 
@@ -71,6 +71,17 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT)}
          And create an event "EMAIL_PRO_NEW_REPORT"                     ${eventMustHaveBeenCreatedWithAction(ActionEvent.EMAIL_PRO_NEW_REPORT)}
          And send a mail to the pro                                     ${mailMustHaveBeenSent(proUser.email,"Nouveau signalement", views.html.mails.professional.reportNotification(report).toString)}
+    """
+}
+
+object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
+  override def is =
+    s2"""
+         Given a draft report which concerns
+          a dangerous product                                           ${step(draftReport = draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(Tags.DangerousProduct)))}
+         When create the report                                         ${step(createReport())}
+         Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(ReportStatus.NA)}
+         And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
     """
 }
 
