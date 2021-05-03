@@ -1,8 +1,8 @@
 package tasks
 
 import java.net.URI
-import java.time.temporal.ChronoUnit
 import java.time._
+import java.time.temporal.ChronoUnit
 
 import actors.EmailActor
 import akka.actor.{ActorRef, ActorSystem}
@@ -11,8 +11,7 @@ import javax.inject.{Inject, Named}
 import models.{Report, ReportFilter, Subscription}
 import play.api.{Configuration, Logger}
 import repositories.{ReportRepository, SubscriptionRepository}
-import services.MailerService
-import utils.Constants.Departments
+import utils.Constants.{Departments, Tags}
 import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.ExecutionContext
@@ -21,7 +20,6 @@ import scala.concurrent.duration._
 class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
                                        reportRepository: ReportRepository,
                                        subscriptionRepository: SubscriptionRepository,
-                                       mailerService: MailerService,
                                        @Named("email-actor") emailActor: ActorRef,
                                        configuration: Configuration)
                                       (implicit executionContext: ExecutionContext) {
@@ -72,7 +70,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
             .filter(report => subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category))
             .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret))
             .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyCountry))
-            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.map(Some(_)).exists(x => report.tags.contains(x))),
+            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.intersect(report.tags).nonEmpty),
           taskDate.minus(period)
         )
       })
@@ -88,7 +86,7 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
-        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length),
+        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length, subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ")),
         bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
       )
     }
