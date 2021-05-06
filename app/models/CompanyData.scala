@@ -6,7 +6,7 @@ import play.api.libs.json.{Json, OFormat, Writes}
 import utils.{Address, SIREN, SIRET}
 
 case class CompanyData(
-  id: UUID,
+  id: UUID = UUID.randomUUID(),
   siret: SIRET,
   siren: SIREN,
   dateDernierTraitementEtablissement: Option[String],
