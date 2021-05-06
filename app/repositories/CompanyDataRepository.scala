@@ -2,6 +2,7 @@ package repositories
 
 import java.util.UUID
 
+import actors.CSVStockFilesColumns
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
@@ -56,7 +57,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def * = (code, libelle) <> (CompanyActivity.tupled, CompanyActivity.unapply)
   }
 
-  val companyDataTableQuery = TableQuery[CompanyDataTable]
+  val companyDataTableQuery     = TableQuery[CompanyDataTable]
   val companyActivityTableQuery = TableQuery[CompanyActivityTable]
 
   private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
@@ -65,9 +66,33 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     row.etatAdministratifEtablissement.getOrElse("A") =!= "F"
   }
 
+  def insertAll(companies: Seq[Map[String, Option[String]]]): Future[Seq[Int]] = {
+    db.run(DBIO.sequence(companies.map(company => {
+      def getCompanyToSqlValue(key: String) = company.get(key).flatten.map(x => s"'$x'").getOrElse("NULL")
+      val columns         = company.keys.toSeq.mkString(",")
+      val values          = company.values.toSeq.map(_.map(x => s"'$x'").getOrElse("NULL")).mkString(",")
+      val conflictUpdates = company.keys.filter(!_.contains("denominationusuelleetablissement")).map(x => s"$x = ${getCompanyToSqlValue(x)}").mkString(",")
+
+      sqlu"""INSERT INTO etablissements (#$columns)
+        VALUES (#$values)
+        ON CONFLICT(siret) DO UPDATE SET #$conflictUpdates,
+        denominationusuelleetablissement=COALESCE(NULLIF(#${getCompanyToSqlValue("denominationusuelleetablissement")}, ''), etablissements.denominationusuelleetablissement)
+      """
+    })
+    ).transactionally)
+  }
+
+  def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
+    db.run(DBIO.sequence(
+      names.map(x => {
+        sqlu"UPDATE etablissements SET denominationusuelleetablissement = ${x._2} WHERE siren = ${x._1.value} AND (denominationusuelleetablissement = '') IS NOT FALSE;"
+      })
+    ).transactionally)
+  }
+
   def create(companyData: CompanyData): Future[CompanyData] = db
-      .run(companyDataTableQuery += companyData)
-      .map(_ => companyData)
+    .run(companyDataTableQuery += companyData)
+    .map(_ => companyData)
 
   def delete(id: UUID): Future[Int] = db.run {
     companyDataTableQuery
