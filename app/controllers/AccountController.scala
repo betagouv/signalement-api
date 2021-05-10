@@ -11,8 +11,8 @@ import orchestrators._
 import play.api._
 import play.api.libs.json.{JsError, JsPath, Json}
 import repositories._
+import utils.EmailAddress
 import utils.silhouette.auth.{AuthEnv, WithPermission}
-import utils.{EmailAddress, FrontEndRoute}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,11 +22,8 @@ class AccountController @Inject()(
   userRepository: UserRepository,
   accessTokenRepository: AccessTokenRepository,
   accessesOrchestrator: AccessesOrchestrator,
-  emailValidationRepository: EmailValidationRepository,
   credentialsProvider: CredentialsProvider,
   configuration: Configuration,
-  frontEndRoutes: FrontEndRoute,
-  reportOrchestrator: ReportOrchestrator,
 )(implicit ec: ExecutionContext)
   extends BaseController {
 

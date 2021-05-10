@@ -54,15 +54,16 @@ class EmailValidationController @Inject()(
             emailValidationRepository.validate(body.email).map(emailValidation =>
               Ok(Json.obj("valid" -> true))
             )
-//          else if (emailValidation.attempts > 10)
-//            Future(Ok(Json.obj("valid" -> false, "reason" -> "TOO_MANY_ATTEMPTS")))
+          // TODO Could be nice to handle some day
+          // else if (emailValidation.attempts > 10)
+          //   Future(Ok(Json.obj("valid" -> false, "reason" -> "TOO_MANY_ATTEMPTS")))
           else
-            emailValidationRepository.update(emailValidation.copy(
-              attempts = emailValidation.attempts + 1,
-              lastAttempt = Some(OffsetDateTime.now)
-            )).map(x =>
-              Ok(Json.obj("valid" -> false, "reason" -> "INVALID_CODE"))
-            )
+          emailValidationRepository.update(emailValidation.copy(
+            attempts = emailValidation.attempts + 1,
+            lastAttempt = Some(OffsetDateTime.now)
+          )).map(x =>
+            Ok(Json.obj("valid" -> false, "reason" -> "INVALID_CODE"))
+          )
         }).getOrElse(Future(NotFound))
       })
     )
