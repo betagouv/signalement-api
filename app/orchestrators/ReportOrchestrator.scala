@@ -15,10 +15,10 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentData
 import play.api.{Configuration, Environment, Logger}
 import repositories._
-import services.{MailerService, PDFService, S3Service}
+import services.{MailService, MailerService, PDFService, S3Service}
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
-import utils.Constants.{ActionEvent, EventType}
+import utils.Constants.{ActionEvent, EventType, Tags}
 import utils.{Constants, EmailAddress, EmailSubjects, URL}
 
 import scala.concurrent.duration._
@@ -32,7 +32,9 @@ class ReportOrchestrator @Inject()(
   eventRepository: EventRepository,
   websiteRepository: WebsiteRepository,
   mailerService: MailerService,
+  mailService: MailService,
   pdfService: PDFService,
+  subscriptionRepository: SubscriptionRepository,
   emailValidationOrchestrator: EmailValidationOrchestrator,
   @Named("email-actor") emailActor: ActorRef,
   @Named("upload-actor") uploadActor: ActorRef,
@@ -135,7 +137,15 @@ class ReportOrchestrator @Inject()(
             Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
           )
         )
+        ddEmails <- if (report.tags.contains(Tags.DangerousProduct)) {
+          report.companyPostalCode
+            .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+            .getOrElse(Future(Seq()))
+        } else Future(Seq())
       } yield {
+        if (ddEmails.nonEmpty) {
+          mailService.sendDangerousProductEmail(ddEmails, report)
+        }
         emailActor ? EmailActor.EmailRequest(
           from = mailFrom,
           recipients = Seq(report.email),

@@ -73,8 +73,8 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def get(id: UUID): Future[Option[Subscription]] = db
     .run(
       subscriptionTableQuery
-      .filter(_.id === id)
-      .result.headOption
+        .filter(_.id === id)
+        .result.headOption
     )
 
   def list(userId: UUID): Future[List[Subscription]] = db
@@ -104,5 +104,15 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
         .to[List]
         .result
     )
+
+  def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]] = {
+    db.run(subscriptionTableQuery
+      .filter(_.email.isDefined)
+      .filter(_.userId.isEmpty)
+      .filter(x => x.departments @> List(department))
+      .filter(x => x.email.map(_.asColumnOf[String]) like s"dd%")
+      .result
+    ).map(_.map(_.email.get).distinct)
+  }
 }
 
