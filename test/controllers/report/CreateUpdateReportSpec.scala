@@ -1,6 +1,7 @@
 package controllers.report
 
 import java.net.URI
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.google.inject.AbstractModule
@@ -9,6 +10,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ReportController
 import models._
+import orchestrators.EmailValidationOrchestrator
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.Configuration
@@ -24,7 +26,7 @@ import utils.{AppSpec, EmailAddress, Fixtures}
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
@@ -138,6 +140,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
 
   implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
   implicit lazy val contactAddress = app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
@@ -167,6 +170,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
       _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
       _ <- reportRepository.create(existingReport)
+      _ <- Future.sequence(
+        Seq(
+          existingReport.email,
+          draftReport.email,
+          report.email
+        ).distinct.map(email => emailValidationRepository.create(EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))))
+      )
       _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
     } yield Unit,
     Duration.Inf)
