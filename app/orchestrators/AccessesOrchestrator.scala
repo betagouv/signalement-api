@@ -160,7 +160,7 @@ class AccessesOrchestrator @Inject()(companyRepository: CompanyRepository,
       token         <- existingToken.map(Future(_)).getOrElse(
                         accessTokenRepository.createToken(
                             TokenKind.COMPANY_JOIN, randomToken, tokenDuration,
-                            Some(company), Some(level), emailedTo = Some(emailedTo)
+                            Some(company.id), Some(level), emailedTo = Some(emailedTo)
                         ))
      } yield token.token
 

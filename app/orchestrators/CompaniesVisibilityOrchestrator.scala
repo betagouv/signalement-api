@@ -2,7 +2,6 @@ package orchestrators
 
 import javax.inject.Inject
 import models.{CompanyData, User, UserRoles}
-import play.api.Environment
 import repositories._
 import utils.{SIREN, SIRET}
 
@@ -13,18 +12,16 @@ case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
 }
 
 class CompaniesVisibilityOrchestrator @Inject()(
-  reportRepository: ReportRepository,
-  companyDataRepository: CompanyDataRepository,
-  companyRepository: CompanyRepository,
-  environment: Environment
+  companyDataRepo: CompanyDataRepository,
+  companyRepo: CompanyRepository,
 )(implicit val executionContext: ExecutionContext) {
 
   def fetchViewableCompanies(pro: User): Future[List[CompanyData]] = {
     for {
-      authorizedSirets <- companyRepository.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
-      headOfficeSirets <- companyDataRepository.searchHeadOffices(authorizedSirets)
-      companiesForHeadOffices <- companyDataRepository.searchBySirens(authorizedSirets.intersect(headOfficeSirets).map(SIREN.apply), includeClosed = true)
-      companiesWithoutHeadOffice <- companyDataRepository.searchBySirets(authorizedSirets.diff(headOfficeSirets), includeClosed = true)
+      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
+      headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets)
+      companiesForHeadOffices <- companyDataRepo.searchBySirens(authorizedSirets.intersect(headOfficeSirets).map(SIREN.apply), includeClosed = true)
+      companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSirets.diff(headOfficeSirets), includeClosed = true)
     } yield {
       companiesForHeadOffices.union(companiesWithoutHeadOffice).map(_._1).distinct
     }
@@ -32,8 +29,8 @@ class CompaniesVisibilityOrchestrator @Inject()(
 
   def fetchViewableSiretsSirens(user: User): Future[SiretsSirens] = {
     for {
-      authorizedSirets <- companyRepository.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
-      authorizedHeadofficeSirens <- companyDataRepository.searchBySirets(authorizedSirets, includeClosed = true)
+      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
+      authorizedHeadofficeSirens <- companyDataRepo.searchBySirets(authorizedSirets, includeClosed = true)
         .map(companies => companies
           .map(_._1)
           .filter(_.etablissementSiege.contains("true"))
