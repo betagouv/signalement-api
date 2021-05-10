@@ -66,6 +66,10 @@ POST          /api/authenticate                                      controllers
 POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
 
+# Enterprises sync
+GET           /api/enterprises/sync                                  controllers.EnterpriseController.syncAll()
+GET           /api/enterprises/stop                                  controllers.EnterpriseController.stopAll()
+
 # Accesses API
 GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()
 GET           /api/accesses/:siret                                   controllers.CompanyAccessController.listAccesses(siret: String)
