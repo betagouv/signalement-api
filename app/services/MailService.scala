@@ -33,7 +33,7 @@ class MailService @Inject()(
     emailActor ? EmailActor.EmailRequest(
       from = mailFrom,
       recipients = Seq(email.email),
-      subject = EmailSubjects.NEW_REPORT,
+      subject = EmailSubjects.VALIDATE_EMAIL,
       bodyHtml = views.html.mails.consumer.confirmEmail(email.email, email.confirmationCode).toString
     )
   }
