@@ -6,9 +6,10 @@ import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import javax.inject.{Inject, Named}
-import models.EmailValidation
+import models.{EmailValidation, Report}
 import play.api.mvc.Request
 import play.api.{Configuration, Logger}
+import utils.Constants.Tags
 import utils.{EmailAddress, EmailSubjects}
 
 import scala.concurrent.ExecutionContext
@@ -35,6 +36,15 @@ class MailService @Inject()(
       recipients = Seq(email.email),
       subject = EmailSubjects.VALIDATE_EMAIL,
       bodyHtml = views.html.mails.consumer.confirmEmail(email.email, email.confirmationCode).toString
+    )
+  }
+
+  def sendDangerousProductEmail(emails: Seq[EmailAddress], report: Report) = {
+    emailActor ? EmailActor.EmailRequest(
+      from = mailFrom,
+      recipients = emails,
+      subject = EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] ")),
+      bodyHtml = views.html.mails.dgccrf.reportDangerousProductNotification(report).toString
     )
   }
 }
