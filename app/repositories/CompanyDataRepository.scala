@@ -2,7 +2,6 @@ package repositories
 
 import java.util.UUID
 
-import actors.CSVStockFilesColumns
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
