@@ -1,7 +1,5 @@
 # --- !Ups
 
---- Needed because of: SlickException("InsertOrUpdateAll is not supported on a table without PK.")
---- insertOrUpdateAll won't work without a primary ket set
 ALTER TABLE etablissements
     ADD CONSTRAINT etablissements_pk PRIMARY KEY (id);
 
