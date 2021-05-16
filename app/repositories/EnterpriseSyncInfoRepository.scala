@@ -46,21 +46,22 @@ class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConf
   def create(info: EnterpriseSyncInfo): Future[EnterpriseSyncInfo] = {
     db.run(EnterpriseSyncInfotableQuery += info).map(_ => info)
   }
-//
-//  def update(id: UUID, entity: EnterpriseSyncInfo): Future[EnterpriseSyncInfo] = {
-//    db.run(EnterpriseSyncInfotableQuery.filter(_.id == id).update(entity)).map(_ => entity)
-//  }
+  //
+  //  def update(id: UUID, entity: EnterpriseSyncInfo): Future[EnterpriseSyncInfo] = {
+  //    db.run(EnterpriseSyncInfotableQuery.filter(_.id == id).update(entity)).map(_ => entity)
+  //  }
 
-  def update(id: UUID, entity: EnterpriseSyncInfoUpdate): Future[Option[EnterpriseSyncInfo]] = {
-    val byId = EnterpriseSyncInfotableQuery.filter(_.id === id)
-    for {
-      infoOpt <- db.run(byId.result.headOption)
-        .map(infoOption => infoOption.map(info => info.copy(
-          linesDone = entity.linesDone.getOrElse(info.linesDone),
-          endedAt = entity.endedAt.orElse(info.endedAt),
-          errors = entity.errors.orElse(info.errors),
-        )))
-      updatedInfo <- infoOpt.map(info => db.run(byId.update(info)).map(_ => Some(info))).getOrElse(Future(None))
-    } yield updatedInfo
+  def byId(id: UUID) = EnterpriseSyncInfotableQuery.filter(_.id === id)
+
+  def updateLinesDone(id: UUID, linesDone: Double): Future[Int] = {
+    db.run(byId(id).map(x => x.linesDone).update(linesDone))
+  }
+
+  def updateEndedAt(id: UUID, endAt: OffsetDateTime = OffsetDateTime.now()): Future[Int] = {
+    db.run(byId(id).map(x => x.endedAt).update(Some(endAt)))
+  }
+
+  def updateError(id: UUID, error: String): Future[Int] = {
+    db.run(byId(id).map(x => x.errors).update(Some(error)))
   }
 }

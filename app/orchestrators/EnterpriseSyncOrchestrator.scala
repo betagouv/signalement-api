@@ -13,7 +13,6 @@ import scala.concurrent.duration._
 
 class EnterpriseSyncOrchestrator @Inject()(
   companyDataRepository: CompanyDataRepository,
-  enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
   @Named("enterprise-sync-actor") enterpriseActor: ActorRef,
 )(implicit val executionContext: ExecutionContext) {
 
@@ -40,70 +39,88 @@ class EnterpriseSyncOrchestrator @Inject()(
     }
   }
 
-  def syncStockEntreprise = {
-    enterpriseActor ? EnterpriseSyncActor.Start(
-      name = "StockEtablissement",
-      url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockEtablissement_utf8.csv",
-      //      url = s"https://files.data.gouv.fr/insee-sirene/StockEtablissement_utf8.zip",
-      approximateLinesCount = 32e6,
-      mapper = (lines: Seq[String]) => {
-        lines.map(getByColumnName(CSVStockFilesColumns.etablissement)).map(getValue => {
-          Map(
-            "siret" -> getValue("siret"),
-            "siren" -> getValue("siren"),
-            "datederniertraitementetablissement" -> getValue("datederniertraitementetablissement"),
-            "etablissementsiege" -> getValue("etablissementsiege"),
-            "complementadresseetablissement" -> getValue("complementadresseetablissement"),
-            "numerovoieetablissement" -> getValue("numerovoieetablissement"),
-            "indicerepetitionetablissement" -> getValue("indicerepetitionetablissement"),
-            "typevoieetablissement" -> getValue("typevoieetablissement"),
-            "libellevoieetablissement" -> getValue("libellevoieetablissement"),
-            "codepostaletablissement" -> getValue("codepostaletablissement"),
-            "libellecommuneetablissement" -> getValue("libellecommuneetablissement"),
-            "libellecommuneetrangeretablissement" -> getValue("libellecommuneetrangeretablissement"),
-            "distributionspecialeetablissement" -> getValue("distributionspecialeetablissement"),
-            "codecommuneetablissement" -> getValue("codecommuneetablissement"),
-            "codecedexetablissement" -> getValue("codecedexetablissement"),
-            "libellecedexetablissement" -> getValue("libellecedexetablissement"),
-            "denominationusuelleetablissement" -> getValue("denominationusuelleetablissement"),
-            "enseigne1etablissement" -> getValue("enseigne1etablissement"),
-            "activiteprincipaleetablissement" -> getValue("activiteprincipaleetablissement"),
-            "etatadministratifetablissement" -> getValue("etatadministratifetablissement"),
-          )
-        })
-      }: Seq[Map[String, Option[String]]],
-      action = companyDataRepository.insertAll,
-    )
-  }
+  private[this] val etablissementActorName = "StockEtablissement"
 
-  def stopStockEntreprise = {
-    enterpriseActor ? EnterpriseSyncActor.Stop("StockEtablissement")
-  }
+  private[this] val uniteLegaleActorName = "StockUniteLegale"
 
-  def syncStockUniteLegale = {
-    enterpriseActor ? EnterpriseSyncActor.Start(
-      name = "StockUniteLegale",
-      url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockUniteLegale_utf8.csv",
-      approximateLinesCount = 23e6,
-      mapper = (lines: Seq[String]) => {
-        lines
-          .map(getByColumnName(CSVStockFilesColumns.uniteLegale))
-          .flatMap(getValue => {
-            getValue("siren").map(siren => {
-              val enterpriseName = getValue("denominationunitelegale")
-                .orElse(getValue("denominationusuelle1unitelegale"))
-                .orElse(getValue("denominationusuelle2unitelegale"))
-                .orElse(getValue("denominationusuelle3unitelegale"))
-                .getOrElse(getValue("prenomusuelunitelegale").getOrElse("") + " " + getValue("nomusageunitelegale").orElse(getValue("nomunitelegale")).getOrElse(""))
-              (SIREN(siren), enterpriseName)
-            })
+  private[this] lazy val syncEtablissementFileActor = EnterpriseSyncActor.Start(
+    name = etablissementActorName,
+    //    url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockEtablissement_utf8.csv",
+    url = s"https://files.data.gouv.fr/insee-sirene/StockEtablissement_utf8.zip",
+    approximateLinesCount = 32e6,
+    mapper = (lines: Seq[String]) => {
+      lines.map(getByColumnName(CSVFilesColumns.etablissement)).map(getValue => {
+        Map(
+          "siret" -> getValue("siret"),
+          "siren" -> getValue("siren"),
+          "datederniertraitementetablissement" -> getValue("datederniertraitementetablissement"),
+          "etablissementsiege" -> getValue("etablissementsiege"),
+          "complementadresseetablissement" -> getValue("complementadresseetablissement"),
+          "numerovoieetablissement" -> getValue("numerovoieetablissement"),
+          "indicerepetitionetablissement" -> getValue("indicerepetitionetablissement"),
+          "typevoieetablissement" -> getValue("typevoieetablissement"),
+          "libellevoieetablissement" -> getValue("libellevoieetablissement"),
+          "codepostaletablissement" -> getValue("codepostaletablissement"),
+          "libellecommuneetablissement" -> getValue("libellecommuneetablissement"),
+          "libellecommuneetrangeretablissement" -> getValue("libellecommuneetrangeretablissement"),
+          "distributionspecialeetablissement" -> getValue("distributionspecialeetablissement"),
+          "codecommuneetablissement" -> getValue("codecommuneetablissement"),
+          "codecedexetablissement" -> getValue("codecedexetablissement"),
+          "libellecedexetablissement" -> getValue("libellecedexetablissement"),
+          "denominationusuelleetablissement" -> getValue("denominationusuelleetablissement"),
+          "enseigne1etablissement" -> getValue("enseigne1etablissement"),
+          "activiteprincipaleetablissement" -> getValue("activiteprincipaleetablissement"),
+          "etatadministratifetablissement" -> getValue("etatadministratifetablissement"),
+        )
+      })
+    }: Seq[Map[String, Option[String]]],
+    action = companyDataRepository.insertAll,
+    // TODO Don't use because cancelling the stream will tigger onEnd
+    //    onEnd = () => enterpriseActor ? syncUniteLegaleFileActor,
+  )
+
+  private[this] lazy val syncUniteLegaleFileActor = EnterpriseSyncActor.Start(
+    name = uniteLegaleActorName,
+    url = s"https://files.data.gouv.fr/insee-sirene/StockUniteLegale_utf8.zip",
+    //    url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockUniteLegale_utf8.csv",
+    approximateLinesCount = 23e6,
+    mapper = (lines: Seq[String]) => {
+      lines
+        .map(getByColumnName(CSVFilesColumns.uniteLegale))
+        .flatMap(getValue => {
+          getValue("siren").map(siren => {
+            val enterpriseName = getValue("denominationunitelegale")
+              .orElse(getValue("denominationusuelle1unitelegale"))
+              .orElse(getValue("denominationusuelle2unitelegale"))
+              .orElse(getValue("denominationusuelle3unitelegale"))
+              .getOrElse(getValue("prenomusuelunitelegale").getOrElse("") + " " + getValue("nomusageunitelegale").orElse(getValue("nomunitelegale")).getOrElse(""))
+            (SIREN(siren), enterpriseName)
           })
-      },
-      action = companyDataRepository.updateNames
-    )
+        })
+    },
+    action = companyDataRepository.updateNames
+  )
+
+
+  def startEntrepriseFile = {
+    val x = enterpriseActor ? syncEtablissementFileActor
+    x.map(z => println("RETURN TYPE ???" + z))
+    x
   }
 
-  object CSVStockFilesColumns {
+  def cancelEntrepriseFile = {
+    enterpriseActor ? EnterpriseSyncActor.Cancel(etablissementActorName)
+  }
+
+  def cancelUniteLegaleFile = {
+    enterpriseActor ? EnterpriseSyncActor.Cancel(uniteLegaleActorName)
+  }
+
+  def startUniteLegaleFile = {
+    enterpriseActor ? syncUniteLegaleFileActor
+  }
+
+  private[this] object CSVFilesColumns {
     val etablissement = Seq(
       "siren",
       "nic",

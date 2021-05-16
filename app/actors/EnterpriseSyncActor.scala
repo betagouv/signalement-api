@@ -1,8 +1,10 @@
 package actors
 
-import java.io.FileInputStream
+import java.io.{BufferedInputStream, FileInputStream}
+import java.net.URL
 import java.time.OffsetDateTime
 import java.util.UUID
+import java.util.zip.ZipInputStream
 
 import akka.actor.{Actor, Props}
 import akka.stream.ActorMaterializer
@@ -10,7 +12,7 @@ import akka.stream.scaladsl.{Framing, StreamConverters}
 import akka.util.ByteString
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
-import models.{EnterpriseSyncInfo, EnterpriseSyncInfoUpdate}
+import models.EnterpriseSyncInfo
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -28,9 +30,10 @@ object EnterpriseSyncActor {
     approximateLinesCount: Double, // TODO Should be calculated
     mapper: Seq[String] => T,
     action: T => Future[Any],
+    onEnd: () => Unit = () => {}
   ) extends Command
 
-  final case class Stop(name: String) extends Command
+  final case class Cancel(name: String) extends Command
 
 }
 
@@ -42,64 +45,85 @@ class EnterpriseSyncActorModule extends AbstractModule with AkkaGuiceSupport {
 
 final case class ProcessedFile(
   infoId: UUID,
-  stream: {def close(): Unit},
+  stream: ZipInputStream,
 )
 
 @Singleton
 class EnterpriseSyncActor @Inject()(
-  enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
+  enterpriseSyncInfoRepo: EnterpriseSyncInfoRepository,
 )(
   implicit val executionContext: ExecutionContext
 ) extends Actor {
 
   import EnterpriseSyncActor._
 
-  private[this]      val logger    = Logger(this.getClass)
-  private[this] lazy val batchSize = 1
-  implicit           val mat       = ActorMaterializer()
+  private[this] val logger = Logger(this.getClass)
+  private[this] lazy val batchSize = 10
+  implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private[this] var processedFiles: Map[String, ProcessedFile] = Map()
 
   override def receive = {
-    case Start(name, url, approximateLinesCount, mapper, action) => {
+    case Start(name, url, approximateLinesCount, mapper, action, onEnd) => {
+      cancel(name)
       val generatedInfoId = UUID.randomUUID()
-      val future          = enterpriseSyncInfoRepository.create(EnterpriseSyncInfo(
+      enterpriseSyncInfoRepo.create(EnterpriseSyncInfo(
         id = generatedInfoId,
-        fileName = url,
+        fileName = name,
         fileUrl = url,
         linesCount = approximateLinesCount,
       ))
+      val stream = streamFile(
+        url,
+        mapper,
+        action,
+        onLinesDone = (linesDone: Double) => enterpriseSyncInfoRepo.updateLinesDone(generatedInfoId, linesDone),
+        onComplete = () => enterpriseSyncInfoRepo.updateEndedAt(generatedInfoId).map(x => onEnd()),
+        onFailure = (t: Throwable) => {
+          logger.debug(s"Error occurred while importing $url" + t)
+          enterpriseSyncInfoRepo.updateError(generatedInfoId, t.toString).map(x => onEnd())
+        }
+      )
+
       processedFiles = processedFiles + (name -> ProcessedFile(
         infoId = generatedInfoId,
-        stream = streamFile(url, mapper, action, (linesDone: Double) => {
-          enterpriseSyncInfoRepository.update(generatedInfoId, EnterpriseSyncInfoUpdate(linesDone = Some(linesDone)))
-        })
+        stream = stream,
       ))
-      future
+      println("==" + generatedInfoId)
+      generatedInfoId
     }
-    case Stop(name) => {
-      processedFiles.get(name).map(processFile => {
-        processFile.stream.close()
-        enterpriseSyncInfoRepository.update(processFile.infoId, EnterpriseSyncInfoUpdate(endedAt = Some(OffsetDateTime.now)))
-        processedFiles = processedFiles - name
-      })
+    case Cancel(name) => {
+      cancel(name)
     }
   }
 
-  private[this] def streamFile[T](url: String, mapper: Seq[String] => T, action: T => Future[Any], onLinesDone: Double => Unit): {def close(): Unit} = {
-    logger.debug(s"Start dumping from ${url}")
+  private[this] def cancel(name: String) = {
+    processedFiles.get(name).map(processFile => {
+      processFile.stream.close()
+      enterpriseSyncInfoRepo.updateEndedAt(processFile.infoId, OffsetDateTime.now)
+      enterpriseSyncInfoRepo.updateError(processFile.infoId, "<CANCELLED>")
+      processedFiles = processedFiles - name
+    })
+  }
+
+  private[this] def streamFile[T](
+    url: String, mapper: Seq[String] => T,
+    action: T => Future[Any],
+    onLinesDone: Double => Unit,
+    onComplete: () => Future[_],
+    onFailure: Throwable => Future[_],
+  ): ZipInputStream = {
+    logger.debug(s"Start importing from ${url}")
     var linesDone = 0d
 
-    //      Source.fromInputStream(new FileInputStream(file.url))
-    val inputstream = new FileInputStream(url)
-    //    val inputstream = new ZipInputStream(new BufferedInputStream(new URL(url).openStream()))
-    //    Stream.continually(inputstream.getNextEntry).takeWhile(_ != null).foreach { zipFile =>
-    //      Source.fromInputStream(inputstream)
+    //    val inputstream = new FileInputStream(url)
+    val inputstream = new ZipInputStream(new BufferedInputStream(new URL(url).openStream()))
+    inputstream.getNextEntry
+
     StreamConverters.fromInputStream(() => inputstream)
       .via(Framing.delimiter(ByteString("\n"), 4096))
       .map(_.utf8String)
       .drop(1)
-      .log("error logging")
       .grouped(batchSize)
       .runForeach(lines => {
         action(mapper(lines)).map(x => {
@@ -107,6 +131,9 @@ class EnterpriseSyncActor @Inject()(
           onLinesDone(linesDone)
         })
       })
+      .map(x => onComplete())
+      .recover { case t => onFailure(t) }
+
     inputstream
   }
 }

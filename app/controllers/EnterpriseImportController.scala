@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @Singleton
-class EnterpriseController @Inject()(
+class EnterpriseImportController @Inject()(
   enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
   enterpriseSyncOrchestrator: EnterpriseSyncOrchestrator,
   val silhouette: Silhouette[AuthEnv],
@@ -21,23 +21,29 @@ class EnterpriseController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
 
 
-  def syncAll = UnsecuredAction { implicit request =>
-    enterpriseSyncOrchestrator.syncStockEntreprise.map(_ => {
-      enterpriseSyncOrchestrator.syncStockUniteLegale
-    })
+  def startEtablissementFile = UnsecuredAction { implicit request =>
+    enterpriseSyncOrchestrator.startEntrepriseFile
     Ok
   }
 
-  def stopAll = UnsecuredAction { implicit request =>
-    enterpriseSyncOrchestrator.stopStockEntreprise
+  def startUniteLegaleFile = SecuredAction { implicit request =>
+    enterpriseSyncOrchestrator.startUniteLegaleFile
     Ok
   }
 
-  def syncEtablissement = SecuredAction { implicit request =>
+  def cancelAllFiles = UnsecuredAction { implicit request =>
+    enterpriseSyncOrchestrator.cancelUniteLegaleFile
+    enterpriseSyncOrchestrator.cancelEntrepriseFile
     Ok
   }
 
-  def syncUniteLegale = SecuredAction { implicit request =>
+  def cancelEtablissementFile = SecuredAction { implicit request =>
+    enterpriseSyncOrchestrator.cancelEntrepriseFile
+    Ok
+  }
+
+  def cancelUniteLegaleFile = SecuredAction { implicit request =>
+    enterpriseSyncOrchestrator.cancelUniteLegaleFile
     Ok
   }
 
