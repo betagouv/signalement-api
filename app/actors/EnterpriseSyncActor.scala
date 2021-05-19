@@ -1,14 +1,14 @@
 package actors
 
-import java.io.{BufferedInputStream, FileInputStream}
+import java.io.BufferedInputStream
 import java.net.URL
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
 import akka.actor.{Actor, Props}
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Framing, StreamConverters}
+import akka.stream.scaladsl.{Framing, Sink, StreamConverters}
+import akka.stream.{ActorMaterializer, ThrottleMode}
 import akka.util.ByteString
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
@@ -17,6 +17,7 @@ import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object EnterpriseSyncActor {
@@ -58,7 +59,7 @@ class EnterpriseSyncActor @Inject()(
   import EnterpriseSyncActor._
 
   private[this] val logger = Logger(this.getClass)
-  private[this] lazy val batchSize = 10
+  private[this] lazy val batchSize = 5000
   implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private[this] var processedFiles: Map[String, ProcessedFile] = Map()
@@ -89,7 +90,6 @@ class EnterpriseSyncActor @Inject()(
         infoId = generatedInfoId,
         stream = stream,
       ))
-      println("==" + generatedInfoId)
       generatedInfoId
     }
     case Cancel(name) => {
@@ -98,10 +98,10 @@ class EnterpriseSyncActor @Inject()(
   }
 
   private[this] def cancel(name: String) = {
+    enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
+    enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
     processedFiles.get(name).map(processFile => {
       processFile.stream.close()
-      enterpriseSyncInfoRepo.updateEndedAt(processFile.infoId, OffsetDateTime.now)
-      enterpriseSyncInfoRepo.updateError(processFile.infoId, "<CANCELLED>")
       processedFiles = processedFiles - name
     })
   }
@@ -116,16 +116,16 @@ class EnterpriseSyncActor @Inject()(
     logger.debug(s"Start importing from ${url}")
     var linesDone = 0d
 
-    //    val inputstream = new FileInputStream(url)
     val inputstream = new ZipInputStream(new BufferedInputStream(new URL(url).openStream()))
     inputstream.getNextEntry
 
     StreamConverters.fromInputStream(() => inputstream)
+      .throttle(batchSize, 1.second, 1, ThrottleMode.Shaping)
       .via(Framing.delimiter(ByteString("\n"), 4096))
       .map(_.utf8String)
       .drop(1)
       .grouped(batchSize)
-      .runForeach(lines => {
+      .runWith(Sink.foreach[Seq[String]] { (lines: Seq[String]) =>
         action(mapper(lines)).map(x => {
           linesDone = linesDone + lines.size
           onLinesDone(linesDone)

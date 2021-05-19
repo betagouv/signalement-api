@@ -1,7 +1,7 @@
 # --- !Ups
 
 ALTER TABLE etablissements
-    ADD CONSTRAINT etablissements_pk PRIMARY KEY (id);
+    ADD CONSTRAINT etablissements_pk PRIMARY KEY (siret);
 
 CREATE TABLE IF NOT EXISTS files_sync_info
 (

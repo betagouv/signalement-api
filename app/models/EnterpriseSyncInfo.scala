@@ -3,6 +3,8 @@ package models
 import java.time.OffsetDateTime
 import java.util.UUID
 
+import play.api.libs.json.Json
+
 final case class EnterpriseSyncInfo(
   id: UUID = UUID.randomUUID(),
   fileName: String,
@@ -14,8 +16,6 @@ final case class EnterpriseSyncInfo(
   errors: Option[String] = None,
 )
 
-final case class EnterpriseSyncInfoUpdate(
-  linesDone: Option[Double] = None,
-  endedAt: Option[OffsetDateTime] = None,
-  errors: Option[String] = None,
-)
+object EnterpriseSyncInfo {
+  implicit val enterpriseSyncWrite = Json.writes[EnterpriseSyncInfo]
+}

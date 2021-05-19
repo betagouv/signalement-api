@@ -4,14 +4,16 @@ import actors.EnterpriseSyncActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import javax.inject.{Inject, Named}
+import models.{CompanyData, EnterpriseSyncInfo}
 import repositories.{CompanyDataRepository, EnterpriseSyncInfoRepository}
-import utils.SIREN
+import utils.{SIREN, SIRET}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
 class EnterpriseSyncOrchestrator @Inject()(
+  enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
   companyDataRepository: CompanyDataRepository,
   @Named("enterprise-sync-actor") enterpriseActor: ActorRef,
 )(implicit val executionContext: ExecutionContext) {
@@ -43,46 +45,44 @@ class EnterpriseSyncOrchestrator @Inject()(
 
   private[this] val uniteLegaleActorName = "StockUniteLegale"
 
-  private[this] lazy val syncEtablissementFileActor = EnterpriseSyncActor.Start(
+  private[this] lazy val startEtablissementFileActor = EnterpriseSyncActor.Start(
     name = etablissementActorName,
-    //    url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockEtablissement_utf8.csv",
     url = s"https://files.data.gouv.fr/insee-sirene/StockEtablissement_utf8.zip",
     approximateLinesCount = 32e6,
-    mapper = (lines: Seq[String]) => {
-      lines.map(getByColumnName(CSVFilesColumns.etablissement)).map(getValue => {
-        Map(
-          "siret" -> getValue("siret"),
-          "siren" -> getValue("siren"),
-          "datederniertraitementetablissement" -> getValue("datederniertraitementetablissement"),
-          "etablissementsiege" -> getValue("etablissementsiege"),
-          "complementadresseetablissement" -> getValue("complementadresseetablissement"),
-          "numerovoieetablissement" -> getValue("numerovoieetablissement"),
-          "indicerepetitionetablissement" -> getValue("indicerepetitionetablissement"),
-          "typevoieetablissement" -> getValue("typevoieetablissement"),
-          "libellevoieetablissement" -> getValue("libellevoieetablissement"),
-          "codepostaletablissement" -> getValue("codepostaletablissement"),
-          "libellecommuneetablissement" -> getValue("libellecommuneetablissement"),
-          "libellecommuneetrangeretablissement" -> getValue("libellecommuneetrangeretablissement"),
-          "distributionspecialeetablissement" -> getValue("distributionspecialeetablissement"),
-          "codecommuneetablissement" -> getValue("codecommuneetablissement"),
-          "codecedexetablissement" -> getValue("codecedexetablissement"),
-          "libellecedexetablissement" -> getValue("libellecedexetablissement"),
-          "denominationusuelleetablissement" -> getValue("denominationusuelleetablissement"),
-          "enseigne1etablissement" -> getValue("enseigne1etablissement"),
-          "activiteprincipaleetablissement" -> getValue("activiteprincipaleetablissement"),
-          "etatadministratifetablissement" -> getValue("etatadministratifetablissement"),
-        )
-      })
-    }: Seq[Map[String, Option[String]]],
+    mapper = (lines: Seq[String]) => lines
+      .map(getByColumnName(CSVFilesColumns.etablissement))
+      .filter(getValue => getValue("siret").isDefined && getValue("siren").isDefined)
+      .map(getValue => CompanyData(
+        siret = SIRET(getValue("siret").get),
+        siren = SIREN(getValue("siren").get),
+        dateDernierTraitementEtablissement = getValue("datederniertraitementetablissement"),
+        etablissementSiege = getValue("etablissementsiege"),
+        complementAdresseEtablissement = getValue("complementadresseetablissement"),
+        numeroVoieEtablissement = getValue("numerovoieetablissement"),
+        indiceRepetitionEtablissement = getValue("indicerepetitionetablissement"),
+        typeVoieEtablissement = getValue("typevoieetablissement"),
+        libelleVoieEtablissement = getValue("libellevoieetablissement"),
+        codePostalEtablissement = getValue("codepostaletablissement"),
+        libelleCommuneEtablissement = getValue("libellecommuneetablissement"),
+        libelleCommuneEtrangerEtablissement = getValue("libellecommuneetrangeretablissement"),
+        distributionSpecialeEtablissement = getValue("distributionspecialeetablissement"),
+        codeCommuneEtablissement = getValue("codecommuneetablissement"),
+        codeCedexEtablissement = getValue("codecedexetablissement"),
+        libelleCedexEtablissement = getValue("libellecedexetablissement"),
+        denominationUsuelleEtablissement = getValue("denominationusuelleetablissement"),
+        enseigne1Etablissement = getValue("enseigne1etablissement"),
+        activitePrincipaleEtablissement = getValue("activiteprincipaleetablissement").getOrElse(""),
+        etatAdministratifEtablissement = getValue("etatadministratifetablissement"),
+      )),
     action = companyDataRepository.insertAll,
-    // TODO Don't use because cancelling the stream will tigger onEnd
-    //    onEnd = () => enterpriseActor ? syncUniteLegaleFileActor,
+    // TODO Don't use because cancelling the stream will tigger it.
+    //  I need a way to only call onEnd only when the stream is completed.
+    // onEnd = () => enterpriseActor ? startUniteLegaleFileActor,
   )
 
-  private[this] lazy val syncUniteLegaleFileActor = EnterpriseSyncActor.Start(
+  private[this] lazy val startUniteLegaleFileActor = EnterpriseSyncActor.Start(
     name = uniteLegaleActorName,
     url = s"https://files.data.gouv.fr/insee-sirene/StockUniteLegale_utf8.zip",
-    //    url = s"/Users/alexandreac/Workspace/signalconso/HEAD_StockUniteLegale_utf8.csv",
     approximateLinesCount = 23e6,
     mapper = (lines: Seq[String]) => {
       lines
@@ -101,11 +101,20 @@ class EnterpriseSyncOrchestrator @Inject()(
     action = companyDataRepository.updateNames
   )
 
+  def getLastEtablissementImportInfo(): Future[Option[EnterpriseSyncInfo]] = {
+    enterpriseSyncInfoRepository.findLast(etablissementActorName)
+  }
 
-  def startEntrepriseFile = {
-    val x = enterpriseActor ? syncEtablissementFileActor
-    x.map(z => println("RETURN TYPE ???" + z))
-    x
+  def getUniteLegaleImportInfo(): Future[Option[EnterpriseSyncInfo]] = {
+    enterpriseSyncInfoRepository.findLast(uniteLegaleActorName)
+  }
+
+  def startEtablissementFile = {
+    enterpriseActor ? startEtablissementFileActor
+  }
+
+  def startUniteLegaleFile = {
+    enterpriseActor ? startUniteLegaleFileActor
   }
 
   def cancelEntrepriseFile = {
@@ -114,10 +123,6 @@ class EnterpriseSyncOrchestrator @Inject()(
 
   def cancelUniteLegaleFile = {
     enterpriseActor ? EnterpriseSyncActor.Cancel(uniteLegaleActorName)
-  }
-
-  def startUniteLegaleFile = {
-    enterpriseActor ? syncUniteLegaleFileActor
   }
 
   private[this] object CSVFilesColumns {
