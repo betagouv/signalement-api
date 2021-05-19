@@ -67,11 +67,12 @@ POST          /api/authenticate/password/forgot                      controllers
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
 
 # Enterprises sync
-GET           /api/enterprises-sync/start-etablissement              controllers.EnterpriseImportController.startEtablissementFile()
-GET           /api/enterprises-sync/start-unitelegale                controllers.EnterpriseImportController.startUniteLegaleFile()
-GET           /api/enterprises-sync/cancel                           controllers.EnterpriseImportController.cancelAllFiles()
-GET           /api/enterprises-sync/cancel-etablissement             controllers.EnterpriseImportController.cancelEtablissementFile()
-GET           /api/enterprises-sync/cancel-unitelegale               controllers.EnterpriseImportController.cancelUniteLegaleFile()
+POST          /api/enterprises-sync/start-etablissement              controllers.EnterpriseImportController.startEtablissementFile()
+POST          /api/enterprises-sync/start-unitelegale                controllers.EnterpriseImportController.startUniteLegaleFile()
+POST          /api/enterprises-sync/cancel                           controllers.EnterpriseImportController.cancelAllFiles()
+POST          /api/enterprises-sync/cancel-etablissement             controllers.EnterpriseImportController.cancelEtablissementFile()
+POST          /api/enterprises-sync/cancel-unitelegale               controllers.EnterpriseImportController.cancelUniteLegaleFile()
+GET           /api/enterprises-sync/info                             controllers.EnterpriseImportController.getSyncInfo()
 
 # Accesses API
 GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()

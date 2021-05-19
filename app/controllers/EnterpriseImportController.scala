@@ -1,19 +1,17 @@
 package controllers
 
-import akka.actor.ActorRef
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.{Inject, Named, Singleton}
-import models.EnterpriseSyncInfo
+import javax.inject.{Inject, Singleton}
+import models.UserRoles
 import orchestrators.EnterpriseSyncOrchestrator
-import repositories.EnterpriseSyncInfoRepository
-import utils.silhouette.auth.AuthEnv
+import play.api.libs.json.Json
+import utils.silhouette.auth.{AuthEnv, WithRole}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 @Singleton
 class EnterpriseImportController @Inject()(
-  enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
   enterpriseSyncOrchestrator: EnterpriseSyncOrchestrator,
   val silhouette: Silhouette[AuthEnv],
 )(implicit ec: ExecutionContext) extends BaseController {
@@ -21,33 +19,41 @@ class EnterpriseImportController @Inject()(
   implicit val timeout: akka.util.Timeout = 5.seconds
 
 
-  def startEtablissementFile = UnsecuredAction { implicit request =>
-    enterpriseSyncOrchestrator.startEntrepriseFile
+  def startEtablissementFile = SecuredAction(WithRole(UserRoles.Admin)) { implicit request =>
+    enterpriseSyncOrchestrator.startEtablissementFile
     Ok
   }
 
-  def startUniteLegaleFile = SecuredAction { implicit request =>
+  def startUniteLegaleFile = SecuredAction(WithRole(UserRoles.Admin)) { implicit request =>
     enterpriseSyncOrchestrator.startUniteLegaleFile
     Ok
   }
 
-  def cancelAllFiles = UnsecuredAction { implicit request =>
+  def cancelAllFiles = SecuredAction(WithRole(UserRoles.Admin)) { implicit request =>
     enterpriseSyncOrchestrator.cancelUniteLegaleFile
     enterpriseSyncOrchestrator.cancelEntrepriseFile
     Ok
   }
 
-  def cancelEtablissementFile = SecuredAction { implicit request =>
+  def cancelEtablissementFile = SecuredAction(WithRole(UserRoles.Admin)) { implicit request =>
     enterpriseSyncOrchestrator.cancelEntrepriseFile
     Ok
   }
 
-  def cancelUniteLegaleFile = SecuredAction { implicit request =>
+  def cancelUniteLegaleFile = SecuredAction(WithRole(UserRoles.Admin)) { implicit request =>
     enterpriseSyncOrchestrator.cancelUniteLegaleFile
     Ok
   }
 
-  def getSyncInfo = SecuredAction { implicit request =>
-    Ok
+  def getSyncInfo = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    for {
+      etablissementImportInfo <- enterpriseSyncOrchestrator.getLastEtablissementImportInfo()
+      uniteLegaleInfo <- enterpriseSyncOrchestrator.getUniteLegaleImportInfo()
+    } yield {
+      Ok(Json.obj(
+        "etablissementImportInfo" -> etablissementImportInfo,
+        "uniteLegaleInfo" -> uniteLegaleInfo
+      ))
+    }
   }
 }
