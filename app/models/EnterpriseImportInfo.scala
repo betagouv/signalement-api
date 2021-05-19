@@ -5,7 +5,7 @@ import java.util.UUID
 
 import play.api.libs.json.Json
 
-final case class EnterpriseSyncInfo(
+final case class EnterpriseImportInfo(
   id: UUID = UUID.randomUUID(),
   fileName: String,
   fileUrl: String,
@@ -16,6 +16,6 @@ final case class EnterpriseSyncInfo(
   errors: Option[String] = None,
 )
 
-object EnterpriseSyncInfo {
-  implicit val enterpriseSyncWrite = Json.writes[EnterpriseSyncInfo]
+object EnterpriseImportInfo {
+  implicit val enterpriseSyncWrite = Json.writes[EnterpriseImportInfo]
 }

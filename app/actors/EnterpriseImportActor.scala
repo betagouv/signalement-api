@@ -12,7 +12,7 @@ import akka.stream.{ActorMaterializer, ThrottleMode}
 import akka.util.ByteString
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
-import models.EnterpriseSyncInfo
+import models.EnterpriseImportInfo
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -51,7 +51,7 @@ final case class ProcessedFile(
 
 @Singleton
 class EnterpriseSyncActor @Inject()(
-  enterpriseSyncInfoRepo: EnterpriseSyncInfoRepository,
+  enterpriseSyncInfoRepo: EnterpriseImportInfoRepository,
 )(
   implicit val executionContext: ExecutionContext
 ) extends Actor {
@@ -68,7 +68,7 @@ class EnterpriseSyncActor @Inject()(
     case Start(name, url, approximateLinesCount, mapper, action, onEnd) => {
       cancel(name)
       val generatedInfoId = UUID.randomUUID()
-      enterpriseSyncInfoRepo.create(EnterpriseSyncInfo(
+      enterpriseSyncInfoRepo.create(EnterpriseImportInfo(
         id = generatedInfoId,
         fileName = name,
         fileUrl = url,
