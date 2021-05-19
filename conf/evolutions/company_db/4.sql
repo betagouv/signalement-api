@@ -3,7 +3,7 @@
 ALTER TABLE etablissements
     ADD CONSTRAINT etablissements_pk PRIMARY KEY (siret);
 
-CREATE TABLE IF NOT EXISTS files_sync_info
+CREATE TABLE IF NOT EXISTS etablissements_import_info
 (
     id          UUID PRIMARY KEY,
     file_name   VARCHAR                     NOT NULL,
@@ -20,4 +20,4 @@ CREATE TABLE IF NOT EXISTS files_sync_info
 ALTER TABLE etablissements
     DROP CONSTRAINT etablissements_pk;
 
-DROP TABLE files_sync_info
+DROP TABLE etablissements_import_info
