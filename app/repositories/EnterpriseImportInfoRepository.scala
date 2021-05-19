@@ -12,14 +12,14 @@ import slick.jdbc.JdbcProfile
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class EnterpriseImportInfoRepository @Inject()(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import PostgresProfile.api._
   import dbConfig._
 
-  class EnterpriseSyncInfoTable(tag: Tag) extends Table[EnterpriseSyncInfo](tag, "files_sync_info") {
+  class EnterpriseSyncInfoTable(tag: Tag) extends Table[EnterpriseImportInfo](tag, "etablissements_import_info") {
     def id = column[UUID]("id", O.PrimaryKey)
     def fileName = column[String]("file_name")
     def fileUrl = column[String]("file_url")
@@ -38,12 +38,12 @@ class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConf
       startedAt,
       endedAt,
       errors,
-    ) <> ((EnterpriseSyncInfo.apply _).tupled, EnterpriseSyncInfo.unapply)
+    ) <> ((EnterpriseImportInfo.apply _).tupled, EnterpriseImportInfo.unapply)
   }
 
   val EnterpriseSyncInfotableQuery = TableQuery[EnterpriseSyncInfoTable]
 
-  def create(info: EnterpriseSyncInfo): Future[EnterpriseSyncInfo] = {
+  def create(info: EnterpriseImportInfo): Future[EnterpriseImportInfo] = {
     db.run(EnterpriseSyncInfotableQuery += info).map(_ => info)
   }
 
@@ -77,7 +77,7 @@ class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConf
       .update(Some(error)))
   }
 
-  def findRunning(name: String): Future[Option[EnterpriseSyncInfo]] = {
+  def findRunning(name: String): Future[Option[EnterpriseImportInfo]] = {
     db.run(EnterpriseSyncInfotableQuery
       .filter(_.fileName === name)
       .filter(_.endedAt.isEmpty)
@@ -86,7 +86,7 @@ class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConf
     )
   }
 
-  def findLastEnded(name: String): Future[Option[EnterpriseSyncInfo]] = {
+  def findLastEnded(name: String): Future[Option[EnterpriseImportInfo]] = {
     db.run(EnterpriseSyncInfotableQuery
       .filter(_.fileName === name)
       .filter(_.endedAt.isDefined)
@@ -95,7 +95,7 @@ class EnterpriseSyncInfoRepository @Inject()(@NamedDatabase("company_db") dbConf
     )
   }
 
-  def findLast(name: String): Future[Option[EnterpriseSyncInfo]] = {
+  def findLast(name: String): Future[Option[EnterpriseImportInfo]] = {
     db.run(EnterpriseSyncInfotableQuery
       .filter(_.fileName === name)
       .sortBy(_.startedAt.desc)

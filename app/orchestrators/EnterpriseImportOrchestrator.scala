@@ -4,16 +4,16 @@ import actors.EnterpriseSyncActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import javax.inject.{Inject, Named}
-import models.{CompanyData, EnterpriseSyncInfo}
-import repositories.{CompanyDataRepository, EnterpriseSyncInfoRepository}
+import models.{CompanyData, EnterpriseImportInfo}
+import repositories.{CompanyDataRepository, EnterpriseImportInfoRepository}
 import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 
-class EnterpriseSyncOrchestrator @Inject()(
-  enterpriseSyncInfoRepository: EnterpriseSyncInfoRepository,
+class EnterpriseImportOrchestrator @Inject()(
+  enterpriseSyncInfoRepository: EnterpriseImportInfoRepository,
   companyDataRepository: CompanyDataRepository,
   @Named("enterprise-sync-actor") enterpriseActor: ActorRef,
 )(implicit val executionContext: ExecutionContext) {
@@ -101,11 +101,11 @@ class EnterpriseSyncOrchestrator @Inject()(
     action = companyDataRepository.updateNames
   )
 
-  def getLastEtablissementImportInfo(): Future[Option[EnterpriseSyncInfo]] = {
+  def getLastEtablissementImportInfo(): Future[Option[EnterpriseImportInfo]] = {
     enterpriseSyncInfoRepository.findLast(etablissementActorName)
   }
 
-  def getUniteLegaleImportInfo(): Future[Option[EnterpriseSyncInfo]] = {
+  def getUniteLegaleImportInfo(): Future[Option[EnterpriseImportInfo]] = {
     enterpriseSyncInfoRepository.findLast(uniteLegaleActorName)
   }
 

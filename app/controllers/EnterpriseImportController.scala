@@ -3,7 +3,7 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.{Inject, Singleton}
 import models.UserRoles
-import orchestrators.EnterpriseSyncOrchestrator
+import orchestrators.EnterpriseImportOrchestrator
 import play.api.libs.json.Json
 import utils.silhouette.auth.{AuthEnv, WithRole}
 
@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 
 @Singleton
 class EnterpriseImportController @Inject()(
-  enterpriseSyncOrchestrator: EnterpriseSyncOrchestrator,
+  enterpriseSyncOrchestrator: EnterpriseImportOrchestrator,
   val silhouette: Silhouette[AuthEnv],
 )(implicit ec: ExecutionContext) extends BaseController {
 
