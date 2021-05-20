@@ -17,14 +17,22 @@ class CompaniesVisibilityOrchestrator @Inject()(
 )(implicit val executionContext: ExecutionContext) {
 
   def fetchViewableCompanies(pro: User): Future[List[CompanyData]] = {
-    for {
+    (for {
       authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
       headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets)
-      companiesForHeadOffices <- companyDataRepo.searchBySirens(authorizedSirets.intersect(headOfficeSirets).map(SIREN.apply), includeClosed = true)
-      companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSirets.diff(headOfficeSirets), includeClosed = true)
+      authorizedHeadOffices = authorizedSirets.intersect(headOfficeSirets)
+      authorizedSubcompanies = authorizedSirets.diff(headOfficeSirets)
+      companiesForHeadOffices <- companyDataRepo.searchBySirens(authorizedHeadOffices.map(SIREN.apply), includeClosed = true)
+      companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSubcompanies, includeClosed = true)
     } yield {
       companiesForHeadOffices.union(companiesWithoutHeadOffice).map(_._1).distinct
-    }
+    }).flatMap(filterReportedCompanyData)
+  }
+
+  private[this] def filterReportedCompanyData(companies: List[CompanyData]): Future[List[CompanyData]] = {
+    for {
+      reportedCompaniesSiret <- companyRepo.findBySirets(companies.map(_.siret)).map(_.map(_.siret))
+    } yield companies.filter(x => reportedCompaniesSiret.contains(x.siret))
   }
 
   def fetchViewableSiretsSirens(user: User): Future[SiretsSirens] = {

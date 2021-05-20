@@ -85,6 +85,9 @@ class CompanyRepository @Inject()(
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 
+  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
