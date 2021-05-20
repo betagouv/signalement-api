@@ -1,6 +1,9 @@
 # --- !Ups
 
 ALTER TABLE etablissements
+    DROP CONSTRAINT etablissements_pk;
+
+ALTER TABLE etablissements
     ADD CONSTRAINT etablissements_pk PRIMARY KEY (siret);
 
 CREATE TABLE IF NOT EXISTS etablissements_import_info
@@ -19,5 +22,8 @@ CREATE TABLE IF NOT EXISTS etablissements_import_info
 
 ALTER TABLE etablissements
     DROP CONSTRAINT etablissements_pk;
+
+ALTER TABLE etablissements
+    ADD CONSTRAINT etablissements_pk PRIMARY KEY (id);
 
 DROP TABLE etablissements_import_info
