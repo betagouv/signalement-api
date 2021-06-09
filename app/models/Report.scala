@@ -92,7 +92,7 @@ case class Report(
 
   def initialStatus() = {
     if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined && !tags.exists(_.contains(Seq(Tags.ReponseConso, Tags.DangerousProduct)))) TRAITEMENT_EN_COURS
+    else if (companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct)).isEmpty) TRAITEMENT_EN_COURS
     else NA
   }
 
