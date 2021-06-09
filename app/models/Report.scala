@@ -102,7 +102,7 @@ case class Report(
 
   def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
 
-  def sentToEnterprise() = !employeeConsumer && !forwardToReponseConso
+  def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }
 
 object Report {
