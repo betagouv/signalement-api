@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
 
   "io.sentry" % "sentry-logback" % "5.0.0",
 
-  "org.typelevel" %% "cats-core" % "2.4.2"
+  "org.typelevel" %% "cats-core" % "2.6.1"
 
 )
 
