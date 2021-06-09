@@ -210,7 +210,7 @@
             <br />
             Email : @report.email
             <br/>
-            @if(report.sentToEnterprise()) {
+            @if(report.isTransmittableToPro()) {
                 Accord pour contact : @if(report.contactAgreement) {oui} else {non}
                 <br/>
             }
