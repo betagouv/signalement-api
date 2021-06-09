@@ -49,8 +49,8 @@ GET           /api/ext/reports/:uuid                                 controllers
 
 # Admin API
 
-GET          /api/admin/test-email                      controllers.AdminController.getEmailCodes
-POST         /api/admin/test-email                      controllers.AdminController.sendTestEmail(templateRef, to)
+GET           /api/admin/test-email                                  controllers.AdminController.getEmailCodes
+POST          /api/admin/test-email                                  controllers.AdminController.sendTestEmail(templateRef, to)
 
 # Async files API
 GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles
@@ -58,8 +58,8 @@ GET           /api/async-files                                       controllers
 # Events API
 
 # Constants API
-GET         /api/constants/reportStatus                              controllers.ConstantController.getReportStatus()
-GET         /api/constants/countries                                 controllers.ConstantController.getCountries()
+GET           /api/constants/reportStatus                            controllers.ConstantController.getReportStatus()
+GET           /api/constants/countries                               controllers.ConstantController.getCountries()
 
 # Authentication API
 POST          /api/authenticate                                      controllers.AuthController.authenticate
@@ -87,6 +87,10 @@ POST          /api/account/dgccrf/invitation                         controllers
 GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF
 GET           /api/account/dgccrf/users                              controllers.AccountController.fetchDGCCRFUsers
 POST          /api/account/validate-email                            controllers.AccountController.validateEmail
+
+# EmailValidation API
+POST          /api/email/check                                       controllers.EmailValidationController.checkEmail
+POST          /api/email/validate                                    controllers.EmailValidationController.validEmail
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create

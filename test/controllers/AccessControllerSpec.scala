@@ -200,7 +200,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
 
   def e2 = {
     token = Await.result(
-      accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany), Some(AccessLevel.ADMIN), None),
+      accessTokenRepository.createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
       Duration.Inf
     )
     token must haveClass [AccessToken]
@@ -215,7 +215,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   }
 
   def e4 = {
-    val admins = Await.result(companyRepository.fetchAdmins(newCompany), Duration.Inf)
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(proMemberUser.id))
   }
 

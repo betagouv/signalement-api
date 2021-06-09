@@ -107,9 +107,8 @@ The get viewable companies endpoint should
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must haveViewableCompanies(
-      aViewableCompany(headOfficeCompany.siret, false),
-      aViewableCompany(subsidiaryCompanyData.siret, false),
-      aViewableCompany(subsidiaryClosedCompanyData.siret, true),
+      aViewableCompany(headOfficeCompany.siret, closed = false),
+      aViewableCompany(subsidiaryCompanyData.siret, closed = false),
     )
   }
 

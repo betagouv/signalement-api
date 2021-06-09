@@ -85,6 +85,9 @@ class CompanyRepository @Inject()(
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 
+  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
@@ -128,9 +131,9 @@ class CompanyRepository @Inject()(
     ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
   }
 
-  def fetchAdmins(company: Company): Future[List[User]] =
+  def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(UserAccessTableQuery.join(userRepository.userTableQuery).on(_.userId === _.id)
-      .filter(_._1.companyId === company.id)
+      .filter(_._1.companyId === companyId)
       .filter(_._1.level === AccessLevel.ADMIN)
       .map(_._2)
       .to[List]

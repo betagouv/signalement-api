@@ -39,11 +39,11 @@ case class Subscription(
   creationDate: OffsetDateTime = OffsetDateTime.now,
   userId: Option[UUID],
   email: Option[EmailAddress],
-  departments: List[String],
-  categories: List[ReportCategory],
-  tags: List[String],
-  countries: List[Country],
-  sirets: List[SIRET],
+  departments: List[String] = List.empty,
+  categories: List[ReportCategory] = List.empty,
+  tags: List[String] = List.empty,
+  countries: List[Country] = List.empty,
+  sirets: List[SIRET] = List.empty,
   frequency: Period
 )
 
