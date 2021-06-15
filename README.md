@@ -17,7 +17,16 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 L'application requiert une connexion à un serveur PostgreSQL (sur macOS, vous pouvez utiliser [https://postgresapp.com/]).
 Créez une base de données pour l'application : `createdb signalconso` (par défaut localement, la base sera accessible au user `$USER`, sans mot de passe).
 
-Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas (voir [https://www.playframework.com/documentation/2.7.x/Evolutions]).
+Il est possible de lancer un PostgreSQL à partir d'une commande docker-compose (le fichier en question est disponible sous scripts/local/)
+
+Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas (voir [https://www.playframework.com/documentation/2.7.x/Evolutions]  **et s'assurer que les properties play.evolutions sont a true**).
+
+Il est possible d'injecter des données de test dans la base signal conso, pour cela il faut jouer les scripts suivants :
+
+- /test/scripts/insert_users.sql
+- /test/scripts/insert_companies.sql
+- /test/scripts/insert_company_accesses.sql
+- /test/scripts/insert_reports.sql
 
 ### Configuration locale
 
