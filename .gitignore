@@ -18,3 +18,4 @@ conf/local.application.conf
 *.iml
 /out/
 /.bsp
+javaOptions.sbt
