@@ -1,6 +1,10 @@
 package utils
 
-import play.api.libs.json.{JsResult, JsString, JsValue, Reads, Writes}
+import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsValue
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 import repositories.PostgresProfile.api._
 
 case class Address(value: String) {
@@ -14,7 +18,7 @@ object Address {
       distinctLines
         .filterNot(_ == "FRANCE")
         .filterNot(line => distinctLines.count(_.contains(line)) > 1)
-      .reduce((a1, a2) => s"$a1 - $a2")
+        .reduce((a1, a2) => s"$a1 - $a2")
     )
   }
 
@@ -23,13 +27,10 @@ object Address {
     Address(_)
   )
   implicit val addressWrites = new Writes[Address] {
-    def writes(o: Address): JsValue = {
+    def writes(o: Address): JsValue =
       JsString(o.value)
-    }
   }
   implicit val addressReads = new Reads[Address] {
     def reads(json: JsValue): JsResult[Address] = json.validate[String].map(Address(_))
   }
 }
-
-

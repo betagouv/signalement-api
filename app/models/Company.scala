@@ -1,11 +1,12 @@
 package models
 
-import java.time.{LocalDate, OffsetDateTime}
+import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 
 import play.api.libs.json._
-import utils.{Address, SIRET}
-
+import utils.Address
+import utils.SIRET
 
 sealed case class AccessLevel(value: String)
 
@@ -14,9 +15,8 @@ object AccessLevel {
   val MEMBER = AccessLevel("member")
   val ADMIN = AccessLevel("admin")
 
-  def fromValue(v: String) = {
+  def fromValue(v: String) =
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
-  }
   implicit val reads = new Reads[AccessLevel] {
     def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue(_))
   }
@@ -26,37 +26,37 @@ object AccessLevel {
 }
 
 case class UserAccess(
-  companyId: UUID,
-  userId: UUID,
-  level: AccessLevel,
-  updateDate: OffsetDateTime
+    companyId: UUID,
+    userId: UUID,
+    level: AccessLevel,
+    updateDate: OffsetDateTime
 )
 
 case class Company(
-                  id: UUID = UUID.randomUUID(),
-                  siret: SIRET,
-                  creationDate: OffsetDateTime = OffsetDateTime.now,
-                  name: String,
-                  address: Address,
-                  postalCode: Option[String],
-                  activityCode: Option[String]
-                ) {
+    id: UUID = UUID.randomUUID(),
+    siret: SIRET,
+    creationDate: OffsetDateTime = OffsetDateTime.now,
+    name: String,
+    address: Address,
+    postalCode: Option[String],
+    activityCode: Option[String]
+) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
 
 case class CompanyCreation(
-  siret: SIRET,
-  name: String,
-  address: Address,
-  postalCode: Option[String],
-  activityCode: Option[String]
+    siret: SIRET,
+    name: String,
+    address: Address,
+    postalCode: Option[String],
+    activityCode: Option[String]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
     name = name,
     address = address,
     postalCode = postalCode,
-    activityCode = activityCode,
+    activityCode = activityCode
   )
 }
 
@@ -76,10 +76,10 @@ object Company {
 }
 
 case class CompanyAddressUpdate(
-                  address: Address,
-                  postalCode: String,
-                  activationDocumentRequired: Boolean = false
-                )
+    address: Address,
+    postalCode: String,
+    activationDocumentRequired: Boolean = false
+)
 
 object CompanyAddressUpdate {
   implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]

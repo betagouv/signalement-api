@@ -3,15 +3,17 @@ package repositories
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -32,14 +34,16 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
   val AsyncFileTableQuery = TableQuery[AsyncFileTable]
 
   def create(owner: User): Future[AsyncFile] =
-    db.run(AsyncFileTableQuery returning AsyncFileTableQuery += AsyncFile(
-      id = UUID.randomUUID(),
-      userId = owner.id,
-      creationDate = OffsetDateTime.now,
-      filename = None,
-      storageFilename = None
-    ))
-  
+    db.run(
+      AsyncFileTableQuery returning AsyncFileTableQuery += AsyncFile(
+        id = UUID.randomUUID(),
+        userId = owner.id,
+        creationDate = OffsetDateTime.now,
+        filename = None,
+        storageFilename = None
+      )
+    )
+
   def update(uuid: UUID, filename: String, storageFilename: String): Future[Int] =
     db.run(
       AsyncFileTableQuery
@@ -49,10 +53,11 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
     )
 
   def list(user: User): Future[List[AsyncFile]] =
-    db.run(AsyncFileTableQuery
-      .filter(_.userId === user.id)
-      .sortBy(_.creationDate.desc)
-      .to[List]
-      .result
+    db.run(
+      AsyncFileTableQuery
+        .filter(_.userId === user.id)
+        .sortBy(_.creationDate.desc)
+        .to[List]
+        .result
     )
 }

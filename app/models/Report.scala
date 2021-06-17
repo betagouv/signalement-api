@@ -4,33 +4,39 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.{Json, OFormat, Writes, _}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.Writes
+import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{Address, Country, EmailAddress, SIRET, URL}
-
+import utils.Address
+import utils.Country
+import utils.EmailAddress
+import utils.SIRET
+import utils.URL
 
 case class DraftReport(
-  category: String,
-  subcategories: List[String],
-  details: List[DetailInputValue],
-  companyName: Option[String],
-  companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
-  companySiret: Option[SIRET],
-  companyActivityCode: Option[String],
-  websiteURL: Option[URL],
-  phone: Option[String],
-  firstName: String,
-  lastName: String,
-  email: EmailAddress,
-  contactAgreement: Boolean,
-  employeeConsumer: Boolean,
-  fileIds: List[UUID],
-  vendor: Option[String] = None,
-  tags: List[String] = Nil
+    category: String,
+    subcategories: List[String],
+    details: List[DetailInputValue],
+    companyName: Option[String],
+    companyAddress: Option[Address],
+    companyPostalCode: Option[String],
+    companyCountry: Option[Country],
+    companySiret: Option[SIRET],
+    companyActivityCode: Option[String],
+    websiteURL: Option[URL],
+    phone: Option[String],
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean,
+    employeeConsumer: Boolean,
+    fileIds: List[UUID],
+    vendor: Option[String] = None,
+    tags: List[String] = Nil
 ) {
 
   def generateReport: Report = {
@@ -61,43 +67,44 @@ case class DraftReport(
   }
 }
 object DraftReport {
-  implicit val draftReportReads = Json.reads[DraftReport].filter(
-    draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined || draft.phone.isDefined || draft.companyAddress.isDefined
-  )
+  implicit val draftReportReads = Json
+    .reads[DraftReport]
+    .filter(draft =>
+      draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined || draft.phone.isDefined || draft.companyAddress.isDefined
+    )
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
 case class Report(
-  id: UUID = UUID.randomUUID(),
-  category: String,
-  subcategories: List[String],
-  details: List[DetailInputValue],
-  companyId: Option[UUID],
-  companyName: Option[String],
-  companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
-  companySiret: Option[SIRET],
-  websiteURL: Option[URL],
-  phone: Option[String],
-  creationDate: OffsetDateTime,
-  firstName: String,
-  lastName: String,
-  email: EmailAddress,
-  contactAgreement: Boolean,
-  employeeConsumer: Boolean,
-  status: ReportStatusValue,
-  vendor: Option[String] = None,
-  tags: List[String] = Nil
+    id: UUID = UUID.randomUUID(),
+    category: String,
+    subcategories: List[String],
+    details: List[DetailInputValue],
+    companyId: Option[UUID],
+    companyName: Option[String],
+    companyAddress: Option[Address],
+    companyPostalCode: Option[String],
+    companyCountry: Option[Country],
+    companySiret: Option[SIRET],
+    websiteURL: Option[URL],
+    phone: Option[String],
+    creationDate: OffsetDateTime,
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean,
+    employeeConsumer: Boolean,
+    status: ReportStatusValue,
+    vendor: Option[String] = None,
+    tags: List[String] = Nil
 ) {
 
-  def initialStatus() = {
+  def initialStatus() =
     if (employeeConsumer) EMPLOYEE_REPORT
     else if (companySiret.isDefined && !tags.contains(Tags.DangerousProduct)) TRAITEMENT_EN_COURS
     else NA
-  }
 
-  def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+  def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
@@ -129,39 +136,39 @@ object Report {
         "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
-        case (_, _) => Json.obj(
-          "firstName" -> report.firstName,
-          "lastName" -> report.lastName,
-          "email" -> report.email
-        )
+        case (_, _) =>
+          Json.obj(
+            "firstName" -> report.firstName,
+            "lastName" -> report.lastName,
+            "email" -> report.email
+          )
       }) ++ (report.companyCountry.map(c => Json.obj("companyCountry" -> c.name)).getOrElse(Json.obj()))
   }
 }
 
-
 case class ReportWithFiles(
-                          report: Report,
-                          files: List[ReportFile]
-                          )
+    report: Report,
+    files: List[ReportFile]
+)
 
 object ReportWithFiles {
   implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
 }
 
-case class  DetailInputValue (
-                           label: String,
-                           value: String
-                 ) extends Struct
+case class DetailInputValue(
+    label: String,
+    value: String
+) extends Struct
 
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
-  implicit def string2detailInputValue(input: String): DetailInputValue = {
+  implicit def string2detailInputValue(input: String): DetailInputValue =
     input match {
-      case input if input.contains(':') => DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
+      case input if input.contains(':') =>
+        DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
       case input => DetailInputValue("Précision :", input)
     }
-  }
 }
 
 case class CompanyWithNbReports(company: Company, count: Int)
@@ -180,33 +187,33 @@ object CompanyWithNbReports {
 }
 
 case class ReportCompany(
-                          name: String,
-                          address: Address,
-                          postalCode: String,
-                          siret: SIRET,
-                          activityCode: Option[String]
-                        )
+    name: String,
+    address: Address,
+    postalCode: String,
+    siret: SIRET,
+    activityCode: Option[String]
+)
 
 object ReportCompany {
   implicit val format = Json.format[ReportCompany]
 }
 
 case class ReportConsumer(
-                           firstName: String,
-                           lastName: String,
-                           email: EmailAddress,
-                           contactAgreement: Boolean
-                        )
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean
+)
 
 object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
 }
 
 case class ReportAction(
-                         actionType: ActionEventValue,
-                         details: Option[String],
-                         fileIds: List[UUID]
-                       )
+    actionType: ActionEventValue,
+    details: Option[String],
+    fileIds: List[UUID]
+)
 
 object ReportAction {
   implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
@@ -233,7 +240,7 @@ object ReportCategory {
   val Animaux = ReportCategory("Animaux")
   val DemarchesAdministratives = ReportCategory("Démarches administratives")
 
-  def fromValue(v: String) = {
+  def fromValue(v: String) =
     List(
       Covid,
       CafeRestaurant,
@@ -251,9 +258,8 @@ object ReportCategory {
       Sante,
       VoitureVehicule,
       Animaux,
-      DemarchesAdministratives,
+      DemarchesAdministratives
     ).find(_.value == v).head
-  }
 
   implicit val reads = new Reads[ReportCategory] {
     def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))

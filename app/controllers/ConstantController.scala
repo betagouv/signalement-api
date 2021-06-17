@@ -8,17 +8,22 @@ import utils.Constants.ReportStatus.reportStatusList
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 
-import scala.concurrent.{ExecutionContext, Future}
-
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class ConstantController @Inject()(val silhouette: Silhouette[AuthEnv])(implicit ec: ExecutionContext) extends BaseController {
+class ConstantController @Inject() (val silhouette: Silhouette[AuthEnv])(implicit ec: ExecutionContext)
+    extends BaseController {
   val logger: Logger = Logger(this.getClass)
 
   def getReportStatus = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(
-      reportStatusList.flatMap(_.getValueWithUserRole(request.identity.userRole)).distinct
-    )))
+    Future.successful(
+      Ok(
+        Json.toJson(
+          reportStatusList.flatMap(_.getValueWithUserRole(request.identity.userRole)).distinct
+        )
+      )
+    )
   }
 
   def getCountries = UnsecuredAction.async {

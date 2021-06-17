@@ -1,7 +1,8 @@
 package tasks
 
 import java.net.URI
-import java.time.{LocalDate, Period}
+import java.time.LocalDate
+import java.time.Period
 import java.util.UUID
 
 import models._
@@ -13,7 +14,10 @@ import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.Constants.Tags
-import utils.{AppSpec, Country, EmailAddress, Fixtures}
+import utils.AppSpec
+import utils.Country
+import utils.EmailAddress
+import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -21,14 +25,33 @@ import scala.concurrent.duration.Duration
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
   override def is =
     s2"""
-         When daily reportNotificationTask task run                                      ${step(Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf))}
-         And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(Seq(covidEmail), s"[SignalConso] Un nouveau signalement", views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString)}
-         And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(Seq(tagEmail), s"[SignalConso] [Produits dangereux] Un nouveau signalement", views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString)}
-         And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(Seq(countryEmail), s"[SignalConso] Un nouveau signalement", views.html.mails.dgccrf.reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1)).toString)}
+         When daily reportNotificationTask task run                                      ${step(
+      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+    )}
+         And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
+      Seq(covidEmail),
+      s"[SignalConso] Un nouveau signalement",
+      views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString
+    )}
+         And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
+      Seq(tagEmail),
+      s"[SignalConso] [Produits dangereux] Un nouveau signalement",
+      views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
+    )}
+         And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
+      Seq(countryEmail),
+      s"[SignalConso] Un nouveau signalement",
+      views.html.mails.dgccrf
+        .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
+        .toString
+    )}
     """
 }
 
-abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
+abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
+    extends Specification
+    with AppSpec
+    with FutureMatchers {
 
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
@@ -74,11 +97,19 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
   )
 
   val company = Fixtures.genCompany.sample.get
-  val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.Covid.value)
-  val tagReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(tagDept + "000"), tags = List(Tags.DangerousProduct))
+  val covidReport = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.Covid.value)
+  val tagReport = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(companyPostalCode = Some(tagDept + "000"), tags = List(Tags.DangerousProduct))
   val countryReport = Fixtures.genReportForCompany(company).sample.get.copy(companyCountry = Some(Country.Suisse))
 
-  override def setupData = {
+  override def setupData =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
@@ -91,9 +122,8 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
       } yield Unit,
       Duration.Inf
     )
-  }
 
-  def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) = {
+  def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
     there was one(mailerService)
       .sendEmail(
         EmailAddress(app.configuration.get[String]("play.mail.from")),
@@ -103,5 +133,4 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
         bodyHtml,
         Nil
       )
-  }
 }
