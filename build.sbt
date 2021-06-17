@@ -46,6 +46,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.4.2"
 )
 
+scalafmtOnCompile := true
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 mappings in Universal ++=
