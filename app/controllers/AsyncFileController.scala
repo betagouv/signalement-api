@@ -28,6 +28,7 @@ class AsyncFileController @Inject()(
     } yield Ok(Json.toJson(asyncFiles.map{
       case asyncFile: AsyncFile => {
           Map(
+            "id"              -> asyncFile.id.toString,
             "creationDate"    -> asyncFile.creationDate.toString,
             "filename"        -> asyncFile.filename.getOrElse(""),
             "url"             -> asyncFile.storageFilename.map(s3Service.getSignedUrl(BucketName, _)).getOrElse(""),
