@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  postgres:
+    image: "postgres:9.6.22"
+    ports: 
+        - "5432:5432"
+    volumes: 
+        - .:/docker-entrypoint-initdb.d  
+    environment: 
+        POSTGRES_HOST_AUTH_METHOD: "trust"
+        POSTGRES_USER: ${USER}
+        POSTGRES_MULTIPLE_DATABASES: signalconso,company
