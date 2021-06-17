@@ -17,8 +17,14 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 L'application requiert une connexion à un serveur PostgreSQL (sur macOS, vous pouvez utiliser [https://postgresapp.com/]).
 Créez une base de données pour l'application : `createdb signalconso` (par défaut localement, la base sera accessible au user `$USER`, sans mot de passe).
 
+
 Il est possible de lancer un PostgreSQL à partir d'une commande docker-compose (le fichier en question est disponible sous scripts/local/)
 
+à la racine du projet faire :
+```
+docker-compose -f scripts/local/docker-compose.yml up
+
+```
 Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas (voir [https://www.playframework.com/documentation/2.7.x/Evolutions]  **et s'assurer que les properties play.evolutions sont a true**).
 
 Il est possible d'injecter des données de test dans la base signal conso, pour cela il faut jouer les scripts suivants :
@@ -28,34 +34,52 @@ Il est possible d'injecter des données de test dans la base signal conso, pour 
 - /test/scripts/insert_company_accesses.sql
 - /test/scripts/insert_reports.sql
 
+
 ### Configuration locale
 
-Créer un fichier de configuration local `conf/local.application.conf`, en vous inspirant du template suivant :
+Lancer une base de donnes PosgreSQL provisionée avec les tables et données (voir plus haut)
+
+Créer un fichier avec les propriétés  à la racine du projet (javaOptions.sbt) et compléter les informations manquantes:
+
 ```
-include "application.conf"
+run / fork := true
 
-slick.dbs.default.db.properties.url = "postgres://user:pass@host/signalconso"
-play.mailer.mock = yes
+// MAILER
+Runtime / javaOptions += s"-DMAILER_HOST="
+Runtime / javaOptions += s"-DMAILER_PORT="
+Runtime / javaOptions += s"-DMAILER_SSL=yes"
+Runtime / javaOptions += s"-DMAILER_TLS=no"
+Runtime / javaOptions += s"-DMAILER_TLS_REQUIRED=no"
+Runtime / javaOptions += s"-DMAILER_USER="
+Runtime / javaOptions += s"-DMAILER_PASSWORD="
+Runtime / javaOptions += s"-DMAILER_MOCK=yes"
+
+// MAIL
+Runtime / javaOptions += s"-DMAIL_FROM="
+Runtime / javaOptions += s"-DMAIL_CONTACT_ADDRESS="
+
+// EVOLUTIONS
+Runtime / javaOptions += s"-DEVOLUTIONS_ENABLED=true"
+Runtime / javaOptions += s"-DEVOLUTIONS_AUTO_APPLY=true"
+Runtime / javaOptions += s"-DEVOLUTIONS_AUTO_APPLY_DOWNS=true"
+
+// TMP DIR ( need to add "/" at the end of the path)
+Runtime / javaOptions += s"-DTMP_DIR="
+
+// S3
+Runtime / javaOptions += s"-DS3_ACCESS_KEY_ID="
+Runtime / javaOptions += s"-DS3_SECRET_ACCESS_KEY="
+
+//DATABASE
+Runtime / javaOptions += s"-DCOMPANY_DATABASE_URL="
+Runtime / javaOptions += s"-DDATABASE_URL="
 ```
 
-Note :
-*La propriété `play.mailer.mock` désactive uniquement l'envoi des mails.
-Si elle est active, la constitution du mail est bien effective et le contenu du mail est uniquement loggué dans la console.
-Si elle n'est pas active, il faut configurer un serveur de mails à travers les variables définies dans le fichier /conf/slick.conf*
-
-Lancer l'application en local :
+Lancer
 
 ```bash
-sbt "run -Dconfig.resource=local.application.conf"
-
-# alternative
-sbt "run -Dconfig.resource=local.application.conf -DAPPLICATION_HOST=." # permet de rendre sa machine accessible par un autre appareil, tel qu'un smartphone, etc..
+sbt run 
 ```
-
-Remarques:
-
-- les guillemets après la commande `sbt` sont nécessaires pour que sbt sache où commence la sous-commande
-- on peut aussi lancer en 2 temps. D'abord, on lance sbt, on laisse la commande répondre, puis `run -Dconfig.resource=local.application.conf`. Dans ce cas, les guillemets ne sont pas nécessaires.
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
 
