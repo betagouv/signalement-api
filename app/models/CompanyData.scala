@@ -44,6 +44,7 @@ case class CompanyData(
     denominationUsuelleEtablissement,
     enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
     etablissementSiege.map(_.toBoolean).getOrElse(false),
+    // FIX IT!
     Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
     codePostalEtablissement,
     activitePrincipaleEtablissement,

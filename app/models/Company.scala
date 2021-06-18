@@ -33,14 +33,15 @@ case class UserAccess(
 )
 
 case class Company(
-                  id: UUID = UUID.randomUUID(),
-                  siret: SIRET,
-                  creationDate: OffsetDateTime = OffsetDateTime.now,
-                  name: String,
-                  address: Address,
-                  postalCode: Option[String],
-                  activityCode: Option[String]
-                ) {
+  id: UUID = UUID.randomUUID(),
+  siret: SIRET,
+  creationDate: OffsetDateTime = OffsetDateTime.now,
+  name: String,
+  /** @deprecated */
+  address: Address,
+  postalCode: Option[String],
+  activityCode: Option[String]
+) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
 
@@ -76,10 +77,10 @@ object Company {
 }
 
 case class CompanyAddressUpdate(
-                  address: Address,
-                  postalCode: String,
-                  activationDocumentRequired: Boolean = false
-                )
+  address: Address,
+  postalCode: String,
+  activationDocumentRequired: Boolean = false
+)
 
 object CompanyAddressUpdate {
   implicit val format: OFormat[CompanyAddressUpdate] = Json.format[CompanyAddressUpdate]
