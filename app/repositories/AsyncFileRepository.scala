@@ -20,7 +20,7 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
   import PostgresProfile.api._
   override val profile: slick.jdbc.JdbcProfile = dbConfigProvider.get.profile
 
-  implicit lazy val greetingMapper = mappedColumnTypeForEnum(AsyncFileKind)
+  implicit lazy val asyncFileKindMapper = mappedColumnTypeForEnum(AsyncFileKind)
 
   class AsyncFileTable(tag: Tag) extends Table[AsyncFile](tag, "async_files") {
 
@@ -31,7 +31,7 @@ class AsyncFileRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
     def kind = column[AsyncFileKind]("kind")
     def storageFilename = column[Option[String]]("storage_filename")
 
-    def * = (id, userId, creationDate, filename, kind, storageFilename) <> ((AsyncFile.apply _).tupled, AsyncFile.unapply)
+    def * = (id, userId, creationDate, filename, kind, storageFilename) <> (AsyncFile.tupled, AsyncFile.unapply)
   }
 
   val AsyncFileTableQuery = TableQuery[AsyncFileTable]
