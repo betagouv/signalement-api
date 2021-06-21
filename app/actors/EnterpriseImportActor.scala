@@ -6,8 +6,8 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.zip.ZipInputStream
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.stream.scaladsl.{Framing, Sink, StreamConverters}
-import akka.stream.ThrottleMode
+import akka.stream.scaladsl.{Framing, Keep, Sink, StreamConverters}
+import akka.stream.{KillSwitches, ThrottleMode, UniqueKillSwitch}
 import akka.util.ByteString
 import com.google.inject.AbstractModule
 
@@ -45,8 +45,8 @@ class EnterpriseSyncActorModule extends AbstractModule with AkkaGuiceSupport {
 }
 
 final case class ProcessedFile(
-  infoId: UUID,
-  stream: ZipInputStream,
+                                infoId: UUID,
+                                stream: UniqueKillSwitch,
 )
 
 @Singleton
@@ -67,31 +67,32 @@ class EnterpriseSyncActor @Inject()(
 
   override def receive = {
     case Start(name, url, approximateLinesCount, mapper, action, onEnd) => {
-      cancel(name)
-      val generatedInfoId = UUID.randomUUID()
-      enterpriseSyncInfoRepo.create(EnterpriseImportInfo(
-        id = generatedInfoId,
-        fileName = name,
-        fileUrl = url,
-        linesCount = approximateLinesCount,
-      ))
-      val stream = streamFile(
-        url,
-        mapper,
-        action,
-        onLinesDone = (linesDone: Double) => enterpriseSyncInfoRepo.updateLinesDone(generatedInfoId, linesDone),
-        onComplete = () => enterpriseSyncInfoRepo.updateEndedAt(generatedInfoId).map(x => onEnd()),
-        onFailure = (t: Throwable) => {
-          logger.debug(s"Error occurred while importing $url" + t)
-          enterpriseSyncInfoRepo.updateError(generatedInfoId, t.toString).map(_ => onEnd())
-        }
-      )
+      cancel(name).map { _ =>
+        val generatedInfoId = UUID.randomUUID()
+        enterpriseSyncInfoRepo.create(EnterpriseImportInfo(
+          id = generatedInfoId,
+          fileName = name,
+          fileUrl = url,
+          linesCount = approximateLinesCount,
+        ))
+        val killSwitch = streamFile(
+          url,
+          mapper,
+          action,
+          onLinesDone = (linesDone: Double) => enterpriseSyncInfoRepo.updateLinesDone(generatedInfoId, linesDone),
+          onComplete = () => enterpriseSyncInfoRepo.updateEndedAt(generatedInfoId).map(_ => onEnd()),
+          onFailure = (t: Throwable) => {
+            logger.debug(s"Error occurred while importing $url" + t)
+            enterpriseSyncInfoRepo.updateError(generatedInfoId, t.toString).map(_ => onEnd())
+          }
+        )
 
-      processedFiles = processedFiles + (name -> ProcessedFile(
-        infoId = generatedInfoId,
-        stream = stream,
-      ))
-      generatedInfoId
+        processedFiles = processedFiles + (name -> ProcessedFile(
+          infoId = generatedInfoId,
+          stream = killSwitch,
+        ))
+        generatedInfoId
+      }
     }
     case Cancel(name) => {
       cancel(name)
@@ -99,12 +100,14 @@ class EnterpriseSyncActor @Inject()(
   }
 
   private[this] def cancel(name: String) = {
-    enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
-    enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
-    processedFiles.get(name).map(processFile => {
-      processFile.stream.close()
-      processedFiles = processedFiles - name
-    })
+    for {
+      _ <- Future.successful(processedFiles.get(name).map(processFile => {
+        processFile.stream.shutdown()
+        processedFiles = processedFiles - name
+      }))
+    _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
+   _ <-  enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
+    } yield ()
   }
 
   private[this] def streamFile[T](
@@ -113,28 +116,34 @@ class EnterpriseSyncActor @Inject()(
     onLinesDone: Double => Unit,
     onComplete: () => Future[_],
     onFailure: Throwable => Future[_],
-  ): ZipInputStream = {
+  )  = {
     logger.debug(s"Start importing from ${url}")
     var linesDone = 0d
 
     val inputstream = new ZipInputStream(new BufferedInputStream(new URL(url).openStream()))
     inputstream.getNextEntry
 
-    StreamConverters.fromInputStream(() => inputstream)
-      .throttle(batchSize, 1.second, 1, ThrottleMode.Shaping)
-      .via(Framing.delimiter(ByteString("\n"), 4096))
-      .map(_.utf8String)
-      .drop(1)
-      .grouped(batchSize)
-      .runWith(Sink.foreach[Seq[String]] { (lines: Seq[String]) =>
-        action(mapper(lines)).map(_ => {
-          linesDone = linesDone + lines.size
-          onLinesDone(linesDone)
-        })
-      })
-      .map(_ => onComplete())
-      .recover { case t => onFailure(t) }
+      val (killSwitch, stream) = StreamConverters.fromInputStream(() => inputstream)
+        .throttle(batchSize, 1.second, 1, ThrottleMode.Shaping)
+        .via(Framing.delimiter(ByteString("\n"), 4096))
+        .map(_.utf8String)
+        .drop(1)
+        .grouped(batchSize)
+        .viaMat(KillSwitches.single)(Keep.right)
+        .toMat(Sink.foreach[Seq[String]] { (lines: Seq[String]) =>
+          action(mapper(lines)).map(_ => {
+            linesDone = linesDone + lines.size
+            onLinesDone(linesDone)
+          })
+        })(Keep.both)
+        .run()
 
-    inputstream
+      stream
+        .flatMap(_ => onComplete())
+        .recover { case t =>
+          onFailure(t).map(_ => killSwitch.shutdown())
+        }
+
+      killSwitch
   }
 }
