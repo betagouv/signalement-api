@@ -15,7 +15,7 @@ select count(distinct(u.id)) "Nb utilisateurs DGCCRF connectés au mois de mai"
 from users u, auth_attempts a
 where u.role = 'DGCCRF'
 and u.email = a.login
-and timestamp >q= '2021-05-01'::timestamp
+and timestamp >= '2021-05-01'::timestamp
 and timestamp <= '2021-06-01'::timestamp;
 
 -- Nb abonnements DGCCRF
