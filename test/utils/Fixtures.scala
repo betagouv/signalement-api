@@ -46,17 +46,26 @@ object Fixtures {
         sirenGen <- genSiren
     } yield SIRET(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
 
-    val genAddress = for {
+    def genAddress(postalCode: Option[String] = Some("37500")) = for {
         address <- arbString.arbitrary
-    } yield Address(address)
+    } yield Address(
+        number = Some(address),
+        street = Some(address),
+        addressSupplement = Some(address),
+        postalCode = postalCode,
+        city = Some(address),
+    )
 
     val genCompany = for {
         id <- arbitrary[UUID]
         name <- arbString.arbitrary
         siret <- genSiret()
-        address <- genAddress
+        address <- genAddress()
     } yield Company(
-        id, siret, OffsetDateTime.now(), name, address, Some("37500"), None
+        siret = siret,
+        name = name,
+        address = address,
+        activityCode = None
     )
 
     def genCompanyData(company: Option[Company] = None) = for {
@@ -85,23 +94,21 @@ object Fixtures {
         company <- genCompany
         websiteURL <- genWebsiteURL
     } yield DraftReport(
-       category = category,
-       subcategories = List(subcategory),
-       details = List(),
-       companyName = Some(company.name),
-       companyAddress = Some(company.address),
-       companyPostalCode = company.postalCode.map(_.substring(0, 2)),
-       companyCountry = None,
-       companySiret = Some(company.siret),
-       companyActivityCode = None,
-       websiteURL = Some(websiteURL),
-       phone = None,
-       firstName = firstName,
-       lastName = lastName,
-       email = email,
-       contactAgreement = contactAgreement,
-       employeeConsumer = false,
-       fileIds = List.empty
+        category = category,
+        subcategories = List(subcategory),
+        details = List(),
+        companyName = Some(company.name),
+        companyAddress = Some(company.address),
+        companySiret = Some(company.siret),
+        companyActivityCode = None,
+        websiteURL = Some(websiteURL),
+        phone = None,
+        firstName = firstName,
+        lastName = lastName,
+        email = email,
+        contactAgreement = contactAgreement,
+        employeeConsumer = false,
+        fileIds = List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -114,16 +121,15 @@ object Fixtures {
         contactAgreement <- arbitrary[Boolean]
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
+        id = id,
         category = category,
         subcategories = List(subcategory),
         details = List(),
         companyId = Some(company.id),
         companyName = Some(company.name),
-        companyAddress = Some(company.address),
-        companyPostalCode = company.postalCode.map(_.substring(0, 2)),
-        companyCountry = None,
+        companyAddress = company.address,
         companySiret = Some(company.siret),
-        websiteURL = WebsiteURL(None, None),
+        websiteURL = None,
         phone = None,
         firstName = firstName,
         lastName = lastName,
@@ -145,10 +151,9 @@ object Fixtures {
 
     def genReportCompany = for {
         name <- arbString.arbitrary
-        address <- genAddress
+        address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
         siret <- genSiret()
-        postalCode <- Gen.choose(10000, 99999)
-    } yield ReportCompany(name, address, postalCode.toString, siret, None)
+    } yield ReportCompany(name, address, siret, None)
 
     def genReviewOnReportResponse = for {
         positive <- arbitrary[Boolean]

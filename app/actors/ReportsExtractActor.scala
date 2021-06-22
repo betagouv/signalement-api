@@ -91,16 +91,16 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Département", centerAlignmentColumn,
-        (report, _, _, _) => report.companyPostalCode.map(Departments.fromPostalCode(_)).flatten.getOrElse(""),
+        (report, _, _, _) => report.companyAddress.postalCode.flatMap(Departments.fromPostalCode).getOrElse(""),
       ),
       ReportColumn(
         "Code postal", centerAlignmentColumn,
-        (report, _, _, _) => report.companyPostalCode.getOrElse(""),
+        (report, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays", centerAlignmentColumn,
-        (report, _, _, _) => report.companyCountry.map(_.name).getOrElse(""),
+        (report, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -114,7 +114,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Adresse de l'entreprise", leftAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.map(_.value).getOrElse(""),
+        (report, _, _, _) => report.companyAddress.toString,
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(

@@ -4,7 +4,7 @@ import java.time.{LocalDate, OffsetDateTime}
 import java.util.UUID
 
 import play.api.libs.json._
-import utils.{Address, SIRET}
+import utils.{SIRET}
 
 
 sealed case class AccessLevel(value: String)
@@ -18,7 +18,7 @@ object AccessLevel {
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
   }
   implicit val reads = new Reads[AccessLevel] {
-    def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue(_))
+    def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue)
   }
   implicit val writes = new Writes[AccessLevel] {
     def writes(level: AccessLevel) = Json.toJson(level.value)
@@ -37,10 +37,8 @@ case class Company(
   siret: SIRET,
   creationDate: OffsetDateTime = OffsetDateTime.now,
   name: String,
-  /** @deprecated */
   address: Address,
-  postalCode: Option[String],
-  activityCode: Option[String]
+  activityCode: Option[String],
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
@@ -49,14 +47,12 @@ case class CompanyCreation(
   siret: SIRET,
   name: String,
   address: Address,
-  postalCode: Option[String],
   activityCode: Option[String]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
     name = name,
     address = address,
-    postalCode = postalCode,
     activityCode = activityCode,
   )
 }
@@ -78,7 +74,6 @@ object Company {
 
 case class CompanyAddressUpdate(
   address: Address,
-  postalCode: String,
   activationDocumentRequired: Boolean = false
 )
 

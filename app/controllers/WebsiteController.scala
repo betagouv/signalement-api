@@ -98,7 +98,6 @@ class WebsiteController @Inject()(
           siret = websiteUpdate.companySiret,
           name = websiteUpdate.companyName,
           address = websiteUpdate.companyAddress,
-          postalCode = websiteUpdate.companyPostalCode,
           activityCode = websiteUpdate.companyActivityCode,
         ))
         (for {
@@ -128,7 +127,6 @@ class WebsiteController @Inject()(
             siret = websiteCreate.companySiret,
             name = websiteCreate.companyName,
             address = websiteCreate.companyAddress,
-            postalCode = websiteCreate.companyPostalCode,
             activityCode = websiteCreate.companyActivityCode,
           ))
           website <- websiteRepository.create(Website(

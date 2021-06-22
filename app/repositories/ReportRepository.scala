@@ -8,7 +8,7 @@ import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus
+import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 import PostgresProfile.api._
@@ -202,7 +202,7 @@ class ReportRepository @Inject()(
     )
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
-  val baseStatReportTableQuery        = reportTableQuery
+  val baseStatReportTableQuery = reportTableQuery
     .filter(_.creationDate > backofficeAdminStartDate)
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
 

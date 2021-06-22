@@ -8,7 +8,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.{Address, SIRET}
+import utils.{SIRET}
 import models._
 import PostgresProfile.api._
 import utils.Constants.Departments

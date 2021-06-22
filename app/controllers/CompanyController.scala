@@ -60,6 +60,7 @@ class CompanyController @Inject()(
     for {
       companies <- q match {
         case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
+        case q if q.matches("[0-9]{9}") => companyRepository.findBySiret(SIRET(q)).map(_.toList)
         case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q)).map(_.toList)
         case q => companyRepository.findByName(q)
       }
@@ -103,7 +104,7 @@ class CompanyController @Inject()(
       companiesByUrl <- websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository.searchBySiret(company.siret).map(_.map {
-          case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind)
+          case (company, activity) => company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
         })
       })
     } yield Ok(Json.toJson(results.flatten))
@@ -241,9 +242,9 @@ class CompanyController @Inject()(
       companyAddressUpdate => for {
         company <- companyRepository.fetchCompany(id)
         updatedCompany <- company.map(c =>
-          companyRepository.update(c.copy(address = companyAddressUpdate.address, postalCode = Some(companyAddressUpdate.postalCode))).map(Some(_))
+          companyRepository.update(c.copy(address = companyAddressUpdate.address)).map(Some(_))
         ).getOrElse(Future(None))
-        _ <- updatedCompany.filter(c => Some(c.address) != company.map(_.address)).map(c =>
+        _ <- updatedCompany.filter(c => !company.map(_.address).contains(c.address)).map(c =>
           eventRepository.createEvent(
             Event(
               Some(UUID.randomUUID()),

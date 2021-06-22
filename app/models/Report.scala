@@ -8,7 +8,7 @@ import play.api.libs.json.{Json, OFormat, Writes, _}
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{Address, Country, EmailAddress, SIRET, URL}
+import utils.{EmailAddress, SIRET, URL}
 
 
 case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
@@ -23,8 +23,6 @@ case class DraftReport(
   details: List[DetailInputValue],
   companyName: Option[String],
   companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
   companySiret: Option[SIRET],
   companyActivityCode: Option[String],
   websiteURL: Option[URL],
@@ -65,9 +63,13 @@ case class DraftReport(
     report.copy(status = report.initialStatus())
   }
 }
+
 object DraftReport {
   implicit val draftReportReads = Json.reads[DraftReport].filter(
-    draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined || draft.phone.isDefined || draft.companyAddress.isDefined
+    draft => draft.companySiret.isDefined
+      || draft.websiteURL.isDefined
+      || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
+      || draft.phone.isDefined
   )
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
@@ -79,9 +81,7 @@ case class Report(
   details: List[DetailInputValue],
   companyId: Option[UUID],
   companyName: Option[String],
-  companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
+  companyAddress: Address,
   companySiret: Option[SIRET],
   websiteURL: WebsiteURL,
   phone: Option[String],
@@ -124,8 +124,7 @@ object Report {
         "subcategories" -> report.subcategories,
         "details" -> report.details,
         "companyName" -> report.companyName,
-        "companyAddress" -> report.companyAddress,
-        "companyPostalCode" -> report.companyPostalCode,
+        "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
@@ -143,24 +142,24 @@ object Report {
           "lastName" -> report.lastName,
           "email" -> report.email
         )
-      }) ++ (report.companyCountry.map(c => Json.obj("companyCountry" -> c.name)).getOrElse(Json.obj()))
+      })
   }
 }
 
 
 case class ReportWithFiles(
-                          report: Report,
-                          files: List[ReportFile]
-                          )
+  report: Report,
+  files: List[ReportFile]
+)
 
 object ReportWithFiles {
   implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
 }
 
-case class  DetailInputValue (
-                           label: String,
-                           value: String
-                 ) extends Struct
+case class DetailInputValue(
+  label: String,
+  value: String
+) extends Struct
 
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
@@ -179,10 +178,9 @@ object CompanyWithNbReports {
 
   implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
     def writes(data: CompanyWithNbReports) = Json.obj(
-      "companyPostalCode" -> data.company.postalCode,
       "companySiret" -> data.company.siret,
       "companyName" -> data.company.name,
-      "companyAddress" -> data.company.address,
+      "companyAddress" -> Json.toJson(data.company.address),
       "count" -> data.count
     )
   }
@@ -191,33 +189,32 @@ object CompanyWithNbReports {
 }
 
 case class ReportCompany(
-                          name: String,
-                          address: Address,
-                          postalCode: String,
-                          siret: SIRET,
-                          activityCode: Option[String]
-                        )
+  name: String,
+  address: Address,
+  siret: SIRET,
+  activityCode: Option[String]
+)
 
 object ReportCompany {
   implicit val format = Json.format[ReportCompany]
 }
 
 case class ReportConsumer(
-                           firstName: String,
-                           lastName: String,
-                           email: EmailAddress,
-                           contactAgreement: Boolean
-                        )
+  firstName: String,
+  lastName: String,
+  email: EmailAddress,
+  contactAgreement: Boolean
+)
 
 object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
 }
 
 case class ReportAction(
-                         actionType: ActionEventValue,
-                         details: Option[String],
-                         fileIds: List[UUID]
-                       )
+  actionType: ActionEventValue,
+  details: Option[String],
+  fileIds: List[UUID]
+)
 
 object ReportAction {
   implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
