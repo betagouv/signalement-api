@@ -14,7 +14,7 @@ object Address {
       distinctLines
         .filterNot(_ == "FRANCE")
         .filterNot(line => distinctLines.count(_.contains(line)) > 1)
-      .reduce((a1, a2) => s"$a1 - $a2")
+        .mkString(" - ")
     )
   }
 
