@@ -53,7 +53,7 @@ GET           /api/admin/test-email                                  controllers
 POST          /api/admin/test-email                                  controllers.AdminController.sendTestEmail(templateRef, to)
 
 # Async files API
-GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles
+GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
 
 # Events API
 
