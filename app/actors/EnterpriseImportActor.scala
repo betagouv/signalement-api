@@ -5,12 +5,12 @@ import java.net.URL
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.zip.ZipInputStream
-import akka.actor.{Actor, ActorSystem, Props}
+
+import akka.actor.{Actor, Props}
 import akka.stream.scaladsl.{Framing, Sink, StreamConverters}
-import akka.stream.ThrottleMode
+import akka.stream.{ActorMaterializer, ThrottleMode}
 import akka.util.ByteString
 import com.google.inject.AbstractModule
-
 import javax.inject.{Inject, Singleton}
 import models.EnterpriseImportInfo
 import play.api.Logger
@@ -57,11 +57,10 @@ class EnterpriseSyncActor @Inject()(
 ) extends Actor {
 
   import EnterpriseSyncActor._
-  implicit val actorSystem: ActorSystem = context.system
 
   private[this] val logger = Logger(this.getClass)
   private[this] lazy val batchSize = 5000
-
+  implicit val mat: ActorMaterializer = ActorMaterializer()
 
   private[this] var processedFiles: Map[String, ProcessedFile] = Map()
 
@@ -83,7 +82,7 @@ class EnterpriseSyncActor @Inject()(
         onComplete = () => enterpriseSyncInfoRepo.updateEndedAt(generatedInfoId).map(x => onEnd()),
         onFailure = (t: Throwable) => {
           logger.debug(s"Error occurred while importing $url" + t)
-          enterpriseSyncInfoRepo.updateError(generatedInfoId, t.toString).map(_ => onEnd())
+          enterpriseSyncInfoRepo.updateError(generatedInfoId, t.toString).map(x => onEnd())
         }
       )
 
@@ -127,12 +126,12 @@ class EnterpriseSyncActor @Inject()(
       .drop(1)
       .grouped(batchSize)
       .runWith(Sink.foreach[Seq[String]] { (lines: Seq[String]) =>
-        action(mapper(lines)).map(_ => {
+        action(mapper(lines)).map(x => {
           linesDone = linesDone + lines.size
           onLinesDone(linesDone)
         })
       })
-      .map(_ => onComplete())
+      .map(x => onComplete())
       .recover { case t => onFailure(t) }
 
     inputstream
