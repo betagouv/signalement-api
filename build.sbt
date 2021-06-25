@@ -24,11 +24,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
   "com.github.tminglei" %% "slick-pg" % slickPgVersion,
   "com.github.tminglei" %% "slick-pg_play-json" % slickPgVersion,
-
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % "2.0.2",
   "com.typesafe.play" %% "play-mailer" % playMailerVersion,
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "2.0.2",
+  "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "2.0.2",
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",

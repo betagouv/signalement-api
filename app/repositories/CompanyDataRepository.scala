@@ -5,8 +5,9 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
-import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toFieldValueMap, toOptionalSqlValue, toSqlValue}
+import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toOptionalSqlValue}
 import slick.jdbc.JdbcProfile
+import slick.sql.{FixedSqlAction, SqlAction}
 import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -65,10 +66,31 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     row.etatAdministratifEtablissement.getOrElse("A") =!= "F"
   }
 
-  def insertAllRaw(companies: Seq[CompanyData]): Future[Seq[Int]] = db.run(DBIO.sequence(companies.map(company => {
+//  def insertAllRaw(companies: Seq[Map[String,Option[String]]]): DBIOAction[Seq[Int], NoStream, Effect] = DBIO.sequence(companies.map(company => {
+//
+//    val companyKeyValues: Map[String, String] = company.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
+//
+//
+//    val insertColumns: String = companyKeyValues.keys.mkString(",")
+//    val insertValues: String = companyKeyValues.values.mkString(",")
+//    val insertValuesOnSiretConflict: String = companyKeyValues
+//      .filterKeys(_ !=  DENOMINATION_USUELLE_ETABLISSEMENT)
+//      .map{ case (columnName,value) => s"$columnName = $value"}
+//      .mkString(",")
+//
+//    sqlu"""INSERT INTO etablissements (#$insertColumns)
+//          VALUES (#$insertValues)
+//          ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
+//          denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(DENOMINATION_USUELLE_ETABLISSEMENT, "NULL")}, ''), etablissements.denominationusuelleetablissement)
+//        """
+//    }))
 
-    val companyKeyValues: Map[String, String] = toFieldValueMap(company).mapValues(maybeValue => toOptionalSqlValue(maybeValue))
 
+
+//  def insertAll(companies: Map[String,Option[String]]): SqlAction[Int, NoStream, Effect] = {
+    def insertAll(companies: Map[String,Option[String]]): DBIO[Int] = {
+
+    val companyKeyValues: Map[String, String] = companies.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
     val insertColumns: String = companyKeyValues.keys.mkString(",")
     val insertValues: String = companyKeyValues.values.mkString(",")
     val insertValuesOnSiretConflict: String = companyKeyValues
@@ -81,15 +103,24 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
           ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
           denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(DENOMINATION_USUELLE_ETABLISSEMENT, "NULL")}, ''), etablissements.denominationusuelleetablissement)
         """
-  })).transactionally)
+  }
 
-  def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
-    db.run(DBIO.sequence(names.map(x => companyDataTableQuery
-      .filter(_.siren === x._1)
+
+//  def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
+//    db.run(DBIO.sequence(names.map(x => companyDataTableQuery
+//      .filter(_.siren === x._1)
+//      .filter(_.denominationUsuelleEtablissement.isEmpty)
+//      .map(_.denominationUsuelleEtablissement)
+//      .update(Some(x._2))
+//    )).transactionally)
+//  }
+
+  def updateName(name: (SIREN, String)): FixedSqlAction[Int, NoStream, Effect.Write] = {
+     companyDataTableQuery
+      .filter(_.siren === name._1)
       .filter(_.denominationUsuelleEtablissement.isEmpty)
       .map(_.denominationUsuelleEtablissement)
-      .update(Some(x._2))
-    )).transactionally)
+      .update(Some(name._2))
   }
 
   def create(companyData: CompanyData): Future[CompanyData] = db
