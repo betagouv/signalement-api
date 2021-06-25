@@ -59,7 +59,7 @@ class EnterpriseSyncActor @Inject()(
 
   implicit val session = SlickSession.forConfig("slick.dbs.company_db")
   implicit val actorSystem: ActorSystem = context.system
-  val batchSize = 50000
+  val batchSize = 5000
   actorSystem.registerOnTermination(() => session.close())
 
   private[this] val logger = Logger(this.getClass)
@@ -105,23 +105,26 @@ class EnterpriseSyncActor @Inject()(
     val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
     inputstream.getNextEntry
 
+
+    val source: Source[Map[String, String], Future[IOResult]] = StreamConverters.fromInputStream(() => inputstream)
+      //      .throttle(5000, 1.second, 1, ThrottleMode.Shaping)
+      .via(CsvParsing.lineScanner(maximumLineLength = 4096))
+      .drop(1)
+      .via(CsvToMap.withHeadersAsStrings(StandardCharsets.UTF_8, companyFile.headers: _*))
+
+
   val EtablissementIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
     Flow[Map[String,String]]
-      .map(_.mapValues(x => {
-      Option(x).filter(_.trim.nonEmpty)
-    }): Map[String, Option[String]])
-    .filter{ columnsValueMap =>
-        columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
-    }.grouped(batchSize)
-      .map { x =>
-      println(s"------------------ x ------------------")
-      x
-    }
-    .via(
-      Slick.flow(4,group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
-    )
+      .map(_.mapValues(x => Option(x).filter(_.trim.nonEmpty)): Map[String, Option[String]])
+      .filter{ columnsValueMap =>
+          columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
+      }.grouped(batchSize)
+      .via(
+        Slick.flow(4,group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
+      )
 
-  val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =   Flow[Map[String,String]]
+  val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
+    Flow[Map[String,String]]
     .map{ columsValueMap =>
       columsValueMap.get("siren").map(siren => {
         val enterpriseName = columsValueMap.get("denominationunitelegale")
@@ -134,15 +137,13 @@ class EnterpriseSyncActor @Inject()(
     }
     .collect {
       case Some(value) => value
-    }
-    .via(Slick.flow(companyDataRepository.updateName(_)))
+    }.grouped(batchSize)
+    .via(
+      Slick.flow(4,group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
+    )
 
 
-    val source: Source[Map[String, String], Future[IOResult]] = StreamConverters.fromInputStream(() => inputstream)
-//      .throttle(5000, 1.second, 1, ThrottleMode.Shaping)
-      .via(CsvParsing.lineScanner(maximumLineLength = 4096))
-      .drop(1)
-      .via(CsvToMap.withHeadersAsStrings(StandardCharsets.UTF_8, companyFile.headers: _*))
+
 
     val processFileFlow = Flow.fromGraph(GraphDSL.create(){ implicit builder =>
 

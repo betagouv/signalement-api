@@ -6,7 +6,7 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toOptionalSqlValue}
-import slick.jdbc.JdbcProfile
+import slick.jdbc.{JdbcProfile, ResultSetConcurrency, ResultSetType}
 import slick.sql.{FixedSqlAction, SqlAction}
 import utils.{SIREN, SIRET}
 
@@ -103,7 +103,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
           ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
           denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(DENOMINATION_USUELLE_ETABLISSEMENT, "NULL")}, ''), etablissements.denominationusuelleetablissement)
         """
-  }
+  }.withStatementParameters(rsType = ResultSetType.ForwardOnly, rsConcurrency = ResultSetConcurrency.ReadOnly).transactionally
 
 
 //  def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
@@ -115,13 +115,13 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
 //    )).transactionally)
 //  }
 
-  def updateName(name: (SIREN, String)): FixedSqlAction[Int, NoStream, Effect.Write] = {
+  def updateName(name: (SIREN, String)): DBIO[Int] = {
      companyDataTableQuery
       .filter(_.siren === name._1)
       .filter(_.denominationUsuelleEtablissement.isEmpty)
       .map(_.denominationUsuelleEtablissement)
       .update(Some(name._2))
-  }
+  }.withStatementParameters(rsType = ResultSetType.ForwardOnly, rsConcurrency = ResultSetConcurrency.ReadOnly).transactionally
 
   def create(companyData: CompanyData): Future[CompanyData] = db
     .run(companyDataTableQuery += companyData)
