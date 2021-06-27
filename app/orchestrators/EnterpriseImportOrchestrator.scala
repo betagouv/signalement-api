@@ -74,7 +74,10 @@ class EnterpriseImportOrchestrator @Inject()(
         activitePrincipaleEtablissement = getValue("activiteprincipaleetablissement").getOrElse(""),
         etatAdministratifEtablissement = getValue("etatadministratifetablissement"),
       )),
-    action = companyDataRepository.insertAllRaw
+    action = companyDataRepository.insertAllRaw,
+    // TODO Don't use because cancelling the stream will tigger it.
+    //  I need a way to only call onEnd only when the stream is completed.
+    // onEnd = () => enterpriseActor ? startUniteLegaleFileActor,
   )
 
   private[this] lazy val startUniteLegaleFileActor = EnterpriseSyncActor.Start(
