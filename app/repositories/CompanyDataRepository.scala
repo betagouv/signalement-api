@@ -66,7 +66,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   }
 
   def insertAll(companies: Seq[CompanyData]) = {
-    db.run(companyDataTableQuery.insertOrUpdateAll(companies))
+    db.run(companyDataTableQuery.insertOrUpdateAll(companies).transactionally)
   }
 
   def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
