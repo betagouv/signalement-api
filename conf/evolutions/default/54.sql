@@ -1,7 +1,11 @@
 -- !Ups
 
-ALTER TABLE reports ADD COLUMN forward_to_reponseconso BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE async_files ADD COLUMN kind VARCHAR;
+UPDATE async_files SET kind = 'ReportedPhones' WHERE filename LIKE 'telephones-signales-%';
+UPDATE async_files SET kind = 'Reports' WHERE filename LIKE 'signalements-%';
+UPDATE async_files SET kind = 'ReportedWebsites' WHERE filename LIKE 'sites-non-identifies-%';
+UPDATE async_files SET kind = 'Reports' WHERE filename IS NULl;
 
 -- !Downs
 
-ALTER TABLE reports DROP COLUMN forward_to_reponseconso;
+ALTER TABLE async_files DROP COLUMN kind;

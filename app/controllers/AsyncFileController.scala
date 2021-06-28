@@ -22,14 +22,16 @@ class AsyncFileController @Inject()(
  extends BaseController {
   val BucketName = configuration.get[String]("play.buckets.report")
 
-  def listAsyncFiles = SecuredAction.async { implicit request =>
+  def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>
     for {
-      asyncFiles <- asyncFileRepository.list(request.identity)
+      asyncFiles <- asyncFileRepository.list(request.identity, kind.map(AsyncFileKind.withName))
     } yield Ok(Json.toJson(asyncFiles.map{
       case asyncFile: AsyncFile => {
           Map(
+            "id"              -> asyncFile.id.toString,
             "creationDate"    -> asyncFile.creationDate.toString,
             "filename"        -> asyncFile.filename.getOrElse(""),
+            "kind"            -> asyncFile.kind.toString,
             "url"             -> asyncFile.storageFilename.map(s3Service.getSignedUrl(BucketName, _)).getOrElse(""),
         )
       }
