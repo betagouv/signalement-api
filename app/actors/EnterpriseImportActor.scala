@@ -119,13 +119,9 @@ class EnterpriseSyncActor @Inject()(
       logger.debug(s"Start importing from ${companyFile.url.toString}")
       var linesDone = 0d
 
-//      val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
-//      inputstream.getNextEntry
-
 
 
       val source: Source[Map[String, String], Any] =
-//        StreamConverters.fromInputStream(() => inputstream)
         FileIO.fromPath(Paths.get(s"./${companyFile.name}.csv"))
               .throttle(5000, 1.second, 1, ThrottleMode.Shaping)
         .via(CsvParsing.lineScanner(maximumLineLength = 4096))
@@ -139,13 +135,11 @@ class EnterpriseSyncActor @Inject()(
           .filter { columnsValueMap =>
             columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
           }.grouped(batchSize)
-          .map{ x=>
-            println(s"------------------ x = ${x} ------------------")
-            x
-          }
-          .via(
-            Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
-          )
+
+          .mapAsyncUnordered(4)(companyDataRepository.insertAllRaw(_).map(_.sum))
+//          .via(
+//            Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
+//          )
           .via(sharedKillSwitch.flow)
 
       val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
@@ -163,9 +157,10 @@ class EnterpriseSyncActor @Inject()(
           .collect {
             case Some(value) => value
           }.grouped(batchSize)
-          .via(
-            Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
-          )
+          .mapAsyncUnordered(4)(companyDataRepository.updateNames(_).map(_.sum))
+//          .via(
+//            Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
+//          )
           .via(sharedKillSwitch.flow)
 
 
@@ -188,8 +183,8 @@ class EnterpriseSyncActor @Inject()(
 
 
       val stream = source.via(processFileFlow).map {
-        _ =>
-          linesDone = linesDone + batchSize
+        done =>
+          linesDone = linesDone + done
           enterpriseSyncInfoRepo.updateLinesDone(jobId, linesDone)
       }.runWith(Sink.ignore)
 
