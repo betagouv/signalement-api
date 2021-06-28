@@ -119,8 +119,6 @@ class EnterpriseSyncActor @Inject()(
       logger.debug(s"Start importing from ${companyFile.url.toString}")
       var linesDone = 0d
 
-
-
       val source: Source[Map[String, String], Any] =
         FileIO.fromPath(Paths.get(s"./${companyFile.name}.csv"))
               .throttle(5000, 1.second, 1, ThrottleMode.Shaping)
@@ -135,10 +133,10 @@ class EnterpriseSyncActor @Inject()(
           .filter { columnsValueMap =>
             columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
           }.grouped(batchSize)
-          .mapAsync(1)(companyDataRepository.insertAllRaw(_).map(_.sum))
-//          .via(
-//            Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
-//          )
+//          .mapAsync(1)(companyDataRepository.insertAllRaw(_).map(_.sum))
+          .via(
+            Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
+          )
           .via(sharedKillSwitch.flow)
 
       val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
@@ -157,10 +155,10 @@ class EnterpriseSyncActor @Inject()(
           .collect {
             case Some(value) => value
           }.grouped(batchSize)
-          .mapAsync(1)(companyDataRepository.updateNames(_).map(_.sum))
-//          .via(
-//            Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
-//          )
+//          .mapAsync(1)(companyDataRepository.updateNames(_).map(_.sum))
+          .via(
+            Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
+          )
           .via(sharedKillSwitch.flow)
 
 
