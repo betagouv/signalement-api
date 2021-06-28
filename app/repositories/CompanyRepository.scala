@@ -3,15 +3,15 @@ package repositories
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Provider, Singleton}
+import javax.inject.{Inject, Singleton}
+import models._
+import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
+import slick.jdbc.JdbcProfile
+import utils.Constants.Departments
+import utils.{Address, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
-import utils.{Address, SIREN, SIRET}
-import models._
-import utils.Constants.Departments
-import PostgresProfile.api._
 
 class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def id = column[UUID]("id", O.PrimaryKey)
