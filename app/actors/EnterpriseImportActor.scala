@@ -135,8 +135,7 @@ class EnterpriseSyncActor @Inject()(
           .filter { columnsValueMap =>
             columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
           }.grouped(batchSize)
-
-          .mapAsyncUnordered(4)(companyDataRepository.insertAllRaw(_).map(_.sum))
+          .mapAsync(1)(companyDataRepository.insertAllRaw(_).map(_.sum))
 //          .via(
 //            Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
 //          )
@@ -145,6 +144,7 @@ class EnterpriseSyncActor @Inject()(
       val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
         Flow[Map[String, String]]
           .map { columsValueMap =>
+
             columsValueMap.get("siren").map(siren => {
               val enterpriseName = columsValueMap.get("denominationunitelegale")
                 .orElse(columsValueMap.get("denominationusuelle1unitelegale"))
@@ -157,7 +157,7 @@ class EnterpriseSyncActor @Inject()(
           .collect {
             case Some(value) => value
           }.grouped(batchSize)
-          .mapAsyncUnordered(4)(companyDataRepository.updateNames(_).map(_.sum))
+          .mapAsync(1)(companyDataRepository.updateNames(_).map(_.sum))
 //          .via(
 //            Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
 //          )
