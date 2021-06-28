@@ -181,8 +181,8 @@ class EnterpriseSyncActor @Inject()(
 
 
       val stream = source.via(processFileFlow).map {
-        done =>
-          linesDone = linesDone + done
+        _ =>
+          linesDone = linesDone +  batchSize
           enterpriseSyncInfoRepo.updateLinesDone(jobId, linesDone)
       }.runWith(Sink.ignore)
 
