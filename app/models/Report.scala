@@ -28,7 +28,7 @@ case class DraftReport(
   email: EmailAddress,
   contactAgreement: Boolean,
   employeeConsumer: Boolean,
-  forwardToReponseConso: Boolean = false,
+  forwardToReponseConso: Option[Boolean] = Some(false),
   fileIds: List[UUID],
   vendor: Option[String] = None,
   tags: List[String] = Nil
@@ -52,6 +52,7 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
+      forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
     )
