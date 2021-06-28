@@ -102,6 +102,8 @@ POST          /api/email/validate                                    controllers
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create
+POST          /api/companies                                         controllers.CompanyController.create
+GET           /api/companies/search                                  controllers.CompanyController.searchRegistered(identity: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/companies/connected-user                          controllers.CompanyController.viewableCompanies
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument

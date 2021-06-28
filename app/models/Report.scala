@@ -186,6 +186,8 @@ object CompanyWithNbReports {
       "count" -> data.count
     )
   }
+
+  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[CompanyWithNbReports]]
 }
 
 case class ReportCompany(

@@ -4,15 +4,90 @@ import java.time._
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
+import models.DetailInputValue.string2detailInputValue
 import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
 import scala.concurrent.{ExecutionContext, Future}
+
+class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
+
+  def id = column[UUID]("id", O.PrimaryKey)
+  def category = column[String]("category")
+  def subcategories = column[List[String]]("subcategories")
+  def details = column[List[String]]("details")
+  def companyId = column[Option[UUID]]("company_id")
+  def companyName = column[Option[String]]("company_name")
+  def companyAddress = column[Option[Address]]("company_address")
+  def companyPostalCode = column[Option[String]]("company_postal_code")
+  def companyCountry = column[Option[Country]]("company_country")
+  def companySiret = column[Option[SIRET]]("company_siret")
+  def websiteURL = column[Option[URL]]("website_url")
+  def phone = column[Option[String]]("phone")
+  def creationDate = column[OffsetDateTime]("creation_date")
+  def firstName = column[String]("first_name")
+  def lastName = column[String]("last_name")
+  def email = column[EmailAddress]("email")
+  def contactAgreement = column[Boolean]("contact_agreement")
+  def employeeConsumer = column[Boolean]("employee_consumer")
+  def status = column[String]("status")
+  def vendor = column[Option[String]]("vendor")
+  def tags = column[List[String]]("tags")
+
+  def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(_.id.?, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+
+  type ReportData = (
+    UUID,
+      String,
+      List[String],
+      List[String],
+      Option[UUID],
+      Option[String],
+      Option[Address],
+      Option[String],
+      Option[Country],
+      Option[SIRET],
+      Option[URL],
+      Option[String],
+      OffsetDateTime,
+      String,
+      String,
+      EmailAddress,
+      Boolean,
+      Boolean,
+      String,
+      Option[String],
+      List[String]
+    )
+
+  def constructReport: ReportData => Report = {
+    case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
+      Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), vendor, tags)
+  }
+
+  def extractReport: PartialFunction[Report, ReportData] = {
+    case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
+      (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, vendor, tags)
+  }
+
+  def * =
+    (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) <> (constructReport, extractReport.lift)
+}
+
+object ReportTables {
+  val tables = TableQuery[ReportTable]
+}
 
 @Singleton
 class ReportRepository @Inject()(
@@ -28,11 +103,8 @@ class ReportRepository @Inject()(
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
 
-  import PostgresProfile.api._
   import dbConfig._
-  import models.DetailInputValue._
 
-  class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
     def id = column[UUID]("id", O.PrimaryKey)
     def category = column[String]("category")
