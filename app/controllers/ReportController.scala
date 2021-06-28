@@ -315,8 +315,6 @@ class ReportController @Inject()(
 
   /** @deprecated replaced by CompanyController.searchRegistered */
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
-    implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
-
     // valeurs par défaut
     val LIMIT_DEFAULT = 25
     val LIMIT_MAX = 250
