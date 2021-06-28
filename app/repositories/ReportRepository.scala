@@ -464,6 +464,7 @@ class ReportRepository @Inject()(
         .update(Some(output))
     )
 
+  /** @deprecated CompanyController.searchRegistered  */
   def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
     val q = db.run(companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
       .groupBy(_._1)

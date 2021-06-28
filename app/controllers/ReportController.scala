@@ -313,6 +313,7 @@ class ReportController @Inject()(
     }
   }
 
+  /** @deprecated replaced by CompanyController.searchRegistered */
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     implicit val paginatedReportWriter = PaginatedResult.paginatedCompanyWithNbReportsWriter
 
