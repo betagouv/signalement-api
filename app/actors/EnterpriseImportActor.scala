@@ -84,13 +84,13 @@ class EnterpriseSyncActor @Inject()(
       ))
         filePath = s"./${companyFile.name}.csv"
         _= logger.debug(s"------------------  Downloading ${companyFile.name} file ------------------")
-        _ <- {
-        val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
-          inputstream.getNextEntry
-          StreamConverters.fromInputStream(() => inputstream)
-            .runWith(FileIO.toPath(Paths.get(filePath)))
-
-      }
+//        _ <- {
+//        val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
+//          inputstream.getNextEntry
+//          StreamConverters.fromInputStream(() => inputstream)
+//            .runWith(FileIO.toPath(Paths.get(filePath)))
+//
+//      }
         _= logger.debug(s"File save in ${filePath}")
       } yield ingestFile(jobId, companyFile)
 
@@ -102,8 +102,8 @@ class EnterpriseSyncActor @Inject()(
    _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
     _ <- Future.successful(processedFiles.get(name).map(processFile => {
-      processFile.stream.shutdown()
       processedFiles = processedFiles - name
+      processFile.stream.shutdown()
     }))
   } yield ()
 
@@ -121,7 +121,7 @@ class EnterpriseSyncActor @Inject()(
 
       val source: Source[Map[String, String], Any] =
         FileIO.fromPath(Paths.get(s"./${companyFile.name}.csv"))
-              .throttle(5000, 1.second, 1, ThrottleMode.Shaping)
+//              .throttle(batchSize, 1.second, 1, ThrottleMode.Shaping)
         .via(CsvParsing.lineScanner(maximumLineLength = 4096))
         .drop(1)
         .via(CsvToMap.withHeadersAsStrings(StandardCharsets.UTF_8, companyFile.headers: _*))
@@ -190,7 +190,8 @@ class EnterpriseSyncActor @Inject()(
         stream = sharedKillSwitch,
       ))
 
-      stream.flatMap(_ => enterpriseSyncInfoRepo.updateEndedAt(jobId))
+      stream
+        .flatMap(_ => enterpriseSyncInfoRepo.updateEndedAt(jobId))
         .recover { case err =>
           logger.error(s"Error occurred while importing ${companyFile.url}", err)
           enterpriseSyncInfoRepo.updateError(jobId, err.toString)
