@@ -84,13 +84,13 @@ class EnterpriseSyncActor @Inject()(
       ))
         filePath = s"./${companyFile.name}.csv"
         _= logger.debug(s"------------------  Downloading ${companyFile.name} file ------------------")
-//        _ <- {
-//        val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
-//          inputstream.getNextEntry
-//          StreamConverters.fromInputStream(() => inputstream)
-//            .runWith(FileIO.toPath(Paths.get(filePath)))
-//
-//      }
+        _ <- {
+        val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
+          inputstream.getNextEntry
+          StreamConverters.fromInputStream(() => inputstream)
+            .runWith(FileIO.toPath(Paths.get(filePath)))
+
+      }
         _= logger.debug(s"File save in ${filePath}")
       } yield ingestFile(jobId, companyFile)
 
