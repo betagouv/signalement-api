@@ -122,7 +122,6 @@ class ReportRepository @Inject()(
     def companyStreet = column[Option[String]]("company_street")
     def companyAddressSupplement = column[Option[String]]("company_address_supplement")
     def companyPostalCode = column[Option[String]]("company_postal_code")
-    def companyDepartment = column[Option[String]]("company_department")
     def companyCity = column[Option[String]]("company_city")
     def companyCountry = column[Option[Country]]("company_country")
     def websiteURL = column[Option[URL]]("website_url")
@@ -149,7 +148,6 @@ class ReportRepository @Inject()(
           Option[UUID],
             Option[String],
             Option[SIRET],
-            Option[String],
             Option[String],
             Option[String],
             Option[String],
@@ -185,7 +183,6 @@ class ReportRepository @Inject()(
           companyStreet,
           companyAddressSupplement,
           companyPostalCode,
-          companyDepartment,
           companyCity,
           companyCountry,
           ),
@@ -246,7 +243,6 @@ class ReportRepository @Inject()(
           r.companyAddress.street,
           r.companyAddress.addressSupplement,
           r.companyAddress.postalCode,
-          r.companyAddress.postalCode.flatMap(Departments.fromPostalCode),
           r.companyAddress.city,
           r.companyAddress.country,
         ),
@@ -278,7 +274,6 @@ class ReportRepository @Inject()(
         companyStreet,
         companyAddressSupplement,
         companyPostalCode,
-        companyDepartment,
         companyCity,
         companyCountry,
       ),
