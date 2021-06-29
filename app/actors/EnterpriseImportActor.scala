@@ -83,7 +83,7 @@ class EnterpriseSyncActor @Inject()(
         linesCount = companyFile.approximateSize,
       ))
         filePath = s"./${companyFile.name}.csv"
-        _= println(s"------------------  Downloading ${companyFile.name} file ------------------")
+        _= logger.debug(s"------------------  Downloading ${companyFile.name} file ------------------")
         _ <- {
         val inputstream = new ZipInputStream(new BufferedInputStream(companyFile.url.openStream()))
           inputstream.getNextEntry
@@ -91,7 +91,7 @@ class EnterpriseSyncActor @Inject()(
             .runWith(FileIO.toPath(Paths.get(filePath)))
 
       }
-        _= logger.info(s"File save in ${filePath}")
+        _= logger.debug(s"File save in ${filePath}")
       } yield ingestFile(jobId, companyFile)
 
     case Cancel(name) => cancel(name)
@@ -101,10 +101,10 @@ class EnterpriseSyncActor @Inject()(
   private[this] def cancel(name: String) = for {
    _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
-    _ = processedFiles.get(name).map(processFile => {
+    _ <- Future.successful(processedFiles.get(name).map(processFile => {
       processFile.stream.shutdown()
       processedFiles = processedFiles - name
-    })
+    }))
   } yield ()
 
 
@@ -142,7 +142,6 @@ class EnterpriseSyncActor @Inject()(
       val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
         Flow[Map[String, String]]
           .map { columsValueMap =>
-
             columsValueMap.get("siren").map(siren => {
               val enterpriseName = columsValueMap.get("denominationunitelegale")
                 .orElse(columsValueMap.get("denominationusuelle1unitelegale"))
