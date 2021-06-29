@@ -89,9 +89,8 @@ class EnterpriseSyncActor @Inject()(
           inputstream.getNextEntry
           StreamConverters.fromInputStream(() => inputstream)
             .runWith(FileIO.toPath(Paths.get(filePath)))
-
       }
-        _= logger.debug(s"File save in ${filePath}")
+        _= logger.debug(s"File saved in ${filePath}")
       } yield ingestFile(jobId, companyFile)
 
     case Cancel(name) => cancel(name)
@@ -99,8 +98,8 @@ class EnterpriseSyncActor @Inject()(
   }
 
   private[this] def cancel(name: String) = for {
-   _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
+   _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- Future.successful(processedFiles.get(name).map(processFile => {
       processedFiles = processedFiles - name
       processFile.stream.shutdown()
@@ -154,6 +153,10 @@ class EnterpriseSyncActor @Inject()(
           .collect {
             case Some(value) => value
           }.grouped(batchSize)
+          .map{ x =>
+            logger.debug("Processing ${x.size} elements")
+            x
+          }
 //          .mapAsync(1)(companyDataRepository.updateNames(_).map(_.sum))
           .via(
             Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))

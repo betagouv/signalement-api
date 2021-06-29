@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
-import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toOptionalSqlValue}
+import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toOptionalSqlValue, toSqlValue}
 import slick.jdbc.{JdbcProfile, ResultSetConcurrency, ResultSetType}
 import slick.sql.{FixedSqlAction, SqlAction}
 import utils.{SIREN, SIRET}
@@ -121,6 +121,17 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(_.denominationUsuelleEtablissement.isEmpty)
       .map(_.denominationUsuelleEtablissement)
       .update(Some(name._2))
+  }
+
+  def up(name: (SIREN, String)):DBIO[Int] = {
+
+    val siren =  toSqlValue(name._1.value)
+    val denomination  = toSqlValue(name._2)
+
+    sqlu"""UPDATE etablissements
+          SET denominationusuelleetablissement= #${denomination}
+          WHERE siren = #${siren}
+          AND (denominationusuelleetablissement is null or denominationusuelleetablissement = '')"""
   }
 
   def create(companyData: CompanyData): Future[CompanyData] = db
