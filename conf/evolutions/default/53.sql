@@ -14,3 +14,5 @@ CREATE TABLE emails_validation
 -- !Downs
 
 DROP TABLE emails_validation
+
+

@@ -58,7 +58,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        asyncFile     <- asyncFileRepository.create(requestedBy)
+        asyncFile     <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath       <- {
           sender() ! Unit
           genTmpFile(requestedBy, filters)
