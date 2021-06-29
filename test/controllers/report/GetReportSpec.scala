@@ -192,18 +192,63 @@ trait GetReportContext extends Mockito {
   val company = Fixtures.genCompanyData().sample.get
 
   val neverRequestedReport = Report(
-    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, TRAITEMENT_EN_COURS
+    category = "category",
+    subcategories = List("subcategory"),
+    details = List(),
+    companyId = Some(company.id),
+    companyName = Some("companyName"),
+    companyAddress = Some(Address("companyAddress")),
+    companyPostalCode = Some(Departments.ALL(0)),
+    companyCountry = None,
+    companySiret = Some(company.siret),
+    websiteURL = None,
+    phone = None,
+    firstName = "firstName",
+    lastName = "lastName",
+    email = EmailAddress("email"),
+    contactAgreement = true,
+    employeeConsumer = false,
+    status = TRAITEMENT_EN_COURS
   )
 
   val neverRequestedFinalReport = Report(
-    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_CONSULTE_IGNORE
+    category = "category",
+    subcategories = List("subcategory"),
+    details = List(),
+    companyId = Some(company.id),
+    companyName = Some("companyName"),
+    companyAddress = Some(Address("companyAddress")),
+    companyPostalCode = Some(Departments.ALL(0)),
+    companyCountry = None,
+    companySiret = Some(company.siret),
+    websiteURL = None,
+    phone = None,
+    firstName = "firstName",
+    lastName = "lastName",
+    email = EmailAddress("email"),
+    contactAgreement = true,
+    employeeConsumer = false,
+    status = SIGNALEMENT_CONSULTE_IGNORE
   )
 
   val alreadyRequestedReport = Report(
-    UUID.randomUUID(), "category", List("subcategory"), List(), Some(company.id), Some("companyName"), Some(Address("companyAddress")), Some(Departments.ALL(0)), None,
-    Some(company.siret), None, None, OffsetDateTime.now(), "firstName", "lastName", EmailAddress("email"), true, false, SIGNALEMENT_TRANSMIS
+    category = "category",
+    subcategories = List("subcategory"),
+    details = List(),
+    companyId = Some(company.id),
+    companyName = Some("companyName"),
+    companyAddress = Some(Address("companyAddress")),
+    companyPostalCode = Some(Departments.ALL(0)),
+    companyCountry = None,
+    companySiret = Some(company.siret),
+    websiteURL = None,
+    phone = None,
+    firstName = "firstName",
+    lastName = "lastName",
+    email = EmailAddress("email"),
+    contactAgreement = true,
+    employeeConsumer = false,
+    status = SIGNALEMENT_TRANSMIS
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

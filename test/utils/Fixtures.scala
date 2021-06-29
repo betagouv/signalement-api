@@ -85,8 +85,23 @@ object Fixtures {
         company <- genCompany
         websiteURL <- genWebsiteURL
     } yield DraftReport(
-        category, List(subcategory), List(), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
-        None, Some(websiteURL), None, firstName, lastName, email, contactAgreement, false, List.empty
+       category = category,
+       subcategories = List(subcategory),
+       details = List(),
+       companyName = Some(company.name),
+       companyAddress = Some(company.address),
+       companyPostalCode = company.postalCode.map(_.substring(0, 2)),
+       companyCountry = None,
+       companySiret = Some(company.siret),
+       companyActivityCode = None,
+       websiteURL = Some(websiteURL),
+       phone = None,
+       firstName = firstName,
+       lastName = lastName,
+       email = email,
+       contactAgreement = contactAgreement,
+       employeeConsumer = false,
+       fileIds = List.empty
     )
 
     def genReportForCompany(company: Company) = for {
@@ -99,8 +114,23 @@ object Fixtures {
         contactAgreement <- arbitrary[Boolean]
         status <- Gen.oneOf(ReportStatus.reportStatusList)
     } yield Report(
-        id, category, List(subcategory), List(), Some(company.id), Some(company.name), Some(company.address), company.postalCode.map(_.substring(0, 2)), None, Some(company.siret),
-        None, None, OffsetDateTime.now(), firstName, lastName, email, contactAgreement, false, status
+        category = category,
+        subcategories = List(subcategory),
+        details = List(),
+        companyId = Some(company.id),
+        companyName = Some(company.name),
+        companyAddress = Some(company.address),
+        companyPostalCode = company.postalCode.map(_.substring(0, 2)),
+        companyCountry = None,
+        companySiret = Some(company.siret),
+        websiteURL = None,
+        phone = None,
+        firstName = firstName,
+        lastName = lastName,
+        email = email,
+        contactAgreement = contactAgreement,
+        employeeConsumer = false,
+        status = status
     )
 
     def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
