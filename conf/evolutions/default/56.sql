@@ -23,6 +23,9 @@ ALTER TABLE reports ADD COLUMN done BOOLEAN;
 
 -- !Downs
 
+ALTER TABLE companies RENAME COLUMN address_old_version TO address;
+ALTER TABLE companies RENAME COLUMN postal_code_old_version TO postal_code;
+ALTER TABLE companies RENAME COLUMN department_old_version TO department;
 ALTER TABLE companies DROP COLUMN department;
 ALTER TABLE companies DROP COLUMN street_number;
 ALTER TABLE companies DROP COLUMN street;
