@@ -45,9 +45,7 @@ case class DraftReport(
       details = details,
       companyId = None,
       companyName = companyName,
-      companyAddress = companyAddress,
-      companyPostalCode = companyPostalCode,
-      companyCountry = companyCountry,
+      companyAddress = companyAddress.getOrElse(Address()),
       companySiret = companySiret,
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
@@ -56,6 +54,7 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
+      status = NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
