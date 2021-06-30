@@ -30,7 +30,10 @@ case class CompanyData(
 ) {
   def toAddress: Address = Address(
     number = numeroVoieEtablissement,
-    street = typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
+    street = Option(Seq(
+      typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
+      libelleVoieEtablissement
+    ).flatten).filterNot(_.isEmpty).map(_.mkString(" ")),
     postalCode = codePostalEtablissement,
     city = libelleCommuneEtablissement,
     addressSupplement = complementAdresseEtablissement,
