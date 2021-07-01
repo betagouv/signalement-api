@@ -32,9 +32,9 @@ ALTER TABLE companies DROP COLUMN postal_code;
 ALTER TABLE companies RENAME COLUMN address_old_version TO address;
 ALTER TABLE companies RENAME COLUMN postal_code_old_version TO postal_code;
 ALTER TABLE companies RENAME COLUMN department_old_version TO department;
-ALTER TABLE companies ALTER COLUMN address_old_version DROP NOT NULL;
-ALTER TABLE companies ALTER COLUMN postal_code_old_version DROP NOT NULL;
-ALTER TABLE companies ALTER COLUMN department_old_version DROP NOT NULL;
+ALTER TABLE companies ALTER COLUMN address DROP NOT NULL;
+ALTER TABLE companies ALTER COLUMN postal_code DROP NOT NULL;
+ALTER TABLE companies ALTER COLUMN department DROP NOT NULL;
 
 ALTER TABLE reports DROP COLUMN company_postal_code;
 ALTER TABLE reports DROP COLUMN company_street_number;
@@ -43,8 +43,8 @@ ALTER TABLE reports DROP COLUMN company_address_supplement;
 ALTER TABLE reports DROP COLUMN company_city;
 ALTER TABLE reports RENAME COLUMN company_address_old_version TO company_address;
 ALTER TABLE reports RENAME COLUMN company_postal_code_old_version TO company_postal_code;
-ALTER TABLE reports ALTER COLUMN company_address_old_version DROP NOT NULL;
-ALTER TABLE reports ALTER COLUMN company_postal_code_old_version DROP NOT NULL;
+ALTER TABLE reports ALTER COLUMN company_address DROP NOT NULL;
+ALTER TABLE reports ALTER COLUMN company_postal_code DROP NOT NULL;
 
 ALTER TABLE reports DROP COLUMN done;
 ALTER TABLE reports DROP COLUMN done;
