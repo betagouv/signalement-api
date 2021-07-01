@@ -177,7 +177,7 @@ class CompanyRepository @Inject()(
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
-  def searchWithReportsCount(identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
+  def searchWithReportsCount(departments: Seq[String] = List(), identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
     val query = companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
