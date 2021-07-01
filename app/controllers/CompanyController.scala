@@ -66,9 +66,9 @@ class CompanyController @Inject()(
     } yield Ok(Json.toJson(companies))
   }
 
-  def searchRegistered(departments: Option[String], identity: Option[String], offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     companyRepository.searchWithReportsCount(
-      departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+      departments = departments.getOrElse(Seq()),
       identity,
       offset,
       limit

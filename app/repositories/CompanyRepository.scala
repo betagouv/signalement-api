@@ -179,6 +179,9 @@ class CompanyRepository @Inject()(
 
   def searchWithReportsCount(departments: Seq[String] = List(), identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
     val query = companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
+      .filterIf(departments.nonEmpty){
+        case (company, report) => company.department.map(a => a.inSet(departments)).getOrElse(false)
+      }
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
       .sortBy(_._2.desc)
