@@ -17,6 +17,7 @@ class CompanyRepository @Inject()(
   dbConfigProvider: DatabaseConfigProvider, val userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+
   import PostgresProfile.api._
   import dbConfig._
 
@@ -25,9 +26,9 @@ class CompanyRepository @Inject()(
     def siret = column[SIRET]("siret", O.Unique)
     def creationDate = column[OffsetDateTime]("creation_date")
     def name = column[String]("name")
-    def address = column[Address]("address")
-    def postalCode = column[Option[String]]("postal_code")
-    def department = column[Option[String]]("department")
+    def address = column[Address]("address_old_version")
+    def postalCode = column[Option[String]]("postal_code_old_version")
+    def department = column[Option[String]]("department_old_version")
     def activityCode = column[Option[String]]("activity_code")
 
     type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
@@ -37,7 +38,7 @@ class CompanyRepository @Inject()(
     }
 
     def extractCompany: PartialFunction[Company, CompanyData] = {
-      case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten  , activityCode)
+      case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
     }
 
     def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
@@ -55,11 +56,68 @@ class CompanyRepository @Inject()(
     def pk = primaryKey("pk_company_user", (companyId, userId))
     def * = (companyId, userId, level, updateDate) <> (UserAccess.tupled, UserAccess.unapply)
 
-    def company = foreignKey("COMPANY_FK", companyId, companyTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    def user = foreignKey("USER_FK", userId, userRepository.userTableQuery)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY_FK", companyId, companyTableQuery)(_.id, onUpdate = ForeignKeyAction.Cascade, onDelete = ForeignKeyAction.Cascade)
+    def user = foreignKey("USER_FK", userId, userRepository.userTableQuery)(_.id, onUpdate = ForeignKeyAction.Cascade, onDelete = ForeignKeyAction.Cascade)
   }
 
   val UserAccessTableQuery = TableQuery[UserAccessTable]
+
+  def migration_getTodoSIRET(): Future[Option[String]] = {
+    db.run(sql"select siret from companies where done is null and siret is not null LIMIT 1".as[String]).map(_.headOption)
+  }
+
+  def migration_update(siret: String, dataOpt: Option[CompanyData]) = {
+    dataOpt match {
+      case Some(data) => {
+        val department = data.codePostalEtablissement.map(_.slice(0, 2))
+        val street_number = data.numeroVoieEtablissement
+        val street = data.libelleVoieEtablissement
+        val address_supplement = data.complementAdresseEtablissement
+        val city = data.libelleCommuneEtablissement
+        val postal_code = data.codePostalEtablissement
+        val activity_code = data.activitePrincipaleEtablissement
+        db.run(DBIO.seq(
+          sqlu"""
+            update companies set
+            department = ${department},
+            street_number = ${street_number},
+            street = ${street},
+            address_supplement = ${address_supplement},
+            city = ${city},
+            postal_code = ${postal_code},
+            activity_code = ${activity_code},
+            done = true
+            where siret = ${siret}
+          """,
+          sqlu"""
+            update reports set
+            company_postal_code = ${postal_code},
+            company_street_number = ${street_number},
+            company_street = ${street},
+            company_address_supplement = ${address_supplement},
+            company_city = ${city},
+            done = true
+            where company_siret = ${siret}
+          """
+        ))
+      }
+      case None => {
+        db.run(DBIO.seq(
+          sqlu"""
+            update companies set
+            done = true
+            where siret = ${siret}
+          """,
+          sqlu"""
+            update reports set
+            done = true
+            where company_siret = ${siret}
+          """
+        ))
+      }
+    }
+
+  }
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
@@ -75,7 +133,7 @@ class CompanyRepository @Inject()(
 
   def fetchCompany(id: UUID) =
     db.run(companyTableQuery.filter(_.id === id).result.headOption)
-  
+
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
 
@@ -123,11 +181,11 @@ class CompanyRepository @Inject()(
   def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] = {
     db.run(
       (for {
-        access    <- UserAccessTableQuery           if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
-        user      <- userRepository.userTableQuery  if user.id === access.userId
+        access <- UserAccessTableQuery if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        user <- userRepository.userTableQuery if user.id === access.userId
       } yield (access.companyId, user))
-      .to[List]
-      .result
+        .to[List]
+        .result
     ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
   }
 
