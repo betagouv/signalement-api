@@ -66,28 +66,6 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     row.etatAdministratifEtablissement.getOrElse("A") =!= "F"
   }
 
-  def insertAllRaw(companies: Seq[Map[String,Option[String]]])= db.run(DBIO.sequence(companies.map(company => {
-
-    val companyKeyValues: Map[String, String] = company.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
-
-
-    val insertColumns: String = companyKeyValues.keys.mkString(",")
-    val insertValues: String = companyKeyValues.values.mkString(",")
-    val insertValuesOnSiretConflict: String = companyKeyValues
-      .filterKeys(_ !=  DENOMINATION_USUELLE_ETABLISSEMENT)
-      .map{ case (columnName,value) => s"$columnName = $value"}
-      .mkString(",")
-
-    sqlu"""INSERT INTO etablissements (#$insertColumns)
-          VALUES (#$insertValues)
-          ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
-          denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(DENOMINATION_USUELLE_ETABLISSEMENT, "NULL")}, ''), etablissements.denominationusuelleetablissement)
-        """
-    })))
-
-
-
-//  def insertAll(companies: Map[String,Option[String]]): SqlAction[Int, NoStream, Effect] = {
     def insertAll(companies: Map[String,Option[String]]): DBIO[Int] = {
 
     val companyKeyValues: Map[String, String] = companies.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
@@ -105,16 +83,6 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
         """
   }
 
-
-  def updateNames(names: Seq[(SIREN, String)]): Future[Seq[Int]] = {
-    db.run(DBIO.sequence(names.map(x => companyDataTableQuery
-      .filter(_.siren === x._1)
-      .filter(_.denominationUsuelleEtablissement.isEmpty)
-      .map(_.denominationUsuelleEtablissement)
-      .update(Some(x._2))
-    )).transactionally)
-  }
-
   def updateName(name: (SIREN, String)): DBIO[Int] = {
      companyDataTableQuery
       .filter(_.siren === name._1)
@@ -123,16 +91,6 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .update(Some(name._2))
   }
 
-  def up(name: (SIREN, String)):DBIO[Int] = {
-
-    val siren =  toSqlValue(name._1.value)
-    val denomination  = toSqlValue(name._2)
-
-    sqlu"""UPDATE etablissements
-          SET denominationusuelleetablissement= #${denomination}
-          WHERE siren = #${siren}
-          AND (denominationusuelleetablissement is null or denominationusuelleetablissement = '')"""
-  }
 
   def create(companyData: CompanyData): Future[CompanyData] = db
     .run(companyDataTableQuery += companyData)

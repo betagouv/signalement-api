@@ -76,9 +76,6 @@
     "S3_ENDPOINT_URL": {
       "required": true
     },
-    "COMPANY_DATABASE_URL": {
-      "value": "postgresql://utp0qgzji131yuzugk7l:HqShMQnQOBULKnabJa4B@boiesxg3rakk1ta1ugik-postgresql.services.clever-cloud.com:5859/boiesxg3rakk1ta1ugik"
-    },
     "TMP_DIR": {
       "required": true
     },
