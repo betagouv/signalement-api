@@ -11,7 +11,8 @@ val playSlickVersion        = "5.0.0"
 val slickPgVersion          = "0.19.5"
 val playMailerVersion       = "8.0.1"
 val playSilhouetteVersion   = "7.0.0"
-val AkkaHttpVersion = "10.1.14"
+val AkkaHttpVersion = "10.1.12"
+val alpakkaVersion = "2.0.2"
 
 libraryDependencies ++= Seq(
   guice,
@@ -24,11 +25,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
   "com.github.tminglei" %% "slick-pg" % slickPgVersion,
   "com.github.tminglei" %% "slick-pg_play-json" % slickPgVersion,
-
+  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % alpakkaVersion,
   "com.typesafe.play" %% "play-mailer" % playMailerVersion,
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
 
-  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % "2.0.2",
+  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % alpakkaVersion,
+  "com.lightbend.akka" %% "akka-stream-alpakka-csv" % alpakkaVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",
@@ -45,7 +47,11 @@ libraryDependencies ++= Seq(
   "com.itextpdf" % "itext7-core" % "7.1.14",
   "com.itextpdf" % "html2pdf" % "3.0.3",
 
-  specs2 % Test,
+  "com.beachape" %% "enumeratum" % "1.6.1",
+  "com.beachape" %% "enumeratum-play" % "1.6.3",
+  "com.beachape" %% "enumeratum-slick" % "1.6.0",
+
+    specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
 

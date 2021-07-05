@@ -1,12 +1,13 @@
 package repositories
 
 import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
-import slick.jdbc.JdbcProfile
+import repositories.CompanyDataRepository.{DENOMINATION_USUELLE_ETABLISSEMENT, toOptionalSqlValue, toSqlValue}
+import slick.jdbc.{JdbcProfile, ResultSetConcurrency, ResultSetType}
+import slick.sql.{FixedSqlAction, SqlAction}
 import utils.{SIREN, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,8 +21,8 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   import dbConfig._
 
   class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "etablissements") {
-    def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[SIRET]("siret")
+    def id = column[UUID]("id")
+    def siret = column[SIRET]("siret", O.PrimaryKey) // Primary key MUST be there so insertOrUpdateAll will do his job
     def siren = column[SIREN]("siren")
     def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")
     def etablissementSiege = column[Option[String]]("etablissementsiege")
@@ -37,7 +38,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     def codeCommuneEtablissement = column[Option[String]]("codecommuneetablissement")
     def codeCedexEtablissement = column[Option[String]]("codecedexetablissement")
     def libelleCedexEtablissement = column[Option[String]]("libellecedexetablissement")
-    def denominationUsuelleEtablissement = column[Option[String]]("denominationusuelleetablissement")
+    def denominationUsuelleEtablissement = column[Option[String]]( DENOMINATION_USUELLE_ETABLISSEMENT)
     def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
     def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
     def etatAdministratifEtablissement = column[Option[String]]("etatadministratifetablissement")
@@ -65,9 +66,35 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
     row.etatAdministratifEtablissement.getOrElse("A") =!= "F"
   }
 
+    def insertAll(companies: Map[String,Option[String]]): DBIO[Int] = {
+
+    val companyKeyValues: Map[String, String] = companies.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
+    val insertColumns: String = companyKeyValues.keys.mkString(",")
+    val insertValues: String = companyKeyValues.values.mkString(",")
+    val insertValuesOnSiretConflict: String = companyKeyValues
+      .filterKeys(_ !=  DENOMINATION_USUELLE_ETABLISSEMENT)
+      .map{ case (columnName,value) => s"$columnName = $value"}
+      .mkString(",")
+
+    sqlu"""INSERT INTO etablissements (#$insertColumns)
+          VALUES (#$insertValues)
+          ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
+          denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(DENOMINATION_USUELLE_ETABLISSEMENT, "NULL")}, ''), etablissements.denominationusuelleetablissement)
+        """
+  }
+
+  def updateName(name: (SIREN, String)): DBIO[Int] = {
+     companyDataTableQuery
+      .filter(_.siren === name._1)
+      .filter(_.denominationUsuelleEtablissement.isEmpty)
+      .map(_.denominationUsuelleEtablissement)
+      .update(Some(name._2))
+  }
+
+
   def create(companyData: CompanyData): Future[CompanyData] = db
-      .run(companyDataTableQuery += companyData)
-      .map(_ => companyData)
+    .run(companyDataTableQuery += companyData)
+    .map(_ => companyData)
 
   def delete(id: UUID): Future[Int] = db.run {
     companyDataTableQuery
@@ -138,4 +165,38 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .filter(filterClosedEtablissements)
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result.headOption)
+}
+
+object CompanyDataRepository {
+
+  private val DENOMINATION_USUELLE_ETABLISSEMENT = "denominationusuelleetablissement"
+
+  def toOptionalSqlValue(maybeValue : Option[String]): String= maybeValue.fold("NULL")(value => toSqlValue(value))
+
+  def toSqlValue(value: String): String = s"'${value.replace("'","''")}'"
+
+  def toFieldValueMap(companyData: CompanyData): Map[String,Option[String]] =
+    Map(
+      "id" -> Some(companyData.id.toString),
+      "siret" -> Some(companyData.siret.value),
+      "siren" -> Some(companyData.siren.value),
+      "datederniertraitementetablissement" -> companyData.dateDernierTraitementEtablissement,
+      "etablissementsiege" -> companyData.etablissementSiege,
+      "complementadresseetablissement" -> companyData.complementAdresseEtablissement,
+      "numerovoieetablissement" -> companyData.numeroVoieEtablissement,
+      "indicerepetitionetablissement" -> companyData.indiceRepetitionEtablissement,
+      "typevoieetablissement" -> companyData.typeVoieEtablissement,
+      "libellevoieetablissement" -> companyData.libelleVoieEtablissement,
+      "codepostaletablissement" -> companyData.codePostalEtablissement,
+      "libellecommuneetablissement" -> companyData.libelleCommuneEtablissement,
+      "libellecommuneetrangeretablissement" -> companyData.libelleCommuneEtrangerEtablissement,
+      "distributionspecialeetablissement" -> companyData.distributionSpecialeEtablissement,
+      "codecommuneetablissement" -> companyData.codeCommuneEtablissement,
+      "codecedexetablissement" -> companyData.codeCedexEtablissement,
+      "libellecedexetablissement" -> companyData.libelleCedexEtablissement,
+      DENOMINATION_USUELLE_ETABLISSEMENT -> companyData.denominationUsuelleEtablissement,
+      "enseigne1etablissement" -> companyData.enseigne1Etablissement,
+      "activiteprincipaleetablissement" -> Some(companyData.activitePrincipaleEtablissement),
+      "etatadministratifetablissement" -> companyData.etatAdministratifEtablissement
+    )
 }

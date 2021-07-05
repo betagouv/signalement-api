@@ -285,6 +285,7 @@ object Constants {
   }
 
   object Tags {
+    val ReponseConso = "ReponseConso"
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
   }

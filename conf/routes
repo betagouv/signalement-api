@@ -53,7 +53,7 @@ GET           /api/admin/test-email                                  controllers
 POST          /api/admin/test-email                                  controllers.AdminController.sendTestEmail(templateRef, to)
 
 # Async files API
-GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles
+GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
 
 # Events API
 
@@ -65,6 +65,14 @@ GET           /api/constants/countries                               controllers
 POST          /api/authenticate                                      controllers.AuthController.authenticate
 POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
+
+# Enterprises sync
+POST          /api/enterprises-sync/start-etablissement              controllers.EnterpriseImportController.startEtablissementFile()
+POST          /api/enterprises-sync/start-unitelegale                controllers.EnterpriseImportController.startUniteLegaleFile()
+POST          /api/enterprises-sync/cancel                           controllers.EnterpriseImportController.cancelAllFiles()
+POST          /api/enterprises-sync/cancel-etablissement             controllers.EnterpriseImportController.cancelEtablissementFile()
+POST          /api/enterprises-sync/cancel-unitelegale               controllers.EnterpriseImportController.cancelUniteLegaleFile()
+GET           /api/enterprises-sync/info                             controllers.EnterpriseImportController.getSyncInfo()
 
 # Accesses API
 GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()
