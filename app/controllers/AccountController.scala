@@ -98,7 +98,8 @@ class AccountController @Inject()(
       Json.obj(
         "email" -> u.email,
         "firstName" -> u.firstName,
-        "lastName" -> u.lastName
+        "lastName" -> u.lastName,
+        "lastEmailValidation" -> u.lastEmailValidation
       ))
     ))
   }
