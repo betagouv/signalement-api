@@ -118,6 +118,14 @@
                 <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
             </p>
         }
+        case _ if report.forwardToReponseConso => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Vous avez souhaitez contacter les enquêteurs de la répression des fraudes, il ne sera donc pas transmis à l'entreprise.
+            </p>
+        }
         case _ => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
@@ -202,7 +210,7 @@
             <br />
             Email : @report.email
             <br/>
-            @if(!report.employeeConsumer) {
+            @if(report.isTransmittableToPro()) {
                 Accord pour contact : @if(report.contactAgreement) {oui} else {non}
                 <br/>
             }
