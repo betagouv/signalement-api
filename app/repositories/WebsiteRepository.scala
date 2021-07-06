@@ -13,7 +13,7 @@ import utils.URL
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val companyRepository: CompanyRepository)
+class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val companyRepository: CompanyRepository, val reportRepository: ReportRepository)
   (implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
@@ -68,10 +68,19 @@ class WebsiteRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, val 
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
   }
 
-  def list() = db.run(websiteTableQuery
-    .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
-    .to[List].result
-  )
+  def listWebsitesCompaniesByReportCount() = {
+    val result = websiteTableQuery
+      .join(companyRepository.companyTableQuery).on(_.companyId === _.id)
+      .joinLeft(reportRepository.reportTableQuery).on( (c,r) => { c._1.host === r.host && c._1.companyId === r.companyId })
+      .filter(_._2.map(_.host.isDefined))
+      .groupBy(_._1)
+      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+      .sortBy(_._2.desc)
+      .to[List].result
+    db.run(result
+    )
+  }
+
 
   def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
 }

@@ -443,6 +443,23 @@ class ReportRepository @Inject()(
         .to[List].result
     )
 
+
+  def getUnkonwnReportCountByHost(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[(Option[String], Int)]] = db
+    .run(
+      reportTableQuery
+        .filter(_.host.isDefined)
+        .filter(_.companyId.isEmpty)
+        .filterOpt(start) {
+          case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        }
+        .filterOpt(end) {
+          case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        }
+        .groupBy(_.host)
+        .map{  case (host,report) =>  (host, report.size)}
+        .to[List].result
+    )
+
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
     .run(
       reportTableQuery

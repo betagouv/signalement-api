@@ -1,7 +1,6 @@
 package controllers
 
 import java.util.UUID
-
 import actors.WebsitesExtractActor
 import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
@@ -34,28 +33,22 @@ class WebsiteController @Inject()(
 
   def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
-      websites <- websiteRepository.list
-      reports <- reportRepository.getWithWebsites()
-      countByHostAndCompany = reports
-        .groupBy(report => (report.websiteURL.flatMap(_.getHost), report.companyId))
-        .collect { case ((Some(websiteURL), Some(companyId)), reports) => ((websiteURL, companyId), reports.length)}
-      websitesWithCount = websites.map { case (website, company) => {
-        val count = countByHostAndCompany.get(website.host, company.id).getOrElse(0)
-        (website, company, count)
-      }}
-    } yield {
-      Ok(Json.toJson(websitesWithCount))
-    }
+      websites <- websiteRepository.listWebsitesCompaniesByReportCount
+       websitesWithCount  = websites.map { case ((website, company), count) =>
+         (website,company,count)}
+    } yield Ok(Json.toJson(websitesWithCount))
+
   }
 
   def fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
-    reportRepository.getWebsiteReportsWithoutCompany(DateUtils.parseDate(start), DateUtils.parseDate(end))
-      .map(reports => Ok(Json.toJson(
-        reports
-          .groupBy(_.websiteURL.flatMap(_.getHost))
-          .collect { case (Some(host), reports) if q.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
-          .map { case (host, count) => Json.obj("host" -> host, "count" -> count) }
-      )))
+
+    reportRepository
+      .getUnkonwnReportCountByHost(DateUtils.parseDate(start), DateUtils.parseDate(end))
+      .map(_.collect{
+        case (Some(host), count) => Json.obj("host" -> host, "count" -> count)
+      })
+      .map{Json.toJson(_)}
+      .map(Ok(_))
   }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
