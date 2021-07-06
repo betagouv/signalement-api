@@ -36,6 +36,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def email = column[EmailAddress]("email")
   def contactAgreement = column[Boolean]("contact_agreement")
   def employeeConsumer = column[Boolean]("employee_consumer")
+  def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
@@ -61,6 +62,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       EmailAddress,
       Boolean,
       Boolean,
+      Boolean,
       String,
       Option[String],
       List[String]
@@ -68,21 +70,21 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
   def constructReport: ReportData => Report = {
     case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
-      Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, ReportStatus.fromDefaultValue(status), vendor, tags)
+    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
+      Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
+        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, ReportStatus.fromDefaultValue(status), vendor, tags)
   }
 
   def extractReport: PartialFunction[Report, ReportData] = {
     case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) =>
+    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
       (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status.defaultValue, vendor, tags)
+        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status.defaultValue, vendor, tags)
   }
 
   def * =
     (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, status, vendor, tags) <> (constructReport, extractReport.lift)
+      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) <> (constructReport, extractReport.lift)
 }
 
 object ReportTables {
@@ -92,19 +94,17 @@ object ReportTables {
 @Singleton
 class ReportRepository @Inject()(
   dbConfigProvider: DatabaseConfigProvider,
-  accessTokenRepository: AccessTokenRepository,
   val companyRepository: CompanyRepository,
   val emailValidationRepository: EmailValidationRepository,
   configuration: Configuration
 )(
   implicit ec: ExecutionContext
 ) {
-
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
 
   import dbConfig._
 
+  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
 
     def id = column[UUID]("id", O.PrimaryKey)
     def category = column[String]("category")
