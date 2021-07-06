@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   ws,
   ehcache,
 
-  "org.postgresql" % "postgresql" % "42.2.19",
+  "org.postgresql" % "postgresql" % "42.2.23",
   "com.typesafe.play" %% "play-slick" %  playSlickVersion,
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
   "com.github.tminglei" %% "slick-pg" % slickPgVersion,
