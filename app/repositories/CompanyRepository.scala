@@ -63,7 +63,7 @@ class CompanyRepository @Inject()(
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def migration_getTodoSIRET(): Future[Option[String]] = {
-    db.run(sql"select siret from companies where done is null and siret is not null LIMIT 1".as[String]).map(_.headOption)
+    db.run(sql"select siret from companies where done is not true and siret is not null LIMIT 1".as[String]).map(_.headOption)
   }
 
   def migration_update(siret: String, dataOpt: Option[CompanyData]) = {
