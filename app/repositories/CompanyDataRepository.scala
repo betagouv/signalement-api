@@ -127,7 +127,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
       .joinLeft(companyActivityTableQuery).on(_.activitePrincipaleEtablissement === _.code)
       .to[List].result)
 
-  def searchBySiret(siret: SIRET, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret))
+  def searchBySiret(siret: SIRET, includeClosed: Boolean = false): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret), includeClosed)
 
   def searchHeadOffices(sirets: List[SIRET]): Future[List[SIRET]] =
     db.run(companyDataTableQuery
