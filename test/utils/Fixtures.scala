@@ -123,7 +123,7 @@ object Fixtures {
         companyPostalCode = company.postalCode.map(_.substring(0, 2)),
         companyCountry = None,
         companySiret = Some(company.siret),
-        websiteURL = None,
+        websiteURL = WebsiteURL(None, None),
         phone = None,
         firstName = firstName,
         lastName = lastName,

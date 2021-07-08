@@ -85,7 +85,7 @@ class WebsitesExtractActor @Inject()(configuration: Configuration,
 
     reportRepository.getWebsiteReportsWithoutCompany(startDate, endDate).map{ reports =>
       val hostsWithCount = reports
-        .groupBy(_.websiteURL.flatMap(_.getHost))
+        .groupBy(_.websiteURL.websiteURL.flatMap(_.getHost))
         .collect { case (Some(host), reports) if filters.query.map(host.contains(_)).getOrElse(true) => (host, reports.length) }
 
       val targetFilename = s"sites-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
