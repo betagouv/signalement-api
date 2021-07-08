@@ -86,7 +86,7 @@ class CompanyDataRepository @Inject()(@NamedDatabase("company_db") dbConfigProvi
   def updateName(name: (SIREN, String)): DBIO[Int] = {
      companyDataTableQuery
       .filter(_.siren === name._1)
-      .filter(_.denominationUsuelleEtablissement.isEmpty)
+      .filter(x => x.denominationUsuelleEtablissement.isEmpty || x.denominationUsuelleEtablissement === "")
       .map(_.denominationUsuelleEtablissement)
       .update(Some(name._2))
   }
