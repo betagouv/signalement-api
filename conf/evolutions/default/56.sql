@@ -21,6 +21,7 @@ ALTER TABLE reports ADD COLUMN company_city VARCHAR;
 ALTER TABLE companies ADD COLUMN done BOOLEAN;
 ALTER TABLE reports ADD COLUMN done BOOLEAN;
 
+ALTER TABLE reports ADD COLUMN host VARCHAR;
 -- !Downs
 
 ALTER TABLE companies DROP COLUMN department;
@@ -48,3 +49,5 @@ ALTER TABLE reports ALTER COLUMN company_postal_code DROP NOT NULL;
 
 ALTER TABLE reports DROP COLUMN done;
 ALTER TABLE companies DROP COLUMN done;
+
+ALTER TABLE reports DROP COLUMN host;

@@ -11,6 +11,12 @@ import utils.Constants.Tags
 import utils.{Address, Country, EmailAddress, SIRET, URL}
 
 
+case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
+
+object WebsiteURL {
+  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
+}
+
 case class DraftReport(
   category: String,
   subcategories: List[String],
@@ -45,7 +51,7 @@ case class DraftReport(
       companyPostalCode = companyPostalCode,
       companyCountry = companyCountry,
       companySiret = companySiret,
-      websiteURL = websiteURL,
+      websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
       lastName = lastName,
@@ -77,7 +83,7 @@ case class Report(
   companyPostalCode: Option[String],
   companyCountry: Option[Country],
   companySiret: Option[SIRET],
-  websiteURL: Option[URL],
+  websiteURL: WebsiteURL,
   phone: Option[String],
   creationDate: OffsetDateTime = OffsetDateTime.now(),
   firstName: String,
@@ -97,7 +103,7 @@ case class Report(
     else NA
   }
 
-  def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+  def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
@@ -125,7 +131,8 @@ object Report {
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
-        "websiteURL" -> report.websiteURL,
+        "websiteURL" -> report.websiteURL.websiteURL,
+        "host" -> report.websiteURL.host,
         "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags
