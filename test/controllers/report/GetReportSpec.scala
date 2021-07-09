@@ -235,7 +235,7 @@ trait GetReportContext extends Mockito {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = address,
+    companyAddress = address.sample.get,
     companySiret = Some(company.siret),
     websiteURL = None,
     phone = None,
