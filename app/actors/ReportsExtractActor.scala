@@ -124,7 +124,7 @@ class ReportsExtractActor @Inject()(configuration: Configuration,
       ),
       ReportColumn(
         "Site web de l'entreprise", centerAlignmentColumn,
-        (report, _, _, _) => report.websiteURL.map(_.value).getOrElse(""),
+        (report, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(

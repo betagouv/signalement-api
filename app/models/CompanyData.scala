@@ -138,4 +138,8 @@ object TypeVoies {
     ("VLA", "Villa"),
     ("VLGE", "Village")
   )
+
+  def getByShortName(shortName: String): Option[String] = {
+    values.find(_._1 == shortName).map(_._2.toUpperCase)
+  }
 }

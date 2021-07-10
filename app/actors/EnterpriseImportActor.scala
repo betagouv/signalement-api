@@ -7,9 +7,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.zip.ZipInputStream
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.client.RequestBuilding.Get
-import akka.stream.{FlowShape, IOResult, KillSwitches, SharedKillSwitch, ThrottleMode}
+import akka.stream.{FlowShape, KillSwitches, SharedKillSwitch }
 import akka.stream.scaladsl.{FileIO, Flow, GraphDSL, Merge, Partition, Sink, Source, StreamConverters}
 import akka.stream.alpakka.csv.scaladsl.{CsvParsing, CsvToMap}
 import akka.stream.alpakka.slick.scaladsl.{Slick, SlickSession}
@@ -24,7 +22,6 @@ import utils.SIREN
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 object EnterpriseSyncActor {
@@ -120,7 +117,6 @@ class EnterpriseSyncActor @Inject()(
 
       val source: Source[Map[String, String], Any] =
         FileIO.fromPath(Paths.get(s"./${companyFile.name}.csv"))
-//              .throttle(batchSize, 1.second, 1, ThrottleMode.Shaping)
         .via(CsvParsing.lineScanner(maximumLineLength = 4096))
         .drop(1)
         .via(CsvToMap.withHeadersAsStrings(StandardCharsets.UTF_8, companyFile.headers: _*))
@@ -132,7 +128,6 @@ class EnterpriseSyncActor @Inject()(
           .filter { columnsValueMap =>
             columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
           }.grouped(batchSize)
-//          .mapAsync(1)(companyDataRepository.insertAllRaw(_).map(_.sum))
           .via(
             Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
           )
@@ -140,6 +135,7 @@ class EnterpriseSyncActor @Inject()(
 
       val UniteLegaleIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
         Flow[Map[String, String]]
+          .map(_.filterNot(_._2.trim.isEmpty))
           .map { columsValueMap =>
             columsValueMap.get("siren").map(siren => {
               val enterpriseName = columsValueMap.get("denominationunitelegale")
@@ -157,7 +153,6 @@ class EnterpriseSyncActor @Inject()(
             logger.debug("Processing ${x.size} elements")
             x
           }
-//          .mapAsync(1)(companyDataRepository.updateNames(_).map(_.sum))
           .via(
             Slick.flow(4, group => group.map(companyDataRepository.updateName(_)).reduceLeft(_.andThen(_)))
           )

@@ -45,6 +45,7 @@ class ReportRepository @Inject()(
     def companyCountry = column[Option[Country]]("company_country")
     def companySiret = column[Option[SIRET]]("company_siret")
     def websiteURL = column[Option[URL]]("website_url")
+    def host = column[Option[String]]("host")
     def phone = column[Option[String]]("phone")
     def creationDate = column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")
@@ -70,7 +71,8 @@ class ReportRepository @Inject()(
       Option[String],
       Option[Country],
       Option[SIRET],
-      Option[URL],
+      (Option[URL],
+      Option[String]),
       Option[String],
       OffsetDateTime,
       String,
@@ -86,21 +88,21 @@ class ReportRepository @Inject()(
 
     def constructReport: ReportData => Report = {
       case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-      websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
+      (websiteURL,host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
         Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-          websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, ReportStatus.fromDefaultValue(status), vendor, tags)
+          WebsiteURL(websiteURL, host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, ReportStatus.fromDefaultValue(status), vendor, tags)
     }
 
     def extractReport: PartialFunction[Report, ReportData] = {
       case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
       websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
         (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-          websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status.defaultValue, vendor, tags)
+          (websiteURL.websiteURL,websiteURL.host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status.defaultValue, vendor, tags)
     }
 
     def * =
       (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) <> (constructReport, extractReport.lift)
+        (websiteURL,host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) <> (constructReport, extractReport.lift)
   }
 
   implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
@@ -440,6 +442,23 @@ class ReportRepository @Inject()(
         .filterOpt(end) {
           case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
         }
+        .to[List].result
+    )
+
+
+  def getUnkonwnReportCountByHost(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[(Option[String], Int)]] = db
+    .run(
+      reportTableQuery
+        .filter(_.host.isDefined)
+        .filter(_.companyId.isEmpty)
+        .filterOpt(start) {
+          case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        }
+        .filterOpt(end) {
+          case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        }
+        .groupBy(_.host)
+        .map{  case (host,report) =>  (host, report.size)}
         .to[List].result
     )
 

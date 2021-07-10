@@ -48,3 +48,4 @@ ALTER TABLE reports ALTER COLUMN company_postal_code DROP NOT NULL;
 
 ALTER TABLE reports DROP COLUMN done;
 ALTER TABLE companies DROP COLUMN done;
+

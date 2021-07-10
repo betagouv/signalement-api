@@ -76,7 +76,7 @@
         case _ if report.isContractualDispute && report.companyId.isDefined => {
             <p>
                 Vous avez signalé un problème individuel (litige)
-                    @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
+                    @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
                 sur SignalConso.
             </p>
             <p>
@@ -192,7 +192,7 @@
                 @report.companyAddress.get
                 <br/>
             }
-            @if(report.websiteURL.isDefined) {
+            @if(report.websiteURL.websiteURL.isDefined) {
                 Site internet : @report.shortURL.get
                 <br/>
             }
