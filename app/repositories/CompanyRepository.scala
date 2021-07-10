@@ -63,7 +63,15 @@ class CompanyRepository @Inject()(
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def migration_getTodoSIRET(): Future[Option[String]] = {
-    db.run(sql"select siret from companies where done is not true and siret is not null LIMIT 1".as[String]).map(_.headOption)
+    db.run(sql"select siret from companies where done is not true and siret is not null LIMIT 1".as[String])
+      .flatMap(result => {
+        result.headOption match {
+          case Some(siret) => Future(Some(siret))
+          case None => {
+            db.run(sql"select siret from reports where done is not true and company_siret is not null LIMIT 1".as[String]).map(_.headOption)
+          }
+        }
+      })
   }
 
   def migration_update(siret: String, dataOpt: Option[CompanyData]) = {
@@ -71,7 +79,10 @@ class CompanyRepository @Inject()(
       case Some(data) => {
         val department = data.codePostalEtablissement.map(_.slice(0, 2))
         val street_number = data.numeroVoieEtablissement
-        val street = data.libelleVoieEtablissement
+        val street = (
+          data.typeVoieEtablissement.flatMap(TypeVoies.getByShortName).getOrElse("") + " " +
+            data.libelleVoieEtablissement.getOrElse("")
+          ).trim()
         val address_supplement = data.complementAdresseEtablissement
         val city = data.libelleCommuneEtablissement
         val postal_code = data.codePostalEtablissement
