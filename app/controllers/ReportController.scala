@@ -186,7 +186,7 @@ class ReportController @Inject()(
           "details" -> report.details,
           "siret" -> report.companySiret,
           "postalCode" -> report.companyPostalCode,
-          "websiteURL" -> report.websiteURL,
+          "websiteURL" -> report.websiteURL.websiteURL,
           "firstName" -> report.firstName,
           "lastName" -> report.lastName,
           "email" -> report.email,
