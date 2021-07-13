@@ -4,39 +4,30 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import models._
-import play.api.db.slick.DatabaseConfigProvider
-import repositories.PostgresProfile.api._
-import slick.jdbc.JdbcProfile
-import utils.Constants.Departments
-import utils.{Address, SIRET}
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.{Address, SIRET}
+import models._
+import PostgresProfile.api._
+import utils.Constants.Departments
 
 class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def id = column[UUID]("id", O.PrimaryKey)
   def siret = column[SIRET]("siret", O.Unique)
   def creationDate = column[OffsetDateTime]("creation_date")
   def name = column[String]("name")
-  def address = column[Address]("address")
-  def postalCode = column[Option[String]]("postal_code")
-  def department = column[Option[String]]("department")
+  def address = column[Address]("address_old_version")
+  def postalCode = column[Option[String]]("postal_code_old_version")
+  def department = column[Option[String]]("department_old_version")
   def activityCode = column[Option[String]]("activity_code")
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
 
-  import PostgresProfile.api._
-  import dbConfig._
-
-  class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
-    def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[SIRET]("siret", O.Unique)
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def name = column[String]("name")
-    def address = column[Address]("address_old_version")
-    def postalCode = column[Option[String]]("postal_code_old_version")
-    def department = column[Option[String]]("department_old_version")
-    def activityCode = column[Option[String]]("activity_code")
+  def constructCompany: CompanyData => Company = {
+    case (id, siret, creationDate, name, address, postalCode, _, activityCode) => Company(id, siret, creationDate, name, address, postalCode, activityCode)
+  }
 
   def extractCompany: PartialFunction[Company, CompanyData] = {
     case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
@@ -45,23 +36,19 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
 }
 
-    def extractCompany: PartialFunction[Company, CompanyData] = {
-      case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
-    }
-
+object CompanyTables {
+  val tables = TableQuery[CompanyTable]
+}
 
 @Singleton
 class CompanyRepository @Inject()(
-  dbConfigProvider: DatabaseConfigProvider,
-  val userRepository: UserRepository
-)(implicit ec: ExecutionContext) {
+  dbConfigProvider: DatabaseConfigProvider, val userRepository: UserRepository)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
 
   val companyTableQuery = CompanyTables.tables
-  val reportTableQuery = ReportTables.tables
 
   implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
 
@@ -144,41 +131,10 @@ class CompanyRepository @Inject()(
         ))
       }
     }
-
   }
-
-  def getOrCreate(siret: SIRET, data: Company): Future[Company] =
-    db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
-      _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
-    )
-
-  def update(company: Company): Future[Company] = {
-    val queryCompany = for (refCompany <- companyTableQuery if refCompany.id === company.id)
-      yield refCompany
-    db.run(queryCompany.update(company))
-      .map(_ => company)
-  }
-
-  def fetchCompany(id: UUID) =
-    db.run(companyTableQuery.filter(_.id === id).result.headOption)
-
-  def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
-    db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
-
-  def findByShortId(id: String): Future[List[Company]] =
-    db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
-
-  def findBySiret(siret: SIRET): Future[Option[Company]] =
-    db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
-
-  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
-    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
-
-  def findByName(name: String): Future[List[Company]] =
-    db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
   def searchWithReportsCount(departments: Seq[String] = List(), identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
-    val query = companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
+    val query = companyTableQuery.joinLeft(ReportTables.tables).on(_.id === _.companyId)
       .filterIf(departments.nonEmpty){
         case (company, report) => company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
@@ -210,6 +166,36 @@ class CompanyRepository @Inject()(
       hasNextPage = count - (offset + limit) > 0
     )
   }
+
+  def getOrCreate(siret: SIRET, data: Company): Future[Company] =
+    db.run(companyTableQuery.filter(_.siret === siret).result.headOption).flatMap(
+      _.map(Future(_)).getOrElse(db.run(companyTableQuery returning companyTableQuery += data))
+    )
+
+  def update(company: Company): Future[Company] = {
+    val queryCompany = for (refCompany <- companyTableQuery if refCompany.id === company.id)
+      yield refCompany
+    db.run(queryCompany.update(company))
+      .map(_ => company)
+  }
+
+  def fetchCompany(id: UUID) =
+    db.run(companyTableQuery.filter(_.id === id).result.headOption)
+
+  def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
+
+  def findByShortId(id: String): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
+
+  def findBySiret(siret: SIRET): Future[Option[Company]] =
+    db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
+
+  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+
+  def findByName(name: String): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(UserAccessTableQuery
