@@ -14,6 +14,4 @@ object PaginatedResult {
   implicit val paginatedReportReader = Json.reads[PaginatedResult[Report]]
 
   implicit def paginatedReportWithFilesWriter(implicit userRole: Option[UserRole]) = Json.writes[PaginatedResult[ReportWithFiles]]
-
-  val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[CompanyWithNbReports]]
 }
