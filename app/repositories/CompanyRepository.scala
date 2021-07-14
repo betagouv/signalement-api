@@ -10,7 +10,35 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.{Address, SIRET}
 import models._
+import PostgresProfile.api._
 import utils.Constants.Departments
+
+class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
+  def id = column[UUID]("id", O.PrimaryKey)
+  def siret = column[SIRET]("siret", O.Unique)
+  def creationDate = column[OffsetDateTime]("creation_date")
+  def name = column[String]("name")
+  def address = column[Address]("address_old_version")
+  def postalCode = column[Option[String]]("postal_code_old_version")
+  def department = column[Option[String]]("department_old_version")
+  def activityCode = column[Option[String]]("activity_code")
+
+  type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
+
+  def constructCompany: CompanyData => Company = {
+    case (id, siret, creationDate, name, address, postalCode, _, activityCode) => Company(id, siret, creationDate, name, address, postalCode, activityCode)
+  }
+
+  def extractCompany: PartialFunction[Company, CompanyData] = {
+    case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
+  }
+
+  def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
+}
+
+object CompanyTables {
+  val tables = TableQuery[CompanyTable]
+}
 
 @Singleton
 class CompanyRepository @Inject()(
@@ -18,33 +46,9 @@ class CompanyRepository @Inject()(
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  import PostgresProfile.api._
   import dbConfig._
 
-  class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
-    def id = column[UUID]("id", O.PrimaryKey)
-    def siret = column[SIRET]("siret", O.Unique)
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def name = column[String]("name")
-    def address = column[Address]("address_old_version")
-    def postalCode = column[Option[String]]("postal_code_old_version")
-    def department = column[Option[String]]("department_old_version")
-    def activityCode = column[Option[String]]("activity_code")
-
-    type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
-
-    def constructCompany: CompanyData => Company = {
-      case (id, siret, creationDate, name, address, postalCode, _, activityCode) => Company(id, siret, creationDate, name, address, postalCode, activityCode)
-    }
-
-    def extractCompany: PartialFunction[Company, CompanyData] = {
-      case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
-    }
-
-    def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
-  }
-
-  val companyTableQuery = TableQuery[CompanyTable]
+  val companyTableQuery = CompanyTables.tables
 
   implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
 
@@ -127,7 +131,40 @@ class CompanyRepository @Inject()(
         ))
       }
     }
+  }
 
+  def searchWithReportsCount(departments: Seq[String] = List(), identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
+    val query = companyTableQuery.joinLeft(ReportTables.tables).on(_.id === _.companyId)
+      .filterIf(departments.nonEmpty){
+        case (company, report) => company.department.map(a => a.inSet(departments)).getOrElse(false)
+      }
+      .groupBy(_._1)
+      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+      .sortBy(_._2.desc)
+    val filterQuery = identity.map {
+      case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => query.filter(_._1.id.asColumnOf[String] like s"${q.toLowerCase}%")
+      case q if q.matches("[0-9]{14}") => query.filter(_._1.siret === SIRET(q))
+      case q if q.matches("[0-9]{9}") => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
+      case q => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
+    }.getOrElse(query)
+    toPaginate(filterQuery, offset, limit).map(res =>
+      res.copy(entities = res.entities.map { case (company, count) => CompanyWithNbReports(company, count) })
+    )
+  }
+
+  def toPaginate[A, B](query: slick.lifted.Query[A, B, Seq], offsetOpt: Option[Long], limitOpt: Option[Int]): Future[PaginatedResult[B]] = {
+    val offset = offsetOpt.getOrElse(0L)
+    val limit = limitOpt.getOrElse(10)
+    val resultF = db.run(query.drop(offset).take(limit).result)
+    val countF = db.run(query.length.result)
+    for {
+      result <- resultF
+      count <- countF
+    } yield PaginatedResult(
+      totalCount = count,
+      entities = result.toList,
+      hasNextPage = count - (offset + limit) > 0
+    )
   }
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company] =

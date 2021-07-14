@@ -55,6 +55,7 @@ class CompanyController @Inject()(
     )
   }
 
+  /** @deprecated replaced by CompanyController.searchRegistered */
   def searchRegisteredCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       companies <- q match {
@@ -63,6 +64,15 @@ class CompanyController @Inject()(
         case q => companyRepository.findByName(q)
       }
     } yield Ok(Json.toJson(companies))
+  }
+
+  def searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int]) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    companyRepository.searchWithReportsCount(
+      departments = departments.getOrElse(Seq()),
+      identity,
+      offset,
+      limit
+    ).map(res => Ok(Json.toJson(res)))
   }
 
   def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>
@@ -113,16 +123,18 @@ class CompanyController @Inject()(
       Ok(
       Json.toJson(accesses.map { case (t, c) =>
         (c, t,
-          eventsMap.get(c.id).map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)).getOrElse(0),
-          eventsMap.get(c.id).flatMap(
-            _.filter(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC).headOption
-          ).flatMap(_.creationDate),
-          eventsMap.get(c.id).flatMap(
-            _.filter(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED).headOption
-          ).flatMap(_.creationDate),
+          eventsMap.get(c.id)
+            .map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
+            .getOrElse(0),
+          eventsMap.get(c.id)
+            .flatMap(_.find(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
+            .flatMap(_.creationDate),
+          eventsMap.get(c.id)
+            .flatMap(_.find(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED))
+            .flatMap(_.creationDate),
         )
       }.filter { case (c, t, noticeCount, lastNotice, lastRequirement) =>
-        lastNotice.filter(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))))).isEmpty }.map {
+        !lastNotice.exists(_.isAfter(lastRequirement.getOrElse(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))))) }.map {
         case (c, t, _, lastNotice, _) =>
           Json.obj(
             "company" -> Json.toJson(c),
