@@ -43,13 +43,13 @@ class ReportOrchestrator @Inject()(
   environment: Environment)
   (implicit val executionContext: ExecutionContext) {
 
-  val logger        = Logger(this.getClass)
-  val bucketName    = configuration.get[String]("play.buckets.report")
-  val mailFrom      = configuration.get[EmailAddress]("play.mail.from")
+  val logger = Logger(this.getClass)
+  val bucketName = configuration.get[String]("play.buckets.report")
+  val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  implicit val websiteUrl                 = configuration.get[URI]("play.website.url")
+  implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
   private def genActivationToken(companyId: UUID, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
     for {
@@ -111,13 +111,10 @@ class ReportOrchestrator @Inject()(
         companyOpt <- draftReport.companySiret.map(siret => companyRepository.getOrCreate(
           siret,
           Company(
-            UUID.randomUUID(),
-            siret,
-            OffsetDateTime.now,
-            draftReport.companyName.get,
-            draftReport.companyAddress.get,
-            draftReport.companyPostalCode,
-            draftReport.companyActivityCode
+            siret = siret,
+            name = draftReport.companyName.get,
+            address = draftReport.companyAddress.get,
+            activityCode = draftReport.companyActivityCode,
           )
         ).map(Some(_))).getOrElse(Future(None))
         _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
@@ -138,7 +135,7 @@ class ReportOrchestrator @Inject()(
           )
         )
         ddEmails <- if (report.tags.contains(Tags.DangerousProduct)) {
-          report.companyPostalCode
+          report.companyAddress.postalCode
             .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
             .getOrElse(Future(Seq()))
         } else Future(Seq())
@@ -169,21 +166,17 @@ class ReportOrchestrator @Inject()(
       company <- companyRepository.getOrCreate(
         reportCompany.siret,
         Company(
-          UUID.randomUUID(),
-          reportCompany.siret,
-          OffsetDateTime.now,
-          reportCompany.name,
-          reportCompany.address,
-          Some(reportCompany.postalCode),
-          reportCompany.activityCode
+          siret = reportCompany.siret,
+          name = reportCompany.name,
+          address = reportCompany.address,
+          activityCode = reportCompany.activityCode
         )
       )
       reportWithNewData <- existingReport match {
         case Some(report) => reportRepository.update(report.copy(
           companyId = Some(company.id),
           companyName = Some(reportCompany.name),
-          companyAddress = Some(reportCompany.address),
-          companyPostalCode = Some(reportCompany.postalCode),
+          companyAddress = reportCompany.address,
           companySiret = Some(reportCompany.siret)
         )).map(Some(_))
         case _ => Future(None)
@@ -210,7 +203,7 @@ class ReportOrchestrator @Inject()(
             Some(OffsetDateTime.now()),
             Constants.EventType.ADMIN,
             Constants.ActionEvent.REPORT_COMPANY_CHANGE,
-            stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${report.companyAddress.getOrElse("Adresse non renseignée")}")
+            stringToDetailsJsValue(s"Entreprise précédente : Siret ${report.companySiret.getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}")
           )
         ).map(Some(_))
         case _ => Future(None)

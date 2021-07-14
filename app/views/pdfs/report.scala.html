@@ -87,19 +87,12 @@
                             <b>@siret</b>
                         </div>
                     }
-                    @report.companyAddress.map{address =>
-                        <div>
-                            @views.html.fragments.address(address)
-                        </div>
+                    @report.companyName.map { companyName =>
+                        <div>@companyName</div>
                     }
-                    @if(report.companyPostalCode.isDefined && !report.companyName.isDefined) {
-                        @report.companyPostalCode
-                    }
-                    @report.companyCountry.map{country =>
-                        <div>
-                            @country.name
-                        </div>
-                    }
+                    <div>
+                        @views.html.fragments.address(report.companyName, report.companyAddress)
+                    </div>
                     @report.websiteURL.websiteURL.map{url =>
                         <div>
                             @url

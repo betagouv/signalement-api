@@ -29,7 +29,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.{ActionEvent, Departments, EventType, ReportStatus}
 import utils.silhouette.auth.AuthEnv
-import utils.{Address, EmailAddress, Fixtures}
+import utils.{EmailAddress, Fixtures}
 
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -191,15 +191,15 @@ trait GetReportContext extends Mockito {
 
   val company = Fixtures.genCompanyData().sample.get
 
+  val address = Fixtures.genAddress()
+
   val neverRequestedReport = Report(
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = Some(Address("companyAddress")),
-    companyPostalCode = Some(Departments.ALL(0)),
-    companyCountry = None,
+    companyAddress = address.sample.get,
     companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,
@@ -217,9 +217,7 @@ trait GetReportContext extends Mockito {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = Some(Address("companyAddress")),
-    companyPostalCode = Some(Departments.ALL(0)),
-    companyCountry = None,
+    companyAddress = address.sample.get,
     companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,
@@ -228,7 +226,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = SIGNALEMENT_CONSULTE_IGNORE
+    status = SIGNALEMENT_CONSULTE_IGNORE,
   )
 
   val alreadyRequestedReport = Report(
@@ -237,9 +235,7 @@ trait GetReportContext extends Mockito {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = Some(Address("companyAddress")),
-    companyPostalCode = Some(Departments.ALL(0)),
-    companyCountry = None,
+    companyAddress = address.sample.get,
     companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,

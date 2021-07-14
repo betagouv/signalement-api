@@ -28,7 +28,6 @@ class UserRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
     def id = column[UUID]("id", O.PrimaryKey)
-
     def password = column[String]("password")
     def email = column[EmailAddress]("email")
     def firstName = column[String]("firstname")

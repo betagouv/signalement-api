@@ -32,7 +32,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a dom tom department                                              ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.CollectivitesOutreMer(0))))}
+          a dom tom department                                              ${step(draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0))))))}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.TRAITEMENT_EN_COURS)}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(draftReport.email,"Votre signalement", views.html.mails.consumer.reportAcknowledgment(report, Nil).toString, mailerService.attachmentSeqForWorkflowStepN(2))}
@@ -42,7 +42,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an experimentation department                                   ${step(draftReport = draftReport.copy(companyPostalCode = Some(Departments.ALL(0))))}
+          an experimentation department                                   ${step(draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0))))))}
           an employee consumer                                            ${step(draftReport = draftReport.copy(employeeConsumer = true))}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(ReportStatus.EMPLOYEE_REPORT)}
@@ -108,8 +108,7 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
          When the report company is updated with same Siret             ${step(updateReportCompany(report.id, reportCompanySameSiret))}
          Then the report contains updated info                          ${checkReport(report.copy(
                                                                           companyName = Some(reportCompanySameSiret.name),
-                                                                          companyAddress = Some(reportCompanySameSiret.address),
-                                                                          companyPostalCode = Some(reportCompanySameSiret.postalCode),
+                                                                          companyAddress = reportCompanySameSiret.address,
                                                                           companySiret = Some(reportCompanySameSiret.siret)
                                                                         ))}
     """
@@ -123,8 +122,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
          Then the report contains updated info and the status is reset  ${checkReport(report.copy(
                                                                           companyId = Some(anotherCompany.id),
                                                                           companyName = Some(reportCompanyAnotherSiret.name),
-                                                                          companyAddress = Some(reportCompanyAnotherSiret.address),
-                                                                          companyPostalCode = Some(reportCompanyAnotherSiret.postalCode),
+                                                                          companyAddress = reportCompanyAnotherSiret.address,
                                                                           companySiret = Some(reportCompanyAnotherSiret.siret),
                                                                           status = ReportStatus.TRAITEMENT_EN_COURS
                                                                         ))}
@@ -161,7 +159,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val reportConsumer = Fixtures.genReportConsumer.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
-  val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get.copy(siret = anotherCompany.siret, postalCode = "45000")
+  val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get.copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))
 
   override def setupData = {
     Await.result(for {

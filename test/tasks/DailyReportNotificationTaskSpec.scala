@@ -74,9 +74,9 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv) extend
   )
 
   val company = Fixtures.genCompany.sample.get
-  val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(covidDept + "000"), category = ReportCategory.Covid.value)
-  val tagReport = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(tagDept + "000"), tags = List(Tags.DangerousProduct))
-  val countryReport = Fixtures.genReportForCompany(company).sample.get.copy(companyCountry = Some(Country.Suisse))
+  val covidReport = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(covidDept + "000")), category = ReportCategory.Covid.value)
+  val tagReport = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(Tags.DangerousProduct))
+  val countryReport = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Suisse)))
 
   override def setupData = {
     Await.result(

@@ -3,7 +3,7 @@ package models
 import java.util.UUID
 
 import play.api.libs.json.{Json, OFormat, Writes}
-import utils.{Address, SIREN, SIRET}
+import utils.{SIREN, SIRET}
 
 case class CompanyData(
   id: UUID = UUID.randomUUID(),
@@ -28,54 +28,50 @@ case class CompanyData(
   activitePrincipaleEtablissement: String,
   etatAdministratifEtablissement: Option[String] = None,
 ) {
-
-  def voie =
-    Option(Seq(
-      numeroVoieEtablissement,
+  def toAddress: Address = Address(
+    number = numeroVoieEtablissement,
+    street = Option(Seq(
       typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
       libelleVoieEtablissement
-    ).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
-
-
-  def commune = Option(Seq(codePostalEtablissement, libelleCommuneEtablissement).flatten).filterNot(_.isEmpty).map(_.mkString(" "))
-
-  def toSearchResult(activityLabel: Option[String], kind: WebsiteKind = WebsiteKind.DEFAULT) = CompanySearchResult(
-    siret,
-    denominationUsuelleEtablissement,
-    enseigne1Etablissement.filter(Some(_) != denominationUsuelleEtablissement),
-    etablissementSiege.map(_.toBoolean).getOrElse(false),
-    Option(Seq(voie, complementAdresseEtablissement, commune).flatten).filterNot(_.isEmpty).map(_.mkString(" - ")).map(Address(_)),
-    codePostalEtablissement,
-    activitePrincipaleEtablissement,
-    activityLabel,
-    kind
+    ).flatten).filterNot(_.isEmpty).map(_.mkString(" ")),
+    postalCode = codePostalEtablissement,
+    city = libelleCommuneEtablissement,
+    addressSupplement = complementAdresseEtablissement,
   )
 
+  def toSearchResult(activityLabel: Option[String], isMarketPlace: Boolean = false) = CompanySearchResult(
+    siret = siret,
+    name = denominationUsuelleEtablissement,
+    brand = enseigne1Etablissement.filter(!denominationUsuelleEtablissement.contains(_)),
+    isHeadOffice = etablissementSiege.exists(_.toBoolean),
+    address = toAddress,
+    activityCode = activitePrincipaleEtablissement,
+    activityLabel = activityLabel,
+    isMarketPlace = isMarketPlace,
+  )
 }
 
-case class CompanyActivity (
-                             code: String,
-                             label: String
-                           )
+case class CompanyActivity(
+  code: String,
+  label: String
+)
 
 
-case class CompanySearchResult (
-                                 siret: SIRET,
-                                 name: Option[String],
-                                 brand: Option[String],
-                                 isHeadOffice: Boolean,
-                                 address: Option[Address],
-                                 postalCode: Option[String],
-                                 activityCode: String,
-                                 activityLabel: Option[String],
-                                 kind: WebsiteKind
-                               ) {
+case class CompanySearchResult(
+  siret: SIRET,
+  name: Option[String],
+  brand: Option[String],
+  isHeadOffice: Boolean,
+  address: Address,
+  activityCode: String,
+  activityLabel: Option[String],
+  isMarketPlace: Boolean = false,
+) {
   def toCompany = Company(
     siret = siret,
     name = name.getOrElse(""),
-    address = address.getOrElse(Address("")),
-    postalCode = postalCode,
-    activityCode =Some(activityCode)
+    address = address,
+    activityCode = Some(activityCode),
   )
 }
 
@@ -84,10 +80,10 @@ object CompanySearchResult {
 }
 
 case class ViewableCompany(
-                          siret: SIRET,
-                          postalCode: Option[String],
-                          closed: Boolean
-                          )
+  siret: SIRET,
+  postalCode: Option[String],
+  closed: Boolean
+)
 
 object ViewableCompany {
   implicit val write: Writes[ViewableCompany] = Json.writes[ViewableCompany]
