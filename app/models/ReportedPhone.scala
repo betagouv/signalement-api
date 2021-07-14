@@ -4,7 +4,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.{Address, SIRET}
+import utils.{SIRET}
 
 sealed case class ReportedPhoneStatus(value: String)
 
@@ -31,7 +31,6 @@ case class ReportedPhoneUpdateCompany (
   companyName: String,
   companyAddress: Address,
   companySiret: SIRET,
-  companyPostalCode: Option[String],
   companyActivityCode: Option[String],
 )
 
@@ -44,7 +43,6 @@ case class ReportedPhoneCreate (
   companyName: String,
   companyAddress: Address,
   companySiret: SIRET,
-  companyPostalCode: Option[String],
   companyActivityCode: Option[String],
 )
 

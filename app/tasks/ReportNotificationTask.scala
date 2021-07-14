@@ -66,10 +66,10 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
           subscription._2,
           subscription._1,
           reports.entities
-            .filter(report => subscription._1.departments.isEmpty || subscription._1.departments.map(Some(_)).contains(report.companyPostalCode.flatMap(Departments.fromPostalCode(_))))
+            .filter(report => subscription._1.departments.isEmpty || subscription._1.departments.map(Some(_)).contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode)))
             .filter(report => subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category))
             .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret))
-            .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyCountry))
+            .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyAddress.country))
             .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.intersect(report.tags).nonEmpty),
           taskDate.minus(period)
         )

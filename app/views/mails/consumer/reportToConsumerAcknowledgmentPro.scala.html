@@ -16,11 +16,9 @@
             SIRET : <b>@report.companySiret.get</b>
         </p>
     }
-    @if(report.companyAddress.isDefined) {
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyAddress.get)
+        @views.html.fragments.address(report.companyName, report.companyAddress)
     </p>
-    }
 
     <p>
         <b>L'entreprise a répondu à votre signalement.</b>

@@ -2,7 +2,7 @@
 @import utils.Constants.ReportStatus._
 @import java.net.URI
 @import utils.Country
-@(report: Report, files: List[ReportFile])(implicit websiteUrl: URI)
+@(report: Report, files: List[ReportFile] = Nil)(implicit websiteUrl: URI)
 
 
 @views.html.mails.layout("Votre signalement") {
@@ -25,17 +25,17 @@
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
         }
-        case NA if report.companyCountry.isDefined => {
+        case NA if report.companyAddress.country.isDefined => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Vous avez indiqué que l’entreprise est une entreprise étrangère (@report.companyCountry.get.name).
+                Vous avez indiqué que l’entreprise est une entreprise étrangère (@report.companyAddress.country.get.name).
             </p>
             <p>
                 Comme précisé sur notre site, votre signalement ne sera pas transmis à cette entreprise.
             </p>
-            @report.companyCountry match {
+            @report.companyAddress.country match {
                 case Some(country) if Country.countries.filter(_.european).contains(country) => {
                     <p>
                         Nous vous invitons à faire votre signalement directement auprès du Centre Européen des Consommateurs. Il vous apportera une assistance pour régler votre problème.
@@ -189,7 +189,7 @@
             <b>Entreprise</b>
             <br/>
             @if(report.companyAddress.isDefined) {
-                @report.companyAddress.get
+                @views.html.fragments.address(report.companyName, report.companyAddress)
                 <br/>
             }
             @if(report.websiteURL.websiteURL.isDefined) {

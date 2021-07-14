@@ -5,7 +5,7 @@ import java.util.UUID
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.{Address, SIRET}
+import utils.SIRET
 
 sealed case class WebsiteKind(value: String, isExclusive: Boolean)
 
@@ -31,7 +31,6 @@ case class WebsiteUpdateCompany (
   companyName: String,
   companyAddress: Address,
   companySiret: SIRET,
-  companyPostalCode: Option[String],
   companyActivityCode: Option[String],
 )
 

@@ -97,11 +97,11 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv) exten
   )
 
   val company = Fixtures.genCompany.sample.get
-  val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"), creationDate = OffsetDateTime.now.minusDays(1))
-  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department1 + "000"), creationDate = OffsetDateTime.now.minusDays(2))
-  val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(department2 + "000"), creationDate = OffsetDateTime.now.minusDays(3))
-  val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyPostalCode = Some(guadeloupe + "00"), creationDate = OffsetDateTime.now.minusDays(4))
-  val reportArgentine = Fixtures.genReportForCompany(company).sample.get.copy(companyCountry = Some(Country.Argentine), creationDate = OffsetDateTime.now.minusDays(4))
+  val report11 = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(department1 + "000")), creationDate = OffsetDateTime.now.minusDays(1))
+  val report12 = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(department1 + "000")), creationDate = OffsetDateTime.now.minusDays(2))
+  val report2 = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(department2 + "000")), creationDate = OffsetDateTime.now.minusDays(3))
+  val reportGuadeloupe = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(postalCode = Some(guadeloupe + "00")), creationDate = OffsetDateTime.now.minusDays(4))
+  val reportArgentine = Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Argentine)), creationDate = OffsetDateTime.now.minusDays(4))
 
   override def setupData = {
     Await.result(
