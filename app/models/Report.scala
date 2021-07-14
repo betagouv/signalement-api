@@ -8,7 +8,7 @@ import play.api.libs.json.{Json, OFormat, Writes, _}
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{EmailAddress, SIRET, URL}
+import utils.{Country, EmailAddress, SIRET, URL}
 
 
 case class WebsiteURL(websiteURL: Option[URL], host: Option[String])

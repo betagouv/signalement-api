@@ -129,7 +129,7 @@ object Fixtures {
         companyName = Some(company.name),
         companyAddress = company.address,
         companySiret = Some(company.siret),
-        websiteURL = None,
+        websiteURL = WebsiteURL(None, None),
         phone = None,
         firstName = firstName,
         lastName = lastName,

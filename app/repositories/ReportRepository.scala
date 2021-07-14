@@ -7,12 +7,11 @@ import javax.inject.{Inject, Singleton}
 import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.{Departments, ReportStatus}
 import utils.Constants.ReportStatus.ReportStatusValue
+import utils.Constants.{Departments, ReportStatus}
 import utils._
-import PostgresProfile.api._
-import models.DetailInputValue.string2detailInputValue
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,10 +23,13 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def details = column[List[String]]("details")
   def companyId = column[Option[UUID]]("company_id")
   def companyName = column[Option[String]]("company_name")
-  def companyAddress = column[Option[Address]]("company_address_old_version")
-  def companyPostalCode = column[Option[String]]("company_postal_code_old_version")
-  def companyCountry = column[Option[Country]]("company_country")
   def companySiret = column[Option[SIRET]]("company_siret")
+  def companyStreetNumber = column[Option[String]]("company_street_number")
+  def companyStreet = column[Option[String]]("company_street")
+  def companyAddressSupplement = column[Option[String]]("company_address_supplement")
+  def companyPostalCode = column[Option[String]]("company_postal_code")
+  def companyCity = column[Option[String]]("company_city")
+  def companyCountry = column[Option[Country]]("company_country")
   def websiteURL = column[Option[URL]]("website_url")
   def host = column[Option[String]]("host")
   def phone = column[Option[String]]("phone")
@@ -49,14 +51,18 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       String,
       List[String],
       List[String],
-      Option[UUID],
-      Option[String],
-      Option[Address],
-      Option[String],
-      Option[Country],
-      Option[SIRET],
-      (Option[URL],
-        Option[String]),
+      (
+        Option[UUID],
+          Option[String],
+          Option[SIRET],
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[Country],
+        ),
+      (Option[URL], Option[String]),
       Option[String],
       OffsetDateTime,
       String,
@@ -67,26 +73,130 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
-      List[String]
+      List[String],
     )
 
   def constructReport: ReportData => Report = {
-    case (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-    (websiteURL,host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
-      Report(id, category, subcategories, details.filter(_ != null).map(string2detailInputValue(_)), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        WebsiteURL(websiteURL, host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, ReportStatus.fromDefaultValue(status), vendor, tags)
+    case (
+      id,
+      category,
+      subcategories,
+      details,
+      (
+        companyId,
+        companyName,
+        companySiret,
+        companyStreetNumber,
+        companyStreet,
+        companyAddressSupplement,
+        companyPostalCode,
+        companyCity,
+        companyCountry,
+        ),
+      (websiteURL,host),
+      phone,
+      creationDate,
+      firstName,
+      lastName,
+      email,
+      contactAgreement,
+      employeeConsumer,
+      forwardToReponseConso,
+      status,
+      vendor,
+      tags,
+      ) => Report(
+      id = id,
+      category = category,
+      subcategories = subcategories,
+      details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
+      companyId = companyId,
+      companyName = companyName,
+      companyAddress = Address(
+        number = companyStreetNumber,
+        street = companyStreet,
+        addressSupplement = companyAddressSupplement,
+        postalCode = companyPostalCode,
+        city = companyCity,
+        country = companyCountry,
+      ),
+      companySiret = companySiret,
+      websiteURL = WebsiteURL(websiteURL, host),
+      phone = phone,
+      creationDate = creationDate,
+      firstName = firstName,
+      lastName = lastName,
+      email = email,
+      contactAgreement = contactAgreement,
+      employeeConsumer = employeeConsumer,
+      forwardToReponseConso = forwardToReponseConso,
+      status = ReportStatus.fromDefaultValue(status),
+      vendor = vendor,
+      tags = tags
+    )
   }
 
   def extractReport: PartialFunction[Report, ReportData] = {
-    case Report(id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-    websiteURL, phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) =>
-      (id, category, subcategories, details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"), companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-        (websiteURL.websiteURL,websiteURL.host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status.defaultValue, vendor, tags)
+    case r => (
+      r.id,
+      r.category,
+      r.subcategories,
+      r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"),
+      (
+        r.companyId,
+        r.companyName,
+        r.companySiret,
+        r.companyAddress.number,
+        r.companyAddress.street,
+        r.companyAddress.addressSupplement,
+        r.companyAddress.postalCode,
+        r.companyAddress.city,
+        r.companyAddress.country,
+      ),
+      (r.websiteURL.websiteURL, r.websiteURL.host),
+      r.phone,
+      r.creationDate,
+      r.firstName,
+      r.lastName,
+      r.email,
+      r.contactAgreement,
+      r.employeeConsumer,
+      r.forwardToReponseConso,
+      r.status.defaultValue,
+      r.vendor,
+      r.tags
+    )
   }
 
-  def * =
-    (id, category, subcategories, details, companyId, companyName, companyAddress, companyPostalCode, companyCountry, companySiret,
-      (websiteURL,host), phone, creationDate, firstName, lastName, email, contactAgreement, employeeConsumer, forwardToReponseConso, status, vendor, tags) <> (constructReport, extractReport.lift)
+  def * = (
+    id,
+    category,
+    subcategories,
+    details,
+    (
+      companyId,
+      companyName,
+      companySiret,
+      companyStreetNumber,
+      companyStreet,
+      companyAddressSupplement,
+      companyPostalCode,
+      companyCity,
+      companyCountry,
+    ),
+    (websiteURL,host),
+    phone,
+    creationDate,
+    firstName,
+    lastName,
+    email,
+    contactAgreement,
+    employeeConsumer,
+    forwardToReponseConso,
+    status,
+    vendor,
+    tags,
+  ) <> (constructReport, extractReport.lift)
 }
 
 object ReportTables {
@@ -125,6 +235,7 @@ class ReportRepository @Inject()(
     def companyCity = column[Option[String]]("company_city")
     def companyCountry = column[Option[Country]]("company_country")
     def websiteURL = column[Option[URL]]("website_url")
+    def host = column[Option[String]]("host")
     def phone = column[Option[String]]("phone")
     def creationDate = column[OffsetDateTime]("creation_date")
     def firstName = column[String]("first_name")

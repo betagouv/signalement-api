@@ -18,22 +18,87 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def siret = column[SIRET]("siret", O.Unique)
   def creationDate = column[OffsetDateTime]("creation_date")
   def name = column[String]("name")
-  def address = column[Address]("address_old_version")
-  def postalCode = column[Option[String]]("postal_code_old_version")
+  def streetNumber = column[Option[String]]("street_number")
+  def street = column[Option[String]]("street")
+  def addressSupplement = column[Option[String]]("address_supplement")
+  def postalCode = column[Option[String]]("postal_code")
   def department = column[Option[String]]("department_old_version")
   def activityCode = column[Option[String]]("activity_code")
 
-  type CompanyData = (UUID, SIRET, OffsetDateTime, String, Address, Option[String], Option[String], Option[String])
+  type CompanyData = (
+    UUID,
+      SIRET,
+      OffsetDateTime,
+      String,
+      Option[String],
+      Option[String],
+      Option[String],
+      Option[String],
+      Option[String],
+      Option[String],
+    )
 
   def constructCompany: CompanyData => Company = {
-    case (id, siret, creationDate, name, address, postalCode, _, activityCode) => Company(id, siret, creationDate, name, address, postalCode, activityCode)
+    case (
+      id,
+      siret,
+      creationDate,
+      name,
+      streetNumber,
+      street,
+      addressSupplement,
+      postalCode,
+      department,
+      activityCode,
+      ) => Company(
+      id = id,
+      siret = siret,
+      creationDate = creationDate,
+      name = name,
+      address = Address(
+        number = streetNumber,
+        street = street,
+        addressSupplement = addressSupplement,
+        postalCode = postalCode,
+      ),
+      activityCode = activityCode,
+    )
   }
 
   def extractCompany: PartialFunction[Company, CompanyData] = {
-    case Company(id, siret, creationDate, name, address, postalCode, activityCode) => (id, siret, creationDate, name, address, postalCode, postalCode.map(Departments.fromPostalCode(_)).flatten, activityCode)
+    case Company(
+    id,
+    siret,
+    creationDate,
+    name,
+    address,
+    activityCode
+    ) => (
+      id,
+      siret,
+      creationDate,
+      name,
+      address.street,
+      address.number,
+      address.addressSupplement,
+      address.postalCode,
+      address.postalCode.flatMap(Departments.fromPostalCode),
+      activityCode
+    )
   }
 
-  def * = (id, siret, creationDate, name, address, postalCode, department, activityCode) <> (constructCompany, extractCompany.lift)
+  def * = (
+    id,
+    siret,
+    creationDate,
+    name,
+    streetNumber,
+    street,
+    addressSupplement,
+    postalCode,
+    department,
+    activityCode,
+  ) <> (constructCompany, extractCompany.lift)
 }
 
 object CompanyTables {
@@ -135,7 +200,7 @@ class CompanyRepository @Inject()(
 
   def searchWithReportsCount(departments: Seq[String] = List(), identity: Option[String] = None, offset: Option[Long], limit: Option[Int]): Future[PaginatedResult[CompanyWithNbReports]] = {
     val query = companyTableQuery.joinLeft(ReportTables.tables).on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty){
+      .filterIf(departments.nonEmpty) {
         case (company, report) => company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
       .groupBy(_._1)
