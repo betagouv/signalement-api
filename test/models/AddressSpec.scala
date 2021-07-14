@@ -7,7 +7,7 @@ class AddressSpec extends Specification {
 
   "AddressSpec" should {
 
-    "isDefined" in {
+    "When all None" in {
       Address(
         number = None,
         street = None,
@@ -17,7 +17,7 @@ class AddressSpec extends Specification {
       ).isDefined === false
     }
 
-    "isDefined" in {
+    "When only number is set" in {
       Address(
         number = Some("1"),
         street = None,
@@ -27,24 +27,24 @@ class AddressSpec extends Specification {
       ).isDefined === true
     }
 
-    "isDefined" in {
+    "When only postalCode is set" in {
       Address(
         number = None,
         street = None,
         addressSupplement = None,
         postalCode = Some("90100"),
         city = None,
-      ).isDefined === false
+      ).isDefined === true
     }
 
-    "isDefined" in {
+    "When only addressSupplement is set" in {
       Address(
         number = None,
         street = None,
         addressSupplement = Some("test"),
         postalCode = None,
         city = None,
-      ).isDefined === false
+      ).isDefined === true
     }
 
     "toString" in {

@@ -12,20 +12,20 @@ case class Address(
   country: Option[Country] = None,
 ) {
 
-  def isDefined: Boolean = (for {
-    _ <- number
-    _ <- street
-    _ <- addressSupplement
-    _ <- postalCode
-    _ <- city
-    _ <- country
-  } yield true).getOrElse(false)
+  def isDefined: Boolean = List(
+    number,
+    street,
+    addressSupplement,
+    postalCode,
+    city,
+    country,
+  ).exists { _.isDefined }
 
   def nonEmpty: Boolean = !isDefined
 
-  private[this] def fullStreet: String = (number.getOrElse(" ") + street.getOrElse("")).trim()
+  private[this] def fullStreet: String = (number.getOrElse("") + " " + street.getOrElse("")).trim()
 
-  private[this] def fullCity: String = (postalCode.getOrElse(" ") + city.getOrElse("")).trim()
+  private[this] def fullCity: String = (postalCode.getOrElse("") + " " + city.getOrElse("")).trim()
 
   def toArray: Seq[String] = Seq(
     fullStreet,
