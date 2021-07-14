@@ -21,6 +21,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def streetNumber = column[Option[String]]("street_number")
   def street = column[Option[String]]("street")
   def addressSupplement = column[Option[String]]("address_supplement")
+  def city = column[Option[String]]("city")
   def postalCode = column[Option[String]]("postal_code")
   def department = column[Option[String]]("department_old_version")
   def activityCode = column[Option[String]]("activity_code")
@@ -30,6 +31,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
       SIRET,
       OffsetDateTime,
       String,
+      Option[String],
       Option[String],
       Option[String],
       Option[String],
@@ -48,6 +50,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
       street,
       addressSupplement,
       postalCode,
+      city,
       department,
       activityCode,
       ) => Company(
@@ -60,6 +63,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
         street = street,
         addressSupplement = addressSupplement,
         postalCode = postalCode,
+        city = city
       ),
       activityCode = activityCode,
     )
@@ -78,10 +82,11 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
       siret,
       creationDate,
       name,
-      address.street,
       address.number,
+      address.street,
       address.addressSupplement,
       address.postalCode,
+      address.city,
       address.postalCode.flatMap(Departments.fromPostalCode),
       activityCode
     )
@@ -96,6 +101,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
     street,
     addressSupplement,
     postalCode,
+    city,
     department,
     activityCode,
   ) <> (constructCompany, extractCompany.lift)

@@ -39,30 +39,4 @@ case class Address(
 
 object Address {
   implicit val addressFormat: OFormat[Address] = Json.format[Address]
-
-  //  def writes(report: Report) =
-  //    Json.obj(
-  //      "id" -> report.id,
-  //      "category" -> report.category,
-  //      "subcategories" -> report.subcategories,
-  //      "details" -> report.details,
-  //      "companyName" -> report.companyName,
-  //      "companyAddress" -> Json.toJson(report.companyAddress),
-  //      "companySiret" -> report.companySiret,
-  //      "creationDate" -> report.creationDate,
-  //      "contactAgreement" -> report.contactAgreement,
-  //      "employeeConsumer" -> report.employeeConsumer,
-  //      "status" -> report.status,
-  //      "websiteURL" -> report.websiteURL,
-  //      "phone" -> report.phone,
-  //      "vendor" -> report.vendor,
-  //      "tags" -> report.tags
-  //    ) ++ ((userRole, report.contactAgreement) match {
-  //      case (Some(UserRoles.Pro), false) => Json.obj()
-  //      case (_, _) => Json.obj(
-  //        "firstName" -> report.firstName,
-  //        "lastName" -> report.lastName,
-  //        "email" -> report.email
-  //      )
-  //    })
 }

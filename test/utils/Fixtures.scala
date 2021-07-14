@@ -47,13 +47,16 @@ object Fixtures {
     } yield SIRET(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
 
     def genAddress(postalCode: Option[String] = Some("37500")) = for {
-        address <- arbString.arbitrary
+        number <- arbString.arbitrary
+        street <- arbString.arbitrary
+        addressSupplement <- arbString.arbitrary
+        city <- arbString.arbitrary
     } yield Address(
-        number = Some(address),
-        street = Some(address),
-        addressSupplement = Some(address),
+        number = Some("number_" + number),
+        street = Some("street_" + street),
+        addressSupplement = Some("addressSupplement_" + addressSupplement),
         postalCode = postalCode,
-        city = Some(address),
+        city = Some("city_" + city),
     )
 
     val genCompany = for {
