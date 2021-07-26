@@ -2,12 +2,12 @@ package repositories
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import javax.inject.Inject
 import javax.inject.Singleton
 import models._
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcBackend
 import slick.jdbc.JdbcProfile
 import utils.URL
 
@@ -81,8 +81,19 @@ class WebsiteRepository @Inject() (
   def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] =
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
 
-  def listWebsitesCompaniesByReportCount() = {
-    val result = websiteTableQuery
+  def listWebsitesCompaniesByReportCount(): Future[Seq[((Website, Company), Int)]] =
+    db.run(listWebsitesCompaniesByReportCountQuery().result)
+
+  def listWebsitesCompaniesByReportCount(
+      maybeOffset: Option[Long],
+      maybeLimit: Option[Int]
+  ): Future[PaginatedResult[((Website, Company), Int)]] =
+    listWebsitesCompaniesByReportCountQuery()
+      .toPaginate(db)(maybeOffset, maybeLimit)
+
+  private def listWebsitesCompaniesByReportCountQuery()
+      : Query[((WebsiteTable, CompanyTable), Rep[Int]), ((Website, Company), Int), Seq] =
+    websiteTableQuery
       .join(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
@@ -91,10 +102,7 @@ class WebsiteRepository @Inject() (
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
       .sortBy(_._2.desc)
-      .to[List]
-      .result
-    db.run(result)
-  }
+      .to[Seq]
 
   def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
 }

@@ -7,6 +7,8 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.OptionT
 import com.mohiva.play.silhouette.api.Silhouette
+import models.PaginatedResult.paginatedResultWrites
+
 import javax.inject._
 import models.WebsiteCompanyFormat._
 import models._
@@ -46,6 +48,16 @@ class WebsiteController @Inject() (
     } yield Ok(Json.toJson(websitesWithCount))
 
   }
+
+  def fetchWithCompanies(maybeOffset: Option[Long], maybeLimit: Option[Int]) =
+    SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+      for {
+        websites <- websiteRepository.listWebsitesCompaniesByReportCount(maybeOffset, maybeLimit)
+        websitesWithCount = websites.copy(entities = websites.entities.map { case ((website, company), count) =>
+                              (website, company, count)
+                            })
+      } yield Ok(Json.toJson(websitesWithCount)(paginatedResultWrites[(Website, Company, Int)]))
+    }
 
   def fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
