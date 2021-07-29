@@ -2,11 +2,12 @@ package models
 
 import java.time.YearMonth
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class Statistics(
-                       reportsDurationsForEnvoiSignalement: Int
-                     )
+    reportsDurationsForEnvoiSignalement: Int
+)
 
 object Statistics {
 
@@ -20,9 +21,9 @@ object Statistics {
 }
 
 case class MonthlyStat(
-                        value: Int,
-                        yearMonth: YearMonth
-                      )
+    value: Int,
+    yearMonth: YearMonth
+)
 
 object MonthlyStat {
 

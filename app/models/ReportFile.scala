@@ -18,14 +18,14 @@ object ReportFileOrigin {
 }
 
 case class ReportFile(
-                 id: UUID,
-                 reportId: Option[UUID],
-                 creationDate: OffsetDateTime,
-                 filename: String,
-                 storageFilename: String,
-                 origin: ReportFileOrigin,
-                 avOutput: Option[String]
-                 )
+    id: UUID,
+    reportId: Option[UUID],
+    creationDate: OffsetDateTime,
+    filename: String,
+    storageFilename: String,
+    origin: ReportFileOrigin,
+    avOutput: Option[String]
+)
 object ReportFile {
   implicit val fileFormat: OFormat[ReportFile] = Json.format[ReportFile]
 }

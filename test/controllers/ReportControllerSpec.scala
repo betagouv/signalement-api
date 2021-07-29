@@ -4,12 +4,16 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{Environment, LoginInfo, Silhouette}
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
+import com.mohiva.play.silhouette.test.FakeEnvironment
+import com.mohiva.play.silhouette.test._
 import models._
 import net.codingwell.scalaguice.ScalaModule
-import orchestrators.{CompaniesVisibilityOrchestrator, ReportOrchestrator}
+import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.ReportOrchestrator
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -19,9 +23,12 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import play.api.Logger
 import repositories._
-import services.{MailerService, S3Service, PDFService}
+import services.MailerService
+import services.S3Service
+import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
@@ -45,7 +52,18 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(mock[ReportOrchestrator], mock[CompanyRepository], mock[ReportRepository], mock[EventRepository], mock[CompaniesVisibilityOrchestrator], mock[S3Service], mock[PDFService], mock[Silhouette[AuthEnv]], mock[Silhouette[APIKeyEnv]], mock[Configuration]) {
+        val controller = new ReportController(
+          mock[ReportOrchestrator],
+          mock[CompanyRepository],
+          mock[ReportRepository],
+          mock[EventRepository],
+          mock[CompaniesVisibilityOrchestrator],
+          mock[S3Service],
+          mock[PDFService],
+          mock[Silhouette[AuthEnv]],
+          mock[Silhouette[APIKeyEnv]],
+          mock[Configuration]
+        ) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
 
@@ -80,7 +98,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
+            "X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2"
+          )
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
@@ -97,7 +117,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
           mockReportRepository.count(Some(siretFixture)) returns Future(5)
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders("X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
+            "X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq"
+          )
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
@@ -118,7 +140,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     val companyId = UUID.randomUUID
 
-    implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
+    implicit val env: Environment[AuthEnv] =
+      new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository = mock[ReportRepository]
     val mockEventRepository = mock[EventRepository]
@@ -134,7 +157,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
     mockCompanyRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
-    mockUserRepository.create(any[User]) answers {user => Future(user.asInstanceOf[User])}
+    mockUserRepository.create(any[User]) answers { user => Future(user.asInstanceOf[User]) }
 
     mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
 

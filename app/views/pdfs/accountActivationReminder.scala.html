@@ -36,7 +36,7 @@
             </div>
 
             <div class="recipient">
-                @views.html.fragments.address(company.address)
+                @views.html.fragments.address(Some(company.name), company.address)
             </div>
 
             <div class="content mt-3">
@@ -62,7 +62,7 @@
                 </p>
 
                 <p class="text-center text-bold">
-                    @views.html.fragments.address(company.address)
+                    @views.html.fragments.address(Some(company.name), company.address)
                 </p>
 
                 <p class="text-bold">

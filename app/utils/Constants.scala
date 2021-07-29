@@ -1,6 +1,7 @@
 package utils
 
-import models.{UserRole, UserRoles}
+import models.UserRole
+import models.UserRoles
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -8,11 +9,14 @@ object Constants {
 
   object ReportStatus {
 
-    case class ReportStatusValue(defaultValue: String, valueByRole: Map[UserRole, Option[String]] = Map(), isFinal: Boolean = false) {
+    case class ReportStatusValue(
+        defaultValue: String,
+        valueByRole: Map[UserRole, Option[String]] = Map(),
+        isFinal: Boolean = false
+    ) {
 
-      def getValueWithUserRole(userRole: UserRole) = {
+      def getValueWithUserRole(userRole: UserRole) =
         valueByRole.get(userRole).getOrElse(Some(defaultValue))
-      }
     }
 
     object ReportStatusValue {
@@ -25,68 +29,77 @@ object Constants {
         JsPath.read[String].map(fromDefaultValue(_))
     }
 
-    object NA extends ReportStatusValue(
-      "NA",
-      Map(
-        UserRoles.Pro -> None
-      ),
-      isFinal = true
-    )
-    object EMPLOYEE_REPORT extends ReportStatusValue(
-      "Lanceur d'alerte",
-      Map(
-        UserRoles.Pro -> None
-      ),
-      isFinal = true
-    )
-    object TRAITEMENT_EN_COURS extends ReportStatusValue(
-      "Traitement en cours",
-      Map(
-        UserRoles.Pro -> Some("Non consulté")
-      )
-    )
-    object SIGNALEMENT_TRANSMIS extends ReportStatusValue(
-      "Signalement transmis",
-      Map(
-        UserRoles.DGCCRF -> Some("Traitement en cours"),
-        UserRoles.Pro -> Some("À répondre")
-      )
-    )
-    object PROMESSE_ACTION extends ReportStatusValue(
-      "Promesse action",
-      Map(
-        UserRoles.Pro -> Some("Clôturé")
-      ),
-      isFinal = true
-    )
-    object SIGNALEMENT_INFONDE extends ReportStatusValue(
-      "Signalement infondé",
-      Map(
-        UserRoles.Pro -> Some("Clôturé")
-      ),
-      isFinal = true
-    )
-    object SIGNALEMENT_NON_CONSULTE extends ReportStatusValue(
-      "Signalement non consulté",
-      Map(
-        UserRoles.Pro -> Some("Clôturé")
-      ),
-      isFinal = true
-    )
-    object SIGNALEMENT_CONSULTE_IGNORE extends ReportStatusValue(
-      "Signalement consulté ignoré",
-      Map(
-        UserRoles.Pro -> Some("Clôturé")
-      ),
-      isFinal = true
-    )
-    object SIGNALEMENT_MAL_ATTRIBUE extends ReportStatusValue(
-      "Signalement mal attribué",
-      Map(
-        UserRoles.Pro -> Some("Clôturé")
-      ),
-      isFinal = true
-    )
+    object NA
+        extends ReportStatusValue(
+          "NA",
+          Map(
+            UserRoles.Pro -> None
+          ),
+          isFinal = true
+        )
+    object EMPLOYEE_REPORT
+        extends ReportStatusValue(
+          "Lanceur d'alerte",
+          Map(
+            UserRoles.Pro -> None
+          ),
+          isFinal = true
+        )
+    object TRAITEMENT_EN_COURS
+        extends ReportStatusValue(
+          "Traitement en cours",
+          Map(
+            UserRoles.Pro -> Some("Non consulté")
+          )
+        )
+    object SIGNALEMENT_TRANSMIS
+        extends ReportStatusValue(
+          "Signalement transmis",
+          Map(
+            UserRoles.DGCCRF -> Some("Traitement en cours"),
+            UserRoles.Pro -> Some("À répondre")
+          )
+        )
+    object PROMESSE_ACTION
+        extends ReportStatusValue(
+          "Promesse action",
+          Map(
+            UserRoles.Pro -> Some("Clôturé")
+          ),
+          isFinal = true
+        )
+    object SIGNALEMENT_INFONDE
+        extends ReportStatusValue(
+          "Signalement infondé",
+          Map(
+            UserRoles.Pro -> Some("Clôturé")
+          ),
+          isFinal = true
+        )
+    object SIGNALEMENT_NON_CONSULTE
+        extends ReportStatusValue(
+          "Signalement non consulté",
+          Map(
+            UserRoles.Pro -> Some("Clôturé")
+          ),
+          isFinal = true
+        )
+    object SIGNALEMENT_CONSULTE_IGNORE
+        extends ReportStatusValue(
+          "Signalement consulté ignoré",
+          Map(
+            UserRoles.Pro -> Some("Clôturé")
+          ),
+          isFinal = true
+        )
+    object SIGNALEMENT_MAL_ATTRIBUE
+        extends ReportStatusValue(
+          "Signalement mal attribué",
+          Map(
+            UserRoles.Pro -> Some("Clôturé")
+          ),
+          isFinal = true
+        )
 
     val reportStatusList = Seq(
       NA,
@@ -100,16 +113,15 @@ object Constants {
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
-    def fromDefaultValue(value: String) = reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
+    def fromDefaultValue(value: String) =
+      reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
-
-    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) = {
+    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) =
       (value, userRole) match {
-        case (Some(value), _) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
+        case (Some(value), _)      => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
         case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined))
-        case (None, _) => None
+        case (None, _)             => None
       }
-    }
 
   }
 
@@ -142,14 +154,13 @@ object Constants {
 
     def fromValue(value: String) = eventTypes.find(_.value == value).getOrElse(EventTypeValue(""))
 
-    def fromUserRole(userRole: UserRole) = {
+    def fromUserRole(userRole: UserRole) =
       userRole match {
-        case UserRoles.Admin => ADMIN
+        case UserRoles.Admin  => ADMIN
         case UserRoles.DGCCRF => DGCCRF
-        case UserRoles.Pro => PRO
-        case _ => CONSO
+        case UserRoles.Pro    => PRO
+        case _                => CONSO
       }
-    }
 
   }
 
@@ -185,16 +196,26 @@ object Constants {
     object REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Signalement non consulté")
     object REPORT_CLOSED_BY_NO_ACTION extends ActionEventValue("Signalement consulté ignoré")
 
-    object EMAIL_CONSUMER_ACKNOWLEDGMENT extends ActionEventValue("Email « Accusé de réception » envoyé au consommateur")
-    object EMAIL_CONSUMER_REPORT_READING extends ActionEventValue("Email « Signalement consulté » envoyé au consommateur")
-    object EMAIL_CONSUMER_REPORT_RESPONSE extends ActionEventValue("Email « L'entreprise a répondu à votre signalement » envoyé au consommateur")
-    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING extends ActionEventValue("Email « L'entreprise n'a pas souhaité consulter votre signalement » envoyé au consommateur")
-    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION extends ActionEventValue("Email « L'entreprise n'a pas répondu au signalement » envoyé au consommateur")
+    object EMAIL_CONSUMER_ACKNOWLEDGMENT
+        extends ActionEventValue("Email « Accusé de réception » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_READING
+        extends ActionEventValue("Email « Signalement consulté » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_RESPONSE
+        extends ActionEventValue("Email « L'entreprise a répondu à votre signalement » envoyé au consommateur")
+    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
+        extends ActionEventValue(
+          "Email « L'entreprise n'a pas souhaité consulter votre signalement » envoyé au consommateur"
+        )
+    object EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
+        extends ActionEventValue("Email « L'entreprise n'a pas répondu au signalement » envoyé au consommateur")
 
     object EMAIL_PRO_NEW_REPORT extends ActionEventValue("Email « Nouveau signalement » envoyé au professionnel")
-    object EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT extends ActionEventValue("Email « Accusé de réception de la réponse » envoyé au professionnel")
-    object EMAIL_PRO_REMIND_NO_READING extends ActionEventValue("Email « Nouveau signalement non consulté » envoyé au professionnel")
-    object EMAIL_PRO_REMIND_NO_ACTION extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
+    object EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+        extends ActionEventValue("Email « Accusé de réception de la réponse » envoyé au professionnel")
+    object EMAIL_PRO_REMIND_NO_READING
+        extends ActionEventValue("Email « Nouveau signalement non consulté » envoyé au professionnel")
+    object EMAIL_PRO_REMIND_NO_ACTION
+        extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
 
     object REPORT_COMPANY_CHANGE extends ActionEventValue("Modification du commerçant")
     object REPORT_CONSUMER_CHANGE extends ActionEventValue("Modification du consommateur")
@@ -272,19 +293,19 @@ object Constants {
 
     val ALL = METROPOLE ++ DOM_TOM
 
-    def fromPostalCode(postalCode: String) = {
+    def fromPostalCode(postalCode: String) =
       postalCode match {
-        case "97150" => Some("978")
-        case "97133" => Some("977")
+        case "97150"                        => Some("978")
+        case "97133"                        => Some("977")
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
-        case code => Departments.ALL.find(postalCode.startsWith(_))
+        case code                           => Departments.ALL.find(postalCode.startsWith(_))
       }
-    }
   }
 
   object Tags {
+    val ReponseConso = "ReponseConso"
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
   }
