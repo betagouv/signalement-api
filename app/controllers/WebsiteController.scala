@@ -42,10 +42,16 @@ class WebsiteController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchWithCompanies(maybeOffset: Option[Long], maybeLimit: Option[Int]) =
+  def fetchWithCompanies(
+      maybeHost: Option[String],
+      maybeKinds: Option[Seq[WebsiteKind]],
+      maybeOffset: Option[Long],
+      maybeLimit: Option[Int]
+  ) =
     SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
       for {
-        result <- websitesOrchestrator.getWebsiteCompanyCount(maybeOffset, maybeLimit)
+        result <-
+          websitesOrchestrator.getWebsiteCompanyCount(maybeHost.filter(_.nonEmpty), maybeKinds, maybeOffset, maybeLimit)
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
     }

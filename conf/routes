@@ -126,7 +126,7 @@ GET           /api/subscriptions/:subscriptionId                     controllers
 DELETE        /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
 
 # Websites API
-GET           /api/websites                                         controllers.WebsiteController.fetchWithCompanies(offset: Option[Long], limit: Option[Int])
+GET           /api/websites                                          controllers.WebsiteController.fetchWithCompanies(host: Option[String], kinds: Option[Seq[WebsiteKind]], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/unregistered                             controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/websites/unregistered/extract                     controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                              controllers.WebsiteController.updateCompany(id: java.util.UUID)

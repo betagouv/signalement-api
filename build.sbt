@@ -55,6 +55,11 @@ libraryDependencies ++= Seq(
 
 scalafmtOnCompile := true
 
+routesImport ++= Seq(
+  "models.WebsiteKind",
+  "controllers.WebsiteKindQueryStringBindable"
+)
+
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 mappings in Universal ++=

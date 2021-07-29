@@ -82,21 +82,35 @@ class WebsiteRepository @Inject() (
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
 
   def listWebsitesCompaniesByReportCount(
+      maybeHost: Option[String],
+      kinds: Option[Seq[WebsiteKind]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Company), Int)]] = {
-    val query = websiteTableQuery
+
+    val baseQuery = websiteTableQuery
       .join(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
       .on((c, r) => c._1.host === r.host && c._1.companyId === r.companyId)
-      .filter(_._2.map(_.host.isDefined))
+      .filter(
+        _._2.map(reportTable =>
+          reportTable.host.isDefined && maybeHost.fold(true.bind)(filteredHost =>
+            reportTable.host.fold(true.bind)(_ like s"%${filteredHost}%")
+          )
+        )
+      )
+      .filter(websiteCompanyTable =>
+        kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)
+      )
+
+    val query = baseQuery
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
       .sortBy(_._2.desc)
       .to[Seq]
 
-    query.toPaginate(db)(maybeOffset, maybeLimit)
+    query.withPagination(db)(maybeOffset, maybeLimit)
   }
 
   def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
