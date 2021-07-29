@@ -300,7 +300,6 @@ Exemple body de la request (JSON):
     "action": "Envoi du signalement"
 }
 ```
-
 - action: ce champ doit contenir le libellé d'une action pro disponible via le ws actionPros (cf. infra)
 
 ### 5. API Constantes

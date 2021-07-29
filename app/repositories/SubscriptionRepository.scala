@@ -1,19 +1,25 @@
 package repositories
 
-import java.time.{OffsetDateTime, Period}
+import java.time.OffsetDateTime
+import java.time.Period
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import utils.{Country, EmailAddress, SIRET}
+import utils.Country
+import utils.EmailAddress
+import utils.SIRET
 
-import scala.concurrent.{ExecutionContext, Future}
-
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(implicit ec: ExecutionContext) {
+class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(
+    implicit ec: ExecutionContext
+) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -34,10 +40,21 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
     def frequency = column[Period]("frequency")
 
-    type SubscriptionData = (UUID, OffsetDateTime, Option[UUID], Option[EmailAddress], List[String], List[String], List[String], List[Country], List[SIRET], Period)
+    type SubscriptionData = (
+        UUID,
+        OffsetDateTime,
+        Option[UUID],
+        Option[EmailAddress],
+        List[String],
+        List[String],
+        List[String],
+        List[Country],
+        List[SIRET],
+        Period
+    )
 
     def constructSubscription: SubscriptionData => Subscription = {
-      case (id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) => {
+      case (id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) =>
         Subscription(
           id = id,
           creationDate = creationDate,
@@ -50,15 +67,26 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
           sirets = sirets,
           frequency = frequency
         )
-      }
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) => (id, creationDate, userId, email, departments, categories.map(_.value), tags, countries, sirets, frequency)
+      case Subscription(id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) =>
+        (id, creationDate, userId, email, departments, categories.map(_.value), tags, countries, sirets, frequency)
     }
 
     def * =
-      (id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) <> (constructSubscription, extractSubscription.lift)
+      (
+        id,
+        creationDate,
+        userId,
+        email,
+        departments,
+        categories,
+        tags,
+        countries,
+        sirets,
+        frequency
+      ) <> (constructSubscription, extractSubscription.lift)
   }
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
@@ -69,12 +97,12 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .run(subscriptionTableQuery += subscription)
     .map(_ => subscription)
 
-
   def get(id: UUID): Future[Option[Subscription]] = db
     .run(
       subscriptionTableQuery
         .filter(_.id === id)
-        .result.headOption
+        .result
+        .headOption
     )
 
   def list(userId: UUID): Future[List[Subscription]] = db
@@ -82,12 +110,14 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       subscriptionTableQuery
         .filter(_.userId === userId)
         .sortBy(_.creationDate.desc)
-        .to[List].result
+        .to[List]
+        .result
     )
 
   def update(subscription: Subscription): Future[Subscription] = {
-    val querySubscription = for (refSubscription <- subscriptionTableQuery if refSubscription.id === subscription.id)
-      yield refSubscription
+    val querySubscription =
+      for (refSubscription <- subscriptionTableQuery if refSubscription.id === subscription.id)
+        yield refSubscription
     db.run(querySubscription.update(subscription))
       .map(_ => subscription)
   }
@@ -99,20 +129,20 @@ class SubscriptionRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .run(
       subscriptionTableQuery
         .filter(_.frequency === frequency)
-        .joinLeft(userTableQuery).on(_.userId === _.id)
+        .joinLeft(userTableQuery)
+        .on(_.userId === _.id)
         .map(subscription => (subscription._1, subscription._1.email.ifNull(subscription._2.map(_.email)).get))
         .to[List]
         .result
     )
 
-  def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]] = {
-    db.run(subscriptionTableQuery
-      .filter(_.email.isDefined)
-      .filter(_.userId.isEmpty)
-      .filter(x => x.departments @> List(department))
-      .filter(x => x.email.map(_.asColumnOf[String]) like s"dd%")
-      .result
+  def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]] =
+    db.run(
+      subscriptionTableQuery
+        .filter(_.email.isDefined)
+        .filter(_.userId.isEmpty)
+        .filter(x => x.departments @> List(department))
+        .filter(x => x.email.map(_.asColumnOf[String]) like s"dd%")
+        .result
     ).map(_.map(_.email.get).distinct)
-  }
 }
-
