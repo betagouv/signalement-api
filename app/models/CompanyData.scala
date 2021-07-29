@@ -2,41 +2,46 @@ package models
 
 import java.util.UUID
 
-import play.api.libs.json.{Json, OFormat, Writes}
-import utils.{SIREN, SIRET}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.Writes
+import utils.SIREN
+import utils.SIRET
 
 case class CompanyData(
-  id: UUID = UUID.randomUUID(),
-  siret: SIRET,
-  siren: SIREN,
-  dateDernierTraitementEtablissement: Option[String] = None,
-  etablissementSiege: Option[String] = None, //TODO change after updating table column type
-  complementAdresseEtablissement: Option[String] = None,
-  numeroVoieEtablissement: Option[String] = None,
-  indiceRepetitionEtablissement: Option[String] = None,
-  typeVoieEtablissement: Option[String] = None,
-  libelleVoieEtablissement: Option[String] = None,
-  codePostalEtablissement: Option[String] = None,
-  libelleCommuneEtablissement: Option[String] = None,
-  libelleCommuneEtrangerEtablissement: Option[String] = None,
-  distributionSpecialeEtablissement: Option[String] = None,
-  codeCommuneEtablissement: Option[String] = None,
-  codeCedexEtablissement: Option[String] = None,
-  libelleCedexEtablissement: Option[String] = None,
-  denominationUsuelleEtablissement: Option[String] = None,
-  enseigne1Etablissement: Option[String] = None,
-  activitePrincipaleEtablissement: String,
-  etatAdministratifEtablissement: Option[String] = None,
+    id: UUID = UUID.randomUUID(),
+    siret: SIRET,
+    siren: SIREN,
+    dateDernierTraitementEtablissement: Option[String] = None,
+    etablissementSiege: Option[String] = None, //TODO change after updating table column type
+    complementAdresseEtablissement: Option[String] = None,
+    numeroVoieEtablissement: Option[String] = None,
+    indiceRepetitionEtablissement: Option[String] = None,
+    typeVoieEtablissement: Option[String] = None,
+    libelleVoieEtablissement: Option[String] = None,
+    codePostalEtablissement: Option[String] = None,
+    libelleCommuneEtablissement: Option[String] = None,
+    libelleCommuneEtrangerEtablissement: Option[String] = None,
+    distributionSpecialeEtablissement: Option[String] = None,
+    codeCommuneEtablissement: Option[String] = None,
+    codeCedexEtablissement: Option[String] = None,
+    libelleCedexEtablissement: Option[String] = None,
+    denominationUsuelleEtablissement: Option[String] = None,
+    enseigne1Etablissement: Option[String] = None,
+    activitePrincipaleEtablissement: String,
+    etatAdministratifEtablissement: Option[String] = None
 ) {
   def toAddress: Address = Address(
     number = numeroVoieEtablissement,
-    street = Option(Seq(
-      typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
-      libelleVoieEtablissement
-    ).flatten).filterNot(_.isEmpty).map(_.mkString(" ")),
+    street = Option(
+      Seq(
+        typeVoieEtablissement.flatMap(typeVoie => TypeVoies.values.find(_._1 == typeVoie).map(_._2.toUpperCase)),
+        libelleVoieEtablissement
+      ).flatten
+    ).filterNot(_.isEmpty).map(_.mkString(" ")),
     postalCode = codePostalEtablissement,
     city = libelleCommuneEtablissement,
-    addressSupplement = complementAdresseEtablissement,
+    addressSupplement = complementAdresseEtablissement
   )
 
   def toSearchResult(activityLabel: Option[String], isMarketPlace: Boolean = false) = CompanySearchResult(
@@ -47,31 +52,30 @@ case class CompanyData(
     address = toAddress,
     activityCode = activitePrincipaleEtablissement,
     activityLabel = activityLabel,
-    isMarketPlace = isMarketPlace,
+    isMarketPlace = isMarketPlace
   )
 }
 
 case class CompanyActivity(
-  code: String,
-  label: String
+    code: String,
+    label: String
 )
 
-
 case class CompanySearchResult(
-  siret: SIRET,
-  name: Option[String],
-  brand: Option[String],
-  isHeadOffice: Boolean,
-  address: Address,
-  activityCode: String,
-  activityLabel: Option[String],
-  isMarketPlace: Boolean = false,
+    siret: SIRET,
+    name: Option[String],
+    brand: Option[String],
+    isHeadOffice: Boolean,
+    address: Address,
+    activityCode: String,
+    activityLabel: Option[String],
+    isMarketPlace: Boolean = false
 ) {
   def toCompany = Company(
     siret = siret,
     name = name.getOrElse(""),
     address = address,
-    activityCode = Some(activityCode),
+    activityCode = Some(activityCode)
   )
 }
 
@@ -80,9 +84,9 @@ object CompanySearchResult {
 }
 
 case class ViewableCompany(
-  siret: SIRET,
-  postalCode: Option[String],
-  closed: Boolean
+    siret: SIRET,
+    postalCode: Option[String],
+    closed: Boolean
 )
 
 object ViewableCompany {
@@ -135,7 +139,6 @@ object TypeVoies {
     ("VLGE", "Village")
   )
 
-  def getByShortName(shortName: String): Option[String] = {
+  def getByShortName(shortName: String): Option[String] =
     values.find(_._1 == shortName).map(_._2.toUpperCase)
-  }
 }

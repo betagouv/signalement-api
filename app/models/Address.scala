@@ -1,15 +1,16 @@
 package models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 import utils.Country
 
 case class Address(
-  number: Option[String] = None,
-  street: Option[String] = None,
-  addressSupplement: Option[String] = None,
-  postalCode: Option[String] = None,
-  city: Option[String] = None,
-  country: Option[Country] = None,
+    number: Option[String] = None,
+    street: Option[String] = None,
+    addressSupplement: Option[String] = None,
+    postalCode: Option[String] = None,
+    city: Option[String] = None,
+    country: Option[Country] = None
 ) {
 
   def isDefined: Boolean = List(
@@ -18,8 +19,8 @@ case class Address(
     addressSupplement,
     postalCode,
     city,
-    country,
-  ).exists { _.isDefined }
+    country
+  ).exists(_.isDefined)
 
   def nonEmpty: Boolean = !isDefined
 
