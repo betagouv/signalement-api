@@ -1,6 +1,7 @@
 package repositories
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import java.util.UUID
 import org.specs2.Specification
@@ -23,7 +24,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
     Await.result(userRepository.create(userToto), Duration.Inf)
     Unit
   }
-  
+
   def is = s2"""
 
  This is a specification to check the UserRepository
