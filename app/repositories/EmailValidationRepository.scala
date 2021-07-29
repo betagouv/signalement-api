@@ -3,20 +3,23 @@ package repositories
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
-import models.{EmailValidation, EmailValidationCreate}
+import javax.inject.Inject
+import javax.inject.Singleton
+import models.EmailValidation
+import models.EmailValidationCreate
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class EmailValidationRepository @Inject()(
-  dbConfigProvider: DatabaseConfigProvider
-)(
-  implicit ec: ExecutionContext
+class EmailValidationRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider
+)(implicit
+    ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
@@ -33,18 +36,24 @@ class EmailValidationRepository @Inject()(
     def attempts = column[Int]("attempts")
     def lastAttempt = column[Option[OffsetDateTime]]("last_attempt")
     def lastValidationDate = column[Option[OffsetDateTime]]("last_validation_date")
-    def * = (id, creationDate, confirmationCode, email, attempts, lastAttempt, lastValidationDate) <> ((EmailValidation.apply _).tupled, EmailValidation.unapply)
+    def * = (
+      id,
+      creationDate,
+      confirmationCode,
+      email,
+      attempts,
+      lastAttempt,
+      lastValidationDate
+    ) <> ((EmailValidation.apply _).tupled, EmailValidation.unapply)
   }
 
   val emailTableQuery = TableQuery[EmailValidationTable]
 
-  def find(id: UUID): Future[Option[EmailValidation]] = {
+  def find(id: UUID): Future[Option[EmailValidation]] =
     db.run(emailTableQuery.filter(_.id === id).result.headOption)
-  }
 
-  def findByEmail(email: EmailAddress): Future[Option[EmailValidation]] = {
+  def findByEmail(email: EmailAddress): Future[Option[EmailValidation]] =
     db.run(emailTableQuery.filter(_.email === email).result.headOption)
-  }
 
   def validate(email: EmailAddress): Future[Option[EmailValidation]] = {
     val action = (for {
@@ -54,30 +63,28 @@ class EmailValidationRepository @Inject()(
     db.run(action)
   }
 
-  def update(email: EmailValidation): Future[Int] = {
+  def update(email: EmailValidation): Future[Int] =
     db.run(emailTableQuery.filter(_.email === email.email).update(email))
-  }
 
-  def exists(email: EmailAddress): Future[Boolean] = {
+  def exists(email: EmailAddress): Future[Boolean] =
     db.run(emailTableQuery.filter(_.email === email).result.headOption).map(_.isDefined)
-  }
 
   def create(newEmailValidation: EmailValidationCreate): Future[EmailValidation] = {
     val entity = newEmailValidation.toEntity
     db.run(emailTableQuery += entity).map(_ => entity)
   }
 
-  def list(): Future[Seq[EmailValidation]] = {
+  def list(): Future[Seq[EmailValidation]] =
     db.run(emailTableQuery.result)
-  }
 
-  def isValidated(email: EmailAddress): Future[Boolean] = {
-    db.run(emailTableQuery
-      .filter(_.email === email)
-      .filter(_.lastValidationDate.isDefined)
-      .result.headOption
+  def isValidated(email: EmailAddress): Future[Boolean] =
+    db.run(
+      emailTableQuery
+        .filter(_.email === email)
+        .filter(_.lastValidationDate.isDefined)
+        .result
+        .headOption
     ).map(_.isDefined)
-  }
 
   def delete(id: UUID): Future[Int] = db.run(emailTableQuery.filter(_.id === id).delete)
 }

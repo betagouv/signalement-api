@@ -61,6 +61,8 @@ libraryDependencies ++= Seq(
 
 )
 
+scalafmtOnCompile := true
+
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 mappings in Universal ++=
