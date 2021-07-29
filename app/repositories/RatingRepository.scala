@@ -3,16 +3,19 @@ package repositories
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models.Rating
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
-
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class RatingRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit ec: ExecutionContext) {
+class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit
+    ec: ExecutionContext
+) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -29,15 +32,13 @@ class RatingRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, repor
 
     type RatingData = (UUID, OffsetDateTime, String, List[String], Boolean)
 
-    def constructRating: RatingData => Rating = {
-
-      case (id, creationDate, category, subcategories, positive) => {
-        Rating(Some(id), Some(creationDate), category, subcategories, positive)
-      }
+    def constructRating: RatingData => Rating = { case (id, creationDate, category, subcategories, positive) =>
+      Rating(Some(id), Some(creationDate), category, subcategories, positive)
     }
 
     def extractRating: PartialFunction[Rating, RatingData] = {
-      case Rating(id, creationDate, category, subcategories, positive) => (id.get, creationDate.get, category, subcategories, positive)
+      case Rating(id, creationDate, category, subcategories, positive) =>
+        (id.get, creationDate.get, category, subcategories, positive)
     }
 
     def * =
@@ -51,4 +52,3 @@ class RatingRepository @Inject()(dbConfigProvider: DatabaseConfigProvider, repor
     .map(_ => rating)
 
 }
-

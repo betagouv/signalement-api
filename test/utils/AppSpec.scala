@@ -12,16 +12,14 @@ import services.MailerService
 
 trait AppSpec extends BeforeAfterAll with Mockito {
 
-  def configureFakeModule(): AbstractModule = {
+  def configureFakeModule(): AbstractModule =
     new AppFakeModule
-  }
 
   class AppFakeModule extends AbstractModule with ScalaModule {
     val mailerServiceMock = mock[MailerService]
     mailerServiceMock.attachmentSeqForWorkflowStepN(any[Int]) returns Seq()
-    override def configure() = {
+    override def configure() =
       bind[MailerService].toInstance(mailerServiceMock)
-    }
   }
 
   lazy val app = new GuiceApplicationBuilder()

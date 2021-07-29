@@ -3,21 +3,26 @@ package repositories
 import java.time._
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models.ReportData
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport.OrderedSetAggFunctions._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
-                                     val eventRepository: EventRepository,
-                                     val reportRepository: ReportRepository,
-                                     configuration: Configuration)(implicit ec: ExecutionContext) {
+class ReportDataRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider,
+    val eventRepository: EventRepository,
+    val reportRepository: ReportRepository,
+    configuration: Configuration
+)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
@@ -36,51 +41,71 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
   val backofficeProStartDate = OffsetDateTime.of(
     LocalDate.parse(configuration.get[String]("play.stats.backofficeProStartDate")),
     LocalTime.MIDNIGHT,
-    ZoneOffset.UTC)
+    ZoneOffset.UTC
+  )
 
-  def updateReportReadDelay = {
+  def updateReportReadDelay =
     for {
       delaisToAdd <- db.run(
-        eventRepository.eventTableQuery
-          .filter(_.action === ActionEvent.REPORT_READING_BY_PRO.value)
-          .filter(_.creationDate > backofficeProStartDate)
-          .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
-          .filterNot(_._2.flatMap(_.readDelay).isDefined)
-          .join(reportRepository.reportTableQuery).on(_._1.reportId === _.id)
-          .map(result => (result._1._1.reportId, result._1._1.creationDate - result._2.creationDate, result._1._2.flatMap(_.responseDelay)))
-          .to[List]
-          .result)
-      _ <- {
-        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes), e._3))))
-      }
+                       eventRepository.eventTableQuery
+                         .filter(_.action === ActionEvent.REPORT_READING_BY_PRO.value)
+                         .filter(_.creationDate > backofficeProStartDate)
+                         .joinLeft(reportDataTableQuery)
+                         .on(_.reportId === _.reportId)
+                         .filterNot(_._2.flatMap(_.readDelay).isDefined)
+                         .join(reportRepository.reportTableQuery)
+                         .on(_._1.reportId === _.id)
+                         .map(result =>
+                           (
+                             result._1._1.reportId,
+                             result._1._1.creationDate - result._2.creationDate,
+                             result._1._2.flatMap(_.responseDelay)
+                           )
+                         )
+                         .to[List]
+                         .result
+                     )
+      _ <-
+        db.run(
+          reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes), e._3)))
+        )
     } yield Unit
-  }
 
-  def updateReportResponseDelay = {
+  def updateReportResponseDelay =
     for {
       delaisToAdd <- db.run(
-        eventRepository.eventTableQuery
-          .filter(_.action === ActionEvent.REPORT_PRO_RESPONSE.value)
-          .filter(_.creationDate > backofficeProStartDate)
-          .joinLeft(reportDataTableQuery).on(_.reportId === _.reportId)
-          .filterNot(_._2.flatMap(_.responseDelay).isDefined)
-          .join(eventRepository.eventTableQuery).on(_._1.reportId === _.reportId)
-          .filter(_._2.action === ActionEvent.REPORT_READING_BY_PRO.value)
-          .map(result => (result._1._1.reportId, result._1._2.flatMap(_.readDelay), result._1._1.creationDate - result._2.creationDate))
-          .to[List]
-          .result)
-      _ <- {
-        db.run(reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes)))))
-      }
+                       eventRepository.eventTableQuery
+                         .filter(_.action === ActionEvent.REPORT_PRO_RESPONSE.value)
+                         .filter(_.creationDate > backofficeProStartDate)
+                         .joinLeft(reportDataTableQuery)
+                         .on(_.reportId === _.reportId)
+                         .filterNot(_._2.flatMap(_.responseDelay).isDefined)
+                         .join(eventRepository.eventTableQuery)
+                         .on(_._1.reportId === _.reportId)
+                         .filter(_._2.action === ActionEvent.REPORT_READING_BY_PRO.value)
+                         .map(result =>
+                           (
+                             result._1._1.reportId,
+                             result._1._2.flatMap(_.readDelay),
+                             result._1._1.creationDate - result._2.creationDate
+                           )
+                         )
+                         .to[List]
+                         .result
+                     )
+      _ <-
+        db.run(
+          reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes))))
+        )
     } yield Unit
-  }
 
   def getReportReadMedianDelay = db
     .run(
       reportDataTableQuery
         .filter(_.readDelay.isDefined)
         .map(readData => percentileCont(0.5).within(readData.readDelay.getOrElse(0d)))
-        .result.head
+        .result
+        .head
     )
 
   def getReportResponseMedianDelay = db
@@ -88,6 +113,7 @@ class ReportDataRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
       reportDataTableQuery
         .filter(_.responseDelay.isDefined)
         .map(readData => percentileCont(0.5).within(readData.responseDelay.getOrElse(0d)))
-        .result.head
+        .result
+        .head
     )
 }
