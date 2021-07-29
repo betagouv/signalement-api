@@ -66,6 +66,14 @@ POST          /api/authenticate                                      controllers
 POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
 
+# Enterprises sync
+POST          /api/enterprises-sync/start-etablissement              controllers.EnterpriseImportController.startEtablissementFile()
+POST          /api/enterprises-sync/start-unitelegale                controllers.EnterpriseImportController.startUniteLegaleFile()
+POST          /api/enterprises-sync/cancel                           controllers.EnterpriseImportController.cancelAllFiles()
+POST          /api/enterprises-sync/cancel-etablissement             controllers.EnterpriseImportController.cancelEtablissementFile()
+POST          /api/enterprises-sync/cancel-unitelegale               controllers.EnterpriseImportController.cancelUniteLegaleFile()
+GET           /api/enterprises-sync/info                             controllers.EnterpriseImportController.getSyncInfo()
+
 # Accesses API
 GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()
 GET           /api/accesses/:siret                                   controllers.CompanyAccessController.listAccesses(siret: String)
@@ -94,6 +102,7 @@ POST          /api/email/validate                                    controllers
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create
+GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/companies/connected-user                          controllers.CompanyController.viewableCompanies
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
@@ -125,6 +134,7 @@ PUT           /api/websites/:id                                      controllers
 PUT           /api/websites                                          controllers.WebsiteController.create
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
+GET           /migrate-database-addresses                            controllers.MigrateAddressController.run()
 
 # Reported phones API
 GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String])

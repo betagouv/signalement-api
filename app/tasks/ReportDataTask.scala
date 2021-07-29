@@ -1,31 +1,38 @@
 package tasks
 
 import java.time.temporal.ChronoUnit
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 import akka.actor.ActorSystem
 import javax.inject.Inject
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import play.api.Logger
 import repositories.ReportDataRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-
-class ReportDataTask @Inject()(actorSystem: ActorSystem,
-                               reportDataRepository: ReportDataRepository,
-                               configuration: Configuration)
-                              (implicit val executionContext: ExecutionContext) {
-
+class ReportDataTask @Inject() (
+    actorSystem: ActorSystem,
+    reportDataRepository: ReportDataRepository,
+    configuration: Configuration
+)(implicit val executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
 
-  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.data.start.hour"), configuration.get[Int]("play.tasks.report.data.start.minute"), 0)
+  val startTime = LocalTime.of(
+    configuration.get[Int]("play.tasks.report.data.start.hour"),
+    configuration.get[Int]("play.tasks.report.data.start.minute"),
+    0
+  )
   val interval = configuration.get[Int]("play.tasks.report.data.intervalInHours").hours
 
-  val startDate = if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime) else LocalDate.now.atTime(startTime)
+  val startDate =
+    if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
+    else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
-
 
   actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
 

@@ -28,9 +28,8 @@ object SIREN {
     _.map(SIREN(_))
   )
   implicit val sirenWrites = new Writes[SIREN] {
-    def writes(o: SIREN): JsValue = {
+    def writes(o: SIREN): JsValue =
       JsString(o.value)
-    }
   }
   implicit val sirenReads = new Reads[SIREN] {
     def reads(json: JsValue): JsResult[SIREN] = json.validate[String].map(SIREN(_))
