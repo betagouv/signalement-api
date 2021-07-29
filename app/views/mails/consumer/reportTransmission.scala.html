@@ -13,11 +13,11 @@
             SIRET : <b>@report.companySiret.get</b>
         </p>
     }
-    @if(report.companyAddress.isDefined) {
     <p style="text-align: center;">
-        <b>@views.html.fragments.address(report.companyAddress.get)</b>
+        <b>
+            @views.html.fragments.address(report.companyName, report.companyAddress)
+        </b>
     </p>
-    }
 
     <p>
         L'entreprise a pris connaissance de votre signalement aujourd'hui.
