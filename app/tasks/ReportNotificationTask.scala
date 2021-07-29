@@ -5,24 +5,33 @@ import java.time._
 import java.time.temporal.ChronoUnit
 
 import actors.EmailActor
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
 import akka.pattern.ask
-import javax.inject.{Inject, Named}
-import models.{Report, ReportFilter, Subscription}
-import play.api.{Configuration, Logger}
-import repositories.{ReportRepository, SubscriptionRepository}
-import utils.Constants.{Departments, Tags}
-import utils.{EmailAddress, EmailSubjects}
+import javax.inject.Inject
+import javax.inject.Named
+import models.Report
+import models.ReportFilter
+import models.Subscription
+import play.api.Configuration
+import play.api.Logger
+import repositories.ReportRepository
+import repositories.SubscriptionRepository
+import utils.Constants.Departments
+import utils.Constants.Tags
+import utils.EmailAddress
+import utils.EmailSubjects
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
-                                       reportRepository: ReportRepository,
-                                       subscriptionRepository: SubscriptionRepository,
-                                       @Named("email-actor") emailActor: ActorRef,
-                                       configuration: Configuration)
-                                      (implicit executionContext: ExecutionContext) {
+class ReportNotificationTask @Inject() (
+    actorSystem: ActorSystem,
+    reportRepository: ReportRepository,
+    subscriptionRepository: SubscriptionRepository,
+    @Named("email-actor") emailActor: ActorRef,
+    configuration: Configuration
+)(implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -30,9 +39,15 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
-  val startTime = LocalTime.of(configuration.get[Int]("play.tasks.report.notification.start.hour"), configuration.get[Int]("play.tasks.report.notification.start.minute"), 0)
+  val startTime = LocalTime.of(
+    configuration.get[Int]("play.tasks.report.notification.start.hour"),
+    configuration.get[Int]("play.tasks.report.notification.start.minute"),
+    0
+  )
 
-  val startDate = if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime) else LocalDate.now.atTime(startTime)
+  val startDate =
+    if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
+    else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
   val departments = Departments.ALL
@@ -40,7 +55,11 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
   actorSystem.scheduler.schedule(initialDelay = initialDelay, 1.days) {
     logger.debug(s"initialDelay - ${initialDelay}");
 
-    if (LocalDate.now.getDayOfWeek == DayOfWeek.valueOf(configuration.get[String]("play.tasks.report.notification.weekly.dayOfWeek"))) {
+    if (
+      LocalDate.now.getDayOfWeek == DayOfWeek.valueOf(
+        configuration.get[String]("play.tasks.report.notification.weekly.dayOfWeek")
+      )
+    ) {
       runPeriodicNotificationTask(LocalDate.now, Period.ofDays(7))
     }
 
@@ -55,40 +74,57 @@ class ReportNotificationTask @Inject()(actorSystem: ActorSystem,
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       reports <- reportRepository.getReports(
-          0,
-          10000,
-          ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
+                   0,
+                   10000,
+                   ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
+                 )
+    } yield subscriptions.foreach { subscription =>
+      sendMailReportNotification(
+        subscription._2,
+        subscription._1,
+        reports.entities
+          .filter(report =>
+            subscription._1.departments.isEmpty || subscription._1.departments
+              .map(Some(_))
+              .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode))
+          )
+          .filter(report =>
+            subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category)
+          )
+          .filter(report =>
+            subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret)
+          )
+          .filter(report =>
+            subscription._1.countries.isEmpty || subscription._1.countries
+              .map(Some(_))
+              .contains(report.companyAddress.country)
+          )
+          .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.intersect(report.tags).nonEmpty),
+        taskDate.minus(period)
       )
-    } yield {
-      subscriptions.foreach(subscription => {
-
-        sendMailReportNotification(
-          subscription._2,
-          subscription._1,
-          reports.entities
-            .filter(report => subscription._1.departments.isEmpty || subscription._1.departments.map(Some(_)).contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode)))
-            .filter(report => subscription._1.categories.isEmpty || subscription._1.categories.map(_.value).contains(report.category))
-            .filter(report => subscription._1.sirets.isEmpty || subscription._1.sirets.map(Some(_)).contains(report.companySiret))
-            .filter(report => subscription._1.countries.isEmpty || subscription._1.countries.map(Some(_)).contains(report.companyAddress.country))
-            .filter(report => subscription._1.tags.isEmpty || subscription._1.tags.intersect(report.tags).nonEmpty),
-          taskDate.minus(period)
-        )
-      })
     }
   }
 
-  private def sendMailReportNotification(email: EmailAddress, subscription: Subscription, reports: List[Report], startDate: LocalDate) = {
-
+  private def sendMailReportNotification(
+      email: EmailAddress,
+      subscription: Subscription,
+      reports: List[Report],
+      startDate: LocalDate
+  ) =
     if (reports.length > 0) {
 
-      logger.debug(s"sendMailReportNotification $email - abonnement ${subscription.id} - ${reports.length} signalements")
+      logger.debug(
+        s"sendMailReportNotification $email - abonnement ${subscription.id} - ${reports.length} signalements"
+      )
 
       emailActor ? EmailActor.EmailRequest(
         from = configuration.get[EmailAddress]("play.mail.from"),
         recipients = Seq(email),
-        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(reports.length, subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ")),
+        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(
+          reports.length,
+          subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ")
+        ),
         bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
       )
     }
-  }
 }

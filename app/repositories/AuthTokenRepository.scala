@@ -4,21 +4,24 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-/**
- * A repository for authToken.
- *
- * @param dbConfigProvider The Play db config provider. Play will inject this for you.
- */
+/** A repository for authToken.
+  *
+  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  */
 @Singleton
-class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
-                                    passwordHasherRegistry: PasswordHasherRegistry)(implicit ec: ExecutionContext) {
+class AuthTokenRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider,
+    passwordHasherRegistry: PasswordHasherRegistry
+)(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -33,12 +36,12 @@ class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
     type AuthTokenData = (UUID, UUID, OffsetDateTime)
 
-    def constructAuthToken: AuthTokenData => AuthToken = {
-      case (id, userId, expiry) => AuthToken(id, userId, expiry)
+    def constructAuthToken: AuthTokenData => AuthToken = { case (id, userId, expiry) =>
+      AuthToken(id, userId, expiry)
     }
 
-    def extractAuthToken: PartialFunction[AuthToken, AuthTokenData] = {
-      case AuthToken(id, userId, expiry) => (id, userId, expiry)
+    def extractAuthToken: PartialFunction[AuthToken, AuthTokenData] = { case AuthToken(id, userId, expiry) =>
+      (id, userId, expiry)
     }
 
     def * = (id, userId, expiry) <> (constructAuthToken, extractAuthToken.lift)
@@ -51,10 +54,14 @@ class AuthTokenRepository @Inject()(dbConfigProvider: DatabaseConfigProvider,
     .map(_ => authToken)
 
   def findValid(id: UUID): Future[Option[AuthToken]] = db
-    .run(authTokenTableQuery
-      .filter(_.id === id)
-      .filter(_.expiry > OffsetDateTime.now)
-      .to[List].result.headOption)
+    .run(
+      authTokenTableQuery
+        .filter(_.id === id)
+        .filter(_.expiry > OffsetDateTime.now)
+        .to[List]
+        .result
+        .headOption
+    )
 
   def deleteForUserId(userId: UUID): Future[Int] = db.run {
     authTokenTableQuery
