@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   "com.norbitltd" %% "spoiwo" % "1.8.0",
   "com.itextpdf" % "itext7-core" % "7.1.14",
   "com.itextpdf" % "html2pdf" % "3.0.3",
-  "com.beachape" %% "enumeratum" % "1.6.1",
+  "com.beachape" %% "enumeratum" % "1.7.0",
   "com.beachape" %% "enumeratum-play" % "1.6.3",
   "com.beachape" %% "enumeratum-slick" % "1.6.0",
   specs2 % Test,
