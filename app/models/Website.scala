@@ -76,14 +76,7 @@ case class Website(
 )
 
 object Website {
-
-  implicit val websiteWrites: Writes[Website] = (
-    (JsPath \ "id").write[UUID] and
-      (JsPath \ "creationDate").write[OffsetDateTime] and
-      (JsPath \ "host").write[String] and
-      (JsPath \ "companyId").write[UUID] and
-      (JsPath \ "kind").write[WebsiteKind]
-  )((w: Website) => (w.id, w.creationDate, w.host, w.companyId, w.kind))
+  implicit val WebsiteWrites: Writes[Website] = Json.writes[Website]
 }
 
 object WebsiteCompanyFormat {

@@ -12,6 +12,8 @@ import models.PaginatedResult.paginatedResultWrites
 import javax.inject._
 import models.WebsiteCompanyFormat._
 import models._
+import models.website.WebsiteCompanyReportCount
+import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -28,6 +30,7 @@ import scala.concurrent.Future
 
 @Singleton
 class WebsiteController @Inject() (
+    val websitesOrchestrator: WebsitesOrchestrator,
     val websiteRepository: WebsiteRepository,
     val reportRepository: ReportRepository,
     val companyRepository: CompanyRepository,
@@ -39,24 +42,12 @@ class WebsiteController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def fetchWithCompanies() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    for {
-      websites <- websiteRepository.listWebsitesCompaniesByReportCount
-      websitesWithCount = websites.map { case ((website, company), count) =>
-                            (website, company, count)
-                          }
-    } yield Ok(Json.toJson(websitesWithCount))
-
-  }
-
   def fetchWithCompanies(maybeOffset: Option[Long], maybeLimit: Option[Int]) =
     SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
       for {
-        websites <- websiteRepository.listWebsitesCompaniesByReportCount(maybeOffset, maybeLimit)
-        websitesWithCount = websites.copy(entities = websites.entities.map { case ((website, company), count) =>
-                              (website, company, count)
-                            })
-      } yield Ok(Json.toJson(websitesWithCount)(paginatedResultWrites[(Website, Company, Int)]))
+        result <- websitesOrchestrator.getWebsiteCompanyCount(maybeOffset, maybeLimit)
+        resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
+      } yield Ok(resultAsJson)
     }
 
   def fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =

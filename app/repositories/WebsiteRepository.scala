@@ -81,19 +81,11 @@ class WebsiteRepository @Inject() (
   def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] =
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
 
-  def listWebsitesCompaniesByReportCount(): Future[Seq[((Website, Company), Int)]] =
-    db.run(listWebsitesCompaniesByReportCountQuery().result)
-
   def listWebsitesCompaniesByReportCount(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
-  ): Future[PaginatedResult[((Website, Company), Int)]] =
-    listWebsitesCompaniesByReportCountQuery()
-      .toPaginate(db)(maybeOffset, maybeLimit)
-
-  private def listWebsitesCompaniesByReportCountQuery()
-      : Query[((WebsiteTable, CompanyTable), Rep[Int]), ((Website, Company), Int), Seq] =
-    websiteTableQuery
+  ): Future[PaginatedResult[((Website, Company), Int)]] = {
+    val query = websiteTableQuery
       .join(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
@@ -103,6 +95,9 @@ class WebsiteRepository @Inject() (
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
       .sortBy(_._2.desc)
       .to[Seq]
+
+    query.toPaginate(db)(maybeOffset, maybeLimit)
+  }
 
   def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
 }
