@@ -94,12 +94,9 @@ class WebsiteRepository @Inject() (
       .joinLeft(reportRepository.reportTableQuery)
       .on((c, r) => c._1.host === r.host && c._1.companyId === r.companyId)
       .filter(
-        _._2.map(reportTable =>
-          reportTable.host.isDefined && maybeHost.fold(true.bind)(filteredHost =>
-            reportTable.host.fold(true.bind)(_ like s"%${filteredHost}%")
-          )
-        )
+        _._2.map(reportTable => reportTable.host.isDefined)
       )
+      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
       .filter(websiteCompanyTable =>
         kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)
       )
