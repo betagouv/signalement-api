@@ -1,14 +1,20 @@
 package utils.silhouette
 
 import com.google.inject.name.Named
-import com.google.inject.{AbstractModule, Provides}
-import com.mohiva.play.silhouette.api.actions.{SecuredErrorHandler, UnsecuredErrorHandler}
+import com.google.inject.AbstractModule
+import com.google.inject.Provides
+import com.mohiva.play.silhouette.api.actions.SecuredErrorHandler
+import com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandler
 import com.mohiva.play.silhouette.api.crypto._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
-import com.mohiva.play.silhouette.crypto.{JcaCrypter, JcaCrypterSettings}
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.EventBus
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.SilhouetteProvider
+import com.mohiva.play.silhouette.crypto.JcaCrypter
+import com.mohiva.play.silhouette.crypto.JcaCrypterSettings
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.util._
@@ -24,16 +30,19 @@ import play.api.Configuration
 import scala.concurrent.ExecutionContext.Implicits.global
 import utils.ErrorHandler
 import net.ceedubs.ficus.readers.EnumerationReader._
-import utils.silhouette.api.{APIKey, APIKeyEnv, APIKeyRequestProvider, ApiKeyService}
-import utils.silhouette.auth.{AuthEnv, PasswordInfoDAO, UserService}
+import utils.silhouette.api.APIKey
+import utils.silhouette.api.APIKeyEnv
+import utils.silhouette.api.APIKeyRequestProvider
+import utils.silhouette.api.ApiKeyService
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.PasswordInfoDAO
+import utils.silhouette.auth.UserService
 
-/**
-  * The Guice module which wires all Silhouette dependencies.
+/** The Guice module which wires all Silhouette dependencies.
   */
 class SilhouetteModule extends AbstractModule with ScalaModule {
 
-  /**
-    * Configures the module.
+  /** Configures the module.
     */
   override def configure() {
     bind[Silhouette[AuthEnv]].to[SilhouetteProvider[AuthEnv]]
@@ -50,8 +59,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[Clock].toInstance(Clock())
   }
 
-  /**
-    * Provides the Silhouette Auth environment.
+  /** Provides the Silhouette Auth environment.
     *
     * @param userService The user service implementation.
     * @param authenticatorService The authentication service implementation.
@@ -60,20 +68,18 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     */
   @Provides
   def provideAuthEnvironment(
-                          userService: UserService,
-                          authenticatorService: AuthenticatorService[JWTAuthenticator],
-                          eventBus: EventBus
-                        ): Environment[AuthEnv] = {
+      userService: UserService,
+      authenticatorService: AuthenticatorService[JWTAuthenticator],
+      eventBus: EventBus
+  ): Environment[AuthEnv] =
     Environment[AuthEnv](
       userService,
       authenticatorService,
       Seq(),
       eventBus
     )
-  }
 
-  /**
-    * Provides the Silhouette Api environment.
+  /** Provides the Silhouette Api environment.
     *
     * @param apiKeyService The api key service implementation.
     * @param authenticatorService The authentication service implementation.
@@ -82,21 +88,19 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     */
   @Provides
   def provideApiEnvironment(
-                             apiKeyService: ApiKeyService,
-                             authenticatorService: AuthenticatorService[DummyAuthenticator],
-                             apiKeyRequestProvider: APIKeyRequestProvider,
-                             eventBus: EventBus
-                        ): Environment[APIKeyEnv] = {
+      apiKeyService: ApiKeyService,
+      authenticatorService: AuthenticatorService[DummyAuthenticator],
+      apiKeyRequestProvider: APIKeyRequestProvider,
+      eventBus: EventBus
+  ): Environment[APIKeyEnv] =
     Environment[APIKeyEnv](
       apiKeyService,
       authenticatorService,
       Seq(apiKeyRequestProvider),
       eventBus
     )
-  }
 
-  /**
-    * Provides the crypter for the authenticator.
+  /** Provides the crypter for the authenticator.
     *
     * @param configuration The Play configuration.
     * @return The crypter for the authenticator.
@@ -108,19 +112,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new JcaCrypter(config)
   }
 
-  /**
-    * Provides the auth info repository.
+  /** Provides the auth info repository.
     *
     * @param passwordInfoDAO The implementation of the delegable password auth info DAO.
     * @return The auth info repository instance.
     */
   @Provides
-  def provideAuthInfoRepository(passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo]): AuthInfoRepository = {
+  def provideAuthInfoRepository(passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo]): AuthInfoRepository =
     new DelegableAuthInfoRepository(passwordInfoDAO)
-  }
 
-  /**
-    * Provides the authenticator service.
+  /** Provides the authenticator service.
     *
     * @param crypter              The crypter implementation.
     * @param idGenerator          The ID generator implementation.
@@ -129,10 +130,12 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     * @return The authenticator service.
     */
   @Provides
-  def provideAuthenticatorService(@Named("authenticator-crypter") crypter: Crypter,
-                                  idGenerator: IDGenerator,
-                                  configuration: Configuration,
-                                  clock: Clock): AuthenticatorService[JWTAuthenticator] = {
+  def provideAuthenticatorService(
+      @Named("authenticator-crypter") crypter: Crypter,
+      idGenerator: IDGenerator,
+      configuration: Configuration,
+      clock: Clock
+  ): AuthenticatorService[JWTAuthenticator] = {
 
     val config = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
@@ -140,19 +143,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new JWTAuthenticatorService(config, None, encoder, idGenerator, clock)
   }
 
-  /**
-    * Provides the password hasher registry.
+  /** Provides the password hasher registry.
     *
     * @param passwordHasher The default password hasher implementation.
     * @return The password hasher registry.
     */
   @Provides
-  def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry = {
+  def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry =
     new PasswordHasherRegistry(passwordHasher)
-  }
 
-  /**
-    * Provides the credentials provider.
+  /** Provides the credentials provider.
     *
     * @param authInfoRepository The auth info repository implementation.
     * @param passwordHasherRegistry The password hasher registry.
@@ -160,24 +160,22 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     */
   @Provides
   def provideCredentialsProvider(
-                                  authInfoRepository: AuthInfoRepository,
-                                  passwordHasherRegistry: PasswordHasherRegistry
-                                ): CredentialsProvider = {
+      authInfoRepository: AuthInfoRepository,
+      passwordHasherRegistry: PasswordHasherRegistry
+  ): CredentialsProvider =
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
-  }
 
-  /**
-    * Provides the dummy authenticator service.
+  /** Provides the dummy authenticator service.
     * @return The dummy authenticator service.
     */
   @Provides
-  def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] = {
+  def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] =
     new DummyAuthenticatorService()
-  }
 
-  /**
-   * See https://www.silhouette.rocks/docs/migration-guide
-   */
+  /** See https://www.silhouette.rocks/docs/migration-guide
+    */
   @Provides
-  def providePasswordDAO(userRepository: UserRepository): DelegableAuthInfoDAO[PasswordInfo] = new PasswordInfoDAO(userRepository)
+  def providePasswordDAO(userRepository: UserRepository): DelegableAuthInfoDAO[PasswordInfo] = new PasswordInfoDAO(
+    userRepository
+  )
 }

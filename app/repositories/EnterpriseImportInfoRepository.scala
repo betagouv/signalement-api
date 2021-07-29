@@ -3,16 +3,20 @@ package repositories
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 import slick.jdbc.JdbcProfile
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
-class EnterpriseImportInfoRepository @Inject()(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class EnterpriseImportInfoRepository @Inject() (@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(
+    implicit ec: ExecutionContext
+) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -37,69 +41,70 @@ class EnterpriseImportInfoRepository @Inject()(@NamedDatabase("company_db") dbCo
       linesDone,
       startedAt,
       endedAt,
-      errors,
+      errors
     ) <> ((EnterpriseImportInfo.apply _).tupled, EnterpriseImportInfo.unapply)
   }
 
   val EnterpriseSyncInfotableQuery = TableQuery[EnterpriseSyncInfoTable]
 
-  def create(info: EnterpriseImportInfo): Future[EnterpriseImportInfo] = {
+  def create(info: EnterpriseImportInfo): Future[EnterpriseImportInfo] =
     db.run(EnterpriseSyncInfotableQuery += info).map(_ => info)
-  }
 
   def byId(id: UUID) = EnterpriseSyncInfotableQuery.filter(_.id === id)
 
-  def updateLinesDone(id: UUID, linesDone: Double): Future[Int] = {
+  def updateLinesDone(id: UUID, linesDone: Double): Future[Int] =
     db.run(byId(id).map(_.linesDone).update(linesDone))
-  }
 
-  def updateEndedAt(id: UUID, endAt: OffsetDateTime = OffsetDateTime.now()): Future[Int] = {
+  def updateEndedAt(id: UUID, endAt: OffsetDateTime = OffsetDateTime.now()): Future[Int] =
     db.run(byId(id).map(_.endedAt).update(Some(endAt)))
-  }
 
-  def updateError(id: UUID, error: String): Future[Int] = {
+  def updateError(id: UUID, error: String): Future[Int] =
     db.run(byId(id).map(_.errors).update(Some(error)))
-  }
 
-  def updateAllEndedAt(name: String, endAt: OffsetDateTime = OffsetDateTime.now()): Future[Int] = {
-    db.run(EnterpriseSyncInfotableQuery
-      .filter(_.endedAt.isEmpty)
-      .filter(_.fileName === name)
-      .map(_.endedAt)
-      .update(Some(endAt)))
-  }
-
-  def updateAllError(name: String, error: String): Future[Int] = {
-    db.run(EnterpriseSyncInfotableQuery
-      .filter(_.endedAt.isEmpty)
-      .filter(_.fileName === name)
-      .map(_.errors)
-      .update(Some(error)))
-  }
-
-  def findRunning(name: String): Future[Option[EnterpriseImportInfo]] = {
-    db.run(EnterpriseSyncInfotableQuery
-      .filter(_.fileName === name)
-      .filter(_.endedAt.isEmpty)
-      .sortBy(_.startedAt.desc)
-      .result.headOption
+  def updateAllEndedAt(name: String, endAt: OffsetDateTime = OffsetDateTime.now()): Future[Int] =
+    db.run(
+      EnterpriseSyncInfotableQuery
+        .filter(_.endedAt.isEmpty)
+        .filter(_.fileName === name)
+        .map(_.endedAt)
+        .update(Some(endAt))
     )
-  }
 
-  def findLastEnded(name: String): Future[Option[EnterpriseImportInfo]] = {
-    db.run(EnterpriseSyncInfotableQuery
-      .filter(_.fileName === name)
-      .filter(_.endedAt.isDefined)
-      .sortBy(_.startedAt.desc)
-      .result.headOption
+  def updateAllError(name: String, error: String): Future[Int] =
+    db.run(
+      EnterpriseSyncInfotableQuery
+        .filter(_.endedAt.isEmpty)
+        .filter(_.fileName === name)
+        .map(_.errors)
+        .update(Some(error))
     )
-  }
 
-  def findLast(name: String): Future[Option[EnterpriseImportInfo]] = {
-    db.run(EnterpriseSyncInfotableQuery
-      .filter(_.fileName === name)
-      .sortBy(_.startedAt.desc)
-      .result.headOption
+  def findRunning(name: String): Future[Option[EnterpriseImportInfo]] =
+    db.run(
+      EnterpriseSyncInfotableQuery
+        .filter(_.fileName === name)
+        .filter(_.endedAt.isEmpty)
+        .sortBy(_.startedAt.desc)
+        .result
+        .headOption
     )
-  }
+
+  def findLastEnded(name: String): Future[Option[EnterpriseImportInfo]] =
+    db.run(
+      EnterpriseSyncInfotableQuery
+        .filter(_.fileName === name)
+        .filter(_.endedAt.isDefined)
+        .sortBy(_.startedAt.desc)
+        .result
+        .headOption
+    )
+
+  def findLast(name: String): Future[Option[EnterpriseImportInfo]] =
+    db.run(
+      EnterpriseSyncInfotableQuery
+        .filter(_.fileName === name)
+        .sortBy(_.startedAt.desc)
+        .result
+        .headOption
+    )
 }
