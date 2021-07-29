@@ -10,11 +10,9 @@
         Nous avons reçu un nouveau signalement le @report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) concernant votre entreprise :
     </p>
 
-    @if(report.companyAddress.isDefined) {
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyAddress.get)
+        @views.html.fragments.address(report.companyName, report.companyAddress)
     </p>
-    }
 
     <p>
         SignalConso a pour objectif de faire baisser les anomalies en intégrant davantage de transparence dans le traitement des plaintes.

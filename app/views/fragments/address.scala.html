@@ -1,9 +1,7 @@
-@import utils.Address
-@(address: Address)
 
-@address.value.split(" - ").filterNot(_.isEmpty).map { ligne =>
-    <span>
-        @(ligne)
-    </span>
-    <br/>
+@(companyName: Option[String], companyAddress: Address)
+
+@companyName.map { name => <span>@name</span>}
+@companyAddress.toArray.map { ligne =>
+    <span>@ligne</span> <br/>
 }

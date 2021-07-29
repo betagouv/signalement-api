@@ -16,9 +16,8 @@ object URL {
     URL(_)
   )
   implicit val urlWrites = new Writes[URL] {
-    def writes(o: URL): JsValue = {
+    def writes(o: URL): JsValue =
       JsString(o.value)
-    }
   }
   implicit val urlReads = new Reads[URL] {
     def reads(json: JsValue): JsResult[URL] = json.validate[String].map(URL(_))

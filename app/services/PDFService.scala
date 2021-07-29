@@ -1,17 +1,22 @@
 package services
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File}
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 
 import akka.actor.ActorSystem
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
-import com.itextpdf.html2pdf.{ConverterProperties, HtmlConverter}
-import com.itextpdf.kernel.pdf.{PdfDocument, PdfWriter}
+import com.itextpdf.html2pdf.ConverterProperties
+import com.itextpdf.html2pdf.HtmlConverter
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
 import javax.inject.Inject
 import play.api.http.FileMimeTypes
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import play.api.Logger
 import play.twirl.api.HtmlFormat
 
 import scala.concurrent.ExecutionContext
@@ -22,8 +27,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
   val websiteUrl = configuration.get[URI]("play.application.url")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
-  def Ok(htmlDocuments: List[HtmlFormat.Appendable])
-    (implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
+  def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
     val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
     val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 
@@ -32,7 +36,11 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(websiteUrl.toString())
 
-    HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()), pdf, converterProperties)
+    HtmlConverter.convertToPdf(
+      new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()),
+      pdf,
+      converterProperties
+    )
     logger.debug(f"Generated ${tmpFileName}")
     play.api.mvc.Results.Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
   }
@@ -45,8 +53,11 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
 
     val pdfOutputStream = new ByteArrayOutputStream
 
-    HtmlConverter.convertToPdf(new ByteArrayInputStream(htmlDocument.body.mkString.getBytes()), pdfOutputStream, converterProperties)
+    HtmlConverter.convertToPdf(
+      new ByteArrayInputStream(htmlDocument.body.mkString.getBytes()),
+      pdfOutputStream,
+      converterProperties
+    )
     pdfOutputStream.toByteArray
   }
 }
-

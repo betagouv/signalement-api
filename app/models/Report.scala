@@ -4,34 +4,43 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.{Json, OFormat, Writes, _}
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import play.api.libs.json.Writes
+import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.{Address, Country, EmailAddress, SIRET, URL}
+import utils.Country
+import utils.EmailAddress
+import utils.SIRET
+import utils.URL
 
+case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
+
+object WebsiteURL {
+  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
+}
 
 case class DraftReport(
-  category: String,
-  subcategories: List[String],
-  details: List[DetailInputValue],
-  companyName: Option[String],
-  companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
-  companySiret: Option[SIRET],
-  companyActivityCode: Option[String],
-  websiteURL: Option[URL],
-  phone: Option[String],
-  firstName: String,
-  lastName: String,
-  email: EmailAddress,
-  contactAgreement: Boolean,
-  employeeConsumer: Boolean,
-  forwardToReponseConso: Option[Boolean] = Some(false),
-  fileIds: List[UUID],
-  vendor: Option[String] = None,
-  tags: List[String] = Nil
+    category: String,
+    subcategories: List[String],
+    details: List[DetailInputValue],
+    companyName: Option[String],
+    companyAddress: Option[Address],
+    companySiret: Option[SIRET],
+    companyActivityCode: Option[String],
+    websiteURL: Option[URL],
+    phone: Option[String],
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean,
+    employeeConsumer: Boolean,
+    forwardToReponseConso: Option[Boolean] = Some(false),
+    fileIds: List[UUID],
+    vendor: Option[String] = None,
+    tags: List[String] = Nil
 ) {
 
   def generateReport: Report = {
@@ -41,17 +50,16 @@ case class DraftReport(
       details = details,
       companyId = None,
       companyName = companyName,
-      companyAddress = companyAddress,
-      companyPostalCode = companyPostalCode,
-      companyCountry = companyCountry,
+      companyAddress = companyAddress.getOrElse(Address()),
       companySiret = companySiret,
-      websiteURL = websiteURL,
+      websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
       lastName = lastName,
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
+      status = NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
@@ -59,45 +67,49 @@ case class DraftReport(
     report.copy(status = report.initialStatus())
   }
 }
+
 object DraftReport {
-  implicit val draftReportReads = Json.reads[DraftReport].filter(
-    draft => draft.companySiret.isDefined || draft.websiteURL.isDefined || draft.companyCountry.isDefined || draft.phone.isDefined || draft.companyAddress.isDefined
-  )
+  implicit val draftReportReads = Json
+    .reads[DraftReport]
+    .filter(draft =>
+      draft.companySiret.isDefined
+        || draft.websiteURL.isDefined
+        || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
+        || draft.phone.isDefined
+    )
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
 case class Report(
-  id: UUID = UUID.randomUUID(),
-  category: String,
-  subcategories: List[String],
-  details: List[DetailInputValue],
-  companyId: Option[UUID],
-  companyName: Option[String],
-  companyAddress: Option[Address],
-  companyPostalCode: Option[String],
-  companyCountry: Option[Country],
-  companySiret: Option[SIRET],
-  websiteURL: Option[URL],
-  phone: Option[String],
-  creationDate: OffsetDateTime = OffsetDateTime.now(),
-  firstName: String,
-  lastName: String,
-  email: EmailAddress,
-  contactAgreement: Boolean,
-  employeeConsumer: Boolean,
-  forwardToReponseConso: Boolean = false,
-  status: ReportStatusValue = NA,
-  vendor: Option[String] = None,
-  tags: List[String] = Nil
+    id: UUID = UUID.randomUUID(),
+    category: String,
+    subcategories: List[String],
+    details: List[DetailInputValue],
+    companyId: Option[UUID],
+    companyName: Option[String],
+    companyAddress: Address,
+    companySiret: Option[SIRET],
+    websiteURL: WebsiteURL,
+    phone: Option[String],
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean,
+    employeeConsumer: Boolean,
+    forwardToReponseConso: Boolean = false,
+    status: ReportStatusValue = NA,
+    vendor: Option[String] = None,
+    tags: List[String] = Nil
 ) {
 
-  def initialStatus() = {
+  def initialStatus() =
     if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct)).isEmpty) TRAITEMENT_EN_COURS
+    else if (companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct)).isEmpty)
+      TRAITEMENT_EN_COURS
     else NA
-  }
 
-  def shortURL() = websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)",""))
+  def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
@@ -118,52 +130,52 @@ object Report {
         "subcategories" -> report.subcategories,
         "details" -> report.details,
         "companyName" -> report.companyName,
-        "companyAddress" -> report.companyAddress,
-        "companyPostalCode" -> report.companyPostalCode,
+        "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
         "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
-        "websiteURL" -> report.websiteURL,
+        "websiteURL" -> report.websiteURL.websiteURL,
+        "host" -> report.websiteURL.host,
         "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRoles.Pro), false) => Json.obj()
-        case (_, _) => Json.obj(
-          "firstName" -> report.firstName,
-          "lastName" -> report.lastName,
-          "email" -> report.email
-        )
-      }) ++ (report.companyCountry.map(c => Json.obj("companyCountry" -> c.name)).getOrElse(Json.obj()))
+        case (_, _) =>
+          Json.obj(
+            "firstName" -> report.firstName,
+            "lastName" -> report.lastName,
+            "email" -> report.email
+          )
+      })
   }
 }
 
-
 case class ReportWithFiles(
-                          report: Report,
-                          files: List[ReportFile]
-                          )
+    report: Report,
+    files: List[ReportFile]
+)
 
 object ReportWithFiles {
   implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
 }
 
-case class  DetailInputValue (
-                           label: String,
-                           value: String
-                 ) extends Struct
+case class DetailInputValue(
+    label: String,
+    value: String
+) extends Struct
 
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
-  implicit def string2detailInputValue(input: String): DetailInputValue = {
+  implicit def string2detailInputValue(input: String): DetailInputValue =
     input match {
-      case input if input.contains(':') => DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
+      case input if input.contains(':') =>
+        DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
       case input => DetailInputValue("Précision :", input)
     }
-  }
 }
 
 case class CompanyWithNbReports(company: Company, count: Int)
@@ -172,43 +184,43 @@ object CompanyWithNbReports {
 
   implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
     def writes(data: CompanyWithNbReports) = Json.obj(
-      "companyPostalCode" -> data.company.postalCode,
       "companySiret" -> data.company.siret,
       "companyName" -> data.company.name,
-      "companyAddress" -> data.company.address,
+      "companyAddress" -> Json.toJson(data.company.address),
       "count" -> data.count
     )
   }
+
+  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[CompanyWithNbReports]]
 }
 
 case class ReportCompany(
-                          name: String,
-                          address: Address,
-                          postalCode: String,
-                          siret: SIRET,
-                          activityCode: Option[String]
-                        )
+    name: String,
+    address: Address,
+    siret: SIRET,
+    activityCode: Option[String]
+)
 
 object ReportCompany {
   implicit val format = Json.format[ReportCompany]
 }
 
 case class ReportConsumer(
-                           firstName: String,
-                           lastName: String,
-                           email: EmailAddress,
-                           contactAgreement: Boolean
-                        )
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    contactAgreement: Boolean
+)
 
 object ReportConsumer {
   implicit val format = Json.format[ReportConsumer]
 }
 
 case class ReportAction(
-                         actionType: ActionEventValue,
-                         details: Option[String],
-                         fileIds: List[UUID]
-                       )
+    actionType: ActionEventValue,
+    details: Option[String],
+    fileIds: List[UUID]
+)
 
 object ReportAction {
   implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
@@ -235,7 +247,7 @@ object ReportCategory {
   val Animaux = ReportCategory("Animaux")
   val DemarchesAdministratives = ReportCategory("Démarches administratives")
 
-  def fromValue(v: String) = {
+  def fromValue(v: String) =
     List(
       Covid,
       CafeRestaurant,
@@ -253,9 +265,8 @@ object ReportCategory {
       Sante,
       VoitureVehicule,
       Animaux,
-      DemarchesAdministratives,
+      DemarchesAdministratives
     ).find(_.value == v).head
-  }
 
   implicit val reads = new Reads[ReportCategory] {
     def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))

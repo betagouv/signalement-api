@@ -7,25 +7,28 @@ import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
-
 case class Event(
-                  id: Option[UUID],
-                  reportId: Option[UUID],
-                  companyId: Option[UUID],
-                  userId: Option[UUID],
-                  creationDate: Option[OffsetDateTime],
-                  eventType: EventTypeValue,
-                  action: ActionEventValue,
-                  details: JsValue = Json.obj()
-                ) {
+    id: Option[UUID],
+    reportId: Option[UUID],
+    companyId: Option[UUID],
+    userId: Option[UUID],
+    creationDate: Option[OffsetDateTime],
+    eventType: EventTypeValue,
+    action: ActionEventValue,
+    details: JsValue = Json.obj()
+) {
 
-  def formattedDate = this.creationDate.map(_.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))).getOrElse("—")
-  def getDescription = this.details.as[JsObject].value.get("description").getOrElse("").toString.replaceAll("^\"|\"$", "");
+  def formattedDate = this.creationDate
+    .map(_.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss")))
+    .getOrElse("—")
+  def getDescription =
+    this.details.as[JsObject].value.get("description").getOrElse("").toString.replaceAll("^\"|\"$", "");
 }
 
 object Event {
 
   implicit val eventFormat: OFormat[Event] = Json.format[Event]
   def stringToDetailsJsValue(value: String): JsValue = Json.obj("description" -> value)
-  def jsValueToString(jsValue: Option[JsValue]) = jsValue.flatMap(_.as[JsObject].value.get("description").map(_.toString))
+  def jsValueToString(jsValue: Option[JsValue]) =
+    jsValue.flatMap(_.as[JsObject].value.get("description").map(_.toString))
 }
