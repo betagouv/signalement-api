@@ -2,13 +2,16 @@ import models.PaginatedResult
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 package object repositories {
 
-  implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq])(implicit executionContext: ExecutionContext){
+  implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq])(implicit executionContext: ExecutionContext) {
 
-    def toPaginate(db:JdbcBackend#DatabaseDef)(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
+    def toPaginate(
+        db: JdbcBackend#DatabaseDef
+    )(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
 
       val offset: Long = maybeOffset.getOrElse(0L)
       val queryWithLimit: Query[A, B, Seq] = maybeLimit.map(query.take).getOrElse(query)
@@ -26,7 +29,5 @@ package object repositories {
     }
 
   }
-
-
 
 }
