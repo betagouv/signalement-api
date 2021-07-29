@@ -16,21 +16,18 @@ object EmailAddress {
     EmailAddress(_)
   )
   implicit val emailWrites = new Writes[EmailAddress] {
-    def writes(o: EmailAddress): JsValue = {
+    def writes(o: EmailAddress): JsValue =
       JsString(o.value)
-    }
   }
   implicit val emailReads = new Reads[EmailAddress] {
     def reads(json: JsValue): JsResult[EmailAddress] = json.validate[String].map(EmailAddress(_))
   }
   implicit val configLoader: ConfigLoader[EmailAddress] = new ConfigLoader[EmailAddress] {
-    def load(rootConfig: Config, path: String): EmailAddress = {
+    def load(rootConfig: Config, path: String): EmailAddress =
       EmailAddress(rootConfig.getString(path))
-    }
   }
   implicit val listConfigLoader: ConfigLoader[List[EmailAddress]] = new ConfigLoader[List[EmailAddress]] {
-    def load(rootConfig: Config, path: String): List[EmailAddress] = {
+    def load(rootConfig: Config, path: String): List[EmailAddress] =
       rootConfig.getString(path).split(",").map(EmailAddress(_)).toList
-    }
   }
 }
