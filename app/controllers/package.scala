@@ -6,7 +6,7 @@ package object controllers {
   implicit val WebsiteKindQueryStringBindable: QueryStringBindable[Seq[WebsiteKind]] =
     QueryStringBindable.bindableString
       .transform[Seq[WebsiteKind]](
-        kinds => kinds.split(",").toSeq.map(WebsiteKind.fromValue),
+        kinds => kinds.split(",").toSeq.filter(_.nonEmpty).map(WebsiteKind.fromValue),
         websiteKinds => websiteKinds.mkString(",")
       )
 }
