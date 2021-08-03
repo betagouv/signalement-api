@@ -174,7 +174,7 @@ class EnterpriseSyncActor @Inject() (
         }
         .grouped(batchSize)
         .map { x =>
-          logger.debug("Processing ${x.size} elements")
+          logger.debug(s"Processing ${x.size} elements")
           x
         }
         .via(

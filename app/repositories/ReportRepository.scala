@@ -787,12 +787,14 @@ class ReportRepository @Inject() (
     )
 
   def getUnkonwnReportCountByHost(
+      host: Option[String],
       start: Option[LocalDate] = None,
       end: Option[LocalDate] = None
   ): Future[List[(Option[String], Int)]] = db
     .run(
       reportTableQuery
         .filter(_.host.isDefined)
+        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
         .filter(_.companyId.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime

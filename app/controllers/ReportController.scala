@@ -85,8 +85,8 @@ class ReportController @Inject() (
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           reportConsumer =>
             reportOrchestrator.updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id).map {
-              case Some(_) => Ok
-              case None    => NotFound
+              case Some(report) => Ok(Json.toJson(report))
+              case None         => NotFound
             }
         )
     }

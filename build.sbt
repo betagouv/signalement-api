@@ -44,7 +44,8 @@ libraryDependencies ++= Seq(
   "com.itextpdf" % "html2pdf" % "3.0.3",
   "com.beachape" %% "enumeratum" % "1.6.1",
   "com.beachape" %% "enumeratum-play" % "1.6.3",
-  "com.beachape" %% "enumeratum-slick" % "1.7.0",
+  "com.beachape" %% "enumeratum-slick" % "1.6.0",
+  "io.scalaland" %% "chimney" % "0.6.1",
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
@@ -53,6 +54,11 @@ libraryDependencies ++= Seq(
 )
 
 scalafmtOnCompile := true
+
+routesImport ++= Seq(
+  "models.WebsiteKind",
+  "controllers.WebsiteKindQueryStringBindable"
+)
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
