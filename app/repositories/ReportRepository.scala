@@ -804,6 +804,7 @@ class ReportRepository @Inject() (
         }
         .groupBy(_.host)
         .map { case (host, report) => (host, report.size) }
+        .sortBy(_._2.desc)
         .to[List]
         .result
     )
