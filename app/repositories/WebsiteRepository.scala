@@ -104,7 +104,7 @@ class WebsiteRepository @Inject() (
     val query = baseQuery
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-      .sortBy(_._2.desc)
+      .sortBy(w => (w._2.desc, w._1._1.host.desc, w._1._1.id.desc))
       .to[Seq]
 
     query.withPagination(db)(maybeOffset, maybeLimit)
