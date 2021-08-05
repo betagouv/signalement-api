@@ -14,34 +14,33 @@ import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val classTag: ClassTag[PasswordInfo])
-      extends DelegableAuthInfoDAO[PasswordInfo] {
+    extends DelegableAuthInfoDAO[PasswordInfo] {
 
   val logger: Logger = Logger(this.getClass())
 
   def add(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     update(loginInfo, authInfo)
 
-  def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = {
+  def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     userRepository.findByLogin(loginInfo).map {
       case Some(user) => Some(user.password)
-      case _ => None
+      case _          => None
     }
-  }
 
-  def remove(loginInfo: LoginInfo): Future[Unit] = userRepository.delete(EmailAddress(loginInfo)).map(_ => ())    // FIXME: Is it used ?
+  def remove(loginInfo: LoginInfo): Future[Unit] =
+    userRepository.delete(EmailAddress(loginInfo)).map(_ => ()) // FIXME: Is it used ?
 
   def save(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     find(loginInfo).flatMap {
       case Some(_) => update(loginInfo, authInfo)
-      case None => add(loginInfo, authInfo)
+      case None    => add(loginInfo, authInfo)
     }
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     userRepository.findByLogin(loginInfo).map {
-      case Some(user) => {
+      case Some(user) =>
         userRepository.update(user.copy(password = authInfo))
         authInfo
-      }
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
     }
 

@@ -3,17 +3,20 @@ package repositories
 import java.time._
 import java.util.UUID
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
 import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.{Departments, ReportStatus}
+import utils.Constants.Departments
+import utils.Constants.ReportStatus
 import utils._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
@@ -44,15 +47,19 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
 
-  def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(_.id.?, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+  def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(
+    _.id.?,
+    onUpdate = ForeignKeyAction.Restrict,
+    onDelete = ForeignKeyAction.Cascade
+  )
 
   type ReportData = (
-    UUID,
+      UUID,
       String,
       List[String],
       List[String],
       (
-        Option[UUID],
+          Option[UUID],
           Option[String],
           Option[SIRET],
           Option[String],
@@ -60,8 +67,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           Option[String],
           Option[String],
           Option[String],
-          Option[Country],
-        ),
+          Option[Country]
+      ),
       (Option[URL], Option[String]),
       Option[String],
       OffsetDateTime,
@@ -73,71 +80,72 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
-      List[String],
-    )
+      List[String]
+  )
 
   def constructReport: ReportData => Report = {
     case (
-      id,
-      category,
-      subcategories,
-      details,
-      (
-        companyId,
-        companyName,
-        companySiret,
-        companyStreetNumber,
-        companyStreet,
-        companyAddressSupplement,
-        companyPostalCode,
-        companyCity,
-        companyCountry,
+          id,
+          category,
+          subcategories,
+          details,
+          (
+            companyId,
+            companyName,
+            companySiret,
+            companyStreetNumber,
+            companyStreet,
+            companyAddressSupplement,
+            companyPostalCode,
+            companyCity,
+            companyCountry
+          ),
+          (websiteURL, host),
+          phone,
+          creationDate,
+          firstName,
+          lastName,
+          email,
+          contactAgreement,
+          employeeConsumer,
+          forwardToReponseConso,
+          status,
+          vendor,
+          tags
+        ) =>
+      Report(
+        id = id,
+        category = category,
+        subcategories = subcategories,
+        details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
+        companyId = companyId,
+        companyName = companyName,
+        companyAddress = Address(
+          number = companyStreetNumber,
+          street = companyStreet,
+          addressSupplement = companyAddressSupplement,
+          postalCode = companyPostalCode,
+          city = companyCity,
+          country = companyCountry
         ),
-      (websiteURL,host),
-      phone,
-      creationDate,
-      firstName,
-      lastName,
-      email,
-      contactAgreement,
-      employeeConsumer,
-      forwardToReponseConso,
-      status,
-      vendor,
-      tags,
-      ) => Report(
-      id = id,
-      category = category,
-      subcategories = subcategories,
-      details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
-      companyId = companyId,
-      companyName = companyName,
-      companyAddress = Address(
-        number = companyStreetNumber,
-        street = companyStreet,
-        addressSupplement = companyAddressSupplement,
-        postalCode = companyPostalCode,
-        city = companyCity,
-        country = companyCountry,
-      ),
-      companySiret = companySiret,
-      websiteURL = WebsiteURL(websiteURL, host),
-      phone = phone,
-      creationDate = creationDate,
-      firstName = firstName,
-      lastName = lastName,
-      email = email,
-      contactAgreement = contactAgreement,
-      employeeConsumer = employeeConsumer,
-      forwardToReponseConso = forwardToReponseConso,
-      status = ReportStatus.fromDefaultValue(status),
-      vendor = vendor,
-      tags = tags
-    )
+        companySiret = companySiret,
+        websiteURL = WebsiteURL(websiteURL, host),
+        phone = phone,
+        creationDate = creationDate,
+        firstName = firstName,
+        lastName = lastName,
+        email = email,
+        contactAgreement = contactAgreement,
+        employeeConsumer = employeeConsumer,
+        forwardToReponseConso = forwardToReponseConso,
+        status = ReportStatus.fromDefaultValue(status),
+        vendor = vendor,
+        tags = tags
+      )
   }
 
-  def extractReport: PartialFunction[Report, ReportData] = {
-    case r => (
+  def extractReport: PartialFunction[Report, ReportData] = { case r =>
+    (
       r.id,
       r.category,
       r.subcategories,
@@ -151,7 +159,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         r.companyAddress.addressSupplement,
         r.companyAddress.postalCode,
         r.companyAddress.city,
-        r.companyAddress.country,
+        r.companyAddress.country
       ),
       (r.websiteURL.websiteURL, r.websiteURL.host),
       r.phone,
@@ -182,9 +190,9 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       companyAddressSupplement,
       companyPostalCode,
       companyCity,
-      companyCountry,
+      companyCountry
     ),
-    (websiteURL,host),
+    (websiteURL, host),
     phone,
     creationDate,
     firstName,
@@ -195,7 +203,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
     forwardToReponseConso,
     status,
     vendor,
-    tags,
+    tags
   ) <> (constructReport, extractReport.lift)
 }
 
@@ -204,14 +212,14 @@ object ReportTables {
 }
 
 @Singleton
-class ReportRepository @Inject()(
-  dbConfigProvider: DatabaseConfigProvider,
-  accessTokenRepository: AccessTokenRepository,
-  val companyRepository: CompanyRepository,
-  val emailValidationRepository: EmailValidationRepository,
-  configuration: Configuration
-)(
-  implicit ec: ExecutionContext
+class ReportRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider,
+    accessTokenRepository: AccessTokenRepository,
+    val companyRepository: CompanyRepository,
+    val emailValidationRepository: EmailValidationRepository,
+    configuration: Configuration
+)(implicit
+    ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -248,15 +256,19 @@ class ReportRepository @Inject()(
     def vendor = column[Option[String]]("vendor")
     def tags = column[List[String]]("tags")
 
-    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(_.id.?, onUpdate = ForeignKeyAction.Restrict, onDelete = ForeignKeyAction.Cascade)
+    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(
+      _.id.?,
+      onUpdate = ForeignKeyAction.Restrict,
+      onDelete = ForeignKeyAction.Cascade
+    )
 
     type ReportData = (
-      UUID,
+        UUID,
         String,
         List[String],
         List[String],
         (
-          Option[UUID],
+            Option[UUID],
             Option[String],
             Option[SIRET],
             Option[String],
@@ -264,8 +276,8 @@ class ReportRepository @Inject()(
             Option[String],
             Option[String],
             Option[String],
-            Option[Country],
-          ),
+            Option[Country]
+        ),
         (Option[URL], Option[String]),
         Option[String],
         OffsetDateTime,
@@ -277,71 +289,72 @@ class ReportRepository @Inject()(
         Boolean,
         String,
         Option[String],
-        List[String],
-      )
+        List[String]
+    )
 
     def constructReport: ReportData => Report = {
       case (
-        id,
-        category,
-        subcategories,
-        details,
-        (
-          companyId,
-          companyName,
-          companySiret,
-          companyStreetNumber,
-          companyStreet,
-          companyAddressSupplement,
-          companyPostalCode,
-          companyCity,
-          companyCountry,
+            id,
+            category,
+            subcategories,
+            details,
+            (
+              companyId,
+              companyName,
+              companySiret,
+              companyStreetNumber,
+              companyStreet,
+              companyAddressSupplement,
+              companyPostalCode,
+              companyCity,
+              companyCountry
+            ),
+            (websiteURL, host),
+            phone,
+            creationDate,
+            firstName,
+            lastName,
+            email,
+            contactAgreement,
+            employeeConsumer,
+            forwardToReponseConso,
+            status,
+            vendor,
+            tags
+          ) =>
+        Report(
+          id = id,
+          category = category,
+          subcategories = subcategories,
+          details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
+          companyId = companyId,
+          companyName = companyName,
+          companyAddress = Address(
+            number = companyStreetNumber,
+            street = companyStreet,
+            addressSupplement = companyAddressSupplement,
+            postalCode = companyPostalCode,
+            city = companyCity,
+            country = companyCountry
           ),
-        (websiteURL,host),
-        phone,
-        creationDate,
-        firstName,
-        lastName,
-        email,
-        contactAgreement,
-        employeeConsumer,
-        forwardToReponseConso,
-        status,
-        vendor,
-        tags,
-        ) => Report(
-        id = id,
-        category = category,
-        subcategories = subcategories,
-        details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
-        companyId = companyId,
-        companyName = companyName,
-        companyAddress = Address(
-          number = companyStreetNumber,
-          street = companyStreet,
-          addressSupplement = companyAddressSupplement,
-          postalCode = companyPostalCode,
-          city = companyCity,
-          country = companyCountry,
-        ),
-        companySiret = companySiret,
-        websiteURL = WebsiteURL(websiteURL, host),
-        phone = phone,
-        creationDate = creationDate,
-        firstName = firstName,
-        lastName = lastName,
-        email = email,
-        contactAgreement = contactAgreement,
-        employeeConsumer = employeeConsumer,
-        forwardToReponseConso = forwardToReponseConso,
-        status = ReportStatus.fromDefaultValue(status),
-        vendor = vendor,
-        tags = tags
-      )
+          companySiret = companySiret,
+          websiteURL = WebsiteURL(websiteURL, host),
+          phone = phone,
+          creationDate = creationDate,
+          firstName = firstName,
+          lastName = lastName,
+          email = email,
+          contactAgreement = contactAgreement,
+          employeeConsumer = employeeConsumer,
+          forwardToReponseConso = forwardToReponseConso,
+          status = ReportStatus.fromDefaultValue(status),
+          vendor = vendor,
+          tags = tags
+        )
     }
 
-    def extractReport: PartialFunction[Report, ReportData] = {
-      case r => (
+    def extractReport: PartialFunction[Report, ReportData] = { case r =>
+      (
         r.id,
         r.category,
         r.subcategories,
@@ -355,7 +368,7 @@ class ReportRepository @Inject()(
           r.companyAddress.addressSupplement,
           r.companyAddress.postalCode,
           r.companyAddress.city,
-          r.companyAddress.country,
+          r.companyAddress.country
         ),
         (r.websiteURL.websiteURL, r.websiteURL.host),
         r.phone,
@@ -386,7 +399,7 @@ class ReportRepository @Inject()(
         companyAddressSupplement,
         companyPostalCode,
         companyCity,
-        companyCountry,
+        companyCountry
       ),
       (websiteURL, host),
       phone,
@@ -399,11 +412,12 @@ class ReportRepository @Inject()(
       forwardToReponseConso,
       status,
       vendor,
-      tags,
+      tags
     ) <> (constructReport, extractReport.lift)
   }
 
-  implicit val ReportFileOriginColumnType = MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
+  implicit val ReportFileOriginColumnType =
+    MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
 
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
@@ -419,11 +433,13 @@ class ReportRepository @Inject()(
     type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 
     def constructFile: FileData => ReportFile = {
-      case (id, reportId, creationDate, filename, storageFilename, origin, avOutput) => ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput)
+      case (id, reportId, creationDate, filename, storageFilename, origin, avOutput) =>
+        ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput)
     }
 
     def extractFile: PartialFunction[ReportFile, FileData] = {
-      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput) => (id, reportId, creationDate, filename, storageFilename, origin, avOutput)
+      case ReportFile(id, reportId, creationDate, filename, storageFilename, origin, avOutput) =>
+        (id, reportId, creationDate, filename, storageFilename, origin, avOutput)
     }
 
     def * =
@@ -447,7 +463,8 @@ class ReportRepository @Inject()(
   val backofficeAdminStartDate = OffsetDateTime.of(
     LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
     LocalTime.MIDNIGHT,
-    ZoneOffset.UTC)
+    ZoneOffset.UTC
+  )
 
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
@@ -466,47 +483,57 @@ class ReportRepository @Inject()(
 
   def list: Future[List[Report]] = db.run(reportTableQuery.to[List].result)
 
-  def findByEmail(email: EmailAddress): Future[Seq[Report]] = {
+  def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(reportTableQuery.filter(_.email === email).result)
-  }
 
   def update(report: Report): Future[Report] = {
-    val queryReport = for (refReport <- reportTableQuery if refReport.id === report.id)
-      yield refReport
+    val queryReport =
+      for (refReport <- reportTableQuery if refReport.id === report.id)
+        yield refReport
     db.run(queryReport.update(report))
       .map(_ => report)
   }
 
   def count(siret: Option[SIRET] = None): Future[Int] = db
-    .run(reportTableQuery
-      .filterOpt(siret) {
-        case (table, siret) => table.companySiret === siret
-      }
-      .length.result)
+    .run(
+      reportTableQuery
+        .filterOpt(siret) { case (table, siret) =>
+          table.companySiret === siret
+        }
+        .length
+        .result
+    )
 
   def monthlyCount: Future[List[MonthlyStat]] = db
     .run(
       reportTableQuery
         .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
         .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map {
-          case ((month, year), group) => (month, year, group.length)
+        .map { case ((month, year), group) =>
+          (month, year, group.length)
         }
-        .to[List].result
+        .to[List]
+        .result
     )
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
   val baseStatReportTableQuery = reportTableQuery
     .filter(_.creationDate > backofficeAdminStartDate)
-  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
+  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report =>
+    report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1)
+  )
 
-  def countWithStatus(statusList: List[ReportStatusValue], cutoff: Option[Duration], withWebsite: Option[Boolean] = None) = db
+  def countWithStatus(
+      statusList: List[ReportStatusValue],
+      cutoff: Option[Duration],
+      withWebsite: Option[Boolean] = None
+  ) = db
     .run(
       baseStatReportTableQuery
         .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
         .filter(_.status inSet statusList.map(_.defaultValue))
-        .filterOpt(withWebsite) {
-          case (table, withWebsite) => table.websiteURL.isDefined === withWebsite
+        .filterOpt(withWebsite) { case (table, withWebsite) =>
+          table.websiteURL.isDefined === withWebsite
         }
         .length
         .result
@@ -517,13 +544,13 @@ class ReportRepository @Inject()(
       baseMonthlyStatReportTableQuery
         .filter(_.status inSet statusList.map(_.defaultValue))
         .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map {
-          case ((month, year), group) => (month, year, group.length)
+        .map { case ((month, year), group) =>
+          (month, year, group.length)
         }
-        .to[List].result
+        .to[List]
+        .result
     )
     .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
-
 
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
@@ -548,85 +575,90 @@ class ReportRepository @Inject()(
   def getWithWebsites(): Future[List[Report]] = db.run {
     reportTableQuery
       .filter(_.websiteURL.isDefined)
-      .to[List].result
+      .to[List]
+      .result
   }
 
   def getWithPhones(): Future[List[Report]] = db.run {
     reportTableQuery
       .filter(_.phone.isDefined)
-      .to[List].result
+      .to[List]
+      .result
   }
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery
-      .filterOpt(filter.email) {
-        case (table, email) => table.email === EmailAddress(email)
+      .filterOpt(filter.email) { case (table, email) =>
+        table.email === EmailAddress(email)
       }
-      .filterOpt(filter.websiteURL) {
-        case (table, websiteURL) => table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
+        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
       }
-      .filterOpt(filter.phone) {
-        case (table, reportedPhone) => table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      .filterOpt(filter.phone) { case (table, reportedPhone) =>
+        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
       }
-      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) {
-        case (table, websiteRequired) => table.websiteURL.isDefined === websiteRequired
+      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) { case (table, websiteRequired) =>
+        table.websiteURL.isDefined === websiteRequired
       }
-      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) {
-        case (table, phoneRequired) => table.phone.isDefined === phoneRequired
+      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
+        table.phone.isDefined === phoneRequired
       }
-      .filterIf(filter.siretSirenList.nonEmpty) {
-        case table => {
-          table.companySiret.map(siret =>
+      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
+        table.companySiret
+          .map(siret =>
             (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
-              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList.filter(_.matches(SIREN.pattern)).distinct)
-          ).getOrElse(false)
-        }
+              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
+                .filter(_.matches(SIREN.pattern))
+                .distinct)
+          )
+          .getOrElse(false)
       }
-      .filterOpt(filter.companyName) {
-        case (table, companyName) => table.companyName like s"${companyName}%"
+      .filterOpt(filter.companyName) { case (table, companyName) =>
+        table.companyName like s"${companyName}%"
       }
-      .filterIf(filter.companyCountries.nonEmpty) {
-        case table => table.companyCountry
+      .filterIf(filter.companyCountries.nonEmpty) { case table =>
+        table.companyCountry
           .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
           .getOrElse(false)
       }
-      .filterOpt(filter.start) {
-        case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
       }
-      .filterOpt(filter.end) {
-        case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
       }
-      .filterOpt(filter.category) {
-        case (table, category) => table.category === category
+      .filterOpt(filter.category) { case (table, category) =>
+        table.category === category
       }
-      .filterOpt(filter.hasCompany) {
-        case (table, hasCompany) => table.companyId.isDefined === hasCompany
+      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
+        table.companyId.isDefined === hasCompany
       }
-      .filterOpt(filter.statusList) {
-        case (table, statusList) => table.status.inSet(statusList.map(_.defaultValue))
+      .filterOpt(filter.statusList) { case (table, statusList) =>
+        table.status.inSet(statusList.map(_.defaultValue))
       }
-      .filterIf(!filter.tags.isEmpty) {
-        case table => table.tags @& filter.tags.toList.bind
+      .filterIf(!filter.tags.isEmpty) { case table =>
+        table.tags @& filter.tags.toList.bind
       }
-      .filterOpt(filter.details) {
-        case (table, details) => array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+      .filterOpt(filter.details) { case (table, details) =>
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
       }
-      .filterOpt(filter.employeeConsumer) {
-        case (table, employeeConsumer) => table.employeeConsumer === employeeConsumer
+      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
+        table.employeeConsumer === employeeConsumer
       }
-      .joinLeft(companyTableQuery).on(_.companyId === _.id)
-      .filterIf(filter.departments.length > 0) {
-        case (report, company) => company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
+      .joinLeft(companyTableQuery)
+      .on(_.companyId === _.id)
+      .filterIf(filter.departments.length > 0) { case (report, company) =>
+        company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
       }
 
     for {
       reports <- query
-        .map(_._1)
-        .sortBy(_.creationDate.desc)
-        .drop(offset)
-        .take(limit)
-        .to[List]
-        .result
+                   .map(_._1)
+                   .sortBy(_.creationDate.desc)
+                   .drop(offset)
+                   .take(limit)
+                   .to[List]
+                   .result
       count <- query.length.result
     } yield PaginatedResult(
       totalCount = count,
@@ -636,7 +668,8 @@ class ReportRepository @Inject()(
   }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
-    reportTableQuery.filter(_.id inSet (ids))
+    reportTableQuery
+      .filter(_.id inSet ids)
       .to[List]
       .result
   )
@@ -646,8 +679,9 @@ class ReportRepository @Inject()(
     .map(_ => file)
 
   def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
-    val queryFile = for (refFile <- fileTableQuery.filter(_.id.inSet(fileIds)))
-      yield refFile.reportId
+    val queryFile =
+      for (refFile <- fileTableQuery.filter(_.id.inSet(fileIds)))
+        yield refFile.reportId
     db.run(queryFile.update(Some(reportId)))
   }
 
@@ -655,7 +689,8 @@ class ReportRepository @Inject()(
     .run(
       fileTableQuery
         .filter(_.id === uuid)
-        .to[List].result
+        .to[List]
+        .result
         .headOption
     )
 
@@ -663,17 +698,19 @@ class ReportRepository @Inject()(
     .run(
       fileTableQuery
         .filter(_.reportId === reportId)
-        .to[List].result
+        .to[List]
+        .result
     )
 
-  def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] = {
-    db.run(fileTableQuery.filter(
-      _.reportId inSetBind reportsIds
-    ).to[List].result)
-      .map(events =>
-        events.groupBy(_.reportId.get)
-      )
-  }
+  def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
+    db.run(
+      fileTableQuery
+        .filter(
+          _.reportId inSetBind reportsIds
+        )
+        .to[List]
+        .result
+    ).map(events => events.groupBy(_.reportId.get))
 
   def deleteFile(uuid: UUID): Future[Int] = db
     .run(
@@ -691,85 +728,98 @@ class ReportRepository @Inject()(
     )
 
   def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
-    val q = db.run(companyTableQuery.joinLeft(reportTableQuery).on(_.id === _.companyId)
-      .groupBy(_._1)
-      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-      .to[List]
-      .sortBy(_._2.desc)
-      .result)
+    val q = db.run(
+      companyTableQuery
+        .joinLeft(reportTableQuery)
+        .on(_.id === _.companyId)
+        .groupBy(_._1)
+        .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+        .to[List]
+        .sortBy(_._2.desc)
+        .result
+    )
 
     for {
       res <- q.map(_.map { case (company, cnt) => CompanyWithNbReports(company, cnt) })
-    } yield {
-      PaginatedResult(
-        totalCount = res.length,
-        entities = res.drop(offset.toInt).take(limit).toList,
-        hasNextPage = res.length - (offset + limit) > 0
-      )
-    }
+    } yield PaginatedResult(
+      totalCount = res.length,
+      entities = res.drop(offset.toInt).take(limit).toList,
+      hasNextPage = res.length - (offset + limit) > 0
+    )
   }
 
-  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] = {
+  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] =
     for {
       reports <- db.run {
-        reportTableQuery
-          .filter(_.status === status.defaultValue)
-          .to[List]
-          .result
-      }
+                   reportTableQuery
+                     .filter(_.status === status.defaultValue)
+                     .to[List]
+                     .result
+                 }
       adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
-  }
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
         .filter(_.companyId inSet companiesIds)
-        .to[List].result
+        .to[List]
+        .result
     )
 
-  def getWebsiteReportsWithoutCompany(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[Report]] = db
+  def getWebsiteReportsWithoutCompany(
+      start: Option[LocalDate] = None,
+      end: Option[LocalDate] = None
+  ): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.websiteURL.isDefined)
         .filter(_.companyId.isEmpty)
-        .filterOpt(start) {
-          case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
-        .filterOpt(end) {
-          case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
         }
-        .to[List].result
+        .to[List]
+        .result
     )
 
-
-  def getUnkonwnReportCountByHost(start: Option[LocalDate] = None, end: Option[LocalDate] = None): Future[List[(Option[String], Int)]] = db
+  def getUnkonwnReportCountByHost(
+      host: Option[String],
+      start: Option[LocalDate] = None,
+      end: Option[LocalDate] = None
+  ): Future[List[(Option[String], Int)]] = db
     .run(
       reportTableQuery
         .filter(_.host.isDefined)
+        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
         .filter(_.companyId.isEmpty)
-        .filterOpt(start) {
-          case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
-        .filterOpt(end) {
-          case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
         }
         .groupBy(_.host)
-        .map{  case (host,report) =>  (host, report.size)}
-        .to[List].result
+        .map { case (host, report) => (host, report.size) }
+        .sortBy(_._2.desc)
+        .to[List]
+        .result
     )
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
     .run(
       reportTableQuery
         .filter(_.phone.isDefined)
-        .filterOpt(start) {
-          case (table, start) => table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
-        .filterOpt(end) {
-          case (table, end) => table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
         }
-        .to[List].result
+        .to[List]
+        .result
     )
 }

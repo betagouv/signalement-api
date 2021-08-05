@@ -13,7 +13,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = None,
         postalCode = None,
-        city = None,
+        city = None
       ).isDefined === false
     }
 
@@ -23,7 +23,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = None,
         postalCode = None,
-        city = None,
+        city = None
       ).isDefined === true
     }
 
@@ -33,7 +33,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = None,
         postalCode = Some("90100"),
-        city = None,
+        city = None
       ).isDefined === true
     }
 
@@ -43,7 +43,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = Some("test"),
         postalCode = None,
-        city = None,
+        city = None
       ).isDefined === true
     }
 
@@ -53,7 +53,7 @@ class AddressSpec extends Specification {
         street = Some("AVENUE FELIX FAURE"),
         addressSupplement = Some("1 RUE ARDOINO"),
         postalCode = Some("06500"),
-        city = Some("MENTON"),
+        city = Some("MENTON")
       ).toString must equalTo("13 AVENUE FELIX FAURE - 1 RUE ARDOINO - 06500 MENTON")
 
       Address(
@@ -61,7 +61,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = Some("1 RUE ARDOINO"),
         postalCode = Some("06500"),
-        city = Some("MENTON"),
+        city = Some("MENTON")
       ).toString must equalTo("1 RUE ARDOINO - 06500 MENTON")
 
       Address(
@@ -69,7 +69,7 @@ class AddressSpec extends Specification {
         street = Some("AVENUE FELIX FAURE"),
         addressSupplement = None,
         postalCode = None,
-        city = Some("MENTON"),
+        city = Some("MENTON")
       ).toString must equalTo("13 AVENUE FELIX FAURE - MENTON")
 
       Address(
@@ -77,7 +77,7 @@ class AddressSpec extends Specification {
         street = None,
         addressSupplement = None,
         postalCode = None,
-        city = None,
+        city = None
       ).toString must equalTo("")
     }
   }

@@ -6,12 +6,12 @@ import java.util.UUID
 import enumeratum._
 
 case class AsyncFile(
-  id: UUID,
-  userId: UUID,
-  creationDate: OffsetDateTime,
-  filename: Option[String],
-  kind: AsyncFileKind,
-  storageFilename: Option[String]
+    id: UUID,
+    userId: UUID,
+    creationDate: OffsetDateTime,
+    filename: Option[String],
+    kind: AsyncFileKind,
+    storageFilename: Option[String]
 )
 
 sealed abstract class AsyncFileKind(value: String) extends EnumEntry

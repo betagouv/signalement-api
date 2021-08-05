@@ -2,11 +2,13 @@ package utils.silhouette.auth
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
-import models.{User, UserPermission, UserRole, UserRoles}
+import models.User
+import models.UserPermission
+import models.UserRole
+import models.UserRoles
 import play.api.mvc.Request
 
 import scala.concurrent.Future
-
 
 case class WithPermission(anyOfPermissions: UserPermission.Value*) extends Authorization[User, JWTAuthenticator] {
   def isAuthorized[A](user: User, authenticator: JWTAuthenticator)(implicit r: Request[A]) = Future.successful {
@@ -19,13 +21,13 @@ object WithPermission {
     anyOfPermissions.intersect(user.userRole.permissions).size > 0
 }
 
-case class WithRole(anyOfRoles: UserRole *) extends Authorization[User, JWTAuthenticator] {
+case class WithRole(anyOfRoles: UserRole*) extends Authorization[User, JWTAuthenticator] {
   def isAuthorized[A](user: User, authenticator: JWTAuthenticator)(implicit r: Request[A]) = Future.successful {
     WithRole.isAuthorized(user, anyOfRoles: _*)
   }
 }
 
 object WithRole {
-  def isAuthorized(user: User, anyOfRoles: UserRole *): Boolean =
+  def isAuthorized(user: User, anyOfRoles: UserRole*): Boolean =
     anyOfRoles.contains(user.userRole)
 }

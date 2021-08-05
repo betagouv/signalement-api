@@ -16,9 +16,8 @@ object WebsiteKind {
 
   val values = List(DEFAULT, MARKETPLACE, PENDING)
 
-  def fromValue(v: String) = {
+  def fromValue(v: String) =
     values.find(_.value == v).head
-  }
   implicit val reads = new Reads[WebsiteKind] {
     def reads(json: JsValue): JsResult[WebsiteKind] = json.validate[String].map(fromValue(_))
   }
@@ -27,42 +26,41 @@ object WebsiteKind {
   }
 }
 
-case class WebsiteUpdateCompany (
-  companyName: String,
-  companyAddress: Address,
-  companySiret: SIRET,
-  companyActivityCode: Option[String],
+case class WebsiteUpdateCompany(
+    companyName: String,
+    companyAddress: Address,
+    companySiret: SIRET,
+    companyActivityCode: Option[String]
 )
 
 object WebsiteUpdateCompany {
   implicit val format: OFormat[WebsiteUpdateCompany] = Json.format[WebsiteUpdateCompany]
 }
 
-case class WebsiteCreate (
-  host: String,
-  companyName: String,
-  companyAddress: Address,
-  companySiret: SIRET,
-  companyPostalCode: Option[String],
-  companyActivityCode: Option[String],
+case class WebsiteCreate(
+    host: String,
+    companyName: String,
+    companyAddress: Address,
+    companySiret: SIRET,
+    companyPostalCode: Option[String],
+    companyActivityCode: Option[String]
 )
 
 object WebsiteCreate {
   implicit val format: OFormat[WebsiteCreate] = Json.format[WebsiteCreate]
 }
 
-case class WebsiteUpdate (
-  host: Option[String],
-  companyId: Option[UUID],
-  kind: Option[WebsiteKind]
+case class WebsiteUpdate(
+    host: Option[String],
+    companyId: Option[UUID],
+    kind: Option[WebsiteKind]
 ) {
-  def mergeIn(website: Website): Website = {
+  def mergeIn(website: Website): Website =
     website.copy(
       host = host.getOrElse(website.host),
       companyId = companyId.getOrElse(website.companyId),
-      kind = kind.getOrElse(website.kind),
+      kind = kind.getOrElse(website.kind)
     )
-  }
 }
 
 object WebsiteUpdate {
@@ -70,22 +68,15 @@ object WebsiteUpdate {
 }
 
 case class Website(
-  id: UUID = UUID.randomUUID(),
-  creationDate: OffsetDateTime = OffsetDateTime.now,
-  host: String,
-  companyId: UUID,
-  kind: WebsiteKind = WebsiteKind.PENDING
+    id: UUID = UUID.randomUUID(),
+    creationDate: OffsetDateTime = OffsetDateTime.now,
+    host: String,
+    companyId: UUID,
+    kind: WebsiteKind = WebsiteKind.PENDING
 )
 
 object Website {
-
-  implicit val websiteWrites: Writes[Website] = (
-    (JsPath \ "id").write[UUID] and
-    (JsPath \ "creationDate").write[OffsetDateTime] and
-    (JsPath \ "host").write[String] and
-    (JsPath \ "companyId").write[UUID] and
-    (JsPath \ "kind").write[WebsiteKind]
-  )((w: Website) => (w.id, w.creationDate, w.host, w.companyId, w.kind))
+  implicit val WebsiteWrites: Writes[Website] = Json.writes[Website]
 }
 
 object WebsiteCompanyFormat {

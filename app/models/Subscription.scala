@@ -1,19 +1,22 @@
 package models
 
-import java.time.{OffsetDateTime, Period}
+import java.time.OffsetDateTime
+import java.time.Period
 import java.util.UUID
 
-import play.api.libs.json.{Json, OFormat}
-import utils.{Country, EmailAddress, SIRET}
-
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+import utils.Country
+import utils.EmailAddress
+import utils.SIRET
 
 case class SubscriptionCreation(
-  departments: List[String],
-  categories: List[ReportCategory],
-  sirets: List[SIRET],
-  tags: List[String],
-  countries: List[String],
-  frequency: Period
+    departments: List[String],
+    categories: List[ReportCategory],
+    sirets: List[SIRET],
+    tags: List[String],
+    countries: List[String],
+    frequency: Period
 )
 
 object SubscriptionCreation {
@@ -22,12 +25,12 @@ object SubscriptionCreation {
 }
 
 case class SubscriptionUpdate(
-  departments: Option[List[String]],
-  categories: Option[List[ReportCategory]],
-  sirets: Option[List[SIRET]],
-  tags: Option[List[String]],
-  countries: Option[List[String]],
-  frequency: Option[Period],
+    departments: Option[List[String]],
+    categories: Option[List[ReportCategory]],
+    sirets: Option[List[SIRET]],
+    tags: Option[List[String]],
+    countries: Option[List[String]],
+    frequency: Option[Period]
 )
 
 object SubscriptionUpdate {
@@ -35,19 +38,18 @@ object SubscriptionUpdate {
 }
 
 case class Subscription(
-  id: UUID = UUID.randomUUID,
-  creationDate: OffsetDateTime = OffsetDateTime.now,
-  userId: Option[UUID],
-  email: Option[EmailAddress],
-  departments: List[String] = List.empty,
-  categories: List[ReportCategory] = List.empty,
-  tags: List[String] = List.empty,
-  countries: List[Country] = List.empty,
-  sirets: List[SIRET] = List.empty,
-  frequency: Period
+    id: UUID = UUID.randomUUID,
+    creationDate: OffsetDateTime = OffsetDateTime.now,
+    userId: Option[UUID],
+    email: Option[EmailAddress],
+    departments: List[String] = List.empty,
+    categories: List[ReportCategory] = List.empty,
+    tags: List[String] = List.empty,
+    countries: List[Country] = List.empty,
+    sirets: List[SIRET] = List.empty,
+    frequency: Period
 )
 
 object Subscription {
   implicit val subscriptionFormat: OFormat[Subscription] = Json.format[Subscription]
 }
-
