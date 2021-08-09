@@ -87,7 +87,6 @@ class WebsiteRepository @Inject() (
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Company), Int)]] = {
-
     val baseQuery = websiteTableQuery
       .join(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
