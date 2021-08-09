@@ -23,7 +23,7 @@ object WebsiteCompanyReportCount {
 
   implicit val WebsiteCompanyCountWrites: Writes[WebsiteCompanyReportCount] = Json.writes[WebsiteCompanyReportCount]
 
-  def toDomain(countByWebsiteCompany: ((Website, Company), Int)): WebsiteCompanyReportCount = {
+  def toApi(countByWebsiteCompany: ((Website, Company), Int)): WebsiteCompanyReportCount = {
     val ((website, company), count) = countByWebsiteCompany
     website
       .into[WebsiteCompanyReportCount]
