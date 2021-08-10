@@ -231,7 +231,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
       .groupBy(_._1)
-      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+      .map { case (grouped, all) => (grouped, all.map(_._2).map(_.map(_.id)).countDefined) }
       .sortBy(_._2.desc)
     val filterQuery = identity
       .map {
