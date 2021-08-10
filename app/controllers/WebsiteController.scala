@@ -51,7 +51,12 @@ class WebsiteController @Inject() (
     SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
       for {
         result <-
-          websitesOrchestrator.getWebsiteCompanyCount(maybeHost.filter(_.nonEmpty), maybeKinds, maybeOffset, maybeLimit)
+          websitesOrchestrator.getWebsiteCompanyCount(
+            maybeHost.filter(_.nonEmpty),
+            maybeKinds.filter(_.nonEmpty),
+            maybeOffset,
+            maybeLimit
+          )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
     }

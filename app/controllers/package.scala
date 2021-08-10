@@ -3,10 +3,10 @@ import play.api.mvc.QueryStringBindable
 
 package object controllers {
 
-  implicit val WebsiteKindQueryStringBindable: QueryStringBindable[Seq[WebsiteKind]] =
+  implicit val WebsiteKindQueryStringBindable: QueryStringBindable[WebsiteKind] =
     QueryStringBindable.bindableString
-      .transform[Seq[WebsiteKind]](
-        kinds => kinds.split(",").toSeq.filter(_.nonEmpty).map(WebsiteKind.fromValue),
-        websiteKinds => websiteKinds.mkString(",")
+      .transform[WebsiteKind](
+        kinds => WebsiteKind.fromValue(kinds),
+        websiteKinds => websiteKinds.value
       )
 }
