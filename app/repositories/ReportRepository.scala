@@ -11,8 +11,10 @@ import utils._
 
 import java.time._
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 

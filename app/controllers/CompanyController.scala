@@ -192,12 +192,12 @@ class CompanyController @Inject() (
     )
   }
 
-  def viewableCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+  def visibleCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
     companiesVisibilityOrchestrator
-      .fetchViewableCompanies(request.identity)
+      .fetchVisibleCompanies(request.identity)
       .map(companies =>
         companies.map(c =>
-          ViewableCompany(
+          VisibleCompany(
             c.siret,
             c.codePostalEtablissement,
             c.etatAdministratifEtablissement.contains("F")

@@ -7,10 +7,13 @@ import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
-import java.time.{Duration, OffsetDateTime}
+import java.time.Duration
+import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
@@ -24,9 +27,8 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
   type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
 
-  def constructUser: UserData => User = {
-    case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
+  def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
+    User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
   }
 
   def extractUser: PartialFunction[User, UserData] = {

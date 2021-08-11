@@ -19,7 +19,9 @@ import scala.concurrent.Future
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
 @Singleton
-class EventRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val userRepository: UserRepository)(implicit
+class EventRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider
+)(implicit
     ec: ExecutionContext
 ) {
 
@@ -64,7 +66,7 @@ class EventRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val u
       (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
   }
 
-  val userTableQuery = TableQuery[userRepository.UserTable]
+  val userTableQuery = UserTables.tables
 
   val eventTableQuery = TableQuery[EventTable]
 
