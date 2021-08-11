@@ -42,13 +42,13 @@ where r.company_id is not null;
 select ((count(*) filter ( where status in ('Signalement transmis', 'Promesse action', 'Signalement infondé', 'Signalement mal attribué', 'Signalement consulté ignoré') ))::numeric /
 (count(*) filter ( where status not in ('NA', 'Lanceur d''alerte') ))::numeric * 100)::numeric(5,2) "Signalements du mois de juillet : % lus"
 from reports
-where reports.creation_date > '2021-07-01'::timestamp - '90 days'::interval;
+where reports.creation_date > '2021-07-01'::timestamp - '81 days'::interval;
 
 -- % signalements avec une réponse (Signalements du mois de juillet)
 select ((count(*) filter ( where status in ('Promesse action', 'Signalement infondé', 'Signalement mal attribué') ))::numeric /
 (count(*) filter ( where status not in ('NA', 'Lanceur d''alerte') ))::numeric * 100)::numeric(5,2) "Signalements du mois de juillet : % avec une réponse"
 from reports
-where creation_date > '2021-07-01'::timestamp - '90 days'::interval;
+where creation_date > '2021-07-01'::timestamp - '81 days'::interval;
 
 
 -- temps de lecture moyen des signalements (signalements du mois de juillet)
