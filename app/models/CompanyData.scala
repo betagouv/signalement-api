@@ -9,27 +9,27 @@ import utils.SIREN
 import utils.SIRET
 
 case class CompanyData(
-    id: UUID = UUID.randomUUID(),
-    siret: SIRET,
-    siren: SIREN,
-    dateDernierTraitementEtablissement: Option[String] = None,
-    etablissementSiege: Option[String] = None, //TODO change after updating table column type
-    complementAdresseEtablissement: Option[String] = None,
-    numeroVoieEtablissement: Option[String] = None,
-    indiceRepetitionEtablissement: Option[String] = None,
-    typeVoieEtablissement: Option[String] = None,
-    libelleVoieEtablissement: Option[String] = None,
-    codePostalEtablissement: Option[String] = None,
-    libelleCommuneEtablissement: Option[String] = None,
-    libelleCommuneEtrangerEtablissement: Option[String] = None,
-    distributionSpecialeEtablissement: Option[String] = None,
-    codeCommuneEtablissement: Option[String] = None,
-    codeCedexEtablissement: Option[String] = None,
-    libelleCedexEtablissement: Option[String] = None,
-    denominationUsuelleEtablissement: Option[String] = None,
-    enseigne1Etablissement: Option[String] = None,
-    activitePrincipaleEtablissement: String,
-    etatAdministratifEtablissement: Option[String] = None
+  id: UUID = UUID.randomUUID(),
+  siret: SIRET,
+  siren: SIREN,
+  dateDernierTraitementEtablissement: Option[String] = None,
+  etablissementSiege: Option[String] = None, //TODO change after updating table column type
+  complementAdresseEtablissement: Option[String] = None,
+  numeroVoieEtablissement: Option[String] = None,
+  indiceRepetitionEtablissement: Option[String] = None,
+  typeVoieEtablissement: Option[String] = None,
+  libelleVoieEtablissement: Option[String] = None,
+  codePostalEtablissement: Option[String] = None,
+  libelleCommuneEtablissement: Option[String] = None,
+  libelleCommuneEtrangerEtablissement: Option[String] = None,
+  distributionSpecialeEtablissement: Option[String] = None,
+  codeCommuneEtablissement: Option[String] = None,
+  codeCedexEtablissement: Option[String] = None,
+  libelleCedexEtablissement: Option[String] = None,
+  denominationUsuelleEtablissement: Option[String] = None,
+  enseigne1Etablissement: Option[String] = None,
+  activitePrincipaleEtablissement: String,
+  etatAdministratifEtablissement: Option[String] = None
 ) {
   def toAddress: Address = Address(
     number = numeroVoieEtablissement,
@@ -54,22 +54,31 @@ case class CompanyData(
     activityLabel = activityLabel,
     isMarketPlace = isMarketPlace
   )
+
+  def toVisibleCompany: ViewableCompany = {
+    ViewableCompany(
+      denominationUsuelleEtablissement.getOrElse(""),
+      siret,
+      codePostalEtablissement,
+      etatAdministratifEtablissement.contains("F")
+    )
+  }
 }
 
 case class CompanyActivity(
-    code: String,
-    label: String
+  code: String,
+  label: String
 )
 
 case class CompanySearchResult(
-    siret: SIRET,
-    name: Option[String],
-    brand: Option[String],
-    isHeadOffice: Boolean,
-    address: Address,
-    activityCode: String,
-    activityLabel: Option[String],
-    isMarketPlace: Boolean = false
+  siret: SIRET,
+  name: Option[String],
+  brand: Option[String],
+  isHeadOffice: Boolean,
+  address: Address,
+  activityCode: String,
+  activityLabel: Option[String],
+  isMarketPlace: Boolean = false
 ) {
   def toCompany = Company(
     siret = siret,
@@ -84,9 +93,10 @@ object CompanySearchResult {
 }
 
 case class VisibleCompany(
-    siret: SIRET,
-    postalCode: Option[String],
-    closed: Boolean
+  name: String,
+  siret: SIRET,
+  postalCode: Option[String],
+  closed: Boolean
 )
 
 object VisibleCompany {
