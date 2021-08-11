@@ -1,19 +1,58 @@
 package repositories
 
-import java.util.UUID
-import java.time.Duration
-import java.time.OffsetDateTime
-
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import java.time.{Duration, OffsetDateTime}
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+class UserTable(tag: Tag) extends Table[User](tag, "users") {
+
+  def id = column[UUID]("id", O.PrimaryKey)
+  def password = column[String]("password")
+  def email = column[EmailAddress]("email")
+  def firstName = column[String]("firstname")
+  def lastName = column[String]("lastname")
+  def role = column[String]("role")
+  def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
+
+  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
+
+  def constructUser: UserData => User = {
+    case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
+      User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
+  }
+
+  def extractUser: PartialFunction[User, UserData] = {
+    case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
+      (id, password, email, firstName, lastName, role.name, lastEmailValidation)
+  }
+
+  def * = (id, password, email, firstName, lastName, role, lastEmailValidation) <> (constructUser, extractUser.lift)
+}
+
+class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
+
+  def id = column[UUID]("id", O.PrimaryKey)
+  def login = column[String]("login")
+  def timestamp = column[OffsetDateTime]("timestamp")
+
+  def * = (id, login, timestamp) <> (AuthAttempt.tupled, AuthAttempt.unapply)
+}
+
+object UserTables {
+  val tables = TableQuery[UserTable]
+}
+
+object AuthAttemptTables {
+  val tables = TableQuery[AuthAttempTable]
+}
 
 /** A repository for user.
   *
@@ -28,44 +67,9 @@ class UserRepository @Inject() (
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
-  import PostgresProfile.api._
 
-  class UserTable(tag: Tag) extends Table[User](tag, "users") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def password = column[String]("password")
-    def email = column[EmailAddress]("email")
-    def firstName = column[String]("firstname")
-    def lastName = column[String]("lastname")
-    def role = column[String]("role")
-    def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
-
-    type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
-
-    def constructUser: UserData => User = {
-      case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-        User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
-    }
-
-    def extractUser: PartialFunction[User, UserData] = {
-      case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-        (id, password, email, firstName, lastName, role.name, lastEmailValidation)
-    }
-
-    def * = (id, password, email, firstName, lastName, role, lastEmailValidation) <> (constructUser, extractUser.lift)
-  }
-
-  class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def login = column[String]("login")
-    def timestamp = column[OffsetDateTime]("timestamp")
-
-    def * = (id, login, timestamp) <> (AuthAttempt.tupled, AuthAttempt.unapply)
-  }
-
-  val userTableQuery = TableQuery[UserTable]
-  val authAttemptTableQuery = TableQuery[AuthAttempTable]
+  val userTableQuery = UserTables.tables
+  val authAttemptTableQuery = AuthAttemptTables.tables
 
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
 
