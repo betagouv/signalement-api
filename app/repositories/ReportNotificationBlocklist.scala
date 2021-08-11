@@ -10,11 +10,13 @@ import utils.Constants.ReportStatus.ReportStatusValue
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-
-class ReportNotificationBlocklistTable(tag: Tag) extends Table[ReportNotificationBlocklist](tag, "report_notification_blocklist") {
+class ReportNotificationBlocklistTable(tag: Tag)
+    extends Table[ReportNotificationBlocklist](tag, "report_notification_blocklist") {
   def userId = column[UUID]("user_id")
   def companyId = column[UUID]("company_id")
   def dateCreation = column[OffsetDateTime]("date_creation")
@@ -28,7 +30,11 @@ class ReportNotificationBlocklistTable(tag: Tag) extends Table[ReportNotificatio
     onDelete = ForeignKeyAction.Cascade
   )
 
-  def * = (userId, companyId, dateCreation) <> ((ReportNotificationBlocklist.apply _).tupled, ReportNotificationBlocklist.unapply)
+  def * = (
+    userId,
+    companyId,
+    dateCreation
+  ) <> ((ReportNotificationBlocklist.apply _).tupled, ReportNotificationBlocklist.unapply)
 }
 
 object ReportNotificationBlocklistTables {
@@ -36,10 +42,10 @@ object ReportNotificationBlocklistTables {
 }
 
 @Singleton
-class ReportNotificationBlocklistRepository @Inject()(
-  dbConfigProvider: DatabaseConfigProvider,
+class ReportNotificationBlocklistRepository @Inject() (
+    dbConfigProvider: DatabaseConfigProvider
 )(implicit
-  ec: ExecutionContext
+    ec: ExecutionContext
 ) {
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -47,15 +53,14 @@ class ReportNotificationBlocklistRepository @Inject()(
 
   val query = ReportNotificationBlocklistTables.tables
 
-  def create(userId: UUID, companyId: UUID): Future[Int] = {
-    db.run(query += ReportNotificationBlocklist(
-      userId = userId,
-      companyId = companyId,
-    ))
+  def findByUser(userId: UUID): Future[Seq[ReportNotificationBlocklist]] =
+    db.run(query.filter(_.userId === userId).result)
+
+  def create(userId: UUID, companyId: UUID): Future[ReportNotificationBlocklist] = {
+    val entity = ReportNotificationBlocklist(userId = userId, companyId = companyId)
+    db.run(query += entity).map(_ => entity)
   }
 
-  def findByUser(userId: UUID): Future[Seq[(ReportNotificationBlocklist, Company)]] = {
-    val q = query.join(CompanyTables.tables).filter(_._1.userId === userId)
-    db.run(q.result)
-  }
+  def delete(userId: UUID, companyId: UUID): Future[Int] =
+    db.run(query.filter(_.userId === userId).filter(_.companyId === companyId).delete)
 }
