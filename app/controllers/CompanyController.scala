@@ -205,7 +205,6 @@ class CompanyController @Inject() (
         )
       )
       .map(x => Ok(Json.toJson(x)))
-
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) {
