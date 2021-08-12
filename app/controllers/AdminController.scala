@@ -18,6 +18,7 @@ import play.api.libs.json.Json
 import play.api.Configuration
 import play.api.Logger
 import utils.Constants.ReportStatus.NA
+import utils.Constants.ReportStatus.reportStatusList
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 import utils.EmailAddress
@@ -26,8 +27,6 @@ import utils.SIRET
 import utils._
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import java.time.LocalDate
 
 import services.MailerService
@@ -40,6 +39,7 @@ import scala.concurrent.Future
 @Singleton
 class AdminController @Inject() (
     reportRepository: ReportRepository,
+    companyRepository: CompanyRepository,
     eventRepository: EventRepository,
     mailerService: MailerService,
     val configuration: Configuration,
@@ -364,13 +364,20 @@ class AdminController @Inject() (
           reportRepository
             .getReportsByIds(results.reportIds)
             .map(_.foreach { report =>
-              emailActor ? EmailActor.EmailRequest(
-                from = mailFrom,
-                recipients = Seq(report.email),
-                subject = EmailSubjects.NEW_REPORT,
-                bodyHtml = views.html.mails.professional.reportNotification(report).toString,
-                attachments = mailerService.attachmentSeqForWorkflowStepN(4)
-              )
+              report.companyId.map { companyId =>
+                companyRepository.fetchAdmins(companyId).map(_.map(_.email).distinct).flatMap { adminsEmails =>
+                  if (adminsEmails.nonEmpty) {
+                    emailActor ? EmailActor.EmailRequest(
+                      from = mailFrom,
+                      recipients = adminsEmails,
+                      subject = EmailSubjects.NEW_REPORT,
+                      bodyHtml = views.html.mails.professional.reportNotification(report).toString
+                    )
+                  } else {
+                    Future.successful(())
+                  }
+                }
+              }
             })
           Future(Ok)
         }
