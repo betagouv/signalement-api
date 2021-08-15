@@ -47,6 +47,7 @@ class ReportOrchestrator @Inject() (
     mailerService: MailerService,
     mailService: MailService,
     pdfService: PDFService,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     @Named("email-actor") emailActor: ActorRef,
@@ -566,4 +567,25 @@ class ReportOrchestrator @Inject() (
       )
     )
   }
+
+  def getReportsForUser(
+      connectedUser: User,
+      filter: ReportFilter,
+      offset: Long,
+      limit: Int
+  ): Future[PaginatedResult[ReportWithFiles]] =
+    for {
+      sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+                                filter.siretSirenList,
+                                connectedUser
+                              )
+      paginatedReports <- reportRepository.getReports(
+                            offset,
+                            limit,
+                            filter.copy(siretSirenList = sanitizedSirenSirets)
+                          )
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+    } yield paginatedReports.copy(entities =
+      paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
+    )
 }
