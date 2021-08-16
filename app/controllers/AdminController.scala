@@ -1,38 +1,35 @@
 package controllers
 
+import actors.EmailActor.EmailRequest
+import akka.actor.ActorRef
+import com.mohiva.play.silhouette.api.Silhouette
+import models._
+import play.api.Configuration
+import play.api.Logger
+import play.api.libs.json.Json
+import services.MailService
+import utils.Constants.ReportStatus.NA
+import utils.Constants.Tags
+import utils._
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
+
 import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import actors.EmailActor
-import akka.actor.ActorRef
-import akka.pattern.ask
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
-import models._
-import play.api.libs.json.Json
-import play.api.Configuration
-import play.api.Logger
-import utils.Constants.ReportStatus.NA
-import utils.Constants.Tags
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
-import utils.EmailAddress
-import utils.EmailSubjects
-import utils.SIRET
-import utils._
-
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class AdminController @Inject() (
     val configuration: Configuration,
     val silhouette: Silhouette[AuthEnv],
+    mailService: MailService,
     @Named("email-actor") emailActor: ActorRef
 )(implicit ec: ExecutionContext)
     extends BaseController {
@@ -294,7 +291,7 @@ class AdminController @Inject() (
           .get(templateRef)
           .map(_.apply)
           .map { case EmailContent(subject, body) =>
-            emailActor ? EmailActor.EmailRequest(
+            mailService.send(
               from = mailFrom,
               recipients = Seq(EmailAddress(to)),
               subject = subject,

@@ -8,6 +8,7 @@ import play.api.db.DBApi
 import play.api.db.evolutions._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.mailer.AttachmentFile
+import services.MailService
 import services.MailerService
 
 trait AppSpec extends BeforeAfterAll with Mockito {

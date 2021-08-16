@@ -37,7 +37,7 @@ class EmailValidationOrchestrator @Inject() (
       emailValidation <- findOrCreate(email)
     } yield
       if (emailValidation.lastValidationDate.isEmpty) {
-        mailService.sendConsumerEmailConfirmation(emailValidation)
+        mailService.Consumer.sendEmailConfirmation(emailValidation)
         false
       } else true
 }

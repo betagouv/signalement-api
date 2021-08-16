@@ -1,51 +1,39 @@
 package tasks
 
-import java.net.URI
-import java.time.temporal.ChronoUnit
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import akka.actor.ActorSystem
-import akka.actor.ActorRef
-import akka.pattern.ask
-import actors.EmailActor
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event._
 import models._
 import play.api.Configuration
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
-import repositories.UserRepository
-import services.MailerService
-import services.S3Service
+import services.MailService
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
-import utils.Constants.EventType.PRO
 import utils.Constants.EventType.SYSTEM
 import utils.Constants.ReportStatus._
+import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
-import utils.EmailSubjects
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class ReminderTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
-    userRepository: UserRepository,
-    mailerService: MailerService,
-    @Named("email-actor") emailActor: ActorRef,
-    s3Service: S3Service,
+    mailService: MailService,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     configuration: Configuration
@@ -187,12 +175,7 @@ class ReminderTask @Inject() (
         )
       )
       .map { newEvent =>
-        emailActor ? EmailActor.EmailRequest(
-          from = configuration.get[EmailAddress]("play.mail.from"),
-          recipients = adminMails,
-          subject = EmailSubjects.REPORT_UNREAD_REMINDER,
-          bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
-        )
+        mailService.Pro.sendReportUnreadReminder(adminMails, report, expirationDate)
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
   }
@@ -249,12 +232,13 @@ class ReminderTask @Inject() (
         )
       )
       .map { newEvent =>
-        emailActor ? EmailActor.EmailRequest(
-          from = configuration.get[EmailAddress]("play.mail.from"),
-          recipients = adminMails,
-          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
-        )
+        mailService.Pro.sendReportTransmittedReminder(adminMails, report, expirationDate)
+//        emailActor ? EmailActor.EmailRequest(
+//          from = configuration.get[EmailAddress]("play.mail.from"),
+//          recipients = adminMails,
+//          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
+//          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
+//        )
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
   }
@@ -299,13 +283,7 @@ class ReminderTask @Inject() (
            )
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_NON_CONSULTE))
     } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
-      )
+      mailService.Consumer.sendReportClosedByNoReading(report)
       Reminder(report.id, ReminderValue.CloseUnreadReport)
     }
 
@@ -349,13 +327,7 @@ class ReminderTask @Inject() (
            )
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_CONSULTE_IGNORE))
     } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
-      )
+      mailService.Consumer.sendAttachmentSeqForWorkflowStepN(report)
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }
 
