@@ -5,7 +5,6 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-
 import models.Event._
 import models._
 import org.specs2.Specification
@@ -15,6 +14,7 @@ import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION

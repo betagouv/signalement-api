@@ -4,10 +4,10 @@
 
 @(
         report: Report,
-        events: List[(Event, Option[User])],
+        events: Seq[(Event, Option[User])],
         responseOption: Option[ReportResponse],
-        companyEvents: List[(Event, Option[User])],
-        files: List[ReportFile]
+        companyEvents: Seq[(Event, Option[User])],
+        files: Seq[ReportFile]
 )(
         implicit websiteUrl: URI, userRoleOpt: Option[UserRole] = None
 )

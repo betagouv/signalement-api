@@ -2,7 +2,6 @@ package controllers.report
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import akka.util.Timeout
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
@@ -26,6 +25,7 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
@@ -320,6 +320,7 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
+  lazy val mailService = application.injector.instanceOf[MailService]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { pro =>
     Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())

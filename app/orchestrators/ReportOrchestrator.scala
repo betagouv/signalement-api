@@ -1,27 +1,15 @@
 package orchestrators
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
-import actors.EmailActor
 import actors.UploadActor
 import akka.actor.ActorRef
-import akka.pattern.ask
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event._
 import models.ReportResponse._
 import models._
-import play.api.libs.json.Json
-import play.api.libs.mailer.AttachmentData
 import play.api.Configuration
-import play.api.Environment
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories._
 import services.MailService
-import services.MailerService
-import services.PDFService
 import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
@@ -30,31 +18,31 @@ import utils.Constants.EventType
 import utils.Constants.Tags
 import utils.Constants
 import utils.EmailAddress
-import utils.EmailSubjects
 import utils.URL
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator @Inject() (
+    mailService: MailService,
     reportRepository: ReportRepository,
     companyRepository: CompanyRepository,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepository,
     websiteRepository: WebsiteRepository,
-    mailerService: MailerService,
-    mailService: MailService,
-    pdfService: PDFService,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
-    @Named("email-actor") emailActor: ActorRef,
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
-    configuration: Configuration,
-    environment: Environment
+    configuration: Configuration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -87,12 +75,7 @@ class ReportOrchestrator @Inject() (
   private def notifyProfessionalOfNewReport(report: Report, reportCompanyId: UUID): Future[Report] =
     companyRepository.fetchAdmins(reportCompanyId).flatMap { admins =>
       if (admins.nonEmpty) {
-        emailActor ? EmailActor.EmailRequest(
-          from = mailFrom,
-          recipients = admins.map(_.email),
-          subject = EmailSubjects.NEW_REPORT,
-          bodyHtml = views.html.mails.professional.reportNotification(report).toString
-        )
+        mailService.Pro.sendReportNotification(admins, report)
         val user = admins.head // We must chose one as Event links to a single User
         eventRepository
           .createEvent(
@@ -174,22 +157,9 @@ class ReportOrchestrator @Inject() (
                       } else Future(Seq())
         } yield {
           if (ddEmails.nonEmpty) {
-            mailService.sendDangerousProductEmail(ddEmails, report)
+            mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
           }
-          emailActor ? EmailActor.EmailRequest(
-            from = mailFrom,
-            recipients = Seq(report.email),
-            subject = EmailSubjects.REPORT_ACK,
-            bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files).toString,
-            attachments = mailerService.attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
-              Seq(
-                AttachmentData(
-                  "Signalement.pdf",
-                  pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)),
-                  "application/pdf"
-                )
-              ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
-          )
+          mailService.Consumer.sendReportAcknowledgment(report, event, files)
           logger.debug(s"Report ${report.id} created")
           Some(report)
         }
@@ -385,13 +355,7 @@ class ReportOrchestrator @Inject() (
     } yield updatedReport
 
   private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
-    emailActor ? EmailActor.EmailRequest(
-      from = mailFrom,
-      recipients = Seq(report.email),
-      subject = EmailSubjects.REPORT_TRANSMITTED,
-      bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
-      attachments = mailerService.attachmentSeqForWorkflowStepN(3)
-    )
+    mailService.Consumer.sendReportTransmission(report)
     for {
       event <- eventRepository.createEvent(
                  Event(
@@ -409,29 +373,11 @@ class ReportOrchestrator @Inject() (
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    Some(user.email)
-      .filter(_.value != "")
-      .foreach(email =>
-        emailActor ? EmailActor.EmailRequest(
-          from = mailFrom,
-          recipients = Seq(email),
-          subject = EmailSubjects.REPORT_ACK_PRO,
-          bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
-        )
-      )
-    emailActor ? EmailActor.EmailRequest(
-      from = mailFrom,
-      recipients = Seq(report.email),
-      subject = EmailSubjects.REPORT_ACK_PRO_CONSUMER,
-      bodyHtml = views.html.mails.consumer
-        .reportToConsumerAcknowledgmentPro(
-          report,
-          reportResponse,
-          configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
-        )
-        .toString,
-      attachments = mailerService.attachmentSeqForWorkflowStepN(4)
-    )
+    println(mailService)
+    println(mailService.Pro)
+    println("================")
+    mailService.Pro.sendReportAcknowledgmentPro(user, reportResponse)
+    mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, reportResponse)
   }
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =

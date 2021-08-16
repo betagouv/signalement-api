@@ -3,7 +3,6 @@ package controllers.report
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -20,6 +19,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories._
+import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._

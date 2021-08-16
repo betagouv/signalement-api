@@ -6,7 +6,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-
 import models.UserRoles.Pro
 import models._
 import models.Event._
@@ -17,6 +16,7 @@ import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.MailService
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent
@@ -120,7 +120,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
       )
 
   def mailMustNotHaveBeenSent() =
-    there was no(app.injector.instanceOf[MailerService])
+    there was no(mailerService)
       .sendEmail(
         EmailAddress(anyString),
         any[Seq[EmailAddress]],
