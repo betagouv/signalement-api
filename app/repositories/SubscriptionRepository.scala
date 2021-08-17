@@ -91,7 +91,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
 
-  private val userTableQuery = TableQuery[userRepository.UserTable]
+  private val userTableQuery = UserTables.tables
 
   def create(subscription: Subscription): Future[Subscription] = db
     .run(subscriptionTableQuery += subscription)

@@ -51,6 +51,8 @@ GET           /api/ext/reports/:uuid                                 controllers
 
 GET           /api/admin/test-email                                  controllers.AdminController.getEmailCodes
 POST          /api/admin/test-email                                  controllers.AdminController.sendTestEmail(templateRef, to)
+POST          /api/admin/emails/proAckToConsumer                     controllers.AdminController.sendProAckToConsumer
+POST          /api/admin/emails/newReportToPro                       controllers.AdminController.sendNewReportToPro
 
 # Async files API
 GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
@@ -103,7 +105,7 @@ POST          /api/email/validate                                    controllers
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create
 GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
-GET           /api/companies/connected-user                          controllers.CompanyController.viewableCompanies
+GET           /api/companies/connected-user                          controllers.CompanyController.visibleCompanies
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()

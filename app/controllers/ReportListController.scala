@@ -1,16 +1,17 @@
 package controllers
 
 import java.util.UUID
-
 import actors.ReportsExtractActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
+
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -28,9 +29,8 @@ import scala.concurrent.Future
 @Singleton
 class ReportListController @Inject() (
     reportRepository: ReportRepository,
-    companyRepository: CompanyRepository,
-    companyDataRepository: CompanyDataRepository,
-    reportListOrchestrator: CompaniesVisibilityOrchestrator,
+    reportOrchestrator: ReportOrchestrator,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
@@ -60,66 +60,49 @@ class ReportListController @Inject() (
       hasCompany: Option[Boolean],
       tags: List[String]
   ) = SecuredAction.async { implicit request =>
-    // valeurs par défaut
-    val LIMIT_DEFAULT = 25
-    val LIMIT_MAX = 250
-
-    // normalisation des entrées
-    val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
-    val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
-
-    val startDate = DateUtils.parseDate(start)
-    val endDate = DateUtils.parseDate(end)
-
-    val filter = ReportFilter(
-      departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      email = email,
-      websiteURL = websiteURL,
-      phone = phone,
-      websiteExists = websiteExists,
-      phoneExists = phoneExists,
-      siretSirenList = siretSirenList,
-      companyName = companyName,
-      companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
-      start = startDate,
-      end = endDate,
-      category = category,
-      statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-      details = details,
-      employeeConsumer = request.identity.userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
-      },
-      hasCompany = hasCompany,
-      tags = tags
-    )
-
+    val limitDefault = 25
+    val limitMax = 250
     for {
-      sanitizedSirenSirets <- reportListOrchestrator.filterUnauthorizedSiretSirenList(siretSirenList, request.identity)
-      paginatedReports <- reportRepository.getReports(
-                            offsetNormalized,
-                            limitNormalized,
-                            filter.copy(siretSirenList = sanitizedSirenSirets)
+      paginatedReports <- reportOrchestrator.getReportsForUser(
+                            connectedUser = request.identity,
+                            filter = ReportFilter(
+                              departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+                              email = email,
+                              websiteURL = websiteURL,
+                              phone = phone,
+                              websiteExists = websiteExists,
+                              phoneExists = phoneExists,
+                              siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
+                              companyName = companyName,
+                              companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
+                              start = DateUtils.parseDate(start),
+                              end = DateUtils.parseDate(end),
+                              category = category,
+                              statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
+                              details = details,
+                              employeeConsumer = request.identity.userRole match {
+                                case UserRoles.Pro => Some(false)
+                                case _             => None
+                              },
+                              hasCompany = hasCompany,
+                              tags = tags
+                            ),
+                            offset = offset.map(Math.max(_, 0)).getOrElse(0),
+                            limit.map(Math.max(_, 0)).map(Math.min(_, limitMax)).getOrElse(limitDefault)
                           )
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
-    } yield Ok(
-      Json.toJson(
-        paginatedReports.copy(entities =
-          paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
-        )
-      )
-    )
+    } yield Ok(Json.toJson(paginatedReports))
   }
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
     request.body
       .validate[ReportFilterBody]
+      .map(filters => filters.copy(siretSirenList = filters.siretSirenList.map(_.replaceAll("\\s", ""))))
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         filters =>
           for {
             sanitizedSirenSirets <-
-              reportListOrchestrator.filterUnauthorizedSiretSirenList(filters.siretSirenList, request.identity)
+              companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(filters.siretSirenList, request.identity)
           } yield {
             logger.debug(s"Requesting report for user ${request.identity.email}")
             reportsExtractActor ? ReportsExtractActor.ExtractRequest(

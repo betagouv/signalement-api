@@ -321,7 +321,7 @@ trait GetReportContext extends Mockito {
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
 
-  companiesVisibilityOrchestrator.fetchViewableCompanies(any[User]) answers { pro =>
+  companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { pro =>
     Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())
   }
 

@@ -87,9 +87,9 @@ class CompanyController @Inject() (
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),
-        identity,
-        offset,
-        limit
+        identity = identity.map(_.replaceAll("\\s", "")),
+        offset = offset,
+        limit = limit
       )
       .map(res => Ok(Json.toJson(res)))
   }
@@ -192,12 +192,12 @@ class CompanyController @Inject() (
     )
   }
 
-  def viewableCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+  def visibleCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
     companiesVisibilityOrchestrator
-      .fetchViewableCompanies(request.identity)
+      .fetchVisibleCompanies(request.identity)
       .map(companies =>
         companies.map(c =>
-          ViewableCompany(
+          VisibleCompany(
             c.siret,
             c.codePostalEtablissement,
             c.etatAdministratifEtablissement.contains("F")
