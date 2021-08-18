@@ -1,12 +1,14 @@
 package controllers
 
-import java.net.URI
+import cats.data.OptionT
 
+import java.net.URI
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+
 import javax.inject.Inject
 import javax.inject.Singleton
 import models._
@@ -39,6 +41,29 @@ class AccountController @Inject() (
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   implicit val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
+
+  def fetchUser = SecuredAction.async(parse.json) { implicit request =>
+    for {
+      user <- userRepository.findById(request.identity.id)
+    } yield Ok(Json.toJson(user))
+  }
+
+  def patchUser = SecuredAction.async(parse.json) { implicit request =>
+    request.body
+      .validate[UserUpdate]
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        userUpdate =>
+          (for {
+            user <- OptionT(userRepository.findById(request.identity.id))
+            updatedUser = userUpdate.mergeInto(user)
+            _ <- OptionT.liftF(userRepository.update(updatedUser))
+          } yield updatedUser).value.map {
+            case None         => NotFound
+            case Some(result) => Ok(Json.toJson(result))
+          }
+      )
+  }
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
     request.body

@@ -88,6 +88,8 @@ POST          /api/accesses/grouped/invitations                      controllers
 POST          /api/accesses/:siret/invitation                        controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
+GET           /api/account                                           controllers.AccountController.fetchUser
+PATCH         /api/account                                           controllers.AccountController.patchUser
 GET           /api/account/token                                     controllers.AccountController.fetchTokenInfo(token: String)
 POST          /api/account/password                                  controllers.AccountController.changePassword
 POST          /api/account/activation                                controllers.AccountController.activateAccount

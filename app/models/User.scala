@@ -1,13 +1,13 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.EnumUtils
 import utils.EmailAddress
+import utils.EnumUtils
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class DraftUser(
     email: EmailAddress,
@@ -15,6 +15,7 @@ case class DraftUser(
     lastName: String,
     password: String
 )
+
 object DraftUser {
   implicit val draftUserFormat = Json.format[DraftUser]
 }
@@ -26,7 +27,8 @@ case class User(
     firstName: String,
     lastName: String,
     userRole: UserRole,
-    lastEmailValidation: Option[OffsetDateTime]
+    lastEmailValidation: Option[OffsetDateTime],
+    acceptNotifications: Boolean = true
 ) extends Identity {
   def fullName = s"${firstName} ${lastName}"
 }
@@ -40,7 +42,8 @@ object User {
       "lastName" -> user.lastName,
       "role" -> user.userRole.name,
       "permissions" -> user.userRole.permissions,
-      "lastEmailValidation" -> user.lastEmailValidation
+      "lastEmailValidation" -> user.lastEmailValidation,
+      "acceptNotifications" -> user.acceptNotifications
     )
   }
 
@@ -50,9 +53,23 @@ object User {
       (JsPath \ "email").read[EmailAddress] and
       (JsPath \ "firstName").read[String] and
       (JsPath \ "lastName").read[String] and
-      ((JsPath \ "role").read[String]).map(UserRoles.withName(_)) and
-      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
+      ((JsPath \ "role").read[String]).map(UserRoles.withName) and
+      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime] and
+      (JsPath \ "acceptNotifications").read[Boolean]
   )(User.apply _)
+}
+
+case class UserUpdate(
+    acceptNotifications: Option[Boolean] = None
+) {
+  def mergeInto(user: User): User =
+    user.copy(
+      acceptNotifications = acceptNotifications.getOrElse(user.acceptNotifications)
+    )
+}
+
+object UserUpdate {
+  implicit val format: OFormat[UserUpdate] = Json.format[UserUpdate]
 }
 
 case class UserLogin(

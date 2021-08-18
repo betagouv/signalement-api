@@ -24,19 +24,30 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
   def lastName = column[String]("lastname")
   def role = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
+  def acceptNotifications = column[Boolean]("accept_notifications", O.Default(true))
 
-  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
+  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime], Boolean)
 
-  def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-    User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
+  def constructUser: UserData => User = {
+    case (id, password, email, firstName, lastName, role, lastEmailValidation, acceptNotifications) =>
+      User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation, acceptNotifications)
   }
 
   def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      (id, password, email, firstName, lastName, role.name, lastEmailValidation)
+    case User(id, password, email, firstName, lastName, role, lastEmailValidation, acceptNotifications) =>
+      (id, password, email, firstName, lastName, role.name, lastEmailValidation, acceptNotifications)
   }
 
-  def * = (id, password, email, firstName, lastName, role, lastEmailValidation) <> (constructUser, extractUser.lift)
+  def * = (
+    id,
+    password,
+    email,
+    firstName,
+    lastName,
+    role,
+    lastEmailValidation,
+    acceptNotifications
+  ) <> (constructUser, extractUser.lift)
 }
 
 class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
@@ -110,8 +121,8 @@ class UserRepository @Inject() (
         yield refUser
     db.run(
       queryUser
-        .map(u => (u.firstName, u.lastName, u.email))
-        .update(user.firstName, user.lastName, user.email)
+        .map(u => (u.firstName, u.lastName, u.email, u.acceptNotifications))
+        .update(user.firstName, user.lastName, user.email, user.acceptNotifications)
     )
   }
 
@@ -132,13 +143,13 @@ class UserRepository @Inject() (
   def delete(email: EmailAddress): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
+  def findById(id: UUID): Future[Option[User]] =
+    db.run(userTableQuery.filter(_.id === id).result.headOption)
   def findByLogin(login: String): Future[Option[User]] =
-    db
-      .run(
-        userTableQuery
-          .filter(_.email === EmailAddress(login))
-          .to[List]
-          .result
-          .headOption
-      )
+    db.run(
+      userTableQuery
+        .filter(_.email === EmailAddress(login))
+        .result
+        .headOption
+    )
 }

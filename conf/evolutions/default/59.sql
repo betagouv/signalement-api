@@ -1,7 +1,7 @@
 -- !Ups
 
 ALTER TABLE users
-    ADD COLUMN enable_report_notifications BOOLEAN NOT NULL DEFAULT TRUE;
+    ADD COLUMN accept_notifications BOOLEAN NOT NULL DEFAULT TRUE;
 
 CREATE TABLE report_notification_blocklist
 (
@@ -24,6 +24,6 @@ ALTER TABLE report_notification_blocklist
 -- !Downs
 
 ALTER TABLE users
-    DROP COLUMN enable_report_notifications;
+    DROP COLUMN accept_notifications;
 
 DROP TABLE report_notification_blocklist;
