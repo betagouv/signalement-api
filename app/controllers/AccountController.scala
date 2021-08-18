@@ -44,8 +44,12 @@ class AccountController @Inject() (
 
   def fetchUser = SecuredAction.async(parse.json) { implicit request =>
     for {
-      user <- userRepository.findById(request.identity.id)
-    } yield Ok(Json.toJson(user))
+      userOpt <- userRepository.findById(request.identity.id)
+    } yield userOpt
+      .map { user =>
+        Ok(Json.toJson(user))
+      }
+      .getOrElse(NotFound)
   }
 
   def patchUser = SecuredAction.async(parse.json) { implicit request =>
