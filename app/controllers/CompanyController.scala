@@ -195,7 +195,6 @@ class CompanyController @Inject() (
   def visibleCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
-      .map(_.map(_.toVisibleCompany))
       .map(x => Ok(Json.toJson(x)))
   }
 

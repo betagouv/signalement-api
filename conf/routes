@@ -144,7 +144,7 @@ GET           /api/reported-phones/extract                           controllers
 
 # Report notifications block list API
 GET /api/report-notification-blocklist controllers.ReportNotificationBlocklistController.getAll()
-POST /api/report-notification-blocklist controllers.ReportNotificationBlocklistController.create()
-DELETE /api/report-notification-blocklist controllers.ReportNotificationBlocklistController.delete(companyId: java.util.UUID)
+POST /api/report-notification-blocklist/:companyId controllers.ReportNotificationBlocklistController.create(companyId: java.util.UUID)
+DELETE /api/report-notification-blocklist/:companyId controllers.ReportNotificationBlocklistController.delete(companyId: java.util.UUID)
 
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)

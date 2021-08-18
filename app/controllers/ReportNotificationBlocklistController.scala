@@ -28,17 +28,8 @@ class ReportNotificationBlocklistController @Inject() (
     repository.findByUser(request.identity.id).map(entities => Ok(Json.toJson(entities)))
   }
 
-  private[this] case class Create(companyId: UUID)
-
-  private[this] val createFormat = Json.format[Create]
-
-  def create() = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
-    request.body
-      .validate[Create](createFormat)
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        create => repository.create(request.identity.id, create.companyId).map(entity => Ok(Json.toJson(entity)))
-      )
+  def create(companyId: UUID) = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+    repository.create(request.identity.id, companyId).map(entity => Ok(Json.toJson(entity)))
   }
 
   def delete(companyId: UUID) = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>

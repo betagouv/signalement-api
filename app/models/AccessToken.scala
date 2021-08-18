@@ -52,5 +52,5 @@ case class ActivationRequest(
     companySiret: Option[SIRET]
 )
 object ActivationRequest {
-  implicit val ActivationRequestFormat = Json.format[ActivationRequest]
+  implicit val ActivationRequestFormat: OFormat[ActivationRequest] = Json.format[ActivationRequest]
 }

@@ -54,14 +54,6 @@ case class CompanyData(
     activityLabel = activityLabel,
     isMarketPlace = isMarketPlace
   )
-
-  def toVisibleCompany: VisibleCompany =
-    VisibleCompany(
-      denominationUsuelleEtablissement.getOrElse(""),
-      siret,
-      codePostalEtablissement,
-      etatAdministratifEtablissement.contains("F")
-    )
 }
 
 case class CompanyActivity(

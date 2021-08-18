@@ -42,7 +42,7 @@ class AccountController @Inject() (
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   implicit val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
 
-  def fetchUser = SecuredAction.async(parse.json) { implicit request =>
+  def fetchUser = SecuredAction.async { implicit request =>
     for {
       userOpt <- userRepository.findById(request.identity.id)
     } yield userOpt

@@ -1,6 +1,7 @@
 package orchestrators
 
 import javax.inject.Inject
+import models.Company
 import models.CompanyData
 import models.User
 import models.UserRoles
@@ -20,7 +21,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
     companyRepo: CompanyRepository
 )(implicit val executionContext: ExecutionContext) {
 
-  def fetchVisibleCompanies(pro: User): Future[List[CompanyData]] =
+  def fetchVisibleCompanies(pro: User): Future[Seq[Company]] =
     (for {
       authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
       headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets)
@@ -30,12 +31,8 @@ class CompaniesVisibilityOrchestrator @Inject() (
         companyDataRepo.searchBySirens(authorizedHeadOffices.map(SIREN.apply), includeClosed = true)
       companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSubcompanies, includeClosed = true)
     } yield companiesForHeadOffices.union(companiesWithoutHeadOffice).map(_._1).distinct)
-      .flatMap(filterReportedCompanyData)
-
-  private[this] def filterReportedCompanyData(companies: List[CompanyData]): Future[List[CompanyData]] =
-    for {
-      reportedCompaniesSiret <- companyRepo.findBySirets(companies.map(_.siret)).map(_.map(_.siret))
-    } yield companies.filter(x => reportedCompaniesSiret.contains(x.siret))
+      .map(_.map(_.siret))
+      .flatMap(companyRepo.findBySirets)
 
   def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
     for {
