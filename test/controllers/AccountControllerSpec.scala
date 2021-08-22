@@ -77,7 +77,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         Helpers.contentAsJson(result) must beEqualTo(
           Json.obj(
             "obj" -> Seq(
-              Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.toJson(Seq.empty))
+              Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.arr())
             )
           )
         )

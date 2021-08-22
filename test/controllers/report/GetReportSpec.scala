@@ -321,17 +321,17 @@ trait GetReportContext extends Mockito {
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
 
-  companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { pro =>
+  companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())
   }
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReport.id) returns Future(Some(alreadyRequestedReport))
-  mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
+  mockReportRepository.update(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
   mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
-  mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
+  mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
