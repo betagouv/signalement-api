@@ -24,9 +24,9 @@ import scala.concurrent.duration.Duration
 class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNotificationTaskSpec {
   override def is =
     s2"""
-      When weekly reportNotificationTask task run               ${step(
+      When weekly reportNotificationTask task run               ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf)
-    )}
+    }}
       A mail is sent to the subscribed user                     ${mailMustHaveBeenSent(
       Seq(user.email),
       s"[SignalConso] 3 nouveaux signalements",

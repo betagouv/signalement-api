@@ -39,10 +39,10 @@ import scala.concurrent.duration.Duration
 class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step(someLoginInfo = None)}
-         When post a response                                         ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         When post a response                                         ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
          Then result status is not authorized                         ${resultStatusMustBe(Status.UNAUTHORIZED)}
     """
 }
@@ -50,12 +50,12 @@ class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends Rep
 class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-         Given an authenticated pro user which is not concerned by the report   ${step(someLoginInfo =
-      Some(notConcernedProLoginInfo)
-    )}
-         When post a response                                                   ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+         Given an authenticated pro user which is not concerned by the report   ${step {
+      someLoginInfo = Some(notConcernedProLoginInfo)
+    }}
+         When post a response                                                   ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
          Then result status is not found                                        ${resultStatusMustBe(Status.NOT_FOUND)}
     """
 }
@@ -63,12 +63,12 @@ class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends Rep
 class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "ACCEPTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "ACCEPTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -99,12 +99,12 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
 class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which have rights on head office         ${step(someLoginInfo =
-      Some(concernedHeadOfficeProLoginInfo)
-    )}
-        When post a response with type "ACCEPTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+        Given an authenticated pro user which have rights on head office         ${step {
+      someLoginInfo = Some(concernedHeadOfficeProLoginInfo)
+    }}
+        When post a response with type "ACCEPTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -135,12 +135,12 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
 class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "REJECTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseRejected))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "REJECTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseRejected))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -170,12 +170,12 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
 class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "NOT_CONCERNED"                           ${step(someResult =
-      Some(postReportResponse(reportResponseNotConcerned))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "NOT_CONCERNED"                           ${step {
+      someResult = Some(postReportResponse(reportResponseNotConcerned))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
