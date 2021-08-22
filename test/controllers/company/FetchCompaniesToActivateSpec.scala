@@ -179,7 +179,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
         _ <- setupCaseCompanyNotifiedTwice
         _ <- setupCaseCompanyNoticeRequired
 
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

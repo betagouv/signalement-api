@@ -168,7 +168,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
         _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
         _ <- reportRepository.create(reportNAOnHeadOffice)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
@@ -177,7 +177,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       for {
         _ <- companyDataRepository.delete(headOfficeCompanyData.id)
         _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

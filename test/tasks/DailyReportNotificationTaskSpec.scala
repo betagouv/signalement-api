@@ -120,7 +120,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- subscriptionRepository.create(covidSubscription)
         _ <- subscriptionRepository.create(tagSubscription)
         _ <- subscriptionRepository.create(countrySubscription)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

@@ -99,7 +99,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- eventRepository.createEvent(responseEvent)
         _ <- eventRepository.createEvent(responseWithReviewEvent)
         _ <- eventRepository.createEvent(reviewEvent)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

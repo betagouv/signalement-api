@@ -262,7 +262,7 @@ class ReportOrchestrator @Inject() (
                  .map(Some(_))
              case _ => Future(None)
            }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield updatedReport
 
   def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumer, userUUID: UUID): Future[Option[Report]] =
@@ -352,7 +352,7 @@ class ReportOrchestrator @Inject() (
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
-      Unit
+      ()
     }
 
   def deleteReport(id: UUID) =
@@ -360,7 +360,7 @@ class ReportOrchestrator @Inject() (
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
       _ <- reportRepository.delete(id)
-      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
+      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =

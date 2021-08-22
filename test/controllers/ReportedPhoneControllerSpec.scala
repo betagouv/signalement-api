@@ -49,7 +49,7 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
           reportRepository.create(
             Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone), category = report2.category)
           )
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

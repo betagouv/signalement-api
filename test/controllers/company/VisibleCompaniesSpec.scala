@@ -81,7 +81,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
 
         _ <- companyRepository.getOrCreate(companyWithoutAccess.siret, companyWithoutAccess)
         _ <- companyDataRepository.create(companyWithoutAccessData)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def cleanupData =
@@ -91,7 +91,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
         _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
         _ <- companyDataRepository.delete(subsidiaryClosedCompanyData.id)
         _ <- companyDataRepository.delete(companyWithoutAccessData.id)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

@@ -298,7 +298,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
         company <- companyRepository.getOrCreate(company.siret, company)
         admin <- userRepository.create(user)
         _ <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   def setupReport(report: Report) =

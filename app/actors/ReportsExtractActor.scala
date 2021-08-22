@@ -67,7 +67,7 @@ class ReportsExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(requestedBy, filters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)

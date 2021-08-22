@@ -58,7 +58,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
                .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

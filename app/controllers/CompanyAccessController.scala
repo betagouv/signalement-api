@@ -56,7 +56,7 @@ class CompanyAccessController @Inject() (
         .map(level =>
           for {
             user <- userRepository.get(userId)
-            _ <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(Unit))
+            _ <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(()))
           } yield if (user.isDefined) Ok else NotFound
         )
         .getOrElse(Future(NotFound))
@@ -66,7 +66,7 @@ class CompanyAccessController @Inject() (
     implicit request =>
       for {
         user <- userRepository.get(userId)
-        _ <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
+        _ <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(()))
       } yield if (user.isDefined) Ok else NotFound
   }
 
@@ -125,7 +125,7 @@ class CompanyAccessController @Inject() (
     implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)
-        _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(Unit))
+        _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(()))
       } yield if (token.isDefined) Ok else NotFound
   }
 

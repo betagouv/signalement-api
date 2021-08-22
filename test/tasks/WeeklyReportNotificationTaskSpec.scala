@@ -176,7 +176,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- subscriptionRepository.create(userSubscriptionCountries)
         _ <- subscriptionRepository.create(officeSubscription)
         _ <- subscriptionRepository.create(userSubscriptionWithoutReport)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
