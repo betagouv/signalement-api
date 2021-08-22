@@ -113,7 +113,7 @@ case class Report(
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
+  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute() && !tags.contains(Tags.DangerousProduct)
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }

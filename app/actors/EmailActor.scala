@@ -15,9 +15,10 @@ import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object EmailActor {
-  def props = Props[EmailActor]
+  def props = Props[EmailActor]()
 
   case class EmailRequest(
       from: EmailAddress,

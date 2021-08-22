@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportedPhonesExtractActor {
-  def props = Props[ReportedPhonesExtractActor]
+  def props = Props[ReportedPhonesExtractActor]()
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
   case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)

@@ -67,7 +67,9 @@ class ReportDataRepository @Inject() (
                      )
       _ <-
         db.run(
-          reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes), e._3)))
+          reportDataTableQuery.insertOrUpdateAll(
+            delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes.toDouble), e._3))
+          )
         )
     } yield Unit
 
@@ -95,7 +97,9 @@ class ReportDataRepository @Inject() (
                      )
       _ <-
         db.run(
-          reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes))))
+          reportDataTableQuery.insertOrUpdateAll(
+            delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes.toDouble)))
+          )
         )
     } yield Unit
 

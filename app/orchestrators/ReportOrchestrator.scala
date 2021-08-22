@@ -188,7 +188,7 @@ class ReportOrchestrator @Inject() (
                   pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)),
                   "application/pdf"
                 )
-              ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
+              ).filter(_ => report.isContractualDispute() && report.companyId.isDefined)
           )
           logger.debug(s"Report ${report.id} created")
           Some(report)
