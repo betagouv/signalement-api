@@ -60,7 +60,7 @@ class ReminderTask @Inject() (
     else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
     runTask(LocalDate.now.atStartOfDay())
   }

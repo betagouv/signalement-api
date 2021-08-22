@@ -110,7 +110,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   val countryReport =
     Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Suisse)))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)

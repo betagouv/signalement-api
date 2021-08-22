@@ -242,7 +242,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
     .copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         u <- userRepository.create(proUser)

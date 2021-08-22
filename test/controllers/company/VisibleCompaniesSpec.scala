@@ -67,7 +67,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   val companyWithoutAccess = Fixtures.genCompany.sample.get
   val companyWithoutAccessData = Fixtures.genCompanyData(Some(companyWithoutAccess)).sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(proUserWithAccessToHeadOffice)
@@ -92,7 +92,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
       } yield (),
       Duration.Inf
     )
-  override def cleanupData =
+  override def cleanupData() =
     Await.result(
       for {
         _ <- companyDataRepository.delete(headOfficeCompanyData.id)

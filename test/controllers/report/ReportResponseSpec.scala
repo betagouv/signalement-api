@@ -265,7 +265,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseNotConcerned =
     ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
-  override def setupData = {
+  override def setupData() = {
     reviewUrl =
       app.configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${reportFixture.id}/avis")
     Await.result(

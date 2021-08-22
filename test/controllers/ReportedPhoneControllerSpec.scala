@@ -37,7 +37,7 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
   val company = Fixtures.genCompany.sample.get
   val reportedPhone = Fixtures.genReportedPhone.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)

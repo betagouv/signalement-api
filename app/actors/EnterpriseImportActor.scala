@@ -43,7 +43,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object EnterpriseSyncActor {
-  def props = Props[EnterpriseSyncActor]
+  def props = Props[EnterpriseSyncActor]()
 
   sealed trait Command
 

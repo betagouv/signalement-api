@@ -151,7 +151,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -176,7 +176,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def cleanupData =
+  override def cleanupData() =
     Await.result(
       for {
         _ <- companyDataRepository.delete(headOfficeCompanyData.id)

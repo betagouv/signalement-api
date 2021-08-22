@@ -40,7 +40,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
   val website2 = Fixtures.genWebsiteURL.sample.get
   val websiteWithCompany = Fixtures.genWebsiteURL.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
