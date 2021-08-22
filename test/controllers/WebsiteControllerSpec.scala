@@ -40,7 +40,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
   val website2 = Fixtures.genWebsiteURL.sample.get
   val websiteWithCompany = Fixtures.genWebsiteURL.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -59,7 +59,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
                  .get
                  .copy(websiteURL = WebsiteURL(Some(websiteWithCompany), websiteWithCompany.getHost))
              )
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

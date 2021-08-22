@@ -96,7 +96,8 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
 
   def insertAll(companies: Map[String, Option[String]]): DBIO[Int] = {
 
-    val companyKeyValues: Map[String, String] = companies.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
+    val companyKeyValues: Map[String, String] =
+      companies.view.mapValues(maybeValue => toOptionalSqlValue(maybeValue)).toMap
     val insertColumns: String = companyKeyValues.keys.mkString(",")
     val insertValues: String = companyKeyValues.values.mkString(",")
     val insertValuesOnSiretConflict: String = companyKeyValues

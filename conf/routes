@@ -49,10 +49,10 @@ GET           /api/ext/reports/:uuid                                 controllers
 
 # Admin API
 
-GET           /api/admin/test-email                                  controllers.AdminController.getEmailCodes
+GET           /api/admin/test-email                                  controllers.AdminController.getEmailCodes()
 POST          /api/admin/test-email                                  controllers.AdminController.sendTestEmail(templateRef, to)
-POST          /api/admin/emails/proAckToConsumer                     controllers.AdminController.sendProAckToConsumer
-POST          /api/admin/emails/newReportToPro                       controllers.AdminController.sendNewReportToPro
+POST          /api/admin/emails/proAckToConsumer                     controllers.AdminController.sendProAckToConsumer()
+POST          /api/admin/emails/newReportToPro                       controllers.AdminController.sendNewReportToPro()
 
 # Async files API
 GET           /api/async-files                                       controllers.AsyncFileController.listAsyncFiles(kind: Option[String])
@@ -64,8 +64,8 @@ GET           /api/constants/reportStatus                            controllers
 GET           /api/constants/countries                               controllers.ConstantController.getCountries()
 
 # Authentication API
-POST          /api/authenticate                                      controllers.AuthController.authenticate
-POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword
+POST          /api/authenticate                                      controllers.AuthController.authenticate()
+POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
 
 # Enterprises sync
@@ -91,23 +91,23 @@ POST          /api/accesses/:siret/invitation                        controllers
 
 # Account API
 GET           /api/account/token                                     controllers.AccountController.fetchTokenInfo(token: String)
-POST          /api/account/password                                  controllers.AccountController.changePassword
-POST          /api/account/activation                                controllers.AccountController.activateAccount
-POST          /api/account/dgccrf/invitation                         controllers.AccountController.sendDGCCRFInvitation
-GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF
-GET           /api/account/dgccrf/users                              controllers.AccountController.fetchDGCCRFUsers
-POST          /api/account/validate-email                            controllers.AccountController.validateEmail
+POST          /api/account/password                                  controllers.AccountController.changePassword()
+POST          /api/account/activation                                controllers.AccountController.activateAccount()
+POST          /api/account/dgccrf/invitation                         controllers.AccountController.sendDGCCRFInvitation()
+GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF()
+GET           /api/account/dgccrf/users                              controllers.AccountController.fetchDGCCRFUsers()
+POST          /api/account/validate-email                            controllers.AccountController.validateEmail()
 
 # EmailValidation API
-POST          /api/email/check                                       controllers.EmailValidationController.checkEmail
-POST          /api/email/validate                                    controllers.EmailValidationController.validEmail
+POST          /api/email/check                                       controllers.EmailValidationController.checkEmail()
+POST          /api/email/validate                                    controllers.EmailValidationController.validEmail()
 
 # Company details API
-POST          /api/companies                                         controllers.CompanyController.create
+POST          /api/companies                                         controllers.CompanyController.create()
 GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
-GET           /api/companies/connected-user                          controllers.CompanyController.visibleCompanies
-GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate
-POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument
+GET           /api/companies/connected-user                          controllers.CompanyController.visibleCompanies()
+GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate()
+POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument()
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
 GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
@@ -118,11 +118,11 @@ PUT           /api/companies/:id/address                             controllers
 POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
 # Rating API
-POST          /api/rating                                            controllers.RatingController.rate
+POST          /api/rating                                            controllers.RatingController.rate()
 
 # Subscription API
-GET           /api/subscriptions                                     controllers.SubscriptionController.getSubscriptions
-POST          /api/subscriptions                                     controllers.SubscriptionController.createSubscription
+GET           /api/subscriptions                                     controllers.SubscriptionController.getSubscriptions()
+POST          /api/subscriptions                                     controllers.SubscriptionController.createSubscription()
 PUT           /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.updateSubscription(subscriptionId: java.util.UUID)
 GET           /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.getSubscription(subscriptionId: java.util.UUID)
 DELETE        /api/subscriptions/:subscriptionId                     controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
@@ -133,7 +133,7 @@ GET           /api/websites/unregistered                             controllers
 GET           /api/websites/unregistered/extract                     controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                              controllers.WebsiteController.updateCompany(id: java.util.UUID)
 PUT           /api/websites/:id                                      controllers.WebsiteController.update(id: java.util.UUID)
-PUT           /api/websites                                          controllers.WebsiteController.create
+PUT           /api/websites                                          controllers.WebsiteController.create()
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
 GET           /migrate-database-addresses                            controllers.MigrateAddressController.run()

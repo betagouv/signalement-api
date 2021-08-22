@@ -24,7 +24,7 @@
         Malgré nos relances, <b>l'entreprise n'a pas souhaité lire votre signalement.</b>
     </p>
 
-    @if(!report.isContractualDispute) {
+    @if(!report.isContractualDispute()) {
         <p>
             Par contre, <b>les enquêteurs de la répression des fraudes ont bien reçu votre signalement.</b>
             <br/>
@@ -55,7 +55,7 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    @if(report.needWorkflowAttachment) {
+    @if(report.needWorkflowAttachment()) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;

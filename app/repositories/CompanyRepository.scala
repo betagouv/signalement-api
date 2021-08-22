@@ -342,7 +342,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       } yield (access.companyId, user))
         .to[List]
         .result
-    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
+    ).map(_.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
 
   def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
@@ -367,5 +367,5 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     )
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
-    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
+    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => ())
 }

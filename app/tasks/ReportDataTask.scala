@@ -44,6 +44,6 @@ class ReportDataTask @Inject() (
     for {
       _ <- reportDataRepository.updateReportReadDelay
       _ <- reportDataRepository.updateReportResponseDelay
-    } yield Unit
+    } yield ()
   }
 }

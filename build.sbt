@@ -3,7 +3,7 @@ organization := "fr.gouv.beta"
 
 version := "1.3.13"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.6"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 

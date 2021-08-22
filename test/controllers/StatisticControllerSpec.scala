@@ -248,7 +248,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   val allReports = lastYearReports ::: lastMonthReports ::: currentMonthReports
 
-  override def setupData = {
+  override def setupData() = {
     Await.result(companyRepository.getOrCreate(company.siret, company), Duration.Inf)
     for (report <- allReports)
       Await.result(reportRepository.create(report), Duration.Inf)

@@ -39,9 +39,9 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     s2"""
        Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and expired reading delay   ${step(setupReport(report))}
-       When remind task run                                                         ${step(
+       When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
-    )}
+    }}
        Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
       report.id,
       ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -66,9 +66,9 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
     s2"""
        Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and no expired reading delay    ${step(setupReport(report))}
-       When remind task run                                                             ${step(
+       When remind task run                                                             ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
-    )}
+    }}
        Then no event is created                                                         ${eventMustNotHaveBeenCreated(
       report.id,
       List.empty
@@ -76,7 +76,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
        And the report is not updated                                                    ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-       And no mail is sent                                                              ${mailMustNotHaveBeenSent}
+       And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
     """
   }
 }

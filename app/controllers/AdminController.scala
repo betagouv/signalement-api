@@ -303,7 +303,7 @@ class AdminController @Inject() (
       Future(
         availableEmails
           .get(templateRef)
-          .map(_.apply)
+          .map(_.apply())
           .map { case EmailContent(subject, body) =>
             emailActor ? EmailActor.EmailRequest(
               from = mailFrom,
@@ -330,8 +330,7 @@ class AdminController @Inject() (
           } yield reports.foreach { report =>
             eventsMap
               .get(report.id)
-              .map(_.find(_.action == REPORT_PRO_RESPONSE))
-              .flatten
+              .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
               .map { responseEvent =>
                 emailActor ? EmailActor.EmailRequest(
                   from = mailFrom,
@@ -347,7 +346,6 @@ class AdminController @Inject() (
                   attachments = mailerService.attachmentSeqForWorkflowStepN(4)
                 )
               }
-              .getOrElse()
           }
           Future(Ok)
         }

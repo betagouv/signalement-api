@@ -43,7 +43,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object EnterpriseSyncActor {
-  def props = Props[EnterpriseSyncActor]
+  def props = Props[EnterpriseSyncActor]()
 
   sealed trait Command
 
@@ -140,13 +140,13 @@ class EnterpriseSyncActor @Inject() (
 
     val EtablissementIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
       Flow[Map[String, String]]
-        .map(_.mapValues(x => Option(x).filter(_.trim.nonEmpty)): Map[String, Option[String]])
+        .map(_.view.mapValues(x => Option(x).filter(_.trim.nonEmpty)).toMap: Map[String, Option[String]])
         .filter { columnsValueMap =>
           columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
         }
         .grouped(batchSize)
         .via(
-          Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
+          Slick.flow(4, group => group.map(companyDataRepository.insertAll).reduceLeft(_.andThen(_)))
         )
         .via(sharedKillSwitch.flow)
 

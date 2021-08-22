@@ -20,14 +20,14 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val marketplaceCompany = Fixtures.genCompany.sample.get
   val pendingCompany = Fixtures.genCompany.sample.get
 
-  val defaultWebsite = Fixtures.genWebsite.sample.get.copy(companyId = defaultCompany.id, kind = WebsiteKind.DEFAULT)
+  val defaultWebsite = Fixtures.genWebsite().sample.get.copy(companyId = defaultCompany.id, kind = WebsiteKind.DEFAULT)
   val marketplaceWebsite =
-    Fixtures.genWebsite.sample.get.copy(companyId = marketplaceCompany.id, kind = WebsiteKind.MARKETPLACE)
-  val pendingWebsite = Fixtures.genWebsite.sample.get.copy(companyId = pendingCompany.id, kind = WebsiteKind.PENDING)
+    Fixtures.genWebsite().sample.get.copy(companyId = marketplaceCompany.id, kind = WebsiteKind.MARKETPLACE)
+  val pendingWebsite = Fixtures.genWebsite().sample.get.copy(companyId = pendingCompany.id, kind = WebsiteKind.PENDING)
 
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
-  override def setupData() {
+  override def setupData() =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(defaultCompany.siret, defaultCompany)
@@ -36,10 +36,9 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
         _ <- websiteRepository.create(defaultWebsite)
         _ <- websiteRepository.create(marketplaceWebsite)
         _ <- websiteRepository.create(pendingWebsite)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
-  }
 
   def is = s2"""
 

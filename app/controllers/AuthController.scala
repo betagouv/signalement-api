@@ -122,7 +122,7 @@ class AuthController @Inject() (
       bodyHtml = views.html.mails.resetPassword(user, authToken).toString
     )
     logger.debug(s"Sent password reset to ${user.email}")
-    Future(Unit)
+    Future(())
   }
 
   def resetPassword(token: UUID) = UnsecuredAction.async(parse.json) { implicit request =>
