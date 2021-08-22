@@ -95,7 +95,7 @@ class MailService @Inject() (
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_READING,
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment())
       )
 
     def sendAttachmentSeqForWorkflowStepN(report: Report): Unit =
@@ -104,7 +104,7 @@ class MailService @Inject() (
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment())
       )
 
     def sendReportToConsumerAcknowledgmentPro(report: Report, reportResponse: ReportResponse): Unit =
@@ -144,7 +144,7 @@ class MailService @Inject() (
               pdfService.getPdfData(views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)),
               "application/pdf"
             )
-          ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
+          ).filter(_ => report.isContractualDispute() && report.companyId.isDefined)
       )
   }
 

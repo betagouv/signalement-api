@@ -85,7 +85,7 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
          When retrieving reports                                                    ${step {
       someResult = Some(getReports(Some("badvalue")))
     }}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered()}
     """
 }
 

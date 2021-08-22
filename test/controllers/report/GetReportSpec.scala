@@ -240,7 +240,8 @@ trait GetReportContext extends Mockito {
 
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
-  val companyData = Fixtures.genCompanyData().sample.get
+  val company = Fixtures.genCompany.sample.get
+  val companyData = Fixtures.genCompanyData(Some(company))
 
   val address = Fixtures.genAddress()
 
@@ -248,10 +249,10 @@ trait GetReportContext extends Mockito {
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
-    companyId = Some(companyData.id),
+    companyId = Some(company.id),
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
-    companySiret = Some(companyData.siret),
+    companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -266,10 +267,10 @@ trait GetReportContext extends Mockito {
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
-    companyId = Some(companyData.id),
+    companyId = Some(company.id),
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
-    companySiret = Some(companyData.siret),
+    companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -284,10 +285,10 @@ trait GetReportContext extends Mockito {
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
-    companyId = Some(companyData.id),
+    companyId = Some(company.id),
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
-    companySiret = Some(companyData.siret),
+    companySiret = Some(company.siret),
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -323,7 +324,7 @@ trait GetReportContext extends Mockito {
   lazy val mailService = application.injector.instanceOf[MailService]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
-    Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(companyData) else List())
+    Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())
   }
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
@@ -340,7 +341,7 @@ trait GetReportContext extends Mockito {
       Event(
         Some(UUID.randomUUID()),
         Some(alreadyRequestedReport.id),
-        Some(companyData.id),
+        Some(company.id),
         Some(concernedProUser.id),
         Some(OffsetDateTime.now()),
         EventType.PRO,
