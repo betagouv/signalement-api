@@ -169,7 +169,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
            )
     } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)

@@ -162,7 +162,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(companyAddress = Address(country = Some(Country.Argentine)), creationDate = OffsetDateTime.now.minusDays(4))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(user)

@@ -50,7 +50,7 @@ object GetReportByUnauthenticatedUser extends GetReportSpec {
          When retrieving the report                                   ${step(someResult =
       Some(getReport(neverRequestedReport.id))
     )}
-         Then user is not authorized                                  ${userMustBeUnauthorized}
+         Then user is not authorized                                  ${userMustBeUnauthorized()}
     """
 }
 
@@ -77,7 +77,7 @@ object GetReportByNotConcernedProUser extends GetReportSpec {
          When getting the report                                                ${step(someResult =
       Some(getReport(neverRequestedReport.id))
     )}
-         Then the report is not found                                           ${reportMustBeNotFound}
+         Then the report is not found                                           ${reportMustBeNotFound()}
     """
 }
 
@@ -121,8 +121,8 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_READING_BY_PRO
     )}
-         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated}
-         And no mail is sent                                                    ${mailMustNotHaveBeenSent}
+         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
+         And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedFinalReport,
       UserRoles.Pro
@@ -139,9 +139,9 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
          When retrieving the report not for the first time                      ${step(someResult =
       Some(getReport(alreadyRequestedReport.id))
     )}
-         Then no event is created                                               ${eventMustNotHaveBeenCreated}
-         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated}
-         And no mail is sent                                                    ${mailMustNotHaveBeenSent}
+         Then no event is created                                               ${eventMustNotHaveBeenCreated()}
+         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
+         And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       alreadyRequestedReport,
       UserRoles.Pro

@@ -82,7 +82,7 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Trans
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -136,7 +136,7 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -200,7 +200,7 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Transm
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
    """
   }
 }
@@ -305,5 +305,5 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     Await.result(reportRepository.create(report), Duration.Inf)
   def setupEvent(event: Event) =
     Await.result(eventRepository.createEvent(event), Duration.Inf)
-  override def setupData() {}
+  override def setupData() = {}
 }

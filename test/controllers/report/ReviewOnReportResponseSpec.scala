@@ -89,7 +89,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   var someResult: Option[Result] = None
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)

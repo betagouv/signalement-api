@@ -35,7 +35,7 @@ class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetRepo
     s2"""
          Given an unauthenticated user                                ${step(someLoginInfo = None)}
          When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then user is not authorized                                  ${userMustBeUnauthorized}
+         Then user is not authorized                                  ${userMustBeUnauthorized()}
     """
 }
 
@@ -83,7 +83,7 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
          When retrieving reports                                                    ${step(someResult =
       Some(getReports(Some("badvalue")))
     )}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered()}
     """
 }
 
@@ -147,7 +147,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -172,7 +172,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def cleanupData =
+  override def cleanupData() =
     Await.result(
       for {
         _ <- companyDataRepository.delete(headOfficeCompanyData.id)

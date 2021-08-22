@@ -76,7 +76,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
        And the report is not updated                                                    ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-       And no mail is sent                                                              ${mailMustNotHaveBeenSent}
+       And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
     """
   }
 }

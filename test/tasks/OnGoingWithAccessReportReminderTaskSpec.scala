@@ -78,7 +78,7 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -128,7 +128,7 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -190,7 +190,7 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
    """
   }
 }

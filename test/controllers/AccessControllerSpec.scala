@@ -31,7 +31,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   val proMemberUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         admin <- userRepository.create(proAdminUser)

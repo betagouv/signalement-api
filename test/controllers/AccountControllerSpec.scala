@@ -51,7 +51,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(proUser)
@@ -86,7 +86,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
     "activateAccount" should {
       "raise a 409 in case of duplicate email addresse" in {
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
@@ -130,7 +130,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           } yield token,
           Duration.Inf
         )
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
@@ -152,7 +152,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send an invalid DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@example.com"))
 
@@ -161,7 +161,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send a DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
 
@@ -173,7 +173,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         val ccrfUser = Fixtures.genUser.sample.get
         val ccrfToken =
           Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf.gouv.fr")), Duration.Inf).head
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
