@@ -112,8 +112,11 @@ class ReminderTask @Inject() (
   private[this] def getReportsWithAdminsByStatus(status: ReportStatusValue): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
-      adminsMap <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(reports.flatMap(_.companySiret))
-    } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
+      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(reports.flatMap(c => for {
+        siret <- c.companySiret
+        id <- c.companyId
+      } yield (siret, id)))
+    } yield reports.flatMap(r => r.companyId.map(companyId => (r, mapAdminsByCompanyId.getOrElse(companyId, Nil))))
 
   def extractEventsWithAction(
       reportId: UUID,
@@ -156,7 +159,7 @@ class ReminderTask @Inject() (
             reportWithAdmins._1.id,
             reportEventsMap,
             EMAIL_PRO_REMIND_NO_READING
-          ).head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)
+          ).head.creationDate.exists(_.toLocalDateTime.isBefore(now.minusDays(7)))
         )
 
   def remindUnreadReportByMail(
@@ -212,8 +215,7 @@ class ReminderTask @Inject() (
         .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
         .filter(reportWithAdmins =>
           extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).head.creationDate
-            .map(_.toLocalDateTime.isBefore(now.minusDays(7)))
-            .getOrElse(false)
+            .exists(_.toLocalDateTime.isBefore(now.minusDays(7)))
         )
 
   def remindTransmittedReportByMail(
@@ -241,12 +243,6 @@ class ReminderTask @Inject() (
       )
       .map { newEvent =>
         mailService.Pro.sendReportTransmittedReminder(adminMails, report, expirationDate)
-        //        emailActor ? EmailActor.EmailRequest(
-        //          from = configuration.get[EmailAddress]("play.mail.from"),
-        //          recipients = adminMails,
-        //          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-        //          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
-        //        )
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
   }
@@ -260,8 +256,7 @@ class ReminderTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING)
-          .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay))).getOrElse(false))
-          .length == 2
+          .count(_.creationDate.exists(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay)))) == 2
       )
 
   def closeUnreadReport(report: Report) =
@@ -304,8 +299,7 @@ class ReminderTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION)
-          .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay))).getOrElse(false))
-          .length == 2
+          .count(_.creationDate.exists(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay)))) == 2
       )
 
   def closeTransmittedReportByNoAction(report: Report) =

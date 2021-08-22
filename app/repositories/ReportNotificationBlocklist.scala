@@ -7,6 +7,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.ReportStatus.ReportStatusValue
+import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -52,9 +53,22 @@ class ReportNotificationBlocklistRepository @Inject() (
   import dbConfig._
 
   val query = ReportNotificationBlocklistTables.tables
+  val queryUser = UserTables.tables
 
-  def findByUser(userId: UUID): Future[Seq[ReportNotificationBlocklist]] =
+  def findByUserId(userId: UUID): Future[Seq[ReportNotificationBlocklist]] =
     db.run(query.filter(_.userId === userId).result)
+
+  def filterBlockedEmails(email: List[EmailAddress], companyId: UUID): Future[List[EmailAddress]] =
+    db.run(
+      query
+        .filter(_.companyId === companyId)
+        .join(queryUser)
+        .on(_.userId === _.id)
+        .filterNot(_._2.email inSet email)
+        .map(_._2.email)
+        .to[List]
+        .result
+    )
 
   def create(userId: UUID, companyId: UUID): Future[ReportNotificationBlocklist] = {
     val entity = ReportNotificationBlocklist(userId = userId, companyId = companyId)

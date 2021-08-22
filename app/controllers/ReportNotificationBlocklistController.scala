@@ -25,7 +25,7 @@ class ReportNotificationBlocklistController @Inject() (
 ) extends BaseController {
 
   def getAll() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
-    repository.findByUser(request.identity.id).map(entities => Ok(Json.toJson(entities)))
+    repository.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))
   }
 
   def create(companyId: UUID) = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>

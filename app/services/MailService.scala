@@ -9,6 +9,7 @@ import play.api.Logger
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
 import play.api.mvc.Request
+import repositories.ReportNotificationBlocklistRepository
 import utils.Constants.Tags
 import utils.EmailAddress
 import utils.EmailSubjects
@@ -17,6 +18,7 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
@@ -26,6 +28,7 @@ class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
     configuration: Configuration,
     mailerService: MailerService,
+    reportNotificationBlocklistRepo: ReportNotificationBlocklistRepository,
     val pdfService: PDFService
 )(implicit
     private[this] val executionContext: ExecutionContext
@@ -48,15 +51,25 @@ class MailService @Inject() (
       attachments: Seq[Attachment] = Seq.empty,
       times: Int = 0
   ): Unit =
-    actor ? EmailRequest(
-      from = from,
-      recipients = recipients,
-      subject = subject,
-      bodyHtml = bodyHtml,
-      blindRecipients = blindRecipients,
-      attachments = attachments,
-      times = times
-    )
+    if (recipients.exists(_.value != "")) {
+      actor ? EmailRequest(
+        from = from,
+        recipients = recipients,
+        subject = subject,
+        bodyHtml = bodyHtml,
+        blindRecipients = blindRecipients,
+        attachments = attachments,
+        times = times
+      )
+    }
+
+  private[this] def sendIfPossible(adminMails: List[EmailAddress], report: Report)(cb: (List[EmailAddress]) => Unit) =
+    report.companyId.map { companyId =>
+      reportNotificationBlocklistRepo
+        .filterBlockedEmails(adminMails, companyId)
+        .filter(_.nonEmpty)
+        .map(cb)
+    }
 
   object Common {
 
@@ -150,35 +163,39 @@ class MailService @Inject() (
 
   object Pro {
 
-    def sendReportUnreadReminder(adminMails: Seq[EmailAddress], report: Report, expirationDate: OffsetDateTime): Unit =
-      send(
-        from = mailFrom,
-        recipients = adminMails,
-        subject = EmailSubjects.REPORT_UNREAD_REMINDER,
-        bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
+    def sendReportUnreadReminder(adminMails: List[EmailAddress], report: Report, expirationDate: OffsetDateTime): Unit =
+      sendIfPossible(adminMails, report)(filteredAdminEmails =>
+        send(
+          from = mailFrom,
+          recipients = filteredAdminEmails,
+          subject = EmailSubjects.REPORT_UNREAD_REMINDER,
+          bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
+        )
       )
 
     def sendReportTransmittedReminder(
-        adminMails: Seq[EmailAddress],
+        adminMails: List[EmailAddress],
         report: Report,
         expirationDate: OffsetDateTime
     ): Unit =
-      send(
-        from = mailFrom,
-        recipients = adminMails,
-        subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-        bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
-      )
-
-    def sendReportAcknowledgmentPro(user: User, reportResponse: ReportResponse): Unit =
-      if (user.email != "") {
+      sendIfPossible(adminMails, report)(filteredAdminEmails =>
         send(
           from = mailFrom,
-          recipients = Seq(user.email),
+          recipients = filteredAdminEmails,
+          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
+          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
+        )
+      )
+
+    def sendReportAcknowledgmentPro(user: User, report: Report, reportResponse: ReportResponse): Unit =
+      sendIfPossible(List(user.email), report)(filteredAdminEmails =>
+        send(
+          from = mailFrom,
+          recipients = filteredAdminEmails,
           subject = EmailSubjects.REPORT_ACK_PRO,
           bodyHtml = views.html.mails.professional.reportAcknowledgmentPro(reportResponse, user).toString
         )
-      }
+      )
 
     def sendCompanyAccessInvitation(
         company: Company,
@@ -193,12 +210,14 @@ class MailService @Inject() (
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
 
-    def sendReportNotification(admins: Seq[User], report: Report): Unit =
-      send(
-        from = mailFrom,
-        recipients = admins.map(_.email),
-        subject = EmailSubjects.NEW_REPORT,
-        bodyHtml = views.html.mails.professional.reportNotification(report).toString
+    def sendReportNotification(admins: List[EmailAddress], report: Report): Unit =
+      sendIfPossible(admins, report)(filteredAdminEmails =>
+        send(
+          from = mailFrom,
+          recipients = filteredAdminEmails,
+          subject = EmailSubjects.NEW_REPORT,
+          bodyHtml = views.html.mails.professional.reportNotification(report).toString
+        )
       )
 
     def sendNewCompanyAccessNotification(user: User, company: Company, invitedBy: Option[User]): Unit =

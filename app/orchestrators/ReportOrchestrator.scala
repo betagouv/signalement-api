@@ -75,7 +75,7 @@ class ReportOrchestrator @Inject() (
   private def notifyProfessionalOfNewReport(report: Report, reportCompanyId: UUID): Future[Report] =
     companyRepository.fetchAdmins(reportCompanyId).flatMap { admins =>
       if (admins.nonEmpty) {
-        mailService.Pro.sendReportNotification(admins, report)
+        mailService.Pro.sendReportNotification(admins.map(_.email), report)
         val user = admins.head // We must chose one as Event links to a single User
         eventRepository
           .createEvent(
@@ -373,7 +373,7 @@ class ReportOrchestrator @Inject() (
   }
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    mailService.Pro.sendReportAcknowledgmentPro(user, reportResponse)
+    mailService.Pro.sendReportAcknowledgmentPro(user, report, reportResponse)
     mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, reportResponse)
   }
 
