@@ -36,7 +36,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
         _ <- websiteRepository.create(defaultWebsite)
         _ <- websiteRepository.create(marketplaceWebsite)
         _ <- websiteRepository.create(pendingWebsite)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   }

@@ -22,7 +22,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
 
   override def setupData() {
     Await.result(userRepository.create(userToto), Duration.Inf)
-    Unit
+    ()
   }
 
   def is = s2"""

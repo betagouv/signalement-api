@@ -25,9 +25,9 @@ import scala.concurrent.duration.Duration
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
   override def is =
     s2"""
-         When daily reportNotificationTask task run                                      ${step(
+         When daily reportNotificationTask task run                                      ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    )}
+    }}
          And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
       Seq(covidEmail),
       s"[SignalConso] Un nouveau signalement",
@@ -120,7 +120,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- subscriptionRepository.create(covidSubscription)
         _ <- subscriptionRepository.create(tagSubscription)
         _ <- subscriptionRepository.create(countrySubscription)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

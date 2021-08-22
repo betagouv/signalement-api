@@ -105,7 +105,7 @@ class CompanyController @Inject() (
     logger.debug(s"searchCompanyByIdentity $identity")
 
     (identity.replaceAll("\\s", "") match {
-      case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
+      case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretIncludingHeadOfficeWithActivity(SIRET(q))
       case q =>
         SIREN.pattern.r
           .findFirstIn(q)

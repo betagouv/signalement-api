@@ -192,7 +192,7 @@ class AccessTokenRepository @Inject() (
             .update(false)
         )
         .transactionally
-    ).map(_ => Unit)
+    ).map(_ => ())
 
   def invalidateToken(token: AccessToken): Future[Int] =
     db.run(

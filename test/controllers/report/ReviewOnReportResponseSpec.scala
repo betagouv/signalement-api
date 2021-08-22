@@ -27,10 +27,10 @@ import scala.concurrent.duration.Duration
 class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report without response                              ${step(reportId = reportWithoutResponse.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report without response                              ${step { reportId = reportWithoutResponse.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is forbidden                              ${resultStatusMustBe(Status.FORBIDDEN)}
     """
 }
@@ -38,10 +38,10 @@ class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnR
 class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report with a response                               ${step(reportId = reportWithResponse.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report with a response                               ${step { reportId = reportWithResponse.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
          And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_REVIEW_ON_RESPONSE
@@ -52,10 +52,10 @@ class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespo
 class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report with a review                                ${step(reportId = reportWithReview.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report with a review                                ${step { reportId = reportWithReview.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is CONFLICT                               ${resultStatusMustBe(Status.CONFLICT)}
     """
 }
@@ -99,7 +99,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- eventRepository.createEvent(responseEvent)
         _ <- eventRepository.createEvent(responseWithReviewEvent)
         _ <- eventRepository.createEvent(reviewEvent)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

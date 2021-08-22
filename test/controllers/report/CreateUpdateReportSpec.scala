@@ -41,9 +41,10 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a dom tom department                                              ${step(draftReport =
-      draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
-    )}
+          a dom tom department                                              ${step {
+      draftReport =
+        draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
+    }}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TRAITEMENT_EN_COURS
@@ -60,12 +61,12 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          an experimentation department                                   ${step(draftReport =
-      draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0)))))
-    )}
-          an employee consumer                                            ${step(draftReport =
-      draftReport.copy(employeeConsumer = true)
-    )}
+          an experimentation department                                   ${step {
+      draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0)))))
+    }}
+          an employee consumer                                            ${step {
+      draftReport = draftReport.copy(employeeConsumer = true)
+    }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.EMPLOYEE_REPORT
@@ -83,9 +84,9 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has no account                                   ${step(draftReport =
-      draftReport.copy(companySiret = Some(anotherCompany.siret))
-    )}
+          a professional who has no account                                   ${step {
+      draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
+    }}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TRAITEMENT_EN_COURS
@@ -106,9 +107,9 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a professional who has an activated account                   ${step(draftReport =
-      draftReport.copy(companySiret = Some(existingCompany.siret))
-    )}
+          a professional who has an activated account                   ${step {
+      draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
+    }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TRAITEMENT_EN_COURS
@@ -137,9 +138,9 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
   override def is =
     s2"""
          Given a draft report which concerns
-          a dangerous product                                           ${step(draftReport =
-      draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(Tags.DangerousProduct))
-    )}
+          a dangerous product                                           ${step {
+      draftReport = draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(Tags.DangerousProduct))
+    }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.NA
@@ -156,10 +157,10 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
 object UpdateReportConsumer extends CreateUpdateReportSpec {
   override def is =
     s2"""
-         Given a preexisting report                                     ${step(report = existingReport)}
-         When the report consumer is updated                            ${step(
+         Given a preexisting report                                     ${step { report = existingReport }}
+         When the report consumer is updated                            ${step {
       updateReportConsumer(report.id, reportConsumer)
-    )}
+    }}
          Then the report contains updated info                          ${checkReport(
       report.copy(
         firstName = reportConsumer.firstName,
@@ -174,10 +175,10 @@ object UpdateReportConsumer extends CreateUpdateReportSpec {
 object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
   override def is =
     s2"""
-         Given a preexisting report                                     ${step(report = existingReport)}
-         When the report company is updated with same Siret             ${step(
+         Given a preexisting report                                     ${step { report = existingReport }}
+         When the report company is updated with same Siret             ${step {
       updateReportCompany(report.id, reportCompanySameSiret)
-    )}
+    }}
          Then the report contains updated info                          ${checkReport(
       report.copy(
         companyName = Some(reportCompanySameSiret.name),
@@ -191,10 +192,10 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
 object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
   override def is =
     s2"""
-         Given a preexisting report                                     ${step(report = existingReport)}
-         When the report company is updated with same Siret             ${step(
+         Given a preexisting report                                     ${step { report = existingReport }}
+         When the report company is updated with same Siret             ${step {
       updateReportCompany(report.id, reportCompanyAnotherSiret)
-    )}
+    }}
          Then the report contains updated info and the status is reset  ${checkReport(
       report.copy(
         companyId = Some(anotherCompany.id),
@@ -261,7 +262,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
                )
              )
         _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

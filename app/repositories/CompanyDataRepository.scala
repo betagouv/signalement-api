@@ -96,10 +96,11 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
 
   def insertAll(companies: Map[String, Option[String]]): DBIO[Int] = {
 
-    val companyKeyValues: Map[String, String] = companies.mapValues(maybeValue => toOptionalSqlValue(maybeValue))
+    val companyKeyValues: Map[String, String] =
+      companies.view.mapValues(maybeValue => toOptionalSqlValue(maybeValue)).toMap
     val insertColumns: String = companyKeyValues.keys.mkString(",")
     val insertValues: String = companyKeyValues.values.mkString(",")
-    val insertValuesOnSiretConflict: String = companyKeyValues
+    val insertValuesOnSiretConflict: String = companyKeyValues.view
       .filterKeys(_ != DENOMINATION_USUELLE_ETABLISSEMENT)
       .map { case (columnName, value) => s"$columnName = $value" }
       .mkString(",")
@@ -171,18 +172,17 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
       includeClosed: Boolean = false
   ): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret), includeClosed)
 
-  def searchHeadOffices(sirets: List[SIRET]): Future[List[SIRET]] =
+  def searchHeadOffices[T](sirets: List[SIRET]): Future[List[CompanyData]] =
     db.run(
       companyDataTableQuery
         .filter(_.siret inSetBind sirets)
         .filter(_.denominationUsuelleEtablissement.isDefined)
         .filter(_.etablissementSiege === "true")
-        .map(_.siret)
         .to[List]
         .result
     )
 
-  def searchBySiretWithHeadOffice(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
+  def searchBySiretIncludingHeadOfficeWithActivity(siret: SIRET): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(
       companyDataTableQuery
         .filter(_.siren === SIREN(siret))
@@ -191,6 +191,17 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
         .filter(filterClosedEtablissements)
         .joinLeft(companyActivityTableQuery)
         .on(_.activitePrincipaleEtablissement === _.code)
+        .to[List]
+        .result
+    )
+
+  def searchBySiretIncludingHeadOffice(siret: SIRET): Future[List[CompanyData]] =
+    db.run(
+      companyDataTableQuery
+        .filter(_.siren === SIREN(siret))
+        .filter(company => company.siret === siret || company.etablissementSiege === "true")
+        .filter(_.denominationUsuelleEtablissement.isDefined)
+        .filter(filterClosedEtablissements)
         .to[List]
         .result
     )
@@ -213,12 +224,16 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
   def searchBySiren(
       siren: SIREN,
       includeClosed: Boolean = false
-  ): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirens(List(siren))
+  ): Future[List[(CompanyData, Option[CompanyActivity])]] =
+    searchBySirens(List(siren))
 
   def searchHeadOfficeBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
+    searchHeadOfficeBySiren(List(siren)).map(_.headOption)
+
+  def searchHeadOfficeBySiren(sirens: List[SIREN]): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(
       companyDataTableQuery
-        .filter(_.siren === siren)
+        .filter(_.siren inSetBind sirens)
         .filter(_.etablissementSiege === "true")
         .filter(_.denominationUsuelleEtablissement.isDefined)
         .filter(filterClosedEtablissements)
@@ -226,7 +241,6 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
         .on(_.activitePrincipaleEtablissement === _.code)
         .to[List]
         .result
-        .headOption
     )
 }
 

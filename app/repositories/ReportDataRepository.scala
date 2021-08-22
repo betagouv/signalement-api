@@ -69,7 +69,7 @@ class ReportDataRepository @Inject() (
         db.run(
           reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, Some(e._2.toMinutes), e._3)))
         )
-    } yield Unit
+    } yield ()
 
   def updateReportResponseDelay =
     for {
@@ -97,7 +97,7 @@ class ReportDataRepository @Inject() (
         db.run(
           reportDataTableQuery.insertOrUpdateAll(delaisToAdd.map(e => ReportData(e._1.get, e._2, Some(e._3.toMinutes))))
         )
-    } yield Unit
+    } yield ()
 
   def getReportReadMedianDelay = db
     .run(

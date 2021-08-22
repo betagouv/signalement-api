@@ -67,7 +67,7 @@ class ReportsExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(requestedBy, filters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
@@ -307,7 +307,10 @@ class ReportsExtractActor @Inject() (
       paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
+      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
+                            paginatedReports.entities.flatMap(_.companyId),
+                            Seq(AccessLevel.ADMIN)
+                          )
     } yield {
       val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")

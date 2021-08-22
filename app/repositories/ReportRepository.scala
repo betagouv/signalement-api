@@ -557,16 +557,8 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] =
-    for {
-      reports <- db.run {
-                   reportTableQuery
-                     .filter(_.status === status.defaultValue)
-                     .to[List]
-                     .result
-                 }
-      adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
-    } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
+  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(

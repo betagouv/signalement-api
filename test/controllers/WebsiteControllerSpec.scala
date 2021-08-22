@@ -59,7 +59,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
                  .get
                  .copy(websiteURL = WebsiteURL(Some(websiteWithCompany), websiteWithCompany.getHost))
              )
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

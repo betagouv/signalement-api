@@ -292,8 +292,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 
-  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
-    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+  def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).to[List].result)
 
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
@@ -334,15 +334,30 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .result
     )
 
-  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] =
+  private[this] def fetchUsersAndAccessesByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[(UUID, User)]] =
     db.run(
       (for {
-        access <- UserAccessTableQuery if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        access <- UserAccessTableQuery if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
         user <- userRepository.userTableQuery if user.id === access.userId
-      } yield (access.companyId, user))
-        .to[List]
-        .result
-    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
+      } yield (access.companyId, user)).to[List].result
+    )
+
+  def fetchUsersByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[User]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
+
+  def fetchAdminsMapByCompany(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[Map[UUID, List[User]]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(users =>
+      users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
+    )
 
   def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
@@ -367,5 +382,5 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     )
 
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
-    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
+    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => ())
 }
