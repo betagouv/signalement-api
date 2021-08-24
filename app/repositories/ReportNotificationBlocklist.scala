@@ -64,11 +64,11 @@ class ReportNotificationBlocklistRepository @Inject() (
         .filter(_.companyId === companyId)
         .join(queryUser)
         .on(_.userId === _.id)
-        .filterNot(_._2.email inSet email)
+        .filter(_._2.email inSet email)
         .map(_._2.email)
         .to[List]
         .result
-    )
+    ).map(blockedEmails => email.diff(blockedEmails))
 
   def create(userId: UUID, companyId: UUID): Future[ReportNotificationBlocklist] = {
     val entity = ReportNotificationBlocklist(userId = userId, companyId = companyId)
