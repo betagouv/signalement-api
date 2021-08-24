@@ -53,8 +53,7 @@ class ReportOrchestrator @Inject() (
     @Named("email-actor") emailActor: ActorRef,
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
-    configuration: Configuration,
-    environment: Environment
+    configuration: Configuration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -341,8 +340,8 @@ class ReportOrchestrator @Inject() (
   def removeReportFile(id: UUID) =
     for {
       reportFile <- reportRepository.getFile(id)
-      repositoryDelete <- reportFile.map(f => reportRepository.deleteFile(f.id)).getOrElse(Future(None))
-      s3Delete <- reportFile.map(f => s3Service.delete(bucketName, f.storageFilename)).getOrElse(Future(None))
+      _ <- reportFile.map(f => reportRepository.deleteFile(f.id)).getOrElse(Future(None))
+      _ <- reportFile.map(f => s3Service.delete(bucketName, f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
   private def removeAccessToken(companyId: UUID) =
@@ -359,6 +358,9 @@ class ReportOrchestrator @Inject() (
     for {
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
+      _ <- reportRepository
+             .retrieveReportFiles(id)
+             .map(files => files.map(file => removeReportFile(file.id)))
       _ <- reportRepository.delete(id)
       _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
