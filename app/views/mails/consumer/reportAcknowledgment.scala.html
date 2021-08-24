@@ -73,7 +73,7 @@
                 Il est possible qu'ils vous contactent pour avoir des informations complémentaires.
             </p>
         }
-        case _ if report.isContractualDispute && report.companyId.isDefined => {
+        case _ if report.isContractualDispute() && report.companyId.isDefined => {
             <p>
                 Vous avez signalé un problème individuel (litige)
                     @report.companyName.map(name => s"avec l’entreprise $name").getOrElse(report.websiteURL.websiteURL.map(url => s"avec le site internet $url").getOrElse(""))
@@ -146,7 +146,7 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    @if(!report.isContractualDispute) {
+    @if(!report.isContractualDispute()) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;
@@ -193,7 +193,7 @@
                 <br/>
             }
             @if(report.websiteURL.websiteURL.isDefined) {
-                Site internet : @report.shortURL.get
+                Site internet : @report.shortURL().get
                 <br/>
             }
             @if(report.vendor.isDefined) {
@@ -217,7 +217,7 @@
         </div>
     }
 
-    @if(report.needWorkflowAttachment) {
+    @if(report.needWorkflowAttachment()) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;

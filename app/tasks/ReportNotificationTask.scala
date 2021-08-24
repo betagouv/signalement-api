@@ -52,7 +52,7 @@ class ReportNotificationTask @Inject() (
 
   val departments = Departments.ALL
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, 1.days) {
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, 1.days) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
 
     if (

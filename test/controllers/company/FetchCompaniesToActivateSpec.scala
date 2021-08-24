@@ -169,7 +169,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
            )
     } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -179,7 +179,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
         _ <- setupCaseCompanyNotifiedTwice
         _ <- setupCaseCompanyNoticeRequired
 
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

@@ -20,9 +20,9 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
   lazy val userRepository = injector.instanceOf[UserRepository]
   val userToto = Fixtures.genProUser.sample.get
 
-  override def setupData() {
+  override def setupData() = {
     Await.result(userRepository.create(userToto), Duration.Inf)
-    Unit
+    ()
   }
 
   def is = s2"""

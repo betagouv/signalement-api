@@ -71,6 +71,16 @@ object Company {
   }
 }
 
+case class CompanyWithNbReports(company: Company, count: Int)
+
+object CompanyWithNbReports {
+
+  implicit def writes: Writes[CompanyWithNbReports] = (data: CompanyWithNbReports) => {
+    val companyJson = Json.toJson(data.company).as[JsObject]
+    companyJson + ("count" -> Json.toJson(data.count))
+  }
+}
+
 case class CompanyAddressUpdate(
     address: Address,
     activationDocumentRequired: Boolean = false

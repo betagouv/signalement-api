@@ -99,9 +99,9 @@ class ReportController @Inject() (
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         reportResponse =>
           for {
-            viewableReport <- getViewableReportForUser(UUID.fromString(uuid), request.identity)
+            visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
             updatedReport <-
-              viewableReport
+              visibleReport
                 .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_)))
                 .getOrElse(Future(None))
           } yield updatedReport
@@ -206,8 +206,8 @@ class ReportController @Inject() (
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
-          viewableReport <- getViewableReportForUser(UUID.fromString(uuid), request.identity)
-          viewedReport <- viewableReport
+          visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
+          viewedReport <- visibleReport
                             .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
                             .getOrElse(Future(None))
           reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
@@ -269,11 +269,10 @@ class ReportController @Inject() (
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
-          viewableReport <- getViewableReportForUser(id, request.identity)
+          visibleReport <- getVisibleReportForUser(id, request.identity)
           events <- eventRepository.getEventsWithUsers(id, EventFilter())
-          companyEvents <- viewableReport
-                             .map(_.companyId)
-                             .flatten
+          companyEvents <- visibleReport
+                             .flatMap(_.companyId)
                              .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
                              .getOrElse(Future(List.empty))
           reportFiles <- reportRepository.retrieveReportFiles(id)
@@ -284,7 +283,7 @@ class ReportController @Inject() (
             .map(_.details)
             .map(_.as[ReportResponse])
 
-          viewableReport
+          visibleReport
             .map(report =>
               pdfService.Ok(
                 List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
@@ -407,20 +406,20 @@ class ReportController @Inject() (
 
     }
 
-  private def getViewableReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
+  private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
       report <- reportRepository.getReport(reportId)
-      viewableReport <-
+      visibleReport <-
         if (Seq(UserRoles.DGCCRF, UserRoles.Admin).contains(user.userRole))
           Future(report)
         else {
           companiesVisibilityOrchestrator
-            .fetchViewableCompanies(user)
+            .fetchVisibleCompanies(user)
             .map(_.map(v => Some(v.siret)))
             .map { viewableSirets =>
               report.filter(r => viewableSirets.contains(r.companySiret))
             }
         }
-    } yield viewableReport
+    } yield visibleReport
 
 }

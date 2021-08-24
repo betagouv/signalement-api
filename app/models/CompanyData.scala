@@ -83,14 +83,14 @@ object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
 }
 
-case class ViewableCompany(
+case class VisibleCompany(
     siret: SIRET,
     postalCode: Option[String],
     closed: Boolean
 )
 
-object ViewableCompany {
-  implicit val write: Writes[ViewableCompany] = Json.writes[ViewableCompany]
+object VisibleCompany {
+  implicit val write: Writes[VisibleCompany] = Json.writes[VisibleCompany]
 }
 
 object TypeVoies {

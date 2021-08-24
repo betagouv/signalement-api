@@ -70,7 +70,7 @@ class ReminderTask @Inject() (
     else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
     runTask(LocalDate.now.atStartOfDay())
   }
@@ -304,7 +304,7 @@ class ReminderTask @Inject() (
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_READING,
         bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment())
       )
       Reminder(report.id, ReminderValue.CloseUnreadReport)
     }
@@ -354,7 +354,7 @@ class ReminderTask @Inject() (
         recipients = Seq(report.email),
         subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
         bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
+        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment())
       )
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }

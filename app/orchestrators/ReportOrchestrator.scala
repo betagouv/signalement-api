@@ -47,6 +47,7 @@ class ReportOrchestrator @Inject() (
     mailerService: MailerService,
     mailService: MailService,
     pdfService: PDFService,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     @Named("email-actor") emailActor: ActorRef,
@@ -187,7 +188,7 @@ class ReportOrchestrator @Inject() (
                   pdfService.getPdfData(views.html.pdfs.report(report, List((event, None)), None, List.empty, files)),
                   "application/pdf"
                 )
-              ).filter(_ => report.isContractualDispute && report.companyId.isDefined)
+              ).filter(_ => report.isContractualDispute() && report.companyId.isDefined)
           )
           logger.debug(s"Report ${report.id} created")
           Some(report)
@@ -261,7 +262,7 @@ class ReportOrchestrator @Inject() (
                  .map(Some(_))
              case _ => Future(None)
            }
-      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield updatedReport
 
   def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumer, userUUID: UUID): Future[Option[Report]] =
@@ -351,7 +352,7 @@ class ReportOrchestrator @Inject() (
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
-      Unit
+      ()
     }
 
   def deleteReport(id: UUID) =
@@ -359,7 +360,7 @@ class ReportOrchestrator @Inject() (
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
       _ <- reportRepository.delete(id)
-      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(Unit))
+      _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
@@ -566,4 +567,25 @@ class ReportOrchestrator @Inject() (
       )
     )
   }
+
+  def getReportsForUser(
+      connectedUser: User,
+      filter: ReportFilter,
+      offset: Long,
+      limit: Int
+  ): Future[PaginatedResult[ReportWithFiles]] =
+    for {
+      sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+                                filter.siretSirenList,
+                                connectedUser
+                              )
+      paginatedReports <- reportRepository.getReports(
+                            offset,
+                            limit,
+                            filter.copy(siretSirenList = sanitizedSirenSirets)
+                          )
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+    } yield paginatedReports.copy(entities =
+      paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
+    )
 }

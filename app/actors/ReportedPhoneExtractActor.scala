@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportedPhonesExtractActor {
-  def props = Props[ReportedPhonesExtractActor]
+  def props = Props[ReportedPhonesExtractActor]()
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
   case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)
@@ -62,7 +62,7 @@ class ReportedPhonesExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.ReportedPhones)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(rawFilters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)

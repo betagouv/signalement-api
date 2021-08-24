@@ -31,7 +31,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   val proMemberUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         admin <- userRepository.create(proAdminUser)
@@ -39,7 +39,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         c <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
         _ <- companyRepository.setUserLevel(c, member, AccessLevel.MEMBER)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

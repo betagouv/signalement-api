@@ -150,16 +150,16 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
-    mockReportRepository.create(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-    mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
+    mockReportRepository.create(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
+    mockReportRepository.update(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
     mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
     mockCompanyRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
-    mockUserRepository.create(any[User]) answers { user => Future(user.asInstanceOf[User]) }
+    mockUserRepository.create(any[User]) answers { (user: Any) => Future(user.asInstanceOf[User]) }
 
-    mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
+    mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
 
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {
