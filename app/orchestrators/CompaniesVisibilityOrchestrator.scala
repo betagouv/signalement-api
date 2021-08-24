@@ -52,7 +52,6 @@ class CompaniesVisibilityOrchestrator @Inject() (
       (x._1, (x._2 ++ headOfficeAdmins).distinctBy(_.id))
     }
 
-
   def fetchVisibleCompanies(pro: User): Future[List[Company]] =
     (for {
       authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))

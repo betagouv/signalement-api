@@ -112,10 +112,14 @@ class ReminderTask @Inject() (
   private[this] def getReportsWithAdminsByStatus(status: ReportStatusValue): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
-      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(reports.flatMap(c => for {
-        siret <- c.companySiret
-        id <- c.companyId
-      } yield (siret, id)))
+      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(
+                                reports.flatMap(c =>
+                                  for {
+                                    siret <- c.companySiret
+                                    id <- c.companyId
+                                  } yield (siret, id)
+                                )
+                              )
     } yield reports.flatMap(r => r.companyId.map(companyId => (r, mapAdminsByCompanyId.getOrElse(companyId, Nil))))
 
   def extractEventsWithAction(
