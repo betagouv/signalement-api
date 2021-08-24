@@ -178,12 +178,14 @@ object DetailInputValue {
     }
 }
 
-case class CompanyWithNbReports(company: Company, count: Int)
+/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
+case class DeprecatedCompanyWithNbReports(company: Company, count: Int)
 
-object CompanyWithNbReports {
+/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
+object DeprecatedCompanyWithNbReports {
 
-  implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
-    def writes(data: CompanyWithNbReports) = Json.obj(
+  implicit val companyWithNbReportsWrites = new Writes[DeprecatedCompanyWithNbReports] {
+    def writes(data: DeprecatedCompanyWithNbReports) = Json.obj(
       "companySiret" -> data.company.siret,
       "companyName" -> data.company.name,
       "companyAddress" -> Json.toJson(data.company.address),
@@ -191,7 +193,7 @@ object CompanyWithNbReports {
     )
   }
 
-  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[CompanyWithNbReports]]
+  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[DeprecatedCompanyWithNbReports]]
 }
 
 case class ReportCompany(
