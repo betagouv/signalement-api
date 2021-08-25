@@ -4,11 +4,12 @@ import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Silhouette
+
 import javax.inject.Inject
 import javax.inject.Singleton
 import models.Event.stringToDetailsJsValue
+import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.libs.json._
@@ -91,7 +92,7 @@ class CompanyController @Inject() (
         offset = offset,
         limit = limit
       )
-      .map(res => Ok(Json.toJson(res)))
+      .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
   }
 
   def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>

@@ -536,7 +536,7 @@ class ReportRepository @Inject() (
         .update(Some(output))
     )
 
-  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
+  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[DeprecatedCompanyWithNbReports]] = {
     val q = db.run(
       companyTableQuery
         .joinLeft(reportTableQuery)
@@ -549,7 +549,7 @@ class ReportRepository @Inject() (
     )
 
     for {
-      res <- q.map(_.map { case (company, cnt) => CompanyWithNbReports(company, cnt) })
+      res <- q.map(_.map { case (company, cnt) => DeprecatedCompanyWithNbReports(company, cnt) })
     } yield PaginatedResult(
       totalCount = res.length,
       entities = res.drop(offset.toInt).take(limit).toList,
