@@ -18,7 +18,6 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
