@@ -168,7 +168,7 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
       includeClosed: Boolean = false
   ): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret), includeClosed)
 
-  def searchHeadOffices[T](sirets: List[SIRET]): Future[List[CompanyData]] =
+  def searchHeadOffices(sirets: List[SIRET]): Future[List[CompanyData]] =
     db.run(
       companyDataTableQuery
         .filter(_.siret inSetBind sirets)

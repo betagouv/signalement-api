@@ -163,7 +163,6 @@ The get visible companies endpoint should
       companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(headOfficeCompany.siret),
       Duration.Inf
     )
-//    headOfficeViewersList(headOfficeCompany.id) must beEqualTo(headOfficeViewers.map(_.id).sorted)
     headOfficeViewersList(headOfficeCompany.id).map(_.id).sorted must beEqualTo(
       List(
         adminWithAccessToHeadOffice,
