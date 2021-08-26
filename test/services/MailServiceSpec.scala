@@ -7,8 +7,6 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -52,6 +50,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   val subsidiaryCompany = Fixtures.genCompany.sample.get.copy(
     siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get
   )
+  val unrelatedCompany = Fixtures.genCompany.sample.get
 
   val headOfficeCompanyData = Fixtures
     .genCompanyData(Some(headOfficeCompany))
@@ -61,7 +60,9 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
       etablissementSiege = Some("true")
     )
   val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
-  val report = Fixtures.genReportForCompany(subsidiaryCompany).sample.get
+  val unrelatedCompanyData = Fixtures.genCompanyData(Some(unrelatedCompany)).sample.get
+  val reportForSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get
+  val reportForUnrelated = Fixtures.genReportForCompany(unrelatedCompany).sample.get
 
   override def setupData() =
     Await.result(
@@ -71,12 +72,15 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
+        _ <- companyRepository.getOrCreate(unrelatedCompany.siret, subsidiaryCompany)
 
         _ <- companyRepository.setUserLevel(headOfficeCompany, proWithAccessToHeadOffice, AccessLevel.MEMBER)
         _ <- companyRepository.setUserLevel(subsidiaryCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.setUserLevel(unrelatedCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)
+        _ <- companyDataRepository.create(unrelatedCompanyData)
       } yield (),
       Duration.Inf
     )
@@ -105,9 +109,9 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  protected def sendEmail(recipients: List[EmailAddress]) = {
+  protected def sendEmail(emails: List[EmailAddress], report: Report) = {
     mailService.Pro.sendReportNotification(
-      List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
+      emails,
       report
     )
     Thread.sleep(100)
@@ -119,10 +123,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     } else {
       there was one(mailerService).sendEmail(
         any,
-        argThat { (list: Seq[EmailAddress]) =>
-          println("1 ---" + list)
-          list.sortBy(_.value) == expectedRecipients.sortBy(_.value)
-        },
+        argThat((list: Seq[EmailAddress]) => list.sortBy(_.value) == expectedRecipients.sortBy(_.value)),
         any,
         any,
         any,
@@ -134,8 +135,39 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""Email must be sent to admin and admin of head office $e1"""
   def e1 = {
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+  }
+}
+
+class MailServiceSpecOnBlockAllEmails(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+  override def is = s2"""No email must be sent to user that block all the notifications $e1"""
+
+  def e1 = {
+    Await.result(
+      userRepository.update(proWithAccessToSubsidiary.copy(acceptNotifications = false)),
+      Duration.Inf
+    )
+    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    checkRecipients(Seq(proWithAccessToHeadOffice.email))
+  }
+}
+
+class MailServiceSpecBlockAllEmailsOrBlockForThis(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+  override def is =
+    s2"""No email must be sent since one user blocked all notifications and the other block for this company $e1"""
+
+  def e1 = {
+    Await.result(
+      userRepository.update(proWithAccessToSubsidiary.copy(acceptNotifications = false)),
+      Duration.Inf
+    )
+    Await.result(
+      reportNotificationBlocklistRepository.create(proWithAccessToHeadOffice.id, reportForSubsidiary.companyId.get),
+      Duration.Inf
+    )
+    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    checkRecipients(Seq())
   }
 }
 
@@ -144,13 +176,14 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
 
   def e1 = {
     Await.result(
-      reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, report.companyId.get),
+      reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, reportForSubsidiary.companyId.get),
       Duration.Inf
     )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email))
   }
 }
+
 class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""No email must be sent since all users blocked the notifications $e1"""
 
@@ -158,13 +191,13 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
     Await.result(
       Future.sequence(
         Seq(
-          reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, report.companyId.get),
-          reportNotificationBlocklistRepository.create(proWithAccessToHeadOffice.id, report.companyId.get)
+          reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, reportForSubsidiary.companyId.get),
+          reportNotificationBlocklistRepository.create(proWithAccessToHeadOffice.id, reportForSubsidiary.companyId.get)
         )
       ),
       Duration.Inf
     )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }
 }

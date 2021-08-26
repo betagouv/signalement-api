@@ -60,12 +60,11 @@ class ReportNotificationBlocklistRepository @Inject() (
 
   def filterBlockedEmails(email: List[EmailAddress], companyId: UUID): Future[List[EmailAddress]] =
     db.run(
-      query
-        .filter(_.companyId === companyId)
-        .join(queryUser)
-        .on(_.userId === _.id)
-        .filter(_._2.email inSet email)
-        .map(_._2.email)
+      queryUser
+        .filter(u =>
+          u.acceptNotifications === false || (u.id in (query.filter(_.companyId === companyId).map(_.userId)))
+        )
+        .map(_.email)
         .to[List]
         .result
     ).map(blockedEmails => email.diff(blockedEmails))
