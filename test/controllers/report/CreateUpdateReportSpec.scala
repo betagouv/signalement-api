@@ -12,7 +12,6 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
-import orchestrators.EmailValidationOrchestrator
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.Configuration

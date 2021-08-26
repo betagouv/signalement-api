@@ -1,14 +1,14 @@
 package utils.silhouette.api
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.RequestProvider
-import javax.inject.Inject
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import play.api.Configuration
 import play.api.mvc.Request
-
-import scala.concurrent.Future
 import utils.silhouette.Credentials._
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class APIKeyRequestProvider @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,

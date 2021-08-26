@@ -1,20 +1,16 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.Writes
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
 

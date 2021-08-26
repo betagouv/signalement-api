@@ -1,10 +1,6 @@
 package controllers
 
-import java.time.OffsetDateTime
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Singleton
 import orchestrators.EmailValidationOrchestrator
 import play.api._
 import play.api.libs.json.JsError
@@ -13,6 +9,9 @@ import repositories._
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 
+import java.time.OffsetDateTime
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

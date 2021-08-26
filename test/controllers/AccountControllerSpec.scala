@@ -1,6 +1,5 @@
 package controllers
 
-import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -15,7 +14,6 @@ import repositories._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
 import org.specs2.matcher.FutureMatchers
-import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._

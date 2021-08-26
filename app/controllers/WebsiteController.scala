@@ -1,6 +1,5 @@
 package controllers
 
-import java.util.UUID
 import actors.WebsitesExtractActor
 import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
@@ -8,8 +7,6 @@ import akka.pattern.ask
 import cats.data.OptionT
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
-
-import javax.inject._
 import models.WebsiteCompanyFormat._
 import models._
 import models.website.WebsiteCompanyReportCount
@@ -24,9 +21,11 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import scala.concurrent.duration._
+import java.util.UUID
+import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class WebsiteController @Inject() (

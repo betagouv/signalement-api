@@ -1,13 +1,13 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import utils.EnumUtils
 import utils.EmailAddress
+import utils.EnumUtils
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class DraftUser(
     email: EmailAddress,

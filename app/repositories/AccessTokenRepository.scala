@@ -1,17 +1,17 @@
 package repositories
 
+import models._
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.Logger
-import slick.jdbc.JdbcProfile
-
-import models._
-import utils.EmailAddress
 
 @Singleton
 class AccessTokenRepository @Inject() (
@@ -23,8 +23,8 @@ class AccessTokenRepository @Inject() (
   val logger: Logger = Logger(this.getClass())
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
-  import dbConfig._
   import companyRepository.AccessLevelColumnType
+  import dbConfig._
   implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.value, TokenKind.fromValue(_))
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {

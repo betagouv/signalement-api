@@ -1,15 +1,14 @@
 package repositories
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import enumeratum.SlickEnumSupport
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -19,8 +18,8 @@ class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(i
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  import dbConfig._
   import PostgresProfile.api._
+  import dbConfig._
   override val profile: slick.jdbc.JdbcProfile = dbConfigProvider.get.profile
 
   implicit lazy val asyncFileKindMapper = mappedColumnTypeForEnum(AsyncFileKind)

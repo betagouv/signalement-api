@@ -3,12 +3,12 @@ package utils.silhouette.auth
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import javax.inject.Inject
 import play.api.Logger
 import repositories.UserRepository
-import utils.silhouette.Credentials._
 import utils.EmailAddress
+import utils.silhouette.Credentials._
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag

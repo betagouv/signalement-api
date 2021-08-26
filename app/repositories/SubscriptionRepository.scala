@@ -1,11 +1,5 @@
 package repositories
 
-import java.time.OffsetDateTime
-import java.time.Period
-import java.util.UUID
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -13,6 +7,11 @@ import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 
+import java.time.OffsetDateTime
+import java.time.Period
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

@@ -1,13 +1,13 @@
 package controllers
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import play.api.mvc.InjectedController
 import repositories.CompanyDataRepository
 import repositories.CompanyRepository
 import repositories.ReportRepository
 import utils.SIRET
 
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

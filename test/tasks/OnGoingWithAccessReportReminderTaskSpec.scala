@@ -1,31 +1,23 @@
 package tasks
 
 import java.net.URI
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 
-import models.UserRoles.Pro
 import models._
-import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.libs.mailer.Attachment
-import play.api.libs.mailer.AttachmentFile
 import repositories._
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
-import utils.Constants.EventType.EventTypeValue
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS

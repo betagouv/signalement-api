@@ -1,16 +1,15 @@
 package tasks
 
-import java.time.temporal.ChronoUnit
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 import akka.actor.ActorSystem
-import javax.inject.Inject
 import play.api.Configuration
 import play.api.Logger
 import repositories.ReportDataRepository
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 

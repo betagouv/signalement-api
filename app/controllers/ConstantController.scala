@@ -1,13 +1,13 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject._
 import play.api.Logger
 import play.api.libs.json.Json
 import utils.Constants.ReportStatus.reportStatusList
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 
+import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

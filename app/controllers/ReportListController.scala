@@ -1,14 +1,9 @@
 package controllers
 
-import java.util.UUID
 import actors.ReportsExtractActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
@@ -22,9 +17,13 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import scala.concurrent.duration._
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (

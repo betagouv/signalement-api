@@ -1,22 +1,21 @@
 package controllers
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import java.util.UUID
-
-import repositories._
+import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import orchestrators.AccessesOrchestrator
-import play.api.libs.json._
 import play.api.Logger
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import com.mohiva.play.silhouette.api.Silhouette
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import play.api.libs.json._
+import repositories._
 import utils.EmailAddress
 import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
+
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class CompanyAccessController @Inject() (

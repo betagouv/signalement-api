@@ -1,17 +1,16 @@
 package actors
 
 import akka.NotUsed
-
-import java.io.BufferedInputStream
-import java.time.OffsetDateTime
-import java.util.UUID
-import java.util.zip.ZipInputStream
 import akka.actor.Actor
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.stream.FlowShape
 import akka.stream.KillSwitches
 import akka.stream.SharedKillSwitch
+import akka.stream.alpakka.csv.scaladsl.CsvParsing
+import akka.stream.alpakka.csv.scaladsl.CsvToMap
+import akka.stream.alpakka.slick.scaladsl.Slick
+import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.GraphDSL
@@ -20,14 +19,7 @@ import akka.stream.scaladsl.Partition
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
-import akka.stream.alpakka.csv.scaladsl.CsvParsing
-import akka.stream.alpakka.csv.scaladsl.CsvToMap
-import akka.stream.alpakka.slick.scaladsl.Slick
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.google.inject.AbstractModule
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.CompanyFile
 import models.EnterpriseImportInfo
 import models.EtablissementFile
@@ -37,8 +29,14 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import utils.SIREN
 
+import java.io.BufferedInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.util.UUID
+import java.util.zip.ZipInputStream
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

@@ -1,19 +1,18 @@
 package repositories
 
+import models._
+import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
+import slick.jdbc.JdbcProfile
+import utils.Constants.Departments
+import utils.SIRET
+
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
-import utils.SIRET
-import models._
-import PostgresProfile.api._
-import utils.Constants.Departments
 
 class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def id = column[UUID]("id", O.PrimaryKey)
