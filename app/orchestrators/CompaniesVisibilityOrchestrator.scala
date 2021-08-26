@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
-  def toList() = sirens.map(_.value).union(sirets.map(_.value))
+  def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
 class CompaniesVisibilityOrchestrator @Inject() (
@@ -29,7 +29,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
       companiesForHeadOffices <-
         companyDataRepo.searchBySirens(authorizedHeadOffices.map(SIREN.apply), includeClosed = true)
       companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSubcompanies, includeClosed = true)
-    } yield companiesForHeadOffices.union(companiesWithoutHeadOffice).map(_._1).distinct)
+    } yield companiesForHeadOffices.concat(companiesWithoutHeadOffice).map(_._1).distinct)
       .flatMap(filterReportedCompanyData)
 
   private[this] def filterReportedCompanyData(companies: List[CompanyData]): Future[List[CompanyData]] =

@@ -34,8 +34,7 @@ class ReportDataTask @Inject() (
     else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
-
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     val taskDate = LocalDate.now
 
     logger.debug("Traitement de mise à jour des reportData automatique")

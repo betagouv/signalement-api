@@ -54,6 +54,7 @@ libraryDependencies ++= Seq(
 )
 
 scalafmtOnCompile := true
+scalacOptions ++= Seq("-Xfatal-warnings", "-feature")
 
 routesImport ++= Seq(
   "models.WebsiteKind",

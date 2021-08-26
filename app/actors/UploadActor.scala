@@ -19,7 +19,7 @@ import akka.stream.scaladsl._
 import services.S3Service
 
 object UploadActor {
-  def props = Props[UploadActor]
+  def props = Props[UploadActor]()
 
   case class Request(reportFile: ReportFile, file: java.io.File)
 }

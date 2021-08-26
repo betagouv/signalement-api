@@ -170,7 +170,7 @@ case class DetailInputValue(
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
-  implicit def string2detailInputValue(input: String): DetailInputValue =
+  def toDetailInputValue(input: String): DetailInputValue =
     input match {
       case input if input.contains(':') =>
         DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)

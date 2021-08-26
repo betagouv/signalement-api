@@ -100,8 +100,9 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
       companies.view.mapValues(maybeValue => toOptionalSqlValue(maybeValue)).toMap
     val insertColumns: String = companyKeyValues.keys.mkString(",")
     val insertValues: String = companyKeyValues.values.mkString(",")
-    val insertValuesOnSiretConflict: String = companyKeyValues
+    val insertValuesOnSiretConflict: String = companyKeyValues.view
       .filterKeys(_ != DENOMINATION_USUELLE_ETABLISSEMENT)
+      .toMap
       .map { case (columnName, value) => s"$columnName = $value" }
       .mkString(",")
 

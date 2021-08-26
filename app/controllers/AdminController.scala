@@ -3,11 +3,12 @@ package controllers
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
+import models.DetailInputValue.toDetailInputValue
+
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -28,7 +29,6 @@ import utils._
 
 import scala.concurrent.duration._
 import java.time.LocalDate
-
 import services.MailerService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.Tags
@@ -60,7 +60,7 @@ class AdminController @Inject() (
     id = UUID.randomUUID,
     category = "Test",
     subcategories = List("test"),
-    details = List("test"),
+    details = List(toDetailInputValue("test")),
     companyId = None,
     companyName = None,
     companyAddress = Address(None, None, None, None),

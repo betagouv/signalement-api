@@ -27,7 +27,7 @@ class EmailValidationController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  final case class EmailBody(email: EmailAddress)
+  case class EmailBody(email: EmailAddress)
 
   def checkEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
@@ -44,7 +44,7 @@ class EmailValidationController @Inject() (
       )
   }
 
-  final case class EmailValidationBody(email: EmailAddress, confirmationCode: String)
+  case class EmailValidationBody(email: EmailAddress, confirmationCode: String)
 
   def validEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     request.body

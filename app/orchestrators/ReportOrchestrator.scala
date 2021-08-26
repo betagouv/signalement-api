@@ -129,7 +129,7 @@ class ReportOrchestrator @Inject() (
     }
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Option[Report]] =
+  def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
       case true =>
         for {
