@@ -1,11 +1,5 @@
 package repositories
 
-import java.time.OffsetDateTime
-import java.time.Period
-import java.util.UUID
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -13,12 +7,17 @@ import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 
+import java.time.OffsetDateTime
+import java.time.Period
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, userRepository: UserRepository)(
-    implicit ec: ExecutionContext
+class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+    ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -37,7 +36,6 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def tags = column[List[String]]("tags")
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
-    def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id)
     def frequency = column[Period]("frequency")
 
     type SubscriptionData = (

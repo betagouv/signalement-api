@@ -1,14 +1,8 @@
 package orchestrators
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event.stringToDetailsJsValue
 import models._
 import play.api.Configuration
@@ -21,10 +15,15 @@ import utils.EmailAddress
 import utils.EmailSubjects
 import utils.SIRET
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.Duration
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import java.time.Duration
+import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,

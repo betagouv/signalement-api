@@ -1,11 +1,11 @@
 package models
 
+import play.api.libs.json._
+import utils.SIRET
+
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import play.api.libs.json._
-import utils.SIRET
 
 sealed case class AccessLevel(value: String)
 

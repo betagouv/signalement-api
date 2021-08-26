@@ -1,23 +1,15 @@
 package orchestrators
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import actors.EmailActor
 import actors.UploadActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event._
-import models.ReportResponse._
 import models._
+import play.api.Configuration
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.libs.mailer.AttachmentData
-import play.api.Configuration
-import play.api.Environment
-import play.api.Logger
 import repositories._
 import services.MailService
 import services.MailerService
@@ -33,9 +25,14 @@ import utils.EmailAddress
 import utils.EmailSubjects
 import utils.URL
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator @Inject() (
@@ -129,7 +126,7 @@ class ReportOrchestrator @Inject() (
     }
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Option[Report]] =
+  def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
       case true =>
         for {

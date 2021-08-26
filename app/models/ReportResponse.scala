@@ -1,12 +1,12 @@
 package models
 
-import java.util.UUID
-
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
 import utils.EnumUtils
+
+import java.util.UUID
 
 case class ReportResponse(
     responseType: ReportResponseType.Value,

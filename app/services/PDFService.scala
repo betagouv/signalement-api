@@ -1,24 +1,23 @@
 package services
 
+import akka.actor.ActorSystem
+import com.itextpdf.html2pdf.ConverterProperties
+import com.itextpdf.html2pdf.HtmlConverter
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import play.api.Configuration
+import play.api.Logger
+import play.api.http.FileMimeTypes
+import play.twirl.api.HtmlFormat
+
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import akka.actor.ActorSystem
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
-import com.itextpdf.html2pdf.ConverterProperties
-import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfWriter
 import javax.inject.Inject
-import play.api.http.FileMimeTypes
-import play.api.Configuration
-import play.api.Logger
-import play.twirl.api.HtmlFormat
-
 import scala.concurrent.ExecutionContext
 
 class PDFService @Inject() (system: ActorSystem, val configuration: Configuration) {

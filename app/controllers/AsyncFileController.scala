@@ -1,17 +1,16 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Silhouette
+import models._
 import play.api.Configuration
+import play.api.libs.json._
+import repositories._
+import services.S3Service
+import utils.silhouette.auth.AuthEnv
+
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.util.UUID
-import repositories._
-import models._
-import play.api.libs.json._
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import com.mohiva.play.silhouette.api.Silhouette
-import utils.silhouette.auth.AuthEnv
-import services.S3Service
 
 @Singleton
 class AsyncFileController @Inject() (

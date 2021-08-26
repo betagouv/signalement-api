@@ -1,20 +1,10 @@
 package tasks
 
-import java.net.URI
-import java.time.temporal.ChronoUnit
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.util.UUID
-
-import akka.actor.ActorSystem
-import akka.actor.ActorRef
-import akka.pattern.ask
 import actors.EmailActor
+import akka.actor.ActorRef
+import akka.actor.ActorSystem
+import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event._
 import models._
 import play.api.Configuration
@@ -26,17 +16,25 @@ import services.MailerService
 import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
-import utils.Constants.EventType.PRO
 import utils.Constants.EventType.SYSTEM
 import utils.Constants.ReportStatus._
-import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.EmailSubjects
+import utils.silhouette.api.APIKeyEnv
+import utils.silhouette.auth.AuthEnv
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class ReminderTask @Inject() (
     actorSystem: ActorSystem,

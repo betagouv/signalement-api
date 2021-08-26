@@ -1,9 +1,9 @@
 package models
 
-import java.time.YearMonth
-
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
+
+import java.time.YearMonth
 
 case class Statistics(
     reportsDurationsForEnvoiSignalement: Int

@@ -5,7 +5,6 @@ import actors.ReportedPhonesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject._
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -15,9 +14,10 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import scala.concurrent.duration._
+import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class ReportedPhoneController @Inject() (

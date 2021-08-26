@@ -1,16 +1,15 @@
 package repositories
 
+import models._
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.URL
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import models._
-import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcBackend
-import slick.jdbc.JdbcProfile
-import utils.URL
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

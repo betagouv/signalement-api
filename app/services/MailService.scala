@@ -1,21 +1,19 @@
 package services
 
-import java.net.URI
-
 import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import javax.inject.Inject
-import javax.inject.Named
 import models.EmailValidation
 import models.Report
-import play.api.mvc.Request
 import play.api.Configuration
 import play.api.Logger
-import utils.Constants.Tags
+import play.api.mvc.Request
 import utils.EmailAddress
 import utils.EmailSubjects
 
+import java.net.URI
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 

@@ -2,24 +2,22 @@ package actors
 
 import akka.actor._
 import akka.stream.Materializer
+import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
-import javax.inject.Inject
-import javax.inject.Singleton
-import java.time.OffsetDateTime
-import java.util.UUID
+import models._
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import models._
 import repositories._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.sys.process._
-import akka.stream.scaladsl._
 import services.S3Service
 
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.sys.process._
+
 object UploadActor {
-  def props = Props[UploadActor]
+  def props = Props[UploadActor]()
 
   case class Request(reportFile: ReportFile, file: java.io.File)
 }

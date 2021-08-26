@@ -1,11 +1,11 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class Event(
     id: Option[UUID],

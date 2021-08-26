@@ -1,20 +1,17 @@
 package repositories
 
-import java.time._
-import java.util.UUID
-
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.github.tminglei.slickpg.agg.PgAggFuncSupport.OrderedSetAggFunctions._
 import models.ReportData
 import play.api.Configuration
-import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
-import com.github.tminglei.slickpg.agg.PgAggFuncSupport.OrderedSetAggFunctions._
 
+import java.time._
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 @Singleton
 class ReportDataRepository @Inject() (

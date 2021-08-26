@@ -54,6 +54,14 @@ libraryDependencies ++= Seq(
 )
 
 scalafmtOnCompile := true
+scalacOptions ++= Seq(
+  "-Xfatal-warnings",
+  "-feature",
+  "-Xlint:deprecation",
+  "-Wunused:imports",
+  "-Wconf:cat=unused-imports&src=views/.*:s",
+  s"-Wconf:src=${target.value}/.*:s"
+)
 
 routesImport ++= Seq(
   "models.WebsiteKind",
