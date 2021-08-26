@@ -37,6 +37,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def frequency = column[Period]("frequency")
+    def user = foreignKey("fk_subscription_user", userId, userTableQuery)(_.id.?)
 
     type SubscriptionData = (
         UUID,
