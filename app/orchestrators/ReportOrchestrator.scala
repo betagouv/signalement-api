@@ -72,8 +72,8 @@ class ReportOrchestrator @Inject() (
                  )
     } yield token.token
 
-  private def notifyProfessionalOfNewReport(report: Report, reportCompanyId: UUID): Future[Report] =
-    companyRepository.fetchAdmins(reportCompanyId).flatMap { admins =>
+  private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
+    companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(company.siret).flatMap { admins =>
       if (admins.nonEmpty) {
         mailService.Pro.sendReportNotification(admins.map(_.email), report)
         val user = admins.head // We must chose one as Event links to a single User
@@ -82,7 +82,7 @@ class ReportOrchestrator @Inject() (
             Event(
               Some(UUID.randomUUID()),
               Some(report.id),
-              Some(reportCompanyId),
+              Some(company.id),
               Some(user.id),
               Some(OffsetDateTime.now()),
               Constants.EventType.PRO,
@@ -94,7 +94,7 @@ class ReportOrchestrator @Inject() (
           )
           .flatMap(event => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
       } else {
-        genActivationToken(reportCompanyId, tokenDuration).map(_ => report)
+        genActivationToken(company.id, tokenDuration).map(_ => report)
       }
     }
 
@@ -137,7 +137,7 @@ class ReportOrchestrator @Inject() (
           _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
           files <- reportRepository.retrieveReportFiles(report.id)
           report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
-                      notifyProfessionalOfNewReport(report, companyOpt.get.id)
+                      notifyProfessionalOfNewReport(report, companyOpt.get)
                     else Future(report)
           event <- eventRepository.createEvent(
                      Event(
@@ -209,7 +209,7 @@ class ReportOrchestrator @Inject() (
                          .filter(_.status == TRAITEMENT_EN_COURS)
                          .filter(_.companySiret.isDefined)
                          .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-                         .map(r => notifyProfessionalOfNewReport(r, company.id).map(Some(_)))
+                         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
                          .getOrElse(Future(reportWithNewStatus))
       _ <- existingReport match {
              case Some(report) =>
