@@ -3,7 +3,6 @@ package orchestrators
 import actors.UploadActor
 import akka.actor.ActorRef
 import models.Event._
-import models.ReportResponse._
 import models._
 import play.api.Configuration
 import play.api.Logger
@@ -113,7 +112,7 @@ class ReportOrchestrator @Inject() (
     }
   }
 
-  def newReport(draftReport: DraftReport)(implicit request: play.api.mvc.Request[Any]): Future[Option[Report]] =
+  def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
       case true =>
         for {

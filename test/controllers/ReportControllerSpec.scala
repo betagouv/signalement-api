@@ -1,6 +1,5 @@
 package controllers
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
 import com.google.inject.AbstractModule
@@ -9,7 +8,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
 import models._
 import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -29,10 +27,6 @@ import repositories._
 import services.MailerService
 import services.S3Service
 import services.PDFService
-import utils.Constants.ActionEvent._
-import utils.Constants.EventType
-import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.Fixtures

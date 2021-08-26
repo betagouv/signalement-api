@@ -1,10 +1,11 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.SIRET
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 sealed case class TokenKind(value: String)
 

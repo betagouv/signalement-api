@@ -1,16 +1,15 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.UserRoles
 import orchestrators.EnterpriseImportOrchestrator
 import play.api.libs.json.Json
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton

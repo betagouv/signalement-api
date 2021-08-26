@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
-  def toList() = sirens.map(_.value).concat(sirets.map(_.value))
+  def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
 class CompaniesVisibilityOrchestrator @Inject() (

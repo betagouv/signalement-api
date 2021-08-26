@@ -50,7 +50,7 @@ class AdminController @Inject() (
     id = UUID.randomUUID,
     category = "Test",
     subcategories = List("test"),
-    details = List("test"),
+    details = List(toDetailInputValue("test")),
     companyId = None,
     companyName = None,
     companyAddress = Address(None, None, None, None),

@@ -1,10 +1,10 @@
 package utils
 
-import java.net.URI
+import play.api.Configuration
 
+import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
-import play.api.Configuration
 
 @Singleton
 class FrontEndRoute @Inject() (config: Configuration) {

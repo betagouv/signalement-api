@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 
 import javax.inject.Inject
@@ -22,6 +23,9 @@ import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
+import java.net.URI
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

@@ -1,16 +1,15 @@
 package tasks
 
-import java.time.temporal.ChronoUnit
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-
 import akka.actor.ActorSystem
-import javax.inject.Inject
 import play.api.Configuration
 import play.api.Logger
 import repositories.ReportDataRepository
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -34,8 +33,7 @@ class ReportDataTask @Inject() (
     else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
-
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     val taskDate = LocalDate.now
 
     logger.debug("Traitement de mise à jour des reportData automatique")

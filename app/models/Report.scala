@@ -1,20 +1,16 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.Writes
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
 
@@ -170,7 +166,7 @@ case class DetailInputValue(
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
-  implicit def string2detailInputValue(input: String): DetailInputValue =
+  def toDetailInputValue(input: String): DetailInputValue =
     input match {
       case input if input.contains(':') =>
         DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)

@@ -1,15 +1,9 @@
 package tasks
 
-import java.net.URI
-import java.time._
-import java.time.temporal.ChronoUnit
-
 import actors.EmailActor
 import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.pattern.ask
-import javax.inject.Inject
-import javax.inject.Named
 import models.Report
 import models.ReportFilter
 import models.Subscription
@@ -22,6 +16,11 @@ import utils.Constants.Tags
 import utils.EmailAddress
 import utils.EmailSubjects
 
+import java.net.URI
+import java.time._
+import java.time.temporal.ChronoUnit
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 

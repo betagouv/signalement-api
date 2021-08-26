@@ -1,10 +1,6 @@
 package controllers
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject._
 import models.Rating
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -12,6 +8,9 @@ import play.api.libs.json.Json
 import repositories.RatingRepository
 import utils.silhouette.auth.AuthEnv
 
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

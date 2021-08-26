@@ -1,15 +1,14 @@
 package utils.silhouette.api
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.RequestProvider
-import javax.inject.Inject
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import play.api.Configuration
 import play.api.mvc.Request
+import utils.silhouette.Credentials._
 
+import javax.inject.Inject
 import scala.concurrent.Future
-import utils.silhouette.Implicits._
 
 class APIKeyRequestProvider @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,
@@ -25,7 +24,9 @@ class APIKeyRequestProvider @Inject() (
         request.headers.get(configuration.get[String]("silhouette.apiKeyAuthenticator.headerName")),
         configuration.get[String]("silhouette.apiKeyAuthenticator.sharedSecret")
       ) match {
-        case (Some(headerValue), secretValue) if hasher.matches(headerValue, secretValue) =>
+        case (Some(headerValue), secretValue)
+            if hasher
+              .matches(toPasswordInfo(headerValue), secretValue) =>
           Some(LoginInfo(id, headerValue))
         case _ => None
       }

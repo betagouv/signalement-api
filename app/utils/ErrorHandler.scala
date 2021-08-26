@@ -2,9 +2,6 @@ package utils
 
 import com.mohiva.play.silhouette.api.actions.SecuredErrorHandler
 import com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandler
-import javax.inject.Inject
-import javax.inject.Provider
-import javax.inject.Singleton
 import play.api._
 import play.api.http.DefaultHttpErrorHandler
 import play.api.i18n.I18nSupport
@@ -13,6 +10,9 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
 import scala.concurrent.Future
 
 @Singleton

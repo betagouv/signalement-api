@@ -1,6 +1,5 @@
 package orchestrators
 
-import javax.inject.Inject
 import models.EmailValidation
 import models.EmailValidationCreate
 import play.api.Logger
@@ -9,6 +8,7 @@ import repositories._
 import services.MailService
 import utils.EmailAddress
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

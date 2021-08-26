@@ -2,10 +2,6 @@ package models
 
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.Writes
 
 case class PaginatedResult[T](
     totalCount: Int,

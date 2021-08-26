@@ -4,7 +4,6 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
-import java.util.UUID
 
 import models._
 import org.specs2.Specification

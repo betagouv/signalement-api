@@ -1,14 +1,11 @@
 package tasks
 
 import java.net.URI
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import models.UserRoles.Pro
 import models._
-import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -22,9 +19,6 @@ import utils.AppSpec
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
-import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
 import utils.EmailAddress

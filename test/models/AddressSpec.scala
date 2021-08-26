@@ -1,7 +1,6 @@
 package models
 
 import org.specs2.mutable.Specification
-import models.DetailInputValue._
 
 class AddressSpec extends Specification {
 

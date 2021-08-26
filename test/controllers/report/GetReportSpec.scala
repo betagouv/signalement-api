@@ -30,7 +30,6 @@ import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
-import utils.Constants.Departments
 import utils.Constants.EventType
 import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
