@@ -1,12 +1,9 @@
 package repositories
 
 import models._
-import orchestrators.CompaniesVisibilityOrchestrator
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus.ReportStatusValue
 import utils.EmailAddress
 
 import java.time.OffsetDateTime

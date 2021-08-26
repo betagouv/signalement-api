@@ -4,7 +4,6 @@ import java.net.URI
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
-import models.UserRoles.Pro
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -13,7 +12,6 @@ import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
-import services.MailService
 import services.MailerService
 import utils.AppSpec
 import utils.Constants.ActionEvent

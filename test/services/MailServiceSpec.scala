@@ -15,7 +15,6 @@ import play.api.Logger
 import repositories.CompanyRepository
 import repositories.ReportNotificationBlocklistRepository
 import repositories._
-import utils.Constants.ReportStatus.ReportStatusValue
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures

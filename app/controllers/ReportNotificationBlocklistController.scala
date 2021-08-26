@@ -2,7 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.UserRoles
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.ReportNotificationBlocklistRepository
 import utils.silhouette.api.APIKeyEnv
@@ -13,7 +12,6 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 @Singleton
 class ReportNotificationBlocklistController @Inject() (

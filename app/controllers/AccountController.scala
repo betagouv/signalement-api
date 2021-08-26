@@ -2,16 +2,12 @@ package controllers
 
 import cats.data.OptionT
 
-import java.net.URI
-import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
 import orchestrators._
 import play.api._

@@ -20,7 +20,6 @@ import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
-import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus.ReportStatusValue

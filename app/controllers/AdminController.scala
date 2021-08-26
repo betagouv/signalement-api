@@ -1,16 +1,13 @@
 package controllers
 
-import akka.actor.ActorRef
 import com.mohiva.play.silhouette.api.Silhouette
+import models.DetailInputValue.toDetailInputValue
 import models._
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories._
 import services.MailService
-import services.MailerService
 import utils.Constants.ReportStatus.NA
-import utils.Constants.ReportStatus.reportStatusList
 import utils.Constants.Tags
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -24,7 +21,6 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
