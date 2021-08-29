@@ -216,6 +216,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
   implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
   implicit lazy val contactAddress =
@@ -225,6 +226,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingCompany = Fixtures.genCompany.sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
+
+  val existingCompanyData =
+    Fixtures.genCompanyData(Some(existingCompany)).sample.get.copy(etablissementSiege = Some("true"))
+  val anotherCompanyData =
+    Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
@@ -247,6 +253,8 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         _ <- userRepository.create(concernedAdminUser)
         c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
         _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
+        _ <- companyDataRepository.create(existingCompanyData)
+        _ <- companyDataRepository.create(anotherCompanyData)
         _ <- reportRepository.create(existingReport)
         _ <- Future.sequence(
                Seq(
