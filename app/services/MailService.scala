@@ -60,7 +60,7 @@ class MailService @Inject() (
       )
     }
 
-  private[this] def sendIfPossible(adminMails: List[EmailAddress], report: Report)(cb: (List[EmailAddress]) => Unit) =
+  private[this] def sendIfAuthorized(adminMails: List[EmailAddress], report: Report)(cb: (List[EmailAddress]) => Unit) =
     report.companyId.map { companyId =>
       reportNotificationBlocklistRepo
         .filterBlockedEmails(adminMails, companyId)
@@ -161,7 +161,7 @@ class MailService @Inject() (
   object Pro {
 
     def sendReportUnreadReminder(adminMails: List[EmailAddress], report: Report, expirationDate: OffsetDateTime): Unit =
-      sendIfPossible(adminMails, report)(filteredAdminEmails =>
+      sendIfAuthorized(adminMails, report)(filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
@@ -175,7 +175,7 @@ class MailService @Inject() (
         report: Report,
         expirationDate: OffsetDateTime
     ): Unit =
-      sendIfPossible(adminMails, report)(filteredAdminEmails =>
+      sendIfAuthorized(adminMails, report)(filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
@@ -185,7 +185,7 @@ class MailService @Inject() (
       )
 
     def sendReportAcknowledgmentPro(user: User, report: Report, reportResponse: ReportResponse): Unit =
-      sendIfPossible(List(user.email), report)(filteredAdminEmails =>
+      sendIfAuthorized(List(user.email), report)(filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
@@ -208,7 +208,7 @@ class MailService @Inject() (
       )
 
     def sendReportNotification(admins: List[EmailAddress], report: Report): Unit =
-      sendIfPossible(admins, report)(filteredAdminEmails =>
+      sendIfAuthorized(admins, report)(filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
