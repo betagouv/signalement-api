@@ -2,8 +2,10 @@ package tasks
 
 import akka.actor.ActorSystem
 import models.ReportFilter
-import play.api.{Configuration, Logger}
-import repositories.{ReportRepository, SubscriptionRepository}
+import play.api.Configuration
+import play.api.Logger
+import repositories.ReportRepository
+import repositories.SubscriptionRepository
 import services.MailService
 import utils.Constants.Departments
 
@@ -18,7 +20,7 @@ class ReportNotificationTask @Inject() (
     reportRepository: ReportRepository,
     subscriptionRepository: SubscriptionRepository,
     configuration: Configuration,
-    mailService: MailService,
+    mailService: MailService
 )(implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())

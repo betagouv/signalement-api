@@ -2,18 +2,23 @@ package orchestrators
 
 import models.Event.stringToDetailsJsValue
 import models._
-import play.api.{Configuration, Logger}
+import play.api.Configuration
+import play.api.Logger
 import repositories._
 import services.MailService
-import utils.Constants.{ActionEvent, EventType}
-import utils.{EmailAddress, SIRET}
+import utils.Constants.ActionEvent
+import utils.Constants.EventType
+import utils.EmailAddress
+import utils.SIRET
 
 import java.net.URI
-import java.time.{Duration, OffsetDateTime}
+import java.time.Duration
+import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
