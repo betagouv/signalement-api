@@ -1,26 +1,19 @@
 package orchestrators
 
-import akka.actor.ActorRef
 import models.Event.stringToDetailsJsValue
 import models._
-import play.api.Configuration
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import repositories._
 import services.MailService
-import utils.Constants.ActionEvent
-import utils.Constants.EventType
-import utils.EmailAddress
-import utils.SIRET
+import utils.Constants.{ActionEvent, EventType}
+import utils.{EmailAddress, SIRET}
 
 import java.net.URI
-import java.time.Duration
-import java.time.OffsetDateTime
+import java.time.{Duration, OffsetDateTime}
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
@@ -29,7 +22,6 @@ class AccessesOrchestrator @Inject() (
     userRepository: UserRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    @Named("email-actor") emailActor: ActorRef,
     configuration: Configuration
 )(implicit val executionContext: ExecutionContext) {
 

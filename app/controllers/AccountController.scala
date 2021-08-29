@@ -1,34 +1,25 @@
 package controllers
 
-import cats.data.OptionT
-
-import com.mohiva.play.silhouette.api.LoginEvent
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-
 import models._
 import orchestrators._
 import play.api._
-import play.api.libs.json.JsError
-import play.api.libs.json.JsPath
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsPath, Json}
 import repositories._
 import utils.EmailAddress
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
+import utils.silhouette.auth.{AuthEnv, WithPermission}
 
 import java.net.URI
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AccountController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepository,
+    accountOrchestrator: AccountOrchestrator,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
     credentialsProvider: CredentialsProvider,
@@ -58,11 +49,7 @@ class AccountController @Inject() (
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         userUpdate =>
-          (for {
-            user <- OptionT(userRepository.findById(request.identity.id))
-            updatedUser = userUpdate.mergeInto(user)
-            _ <- OptionT.liftF(userRepository.update(updatedUser))
-          } yield updatedUser).value.map {
+          accountOrchestrator.patchUser(request.identity.id, userUpdate).map {
             case None         => NotFound
             case Some(result) => Ok(Json.toJson(result))
           }
