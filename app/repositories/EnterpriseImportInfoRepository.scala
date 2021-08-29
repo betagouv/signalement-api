@@ -4,7 +4,6 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 import slick.jdbc.JdbcProfile
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject

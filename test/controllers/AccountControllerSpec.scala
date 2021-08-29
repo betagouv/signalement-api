@@ -2,7 +2,6 @@ package controllers
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo

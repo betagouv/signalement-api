@@ -10,7 +10,6 @@ import play.api.Configuration
 import play.api.Logger
 import play.api.http.FileMimeTypes
 import play.twirl.api.HtmlFormat
-
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -27,7 +26,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
   def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
-    val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
+    val tmpFileName = s"$tmpDirectory/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
     val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 
     val converterProperties = new ConverterProperties
@@ -40,7 +39,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
       pdf,
       converterProperties
     )
-    logger.debug(f"Generated ${tmpFileName}")
+    logger.debug(f"Generated $tmpFileName")
     play.api.mvc.Results.Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
   }
 

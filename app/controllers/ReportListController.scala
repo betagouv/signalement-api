@@ -16,7 +16,6 @@ import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named

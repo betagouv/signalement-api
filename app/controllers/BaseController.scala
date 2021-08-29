@@ -8,7 +8,6 @@ import play.api.mvc._
 import repositories._
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

@@ -7,7 +7,6 @@ import play.api.mvc.Request
 import repositories._
 import services.MailService
 import utils.EmailAddress
-
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

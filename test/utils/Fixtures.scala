@@ -2,7 +2,6 @@ package utils
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import models.Event._
 import models._
 import org.scalacheck.Arbitrary._
@@ -11,7 +10,6 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
-
 import scala.util.Random
 
 object Fixtures {
@@ -32,7 +30,7 @@ object Fixtures {
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
   val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
   def genEmailAddress(firstName: String, lastName: String): Gen[EmailAddress] = EmailAddress(
-    s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com"
+    s"$firstName.$lastName.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
 
   val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
@@ -103,7 +101,7 @@ object Fixtures {
 
   val genWebsiteURL = for {
     randInt <- Gen.choose(0, 1000000)
-  } yield URL(s"https://www.example${randInt}.com")
+  } yield URL(s"https://www.example$randInt.com")
 
   val genReportedPhone = for {
     randInt <- Gen.choose(0, 999999999)

@@ -4,7 +4,6 @@ import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import models.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -14,7 +13,8 @@ import scala.concurrent.Future
 
 /** A repository for authToken.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class AuthTokenRepository @Inject() (

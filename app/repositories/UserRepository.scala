@@ -6,7 +6,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -58,7 +57,8 @@ object AuthAttemptTables {
 
 /** A repository for user.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class UserRepository @Inject() (

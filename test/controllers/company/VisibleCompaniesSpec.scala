@@ -23,7 +23,6 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
 import utils.SIRET
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

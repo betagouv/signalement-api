@@ -20,7 +20,6 @@ import utils.EmailAddress
 import utils.EmailSubjects
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
-
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID

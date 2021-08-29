@@ -15,7 +15,6 @@ import repositories._
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -82,7 +81,7 @@ class AccountController @Inject() (
           email =>
             if (email.value.endsWith(ccrfEmailSuffix))
               accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
-            else Future(Forbidden(s"Email invalide. Email acceptés : *${ccrfEmailSuffix}"))
+            else Future(Forbidden(s"Email invalide. Email acceptés : *$ccrfEmailSuffix"))
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>

@@ -18,7 +18,6 @@ import utils.Constants.Tags
 import utils._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
-
 import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime

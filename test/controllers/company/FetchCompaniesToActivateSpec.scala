@@ -2,7 +2,6 @@ package controllers.company
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -28,7 +27,6 @@ import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Random

@@ -6,7 +6,6 @@ import models.website.WebsiteCompanyReportCount
 import models.website.WebsiteCompanyReportCount.toApi
 import play.api.Logger
 import repositories.WebsiteRepository
-
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

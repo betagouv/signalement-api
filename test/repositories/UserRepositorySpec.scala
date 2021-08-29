@@ -5,7 +5,6 @@ import scala.concurrent.duration._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-
 import utils.AppSpec
 import utils.Fixtures
 

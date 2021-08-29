@@ -14,7 +14,6 @@ import utils.Constants.EventType
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.SIRET
-
 import java.net.URI
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -43,7 +42,7 @@ class AccessesOrchestrator @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
-    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
+    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - $msg")
 
     def fetchToken: Future[Option[AccessToken]]
     def run: Future[Boolean]
@@ -100,7 +99,10 @@ class AccessesOrchestrator @Inject() (
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))
-      applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
+      applied <- (for {
+                   u <- user
+                   t <- accessToken
+                 } yield accessTokenRepository.applyCompanyToken(t, u))
                    .getOrElse(Future(false))
       _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
       _ <- accessToken
@@ -208,14 +210,14 @@ class AccessesOrchestrator @Inject() (
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map { tokenCode =>
-      val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}")
+      val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=$tokenCode")
       emailActor ? EmailActor.EmailRequest(
         from = mailFrom,
         recipients = Seq(email),
         subject = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
         bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
       )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
+      logger.debug(s"Token sent to $email for company ${company.id}")
     }
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
@@ -230,7 +232,7 @@ class AccessesOrchestrator @Inject() (
         subject = EmailSubjects.DGCCRF_ACCESS_LINK,
         bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
       )
-      logger.debug(s"Sent DGCCRF account invitation to ${email}")
+      logger.debug(s"Sent DGCCRF account invitation to $email")
     }
 
   def sendEmailValidation(user: User): Future[Unit] =

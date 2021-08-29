@@ -19,7 +19,6 @@ import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
-
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -71,9 +70,9 @@ class CompanyController @Inject() (
     for {
       companies <- q match {
                      case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
-                     case q if q.matches("[0-9]{9}")                      => companyRepository.findBySiret(SIRET(q)).map(_.toList)
-                     case q if q.matches("[0-9]{14}")                     => companyRepository.findBySiret(SIRET(q)).map(_.toList)
-                     case q                                               => companyRepository.findByName(q)
+                     case q if q.matches("[0-9]{9}")  => companyRepository.findBySiret(SIRET(q)).map(_.toList)
+                     case q if q.matches("[0-9]{14}") => companyRepository.findBySiret(SIRET(q)).map(_.toList)
+                     case q                           => companyRepository.findByName(q)
                    }
     } yield Ok(Json.toJson(companies))
   }

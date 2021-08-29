@@ -10,7 +10,6 @@ import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
-
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext

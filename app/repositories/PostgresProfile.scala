@@ -4,7 +4,6 @@ import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
 import models.WebsiteKind
-
 import java.time.OffsetDateTime
 
 trait PostgresProfile

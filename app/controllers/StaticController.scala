@@ -2,7 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import utils.silhouette.auth.AuthEnv
-
 import javax.inject._
 import scala.concurrent.ExecutionContext
 

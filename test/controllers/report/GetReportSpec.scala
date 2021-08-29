@@ -2,7 +2,6 @@ package controllers.report
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import akka.util.Timeout
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
@@ -35,7 +34,6 @@ import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
-
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import scala.concurrent.Await
@@ -212,7 +210,7 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.status, s"reportStatusList doesn't match ${status}")
+    (status == report.status, s"reportStatusList doesn't match $status")
   }
 
   def reportMustNotHaveBeenUpdated() =
@@ -222,7 +220,7 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was one(mockEventRepository).createEvent(argThat(eventActionMatcher(action)))
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>
-    (action == event.action, s"action doesn't match ${action}")
+    (action == event.action, s"action doesn't match $action")
   }
 
   def eventMustNotHaveBeenCreated() =

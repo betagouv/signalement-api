@@ -6,7 +6,6 @@ import models.UserRoles
 import repositories._
 import utils.SIREN
 import utils.SIRET
-
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

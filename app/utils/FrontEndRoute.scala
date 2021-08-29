@@ -1,7 +1,6 @@
 package utils
 
 import play.api.Configuration
-
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton

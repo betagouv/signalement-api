@@ -1,7 +1,6 @@
 package models
 
 import enumeratum._
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

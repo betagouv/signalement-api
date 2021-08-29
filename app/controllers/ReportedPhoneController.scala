@@ -13,7 +13,6 @@ import repositories.ReportRepository
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
-
 import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

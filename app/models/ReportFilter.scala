@@ -3,7 +3,6 @@ package models
 import play.api.libs.json.Json
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils
-
 import java.time.LocalDate
 
 case class ReportFilter(

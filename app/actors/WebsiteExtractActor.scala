@@ -17,7 +17,6 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.DateUtils
-
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
@@ -145,13 +144,13 @@ class WebsitesExtractActor @Inject() (
 
       val localPath = Paths.get(tmpDirectory, targetFilename)
       Workbook(extractSheet, filtersSheet).saveAsXlsx(localPath.toString)
-      logger.debug(s"Generated extract locally: ${localPath}")
+      logger.debug(s"Generated extract locally: $localPath")
       localPath
     }
   }
 
   def saveRemotely(localPath: Path, remoteName: String) = {
-    val remotePath = s"website-extracts/${remoteName}"
+    val remotePath = s"website-extracts/$remoteName"
     s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }

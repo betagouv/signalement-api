@@ -6,7 +6,6 @@ import models.User
 import models.UserPermission
 import models.UserRole
 import play.api.mvc.Request
-
 import scala.concurrent.Future
 
 case class WithPermission(anyOfPermissions: UserPermission.Value*) extends Authorization[User, JWTAuthenticator] {

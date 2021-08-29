@@ -5,7 +5,6 @@ import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject

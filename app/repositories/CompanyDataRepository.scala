@@ -8,7 +8,6 @@ import repositories.CompanyDataRepository.toOptionalSqlValue
 import slick.jdbc.JdbcProfile
 import utils.SIREN
 import utils.SIRET
-
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton

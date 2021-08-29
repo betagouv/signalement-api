@@ -1,7 +1,6 @@
 package controllers.report
 
 import java.util.UUID
-
 import controllers.ReportController
 import models._
 import org.specs2.Specification
@@ -20,7 +19,6 @@ import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.AppSpec
 import utils.Fixtures
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -109,7 +107,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         .instanceOf[ReportController]
         .reviewOnReportResponse(reportId.toString)
         .apply(
-          FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
+          FakeRequest("POST", s"/api/reports/$reportId/response/review").withBody(Json.toJson(reviewOnReportResponse))
         ),
       Duration.Inf
     )
@@ -129,6 +127,6 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   }
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.status, s"status doesn't match ${status} - ${report}")
+    (status == report.status, s"status doesn't match $status - $report")
   }
 }

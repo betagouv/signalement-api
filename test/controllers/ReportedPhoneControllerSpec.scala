@@ -19,7 +19,6 @@ import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import utils.SIRET
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

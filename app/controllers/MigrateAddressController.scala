@@ -5,7 +5,6 @@ import repositories.CompanyDataRepository
 import repositories.CompanyRepository
 import repositories.ReportRepository
 import utils.SIRET
-
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext

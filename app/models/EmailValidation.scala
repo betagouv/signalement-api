@@ -3,7 +3,6 @@ package models
 import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.json._
 import utils.EmailAddress
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

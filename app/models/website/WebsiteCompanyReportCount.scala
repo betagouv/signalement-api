@@ -6,7 +6,6 @@ import models.Website
 import models.WebsiteKind
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

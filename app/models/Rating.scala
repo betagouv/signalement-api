@@ -2,7 +2,6 @@ package models
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

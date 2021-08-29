@@ -5,7 +5,6 @@ import play.api.Environment
 import play.api.Logger
 import play.api.libs.mailer._
 import utils.EmailAddress
-
 import javax.inject.Inject
 
 class MailerService @Inject() (mailerClient: MailerClient, system: ActorSystem, environment: Environment) {

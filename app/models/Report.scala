@@ -8,7 +8,6 @@ import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

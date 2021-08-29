@@ -3,7 +3,6 @@ package controllers.report
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -32,7 +31,6 @@ import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 import utils.SIREN
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -347,7 +345,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>
-    (action == event.action, s"action doesn't match ${action}")
+    (action == event.action, s"action doesn't match $action")
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
@@ -356,7 +354,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.status, s"status doesn't match ${status} - ${report}")
+    (status == report.status, s"status doesn't match $status - $report")
   }
 
   def reportFileMustHaveBeenAttachedToReport() = {

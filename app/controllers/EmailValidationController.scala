@@ -8,7 +8,6 @@ import play.api.libs.json.Json
 import repositories._
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
-
 import java.time.OffsetDateTime
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import play.api.Configuration
 import play.api.Logger
 import repositories.ReportDataRepository
-
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -37,7 +36,7 @@ class ReportDataTask @Inject() (
     val taskDate = LocalDate.now
 
     logger.debug("Traitement de mise à jour des reportData automatique")
-    logger.debug(s"taskDate - ${taskDate}");
+    logger.debug(s"taskDate - $taskDate");
 
     for {
       _ <- reportDataRepository.updateReportReadDelay

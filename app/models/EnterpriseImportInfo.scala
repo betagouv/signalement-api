@@ -1,7 +1,6 @@
 package models
 
 import play.api.libs.json.Json
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

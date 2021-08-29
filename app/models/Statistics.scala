@@ -2,7 +2,6 @@ package models
 
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-
 import java.time.YearMonth
 
 case class Statistics(

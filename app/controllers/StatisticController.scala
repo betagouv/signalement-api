@@ -12,7 +12,6 @@ import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
-
 import java.time.Duration
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

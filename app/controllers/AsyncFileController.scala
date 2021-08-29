@@ -7,7 +7,6 @@ import play.api.libs.json._
 import repositories._
 import services.S3Service
 import utils.silhouette.auth.AuthEnv
-
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext

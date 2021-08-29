@@ -4,7 +4,6 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -16,7 +15,6 @@ import utils.AppSpec
 import utils.Country
 import utils.EmailAddress
 import utils.Fixtures
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 

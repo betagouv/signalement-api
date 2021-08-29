@@ -7,7 +7,6 @@ import play.api.Logger
 import repositories.UserRepository
 import utils.EmailAddress
 import utils.silhouette.Credentials._
-
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

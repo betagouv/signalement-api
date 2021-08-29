@@ -3,7 +3,6 @@ package models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.SIRET
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

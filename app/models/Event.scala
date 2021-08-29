@@ -3,7 +3,6 @@ package models
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-
 import java.time.OffsetDateTime
 import java.util.UUID
 

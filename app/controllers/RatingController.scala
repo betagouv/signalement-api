@@ -7,7 +7,6 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.RatingRepository
 import utils.silhouette.auth.AuthEnv
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject._

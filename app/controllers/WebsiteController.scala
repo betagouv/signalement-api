@@ -20,7 +20,6 @@ import repositories.WebsiteRepository
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
-
 import java.util.UUID
 import javax.inject._
 import scala.concurrent.ExecutionContext

@@ -2,7 +2,6 @@ package utils
 
 import play.api.libs.json._
 import repositories.PostgresProfile.api._
-
 import scala.util.Try
 
 case class URL(value: String) {

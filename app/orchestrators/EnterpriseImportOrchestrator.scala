@@ -7,7 +7,6 @@ import models.EnterpriseImportInfo
 import models.EtablissementFile
 import models.UniteLegaleFile
 import repositories.EnterpriseImportInfoRepository
-
 import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext

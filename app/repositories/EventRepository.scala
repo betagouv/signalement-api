@@ -7,7 +7,6 @@ import slick.jdbc.JdbcProfile
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject

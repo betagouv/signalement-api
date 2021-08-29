@@ -1,7 +1,6 @@
 import models.PaginatedResult
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

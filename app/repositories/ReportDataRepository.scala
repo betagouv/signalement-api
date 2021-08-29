@@ -6,7 +6,6 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent
-
 import java.time._
 import java.util.UUID
 import javax.inject.Inject

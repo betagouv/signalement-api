@@ -10,7 +10,6 @@ import play.api.Logger
 import play.api.mvc.Request
 import utils.EmailAddress
 import utils.EmailSubjects
-
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Named

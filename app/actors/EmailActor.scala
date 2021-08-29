@@ -9,7 +9,6 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
-
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext

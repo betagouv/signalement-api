@@ -5,7 +5,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.EnumUtils
-
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -28,7 +27,7 @@ case class User(
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime]
 ) extends Identity {
-  def fullName = s"${firstName} ${lastName}"
+  def fullName = s"$firstName $lastName"
 }
 
 object User {

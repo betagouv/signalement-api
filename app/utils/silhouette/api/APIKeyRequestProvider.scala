@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import play.api.Configuration
 import play.api.mvc.Request
 import utils.silhouette.Credentials._
-
 import javax.inject.Inject
 import scala.concurrent.Future
 

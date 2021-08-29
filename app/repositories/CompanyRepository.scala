@@ -6,7 +6,6 @@ import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
 import utils.SIRET
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -178,25 +177,25 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
           DBIO.seq(
             sqlu"""
             update companies set
-            department = ${department},
-            street_number = ${street_number},
-            street = ${street},
-            address_supplement = ${address_supplement},
-            city = ${city},
-            postal_code = ${postal_code},
-            activity_code = ${activity_code},
+            department = $department,
+            street_number = $street_number,
+            street = $street,
+            address_supplement = $address_supplement,
+            city = $city,
+            postal_code = $postal_code,
+            activity_code = $activity_code,
             done = true
-            where siret = ${siret}
+            where siret = $siret
           """,
             sqlu"""
             update reports set
-            company_postal_code = ${postal_code},
-            company_street_number = ${street_number},
-            company_street = ${street},
-            company_address_supplement = ${address_supplement},
-            company_city = ${city},
+            company_postal_code = $postal_code,
+            company_street_number = $street_number,
+            company_street = $street,
+            company_address_supplement = $address_supplement,
+            company_city = $city,
             done = true
-            where company_siret = ${siret}
+            where company_siret = $siret
           """
           )
         )
@@ -206,12 +205,12 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
             sqlu"""
             update companies set
             done = true
-            where siret = ${siret}
+            where siret = $siret
           """,
             sqlu"""
             update reports set
             done = true
-            where company_siret = ${siret}
+            where company_siret = $siret
           """
           )
         )

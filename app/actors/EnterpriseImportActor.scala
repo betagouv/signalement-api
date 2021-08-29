@@ -28,7 +28,6 @@ import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import utils.SIREN
-
 import java.io.BufferedInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
@@ -105,7 +104,7 @@ class EnterpriseSyncActor @Inject() (
             .fromInputStream(() => inputstream)
             .runWith(FileIO.toPath(Paths.get(filePath)))
         }
-        _ = logger.debug(s"File saved in ${filePath}")
+        _ = logger.debug(s"File saved in $filePath")
       } yield ingestFile(jobId, companyFile)
 
     case Cancel(name) => cancel(name)

@@ -12,7 +12,6 @@ import repositories.SubscriptionRepository
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
 import java.util.UUID
 import javax.inject._
 import scala.concurrent.ExecutionContext
