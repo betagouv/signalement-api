@@ -5,8 +5,10 @@ import models.DetailInputValue.toDetailInputValue
 import models._
 import play.api.Configuration
 import play.api.Logger
-import play.api.libs.json.Json
-import services.MailService
+import play.api.libs.json.{JsError, Json}
+import repositories.{CompanyRepository, EventRepository, ReportRepository}
+import services.{MailService, MailerService}
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus.NA
 import utils.Constants.Tags
 import utils.silhouette.auth.AuthEnv
@@ -27,10 +29,14 @@ import scala.concurrent.duration._
 import javax.inject.Singleton
 
 @Singleton
-class AdminController @Inject() (
-    val configuration: Configuration,
-    val silhouette: Silhouette[AuthEnv],
-    mailService: MailService
+class AdminController @Inject()(
+  val configuration: Configuration,
+  val silhouette: Silhouette[AuthEnv],
+  reportRepository: ReportRepository,
+  companyRepository: CompanyRepository,
+  eventRepository: EventRepository,
+  mailerService: MailerService,
+  mailService: MailService
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
@@ -300,6 +306,53 @@ class AdminController @Inject() (
           }
           .map(_ => Ok)
           .getOrElse(NotFound)
+      )
+  }
+
+  def sendProAckToConsumer = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    import AdminObjects.ReportList
+    request.body
+      .validate[ReportList](Json.reads[ReportList])
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        results => {
+          for {
+            reports <- reportRepository.getReportsByIds(results.reportIds)
+            eventsMap <- eventRepository.prefetchReportsEvents(reports)
+          } yield reports.foreach { report =>
+            eventsMap
+              .get(report.id)
+              .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
+              .map { responseEvent =>
+                mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
+              }
+          }
+          Future(Ok)
+        }
+      )
+  }
+
+  def sendNewReportToPro = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+    import AdminObjects.ReportList
+    request.body
+      .validate[ReportList](Json.reads[ReportList])
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        results => {
+          reportRepository
+            .getReportsByIds(results.reportIds)
+            .map(_.foreach { report =>
+              report.companyId.map { companyId =>
+                companyRepository.fetchAdmins(companyId)
+                  .map(_.map(_.email).distinct)
+                  .flatMap { adminsEmails =>
+                    mailService.Pro.sendReportNotification(adminsEmails, report)
+                    Future.successful()
+                  }
+              }
+            })
+          Future(Ok)
+        }
       )
   }
 }
