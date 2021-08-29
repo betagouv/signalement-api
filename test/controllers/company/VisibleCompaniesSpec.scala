@@ -197,6 +197,3 @@ The get visible companies endpoint should
   def haveVisibleCompanies(visibleCompanies: Matcher[String]*): Matcher[String] =
     have(TraversableMatchers.exactly(visibleCompanies: _*))
 }
-
-// List(User(38d3ded9-17a3-4850-8f5f-4e1674105f4b,  $2a$10$1ApwUO22fC0qj7fgjgoADO/pFzpn.NICXuNa69wYr/dnNnWOJgdg., bob.durand.908821@example.com,Bob,Durand,UserRole(Professionnel,List(listReports, createReportAction)),None,true))
-// List(User(38d3ded9-17a3-4850-8f5f-4e1674105f4b,  a6GYCrxE4ENUXQZVZahYy5uNb5iL7Co2YvjNCwy5uJxn,                 bob.durand.908821@example.com,Bob,Durand,UserRole(Professionnel,List(listReports, createReportAction)),None,true))
