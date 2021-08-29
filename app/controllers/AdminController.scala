@@ -5,9 +5,13 @@ import models.DetailInputValue.toDetailInputValue
 import models._
 import play.api.Configuration
 import play.api.Logger
-import play.api.libs.json.{JsError, Json}
-import repositories.{CompanyRepository, EventRepository, ReportRepository}
-import services.{MailService, MailerService}
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
+import repositories.CompanyRepository
+import repositories.EventRepository
+import repositories.ReportRepository
+import services.MailService
+import services.MailerService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus.NA
 import utils.Constants.Tags
@@ -29,14 +33,14 @@ import scala.concurrent.duration._
 import javax.inject.Singleton
 
 @Singleton
-class AdminController @Inject()(
-  val configuration: Configuration,
-  val silhouette: Silhouette[AuthEnv],
-  reportRepository: ReportRepository,
-  companyRepository: CompanyRepository,
-  eventRepository: EventRepository,
-  mailerService: MailerService,
-  mailService: MailService
+class AdminController @Inject() (
+    val configuration: Configuration,
+    val silhouette: Silhouette[AuthEnv],
+    reportRepository: ReportRepository,
+    companyRepository: CompanyRepository,
+    eventRepository: EventRepository,
+    mailerService: MailerService,
+    mailService: MailService
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
@@ -324,7 +328,8 @@ class AdminController @Inject()(
               .get(report.id)
               .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
               .map { responseEvent =>
-                mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
+                mailService.Consumer
+                  .sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
               }
           }
           Future(Ok)
@@ -343,12 +348,10 @@ class AdminController @Inject()(
             .getReportsByIds(results.reportIds)
             .map(_.foreach { report =>
               report.companyId.map { companyId =>
-                companyRepository.fetchAdmins(companyId)
+                companyRepository
+                  .fetchAdmins(companyId)
                   .map(_.map(_.email).distinct)
-                  .flatMap { adminsEmails =>
-                    mailService.Pro.sendReportNotification(adminsEmails, report)
-                    Future.successful()
-                  }
+                  .map(adminsEmails => mailService.Pro.sendReportNotification(adminsEmails, report))
               }
             })
           Future(Ok)
