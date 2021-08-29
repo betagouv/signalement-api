@@ -31,7 +31,6 @@ class AccessesOrchestrator @Inject() (
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val timeout: akka.util.Timeout = 5.seconds

@@ -17,7 +17,6 @@ import utils.EmailSubjects
 import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.Period
 import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
@@ -35,7 +34,6 @@ class MailService @Inject() (
 
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = configuration.get[EmailAddress]("play.mail.from")
-  private[this] val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(Period.parse)
   implicit private[this] val websiteUrl = configuration.get[URI]("play.website.url")
   implicit private[this] val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   implicit private[this] val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")

@@ -16,7 +16,6 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.Tags
 import utils.Constants
-import utils.EmailAddress
 import utils.URL
 
 import java.net.URI
@@ -46,7 +45,6 @@ class ReportOrchestrator @Inject() (
 
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
-  val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
 
   implicit val timeout: akka.util.Timeout = 5.seconds
