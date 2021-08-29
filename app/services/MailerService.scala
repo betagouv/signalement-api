@@ -39,7 +39,7 @@ class MailerService @Inject() (mailerClient: MailerClient, system: ActorSystem, 
         from.value,
         recipients.map(_.value),
         bcc = blindRecipients.map(_.value),
-        bodyHtml = Some(""), //+Some(bodyHtml),
+        bodyHtml = Some(bodyHtml),
         attachments = defaultAttachments ++ attachments
       )
     )
