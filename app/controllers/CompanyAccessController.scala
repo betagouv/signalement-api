@@ -1,6 +1,7 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.AccessesOrchestrator
 import play.api.Logger
@@ -129,14 +130,12 @@ class CompanyAccessController @Inject() (
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
-    for {
-      company <- companyRepository.findBySiret(SIRET(siret))
-      token <- company
-                 .map(accessTokenRepository.findToken(_, token))
-                 .getOrElse(Future(None))
-    } yield token
-      .flatMap(t => company.map(c => Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))))
-      .getOrElse(NotFound)
+    accessesOrchestrator
+      .fetchCompanyUserActivationToken(SIRET(siret), token)
+      .map(token => Ok(Json.toJson(token)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
 
   case class ActivationLinkRequest(token: String, email: EmailAddress)

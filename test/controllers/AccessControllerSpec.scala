@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.specs2.concurrent.ExecutionEnv
@@ -14,11 +15,10 @@ import play.api.libs.json.Json
 import play.api.test._
 import play.api.test.Helpers._
 import utils.silhouette.auth.AuthEnv
-
 import utils.AppSpec
 import utils.Fixtures
-
 import models._
+import models.token.TokenKind.CompanyJoin
 import repositories._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
@@ -213,7 +213,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .createToken(CompanyJoin, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
       Duration.Inf
     )
     token must haveClass[AccessToken]

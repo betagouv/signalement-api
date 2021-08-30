@@ -2,7 +2,6 @@ package controllers.company
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -10,6 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import controllers.routes
 import models._
+import models.token.TokenKind.CompanyInit
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -60,7 +60,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     for {
       c <- companyRepository.getOrCreate(company.siret, company)
       a <- accessTokenRepository.createToken(
-             TokenKind.COMPANY_INIT,
+             CompanyInit,
              f"${Random.nextInt(1000000)}%06d",
              Some(tokenDuration),
              Some(company.id),

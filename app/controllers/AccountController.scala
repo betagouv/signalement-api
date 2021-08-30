@@ -1,11 +1,13 @@
 package controllers
 
+import _root_.controllers.error.AppErrorTransformer._
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models._
+import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
 import play.api.libs.json.JsError
@@ -127,10 +129,14 @@ class AccountController @Inject() (
     )
   }
   def fetchTokenInfo(token: String) = UnsecuredAction.async { implicit request =>
-    for {
-      accessToken <- accessTokenRepository.findToken(token)
-    } yield accessToken.map(t => Ok(Json.toJson(TokenInfo(t.token, t.kind, None, t.emailedTo)))).getOrElse(NotFound)
+    accessesOrchestrator
+      .fetchDGCCRFUserActivationToken(token)
+      .map(token => Ok(Json.toJson(token)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
+
   def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
       .validate[String]((JsPath \ "token").read[String])
@@ -140,7 +146,7 @@ class AccountController @Inject() (
           for {
             accessToken <- accessTokenRepository.findToken(token)
             oUser <- accessToken
-                       .filter(_.kind == TokenKind.VALIDATE_EMAIL)
+                       .filter(_.kind == ValidateEmail)
                        .map(accessesOrchestrator.validateEmail)
                        .getOrElse(Future(None))
             authToken <- oUser

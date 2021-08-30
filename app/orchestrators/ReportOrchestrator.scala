@@ -4,6 +4,7 @@ import actors.UploadActor
 import akka.actor.ActorRef
 import models.Event._
 import models._
+import models.token.TokenKind.CompanyInit
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
@@ -60,11 +61,11 @@ class ReportOrchestrator @Inject() (
                  .map(Future(_))
                  .getOrElse(
                    accessTokenRepository.createToken(
-                     TokenKind.COMPANY_INIT,
-                     f"${Random.nextInt(1000000)}%06d",
-                     tokenDuration,
-                     Some(companyId),
-                     Some(AccessLevel.ADMIN)
+                     kind = CompanyInit,
+                     token = f"${Random.nextInt(1000000)}%06d",
+                     validity = tokenDuration,
+                     companyId = Some(companyId),
+                     level = Some(AccessLevel.ADMIN)
                    )
                  )
     } yield token.token
