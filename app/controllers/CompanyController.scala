@@ -83,7 +83,7 @@ class CompanyController @Inject() (
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),
