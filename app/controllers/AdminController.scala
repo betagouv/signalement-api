@@ -1,40 +1,34 @@
 package controllers
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
+import models.DetailInputValue.toDetailInputValue
+import models._
+import play.api.Configuration
+import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
+import repositories._
+import services.MailerService
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ReportStatus.NA
+import utils.Constants.Tags
+import utils._
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
+
+import java.net.URI
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
-import models._
-import play.api.libs.json.JsError
-import repositories._
-import play.api.libs.json.Json
-import play.api.Configuration
-import play.api.Logger
-import utils.Constants.ReportStatus.NA
-import utils.Constants.ReportStatus.reportStatusList
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
-import utils.EmailAddress
-import utils.EmailSubjects
-import utils.SIRET
-import utils._
-
-import scala.concurrent.duration._
-import java.time.LocalDate
-
-import services.MailerService
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.Tags
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class AdminController @Inject() (
@@ -60,7 +54,7 @@ class AdminController @Inject() (
     id = UUID.randomUUID,
     category = "Test",
     subcategories = List("test"),
-    details = List("test"),
+    details = List(toDetailInputValue("test")),
     companyId = None,
     companyName = None,
     companyAddress = Address(None, None, None, None),

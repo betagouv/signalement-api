@@ -1,37 +1,35 @@
 package controllers
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
+import actors.EmailActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import actors.EmailActor
-import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
 import models._
+import orchestrators.AccessesOrchestrator
 import play.api._
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
-import orchestrators.AccessesOrchestrator
 import repositories.AuthTokenRepository
 import repositories.UserRepository
-import services.MailerService
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.UserService
 import utils.EmailAddress
 import utils.EmailSubjects
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.UserService
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class AuthController @Inject() (

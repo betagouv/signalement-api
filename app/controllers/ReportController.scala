@@ -1,32 +1,31 @@
 package controllers
 
-import java.net.URI
-import java.nio.file.Paths
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
+import play.api.Configuration
+import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-import play.api.Configuration
-import play.api.Logger
 import repositories._
 import services.PDFService
 import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Constants
+import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
-import utils.Constants
-import utils.SIRET
 
+import java.net.URI
+import java.nio.file.Paths
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure

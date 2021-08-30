@@ -11,7 +11,6 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
-import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.CompanyRepository

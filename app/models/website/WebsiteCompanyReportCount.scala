@@ -1,11 +1,12 @@
 package models.website
 
+import io.scalaland.chimney.dsl.TransformerOps
 import models.Company
 import models.Website
 import models.WebsiteKind
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-import io.scalaland.chimney.dsl.TransformerOps
+
 import java.time.OffsetDateTime
 import java.util.UUID
 

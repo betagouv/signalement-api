@@ -1,12 +1,9 @@
 package tasks
 
 import java.net.URI
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 
-import models.Event._
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -18,12 +15,10 @@ import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
-import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.AppSpec

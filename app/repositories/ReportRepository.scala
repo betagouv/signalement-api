@@ -1,5 +1,6 @@
 package repositories
 
+import models.DetailInputValue.toDetailInputValue
 import models._
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
@@ -115,7 +116,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         id = id,
         category = category,
         subcategories = subcategories,
-        details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
+        details = details.filter(_ != null).map(toDetailInputValue),
         companyId = companyId,
         companyName = companyName,
         companyAddress = Address(

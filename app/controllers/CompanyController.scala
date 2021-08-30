@@ -1,32 +1,31 @@
 package controllers
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
-import java.util.UUID
 import com.mohiva.play.silhouette.api.Silhouette
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.Event.stringToDetailsJsValue
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
-import play.api.libs.json._
-import play.api.libs.ws._
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.json._
+import play.api.libs.ws._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
-import utils.silhouette.auth.WithRole
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithPermission
+import utils.silhouette.auth.WithRole
 
+import java.net.URI
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -84,7 +83,7 @@ class CompanyController @Inject() (
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),

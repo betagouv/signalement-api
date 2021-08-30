@@ -4,7 +4,6 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.actions.UserAwareRequest
 import models._
-import play.api.mvc.InjectedController
 import play.api.mvc._
 import repositories._
 import utils.SIRET

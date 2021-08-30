@@ -1,13 +1,10 @@
 package controllers
 
-import java.time.Duration
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
 import models._
-import play.api.libs.json.Json
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories._
 import services.MailerService
 import services.S3Service
@@ -16,6 +13,8 @@ import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
+import java.time.Duration
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class StatisticController @Inject() (
