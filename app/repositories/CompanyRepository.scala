@@ -235,7 +235,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     val filterQuery = identity
       .map {
         case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") =>
-          query.filter(_._1.id.asColumnOf[String] like s"${q.toLowerCase}%")
+          query.filter(_._1.id.asColumnOf[String] like s"%${q.toLowerCase}%")
         case q if q.matches("[0-9]{14}") => query.filter(_._1.siret === SIRET(q))
         case q if q.matches("[0-9]{9}")  => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case q                           => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
