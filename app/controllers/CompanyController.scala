@@ -78,22 +78,18 @@ class CompanyController @Inject() (
     } yield Ok(Json.toJson(companies))
   }
 
+
+
   def searchRegistered(
       departments: Option[Seq[String]],
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
   ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
-    def removeSpacesIfSirenSirets(identity: String): String =
-      if (identity.replaceAll("\\s", "").matches("^([0-9]{9}|[0-9]{14})$"))
-        identity.replaceAll("\\s", "")
-      else
-        identity
-
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),
-        identity = identity.map(removeSpacesIfSirenSirets),
+        identity = identity.map(SearchCompanyIdentity.fromString),
         offset = offset,
         limit = limit
       )
