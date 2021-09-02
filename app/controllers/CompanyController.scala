@@ -78,8 +78,6 @@ class CompanyController @Inject() (
     } yield Ok(Json.toJson(companies))
   }
 
-
-
   def searchRegistered(
       departments: Option[Seq[String]],
       identity: Option[String],
