@@ -1,36 +1,49 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.ReportBlockedNotificationBody
 import models.UserRoles
+import orchestrators.ReportBlockedNotificationOrchestrator
+import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.ReportNotificationBlockedRepository
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class ReportBlockedNotificationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-    val repository: ReportNotificationBlockedRepository
+    val orchestrator: ReportBlockedNotificationOrchestrator
 )(implicit
     ec: ExecutionContext
 ) extends BaseController {
 
   def getAll() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
-    repository.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))
+    orchestrator.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))
   }
 
-  def create(companyId: UUID) = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
-    repository.create(request.identity.id, companyId).map(entity => Ok(Json.toJson(entity)))
+  def create() = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
+    request.body
+      .validate[ReportBlockedNotificationBody]
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        body =>
+          orchestrator.createIfNotExists(request.identity.id, body.companyIds).map(entity => Ok(Json.toJson(entity)))
+      )
   }
 
-  def delete(companyId: UUID) = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
-    repository.delete(request.identity.id, companyId).map(_ => Ok)
+  def delete() = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
+    request.body
+      .validate[ReportBlockedNotificationBody]
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        body => orchestrator.delete(request.identity.id, body.companyIds).map(_ => Ok)
+      )
   }
 }

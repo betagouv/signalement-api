@@ -64,11 +64,11 @@ class ReportNotificationBlockedRepository @Inject() (
         .result
     ).map(blockedEmails => email.diff(blockedEmails))
 
-  def create(userId: UUID, companyId: UUID): Future[ReportBlockedNotification] = {
-    val entity = ReportBlockedNotification(userId = userId, companyId = companyId)
-    db.run(query += entity).map(_ => entity)
+  def create(userId: UUID, companyIds: Seq[UUID]): Future[Seq[ReportBlockedNotification]] = {
+    val entities = companyIds.map(companyId => ReportBlockedNotification(userId = userId, companyId = companyId))
+    db.run(query ++= entities).map(_ => entities)
   }
 
-  def delete(userId: UUID, companyId: UUID): Future[Int] =
-    db.run(query.filter(_.userId === userId).filter(_.companyId === companyId).delete)
+  def delete(userId: UUID, companyIds: Seq[UUID]): Future[Int] =
+    db.run(query.filter(_.userId === userId).filter(_.companyId inSet companyIds).delete)
 }

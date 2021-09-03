@@ -15,3 +15,9 @@ case class ReportBlockedNotification(
 object ReportBlockedNotification {
   implicit val format: OFormat[ReportBlockedNotification] = Json.format[ReportBlockedNotification]
 }
+
+case class ReportBlockedNotificationBody(companyIds: Seq[UUID])
+
+object ReportBlockedNotificationBody {
+  implicit val format: OFormat[ReportBlockedNotificationBody] = Json.format[ReportBlockedNotificationBody]
+}
