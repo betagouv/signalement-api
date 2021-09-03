@@ -13,8 +13,8 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportNotificationBlocklistTable(tag: Tag)
-    extends Table[ReportNotificationBlocklist](tag, "report_notification_blocklist") {
+class ReportBlockedNotificationTable(tag: Tag)
+    extends Table[ReportBlockedNotification](tag, "report_notifications_blocked") {
   def userId = column[UUID]("user_id")
   def companyId = column[UUID]("company_id")
   def dateCreation = column[OffsetDateTime]("date_creation")
@@ -32,15 +32,15 @@ class ReportNotificationBlocklistTable(tag: Tag)
     userId,
     companyId,
     dateCreation
-  ) <> ((ReportNotificationBlocklist.apply _).tupled, ReportNotificationBlocklist.unapply)
+  ) <> ((ReportBlockedNotification.apply _).tupled, ReportBlockedNotification.unapply)
 }
 
 object ReportNotificationBlocklistTables {
-  val tables = TableQuery[ReportNotificationBlocklistTable]
+  val tables = TableQuery[ReportBlockedNotificationTable]
 }
 
 @Singleton
-class ReportNotificationBlocklistRepository @Inject() (
+class ReportNotificationBlockedRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
 )(implicit
     ec: ExecutionContext
@@ -52,22 +52,20 @@ class ReportNotificationBlocklistRepository @Inject() (
   val query = ReportNotificationBlocklistTables.tables
   val queryUser = UserTables.tables
 
-  def findByUserId(userId: UUID): Future[Seq[ReportNotificationBlocklist]] =
+  def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] =
     db.run(query.filter(_.userId === userId).result)
 
   def filterBlockedEmails(email: List[EmailAddress], companyId: UUID): Future[List[EmailAddress]] =
     db.run(
       queryUser
-        .filter(u =>
-          u.acceptNotifications === false || (u.id in (query.filter(_.companyId === companyId).map(_.userId)))
-        )
+        .filter(_.id in (query.filter(_.companyId === companyId).map(_.userId)))
         .map(_.email)
         .to[List]
         .result
     ).map(blockedEmails => email.diff(blockedEmails))
 
-  def create(userId: UUID, companyId: UUID): Future[ReportNotificationBlocklist] = {
-    val entity = ReportNotificationBlocklist(userId = userId, companyId = companyId)
+  def create(userId: UUID, companyId: UUID): Future[ReportBlockedNotification] = {
+    val entity = ReportBlockedNotification(userId = userId, companyId = companyId)
     db.run(query += entity).map(_ => entity)
   }
 

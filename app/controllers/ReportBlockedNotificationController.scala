@@ -3,7 +3,7 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models.UserRoles
 import play.api.libs.json.Json
-import repositories.ReportNotificationBlocklistRepository
+import repositories.ReportNotificationBlockedRepository
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -14,10 +14,10 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class ReportNotificationBlocklistController @Inject() (
+class ReportBlockedNotificationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-    val repository: ReportNotificationBlocklistRepository
+    val repository: ReportNotificationBlockedRepository
 )(implicit
     ec: ExecutionContext
 ) extends BaseController {

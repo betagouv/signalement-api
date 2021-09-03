@@ -1,9 +1,9 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models._
 import orchestrators._
@@ -26,7 +26,6 @@ import scala.concurrent.Future
 class AccountController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepository,
-    accountOrchestrator: AccountOrchestrator,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
     credentialsProvider: CredentialsProvider,
@@ -48,19 +47,6 @@ class AccountController @Inject() (
         Ok(Json.toJson(user))
       }
       .getOrElse(NotFound)
-  }
-
-  def patchUser = SecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[UserUpdate]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        userUpdate =>
-          accountOrchestrator.patchUser(request.identity.id, userUpdate).map {
-            case None         => NotFound
-            case Some(result) => Ok(Json.toJson(result))
-          }
-      )
   }
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>

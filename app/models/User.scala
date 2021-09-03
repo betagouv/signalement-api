@@ -27,8 +27,7 @@ case class User(
     firstName: String,
     lastName: String,
     userRole: UserRole,
-    lastEmailValidation: Option[OffsetDateTime],
-    acceptNotifications: Boolean = true
+    lastEmailValidation: Option[OffsetDateTime]
 ) extends Identity {
   def fullName = s"${firstName} ${lastName}"
 }
@@ -42,8 +41,7 @@ object User {
       "lastName" -> user.lastName,
       "role" -> user.userRole.name,
       "permissions" -> user.userRole.permissions,
-      "lastEmailValidation" -> user.lastEmailValidation,
-      "acceptNotifications" -> user.acceptNotifications
+      "lastEmailValidation" -> user.lastEmailValidation
     )
   }
 
@@ -54,22 +52,8 @@ object User {
       (JsPath \ "firstName").read[String] and
       (JsPath \ "lastName").read[String] and
       ((JsPath \ "role").read[String]).map(UserRoles.withName) and
-      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime] and
-      (JsPath \ "acceptNotifications").read[Boolean]
+      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
   )(User.apply _)
-}
-
-case class UserUpdate(
-    acceptNotifications: Option[Boolean] = None
-) {
-  def mergeInto(user: User): User =
-    user.copy(
-      acceptNotifications = acceptNotifications.getOrElse(user.acceptNotifications)
-    )
-}
-
-object UserUpdate {
-  implicit val format: OFormat[UserUpdate] = Json.format[UserUpdate]
 }
 
 case class UserLogin(

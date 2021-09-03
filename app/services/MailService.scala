@@ -9,7 +9,7 @@ import play.api.Logger
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
 import play.api.mvc.Request
-import repositories.ReportNotificationBlocklistRepository
+import repositories.ReportNotificationBlockedRepository
 import utils.Constants.Tags
 import utils.EmailAddress
 import utils.EmailSubjects
@@ -26,7 +26,7 @@ class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
     configuration: Configuration,
     mailerService: MailerService,
-    reportNotificationBlocklistRepo: ReportNotificationBlocklistRepository,
+    reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
     val pdfService: PDFService
 )(implicit
     private[this] val executionContext: ExecutionContext

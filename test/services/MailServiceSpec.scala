@@ -13,7 +13,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
 import repositories.CompanyRepository
-import repositories.ReportNotificationBlocklistRepository
+import repositories.ReportNotificationBlockedRepository
 import repositories._
 import utils.AppSpec
 import utils.EmailAddress
@@ -38,7 +38,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
-  lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlocklistRepository]
+  lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val mailService = injector.instanceOf[MailService]
 
@@ -136,37 +136,6 @@ class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceS
   def e1 = {
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
-  }
-}
-
-class MailServiceSpecOnBlockAllEmails(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
-  override def is = s2"""No email must be sent to user that block all the notifications $e1"""
-
-  def e1 = {
-    Await.result(
-      userRepository.update(proWithAccessToSubsidiary.copy(acceptNotifications = false)),
-      Duration.Inf
-    )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
-    checkRecipients(Seq(proWithAccessToHeadOffice.email))
-  }
-}
-
-class MailServiceSpecBlockAllEmailsOrBlockForThis(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
-  override def is =
-    s2"""No email must be sent since one user blocked all notifications and the other block for this company $e1"""
-
-  def e1 = {
-    Await.result(
-      userRepository.update(proWithAccessToSubsidiary.copy(acceptNotifications = false)),
-      Duration.Inf
-    )
-    Await.result(
-      reportNotificationBlocklistRepository.create(proWithAccessToHeadOffice.id, reportForSubsidiary.companyId.get),
-      Duration.Inf
-    )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
-    checkRecipients(Seq())
   }
 }
 

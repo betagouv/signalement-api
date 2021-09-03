@@ -24,18 +24,16 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
   def lastName = column[String]("lastname")
   def role = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
-  def acceptNotifications = column[Boolean]("accept_notifications", O.Default(true))
 
-  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime], Boolean)
+  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
 
-  def constructUser: UserData => User = {
-    case (id, password, email, firstName, lastName, role, lastEmailValidation, acceptNotifications) =>
-      User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation, acceptNotifications)
+  def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
+    User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
   }
 
   def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation, acceptNotifications) =>
-      (id, password, email, firstName, lastName, role.name, lastEmailValidation, acceptNotifications)
+    case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
+      (id, password, email, firstName, lastName, role.name, lastEmailValidation)
   }
 
   def * = (
@@ -45,8 +43,7 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
     firstName,
     lastName,
     role,
-    lastEmailValidation,
-    acceptNotifications
+    lastEmailValidation
   ) <> (constructUser, extractUser.lift)
 }
 
@@ -121,8 +118,8 @@ class UserRepository @Inject() (
         yield refUser
     db.run(
       queryUser
-        .map(u => (u.firstName, u.lastName, u.email, u.acceptNotifications))
-        .update(user.firstName, user.lastName, user.email, user.acceptNotifications)
+        .map(u => (u.firstName, u.lastName, u.email))
+        .update(user.firstName, user.lastName, user.email)
     )
   }
 

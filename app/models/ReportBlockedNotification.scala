@@ -6,12 +6,12 @@ import play.api.libs.json.OFormat
 import java.time.OffsetDateTime
 import java.util.UUID
 
-case class ReportNotificationBlocklist(
+case class ReportBlockedNotification(
     userId: UUID,
     companyId: UUID,
     dateCreation: OffsetDateTime = OffsetDateTime.now
 )
 
-object ReportNotificationBlocklist {
-  implicit val format: OFormat[ReportNotificationBlocklist] = Json.format[ReportNotificationBlocklist]
+object ReportBlockedNotification {
+  implicit val format: OFormat[ReportBlockedNotification] = Json.format[ReportBlockedNotification]
 }
