@@ -87,7 +87,7 @@ class CompanyController @Inject() (
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),
-        identity = identity.map(_.replaceAll("\\s", "")),
+        identity = identity.map(SearchCompanyIdentity.fromString),
         offset = offset,
         limit = limit
       )
