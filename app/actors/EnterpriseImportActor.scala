@@ -105,7 +105,7 @@ class EnterpriseSyncActor @Inject() (
             .fromInputStream(() => inputstream)
             .runWith(FileIO.toPath(Paths.get(filePath)))
         }
-        _ = logger.debug(s"File saved in ${filePath}")
+        _ = logger.debug(s"File saved in $filePath")
       } yield ingestFile(jobId, companyFile)
 
     case Cancel(name) => cancel(name)

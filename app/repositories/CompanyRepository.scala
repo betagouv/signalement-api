@@ -178,25 +178,25 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
           DBIO.seq(
             sqlu"""
             update companies set
-            department = ${department},
-            street_number = ${street_number},
-            street = ${street},
-            address_supplement = ${address_supplement},
-            city = ${city},
-            postal_code = ${postal_code},
-            activity_code = ${activity_code},
+            department = $department,
+            street_number = $street_number,
+            street = $street,
+            address_supplement = $address_supplement,
+            city = $city,
+            postal_code = $postal_code,
+            activity_code = $activity_code,
             done = true
-            where siret = ${siret}
+            where siret = $siret
           """,
             sqlu"""
             update reports set
-            company_postal_code = ${postal_code},
-            company_street_number = ${street_number},
-            company_street = ${street},
-            company_address_supplement = ${address_supplement},
-            company_city = ${city},
+            company_postal_code = $postal_code,
+            company_street_number = $street_number,
+            company_street = $street,
+            company_address_supplement = $address_supplement,
+            company_city = $city,
             done = true
-            where company_siret = ${siret}
+            where company_siret = $siret
           """
           )
         )
@@ -206,12 +206,12 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
             sqlu"""
             update companies set
             done = true
-            where siret = ${siret}
+            where siret = $siret
           """,
             sqlu"""
             update reports set
             done = true
-            where company_siret = ${siret}
+            where company_siret = $siret
           """
           )
         )
@@ -235,7 +235,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     val filterQuery = identity
       .map {
         case SearchCompanyIdentityRCS(q) =>
-          query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
+          query.filter(_._1.id.asColumnOf[String] like s"%$q%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
         case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case SearchCompanyIdentityName(q)  => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")

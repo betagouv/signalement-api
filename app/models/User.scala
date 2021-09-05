@@ -28,7 +28,7 @@ case class User(
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime]
 ) extends Identity {
-  def fullName = s"${firstName} ${lastName}"
+  def fullName = s"$firstName $lastName"
 }
 
 object User {

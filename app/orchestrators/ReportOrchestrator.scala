@@ -347,7 +347,7 @@ class ReportOrchestrator @Inject() (
       reports <- company.map(c => reportRepository.getReports(c.id)).getOrElse(Future(Nil))
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
-      logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
+      logger.debug(s"Removed $cnt tokens for company $companyId")
       ()
     }
 
@@ -549,7 +549,7 @@ class ReportOrchestrator @Inject() (
     }
 
   def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
-    logger.debug(s"Report ${reportId} - the consumer give a review on response")
+    logger.debug(s"Report $reportId - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
         Some(UUID.randomUUID()),

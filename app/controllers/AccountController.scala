@@ -82,7 +82,7 @@ class AccountController @Inject() (
           email =>
             if (email.value.endsWith(ccrfEmailSuffix))
               accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
-            else Future(Forbidden(s"Email invalide. Email acceptés : *${ccrfEmailSuffix}"))
+            else Future(Forbidden(s"Email invalide. Email acceptés : *$ccrfEmailSuffix"))
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>

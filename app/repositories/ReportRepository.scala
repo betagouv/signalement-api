@@ -424,7 +424,7 @@ class ReportRepository @Inject() (
           .getOrElse(false)
       }
       .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
+        table.companyName like s"$companyName%"
       }
       .filterIf(filter.companyCountries.nonEmpty) { case table =>
         table.companyCountry
@@ -450,7 +450,7 @@ class ReportRepository @Inject() (
         table.tags @& filter.tags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"$details"
       }
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
@@ -604,7 +604,7 @@ class ReportRepository @Inject() (
     .run(
       reportTableQuery
         .filter(_.host.isDefined)
-        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
+        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%$h%")))
         .filter(_.companyId.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime

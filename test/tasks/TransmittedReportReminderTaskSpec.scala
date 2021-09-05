@@ -258,7 +258,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     ).await
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>
-    (action == event.action, s"action doesn't match ${action}")
+    (action == event.action, s"action doesn't match $action")
   }
 
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) =
@@ -269,7 +269,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
-      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match $status")
   }
 
   def reportStatusMustNotHaveBeenUpdated(report: Report) =

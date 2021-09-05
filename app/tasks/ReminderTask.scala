@@ -69,14 +69,14 @@ class ReminderTask @Inject() (
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
-    logger.debug(s"initialDelay - ${initialDelay}");
+    logger.debug(s"initialDelay - $initialDelay");
     runTask(LocalDate.now.atStartOfDay())
   }
 
   def runTask(now: LocalDateTime) = {
 
     logger.debug("Traitement de relance automatique")
-    logger.debug(s"taskDate - ${now}");
+    logger.debug(s"taskDate - $now");
 
     for {
       onGoingReportsWithAdmins <- reportRepository.getReportsForStatusWithAdmins(TRAITEMENT_EN_COURS)

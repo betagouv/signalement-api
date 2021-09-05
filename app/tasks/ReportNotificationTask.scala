@@ -52,7 +52,7 @@ class ReportNotificationTask @Inject() (
   val departments = Departments.ALL
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, 1.days) { () =>
-    logger.debug(s"initialDelay - ${initialDelay}");
+    logger.debug(s"initialDelay - $initialDelay");
 
     if (
       LocalDate.now.getDayOfWeek == DayOfWeek.valueOf(
@@ -68,7 +68,7 @@ class ReportNotificationTask @Inject() (
   def runPeriodicNotificationTask(taskDate: LocalDate, period: Period) = {
 
     logger.debug(s"Traitement de notification des signalements - period $period")
-    logger.debug(s"taskDate - ${taskDate}");
+    logger.debug(s"taskDate - $taskDate");
 
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
