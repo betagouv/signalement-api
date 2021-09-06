@@ -1,12 +1,13 @@
 package orchestrators
 
-import models.CompanyData
+import models.Company
 import models.User
 import models.UserRoles
 import repositories._
 import utils.SIREN
 import utils.SIRET
 
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -20,22 +21,48 @@ class CompaniesVisibilityOrchestrator @Inject() (
     companyRepo: CompanyRepository
 )(implicit val executionContext: ExecutionContext) {
 
-  def fetchVisibleCompanies(pro: User): Future[List[CompanyData]] =
+  def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =
+    for {
+      companiesDataIncludingHeadOffice <- companyDataRepo.searchBySiretIncludingHeadOffice(siret)
+      companies <- companyRepo.findBySirets(companiesDataIncludingHeadOffice.map(_.siret))
+      admins <- companyRepo.fetchUsersByCompanies(companies.map(_.id))
+    } yield admins
+
+  def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
+    for {
+      admins <- companyRepo.fetchAdminsMapByCompany(companies.map(_._2))
+      headOfficesCompanyData <- companyDataRepo
+                                  .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)))
+                                  .map(_.map(_._1))
+      headOfficesCompany <- companyRepo.findBySirets(headOfficesCompanyData.map(_.siret))
+      headOfficeAdminsMap <- companyRepo.fetchAdminsMapByCompany(headOfficesCompany.map(_.id))
+      mapHeadOfficeIdByCompanyId = companies
+                                     .groupBy(_._2)
+                                     .view
+                                     .mapValues { values =>
+                                       val siren = values.headOption.map(x => SIREN(x._1))
+                                       headOfficesCompany.find(c => siren.contains(SIREN(c.siret))).map(_.id)
+                                     }
+                                     .toMap
+
+    } yield admins.map { x =>
+      val headOfficeId = mapHeadOfficeIdByCompanyId(x._1)
+      val headOfficeAdmins = headOfficeId.map(headOfficeAdminsMap).getOrElse(List())
+      (x._1, (x._2 ++ headOfficeAdmins).distinctBy(_.id))
+    }
+
+  def fetchVisibleCompanies(pro: User): Future[List[Company]] =
     (for {
       authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
-      headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets)
+      headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets).map(_.map(_.siret))
       authorizedHeadOffices = authorizedSirets.intersect(headOfficeSirets)
       authorizedSubcompanies = authorizedSirets.diff(headOfficeSirets)
       companiesForHeadOffices <-
         companyDataRepo.searchBySirens(authorizedHeadOffices.map(SIREN.apply), includeClosed = true)
       companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSubcompanies, includeClosed = true)
     } yield companiesForHeadOffices.concat(companiesWithoutHeadOffice).map(_._1).distinct)
-      .flatMap(filterReportedCompanyData)
-
-  private[this] def filterReportedCompanyData(companies: List[CompanyData]): Future[List[CompanyData]] =
-    for {
-      reportedCompaniesSiret <- companyRepo.findBySirets(companies.map(_.siret)).map(_.map(_.siret))
-    } yield companies.filter(x => reportedCompaniesSiret.contains(x.siret))
+      .map(_.map(_.siret))
+      .flatMap(companyRepo.findBySirets)
 
   def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
     for {

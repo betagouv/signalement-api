@@ -36,7 +36,15 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
       (id, password, email, firstName, lastName, role.name, lastEmailValidation)
   }
 
-  def * = (id, password, email, firstName, lastName, role, lastEmailValidation) <> (constructUser, extractUser.lift)
+  def * = (
+    id,
+    password,
+    email,
+    firstName,
+    lastName,
+    role,
+    lastEmailValidation
+  ) <> (constructUser, extractUser.lift)
 }
 
 class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
@@ -133,13 +141,13 @@ class UserRepository @Inject() (
   def delete(email: EmailAddress): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
+  def findById(id: UUID): Future[Option[User]] =
+    db.run(userTableQuery.filter(_.id === id).result.headOption)
   def findByLogin(login: String): Future[Option[User]] =
-    db
-      .run(
-        userTableQuery
-          .filter(_.email === EmailAddress(login))
-          .to[List]
-          .result
-          .headOption
-      )
+    db.run(
+      userTableQuery
+        .filter(_.email === EmailAddress(login))
+        .result
+        .headOption
+    )
 }

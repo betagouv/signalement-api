@@ -1,8 +1,5 @@
 package controllers
 
-import actors.EmailActor
-import akka.actor.ActorRef
-import akka.pattern.ask
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
@@ -16,16 +13,13 @@ import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import repositories.AuthTokenRepository
 import repositories.UserRepository
-import utils.EmailAddress
-import utils.EmailSubjects
+import services.MailService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -38,7 +32,7 @@ class AuthController @Inject() (
     userRepository: UserRepository,
     authTokenRepository: AuthTokenRepository,
     userService: UserService,
-    @Named("email-actor") emailActor: ActorRef,
+    mailService: MailService,
     configuration: Configuration,
     credentialsProvider: CredentialsProvider
 )(implicit ec: ExecutionContext)
@@ -47,8 +41,6 @@ class AuthController @Inject() (
   val logger: Logger = Logger(this.getClass())
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
-  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   implicit val dgccrfEmailValidation =
     java.time.Period.parse(configuration.get[String]("play.tokens.dgccrfEmailValidation"))
 
@@ -102,7 +94,7 @@ class AuthController @Inject() (
                 _ <- authTokenRepository.deleteForUserId(user.id)
                 authToken <-
                   authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
-                _ <- sendResetPasswordMail(user, authToken)
+                _ <- Future(mailService.Common.sendResetPassword(user, authToken))
               } yield Ok
             case _ =>
               Future.successful(
@@ -110,17 +102,6 @@ class AuthController @Inject() (
               ) // TODO: renvoyer une erreur? 424 FAILED_DEPENDENCY? 422 UNPROCESSABLE_ENTITY? 412 PRECONDITION_FAILED
           }
       )
-  }
-
-  private def sendResetPasswordMail(user: User, authToken: AuthToken) = {
-    emailActor ? EmailActor.EmailRequest(
-      from = configuration.get[EmailAddress]("play.mail.from"),
-      recipients = Seq(user.email),
-      subject = EmailSubjects.RESET_PASSWORD,
-      bodyHtml = views.html.mails.resetPassword(user, authToken).toString
-    )
-    logger.debug(s"Sent password reset to ${user.email}")
-    Future(())
   }
 
   def resetPassword(token: UUID) = UnsecuredAction.async(parse.json) { implicit request =>

@@ -4,7 +4,6 @@ import java.net.URI
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -113,7 +112,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
       )
 
   def mailMustNotHaveBeenSent() =
-    there was no(app.injector.instanceOf[MailerService])
+    there was no(mailerService)
       .sendEmail(
         EmailAddress(anyString),
         any[Seq[EmailAddress]],

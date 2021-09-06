@@ -149,7 +149,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
     mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
-    mockCompanyRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
+    mockCompanyRepository.fetchAdminsMapByCompany(List(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
     mockUserRepository.create(any[User]) answers { (user: Any) => Future(user.asInstanceOf[User]) }
 

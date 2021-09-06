@@ -105,7 +105,7 @@ class CompanyController @Inject() (
     logger.debug(s"searchCompanyByIdentity $identity")
 
     (identity.replaceAll("\\s", "") match {
-      case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretWithHeadOffice(SIRET(q))
+      case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretIncludingHeadOfficeWithActivity(SIRET(q))
       case q =>
         SIREN.pattern.r
           .findFirstIn(q)
@@ -195,17 +195,7 @@ class CompanyController @Inject() (
   def visibleCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
-      .map(companies =>
-        companies.map(c =>
-          VisibleCompany(
-            c.siret,
-            c.codePostalEtablissement,
-            c.etatAdministratifEtablissement.contains("F")
-          )
-        )
-      )
       .map(x => Ok(Json.toJson(x)))
-
   }
 
   def getActivationDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) {

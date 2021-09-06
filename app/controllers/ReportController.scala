@@ -415,8 +415,8 @@ class ReportController @Inject() (
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)
             .map(_.map(v => Some(v.siret)))
-            .map { viewableSirets =>
-              report.filter(r => viewableSirets.contains(r.companySiret))
+            .map { visibleSirets =>
+              report.filter(r => visibleSirets.contains(r.companySiret))
             }
         }
     } yield visibleReport

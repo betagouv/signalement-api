@@ -3,7 +3,6 @@ package tasks
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv

@@ -1,18 +1,14 @@
 package orchestrators
 
-import actors.EmailActor
-import akka.actor.ActorRef
-import akka.pattern.ask
 import models.Event.stringToDetailsJsValue
 import models._
 import play.api.Configuration
 import play.api.Logger
 import repositories._
-import services.MailerService
+import services.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress
-import utils.EmailSubjects
 import utils.SIRET
 
 import java.net.URI
@@ -20,10 +16,9 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
@@ -31,13 +26,11 @@ class AccessesOrchestrator @Inject() (
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
     eventRepository: EventRepository,
-    mailerService: MailerService,
-    @Named("email-actor") emailActor: ActorRef,
+    mailService: MailService,
     configuration: Configuration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  val mailFrom = EmailAddress(configuration.get[String]("play.mail.from"))
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -172,14 +165,7 @@ class AccessesOrchestrator @Inject() (
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
     } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
-        recipients = Seq(user.email),
-        subject = EmailSubjects.NEW_COMPANY_ACCESS(company.name),
-        bodyHtml = views.html.mails.professional
-          .newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy)
-          .toString
-      )
+      mailService.Pro.sendNewCompanyAccessNotification(user, company, invitedBy)
       logger.debug(s"User ${user.id} may now access company ${company.id}")
       ()
     }
@@ -211,27 +197,29 @@ class AccessesOrchestrator @Inject() (
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     genInvitationToken(company, level, tokenDuration, email).map { tokenCode =>
-      val invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=$tokenCode")
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
-        recipients = Seq(email),
-        subject = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
-        bodyHtml = views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
+      mailService.Pro.sendCompanyAccessInvitation(
+        company = company,
+        email = email,
+        invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}"),
+        invitedBy = invitedBy
       )
       logger.debug(s"Token sent to $email for company ${company.id}")
     }
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     for {
-      token <-
-        accessTokenRepository.createToken(TokenKind.DGCCRF_ACCOUNT, randomToken, tokenDuration, None, None, Some(email))
+      token <- accessTokenRepository.createToken(
+                 TokenKind.DGCCRF_ACCOUNT,
+                 randomToken,
+                 tokenDuration,
+                 None,
+                 None,
+                 Some(email)
+               )
     } yield {
-      val invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
-        recipients = Seq(email),
-        subject = EmailSubjects.DGCCRF_ACCESS_LINK,
-        bodyHtml = views.html.mails.dgccrf.accessLink(invitationUrl).toString
+      mailService.Dgccrf.sendAccessLink(
+        email = email,
+        invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
       )
       logger.debug(s"Sent DGCCRF account invitation to $email")
     }
@@ -247,12 +235,9 @@ class AccessesOrchestrator @Inject() (
                  Some(user.email)
                )
     } yield {
-      val validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
-      emailActor ? EmailActor.EmailRequest(
-        from = mailFrom,
-        recipients = Seq(user.email),
-        subject = EmailSubjects.VALIDATE_EMAIL,
-        bodyHtml = views.html.mails.validateEmail(validationUrl).toString
+      mailService.Common.sendValidateEmail(
+        user = user,
+        validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
       )
       logger.debug(s"Sent email validation to ${user.email}")
     }
