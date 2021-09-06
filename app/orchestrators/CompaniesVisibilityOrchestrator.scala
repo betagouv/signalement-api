@@ -84,13 +84,13 @@ class CompaniesVisibilityOrchestrator @Inject() (
     for {
       authorizedSirets <- companyRepo.fetchCompaniesWithLevel(user).map(_.map(_.company.siret))
       authorizedHeadofficeSirens <- companyDataRepo
-        .searchBySirets(authorizedSirets, includeClosed = true)
-        .map(companies =>
-          companies
-            .map(_._1)
-            .filter(_.etablissementSiege.contains("true"))
-            .map(_.siren)
-        )
+                                      .searchBySirets(authorizedSirets, includeClosed = true)
+                                      .map(companies =>
+                                        companies
+                                          .map(_._1)
+                                          .filter(_.etablissementSiege.contains("true"))
+                                          .map(_.siren)
+                                      )
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
   def filterUnauthorizedSiretSirenList(siretSirenList: List[String], user: User): Future[List[String]] =

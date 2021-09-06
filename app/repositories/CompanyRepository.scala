@@ -307,7 +307,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .to[List]
         .result
     )
-  
+
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(
       UserAccessTableQuery
