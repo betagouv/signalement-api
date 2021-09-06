@@ -90,6 +90,7 @@ POST          /api/accesses/grouped/invitations                      controllers
 POST          /api/accesses/:siret/invitation                        controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
+GET           /api/account                                           controllers.AccountController.fetchUser
 GET           /api/account/token                                     controllers.AccountController.fetchTokenInfo(token: String)
 POST          /api/account/password                                  controllers.AccountController.changePassword()
 POST          /api/account/activation                                controllers.AccountController.activateAccount()
@@ -141,5 +142,10 @@ GET           /migrate-database-addresses                            controllers
 # Reported phones API
 GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/reported-phones/extract                           controllers.ReportedPhoneController.extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])
+
+# Report notifications block list API
+GET /api/report-blocked-notification controllers.ReportBlockedNotificationController.getAll()
+POST /api/report-blocked-notification controllers.ReportBlockedNotificationController.create()
+POST /api/report-blocked-notification/delete controllers.ReportBlockedNotificationController.delete()
 
 GET           /assets/*file                                          controllers.Assets.versioned(path="/public", file: Asset)

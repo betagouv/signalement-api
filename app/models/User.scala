@@ -15,6 +15,7 @@ case class DraftUser(
     lastName: String,
     password: String
 )
+
 object DraftUser {
   implicit val draftUserFormat = Json.format[DraftUser]
 }
@@ -50,7 +51,7 @@ object User {
       (JsPath \ "email").read[EmailAddress] and
       (JsPath \ "firstName").read[String] and
       (JsPath \ "lastName").read[String] and
-      ((JsPath \ "role").read[String]).map(UserRoles.withName(_)) and
+      ((JsPath \ "role").read[String]).map(UserRoles.withName) and
       (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
   )(User.apply _)
 }
