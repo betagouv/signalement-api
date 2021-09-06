@@ -144,7 +144,8 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
 
   def e1 = {
     Await.result(
-      reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, reportForSubsidiary.companyId.get),
+      reportNotificationBlocklistRepository
+        .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
       Duration.Inf
     )
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
@@ -159,8 +160,10 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
     Await.result(
       Future.sequence(
         Seq(
-          reportNotificationBlocklistRepository.create(proWithAccessToSubsidiary.id, reportForSubsidiary.companyId.get),
-          reportNotificationBlocklistRepository.create(proWithAccessToHeadOffice.id, reportForSubsidiary.companyId.get)
+          reportNotificationBlocklistRepository
+            .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
+          reportNotificationBlocklistRepository
+            .create(proWithAccessToHeadOffice.id, Seq(reportForSubsidiary.companyId.get))
         )
       ),
       Duration.Inf
