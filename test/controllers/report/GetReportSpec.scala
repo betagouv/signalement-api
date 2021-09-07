@@ -323,7 +323,10 @@ trait GetReportContext extends Mockito {
   lazy val mailService = application.injector.instanceOf[MailService]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
-    Future(if (pro.asInstanceOf[User].id == concernedProUser.id) List(company) else List())
+    Future(
+      if (pro.asInstanceOf[User].id == concernedProUser.id) List(CompanyWithAccess(company, AccessLevel.ADMIN))
+      else List()
+    )
   }
 
   mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))

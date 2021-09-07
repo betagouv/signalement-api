@@ -137,8 +137,6 @@ PUT           /api/websites/:id                                      controllers
 PUT           /api/websites                                          controllers.WebsiteController.create()
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
-GET           /migrate-database-addresses                            controllers.MigrateAddressController.run()
-
 # Reported phones API
 GET           /api/reported-phones                                   controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/reported-phones/extract                           controllers.ReportedPhoneController.extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String])

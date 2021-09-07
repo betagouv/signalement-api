@@ -42,6 +42,23 @@ case class Company(
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
 
+object Company {
+
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+}
+
+case class CompanyWithAccess(
+    company: Company,
+    level: AccessLevel
+)
+
+object CompanyWithAccess {
+  implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
+    val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
+    companyJson + ("level" -> Json.toJson(companyWithAccess.level))
+  }
+}
+
 case class CompanyCreation(
     siret: SIRET,
     name: String,
@@ -59,16 +76,6 @@ case class CompanyCreation(
 object CompanyCreation {
 
   implicit val format: OFormat[CompanyCreation] = Json.format[CompanyCreation]
-}
-
-object Company {
-
-  implicit val companyFormat: OFormat[Company] = Json.format[Company]
-
-  implicit def writes: Writes[(Company, AccessLevel)] = (companyAccessLevel: (Company, AccessLevel)) => {
-    val companyJson = Json.toJson(companyAccessLevel._1).as[JsObject]
-    companyJson + ("level" -> Json.toJson(companyAccessLevel._2))
-  }
 }
 
 case class CompanyWithNbReports(company: Company, count: Int)
