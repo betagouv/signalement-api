@@ -41,6 +41,7 @@ class CompanyController @Inject() (
     val reportRepository: ReportRepository,
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
+    val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val configuration: Configuration,
     ws: WSClient
 )(implicit ec: ExecutionContext)
