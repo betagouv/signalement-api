@@ -1,5 +1,6 @@
 package orchestrators
 
+import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
 import models.User
@@ -69,12 +70,12 @@ class CompaniesVisibilityOrchestrator @Inject() (
       authorizedCompaniesWithAccesses: List[CompanyWithAccess],
       accessibleSubsidiaries: List[Company]
   ) = {
-    val levelOrder = Map(
-      AccessLevel.MEMBER -> 0,
-      AccessLevel.ADMIN -> 1
+    val levelPriority = Map(
+      AccessLevel.ADMIN -> 1,
+      AccessLevel.MEMBER -> 0
     ).withDefaultValue(-1)
     val getLevelBySiren = authorizedCompaniesWithAccesses
-      .groupMapReduce(c => SIREN(c.company.siret))(_.level)((a, b) => if (levelOrder(a) > levelOrder(b)) a else b)
+      .groupMapReduce(c => SIREN(c.company.siret))(_.level)((a, b) => if (levelPriority(a) > levelPriority(b)) a else b)
       .withDefaultValue(AccessLevel.NONE)
     accessibleSubsidiaries.map(c => CompanyWithAccess(c, getLevelBySiren(SIREN(c.siret))))
   }
