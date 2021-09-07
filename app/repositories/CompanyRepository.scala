@@ -5,6 +5,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -125,7 +126,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   val companyTableQuery = CompanyTables.tables
 
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
+  private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
+
+  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue)
 
   class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
     def companyId = column[UUID]("company_id")
@@ -297,6 +300,14 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
+  def findBySiren(siren: List[SIREN]): Future[List[Company]] =
+    db.run(
+      companyTableQuery
+        .filter(x => substr(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .to[List]
+        .result
+    )
+
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(
       UserAccessTableQuery
@@ -307,7 +318,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
-  def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
+  def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
       UserAccessTableQuery
         .join(companyTableQuery)
@@ -318,7 +329,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    )
+    ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
 
   def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
     db.run(

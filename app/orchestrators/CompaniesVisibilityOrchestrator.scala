@@ -1,6 +1,8 @@
 package orchestrators
 
+import models.AccessLevel
 import models.Company
+import models.CompanyWithAccess
 import models.User
 import models.UserRoles
 import repositories._
@@ -51,22 +53,36 @@ class CompaniesVisibilityOrchestrator @Inject() (
       (x._1, (x._2 ++ headOfficeAdmins).distinctBy(_.id))
     }
 
-  def fetchVisibleCompanies(pro: User): Future[List[Company]] =
-    (for {
-      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(pro).map(_.map(_._1.siret))
-      headOfficeSirets <- companyDataRepo.searchHeadOffices(authorizedSirets).map(_.map(_.siret))
-      authorizedHeadOffices = authorizedSirets.intersect(headOfficeSirets)
-      authorizedSubcompanies = authorizedSirets.diff(headOfficeSirets)
-      companiesForHeadOffices <-
-        companyDataRepo.searchBySirens(authorizedHeadOffices.map(SIREN.apply), includeClosed = true)
-      companiesWithoutHeadOffice <- companyDataRepo.searchBySirets(authorizedSubcompanies, includeClosed = true)
-    } yield companiesForHeadOffices.concat(companiesWithoutHeadOffice).map(_._1).distinct)
-      .map(_.map(_.siret))
-      .flatMap(companyRepo.findBySirets)
-
-  def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
+  def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
-      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(user).map(_.map(_._1.siret))
+      authorizedCompanies <- companyRepo.fetchCompaniesWithLevel(pro)
+      headOfficeSirets <- companyDataRepo
+                            .searchHeadOffices(authorizedCompanies.map(_.company.siret))
+                            .map(_.map(_.siret))
+      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.apply))
+      companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
+      accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
+                               .distinctBy(_.company.siret)
+                               .sortBy(_.company.siret.value)
+    } yield accessiblesCompanies
+
+  private[this] def addAccessToSubsidiaries(
+      authorizedCompaniesWithAccesses: List[CompanyWithAccess],
+      accessibleSubsidiaries: List[Company]
+  ) = {
+    val levelOrder = Map(
+      AccessLevel.MEMBER -> 0,
+      AccessLevel.ADMIN -> 1
+    ).withDefaultValue(-1)
+    val getLevelBySiren = authorizedCompaniesWithAccesses
+      .groupMapReduce(c => SIREN(c.company.siret))(_.level)((a, b) => if (levelOrder(a) > levelOrder(b)) a else b)
+      .withDefaultValue(AccessLevel.NONE)
+    accessibleSubsidiaries.map(c => CompanyWithAccess(c, getLevelBySiren(SIREN(c.siret))))
+  }
+
+  private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
+    for {
+      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(user).map(_.map(_.company.siret))
       authorizedHeadofficeSirens <- companyDataRepo
                                       .searchBySirets(authorizedSirets, includeClosed = true)
                                       .map(companies =>
