@@ -55,19 +55,19 @@ class ReportOrchestrator @Inject() (
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(companyId)
       _ <- existingToken
-             .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration))
-             .getOrElse(Future(None))
+        .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration))
+        .getOrElse(Future(None))
       token <- existingToken
-                 .map(Future(_))
-                 .getOrElse(
-                   accessTokenRepository.createToken(
-                     kind = CompanyInit,
-                     token = f"${Random.nextInt(1000000)}%06d",
-                     validity = tokenDuration,
-                     companyId = Some(companyId),
-                     level = Some(AccessLevel.ADMIN)
-                   )
-                 )
+        .map(Future(_))
+        .getOrElse(
+          accessTokenRepository.createToken(
+            kind = CompanyInit,
+            token = f"${Random.nextInt(1000000)}%06d",
+            validity = tokenDuration,
+            companyId = Some(companyId),
+            level = Some(AccessLevel.ADMIN)
+          )
+        )
     } yield token.token
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
@@ -116,43 +116,45 @@ class ReportOrchestrator @Inject() (
       case true =>
         for {
           companyOpt <- draftReport.companySiret
-                          .map(siret =>
-                            companyRepository
-                              .getOrCreate(
-                                siret,
-                                Company(
-                                  siret = siret,
-                                  name = draftReport.companyName.get,
-                                  address = draftReport.companyAddress.get,
-                                  activityCode = draftReport.companyActivityCode
-                                )
-                              )
-                              .map(Some(_))
-                          )
-                          .getOrElse(Future(None))
+            .map(siret =>
+              companyRepository
+                .getOrCreate(
+                  siret,
+                  Company(
+                    siret = siret,
+                    name = draftReport.companyName.get,
+                    address = draftReport.companyAddress.get,
+                    activityCode = draftReport.companyActivityCode
+                  )
+                )
+                .map(Some(_))
+            )
+            .getOrElse(Future(None))
           _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
           report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
           _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
           files <- reportRepository.retrieveReportFiles(report.id)
-          report <- if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
-                      notifyProfessionalOfNewReport(report, companyOpt.get)
-                    else Future(report)
+          report <-
+            if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
+              notifyProfessionalOfNewReport(report, companyOpt.get)
+            else Future(report)
           event <- eventRepository.createEvent(
-                     Event(
-                       Some(UUID.randomUUID()),
-                       Some(report.id),
-                       companyOpt.map(_.id),
-                       None,
-                       Some(OffsetDateTime.now()),
-                       Constants.EventType.CONSO,
-                       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-                     )
-                   )
-          ddEmails <- if (report.tags.contains(Tags.DangerousProduct)) {
-                        report.companyAddress.postalCode
-                          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-                          .getOrElse(Future(Seq()))
-                      } else Future(Seq())
+            Event(
+              Some(UUID.randomUUID()),
+              Some(report.id),
+              companyOpt.map(_.id),
+              None,
+              Some(OffsetDateTime.now()),
+              Constants.EventType.CONSO,
+              Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+            )
+          )
+          ddEmails <-
+            if (report.tags.contains(Tags.DangerousProduct)) {
+              report.companyAddress.postalCode
+                .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+                .getOrElse(Future(Seq()))
+            } else Future(Seq())
         } yield {
           if (ddEmails.nonEmpty) {
             mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
@@ -168,68 +170,68 @@ class ReportOrchestrator @Inject() (
     for {
       existingReport <- reportRepository.getReport(reportId)
       company <- companyRepository.getOrCreate(
-                   reportCompany.siret,
-                   Company(
-                     siret = reportCompany.siret,
-                     name = reportCompany.name,
-                     address = reportCompany.address,
-                     activityCode = reportCompany.activityCode
-                   )
-                 )
+        reportCompany.siret,
+        Company(
+          siret = reportCompany.siret,
+          name = reportCompany.name,
+          address = reportCompany.address,
+          activityCode = reportCompany.activityCode
+        )
+      )
       reportWithNewData <- existingReport match {
-                             case Some(report) =>
-                               reportRepository
-                                 .update(
-                                   report.copy(
-                                     companyId = Some(company.id),
-                                     companyName = Some(reportCompany.name),
-                                     companyAddress = reportCompany.address,
-                                     companySiret = Some(reportCompany.siret)
-                                   )
-                                 )
-                                 .map(Some(_))
-                             case _ => Future(None)
-                           }
+        case Some(report) =>
+          reportRepository
+            .update(
+              report.copy(
+                companyId = Some(company.id),
+                companyName = Some(reportCompany.name),
+                companyAddress = reportCompany.address,
+                companySiret = Some(reportCompany.siret)
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
       reportWithNewStatus <- reportWithNewData
-                               .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-                               .filter(_.creationDate.isAfter(OffsetDateTime.now.minusDays(7)))
-                               .map(report =>
-                                 reportRepository
-                                   .update(
-                                     report.copy(
-                                       status = report.initialStatus()
-                                     )
-                                   )
-                                   .map(Some(_))
-                               )
-                               .getOrElse(Future(reportWithNewData))
+        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now.minusDays(7)))
+        .map(report =>
+          reportRepository
+            .update(
+              report.copy(
+                status = report.initialStatus()
+              )
+            )
+            .map(Some(_))
+        )
+        .getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-                         .filter(_.status == TRAITEMENT_EN_COURS)
-                         .filter(_.companySiret.isDefined)
-                         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-                         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
-                         .getOrElse(Future(reportWithNewStatus))
+        .filter(_.status == TRAITEMENT_EN_COURS)
+        .filter(_.companySiret.isDefined)
+        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
+        .getOrElse(Future(reportWithNewStatus))
       _ <- existingReport match {
-             case Some(report) =>
-               eventRepository
-                 .createEvent(
-                   Event(
-                     Some(UUID.randomUUID()),
-                     Some(report.id),
-                     Some(company.id),
-                     Some(userUUID),
-                     Some(OffsetDateTime.now()),
-                     Constants.EventType.ADMIN,
-                     Constants.ActionEvent.REPORT_COMPANY_CHANGE,
-                     stringToDetailsJsValue(
-                       s"Entreprise précédente : Siret ${report.companySiret
-                         .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
-                     )
-                   )
-                 )
-                 .map(Some(_))
-             case _ => Future(None)
-           }
+        case Some(report) =>
+          eventRepository
+            .createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                Some(report.id),
+                Some(company.id),
+                Some(userUUID),
+                Some(OffsetDateTime.now()),
+                Constants.EventType.ADMIN,
+                Constants.ActionEvent.REPORT_COMPANY_CHANGE,
+                stringToDetailsJsValue(
+                  s"Entreprise précédente : Siret ${report.companySiret
+                    .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
+                )
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
       _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield updatedReport
 
@@ -237,40 +239,40 @@ class ReportOrchestrator @Inject() (
     for {
       existingReport <- reportRepository.getReport(reportId)
       updatedReport <- existingReport match {
-                         case Some(report) =>
-                           reportRepository
-                             .update(
-                               report.copy(
-                                 firstName = reportConsumer.firstName,
-                                 lastName = reportConsumer.lastName,
-                                 email = reportConsumer.email,
-                                 contactAgreement = reportConsumer.contactAgreement
-                               )
-                             )
-                             .map(Some(_))
-                         case _ => Future(None)
-                       }
+        case Some(report) =>
+          reportRepository
+            .update(
+              report.copy(
+                firstName = reportConsumer.firstName,
+                lastName = reportConsumer.lastName,
+                email = reportConsumer.email,
+                contactAgreement = reportConsumer.contactAgreement
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
       _ <- existingReport match {
-             case Some(report) =>
-               eventRepository
-                 .createEvent(
-                   Event(
-                     Some(UUID.randomUUID()),
-                     Some(report.id),
-                     report.companyId,
-                     Some(userUUID),
-                     Some(OffsetDateTime.now()),
-                     Constants.EventType.ADMIN,
-                     Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
-                     stringToDetailsJsValue(
-                       s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
-                         s"- Accord pour contact : ${if (report.contactAgreement) "oui" else "non"}"
-                     )
-                   )
-                 )
-                 .map(Some(_))
-             case _ => Future(None)
-           }
+        case Some(report) =>
+          eventRepository
+            .createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                Some(report.id),
+                report.companyId,
+                Some(userUUID),
+                Some(OffsetDateTime.now()),
+                Constants.EventType.ADMIN,
+                Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
+                stringToDetailsJsValue(
+                  s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
+                    s"- Accord pour contact : ${if (report.contactAgreement) "oui" else "non"}"
+                )
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
     } yield updatedReport
 
   def handleReportView(report: Report, user: User): Future[Report] =
@@ -291,16 +293,16 @@ class ReportOrchestrator @Inject() (
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
     for {
       reportFile <- reportRepository.createFile(
-                      ReportFile(
-                        UUID.randomUUID,
-                        None,
-                        OffsetDateTime.now(),
-                        filename,
-                        file.getName(),
-                        origin,
-                        None
-                      )
-                    )
+        ReportFile(
+          UUID.randomUUID,
+          None,
+          OffsetDateTime.now(),
+          filename,
+          file.getName(),
+          origin,
+          None
+        )
+      )
     } yield {
       uploadActor ! UploadActor.Request(reportFile, file)
       reportFile
@@ -328,8 +330,8 @@ class ReportOrchestrator @Inject() (
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
       _ <- reportRepository
-             .retrieveReportFiles(id)
-             .map(files => files.map(file => removeReportFile(file.id)))
+        .retrieveReportFiles(id)
+        .map(files => files.map(file => removeReportFile(file.id)))
       _ <- reportRepository.delete(id)
       _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
@@ -337,16 +339,16 @@ class ReportOrchestrator @Inject() (
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {
       event <- eventRepository.createEvent(
-                 Event(
-                   Some(UUID.randomUUID()),
-                   Some(report.id),
-                   report.companyId,
-                   Some(userUUID),
-                   Some(OffsetDateTime.now()),
-                   Constants.EventType.PRO,
-                   Constants.ActionEvent.REPORT_READING_BY_PRO
-                 )
-               )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          Some(userUUID),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.REPORT_READING_BY_PRO
+        )
+      )
       updatedReport <-
         if (report.status.isFinal) {
           Future(report)
@@ -359,16 +361,16 @@ class ReportOrchestrator @Inject() (
     mailService.Consumer.sendReportTransmission(report)
     for {
       event <- eventRepository.createEvent(
-                 Event(
-                   Some(UUID.randomUUID()),
-                   Some(report.id),
-                   report.companyId,
-                   None,
-                   Some(OffsetDateTime.now()),
-                   Constants.EventType.CONSO,
-                   Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
-                 )
-               )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
+        )
+      )
       newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
     } yield newReport
   }
@@ -382,32 +384,32 @@ class ReportOrchestrator @Inject() (
     for {
       report <- reportRepository.getReport(reportId)
       newEvent <- report match {
-                    case Some(r) =>
-                      eventRepository
-                        .createEvent(
-                          draftEvent.copy(
-                            id = Some(UUID.randomUUID()),
-                            creationDate = Some(OffsetDateTime.now()),
-                            reportId = Some(r.id),
-                            companyId = r.companyId,
-                            userId = Some(user.id)
-                          )
-                        )
-                        .map(Some(_))
-                    case _ => Future(None)
-                  }
+        case Some(r) =>
+          eventRepository
+            .createEvent(
+              draftEvent.copy(
+                id = Some(UUID.randomUUID()),
+                creationDate = Some(OffsetDateTime.now()),
+                reportId = Some(r.id),
+                companyId = r.companyId,
+                userId = Some(user.id)
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
       updatedReport: Option[Report] <- (report, newEvent) match {
-                                         case (Some(r), Some(event)) =>
-                                           reportRepository
-                                             .update(
-                                               r.copy(status = event.action match {
-                                                 case POST_ACCOUNT_ACTIVATION_DOC => TRAITEMENT_EN_COURS
-                                                 case _                           => r.status
-                                               })
-                                             )
-                                             .map(Some(_))
-                                         case _ => Future(None)
-                                       }
+        case (Some(r), Some(event)) =>
+          reportRepository
+            .update(
+              r.copy(status = event.action match {
+                case POST_ACCOUNT_ACTIVATION_DOC => TRAITEMENT_EN_COURS
+                case _                           => r.status
+              })
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
     } yield {
       newEvent.foreach(event =>
         event.action match {
@@ -422,69 +424,69 @@ class ReportOrchestrator @Inject() (
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
       newEvent <- eventRepository.createEvent(
-                    Event(
-                      Some(UUID.randomUUID()),
-                      Some(report.id),
-                      report.companyId,
-                      Some(user.id),
-                      Some(OffsetDateTime.now()),
-                      EventType.PRO,
-                      ActionEvent.REPORT_PRO_RESPONSE,
-                      Json.toJson(reportResponse)
-                    )
-                  )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.PRO,
+          ActionEvent.REPORT_PRO_RESPONSE,
+          Json.toJson(reportResponse)
+        )
+      )
       _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
-                         report.copy(
-                           status = reportResponse.responseType match {
-                             case ReportResponseType.ACCEPTED      => PROMESSE_ACTION
-                             case ReportResponseType.REJECTED      => SIGNALEMENT_INFONDE
-                             case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
-                           }
-                         )
-                       )
+        report.copy(
+          status = reportResponse.responseType match {
+            case ReportResponseType.ACCEPTED      => PROMESSE_ACTION
+            case ReportResponseType.REJECTED      => SIGNALEMENT_INFONDE
+            case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
+          }
+        )
+      )
       - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
       - <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               updatedReport.companyId,
-               None,
-               Some(OffsetDateTime.now()),
-               Constants.EventType.CONSO,
-               Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          updatedReport.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+        )
+      )
       - <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               updatedReport.companyId,
-               Some(user.id),
-               Some(OffsetDateTime.now()),
-               Constants.EventType.PRO,
-               Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          updatedReport.companyId,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+        )
+      )
     } yield updatedReport
   }
 
   def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] =
     for {
       newEvent <- eventRepository.createEvent(
-                    Event(
-                      Some(UUID.randomUUID()),
-                      Some(report.id),
-                      report.companyId,
-                      Some(user.id),
-                      Some(OffsetDateTime.now()),
-                      EventType.fromUserRole(user.userRole),
-                      reportAction.actionType,
-                      reportAction.details
-                        .map(details => Json.obj("description" -> details))
-                        .getOrElse(Json.toJson(reportAction))
-                    )
-                  )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          Some(user.id),
+          Some(OffsetDateTime.now()),
+          EventType.fromUserRole(user.userRole),
+          reportAction.actionType,
+          reportAction.details
+            .map(details => Json.obj("description" -> details))
+            .getOrElse(Json.toJson(reportAction))
+        )
+      )
       _ <- reportRepository.attachFilesToReport(reportAction.fileIds, report.id)
     } yield {
       logger.debug(
@@ -520,14 +522,14 @@ class ReportOrchestrator @Inject() (
   ): Future[PaginatedResult[ReportWithFiles]] =
     for {
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-                                filter.siretSirenList,
-                                connectedUser
-                              )
+        filter.siretSirenList,
+        connectedUser
+      )
       paginatedReports <- reportRepository.getReports(
-                            offset,
-                            limit,
-                            filter.copy(siretSirenList = sanitizedSirenSirets)
-                          )
+        offset,
+        limit,
+        filter.copy(siretSirenList = sanitizedSirenSirets)
+      )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities =
       paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))

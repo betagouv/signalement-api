@@ -137,13 +137,14 @@ class ReportController @Inject() (
         review =>
           for {
             events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
-            result <- if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
-                        Future(Forbidden)
-                      } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
-                        Future(Conflict)
-                      } else {
-                        reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
-                      }
+            result <-
+              if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
+                Future(Forbidden)
+              } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
+                Future(Conflict)
+              } else {
+                reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
+              }
           } yield result
       )
   }
@@ -207,8 +208,8 @@ class ReportController @Inject() (
         for {
           visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
           viewedReport <- visibleReport
-                            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
-                            .getOrElse(Future(None))
+            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
+            .getOrElse(Future(None))
           reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield viewedReport
           .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
@@ -271,9 +272,9 @@ class ReportController @Inject() (
           visibleReport <- getVisibleReportForUser(id, request.identity)
           events <- eventRepository.getEventsWithUsers(id, EventFilter())
           companyEvents <- visibleReport
-                             .flatMap(_.companyId)
-                             .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-                             .getOrElse(Future(List.empty))
+            .flatMap(_.companyId)
+            .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
+            .getOrElse(Future(List.empty))
           reportFiles <- reportRepository.retrieveReportFiles(id)
         } yield {
           val responseOption = events
@@ -356,9 +357,9 @@ class ReportController @Inject() (
       for {
         company <- companyRepository.findBySiret(SIRET(siret))
         events <- company
-                    .map(_.id)
-                    .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
-                    .getOrElse(Future(None))
+          .map(_.id)
+          .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
+          .getOrElse(Future(None))
       } yield company match {
         case Some(_) =>
           Ok(

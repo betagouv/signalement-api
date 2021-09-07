@@ -146,19 +146,19 @@ class AccountController @Inject() (
           for {
             accessToken <- accessTokenRepository.findToken(token)
             oUser <- accessToken
-                       .filter(_.kind == ValidateEmail)
-                       .map(accessesOrchestrator.validateEmail)
-                       .getOrElse(Future(None))
+              .filter(_.kind == ValidateEmail)
+              .map(accessesOrchestrator.validateEmail)
+              .getOrElse(Future(None))
             authToken <- oUser
-                           .map(user =>
-                             silhouette.env.authenticatorService
-                               .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
-                               .flatMap { authenticator =>
-                                 silhouette.env.eventBus.publish(LoginEvent(user, request))
-                                 silhouette.env.authenticatorService.init(authenticator).map(Some(_))
-                               }
-                           )
-                           .getOrElse(Future(None))
+              .map(user =>
+                silhouette.env.authenticatorService
+                  .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
+                  .flatMap { authenticator =>
+                    silhouette.env.eventBus.publish(LoginEvent(user, request))
+                    silhouette.env.authenticatorService.init(authenticator).map(Some(_))
+                  }
+              )
+              .getOrElse(Future(None))
           } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
       )
   }

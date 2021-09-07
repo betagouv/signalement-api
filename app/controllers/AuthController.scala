@@ -53,31 +53,32 @@ class AuthController @Inject() (
           for {
             _ <- userRepository.saveAuthAttempt(data.login)
             attempts <- userRepository.countAuthAttempts(data.login, java.time.Duration.parse("PT30M"))
-            response <- if (attempts > 15) Future(Forbidden)
-                        else
-                          credentialsProvider
-                            .authenticate(Credentials(data.login, data.password))
-                            .flatMap { loginInfo =>
-                              userService.retrieve(loginInfo).flatMap {
-                                case Some(user)
-                                    if user.userRole == UserRoles.DGCCRF
-                                      && user.lastEmailValidation
-                                        .exists(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))) =>
-                                  accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
-                                case Some(user) =>
-                                  silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
-                                    silhouette.env.eventBus.publish(LoginEvent(user, request))
-                                    silhouette.env.authenticatorService.init(authenticator).map { token =>
-                                      Ok(Json.obj("token" -> token, "user" -> user))
-                                    }
-                                  }
-                                case None => userRepository.saveAuthAttempt(data.login).map(_ => Unauthorized)
-                              }
-                            }
-                            .recoverWith { case e =>
-                              logger.error(e.getMessage)
-                              Future(Unauthorized)
-                            }
+            response <-
+              if (attempts > 15) Future(Forbidden)
+              else
+                credentialsProvider
+                  .authenticate(Credentials(data.login, data.password))
+                  .flatMap { loginInfo =>
+                    userService.retrieve(loginInfo).flatMap {
+                      case Some(user)
+                          if user.userRole == UserRoles.DGCCRF
+                            && user.lastEmailValidation
+                              .exists(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))) =>
+                        accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
+                      case Some(user) =>
+                        silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>
+                          silhouette.env.eventBus.publish(LoginEvent(user, request))
+                          silhouette.env.authenticatorService.init(authenticator).map { token =>
+                            Ok(Json.obj("token" -> token, "user" -> user))
+                          }
+                        }
+                      case None => userRepository.saveAuthAttempt(data.login).map(_ => Unauthorized)
+                    }
+                  }
+                  .recoverWith { case e =>
+                    logger.error(e.getMessage)
+                    Future(Unauthorized)
+                  }
           } yield response
       )
   }

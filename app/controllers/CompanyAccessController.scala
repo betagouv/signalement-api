@@ -150,17 +150,18 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             isValid <- company
-                         .map(c =>
-                           accessTokenRepository
-                             .fetchActivationCode(c)
-                             .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
-                         )
-                         .getOrElse(Future(false))
-            sent <- if (isValid)
-                      accessesOrchestrator
-                        .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
-                        .map(_ => true)
-                    else Future(false)
+              .map(c =>
+                accessTokenRepository
+                  .fetchActivationCode(c)
+                  .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
+              )
+              .getOrElse(Future(false))
+            sent <-
+              if (isValid)
+                accessesOrchestrator
+                  .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
+                  .map(_ => true)
+              else Future(false)
           } yield if (sent) Ok else NotFound
       )
   }
@@ -177,22 +178,22 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             token <- company
-                       .map(
-                         accessTokenRepository
-                           .findToken(_, acceptTokenRequest.token)
-                           .map(
-                             _.filter(
-                               _.emailedTo.filter(email => email != request.identity.email).isEmpty
-                             )
-                           )
-                       )
-                       .getOrElse(Future(None))
+              .map(
+                accessTokenRepository
+                  .findToken(_, acceptTokenRequest.token)
+                  .map(
+                    _.filter(
+                      _.emailedTo.filter(email => email != request.identity.email).isEmpty
+                    )
+                  )
+              )
+              .getOrElse(Future(None))
             applied <- token
-                         .map(t =>
-                           accessTokenRepository
-                             .applyCompanyToken(t, request.identity)
-                         )
-                         .getOrElse(Future(false))
+              .map(t =>
+                accessTokenRepository
+                  .applyCompanyToken(t, request.identity)
+              )
+              .getOrElse(Future(false))
           } yield if (applied) Ok else NotFound
       )
   }

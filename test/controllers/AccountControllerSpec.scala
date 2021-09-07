@@ -56,7 +56,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(proUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-               .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
       } yield (),
       Duration.Inf
     )
@@ -111,21 +111,21 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           for {
             _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
             _ <- accessTokenRepository.createToken(
-                   CompanyJoin,
-                   "000000",
-                   None,
-                   Some(company.id),
-                   Some(AccessLevel.ADMIN),
-                   Some(newUser.email)
-                 )
+              CompanyJoin,
+              "000000",
+              None,
+              Some(company.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
             token <- accessTokenRepository.createToken(
-                       CompanyJoin,
-                       "whatever",
-                       None,
-                       Some(otherCompany.id),
-                       Some(AccessLevel.ADMIN),
-                       Some(newUser.email)
-                     )
+              CompanyJoin,
+              "whatever",
+              None,
+              Some(otherCompany.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
           } yield token,
           Duration.Inf
         )
