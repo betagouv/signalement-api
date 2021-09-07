@@ -1,6 +1,5 @@
 package orchestrators
 
-import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
 import models.User
