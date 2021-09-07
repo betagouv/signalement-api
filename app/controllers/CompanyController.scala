@@ -70,11 +70,11 @@ class CompanyController @Inject() (
   def searchRegisteredCompany(q: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       companies <- q match {
-                     case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
-                     case q if q.matches("[0-9]{9}")                      => companyRepository.findBySiret(SIRET(q)).map(_.toList)
-                     case q if q.matches("[0-9]{14}")                     => companyRepository.findBySiret(SIRET(q)).map(_.toList)
-                     case q                                               => companyRepository.findByName(q)
-                   }
+        case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") => companyRepository.findByShortId(q)
+        case q if q.matches("[0-9]{9}")                      => companyRepository.findBySiret(SIRET(q)).map(_.toList)
+        case q if q.matches("[0-9]{14}")                     => companyRepository.findBySiret(SIRET(q)).map(_.toList)
+        case q                                               => companyRepository.findByName(q)
+      }
     } yield Ok(Json.toJson(companies))
   }
 
@@ -113,8 +113,8 @@ class CompanyController @Inject() (
             for {
               headOffice <- companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))
               companies <- headOffice
-                             .map(company => Future(List(company)))
-                             .getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
+                .map(company => Future(List(company)))
+                .getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
             } yield companies
           )
           .getOrElse(Future(List.empty))
@@ -132,12 +132,12 @@ class CompanyController @Inject() (
       companiesByUrl <-
         websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-                   companyDataRepository
-                     .searchBySiret(company.siret)
-                     .map(_.map { case (company, activity) =>
-                       company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
-                     })
-                 })
+        companyDataRepository
+          .searchBySiret(company.siret)
+          .map(_.map { case (company, activity) =>
+            company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
+          })
+      })
     } yield Ok(Json.toJson(results.flatten))
   }
 
@@ -301,38 +301,38 @@ class CompanyController @Inject() (
                   .map(c => companyRepository.update(c.copy(address = companyAddressUpdate.address)).map(Some(_)))
                   .getOrElse(Future(None))
               _ <- updatedCompany
-                     .filter(c => !company.map(_.address).contains(c.address))
-                     .map(c =>
-                       eventRepository.createEvent(
-                         Event(
-                           Some(UUID.randomUUID()),
-                           None,
-                           Some(c.id),
-                           Some(request.identity.id),
-                           Some(OffsetDateTime.now()),
-                           EventType.PRO,
-                           ActionEvent.COMPANY_ADDRESS_CHANGE,
-                           stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
-                         )
-                       )
-                     )
-                     .getOrElse(Future(None))
+                .filter(c => !company.map(_.address).contains(c.address))
+                .map(c =>
+                  eventRepository.createEvent(
+                    Event(
+                      Some(UUID.randomUUID()),
+                      None,
+                      Some(c.id),
+                      Some(request.identity.id),
+                      Some(OffsetDateTime.now()),
+                      EventType.PRO,
+                      ActionEvent.COMPANY_ADDRESS_CHANGE,
+                      stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
+                    )
+                  )
+                )
+                .getOrElse(Future(None))
               _ <- updatedCompany
-                     .filter(_ => companyAddressUpdate.activationDocumentRequired)
-                     .map(c =>
-                       eventRepository.createEvent(
-                         Event(
-                           Some(UUID.randomUUID()),
-                           None,
-                           Some(c.id),
-                           Some(request.identity.id),
-                           Some(OffsetDateTime.now()),
-                           EventType.PRO,
-                           ActionEvent.ACTIVATION_DOC_REQUIRED
-                         )
-                       )
-                     )
-                     .getOrElse(Future(None))
+                .filter(_ => companyAddressUpdate.activationDocumentRequired)
+                .map(c =>
+                  eventRepository.createEvent(
+                    Event(
+                      Some(UUID.randomUUID()),
+                      None,
+                      Some(c.id),
+                      Some(request.identity.id),
+                      Some(OffsetDateTime.now()),
+                      EventType.PRO,
+                      ActionEvent.ACTIVATION_DOC_REQUIRED
+                    )
+                  )
+                )
+                .getOrElse(Future(None))
             } yield updatedCompany.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
         )
   }
@@ -347,24 +347,24 @@ class CompanyController @Inject() (
             for {
               company <- companyRepository.findBySiret(SIRET(siret))
               event <- company
-                         .map(c =>
-                           eventRepository
-                             .createEvent(
-                               Event(
-                                 Some(UUID.randomUUID()),
-                                 None,
-                                 Some(c.id),
-                                 Some(request.identity.id),
-                                 Some(OffsetDateTime.now()),
-                                 EventType.ADMIN,
-                                 ActionEvent.ACTIVATION_DOC_RETURNED,
-                                 stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate
-                                   .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
-                               )
-                             )
-                             .map(Some(_))
-                         )
-                         .getOrElse(Future(None))
+                .map(c =>
+                  eventRepository
+                    .createEvent(
+                      Event(
+                        Some(UUID.randomUUID()),
+                        None,
+                        Some(c.id),
+                        Some(request.identity.id),
+                        Some(OffsetDateTime.now()),
+                        EventType.ADMIN,
+                        ActionEvent.ACTIVATION_DOC_RETURNED,
+                        stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate
+                          .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+                      )
+                    )
+                    .map(Some(_))
+                )
+                .getOrElse(Future(None))
             } yield event.map(e => Ok(Json.toJson(e))).getOrElse(NotFound)
         )
   }

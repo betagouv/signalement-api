@@ -44,24 +44,24 @@ class ReportDataRepository @Inject() (
   def updateReportReadDelay =
     for {
       delaisToAdd <- db.run(
-                       eventRepository.eventTableQuery
-                         .filter(_.action === ActionEvent.REPORT_READING_BY_PRO.value)
-                         .filter(_.creationDate > backofficeProStartDate)
-                         .joinLeft(reportDataTableQuery)
-                         .on(_.reportId === _.reportId)
-                         .filterNot(_._2.flatMap(_.readDelay).isDefined)
-                         .join(reportRepository.reportTableQuery)
-                         .on(_._1.reportId === _.id)
-                         .map(result =>
-                           (
-                             result._1._1.reportId,
-                             result._1._1.creationDate - result._2.creationDate,
-                             result._1._2.flatMap(_.responseDelay)
-                           )
-                         )
-                         .to[List]
-                         .result
-                     )
+        eventRepository.eventTableQuery
+          .filter(_.action === ActionEvent.REPORT_READING_BY_PRO.value)
+          .filter(_.creationDate > backofficeProStartDate)
+          .joinLeft(reportDataTableQuery)
+          .on(_.reportId === _.reportId)
+          .filterNot(_._2.flatMap(_.readDelay).isDefined)
+          .join(reportRepository.reportTableQuery)
+          .on(_._1.reportId === _.id)
+          .map(result =>
+            (
+              result._1._1.reportId,
+              result._1._1.creationDate - result._2.creationDate,
+              result._1._2.flatMap(_.responseDelay)
+            )
+          )
+          .to[List]
+          .result
+      )
       _ <-
         db.run(
           reportDataTableQuery.insertOrUpdateAll(
@@ -73,25 +73,25 @@ class ReportDataRepository @Inject() (
   def updateReportResponseDelay =
     for {
       delaisToAdd <- db.run(
-                       eventRepository.eventTableQuery
-                         .filter(_.action === ActionEvent.REPORT_PRO_RESPONSE.value)
-                         .filter(_.creationDate > backofficeProStartDate)
-                         .joinLeft(reportDataTableQuery)
-                         .on(_.reportId === _.reportId)
-                         .filterNot(_._2.flatMap(_.responseDelay).isDefined)
-                         .join(eventRepository.eventTableQuery)
-                         .on(_._1.reportId === _.reportId)
-                         .filter(_._2.action === ActionEvent.REPORT_READING_BY_PRO.value)
-                         .map(result =>
-                           (
-                             result._1._1.reportId,
-                             result._1._2.flatMap(_.readDelay),
-                             result._1._1.creationDate - result._2.creationDate
-                           )
-                         )
-                         .to[List]
-                         .result
-                     )
+        eventRepository.eventTableQuery
+          .filter(_.action === ActionEvent.REPORT_PRO_RESPONSE.value)
+          .filter(_.creationDate > backofficeProStartDate)
+          .joinLeft(reportDataTableQuery)
+          .on(_.reportId === _.reportId)
+          .filterNot(_._2.flatMap(_.responseDelay).isDefined)
+          .join(eventRepository.eventTableQuery)
+          .on(_._1.reportId === _.reportId)
+          .filter(_._2.action === ActionEvent.REPORT_READING_BY_PRO.value)
+          .map(result =>
+            (
+              result._1._1.reportId,
+              result._1._2.flatMap(_.readDelay),
+              result._1._1.creationDate - result._2.creationDate
+            )
+          )
+          .to[List]
+          .result
+      )
       _ <-
         db.run(
           reportDataTableQuery.insertOrUpdateAll(

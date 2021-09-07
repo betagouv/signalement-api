@@ -89,13 +89,13 @@ class EnterpriseSyncActor @Inject() (
         _ <- cancel(companyFile.name)
         jobId = UUID.randomUUID()
         _ <- enterpriseSyncInfoRepo.create(
-               EnterpriseImportInfo(
-                 id = jobId,
-                 fileName = companyFile.name,
-                 fileUrl = companyFile.url.toString,
-                 linesCount = companyFile.approximateSize
-               )
-             )
+          EnterpriseImportInfo(
+            id = jobId,
+            fileName = companyFile.name,
+            fileUrl = companyFile.url.toString,
+            linesCount = companyFile.approximateSize
+          )
+        )
         filePath = s"./${companyFile.name}.csv"
         _ = logger.debug(s"------------------  Downloading ${companyFile.name} file ------------------")
         _ <- {
@@ -116,9 +116,9 @@ class EnterpriseSyncActor @Inject() (
     _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
     _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- Future.successful(processedFiles.get(name).map { processFile =>
-           processedFiles = processedFiles - name
-           processFile.stream.shutdown()
-         })
+      processedFiles = processedFiles - name
+      processFile.stream.shutdown()
+    })
   } yield ()
 
   private[this] def ingestFile[T](

@@ -463,12 +463,12 @@ class ReportRepository @Inject() (
 
     for {
       reports <- query
-                   .map(_._1)
-                   .sortBy(_.creationDate.desc)
-                   .drop(offset)
-                   .take(limit)
-                   .to[List]
-                   .result
+        .map(_._1)
+        .sortBy(_.creationDate.desc)
+        .drop(offset)
+        .take(limit)
+        .to[List]
+        .result
       count <- query.length.result
     } yield PaginatedResult(
       totalCount = count,

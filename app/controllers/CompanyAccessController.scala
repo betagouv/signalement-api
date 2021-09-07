@@ -1,6 +1,7 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.AccessesOrchestrator
 import play.api.Logger
@@ -129,14 +130,12 @@ class CompanyAccessController @Inject() (
   }
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
-    for {
-      company <- companyRepository.findBySiret(SIRET(siret))
-      token <- company
-                 .map(accessTokenRepository.findToken(_, token))
-                 .getOrElse(Future(None))
-    } yield token
-      .flatMap(t => company.map(c => Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))))
-      .getOrElse(NotFound)
+    accessesOrchestrator
+      .fetchCompanyUserActivationToken(SIRET(siret), token)
+      .map(token => Ok(Json.toJson(token)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
 
   case class ActivationLinkRequest(token: String, email: EmailAddress)
@@ -151,17 +150,18 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             isValid <- company
-                         .map(c =>
-                           accessTokenRepository
-                             .fetchActivationCode(c)
-                             .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
-                         )
-                         .getOrElse(Future(false))
-            sent <- if (isValid)
-                      accessesOrchestrator
-                        .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
-                        .map(_ => true)
-                    else Future(false)
+              .map(c =>
+                accessTokenRepository
+                  .fetchActivationCode(c)
+                  .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
+              )
+              .getOrElse(Future(false))
+            sent <-
+              if (isValid)
+                accessesOrchestrator
+                  .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
+                  .map(_ => true)
+              else Future(false)
           } yield if (sent) Ok else NotFound
       )
   }
@@ -178,22 +178,22 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             token <- company
-                       .map(
-                         accessTokenRepository
-                           .findToken(_, acceptTokenRequest.token)
-                           .map(
-                             _.filter(
-                               _.emailedTo.filter(email => email != request.identity.email).isEmpty
-                             )
-                           )
-                       )
-                       .getOrElse(Future(None))
+              .map(
+                accessTokenRepository
+                  .findToken(_, acceptTokenRequest.token)
+                  .map(
+                    _.filter(
+                      _.emailedTo.filter(email => email != request.identity.email).isEmpty
+                    )
+                  )
+              )
+              .getOrElse(Future(None))
             applied <- token
-                         .map(t =>
-                           accessTokenRepository
-                             .applyCompanyToken(t, request.identity)
-                         )
-                         .getOrElse(Future(false))
+              .map(t =>
+                accessTokenRepository
+                  .applyCompanyToken(t, request.identity)
+              )
+              .getOrElse(Future(false))
           } yield if (applied) Ok else NotFound
       )
   }

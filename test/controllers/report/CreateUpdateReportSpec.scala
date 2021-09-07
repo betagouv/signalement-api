@@ -257,16 +257,16 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         _ <- companyDataRepository.create(anotherCompanyData)
         _ <- reportRepository.create(existingReport)
         _ <- Future.sequence(
-               Seq(
-                 existingReport.email,
-                 draftReport.email,
-                 report.email
-               ).distinct.map(email =>
-                 emailValidationRepository.create(
-                   EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
-                 )
-               )
-             )
+          Seq(
+            existingReport.email,
+            draftReport.email,
+            report.email
+          ).distinct.map(email =>
+            emailValidationRepository.create(
+              EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
+            )
+          )
+        )
         _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
