@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.AccessesOrchestrator
+import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import repositories._
@@ -24,6 +25,7 @@ class CompanyAccessController @Inject() (
     val companyRepository: CompanyRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
+    val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
