@@ -305,9 +305,9 @@ class ReportsExtractActor @Inject() (
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
-                            paginatedReports.entities.flatMap(_.companyId),
-                            Seq(AccessLevel.ADMIN)
-                          )
+        paginatedReports.entities.flatMap(_.companyId),
+        Seq(AccessLevel.ADMIN)
+      )
     } yield {
       val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")

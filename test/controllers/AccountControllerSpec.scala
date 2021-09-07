@@ -1,8 +1,5 @@
 package controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -10,18 +7,22 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import models._
-import repositories._
+import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
 import org.specs2.matcher.FutureMatchers
+import org.specs2.mutable.Specification
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import utils.silhouette.auth.AuthEnv
+import repositories._
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.silhouette.auth.AuthEnv
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class AccountControllerSpec(implicit ee: ExecutionEnv)
     extends Specification
@@ -55,7 +56,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(proUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-               .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
       } yield (),
       Duration.Inf
     )
@@ -110,21 +111,21 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           for {
             _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
             _ <- accessTokenRepository.createToken(
-                   TokenKind.COMPANY_JOIN,
-                   "000000",
-                   None,
-                   Some(company.id),
-                   Some(AccessLevel.ADMIN),
-                   Some(newUser.email)
-                 )
+              CompanyJoin,
+              "000000",
+              None,
+              Some(company.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
             token <- accessTokenRepository.createToken(
-                       TokenKind.COMPANY_JOIN,
-                       "whatever",
-                       None,
-                       Some(otherCompany.id),
-                       Some(AccessLevel.ADMIN),
-                       Some(newUser.email)
-                     )
+              CompanyJoin,
+              "whatever",
+              None,
+              Some(otherCompany.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
           } yield token,
           Duration.Inf
         )

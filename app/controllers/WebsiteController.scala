@@ -90,9 +90,9 @@ class WebsiteController @Inject() (
           (for {
             website <- OptionT(websiteRepository.find(uuid))
             _ <- OptionT.liftF(
-                   if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
-                   else Future.successful(())
-                 )
+              if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
+              else Future.successful(())
+            )
             updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
             company <- OptionT(companyRepository.fetchCompany(website.companyId))
           } yield (updatedWebsite, company)).value.map {
@@ -105,13 +105,13 @@ class WebsiteController @Inject() (
   private[this] def unvalidateOtherWebsites(updatedWebsite: Website) =
     for {
       websitesWithSameHost <- websiteRepository
-                                .searchCompaniesByHost(updatedWebsite.host)
-                                .map(websites =>
-                                  websites
-                                    .map(_._1)
-                                    .filter(_.id != updatedWebsite.id)
-                                    .filter(_.kind == WebsiteKind.DEFAULT)
-                                )
+        .searchCompaniesByHost(updatedWebsite.host)
+        .map(websites =>
+          websites
+            .map(_._1)
+            .filter(_.id != updatedWebsite.id)
+            .filter(_.kind == WebsiteKind.DEFAULT)
+        )
       unvalidatedWebsites <-
         Future.sequence(
           websitesWithSameHost.map(website => websiteRepository.update(website.copy(kind = WebsiteKind.PENDING)))
@@ -139,12 +139,12 @@ class WebsiteController @Inject() (
               OptionT.liftF(websiteRepository.searchCompaniesByHost(website.host).map(_.map(_._2.siret)))
             newCompany <- OptionT.liftF(newCompanyFuture)
             result <- OptionT.liftF(if (otherAssociatedCompaniesIds.contains(websiteUpdate.companySiret)) {
-                        Future.successful(Conflict)
-                      } else {
-                        websiteRepository
-                          .update(website.copy(companyId = newCompany.id, kind = WebsiteKind.DEFAULT))
-                          .map(updated => Ok(Json.toJson((updated, newCompany))))
-                      })
+              Future.successful(Conflict)
+            } else {
+              websiteRepository
+                .update(website.copy(companyId = newCompany.id, kind = WebsiteKind.DEFAULT))
+                .map(updated => Ok(Json.toJson((updated, newCompany))))
+            })
           } yield result).value.map {
             case None         => NotFound
             case Some(result) => result
@@ -161,21 +161,21 @@ class WebsiteController @Inject() (
         websiteCreate =>
           for {
             company <- companyRepository.getOrCreate(
-                         websiteCreate.companySiret,
-                         Company(
-                           siret = websiteCreate.companySiret,
-                           name = websiteCreate.companyName,
-                           address = websiteCreate.companyAddress,
-                           activityCode = websiteCreate.companyActivityCode
-                         )
-                       )
+              websiteCreate.companySiret,
+              Company(
+                siret = websiteCreate.companySiret,
+                name = websiteCreate.companyName,
+                address = websiteCreate.companyAddress,
+                activityCode = websiteCreate.companyActivityCode
+              )
+            )
             website <- websiteRepository.create(
-                         Website(
-                           host = websiteCreate.host,
-                           kind = WebsiteKind.DEFAULT,
-                           companyId = company.id
-                         )
-                       )
+              Website(
+                host = websiteCreate.host,
+                kind = WebsiteKind.DEFAULT,
+                companyId = company.id
+              )
+            )
           } yield Ok(Json.toJson(website, company))
       )
   }
