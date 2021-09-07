@@ -32,7 +32,6 @@ class CompanyAccessController @Inject() (
 
   val logger: Logger = Logger(this.getClass())
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
-    println(s"------------------ sirey = ${siret} ------------------")
     for {
       userAccesses <- companyRepository.fetchUsersWithLevel(request.company)
     } yield Ok(Json.toJson(userAccesses.map { case (user, level) =>

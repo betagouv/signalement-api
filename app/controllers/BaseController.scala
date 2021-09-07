@@ -5,7 +5,6 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.actions.UserAwareRequest
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
-import play.api.Logger
 import play.api.mvc._
 import repositories._
 import utils.SIRET
@@ -42,12 +41,8 @@ trait BaseCompanyController extends BaseController {
       extends WrappedRequest[A](request) {
     def identity = request.identity
   }
-
   def withCompany[A](siret: String, authorizedLevels: Seq[AccessLevel])(implicit ec: ExecutionContext) =
     SecuredAction andThen new ActionRefiner[SecuredRequestWrapper, CompanyRequest] {
-
-      val logger: Logger = Logger(this.getClass())
-
       def executionContext = ec
       def refine[A](request: SecuredRequestWrapper[A]) =
         for {
@@ -63,17 +58,9 @@ trait BaseCompanyController extends BaseController {
                 )
                 .getOrElse(Future(None))
         } yield company
-          .flatMap { c =>
-            println(s"------------------ accessLevel = ${accessLevel} ------------------")
-            accessLevel.map((c, _))
-          }
+          .flatMap(c => accessLevel.map((c, _)))
           .filter { case (_, l) => authorizedLevels.contains(l) }
           .map { case (c, l) => Right(new CompanyRequest[A](c, l, request)) }
-          .getOrElse {
-            logger.warn(
-              s"Unable to link user [ ${request.identity} ]  to company $company with siret $siret and roles ${authorizedLevels}  "
-            )
-            Left(NotFound)
-          }
+          .getOrElse(Left(NotFound))
     }
 }
