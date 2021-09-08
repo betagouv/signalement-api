@@ -11,7 +11,6 @@ import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories.ReportRepository
 import services.MailService
-import services.MailerService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus.NA
 import utils.Constants.Tags
@@ -20,9 +19,9 @@ import utils.silhouette.auth.WithRole
 import utils.Country
 import utils.EmailAddress
 import utils.EmailSubjects
+import utils.FrontRoute
 import utils.SIRET
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -39,13 +38,12 @@ class AdminController @Inject() (
     reportRepository: ReportRepository,
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
-    mailerService: MailerService,
-    mailService: MailService
+    mailService: MailService,
+    implicit val frontRoute: FrontRoute
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -127,7 +125,7 @@ class AdminController @Inject() (
       val company = genCompany
       EmailContent(
         EmailSubjects.NEW_COMPANY_ACCESS(company.name),
-        views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, None)
+        views.html.mails.professional.newCompanyAccessNotification(frontRoute.dashboard.login, company, None)
       )
     }),
     "pro_access_invitation" -> (() => {
@@ -140,7 +138,7 @@ class AdminController @Inject() (
     "dgccrf_access_link" -> (() =>
       EmailContent(
         EmailSubjects.DGCCRF_ACCESS_LINK,
-        views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc"))
+        views.html.mails.dgccrf.accessLink(frontRoute.dashboard.registerDgccrf(token = "abc"))
       )
     ),
     "pro_report_notification" -> (() =>
@@ -249,7 +247,7 @@ class AdminController @Inject() (
         views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
           genReport,
           genReportResponse,
-          websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")
+          frontRoute.dashboard.reportReview("abc")
         )
       )
     ),
