@@ -1,4 +1,4 @@
-@import java.net.URI
+@import utils.FrontRoute
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
 
@@ -9,7 +9,7 @@
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(
-        implicit websiteUrl: URI, userRoleOpt: Option[UserRole] = None
+        implicit frontRoute: FrontRoute, userRoleOpt: Option[UserRole] = None
 )
 
 <!doctype html>

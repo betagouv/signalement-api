@@ -8,19 +8,18 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.ws._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress
+import utils.FrontRoute
 import utils.SIREN
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -43,7 +42,7 @@ class CompanyController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val configuration: Configuration,
-    ws: WSClient
+    val frontRoute: FrontRoute
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
 
@@ -52,8 +51,7 @@ class CompanyController @Inject() (
   val reportReminderByPostDelay =
     java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
   val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
-  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   def create() = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
     request.body
@@ -251,14 +249,14 @@ class CompanyController @Inject() (
         lastContact.flatMap(_.creationDate).getOrElse(company.creationDate).toLocalDate,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
         activationKey
-      )
+      )(frontRoute = frontRoute, contactAddress = contactAddress)
     else
       views.html.pdfs.accountActivation(
         company,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
         activationKey
-      )
+      )(frontRoute = frontRoute, contactAddress = contactAddress)
   }
 
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) {

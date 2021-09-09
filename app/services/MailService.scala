@@ -13,6 +13,7 @@ import repositories.ReportNotificationBlockedRepository
 import utils.Constants.Tags
 import utils.EmailAddress
 import utils.EmailSubjects
+import utils.FrontRoute
 
 import java.net.URI
 import java.time.LocalDate
@@ -27,6 +28,7 @@ class MailService @Inject() (
     configuration: Configuration,
     mailerService: MailerService,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
+    implicit val frontRoute: FrontRoute,
     val pdfService: PDFService
 )(implicit
     private[this] val executionContext: ExecutionContext
@@ -34,7 +36,6 @@ class MailService @Inject() (
 
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = configuration.get[EmailAddress]("play.mail.from")
-  implicit private[this] val websiteUrl = configuration.get[URI]("play.website.url")
   implicit private[this] val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   implicit private[this] val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
@@ -126,7 +127,7 @@ class MailService @Inject() (
           .reportToConsumerAcknowledgmentPro(
             report,
             reportResponse,
-            websiteUrl.resolve(s"/suivi-des-signalements/${report.id}/avis")
+            frontRoute.dashboard.reportReview(report.id.toString)
           )
           .toString,
         attachments = mailerService.attachmentSeqForWorkflowStepN(4)
@@ -223,7 +224,7 @@ class MailService @Inject() (
         recipients = Seq(user.email),
         subject = EmailSubjects.NEW_COMPANY_ACCESS(company.name),
         bodyHtml = views.html.mails.professional
-          .newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, invitedBy)
+          .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)
           .toString
       )
   }
