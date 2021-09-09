@@ -18,9 +18,9 @@ import services.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress
+import utils.FrontRoute
 import utils.SIRET
 
-import java.net.URI
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -36,12 +36,12 @@ class AccessesOrchestrator @Inject() (
     userRepository: UserRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    configuration: Configuration
+    configuration: Configuration,
+    frontRoute: FrontRoute
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
-  val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
@@ -166,11 +166,11 @@ class AccessesOrchestrator @Inject() (
         .map(accessTokenRepository.findToken(_, token))
         .getOrElse(Future.failed[Option[AccessToken]](CompanySiretNotFound(siret)))
       accessToken <- maybeAccessToken
-        .map(Future.successful(_))
+        .map(Future.successful)
         .getOrElse(Future.failed[AccessToken](DGCCRFActivationTokenNotFound(token)))
       emailTo <-
         accessToken.emailedTo
-          .map(Future.successful(_))
+          .map(Future.successful)
           .getOrElse(Future.failed[EmailAddress](ServerError(s"Email should be defined for access token $token")))
 
     } yield accessToken
@@ -244,7 +244,7 @@ class AccessesOrchestrator @Inject() (
       mailService.Pro.sendCompanyAccessInvitation(
         company = company,
         email = email,
-        invitationUrl = websiteUrl.resolve(s"/entreprise/rejoindre/${company.siret}?token=${tokenCode}"),
+        invitationUrl = frontRoute.dashboard.registerPro(company.siret, tokenCode),
         invitedBy = invitedBy
       )
       logger.debug(s"Token sent to $email for company ${company.id}")
@@ -264,7 +264,7 @@ class AccessesOrchestrator @Inject() (
     } yield {
       mailService.Dgccrf.sendAccessLink(
         email = email,
-        invitationUrl = websiteUrl.resolve(s"/dgccrf/rejoindre/?token=${token.token}")
+        invitationUrl = frontRoute.dashboard.registerDgccrf(token.token)
       )
       logger.debug(s"Sent DGCCRF account invitation to $email")
     }
@@ -282,7 +282,7 @@ class AccessesOrchestrator @Inject() (
     } yield {
       mailService.Common.sendValidateEmail(
         user = user,
-        validationUrl = websiteUrl.resolve(s"/connexion/validation-email?token=${token.token}")
+        validationUrl = frontRoute.dashboard.validateEmail(token.token)
       )
       logger.debug(s"Sent email validation to ${user.email}")
     }

@@ -1,9 +1,7 @@
 package tasks
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.Period
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -16,6 +14,7 @@ import utils.AppSpec
 import utils.Country
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -57,7 +56,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   implicit val ec = ee.executionContext

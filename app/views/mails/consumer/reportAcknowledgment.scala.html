@@ -1,8 +1,8 @@
 @import utils.EmailAddress
 @import utils.Constants.ReportStatus._
-@import java.net.URI
+@import utils.FrontRoute
 @import utils.Country
-@(report: Report, files: List[ReportFile] = Nil)(implicit websiteUrl: URI)
+@(report: Report, files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
 
 
 @views.html.mails.layout("Votre signalement") {
@@ -86,7 +86,7 @@
                 Vous trouverez en pièce jointe votre signalement au format PDF qui vous sera utile.
             </p>
             <p style="text-align: center; padding: 20px">
-                <a href="@websiteUrl.resolve("/litige")" class="btn">
+                <a href="@frontRoute.website.litige" class="btn">
                     Commencer mes démarches
                 </a>
             </p>

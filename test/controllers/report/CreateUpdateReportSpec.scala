@@ -1,6 +1,5 @@
 package controllers.report
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 import com.google.inject.AbstractModule
@@ -28,6 +27,7 @@ import utils.Constants.Tags
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.Duration
@@ -218,7 +218,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress =
     app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 

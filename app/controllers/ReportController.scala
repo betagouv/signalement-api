@@ -16,13 +16,13 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants
+import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
-import java.net.URI
 import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
@@ -40,6 +40,7 @@ class ReportController @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     s3Service: S3Service,
     pdfService: PDFService,
+    frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     configuration: Configuration
@@ -49,7 +50,6 @@ class ReportController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-  implicit val websiteUrl = configuration.get[URI]("play.application.url")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
   val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
@@ -286,7 +286,11 @@ class ReportController @Inject() (
           visibleReport
             .map(report =>
               pdfService.Ok(
-                List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
+                List(
+                  views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
+                    frontRoute
+                  )
+                )
               )
             )
             .getOrElse(NotFound)
