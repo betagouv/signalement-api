@@ -1,7 +1,6 @@
 package controllers
 
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -25,11 +24,12 @@ import play.api.Configuration
 import play.api.Logger
 import repositories._
 import services.MailerService
-import services.S3Service
 import services.PDFService
-import utils.silhouette.api.APIKeyEnv
+import services.S3Service
 import utils.silhouette.auth.AuthEnv
 import utils.Fixtures
+import utils.FrontRoute
+import utils.silhouette.api.APIKeyEnv
 
 import scala.concurrent.Future
 
@@ -54,6 +54,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           mock[CompaniesVisibilityOrchestrator],
           mock[S3Service],
           mock[PDFService],
+          mock[FrontRoute],
           mock[Silhouette[AuthEnv]],
           mock[Silhouette[APIKeyEnv]],
           mock[Configuration]

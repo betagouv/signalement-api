@@ -1,6 +1,5 @@
 package tasks
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 import models._
@@ -23,6 +22,7 @@ import utils.Constants.ReportStatus
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -282,7 +282,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = app.injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress =
     app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
