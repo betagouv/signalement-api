@@ -5,6 +5,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -125,7 +126,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   val companyTableQuery = CompanyTables.tables
 
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
+  private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
+
+  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue)
 
   class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
     def companyId = column[UUID]("company_id")
@@ -149,77 +152,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
-  def migration_getTodoSIRET(): Future[Option[String]] =
-    db.run(sql"select siret from companies where done is not true and siret is not null LIMIT 1".as[String])
-      .flatMap { result =>
-        result.headOption match {
-          case Some(siret) => Future(Some(siret))
-          case None =>
-            db.run(
-              sql"select siret from reports where done is not true and company_siret is not null LIMIT 1".as[String]
-            ).map(_.headOption)
-        }
-      }
-
-  def migration_update(siret: String, dataOpt: Option[CompanyData]) =
-    dataOpt match {
-      case Some(data) =>
-        val department = data.codePostalEtablissement.map(_.slice(0, 2))
-        val street_number = data.numeroVoieEtablissement
-        val street = (
-          data.typeVoieEtablissement.flatMap(TypeVoies.getByShortName).getOrElse("") + " " +
-            data.libelleVoieEtablissement.getOrElse("")
-        ).trim()
-        val address_supplement = data.complementAdresseEtablissement
-        val city = data.libelleCommuneEtablissement
-        val postal_code = data.codePostalEtablissement
-        val activity_code = data.activitePrincipaleEtablissement
-        db.run(
-          DBIO.seq(
-            sqlu"""
-            update companies set
-            department = ${department},
-            street_number = ${street_number},
-            street = ${street},
-            address_supplement = ${address_supplement},
-            city = ${city},
-            postal_code = ${postal_code},
-            activity_code = ${activity_code},
-            done = true
-            where siret = ${siret}
-          """,
-            sqlu"""
-            update reports set
-            company_postal_code = ${postal_code},
-            company_street_number = ${street_number},
-            company_street = ${street},
-            company_address_supplement = ${address_supplement},
-            company_city = ${city},
-            done = true
-            where company_siret = ${siret}
-          """
-          )
-        )
-      case None =>
-        db.run(
-          DBIO.seq(
-            sqlu"""
-            update companies set
-            done = true
-            where siret = ${siret}
-          """,
-            sqlu"""
-            update reports set
-            done = true
-            where company_siret = ${siret}
-          """
-          )
-        )
-    }
-
   def searchWithReportsCount(
       departments: Seq[String] = List(),
-      identity: Option[String] = None,
+      identity: Option[SearchCompanyIdentity] = None,
       offset: Option[Long],
       limit: Option[Int]
   ): Future[PaginatedResult[CompanyWithNbReports]] = {
@@ -234,11 +169,11 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       .sortBy(_._2.desc)
     val filterQuery = identity
       .map {
-        case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") =>
-          query.filter(_._1.id.asColumnOf[String] like s"${q.toLowerCase}%")
-        case q if q.matches("[0-9]{14}") => query.filter(_._1.siret === SIRET(q))
-        case q if q.matches("[0-9]{9}")  => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
-        case q                           => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
+        case SearchCompanyIdentityRCS(q) =>
+          query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
+        case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
+        case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
+        case SearchCompanyIdentityName(q)  => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
       }
       .getOrElse(query)
     toPaginate(filterQuery, offset, limit).map(res =>
@@ -291,11 +226,19 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 
-  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
-    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+  def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).to[List].result)
 
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
+
+  def findBySiren(siren: List[SIREN]): Future[List[Company]] =
+    db.run(
+      companyTableQuery
+        .filter(x => substr(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .to[List]
+        .result
+    )
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(
@@ -307,7 +250,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
-  def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
+  def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
       UserAccessTableQuery
         .join(companyTableQuery)
@@ -318,7 +261,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    )
+    ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
 
   def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
     db.run(
@@ -333,15 +276,30 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .result
     )
 
-  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] =
+  private[this] def fetchUsersAndAccessesByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[(UUID, User)]] =
     db.run(
       (for {
-        access <- UserAccessTableQuery if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        access <- UserAccessTableQuery if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
         user <- userRepository.userTableQuery if user.id === access.userId
-      } yield (access.companyId, user))
-        .to[List]
-        .result
-    ).map(_.groupBy(_._1).view.mapValues(_.map(_._2)).toMap)
+      } yield (access.companyId, user)).to[List].result
+    )
+
+  def fetchUsersByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[User]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
+
+  def fetchAdminsMapByCompany(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[Map[UUID, List[User]]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(users =>
+      users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
+    )
 
   def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(

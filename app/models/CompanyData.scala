@@ -84,6 +84,7 @@ object CompanySearchResult {
 }
 
 case class VisibleCompany(
+    name: String,
     siret: SIRET,
     postalCode: Option[String],
     closed: Boolean

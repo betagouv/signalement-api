@@ -1,9 +1,7 @@
 package controllers.report
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -29,6 +27,7 @@ import utils.Constants.Tags
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.Duration
@@ -217,8 +216,9 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress =
     app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
@@ -226,6 +226,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val existingCompany = Fixtures.genCompany.sample.get
   val anotherCompany = Fixtures.genCompany.sample.get
+
+  val existingCompanyData =
+    Fixtures.genCompanyData(Some(existingCompany)).sample.get.copy(etablissementSiege = Some("true"))
+  val anotherCompanyData =
+    Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
@@ -248,18 +253,20 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         _ <- userRepository.create(concernedAdminUser)
         c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
         _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
+        _ <- companyDataRepository.create(existingCompanyData)
+        _ <- companyDataRepository.create(anotherCompanyData)
         _ <- reportRepository.create(existingReport)
         _ <- Future.sequence(
-               Seq(
-                 existingReport.email,
-                 draftReport.email,
-                 report.email
-               ).distinct.map(email =>
-                 emailValidationRepository.create(
-                   EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
-                 )
-               )
-             )
+          Seq(
+            existingReport.email,
+            draftReport.email,
+            report.email
+          ).distinct.map(email =>
+            emailValidationRepository.create(
+              EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
+            )
+          )
+        )
         _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf

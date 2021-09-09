@@ -16,13 +16,13 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants
+import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
-import java.net.URI
 import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
@@ -40,6 +40,7 @@ class ReportController @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     s3Service: S3Service,
     pdfService: PDFService,
+    frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     configuration: Configuration
@@ -49,7 +50,6 @@ class ReportController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-  implicit val websiteUrl = configuration.get[URI]("play.application.url")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
   val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
@@ -137,13 +137,14 @@ class ReportController @Inject() (
         review =>
           for {
             events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
-            result <- if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
-                        Future(Forbidden)
-                      } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
-                        Future(Conflict)
-                      } else {
-                        reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
-                      }
+            result <-
+              if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
+                Future(Forbidden)
+              } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
+                Future(Conflict)
+              } else {
+                reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
+              }
           } yield result
       )
   }
@@ -207,8 +208,8 @@ class ReportController @Inject() (
         for {
           visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
           viewedReport <- visibleReport
-                            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
-                            .getOrElse(Future(None))
+            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
+            .getOrElse(Future(None))
           reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield viewedReport
           .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
@@ -271,9 +272,9 @@ class ReportController @Inject() (
           visibleReport <- getVisibleReportForUser(id, request.identity)
           events <- eventRepository.getEventsWithUsers(id, EventFilter())
           companyEvents <- visibleReport
-                             .flatMap(_.companyId)
-                             .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-                             .getOrElse(Future(List.empty))
+            .flatMap(_.companyId)
+            .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
+            .getOrElse(Future(List.empty))
           reportFiles <- reportRepository.retrieveReportFiles(id)
         } yield {
           val responseOption = events
@@ -285,7 +286,11 @@ class ReportController @Inject() (
           visibleReport
             .map(report =>
               pdfService.Ok(
-                List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
+                List(
+                  views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
+                    frontRoute
+                  )
+                )
               )
             )
             .getOrElse(NotFound)
@@ -356,9 +361,9 @@ class ReportController @Inject() (
       for {
         company <- companyRepository.findBySiret(SIRET(siret))
         events <- company
-                    .map(_.id)
-                    .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
-                    .getOrElse(Future(None))
+          .map(_.id)
+          .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
+          .getOrElse(Future(None))
       } yield company match {
         case Some(_) =>
           Ok(
@@ -414,9 +419,9 @@ class ReportController @Inject() (
         else {
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)
-            .map(_.map(v => Some(v.siret)))
-            .map { viewableSirets =>
-              report.filter(r => viewableSirets.contains(r.companySiret))
+            .map(_.map(v => Some(v.company.siret)))
+            .map { visibleSirets =>
+              report.filter(r => visibleSirets.contains(r.companySiret))
             }
         }
     } yield visibleReport

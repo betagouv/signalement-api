@@ -1,6 +1,6 @@
-@import java.net.URI
+@import utils.FrontRoute
 @import utils.Constants.ReportStatus._
-@(report: Report)(implicit websiteUrl: URI)
+@(report: Report)(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
     <p>
@@ -41,7 +41,7 @@
             Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation
         </p>
         <p style="text-align: center; padding: 20px">
-            <a href="@websiteUrl.resolve("/litige")" class="btn">
+            <a href="@frontRoute.website.litige" class="btn">
                 Continuer mes démarches
             </a>
         </p>

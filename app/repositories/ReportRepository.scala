@@ -463,12 +463,12 @@ class ReportRepository @Inject() (
 
     for {
       reports <- query
-                   .map(_._1)
-                   .sortBy(_.creationDate.desc)
-                   .drop(offset)
-                   .take(limit)
-                   .to[List]
-                   .result
+        .map(_._1)
+        .sortBy(_.creationDate.desc)
+        .drop(offset)
+        .take(limit)
+        .to[List]
+        .result
       count <- query.length.result
     } yield PaginatedResult(
       totalCount = count,
@@ -558,16 +558,8 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] =
-    for {
-      reports <- db.run {
-                   reportTableQuery
-                     .filter(_.status === status.defaultValue)
-                     .to[List]
-                     .result
-                 }
-      adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
-    } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
+  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(

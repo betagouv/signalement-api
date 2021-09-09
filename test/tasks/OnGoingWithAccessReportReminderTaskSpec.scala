@@ -1,9 +1,7 @@
 package tasks
 
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -14,6 +12,9 @@ import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
@@ -21,8 +22,6 @@ import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -255,7 +254,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
-      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+      (report.exists(report => status == report.status), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
@@ -269,7 +268,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress =
     app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 

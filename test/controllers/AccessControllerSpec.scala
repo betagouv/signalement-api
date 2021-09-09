@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import org.specs2.concurrent.ExecutionEnv
@@ -14,11 +15,10 @@ import play.api.libs.json.Json
 import play.api.test._
 import play.api.test.Helpers._
 import utils.silhouette.auth.AuthEnv
-
 import utils.AppSpec
 import utils.Fixtures
-
 import models._
+import models.token.TokenKind.CompanyJoin
 import repositories._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
@@ -111,7 +111,7 @@ The myCompanies endpoint should
       .withAuthenticator[AuthEnv](loginInfo(user))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    contentAsJson(result) must beEqualTo(Json.toJson(Seq((company, level))))
+    contentAsJson(result) must beEqualTo(Json.toJson(Seq(CompanyWithAccess(company, level))))
   }
   def checkNotConnected = {
     val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
@@ -213,7 +213,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .createToken(CompanyJoin, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
       Duration.Inf
     )
     token must haveClass[AccessToken]

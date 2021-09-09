@@ -61,24 +61,24 @@ class SubscriptionController @Inject() (
             for {
               subscriptions <- subscriptionRepository.list(request.identity.id)
               updatedSubscription <- subscriptions
-                                       .find(_.id == uuid)
-                                       .map(s =>
-                                         subscriptionRepository
-                                           .update(
-                                             s.copy(
-                                               departments = draftSubscription.departments.getOrElse(s.departments),
-                                               categories = draftSubscription.categories.getOrElse(s.categories),
-                                               tags = draftSubscription.tags.getOrElse(s.tags),
-                                               countries = draftSubscription.countries
-                                                 .map(_.map(Country.fromCode))
-                                                 .getOrElse(s.countries),
-                                               sirets = draftSubscription.sirets.getOrElse(s.sirets),
-                                               frequency = draftSubscription.frequency.getOrElse(s.frequency)
-                                             )
-                                           )
-                                           .map(Some(_))
-                                       )
-                                       .getOrElse(Future(None))
+                .find(_.id == uuid)
+                .map(s =>
+                  subscriptionRepository
+                    .update(
+                      s.copy(
+                        departments = draftSubscription.departments.getOrElse(s.departments),
+                        categories = draftSubscription.categories.getOrElse(s.categories),
+                        tags = draftSubscription.tags.getOrElse(s.tags),
+                        countries = draftSubscription.countries
+                          .map(_.map(Country.fromCode))
+                          .getOrElse(s.countries),
+                        sirets = draftSubscription.sirets.getOrElse(s.sirets),
+                        frequency = draftSubscription.frequency.getOrElse(s.frequency)
+                      )
+                    )
+                    .map(Some(_))
+                )
+                .getOrElse(Future(None))
             } yield if (updatedSubscription.isDefined) Ok(Json.toJson(updatedSubscription)) else NotFound
         )
     }
@@ -104,9 +104,9 @@ class SubscriptionController @Inject() (
       for {
         subscriptions <- subscriptionRepository.list(request.identity.id)
         deletedCount <- subscriptions
-                          .find(_.id == uuid)
-                          .map(subscription => subscriptionRepository.delete(subscription.id))
-                          .getOrElse(Future(0))
+          .find(_.id == uuid)
+          .map(subscription => subscriptionRepository.delete(subscription.id))
+          .getOrElse(Future(0))
       } yield if (deletedCount > 0) Ok else NotFound
   }
 }

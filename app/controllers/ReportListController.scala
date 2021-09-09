@@ -63,32 +63,32 @@ class ReportListController @Inject() (
     val limitMax = 250
     for {
       paginatedReports <- reportOrchestrator.getReportsForUser(
-                            connectedUser = request.identity,
-                            filter = ReportFilter(
-                              departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-                              email = email,
-                              websiteURL = websiteURL,
-                              phone = phone,
-                              websiteExists = websiteExists,
-                              phoneExists = phoneExists,
-                              siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
-                              companyName = companyName,
-                              companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
-                              start = DateUtils.parseDate(start),
-                              end = DateUtils.parseDate(end),
-                              category = category,
-                              statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-                              details = details,
-                              employeeConsumer = request.identity.userRole match {
-                                case UserRoles.Pro => Some(false)
-                                case _             => None
-                              },
-                              hasCompany = hasCompany,
-                              tags = tags
-                            ),
-                            offset = offset.map(Math.max(_, 0)).getOrElse(0),
-                            limit.map(Math.max(_, 0)).map(Math.min(_, limitMax)).getOrElse(limitDefault)
-                          )
+        connectedUser = request.identity,
+        filter = ReportFilter(
+          departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          email = email,
+          websiteURL = websiteURL,
+          phone = phone,
+          websiteExists = websiteExists,
+          phoneExists = phoneExists,
+          siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
+          companyName = companyName,
+          companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          start = DateUtils.parseDate(start),
+          end = DateUtils.parseDate(end),
+          category = category,
+          statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
+          details = details,
+          employeeConsumer = request.identity.userRole match {
+            case UserRoles.Pro => Some(false)
+            case _             => None
+          },
+          hasCompany = hasCompany,
+          tags = tags
+        ),
+        offset = offset.map(Math.max(_, 0)).getOrElse(0),
+        limit.map(Math.max(_, 0)).map(Math.min(_, limitMax)).getOrElse(limitDefault)
+      )
     } yield Ok(Json.toJson(paginatedReports))
   }
 

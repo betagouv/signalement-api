@@ -1,27 +1,25 @@
 package tasks
 
-import java.net.URI
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -80,7 +78,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
     with Mockito
     with FutureMatchers {
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   implicit val ec = ee.executionContext
 
@@ -113,7 +111,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
       )
 
   def mailMustNotHaveBeenSent() =
-    there was no(app.injector.instanceOf[MailerService])
+    there was no(mailerService)
       .sendEmail(
         EmailAddress(anyString),
         any[Seq[EmailAddress]],

@@ -1,26 +1,17 @@
 package tasks
 
-import actors.EmailActor
-import akka.actor.ActorRef
 import akka.actor.ActorSystem
-import akka.pattern.ask
-import models.Report
 import models.ReportFilter
-import models.Subscription
 import play.api.Configuration
 import play.api.Logger
 import repositories.ReportRepository
 import repositories.SubscriptionRepository
+import services.MailService
 import utils.Constants.Departments
-import utils.Constants.Tags
-import utils.EmailAddress
-import utils.EmailSubjects
 
-import java.net.URI
 import java.time._
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
-import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -28,15 +19,12 @@ class ReportNotificationTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepository,
     subscriptionRepository: SubscriptionRepository,
-    @Named("email-actor") emailActor: ActorRef,
-    configuration: Configuration
+    configuration: Configuration,
+    mailService: MailService
 )(implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
   implicit val timeout: akka.util.Timeout = 5.seconds
-
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
-  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
   val startTime = LocalTime.of(
     configuration.get[Int]("play.tasks.report.notification.start.hour"),
@@ -51,7 +39,7 @@ class ReportNotificationTask @Inject() (
 
   val departments = Departments.ALL
 
-  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, 1.days) { () =>
+  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
 
     if (
@@ -73,12 +61,12 @@ class ReportNotificationTask @Inject() (
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       reports <- reportRepository.getReports(
-                   0,
-                   10000,
-                   ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
-                 )
+        0,
+        10000,
+        ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
+      )
     } yield subscriptions.foreach { subscription =>
-      sendMailReportNotification(
+      mailService.Dgccrf.sendMailReportNotification(
         subscription._2,
         subscription._1,
         reports.entities
@@ -103,27 +91,4 @@ class ReportNotificationTask @Inject() (
       )
     }
   }
-
-  private def sendMailReportNotification(
-      email: EmailAddress,
-      subscription: Subscription,
-      reports: List[Report],
-      startDate: LocalDate
-  ) =
-    if (reports.length > 0) {
-
-      logger.debug(
-        s"sendMailReportNotification $email - abonnement ${subscription.id} - ${reports.length} signalements"
-      )
-
-      emailActor ? EmailActor.EmailRequest(
-        from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = Seq(email),
-        subject = EmailSubjects.REPORT_NOTIF_DGCCRF(
-          reports.length,
-          subscription.tags.filter(_ == Tags.DangerousProduct).headOption.map(_ => "[Produits dangereux] ")
-        ),
-        bodyHtml = views.html.mails.dgccrf.reportNotification(subscription, reports, startDate).toString
-      )
-    }
 }

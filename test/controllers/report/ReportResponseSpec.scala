@@ -3,7 +3,6 @@ package controllers.report
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -266,8 +265,9 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
   override def setupData() = {
-    reviewUrl =
-      app.configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${reportFixture.id}/avis")
+    reviewUrl = new URI(
+      app.configuration.get[URI]("play.dashboard.url").toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+    )
     Await.result(
       for {
         _ <- userRepository.create(concernedProUser)
