@@ -28,13 +28,13 @@ import scala.concurrent.duration._
 class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticControllerSpec {
   override def is =
     s2"""it should
-         return reports count                               ${getReportCount}
-         return monthly reports count                       ${getMonthlyReportCount}
-         return reports read by pro percentage              ${getReportReadByProPercentage}
-         return reports forwarded to pro percentage         ${getReportForwardedToProPercentage}
-         return monthly reports read by pro percentage      ${getMonthlyReportWithResponsePercentage}
-         return reports with response percentage            ${getReportWithResponsePercentage}
-         return monthly reports with response percentage    ${getMonthlyReportWithResponsePercentage}
+         return reports count                               $getReportCount
+         return monthly reports count                       $getMonthlyReportCount
+         return reports read by pro percentage              $getReportReadByProPercentage
+         return reports forwarded to pro percentage         $getReportForwardedToProPercentage
+         return monthly reports read by pro percentage      $getMonthlyReportWithResponsePercentage
+         return reports with response percentage            $getReportWithResponsePercentage
+         return monthly reports with response percentage    $getMonthlyReportWithResponsePercentage
     """
 
   def aMonthlyStat(monthlyStat: MonthlyStat): Matcher[String] =

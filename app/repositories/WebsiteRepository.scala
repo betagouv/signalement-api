@@ -94,7 +94,7 @@ class WebsiteRepository @Inject() (
       .filter(
         _._2.map(reportTable => reportTable.host.isDefined)
       )
-      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
+      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%$h%"))))
       .filter(websiteCompanyTable =>
         kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)
       )

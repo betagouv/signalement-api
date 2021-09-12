@@ -14,7 +14,8 @@ import scala.concurrent.Future
 
 /** A repository for authToken.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class AuthTokenRepository @Inject() (

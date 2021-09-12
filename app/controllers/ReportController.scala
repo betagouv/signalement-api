@@ -91,7 +91,7 @@ class ReportController @Inject() (
     }
 
   def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
-    logger.debug(s"reportResponse ${uuid}")
+    logger.debug(s"reportResponse $uuid")
     request.body
       .validate[ReportResponse]
       .fold(
@@ -155,7 +155,7 @@ class ReportController @Inject() (
       .filter(f => allowedExtensions.contains(f.filename.toLowerCase.toString.split("\\.").last))
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
-        val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_${filename}")
+        val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_$filename")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
