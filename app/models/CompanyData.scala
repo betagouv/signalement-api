@@ -2,7 +2,6 @@ package models
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import play.api.libs.json.Writes
 import utils.SIREN
 import utils.SIRET
 
@@ -81,17 +80,6 @@ case class CompanySearchResult(
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
-}
-
-case class VisibleCompany(
-    name: String,
-    siret: SIRET,
-    postalCode: Option[String],
-    closed: Boolean
-)
-
-object VisibleCompany {
-  implicit val write: Writes[VisibleCompany] = Json.writes[VisibleCompany]
 }
 
 object TypeVoies {
