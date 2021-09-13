@@ -118,6 +118,12 @@ GET           /api/companies/:siret                                  controllers
 PUT           /api/companies/:id/address                             controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
+# Company stats API
+GET /api/companies-stats/report-count/:id    controllers.CompanyStatsController.getReportsCountEvolution(id: java.util.UUID, period: String)
+GET /api/companies-stats/hosts/:id    controllers.CompanyStatsController.getHosts(id: java.util.UUID)
+GET /api/companies-stats/tags/:id    controllers.CompanyStatsController.getReportsTagsDistribution(id: java.util.UUID)
+GET /api/companies-stats/status/:id    controllers.CompanyStatsController.getReportsStatusDistribution(id: java.util.UUID)
+
 # Rating API
 POST          /api/rating                                            controllers.RatingController.rate()
 
