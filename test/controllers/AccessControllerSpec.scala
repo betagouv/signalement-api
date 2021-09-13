@@ -24,11 +24,13 @@ import repositories._
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
   val proMemberUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
+  val companyData = Fixtures.genCompanyData(Some(company)).sample.get.copy(etablissementSiege = Some("true"))
 
   override def setupData() =
     Await.result(
@@ -36,6 +38,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         admin <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
         c <- companyRepository.getOrCreate(company.siret, company)
+        cd <- companyDataRepository.create(companyData)
         _ <- companyRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
         _ <- companyRepository.setUserLevel(c, member, AccessLevel.MEMBER)
       } yield (),
@@ -77,14 +80,16 @@ The listAccesses endpoint should
             "email":"${proAdminUser.email}",
             "firstName":"${proAdminUser.firstName}",
             "lastName":"${proAdminUser.lastName}",
-            "level":"admin"
+            "level":"admin",
+            "editable": false
           },
           {
             "userId":"${proMemberUser.id}",
             "email":"${proMemberUser.email}",
             "firstName":"${proMemberUser.firstName}",
             "lastName":"${proMemberUser.lastName}",
-            "level":"member"
+            "level":"member",
+            "editable": true
           }]
         """
       )
