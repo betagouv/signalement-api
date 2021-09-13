@@ -1,11 +1,13 @@
 package orchestrators
 
+import controllers.error.AppError.CompanyActivationTokenNotFound
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.DGCCRFActivationTokenNotFound
 import controllers.error.AppError.ServerError
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
+import models.access.UserWithAccessLevel
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind.CompanyJoin
@@ -25,13 +27,13 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
-    val companyDataRepository: CompanyDataRepository,
+    companyDataRepository: CompanyDataRepository,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
     eventRepository: EventRepository,
@@ -43,6 +45,15 @@ class AccessesOrchestrator @Inject() (
   val logger = Logger(this.getClass)
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   implicit val timeout: akka.util.Timeout = 5.seconds
+
+  def listAccesses(company: Company) =
+    for {
+      headOffices <- companyDataRepository.searchHeadOffices(List(company.siret))
+      companies <- companyRepository.findBySirets(headOffices.map(_.siret))
+      headOfficeCompanyIds = companies.map(_.id)
+      companyIds = headOfficeCompanyIds :+ company.id
+      userAccesses <- companyRepository.fetchUsersWithLevel(companyIds)
+    } yield userAccesses.map(UserWithAccessLevel.toApi)
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -167,7 +178,7 @@ class AccessesOrchestrator @Inject() (
         .getOrElse(Future.failed[Option[AccessToken]](CompanySiretNotFound(siret)))
       accessToken <- maybeAccessToken
         .map(Future.successful)
-        .getOrElse(Future.failed[AccessToken](DGCCRFActivationTokenNotFound(token)))
+        .getOrElse(Future.failed[AccessToken](CompanyActivationTokenNotFound(token, siret)))
       emailTo <-
         accessToken.emailedTo
           .map(Future.successful)
