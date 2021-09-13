@@ -10,7 +10,6 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories._
 import utils.Constants.ReportStatus._
 import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
@@ -27,7 +26,6 @@ import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (
-    reportRepository: ReportRepository,
     reportOrchestrator: ReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
