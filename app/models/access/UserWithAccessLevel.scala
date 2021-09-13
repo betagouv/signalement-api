@@ -9,18 +9,24 @@ import utils.EmailAddress
 
 import java.util.UUID
 
-case class UserWithAccessLevel(userId: UUID, firstName: String, lastName: String, email: EmailAddress, level: String)
+case class UserWithAccessLevel(
+    userId: UUID,
+    firstName: String,
+    lastName: String,
+    email: EmailAddress,
+    level: String,
+    editable: Boolean
+)
 
 object UserWithAccessLevel {
 
   implicit val UserWithAccessLevelWrites: Writes[UserWithAccessLevel] = Json.writes[UserWithAccessLevel]
 
-  def toApi(userAccessLevelTuple: (User, AccessLevel)): UserWithAccessLevel = {
-    val (user, accessLevel) = userAccessLevelTuple
+  def toApi(user: User, accessLevel: AccessLevel, editable: Boolean): UserWithAccessLevel =
     user
       .into[UserWithAccessLevel]
       .withFieldConst(_.userId, user.id)
+      .withFieldConst(_.editable, editable)
       .withFieldConst(_.level, accessLevel.value)
       .transform
-  }
 }

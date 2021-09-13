@@ -7,7 +7,10 @@ import controllers.error.AppError.ServerError
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
+import models.access.ActivationOutcome.ActivationOutcome
+import models.access.ActivationOutcome
 import models.access.UserWithAccessLevel
+import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind.CompanyJoin
@@ -15,6 +18,7 @@ import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Configuration
 import play.api.Logger
+import repositories.AccessTokenRepository
 import repositories._
 import services.MailService
 import utils.Constants.ActionEvent
@@ -46,14 +50,70 @@ class AccessesOrchestrator @Inject() (
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listAccesses(company: Company) =
+  def listAccesses(company: Company, user: User) =
+    getHeadOffice(company.siret).flatMap {
+
+      case headOffice if headOffice.siret == company.siret =>
+        logger.debug(s"$company is a head office, returning access for head office")
+        for {
+          userLevel <- companyRepository.getUserLevel(company.id, user)
+          access <- getUserAccess(user.id, userLevel, List(company), editable = true)
+        } yield access
+
+      case headOffice =>
+        logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
+        for {
+          userLevel <- companyRepository.getUserLevel(company.id, user)
+          subsidiaryUserAccess <- getUserAccess(user.id, userLevel, List(company), editable = true)
+          maybeHeadOfficeCompany <- companyRepository
+            .findBySiret(headOffice.siret)
+          headOfficeCompany <- maybeHeadOfficeCompany match {
+            case Some(value) => Future.successful(value)
+            case None        => Future.failed(CompanySiretNotFound(headOffice.siret))
+          }
+          headOfficeAccess <- getUserAccess(user.id, userLevel, List(headOfficeCompany), editable = false)
+          _ = logger.debug(s"Removing duplicate access")
+          filteredHeadOfficeAccess = headOfficeAccess.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
+        } yield filteredHeadOfficeAccess ++ subsidiaryUserAccess
+
+    }
+
+  private def getHeadOffice(siret: SIRET): Future[CompanyData] =
+    companyDataRepository.getHeadOffice(siret).flatMap {
+      case Nil =>
+        logger.error(s"No head office for siret $siret")
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+      case company :: Nil =>
+        Future.successful(company)
+      case companies =>
+        logger.error(s"Multiple head offices for siret $siret company data ids ${companies.map(_.id)} ")
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+    }
+
+  private def getUserAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      companies: List[Company],
+      editable: Boolean
+  ): Future[List[UserWithAccessLevel]] =
     for {
-      headOffices <- companyDataRepository.searchHeadOffices(List(company.siret))
-      companies <- companyRepository.findBySirets(headOffices.map(_.siret))
-      headOfficeCompanyIds = companies.map(_.id)
-      companyIds = headOfficeCompanyIds :+ company.id
-      userAccesses <- companyRepository.fetchUsersWithLevel(companyIds)
-    } yield userAccesses.map(UserWithAccessLevel.toApi)
+      companyAccess <- companyRepository
+        .fetchUsersWithLevel(companies.map(_.id))
+      userAccess =
+        if (userLevel != AccessLevel.ADMIN) {
+          logger.debug(s"User is not an admin : setting editable to false")
+          companyAccess.map(x => toApi(x._1, x._2, editable = false))
+        } else {
+          companyAccess.map {
+            case (user, level) if user.id == userId =>
+              logger.debug(s"User cannot edit his own access : setting editable to false")
+              toApi(user, level, editable = false)
+            case (user, level) =>
+              toApi(user, level, editable)
+          }
+
+        }
+    } yield userAccess
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -134,12 +194,6 @@ class AccessesOrchestrator @Inject() (
         .getOrElse(Future(None))
     } yield applied
   }
-
-  object ActivationOutcome extends Enumeration {
-    type ActivationOutcome = Value
-    val Success, NotFound, EmailConflict = Value
-  }
-  import ActivationOutcome._
 
   def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
     val workflow = siret

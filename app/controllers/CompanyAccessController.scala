@@ -34,7 +34,7 @@ class CompanyAccessController @Inject() (
 
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     accessesOrchestrator
-      .listAccesses(request.company)
+      .listAccesses(request.company, request.identity)
       .map(res => Ok(Json.toJson(res)))
       .recover { case err =>
         handleError(err)

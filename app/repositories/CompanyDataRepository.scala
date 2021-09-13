@@ -178,10 +178,10 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
         .result
     )
 
-  def searchHeadOffices(sirets: List[SIRET]): Future[List[CompanyData]] =
+  def getHeadOffice(siret: SIRET): Future[List[CompanyData]] =
     db.run(
       companyDataTableQuery
-        .filter(_.siren inSetBind sirets.map(SIREN(_)))
+        .filter(_.siren === SIREN(siret))
         .filter(_.denominationUsuelleEtablissement.isDefined)
         .filter(_.etablissementSiege === "true")
         .to[List]
