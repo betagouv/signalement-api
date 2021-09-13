@@ -399,25 +399,23 @@ class ReportRepository @Inject() (
       .result
   }
 
-  def getReportsStatusDistribution(companyId: UUID): Future[Seq[(String, Int)]] =
+  def getReportsStatusDistribution(companyId: UUID): Future[Map[String, Int]] =
     db.run(
       reportTableQuery
         .filter(_.companyId === companyId)
         .groupBy(_.status)
         .map { case (status, report) => status -> report.size }
         .result
-    )
-//      .map(_.foldLeft(Map.empty[String, Int]) { case (acc, (a, b)) =>
-//      acc ++ Map(a -> b)
-//    })
+    ).map(_.foldLeft(Map.empty[String, Int]) { case (acc, (a, b)) =>
+      acc ++ Map(a -> b)
+    })
 
-  def getReportsTagsDistribution(companyId: UUID): Future[Seq[(String, Int)]] = {
-    def spreadListOfTags(map: Seq[(List[String], Int)]): Seq[(String, Int)] =
+  def getReportsTagsDistribution(companyId: UUID): Future[Map[String, Int]] = {
+    def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
       map
         .foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
           acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
         }
-        .toSeq
 
     db.run(
       reportTableQuery
