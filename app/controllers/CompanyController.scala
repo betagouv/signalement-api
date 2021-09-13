@@ -5,20 +5,20 @@ import models.Event.stringToDetailsJsValue
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
+import play.api.libs.json._
 import play.api.Configuration
 import play.api.Logger
-import play.api.libs.json._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithPermission
+import utils.silhouette.auth.WithRole
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.SIREN
 import utils.SIRET
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithPermission
-import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
