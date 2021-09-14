@@ -57,7 +57,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
     for {
       authorizedCompanies <- companyRepo.fetchCompaniesWithLevel(pro)
       headOfficeSirets <- companyDataRepo
-        .searchHeadOffices(authorizedCompanies.map(_.company.siret))
+        .filterHeadOffices(authorizedCompanies.map(_.company.siret))
         .map(_.map(_.siret))
       companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.apply))
       companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)

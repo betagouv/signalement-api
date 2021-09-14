@@ -31,18 +31,14 @@ class CompanyAccessController @Inject() (
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass())
+
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
-    for {
-      userAccesses <- companyRepository.fetchUsersWithLevel(request.company)
-    } yield Ok(Json.toJson(userAccesses.map { case (user, level) =>
-      Map(
-        "userId" -> user.id.toString,
-        "firstName" -> user.firstName,
-        "lastName" -> user.lastName,
-        "email" -> user.email.value,
-        "level" -> level.value
-      )
-    }))
+    accessesOrchestrator
+      .listAccesses(request.company, request.identity)
+      .map(res => Ok(Json.toJson(res)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
