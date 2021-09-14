@@ -499,14 +499,14 @@ class ReportOrchestrator @Inject() (
     logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
-        Some(UUID.randomUUID()),
-        Some(reportId),
-        None,
-        None,
-        Some(OffsetDateTime.now()),
-        EventType.CONSO,
-        ActionEvent.REPORT_REVIEW_ON_RESPONSE,
-        stringToDetailsJsValue(
+        id = Some(UUID.randomUUID()),
+        reportId = Some(reportId),
+        companyId = None,
+        userId = None,
+        creationDate = Some(OffsetDateTime.now()),
+        eventType = EventType.CONSO,
+        action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
+        details = stringToDetailsJsValue(
           s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )

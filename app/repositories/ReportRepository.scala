@@ -450,7 +450,7 @@ class ReportRepository @Inject() (
         .groupBy(x => trunc(truncName, x.creationDate))
         .map { case (creationDate, report) => creationDate -> report.size }
         .result
-    ).map(mapPeriod(tick, (date, i) => date.minusMonths(i)))
+    ).map(mapPeriod(tick, dateOperator))
 
   private[this] def mapPeriod(
       ticks: Int,

@@ -12,5 +12,6 @@ object CompanyReportsCountPeriod {
       case "day"   => CompanyReportsCountByDay
       case "week"  => CompanyReportsCountByWeek
       case "month" => CompanyReportsCountByMonth
+      case _       => CompanyReportsCountByMonth
     }
 }
