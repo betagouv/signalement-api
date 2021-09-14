@@ -81,7 +81,8 @@ The listAccesses endpoint should
             "firstName":"${proAdminUser.firstName}",
             "lastName":"${proAdminUser.lastName}",
             "level":"admin",
-            "editable": false
+            "editable": false,
+            "isHeadOffice" : true
           },
           {
             "userId":"${proMemberUser.id}",
@@ -89,7 +90,8 @@ The listAccesses endpoint should
             "firstName":"${proMemberUser.firstName}",
             "lastName":"${proMemberUser.lastName}",
             "level":"member",
-            "editable": true
+            "editable": true,
+            "isHeadOffice" : true
           }]
         """
       )

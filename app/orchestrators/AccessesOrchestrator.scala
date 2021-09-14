@@ -57,25 +57,23 @@ class AccessesOrchestrator @Inject() (
         logger.debug(s"$company is a head office, returning access for head office")
         for {
           userLevel <- companyRepository.getUserLevel(company.id, user)
-          access <- getUserAccess(user.id, userLevel, List(company), editable = true)
+          access <- getHeadOfficeAccess(user.id, userLevel, company, editable = true)
         } yield access
 
       case headOffice =>
         logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
         for {
           userLevel <- companyRepository.getUserLevel(company.id, user)
-          subsidiaryUserAccess <- getUserAccess(user.id, userLevel, List(company), editable = true)
-          maybeHeadOfficeCompany <- companyRepository
-            .findBySiret(headOffice.siret)
+          subsidiaryUserAccess <- getSubsidiaryAccess(user.id, userLevel, List(company), editable = true)
+          maybeHeadOfficeCompany <- companyRepository.findBySiret(headOffice.siret)
           headOfficeCompany <- maybeHeadOfficeCompany match {
             case Some(value) => Future.successful(value)
             case None        => Future.failed(CompanySiretNotFound(headOffice.siret))
           }
-          headOfficeAccess <- getUserAccess(user.id, userLevel, List(headOfficeCompany), editable = false)
+          headOfficeAccess <- getHeadOfficeAccess(user.id, userLevel, headOfficeCompany, editable = false)
           _ = logger.debug(s"Removing duplicate access")
           filteredHeadOfficeAccess = headOfficeAccess.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
         } yield filteredHeadOfficeAccess ++ subsidiaryUserAccess
-
     }
 
   private def getHeadOffice(siret: SIRET): Future[CompanyData] =
@@ -90,11 +88,28 @@ class AccessesOrchestrator @Inject() (
         Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
     }
 
-  private def getUserAccess(
+  private def getHeadOfficeAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      company: Company,
+      editable: Boolean
+  ): Future[List[UserWithAccessLevel]] =
+    getUserAccess(userId, userLevel, List(company), editable, isHeadOffice = true)
+
+  private def getSubsidiaryAccess(
       userId: UUID,
       userLevel: AccessLevel,
       companies: List[Company],
       editable: Boolean
+  ): Future[List[UserWithAccessLevel]] =
+    getUserAccess(userId, userLevel, companies, editable, isHeadOffice = false)
+
+  private def getUserAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      companies: List[Company],
+      editable: Boolean,
+      isHeadOffice: Boolean
   ): Future[List[UserWithAccessLevel]] =
     for {
       companyAccess <- companyRepository
@@ -102,14 +117,14 @@ class AccessesOrchestrator @Inject() (
       userAccess =
         if (userLevel != AccessLevel.ADMIN) {
           logger.debug(s"User is not an admin : setting editable to false")
-          companyAccess.map(x => toApi(x._1, x._2, editable = false))
+          companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
         } else {
           companyAccess.map {
             case (user, level) if user.id == userId =>
               logger.debug(s"User cannot edit his own access : setting editable to false")
-              toApi(user, level, editable = false)
+              toApi(user, level, editable = false, isHeadOffice)
             case (user, level) =>
-              toApi(user, level, editable)
+              toApi(user, level, editable, isHeadOffice)
           }
 
         }

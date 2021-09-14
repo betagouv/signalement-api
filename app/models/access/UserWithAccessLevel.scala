@@ -15,18 +15,20 @@ case class UserWithAccessLevel(
     lastName: String,
     email: EmailAddress,
     level: String,
-    editable: Boolean
+    editable: Boolean,
+    isHeadOffice: Boolean
 )
 
 object UserWithAccessLevel {
 
   implicit val UserWithAccessLevelWrites: Writes[UserWithAccessLevel] = Json.writes[UserWithAccessLevel]
 
-  def toApi(user: User, accessLevel: AccessLevel, editable: Boolean): UserWithAccessLevel =
+  def toApi(user: User, accessLevel: AccessLevel, editable: Boolean, isHeadOffice: Boolean): UserWithAccessLevel =
     user
       .into[UserWithAccessLevel]
       .withFieldConst(_.userId, user.id)
       .withFieldConst(_.editable, editable)
       .withFieldConst(_.level, accessLevel.value)
+      .withFieldConst(_.isHeadOffice, isHeadOffice)
       .transform
 }
