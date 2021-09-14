@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models._
+import models.access.ActivationOutcome
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
@@ -78,9 +79,9 @@ class AccountController @Inject() (
           accessesOrchestrator
             .handleActivationRequest(draftUser, token, companySiret)
             .map {
-              case accessesOrchestrator.ActivationOutcome.NotFound      => NotFound
-              case accessesOrchestrator.ActivationOutcome.EmailConflict => Conflict // HTTP 409
-              case accessesOrchestrator.ActivationOutcome.Success       => NoContent
+              case ActivationOutcome.NotFound      => NotFound
+              case ActivationOutcome.EmailConflict => Conflict // HTTP 409
+              case ActivationOutcome.Success       => NoContent
             }
         }
       )

@@ -263,15 +263,16 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .result
     ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
 
-  def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
+  def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
       UserAccessTableQuery
         .join(userRepository.userTableQuery)
         .on(_.userId === _.id)
-        .filter(_._1.companyId === company.id)
+        .filter(_._1.companyId inSet companyIds)
         .filter(_._1.level =!= AccessLevel.NONE)
         .sortBy(entry => (entry._1.level, entry._2.email))
         .map(r => (r._2, r._1.level))
+        .distinct
         .to[List]
         .result
     )

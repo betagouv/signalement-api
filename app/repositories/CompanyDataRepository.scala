@@ -168,10 +168,20 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
       includeClosed: Boolean = false
   ): Future[List[(CompanyData, Option[CompanyActivity])]] = searchBySirets(List(siret), includeClosed)
 
-  def searchHeadOffices(sirets: List[SIRET]): Future[List[CompanyData]] =
+  def filterHeadOffices(sirets: List[SIRET]): Future[List[CompanyData]] =
     db.run(
       companyDataTableQuery
         .filter(_.siret inSetBind sirets)
+        .filter(_.denominationUsuelleEtablissement.isDefined)
+        .filter(_.etablissementSiege === "true")
+        .to[List]
+        .result
+    )
+
+  def getHeadOffice(siret: SIRET): Future[List[CompanyData]] =
+    db.run(
+      companyDataTableQuery
+        .filter(_.siren === SIREN(siret))
         .filter(_.denominationUsuelleEtablissement.isDefined)
         .filter(_.etablissementSiege === "true")
         .to[List]

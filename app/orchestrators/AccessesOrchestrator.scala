@@ -1,11 +1,16 @@
 package orchestrators
 
+import controllers.error.AppError.CompanyActivationTokenNotFound
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.DGCCRFActivationTokenNotFound
 import controllers.error.AppError.ServerError
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
+import models.access.ActivationOutcome.ActivationOutcome
+import models.access.ActivationOutcome
+import models.access.UserWithAccessLevel
+import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind.CompanyJoin
@@ -13,6 +18,7 @@ import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Configuration
 import play.api.Logger
+import repositories.AccessTokenRepository
 import repositories._
 import services.MailService
 import utils.Constants.ActionEvent
@@ -25,13 +31,13 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
-    val companyDataRepository: CompanyDataRepository,
+    companyDataRepository: CompanyDataRepository,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
     eventRepository: EventRepository,
@@ -43,6 +49,86 @@ class AccessesOrchestrator @Inject() (
   val logger = Logger(this.getClass)
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
   implicit val timeout: akka.util.Timeout = 5.seconds
+
+  def listAccesses(company: Company, user: User) =
+    getHeadOffice(company.siret).flatMap {
+
+      case headOffice if headOffice.siret == company.siret =>
+        logger.debug(s"$company is a head office, returning access for head office")
+        for {
+          userLevel <- companyRepository.getUserLevel(company.id, user)
+          access <- getHeadOfficeAccess(user.id, userLevel, company, editable = true)
+        } yield access
+
+      case headOffice =>
+        logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
+        for {
+          userLevel <- companyRepository.getUserLevel(company.id, user)
+          subsidiaryUserAccess <- getSubsidiaryAccess(user.id, userLevel, List(company), editable = true)
+          maybeHeadOfficeCompany <- companyRepository.findBySiret(headOffice.siret)
+          headOfficeCompany <- maybeHeadOfficeCompany match {
+            case Some(value) => Future.successful(value)
+            case None        => Future.failed(CompanySiretNotFound(headOffice.siret))
+          }
+          headOfficeAccess <- getHeadOfficeAccess(user.id, userLevel, headOfficeCompany, editable = false)
+          _ = logger.debug(s"Removing duplicate access")
+          filteredHeadOfficeAccess = headOfficeAccess.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
+        } yield filteredHeadOfficeAccess ++ subsidiaryUserAccess
+    }
+
+  private def getHeadOffice(siret: SIRET): Future[CompanyData] =
+    companyDataRepository.getHeadOffice(siret).flatMap {
+      case Nil =>
+        logger.error(s"No head office for siret $siret")
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+      case company :: Nil =>
+        Future.successful(company)
+      case companies =>
+        logger.error(s"Multiple head offices for siret $siret company data ids ${companies.map(_.id)} ")
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+    }
+
+  private def getHeadOfficeAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      company: Company,
+      editable: Boolean
+  ): Future[List[UserWithAccessLevel]] =
+    getUserAccess(userId, userLevel, List(company), editable, isHeadOffice = true)
+
+  private def getSubsidiaryAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      companies: List[Company],
+      editable: Boolean
+  ): Future[List[UserWithAccessLevel]] =
+    getUserAccess(userId, userLevel, companies, editable, isHeadOffice = false)
+
+  private def getUserAccess(
+      userId: UUID,
+      userLevel: AccessLevel,
+      companies: List[Company],
+      editable: Boolean,
+      isHeadOffice: Boolean
+  ): Future[List[UserWithAccessLevel]] =
+    for {
+      companyAccess <- companyRepository
+        .fetchUsersWithLevel(companies.map(_.id))
+      userAccess =
+        if (userLevel != AccessLevel.ADMIN) {
+          logger.debug(s"User is not an admin : setting editable to false")
+          companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
+        } else {
+          companyAccess.map {
+            case (user, level) if user.id == userId =>
+              logger.debug(s"User cannot edit his own access : setting editable to false")
+              toApi(user, level, editable = false, isHeadOffice)
+            case (user, level) =>
+              toApi(user, level, editable, isHeadOffice)
+          }
+
+        }
+    } yield userAccess
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -124,12 +210,6 @@ class AccessesOrchestrator @Inject() (
     } yield applied
   }
 
-  object ActivationOutcome extends Enumeration {
-    type ActivationOutcome = Value
-    val Success, NotFound, EmailConflict = Value
-  }
-  import ActivationOutcome._
-
   def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
     val workflow = siret
       .map(s => new CompanyTokenWorkflow(draftUser, token, s))
@@ -167,7 +247,7 @@ class AccessesOrchestrator @Inject() (
         .getOrElse(Future.failed[Option[AccessToken]](CompanySiretNotFound(siret)))
       accessToken <- maybeAccessToken
         .map(Future.successful)
-        .getOrElse(Future.failed[AccessToken](DGCCRFActivationTokenNotFound(token)))
+        .getOrElse(Future.failed[AccessToken](CompanyActivationTokenNotFound(token, siret)))
       emailTo <-
         accessToken.emailedTo
           .map(Future.successful)
