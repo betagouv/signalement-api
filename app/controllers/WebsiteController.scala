@@ -5,11 +5,13 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.OptionT
+import cats.syntax.option._
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppError.WebsiteNotFound
 import models.PaginatedResult.paginatedResultWrites
 import models.WebsiteCompanyFormat._
 import models._
-import models.website.WebsiteCompanyReportCount
+import models.website.{WebsiteCompany, WebsiteCompanyReportCount}
 import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -88,17 +90,22 @@ class WebsiteController @Inject() (
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         websiteUpdate =>
           (for {
-            website <- OptionT(websiteRepository.find(uuid))
-            _ <- OptionT.liftF(
+            maybeWebsite <- websiteRepository.find(uuid)
+            website <- maybeWebsite.liftTo[Future](WebsiteNotFound(uuid))
+            _ <-
               if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
               else Future.successful(())
-            )
-            updatedWebsite <- OptionT.liftF(websiteRepository.update(websiteUpdate.mergeIn(website)))
-            company <- OptionT(companyRepository.fetchCompany(website.companyId))
-          } yield (updatedWebsite, company)).value.map {
-            case None         => NotFound
-            case Some(result) => Ok(Json.toJson(result))
-          }
+
+            updatedWebsite <- websiteRepository.update(websiteUpdate.mergeIn(website))
+            maybeCompany <- website.companyId match {
+              case Some(id) => companyRepository.fetchCompany(id)
+              case None     => Future.successful(None)
+            }
+          } yield WebsiteCompany()
+//            (updatedWebsite, maybeCompany)).value.map {
+//            case None         => NotFound
+//            case Some(result) => Ok(Json.toJson(result))
+//          }
       )
   }
 

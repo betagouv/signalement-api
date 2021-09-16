@@ -32,9 +32,10 @@ class WebsiteRepository @Inject() (
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
     def host = column[String]("host")
-    def companyId = column[UUID]("company_id")
+    def country = column[Option[String]]("country")
+    def companyId = column[Option[UUID]]("company_id")
     def kind = column[WebsiteKind]("kind")
-    def * = (id, creationDate, host, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
+    def * = (id, creationDate, host, country, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
   }
 
   val websiteTableQuery = TableQuery[WebsiteTable]

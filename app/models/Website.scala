@@ -57,7 +57,7 @@ case class WebsiteUpdate(
   def mergeIn(website: Website): Website =
     website.copy(
       host = host.getOrElse(website.host),
-      companyId = companyId.getOrElse(website.companyId),
+      companyId = companyId,
       kind = kind.getOrElse(website.kind)
     )
 }
@@ -70,7 +70,8 @@ case class Website(
     id: UUID = UUID.randomUUID(),
     creationDate: OffsetDateTime = OffsetDateTime.now,
     host: String,
-    companyId: UUID,
+    country: Option[String],
+    companyId: Option[UUID],
     kind: WebsiteKind = WebsiteKind.PENDING
 )
 
