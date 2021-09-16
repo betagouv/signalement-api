@@ -1,5 +1,6 @@
 package orchestrators
 
+import cats.implicits.toTraverseOps
 import controllers.error.AppError.CompanyActivationTokenNotFound
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.DGCCRFActivationTokenNotFound
@@ -8,14 +9,14 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
+import models.access.UserWithAccessLevel.toApi
 import models.access.ActivationOutcome
 import models.access.UserWithAccessLevel
-import models.access.UserWithAccessLevel.toApi
-import models.token.CompanyUserActivationToken
-import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
+import models.token.CompanyUserActivationToken
+import models.token.DGCCRFUserActivationToken
 import play.api.Configuration
 import play.api.Logger
 import repositories.AccessTokenRepository
@@ -31,9 +32,9 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
@@ -66,14 +67,14 @@ class AccessesOrchestrator @Inject() (
           userLevel <- companyRepository.getUserLevel(company.id, user)
           subsidiaryUserAccess <- getSubsidiaryAccess(user.id, userLevel, List(company), editable = true)
           maybeHeadOfficeCompany <- companyRepository.findBySiret(headOffice.siret)
-          headOfficeCompany <- maybeHeadOfficeCompany match {
-            case Some(value) => Future.successful(value)
-            case None        => Future.failed(CompanySiretNotFound(headOffice.siret))
-          }
-          headOfficeAccess <- getHeadOfficeAccess(user.id, userLevel, headOfficeCompany, editable = false)
+          headOfficeAccess <- maybeHeadOfficeCompany
+            .map(headOfficeCompany => getHeadOfficeAccess(user.id, userLevel, headOfficeCompany, editable = false))
+            .sequence
           _ = logger.debug(s"Removing duplicate access")
-          filteredHeadOfficeAccess = headOfficeAccess.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
-        } yield filteredHeadOfficeAccess ++ subsidiaryUserAccess
+          filteredHeadOfficeAccess = headOfficeAccess.map(
+            _.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
+          )
+        } yield filteredHeadOfficeAccess.getOrElse(List.empty) ++ subsidiaryUserAccess
     }
 
   private def getHeadOffice(siret: SIRET): Future[CompanyData] =
