@@ -20,8 +20,6 @@ class CompanyStatsController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  val logger: Logger = Logger(this.getClass)
-
   def getReportsCountEvolution(id: UUID, period: String) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
   ).async {
