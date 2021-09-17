@@ -1,5 +1,8 @@
 package models
 
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
+
 trait CompanyReportsCountPeriod {}
 
 case object CompanyReportsCountByDay extends CompanyReportsCountPeriod
@@ -14,4 +17,13 @@ object CompanyReportsCountPeriod {
       case "month" => CompanyReportsCountByMonth
       case _       => CompanyReportsCountByMonth
     }
+}
+
+case class ReportReviewStats(
+    positive: Int = 0,
+    negative: Int = 0
+)
+
+object ReportReviewStats {
+  implicit val format: OFormat[ReportReviewStats] = Json.format[ReportReviewStats]
 }

@@ -15,6 +15,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Constants.ReportResponseReview
 import utils.Constants.Tags
 import utils.Constants
 import utils.URL
@@ -507,7 +508,7 @@ class ReportOrchestrator @Inject() (
         eventType = EventType.CONSO,
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(
-          s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+          s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive else ReportResponseReview.Negative}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )

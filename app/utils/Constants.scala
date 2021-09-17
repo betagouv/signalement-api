@@ -1,5 +1,7 @@
 package utils
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import models.UserRole
 import models.UserRoles
 import play.api.libs.json.Reads._
@@ -263,6 +265,17 @@ object Constants {
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
+  }
+
+  sealed abstract class ReportResponseReview(value: String) extends EnumEntry
+
+  object ReportResponseReview extends PlayEnum[ReportResponseReview] {
+
+    val values = findValues
+
+    case object Positive extends ReportResponseReview("Avis positif")
+
+    case object Negative extends ReportResponseReview("Avis négatif")
   }
 
   object Departments {

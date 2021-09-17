@@ -6,6 +6,7 @@ import play.api.libs.json._
 import slick.jdbc.JdbcProfile
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
 
 import java.time.OffsetDateTime
@@ -119,6 +120,21 @@ class EventRepository @Inject() (
       .to[List]
       .result
   }
+
+  def getReportResponseReviews(companyId: UUID): Future[Seq[Event]] =
+    db.run(
+      eventTableQuery
+        .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
+        .joinLeft(ReportTables.tables)
+        .on(_.reportId === _.id)
+        .filter { x =>
+          val res1 = x._1.companyId === companyId
+          val res2 = x._2.map(_.companyId === companyId).flatten
+          res1 || res2
+        }
+        .map(_._1)
+        .result
+    )
 
   def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
