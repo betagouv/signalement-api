@@ -24,7 +24,7 @@ class CompanyStatsController @Inject() (
 
   def getReportsCountEvolution(id: UUID, period: String) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
-  ).async { implicit request =>
+  ).async {
     _companyStats
       .getReportsCountByDate(id, CompanyReportsCountPeriod.fromString(period))
       .map(res => Ok(Json.toJson(res)))
@@ -32,19 +32,25 @@ class CompanyStatsController @Inject() (
 
   def getHosts(id: UUID) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
-  ).async { implicit request =>
+  ).async {
     _companyStats.getHosts(id).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsTagsDistribution(id: UUID) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
-  ).async { implicit request =>
+  ).async {
     _companyStats.getReportsTagsDistribution(id).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsStatusDistribution(id: UUID) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
-  ).async { implicit request =>
+  ).async {
     _companyStats.getReportsStatusDistribution(id).map(x => Ok(Json.toJson(x)))
+  }
+
+  def getReportResponseReviews(id: UUID) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats.getReportResponseReview(id).map(x => Ok(Json.toJson(x)))
   }
 }
