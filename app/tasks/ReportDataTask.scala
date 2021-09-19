@@ -37,7 +37,7 @@ class ReportDataTask @Inject() (
     val taskDate = LocalDate.now
 
     logger.debug("Traitement de mise à jour des reportData automatique")
-    logger.debug(s"taskDate - ${taskDate}");
+    logger.debug(s"taskDate - $taskDate");
 
     for {
       _ <- reportDataRepository.updateReportReadDelay

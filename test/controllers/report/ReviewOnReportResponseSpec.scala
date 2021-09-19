@@ -109,7 +109,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         .instanceOf[ReportController]
         .reviewOnReportResponse(reportId.toString)
         .apply(
-          FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
+          FakeRequest("POST", s"/api/reports/$reportId/response/review").withBody(Json.toJson(reviewOnReportResponse))
         ),
       Duration.Inf
     )
@@ -129,6 +129,6 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   }
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.status, s"status doesn't match ${status} - ${report}")
+    (status == report.status, s"status doesn't match $status - $report")
   }
 }

@@ -49,7 +49,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
         _ <-
           reportRepository.create(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)).generateReport)
         _ <- reportRepository.create(
-          Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(URL(s"${website2}/test?query"))).generateReport
+          Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(URL(s"$website2/test?query"))).generateReport
         )
         _ <- reportRepository.create(
           Fixtures

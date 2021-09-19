@@ -188,9 +188,7 @@ class ReportsExtractActor @Inject() (
         (report, files, _, _) =>
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
-            .map(file =>
-              s"${baseUrl}${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}"
-            )
+            .map(file => s"$baseUrl${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}")
             .mkString("\n"),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
@@ -369,13 +367,13 @@ class ReportsExtractActor @Inject() (
 
       val localPath = Paths.get(tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
-      logger.debug(s"Generated extract locally: ${localPath}")
+      logger.debug(s"Generated extract locally: $localPath")
       localPath
     }
   }
 
   def saveRemotely(localPath: Path, remoteName: String) = {
-    val remotePath = s"extracts/${remoteName}"
+    val remotePath = s"extracts/$remoteName"
     s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }

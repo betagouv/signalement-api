@@ -81,12 +81,12 @@ class AccessesOrchestrator @Inject() (
     companyDataRepository.getHeadOffice(siret).flatMap {
       case Nil =>
         logger.error(s"No head office for siret $siret")
-        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret $siret"))
       case company :: Nil =>
         Future.successful(company)
       case companies =>
         logger.error(s"Multiple head offices for siret $siret company data ids ${companies.map(_.id)} ")
-        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret $siret"))
     }
 
   private def getHeadOfficeAccess(
@@ -132,7 +132,7 @@ class AccessesOrchestrator @Inject() (
     } yield userAccess
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
-    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
+    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - $msg")
 
     def fetchToken: Future[Option[AccessToken]]
     def run: Future[Boolean]
@@ -189,7 +189,10 @@ class AccessesOrchestrator @Inject() (
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))
-      applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
+      applied <- (for {
+        u <- user
+        t <- accessToken
+      } yield accessTokenRepository.applyCompanyToken(t, u))
         .getOrElse(Future(false))
       _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
       _ <- accessToken
@@ -234,7 +237,7 @@ class AccessesOrchestrator @Inject() (
       accessToken.emailedTo
         .map(Future.successful(_))
         .getOrElse(Future.failed[EmailAddress](ServerError(s"Email should be defined for access token $token")))
-    _ = logger.debug(s"Access token found ${accessToken}")
+    _ = logger.debug(s"Access token found $accessToken")
   } yield accessToken
     .into[DGCCRFUserActivationToken]
     .withFieldConst(_.emailedTo, emailTo)
@@ -328,7 +331,7 @@ class AccessesOrchestrator @Inject() (
         invitationUrl = frontRoute.dashboard.registerPro(company.siret, tokenCode),
         invitedBy = invitedBy
       )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
+      logger.debug(s"Token sent to $email for company ${company.id}")
     }
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
@@ -347,7 +350,7 @@ class AccessesOrchestrator @Inject() (
         email = email,
         invitationUrl = frontRoute.dashboard.registerDgccrf(token.token)
       )
-      logger.debug(s"Sent DGCCRF account invitation to ${email}")
+      logger.debug(s"Sent DGCCRF account invitation to $email")
     }
 
   def sendEmailValidation(user: User): Future[Unit] =

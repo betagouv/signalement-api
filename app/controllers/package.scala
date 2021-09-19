@@ -1,4 +1,5 @@
 import models.WebsiteKind
+
 import play.api.mvc.QueryStringBindable
 
 package object controllers {
