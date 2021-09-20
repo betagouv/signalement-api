@@ -15,6 +15,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Constants.ReportResponseReview
 import utils.Constants.Tags
 import utils.Constants
 import utils.URL
@@ -499,15 +500,15 @@ class ReportOrchestrator @Inject() (
     logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
-        Some(UUID.randomUUID()),
-        Some(reportId),
-        None,
-        None,
-        Some(OffsetDateTime.now()),
-        EventType.CONSO,
-        ActionEvent.REPORT_REVIEW_ON_RESPONSE,
-        stringToDetailsJsValue(
-          s"${if (reviewOnReportResponse.positive) "Avis positif" else "Avis négatif"}" +
+        id = Some(UUID.randomUUID()),
+        reportId = Some(reportId),
+        companyId = None,
+        userId = None,
+        creationDate = Some(OffsetDateTime.now()),
+        eventType = EventType.CONSO,
+        action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
+        details = stringToDetailsJsValue(
+          s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive else ReportResponseReview.Negative}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )
