@@ -34,10 +34,10 @@ class WebsiteRepository @Inject() (
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
     def host = column[String]("host")
-    def country = column[Option[String]]("country")
+    def companyCountry = column[Option[String]]("company_country")
     def companyId = column[Option[UUID]]("company_id")
     def kind = column[WebsiteKind]("kind")
-    def * = (id, creationDate, host, country, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
+    def * = (id, creationDate, host, companyCountry, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
   }
   val websiteTableQuery = TableQuery[WebsiteTable]
 
@@ -87,15 +87,16 @@ class WebsiteRepository @Inject() (
       kinds: Option[Seq[WebsiteKind]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
-  ): Future[PaginatedResult[((Website, Company), Int)]] = {
+  ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
     val baseQuery = websiteTableQuery
-      .join(companyRepository.companyTableQuery)
+      .joinLeft(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
       .on((c, r) => c._1.host === r.host)
       .filter(
         _._2.map(reportTable => reportTable.host.isDefined)
       )
+      .filter(x => x._1._1.companyId.nonEmpty || x._1._1.companyCountry.nonEmpty)
       .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
       .filter(websiteCompanyTable =>
         kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)

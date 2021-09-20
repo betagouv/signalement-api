@@ -13,9 +13,9 @@ case class WebsiteCompanyReportCount(
     creationDate: OffsetDateTime,
     host: String,
     companyId: Option[UUID],
-    country: Option[String],
+    companyCountry: Option[String],
     kind: WebsiteKind,
-    company: Company,
+    company: Option[Company],
     count: Int
 )
 
@@ -23,11 +23,11 @@ object WebsiteCompanyReportCount {
 
   implicit val WebsiteCompanyCountWrites: Writes[WebsiteCompanyReportCount] = Json.writes[WebsiteCompanyReportCount]
 
-  def toApi(countByWebsiteCompany: ((Website, Company), Int)): WebsiteCompanyReportCount = {
-    val ((website, company), count) = countByWebsiteCompany
+  def toApi(countByWebsiteCompany: ((Website, Option[Company]), Int)): WebsiteCompanyReportCount = {
+    val ((website, maybeCompany), count) = countByWebsiteCompany
     website
       .into[WebsiteCompanyReportCount]
-      .withFieldConst(_.company, company)
+      .withFieldConst(_.company, maybeCompany)
       .withFieldConst(_.count, count)
       .transform
   }

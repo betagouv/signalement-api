@@ -4,17 +4,11 @@ import actors.WebsitesExtractActor
 import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
-import cats.data.OptionT
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.error.AppErrorTransformer.handleError
 import models.PaginatedResult.paginatedResultWrites
 import models._
-import models.website.Website
-import models.website.WebsiteCompanyReportCount
-import models.website.WebsiteCreate
-import models.website.WebsiteKind
-import models.website.WebsiteUpdate
-import models.website.WebsiteUpdateCompany
+import models.website._
 import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -99,54 +93,16 @@ class WebsiteController @Inject() (
       )
   }
 
-  private[this] def unvalidateOtherWebsites(updatedWebsite: Website) =
-    for {
-      websitesWithSameHost <- websiteRepository
-        .searchCompaniesByHost(updatedWebsite.host)
-        .map(websites =>
-          websites
-            .map(_._1)
-            .filter(_.id != updatedWebsite.id)
-            .filter(_.kind == WebsiteKind.DEFAULT)
-        )
-      unvalidatedWebsites <-
-        Future.sequence(
-          websitesWithSameHost.map(website => websiteRepository.update(website.copy(kind = WebsiteKind.PENDING)))
-        )
-    } yield unvalidatedWebsites
-
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
     request.body
-      .validate[WebsiteUpdateCompany]
+      .validate[CompanyCreation]
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        websiteUpdate => {
-          val newCompanyFuture = companyRepository.getOrCreate(
-            websiteUpdate.companySiret,
-            Company(
-              siret = websiteUpdate.companySiret,
-              name = websiteUpdate.companyName,
-              address = websiteUpdate.companyAddress,
-              activityCode = websiteUpdate.companyActivityCode
-            )
-          )
-          (for {
-            website <- OptionT(websiteRepository.find(uuid))
-            otherAssociatedCompaniesIds <-
-              OptionT.liftF(websiteRepository.searchCompaniesByHost(website.host).map(_.map(_._2.siret)))
-            newCompany <- OptionT.liftF(newCompanyFuture)
-            result <- OptionT.liftF(if (otherAssociatedCompaniesIds.contains(websiteUpdate.companySiret)) {
-              Future.successful(Conflict)
-            } else {
-              websiteRepository
-                .update(website.copy(companyId = Some(newCompany.id), kind = WebsiteKind.DEFAULT))
-                .map(updated => Ok(Json.toJson((updated, newCompany))))
-            })
-          } yield result).value.map {
-            case None         => NotFound
-            case Some(result) => result
-          }
-        }
+        company =>
+          websitesOrchestrator
+            .updateCompany(uuid, company)
+            .map(x => Ok(Json.toJson(x)))
+            .recover { case e => handleError(e) }
       )
   }
 
@@ -156,31 +112,17 @@ class WebsiteController @Inject() (
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         websiteCreate =>
-          for {
-            company <- companyRepository.getOrCreate(
-              websiteCreate.companySiret,
-              Company(
-                siret = websiteCreate.companySiret,
-                name = websiteCreate.companyName,
-                address = websiteCreate.companyAddress,
-                activityCode = websiteCreate.companyActivityCode
-              )
-            )
-            website <- websiteRepository.create(
-              Website(
-                host = websiteCreate.host,
-                kind = WebsiteKind.DEFAULT,
-                companyCountry = None,
-                companyId = Some(company.id)
-              )
-            )
-          } yield Ok(Json.toJson(website, company))
+          websitesOrchestrator
+            .create(websiteCreate)
+            .map(x => Ok(Json.toJson(x)))
+            .recover { case e => handleError(e) }
       )
   }
 
   def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    for {
-      _ <- websiteRepository.delete(uuid)
-    } yield Ok
+    websiteRepository
+      .delete(uuid)
+      .map(_ => Ok)
+      .recover { case e => handleError(e) }
   }
 }

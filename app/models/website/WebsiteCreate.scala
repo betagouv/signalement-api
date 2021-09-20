@@ -1,17 +1,13 @@
 package models.website
 
-import models.Address
+import models.CompanyCreation
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import utils.SIRET
 
 case class WebsiteCreate(
     host: String,
-    companyName: String,
-    companyAddress: Address,
-    companySiret: SIRET,
-    companyPostalCode: Option[String],
-    companyActivityCode: Option[String]
+    company: Option[CompanyCreation],
+    companyCountry: Option[String]
 )
 
 object WebsiteCreate {

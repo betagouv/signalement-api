@@ -8,23 +8,23 @@ import play.api.libs.json.Writes
 import java.time.OffsetDateTime
 import java.util.UUID
 
-case class WebsiteCompany(
+case class WebsiteAndCompany(
     id: UUID,
     creationDate: OffsetDateTime,
     host: String,
-    country: Option[String],
+    companyCountry: Option[String],
     companyId: Option[UUID],
     kind: WebsiteKind,
     company: Option[Company]
 )
 
-object WebsiteCompany {
+object WebsiteAndCompany {
 
-  implicit val WebsiteCompanyWrites: Writes[WebsiteCompany] = Json.writes[WebsiteCompany]
+  implicit val WebsiteCompanyWrites: Writes[WebsiteAndCompany] = Json.writes[WebsiteAndCompany]
 
-  def toApi(website: Website, maybeCompany: Option[Company]): WebsiteCompany =
+  def toApi(website: Website, maybeCompany: Option[Company]): WebsiteAndCompany =
     website
-      .into[WebsiteCompany]
+      .into[WebsiteAndCompany]
       .withFieldConst(_.company, maybeCompany)
       .transform
 }

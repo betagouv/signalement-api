@@ -7,6 +7,7 @@ import java.util.UUID
 
 case class WebsiteUpdate(
     host: Option[String],
+    companyCountry: Option[String],
     companyId: Option[UUID],
     kind: Option[WebsiteKind]
 ) {
@@ -14,6 +15,7 @@ case class WebsiteUpdate(
     website.copy(
       host = host.getOrElse(website.host),
       companyId = companyId,
+      companyCountry = companyCountry,
       kind = kind.getOrElse(website.kind)
     )
 }
