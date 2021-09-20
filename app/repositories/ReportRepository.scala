@@ -6,10 +6,12 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
+import java.time.OffsetDateTime
 import java.time._
 import java.util.UUID
 import javax.inject.Inject
@@ -213,7 +215,6 @@ object ReportTables {
 @Singleton
 class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
-    accessTokenRepository: AccessTokenRepository,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
     configuration: Configuration
@@ -265,6 +266,8 @@ class ReportRepository @Inject() (
   private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
 
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
+
+  private val trunc = SimpleFunction.binary[String, OffsetDateTime, OffsetDateTime]("date_trunc")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
@@ -395,6 +398,117 @@ class ReportRepository @Inject() (
       .to[List]
       .result
   }
+
+  def getReportsStatusDistribution(companyId: UUID): Future[Map[String, Int]] =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .groupBy(_.status)
+        .map { case (status, report) => status -> report.size }
+        .result
+    ).map(_.toMap)
+
+  def getReportsTagsDistribution(companyId: UUID): Future[Map[String, Int]] = {
+    def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
+      map.foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
+        acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
+      }
+
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .groupBy(_.tags)
+        .map { case (status, report) => (status, report.size) }
+        .sortBy(_._2.desc)
+        .result
+    ).map(spreadListOfTags)
+  }
+
+  def getReportsCountByDay(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsCount(companyId, "day", (date, i) => date.minusDays(i))
+
+  def getReportsCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsCount(companyId, "week", (date, i) => date.minusWeeks(i))
+
+  def getReportsCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
+
+  def getReportsResponsesCountByDay(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "day", (date, i) => date.minusDays(i))
+
+  def getReportsResponsesCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "week", (date, i) => date.minusWeeks(i))
+
+  def getReportsResponsesCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
+
+  private[this] def getReportsCount(
+      companyId: UUID,
+      truncName: String,
+      dateOperator: (LocalDate, Int) => LocalDate,
+      tick: Int = 7
+  ) =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .filter(
+          _.creationDate >= ZonedDateTime
+            .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
+            .toOffsetDateTime
+        )
+        .groupBy(x => trunc(truncName, x.creationDate))
+        .map { case (creationDate, report) => creationDate -> report.size }
+        .result
+    ).map(mapPeriod(tick, dateOperator))
+
+  private[this] def getReportsResponsesCount(
+      companyId: UUID,
+      truncName: String,
+      dateOperator: (LocalDate, Int) => LocalDate,
+      tick: Int = 7
+  ) =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .join(EventTables.tables)
+        .on(_.id === _.reportId)
+        .filter(_._2.action === REPORT_PRO_RESPONSE.value)
+        .filter(
+          _._2.creationDate >= ZonedDateTime
+            .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
+            .toOffsetDateTime
+        )
+        .groupBy(x => trunc(truncName, x._2.creationDate))
+        .map { case (creationDate, report) => creationDate -> report.size }
+        .result
+    ).map(mapPeriod(tick, dateOperator))
+
+  private[this] def mapPeriod(
+      ticks: Int,
+      dateOperator: (LocalDate, Int) => LocalDate
+  )(
+      fetchedData: Seq[(OffsetDateTime, Int)]
+  ): Seq[(LocalDate, Int)] = {
+    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
+    (1 to ticks).map { i =>
+      val date = dateOperator(start, -i)
+      val count = fetchedData
+        .find(_._1.toLocalDate.equals(date))
+        .map(_._2)
+        .getOrElse(0)
+      (date, count)
+    }
+  }
+
+  def getHosts(companyId: UUID): Future[Seq[String]] =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .filter(_.host.isDefined)
+        .map(_.host)
+        .distinct
+        .result
+    ).map(_.map(_.getOrElse("")))
 
   def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
     val query = reportTableQuery

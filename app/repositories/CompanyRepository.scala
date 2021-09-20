@@ -169,11 +169,11 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       .sortBy(_._2.desc)
     val filterQuery = identity
       .map {
-        case SearchCompanyIdentityRCS(q) =>
-          query.filter(_._1.id.asColumnOf[String] like s"%$q%")
+        case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
         case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case SearchCompanyIdentityName(q)  => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
+        case id: SearchCompanyIdentityId   => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
     toPaginate(filterQuery, offset, limit).map(res =>
