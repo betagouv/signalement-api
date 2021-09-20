@@ -77,20 +77,15 @@ class WebsiteController @Inject() (
         request.identity,
         RawFilters(q.filter(_.nonEmpty), start, end)
       )
-      Future(Ok)
+      Future.successful(Ok)
     }
 
-  def update(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
-    request.body
-      .validate[WebsiteUpdate]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        websiteUpdate =>
-          websitesOrchestrator
-            .update(uuid, websiteUpdate)
-            .map(x => Ok(Json.toJson(x)))
-            .recover { case e => handleError(e) }
-      )
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) {
+    implicit request =>
+      websitesOrchestrator
+        .updateWebsiteKind(uuid, kind)
+        .map(website => Ok(Json.toJson(website)))
+        .recover { case e => handleError(e) }
   }
 
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
@@ -101,7 +96,7 @@ class WebsiteController @Inject() (
         company =>
           websitesOrchestrator
             .updateCompany(uuid, company)
-            .map(x => Ok(Json.toJson(x)))
+            .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
             .recover { case e => handleError(e) }
       )
   }
@@ -114,7 +109,7 @@ class WebsiteController @Inject() (
         websiteCreate =>
           websitesOrchestrator
             .create(websiteCreate)
-            .map(x => Ok(Json.toJson(x)))
+            .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
             .recover { case e => handleError(e) }
       )
   }

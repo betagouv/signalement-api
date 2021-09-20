@@ -69,26 +69,21 @@ class WebsitesOrchestrator @Inject() (
       _ = logger.debug(s"Website successfully created")
     } yield WebsiteAndCompany.toApi(website, company)
 
-  def update(websiteId: UUID, websiteUpdate: WebsiteUpdate): Future[WebsiteAndCompany] = for {
+  def updateWebsiteKind(websiteId: UUID, kind: WebsiteKind): Future[Website] = for {
     maybeWebsite <- {
       logger.debug(s"Searching for website with id : $websiteId")
       repository.find(websiteId)
     }
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
     _ <-
-      if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) {
-        logger.debug(s"Updating website kind on other websites with host : ${website.host}")
+      if (kind == WebsiteKind.DEFAULT) {
+        logger.debug(s"Unvalidate other websites with host : ${website.host}")
         unvalidateOtherWebsites(website)
       } else Future.successful(())
-    _ = logger.debug(s"Updating website")
-    updatedWebsite <- repository.update(websiteUpdate.mergeIn(website))
-    maybeCompany <- website.companyId match {
-      case Some(id) =>
-        logger.debug(s"Fetching company with id $id")
-        companyRepository.fetchCompany(id)
-      case None => Future.successful(None)
-    }
-  } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany)
+    _ = logger.debug(s"Updating website kind to ${kind}")
+    updatedWebsite = website.copy(kind = kind)
+    _ <- repository.update(updatedWebsite)
+  } yield updatedWebsite
 
   def updateCompany(websiteId: UUID, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
     company <- {
