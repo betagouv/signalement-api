@@ -1,6 +1,8 @@
 package repositories
 
 import models._
+import models.website.Website
+import models.website.WebsiteKind
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -37,7 +39,6 @@ class WebsiteRepository @Inject() (
     def kind = column[WebsiteKind]("kind")
     def * = (id, creationDate, host, country, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
   }
-
   val websiteTableQuery = TableQuery[WebsiteTable]
 
   def find(id: UUID): Future[Option[Website]] = db

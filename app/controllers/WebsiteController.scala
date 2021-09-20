@@ -5,13 +5,16 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.OptionT
-import cats.syntax.option._
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppError.WebsiteNotFound
+import controllers.error.AppErrorTransformer.handleError
 import models.PaginatedResult.paginatedResultWrites
-import models.WebsiteCompanyFormat._
 import models._
-import models.website.{WebsiteCompany, WebsiteCompanyReportCount}
+import models.website.Website
+import models.website.WebsiteCompanyReportCount
+import models.website.WebsiteCreate
+import models.website.WebsiteKind
+import models.website.WebsiteUpdate
+import models.website.WebsiteUpdateCompany
 import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -89,23 +92,10 @@ class WebsiteController @Inject() (
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         websiteUpdate =>
-          (for {
-            maybeWebsite <- websiteRepository.find(uuid)
-            website <- maybeWebsite.liftTo[Future](WebsiteNotFound(uuid))
-            _ <-
-              if (websiteUpdate.kind.contains(WebsiteKind.DEFAULT)) unvalidateOtherWebsites(website)
-              else Future.successful(())
-
-            updatedWebsite <- websiteRepository.update(websiteUpdate.mergeIn(website))
-            maybeCompany <- website.companyId match {
-              case Some(id) => companyRepository.fetchCompany(id)
-              case None     => Future.successful(None)
-            }
-          } yield WebsiteCompany()
-//            (updatedWebsite, maybeCompany)).value.map {
-//            case None         => NotFound
-//            case Some(result) => Ok(Json.toJson(result))
-//          }
+          websitesOrchestrator
+            .update(uuid, websiteUpdate)
+            .map(x => Ok(Json.toJson(x)))
+            .recover { case e => handleError(e) }
       )
   }
 
@@ -149,7 +139,7 @@ class WebsiteController @Inject() (
               Future.successful(Conflict)
             } else {
               websiteRepository
-                .update(website.copy(companyId = newCompany.id, kind = WebsiteKind.DEFAULT))
+                .update(website.copy(companyId = Some(newCompany.id), kind = WebsiteKind.DEFAULT))
                 .map(updated => Ok(Json.toJson((updated, newCompany))))
             })
           } yield result).value.map {
@@ -180,7 +170,8 @@ class WebsiteController @Inject() (
               Website(
                 host = websiteCreate.host,
                 kind = WebsiteKind.DEFAULT,
-                companyId = company.id
+                companyCountry = None,
+                companyId = Some(company.id)
               )
             )
           } yield Ok(Json.toJson(website, company))

@@ -1,6 +1,5 @@
 package controllers
 
-import _root_.controllers.error.AppErrorTransformer._
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
@@ -18,7 +17,7 @@ import repositories._
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
+import _root_.controllers.error.AppErrorTransformer.handleError
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton

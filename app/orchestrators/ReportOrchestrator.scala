@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
+import models.website.Website
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
@@ -105,7 +106,7 @@ class ReportOrchestrator @Inject() (
       company <- companyOpt
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
-    } yield websiteRepository.create(Website(host = host, companyId = company.id))
+    } yield websiteRepository.create(Website(host = host, companyCountry = None, companyId = Some(company.id)))
     creationOpt match {
       case Some(f) => f.map(Some(_))
       case None    => Future(None)

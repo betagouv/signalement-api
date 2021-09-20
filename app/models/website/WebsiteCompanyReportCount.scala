@@ -2,8 +2,6 @@ package models.website
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Company
-import models.Website
-import models.WebsiteKind
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
@@ -14,7 +12,8 @@ case class WebsiteCompanyReportCount(
     id: UUID,
     creationDate: OffsetDateTime,
     host: String,
-    companyId: UUID,
+    companyId: Option[UUID],
+    country: Option[String],
     kind: WebsiteKind,
     company: Company,
     count: Int
