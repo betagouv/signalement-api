@@ -9,14 +9,14 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
-import models.access.UserWithAccessLevel.toApi
 import models.access.ActivationOutcome
 import models.access.UserWithAccessLevel
+import models.access.UserWithAccessLevel.toApi
+import models.token.CompanyUserActivationToken
+import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
-import models.token.CompanyUserActivationToken
-import models.token.DGCCRFUserActivationToken
 import play.api.Configuration
 import play.api.Logger
 import repositories.AccessTokenRepository
@@ -32,9 +32,9 @@ import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
@@ -52,7 +52,7 @@ class AccessesOrchestrator @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
-    getHeadOffice(company.siret).flatMap {
+    getHeadOffice(company).flatMap {
 
       case headOffice if headOffice.siret == company.siret =>
         logger.debug(s"$company is a head office, returning access for head office")
@@ -77,16 +77,18 @@ class AccessesOrchestrator @Inject() (
         } yield filteredHeadOfficeAccess.getOrElse(List.empty) ++ subsidiaryUserAccess
     }
 
-  private def getHeadOffice(siret: SIRET): Future[CompanyData] =
-    companyDataRepository.getHeadOffice(siret).flatMap {
+  private def getHeadOffice(company: Company): Future[Company] =
+    companyDataRepository.getHeadOffice(company.siret).flatMap {
       case Nil =>
-        logger.error(s"No head office for siret $siret")
-        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
-      case company :: Nil =>
+        logger.warn(s"No head office for siret ${company.siret}, acting as if company is a head office")
+        Future.successful(company)
+      case _ :: Nil =>
         Future.successful(company)
       case companies =>
-        logger.error(s"Multiple head offices for siret $siret company data ids ${companies.map(_.id)} ")
-        Future.failed(ServerError(s"Unexpected error when fetching head office for company with siret ${siret}"))
+        logger.error(s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} ")
+        Future.failed(
+          ServerError(s"Unexpected error when fetching head office for company with siret ${company.siret}")
+        )
     }
 
   private def getHeadOfficeAccess(
