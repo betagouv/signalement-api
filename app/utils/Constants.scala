@@ -267,7 +267,7 @@ object Constants {
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
 
-  sealed abstract class ReportResponseReview(value: String) extends EnumEntry
+  sealed abstract class ReportResponseReview(override val entryName: String) extends EnumEntry
 
   object ReportResponseReview extends PlayEnum[ReportResponseReview] {
 

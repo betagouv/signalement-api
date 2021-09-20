@@ -8,6 +8,7 @@ import models.ReportReviewStats
 import play.api.libs.json.JsObject
 import repositories._
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ReportResponseReview
 
 import java.time.LocalDate
 import java.util.UUID
@@ -45,8 +46,8 @@ class CompanyStatsOrchestrator @Inject() (
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
         val review = event.details.as[JsObject].value.getOrElse("description", "").toString
         ReportReviewStats(
-          acc.positive + (if (review.contains("Avis positif")) 1 else 0),
-          acc.negative + (if (review.contains("Avis négatif")) 1 else 0)
+          acc.positive + (if (review.contains(ReportResponseReview.Positive.entryName)) 1 else 0),
+          acc.negative + (if (review.contains(ReportResponseReview.Negative.entryName)) 1 else 0)
         )
       }
     }
