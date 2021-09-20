@@ -3,20 +3,61 @@ package repositories
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
-import slick.jdbc.JdbcProfile
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
-
+import repositories.PostgresProfile.api._
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import java.time.Duration
+import slick.jdbc.JdbcProfile
 
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
+
+class EventTables(tag: Tag) extends Table[Event](tag, "events") {
+
+  def id = column[UUID]("id", O.PrimaryKey)
+  def reportId = column[Option[UUID]]("report_id")
+  def companyId = column[Option[UUID]]("company_id")
+  def userId = column[Option[UUID]]("user_id")
+  def creationDate = column[OffsetDateTime]("creation_date")
+  def eventType = column[String]("event_type")
+  def action = column[String]("action")
+  def details = column[JsValue]("details")
+
+  type EventData = (UUID, Option[UUID], Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
+
+  def constructEvent: EventData => Event = {
+    case (id, reportId, companyId, userId, creationDate, eventType, action, details) =>
+      Event(
+        Some(id),
+        reportId,
+        companyId,
+        userId,
+        Some(creationDate),
+        Constants.EventType.fromValue(eventType),
+        Constants.ActionEvent.fromValue(action),
+        details
+      )
+  }
+
+  def extractEvent: PartialFunction[Event, EventData] = {
+    case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
+      (id.get, reportId, companyId, userId, creationDate.get, eventType.value, action.value, details)
+  }
+
+  def * =
+    (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
+}
+
+object EventTables {
+  val tables = TableQuery[EventTables]
+}
 
 @Singleton
 class EventRepository @Inject() (
@@ -27,48 +68,11 @@ class EventRepository @Inject() (
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  import PostgresProfile.api._
   import dbConfig._
-
-  class EventTable(tag: Tag) extends Table[Event](tag, "events") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def reportId = column[Option[UUID]]("report_id")
-    def companyId = column[Option[UUID]]("company_id")
-    def userId = column[Option[UUID]]("user_id")
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def eventType = column[String]("event_type")
-    def action = column[String]("action")
-    def details = column[JsValue]("details")
-
-    type EventData = (UUID, Option[UUID], Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
-
-    def constructEvent: EventData => Event = {
-      case (id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-        Event(
-          Some(id),
-          reportId,
-          companyId,
-          userId,
-          Some(creationDate),
-          Constants.EventType.fromValue(eventType),
-          Constants.ActionEvent.fromValue(action),
-          details
-        )
-    }
-
-    def extractEvent: PartialFunction[Event, EventData] = {
-      case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-        (id.get, reportId, companyId, userId, creationDate.get, eventType.value, action.value, details)
-    }
-
-    def * =
-      (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
-  }
 
   val userTableQuery = UserTables.tables
 
-  val eventTableQuery = TableQuery[EventTable]
+  val eventTableQuery = EventTables.tables
 
   def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
 
@@ -156,4 +160,16 @@ class EventRepository @Inject() (
         .to[List]
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
+
+  def getAvgTimeUntilEvent(companyId: UUID, action: ActionEventValue): Future[Option[Duration]] =
+    db.run(
+      ReportTables.tables
+        .filter(_.companyId === companyId)
+        .join(eventTableQuery)
+        .on(_.id === _.reportId)
+        .filter(_._2.action === action.value)
+        .map(x => x._2.creationDate - x._1.creationDate)
+        .avg
+        .result
+    )
 }

@@ -3,7 +3,6 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import orchestrators.CompanyStatsOrchestrator
-import play.api.Logger
 import play.api.libs.json._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -23,9 +22,20 @@ class CompanyStatsController @Inject() (
   def getReportsCountEvolution(id: UUID, period: String) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
   ).async {
-    _companyStats
-      .getReportsCountByDate(id, CompanyReportsCountPeriod.fromString(period))
-      .map(res => Ok(Json.toJson(res)))
+    for {
+      reportsCount <- _companyStats.getReportsCountByDate(id, Period.fromString(period))
+      responsesCount <- _companyStats.getReportsResponsesCountByDate(id, Period.fromString(period))
+    } yield {
+      val indexedReportsCount = reportsCount.groupBy(_._1)
+      val data = responsesCount.map(x =>
+        ReportsCountEvolution(
+          date = x._1,
+          reports = indexedReportsCount.get(x._1).flatMap(_.headOption).map(_._2).getOrElse(0),
+          responses = x._2
+        )
+      )
+      Ok(Json.toJson(data))
+    }
   }
 
   def getHosts(id: UUID) = SecuredAction(
@@ -50,5 +60,11 @@ class CompanyStatsController @Inject() (
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
   ).async {
     _companyStats.getReportResponseReview(id).map(x => Ok(Json.toJson(x)))
+  }
+
+  def getResponseDelayInDays(id: UUID) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats.getResponseDelay(id).map(x => Ok(Json.toJson(x.map(_.toDays))))
   }
 }

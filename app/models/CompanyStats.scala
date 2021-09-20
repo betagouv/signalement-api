@@ -1,22 +1,17 @@
 package models
 
+import java.time.LocalDate
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
-trait CompanyReportsCountPeriod {}
+case class ReportsCountEvolution(
+    date: LocalDate,
+    reports: Int,
+    responses: Int
+)
 
-case object CompanyReportsCountByDay extends CompanyReportsCountPeriod
-case object CompanyReportsCountByWeek extends CompanyReportsCountPeriod
-case object CompanyReportsCountByMonth extends CompanyReportsCountPeriod
-
-object CompanyReportsCountPeriod {
-  def fromString(period: String): CompanyReportsCountPeriod =
-    period match {
-      case "day"   => CompanyReportsCountByDay
-      case "week"  => CompanyReportsCountByWeek
-      case "month" => CompanyReportsCountByMonth
-      case _       => CompanyReportsCountByMonth
-    }
+object ReportsCountEvolution {
+  implicit val format: OFormat[ReportsCountEvolution] = Json.format[ReportsCountEvolution]
 }
 
 case class ReportReviewStats(

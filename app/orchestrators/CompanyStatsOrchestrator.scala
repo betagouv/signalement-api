@@ -1,12 +1,13 @@
 package orchestrators
 
-import models.CompanyReportsCountByDay
-import models.CompanyReportsCountByMonth
-import models.CompanyReportsCountByWeek
-import models.CompanyReportsCountPeriod
+import models.Day
+import models.Month
+import models.Week
+import models.Period
 import models.ReportReviewStats
 import play.api.libs.json.JsObject
 import repositories._
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 
 import java.time.LocalDate
 import java.util.UUID
@@ -19,11 +20,18 @@ class CompanyStatsOrchestrator @Inject() (
     _event: EventRepository
 )(implicit val executionContext: ExecutionContext) {
 
-  def getReportsCountByDate(id: UUID, request: CompanyReportsCountPeriod): Future[Seq[(LocalDate, Int)]] =
+  def getReportsCountByDate(id: UUID, request: Period): Future[Seq[(LocalDate, Int)]] =
     request match {
-      case CompanyReportsCountByDay   => _report.getReportsCountByDay(id)
-      case CompanyReportsCountByWeek  => _report.getReportsCountByWeek(id)
-      case CompanyReportsCountByMonth => _report.getReportsCountByMonth(id)
+      case Day   => _report.getReportsCountByDay(id)
+      case Week  => _report.getReportsCountByWeek(id)
+      case Month => _report.getReportsCountByMonth(id)
+    }
+
+  def getReportsResponsesCountByDate(id: UUID, request: Period): Future[Seq[(LocalDate, Int)]] =
+    request match {
+      case Day   => _report.getReportsResponsesCountByDay(id)
+      case Week  => _report.getReportsResponsesCountByWeek(id)
+      case Month => _report.getReportsResponsesCountByMonth(id)
     }
 
   def getHosts(id: UUID) = _report.getHosts(id)
@@ -42,4 +50,7 @@ class CompanyStatsOrchestrator @Inject() (
         )
       }
     }
+
+  def getResponseDelay(id: UUID): Future[Option[java.time.Duration]] =
+    _event.getAvgTimeUntilEvent(id, REPORT_PRO_RESPONSE)
 }

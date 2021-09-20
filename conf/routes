@@ -124,6 +124,7 @@ GET /api/company-stats/:id/hosts    controllers.CompanyStatsController.getHosts(
 GET /api/company-stats/:id/tags    controllers.CompanyStatsController.getReportsTagsDistribution(id: java.util.UUID)
 GET /api/company-stats/:id/status    controllers.CompanyStatsController.getReportsStatusDistribution(id: java.util.UUID)
 GET /api/company-stats/:id/reviews    controllers.CompanyStatsController.getReportResponseReviews(id: java.util.UUID)
+GET /api/company-stats/:id/response-delay-days    controllers.CompanyStatsController.getResponseDelayInDays(id: java.util.UUID)
 
 # Rating API
 POST          /api/rating                                            controllers.RatingController.rate()

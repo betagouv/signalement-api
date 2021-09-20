@@ -6,6 +6,7 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
@@ -214,7 +215,6 @@ object ReportTables {
 @Singleton
 class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
-    accessTokenRepository: AccessTokenRepository,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
     configuration: Configuration
@@ -431,7 +431,16 @@ class ReportRepository @Inject() (
     getReportsCount(companyId, "week", (date, i) => date.minusWeeks(i))
 
   def getReportsCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsCount(companyId, "month", (date, i) => date.minusMonths(i))
+    getReportsCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
+
+  def getReportsResponsesCountByDay(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "day", (date, i) => date.minusDays(i))
+
+  def getReportsResponsesCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "week", (date, i) => date.minusWeeks(i))
+
+  def getReportsResponsesCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
+    getReportsResponsesCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
 
   private[this] def getReportsCount(
       companyId: UUID,
@@ -452,13 +461,35 @@ class ReportRepository @Inject() (
         .result
     ).map(mapPeriod(tick, dateOperator))
 
+  private[this] def getReportsResponsesCount(
+      companyId: UUID,
+      truncName: String,
+      dateOperator: (LocalDate, Int) => LocalDate,
+      tick: Int = 7
+  ) =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .join(EventTables.tables)
+        .on(_.id === _.reportId)
+        .filter(_._2.action === REPORT_PRO_RESPONSE.value)
+        .filter(
+          _._2.creationDate >= ZonedDateTime
+            .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
+            .toOffsetDateTime
+        )
+        .groupBy(x => trunc(truncName, x._2.creationDate))
+        .map { case (creationDate, report) => creationDate -> report.size }
+        .result
+    ).map(mapPeriod(tick, dateOperator))
+
   private[this] def mapPeriod(
       ticks: Int,
       dateOperator: (LocalDate, Int) => LocalDate
   )(
       fetchedData: Seq[(OffsetDateTime, Int)]
   ): Seq[(LocalDate, Int)] = {
-    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().withDayOfMonth(1).toLocalDate
+    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
     (1 to ticks).map { i =>
       val date = dateOperator(start, -i)
       val count = fetchedData
