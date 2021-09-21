@@ -80,7 +80,7 @@ class WebsiteController @Inject() (
       Future.successful(Ok)
     }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) {
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async {
     implicit request =>
       websitesOrchestrator
         .updateWebsiteKind(uuid, kind)
@@ -99,6 +99,15 @@ class WebsiteController @Inject() (
             .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
             .recover { case e => handleError(e) }
       )
+  }
+
+  def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRoles.Admin)).async {
+    implicit request =>
+      websitesOrchestrator
+        .updateCompanyCountry(websiteId, companyCountry)
+        .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
+        .recover { case e => handleError(e) }
+
   }
 
   def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>

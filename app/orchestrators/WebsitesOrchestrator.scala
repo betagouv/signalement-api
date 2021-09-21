@@ -78,23 +78,32 @@ class WebsitesOrchestrator @Inject() (
         }
     } yield ()
 
-  private[this] def unvalidateOtherWebsites(updatedWebsite: Website) =
+  def updateCompanyCountry(websiteId: UUID, companyCountry: String): Future[WebsiteAndCompany] = for {
+    website <- {
+      logger.debug(s"Updating website id ${websiteId} with company country : ${companyCountry}")
+      findWebsite(websiteId)
+    }
+    websiteToUpdate = website.copy(
+      companyCountry = Some(companyCountry),
+      companyId = None,
+      kind = WebsiteKind.DEFAULT
+    )
+    _ = logger.debug(s"Website to update : ${websiteToUpdate}")
+    updatedWebsite <- repository.update(websiteToUpdate)
+    _ = logger.debug(s"Website company country successfully updated")
+  } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
+
+  private[this] def unvalidateOtherWebsites(updatedWebsite: Website): Future[Seq[Website]] =
     for {
       websitesWithSameHost <- repository
-        .searchCompaniesByHost(updatedWebsite.host)
-        .map(websites =>
-          websites
-            .map(_._1)
-            .filter(_.id != updatedWebsite.id)
-            .filter(_.kind == WebsiteKind.DEFAULT)
-        )
+        .searchOtherValidatedWebsiteWithSameHost(updatedWebsite)
       unvalidatedWebsites: Seq[Website] <-
         Future.sequence(
           websitesWithSameHost.map(website => repository.update(website.copy(kind = WebsiteKind.PENDING)))
         )
     } yield unvalidatedWebsites
 
-  private[this] def getOrCreateCompay(companyCreate: CompanyCreation) = companyRepository
+  private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(
       companyCreate.siret,
       Company(
