@@ -101,19 +101,6 @@ class WebsiteController @Inject() (
       )
   }
 
-  def create() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
-    request.body
-      .validate[WebsiteCreate]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        websiteCreate =>
-          websitesOrchestrator
-            .create(websiteCreate)
-            .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-            .recover { case e => handleError(e) }
-      )
-  }
-
   def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     websiteRepository
       .delete(uuid)

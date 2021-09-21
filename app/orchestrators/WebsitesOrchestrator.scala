@@ -2,7 +2,6 @@ package orchestrators
 
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.CompanyAlreadyAssociatedToWebsite
-import controllers.error.AppError.WebsiteIdentificationInvalid
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
@@ -39,42 +38,8 @@ class WebsitesOrchestrator @Inject() (
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
 
-  def create(websiteCreate: WebsiteCreate): Future[WebsiteAndCompany] =
-    for {
-      countryOrCompany <- (websiteCreate.company, websiteCreate.companyCountry) match {
-        case (Some(company), None) =>
-          logger.debug(s"Creating website with company siret ${company.siret}")
-          getOrCreateCompay(company).map(Right(_))
-        case (None, Some(companyCountry)) =>
-          logger.debug(s"Creating website with company country ${companyCountry}")
-          Future.successful(Left(companyCountry))
-        case _ =>
-          logger.warn(s"Website should be provided a company or a country exclusively (not both)")
-          logger.debug(s"Company siret ${websiteCreate.company.map(_.siret)}")
-          logger.debug(s"Company country ${websiteCreate.companyCountry}")
-          Future.failed(WebsiteIdentificationInvalid)
-      }
-      companyCountry = countryOrCompany.swap.toOption
-      company = countryOrCompany.toOption
-      companyId = countryOrCompany.map(_.id).toOption
-      _ = logger.debug(s"Creating website with company ${companyId} and country ${companyCountry}")
-      website <- repository.create(
-        Website(
-          host = websiteCreate.host,
-          kind = WebsiteKind.DEFAULT,
-          companyCountry = companyCountry,
-          companyId = companyId
-        )
-      )
-      _ = logger.debug(s"Website successfully created")
-    } yield WebsiteAndCompany.toApi(website, company)
-
   def updateWebsiteKind(websiteId: UUID, kind: WebsiteKind): Future[Website] = for {
-    maybeWebsite <- {
-      logger.debug(s"Searching for website with id : $websiteId")
-      repository.find(websiteId)
-    }
-    website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
+    website <- findWebsite(websiteId)
     _ <-
       if (kind == WebsiteKind.DEFAULT) {
         logger.debug(s"Unvalidate other websites with host : ${website.host}")
@@ -90,22 +55,16 @@ class WebsitesOrchestrator @Inject() (
       logger.debug(s"Updating website id ${websiteId} with company siret : ${companyToAssign.siret}")
       getOrCreateCompay(companyToAssign)
     }
-    _ = logger.debug(s"Searching for website with id : $websiteId")
-    maybeWebsite <- repository.find(websiteId)
-    website <- maybeWebsite match {
-      case Some(website) => Future.successful(website)
-      case None          => Future.failed(WebsiteNotFound(websiteId))
-    }
-    _ = logger.debug(s"Found website")
+    website <- findWebsite(websiteId)
     _ = logger.debug(s"Validating company update")
-    _ <- validateCompanyUpdate(website, company)
+    _ <- validateWebsiteAssociation(website, company)
     websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.DEFAULT)
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate)
     _ = logger.debug(s"Website company successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
-  private[this] def validateCompanyUpdate(website: Website, companyToUpdate: Company) =
+  private[this] def validateWebsiteAssociation(website: Website, companyToUpdate: Company) =
     for {
       otherAssociatedCompanies <- repository.searchCompaniesByHost(website.host)
       otherAssociatedCompaniesSiret = otherAssociatedCompanies.map(_._2.siret)
@@ -145,5 +104,14 @@ class WebsitesOrchestrator @Inject() (
         activityCode = companyCreate.activityCode
       )
     )
+
+  private[this] def findWebsite(websiteId: UUID): Future[Website] = for {
+    maybeWebsite <- {
+      logger.debug(s"Searching for website with id : $websiteId")
+      repository.find(websiteId)
+    }
+    website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
+    _ = logger.debug(s"Found website")
+  } yield website
 
 }

@@ -142,7 +142,6 @@ GET           /api/websites/unregistered                             controllers
 GET           /api/websites/unregistered/extract                     controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                              controllers.WebsiteController.updateCompany(id: java.util.UUID)
 PUT           /api/websites/:id                                      controllers.WebsiteController.updateWebsiteKind(id: java.util.UUID, kind :WebsiteKind)
-PUT           /api/websites                                          controllers.WebsiteController.create()
 DELETE        /api/websites/:id                                      controllers.WebsiteController.remove(id: java.util.UUID)
 
 # Reported phones API

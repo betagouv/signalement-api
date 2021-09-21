@@ -49,14 +49,8 @@ object AppError {
     override val details: String = s"Website with id ${websiteId} could not be found"
   }
 
-  final case object WebsiteIdentificationInvalid extends BadRequestError {
-    override val `type`: String = "SC-0006"
-    override val title: String = "Invalid website identification"
-    override val details: String = s"Website should have either companyCountry or company provided."
-  }
-
   final case class CompanyAlreadyAssociatedToWebsite(websiteId: UUID, siret: SIRET) extends BadRequestError {
-    override val `type`: String = "SC-0007"
+    override val `type`: String = "SC-0006"
     override val title: String = "Company already associated to website"
     override val details: String =
       s"Company with siret ${siret.value} already associated to website ${websiteId.toString}"
