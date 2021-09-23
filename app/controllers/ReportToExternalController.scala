@@ -26,7 +26,7 @@ class ReportToExternalController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportToExternal(uuid: String) = UnsecuredAction.async {
+  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
@@ -43,7 +43,7 @@ class ReportToExternalController @Inject() (
 
   def searchReportsToExternal(
       siret: String
-  ) = UnsecuredAction.async { implicit request =>
+  ) = silhouetteAPIKey.SecuredAction.async { implicit request =>
     val start = DateUtils.parseDate(request.queryString.get("start").flatMap(_.headOption))
     val end = DateUtils.parseDate(request.queryString.get("end").flatMap(_.headOption))
     val filter = ReportFilter(

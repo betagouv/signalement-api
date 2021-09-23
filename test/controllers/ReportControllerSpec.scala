@@ -76,7 +76,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       "ReportController" in new Context {
         new WithApplication(application) {
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count")
+          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture")
           val controller = application.injector.instanceOf[ReportController]
           val result = route(application, request).get
 
