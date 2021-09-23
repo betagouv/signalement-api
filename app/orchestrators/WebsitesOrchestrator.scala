@@ -1,7 +1,6 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
-import controllers.error.AppError.CompanyAlreadyAssociatedToWebsite
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
@@ -40,14 +39,15 @@ class WebsitesOrchestrator @Inject() (
 
   def updateWebsiteKind(websiteId: UUID, kind: WebsiteKind): Future[Website] = for {
     website <- findWebsite(websiteId)
-    _ <-
-      if (kind == WebsiteKind.DEFAULT) {
-        logger.debug(s"Unvalidate other websites with host : ${website.host}")
-        unvalidateOtherWebsites(website)
-      } else Future.successful(())
     _ = logger.debug(s"Updating website kind to ${kind}")
     updatedWebsite = website.copy(kind = kind)
     _ <- repository.update(updatedWebsite)
+    _ <-
+      if (kind == WebsiteKind.DEFAULT) {
+        logger.debug(s"Removing other websites with the same host : ${website.host}")
+        repository
+          .removeOtherWebsitesWithSameHost(website)
+      } else Future.successful(())
   } yield updatedWebsite
 
   def updateCompany(websiteId: UUID, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
@@ -56,27 +56,14 @@ class WebsitesOrchestrator @Inject() (
       getOrCreateCompay(companyToAssign)
     }
     website <- findWebsite(websiteId)
-    _ = logger.debug(s"Validating company update")
-    _ <- validateWebsiteAssociation(website, company)
     websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.DEFAULT)
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate)
+    _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
+    _ <- repository
+      .removeOtherWebsitesWithSameHost(website)
     _ = logger.debug(s"Website company successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
-
-  private[this] def validateWebsiteAssociation(website: Website, companyToUpdate: Company) =
-    for {
-      otherAssociatedCompanies <- repository.searchCompaniesByHost(website.host)
-      otherAssociatedCompaniesSiret = otherAssociatedCompanies.map(_._2.siret)
-      _ <-
-        if (otherAssociatedCompaniesSiret.contains(companyToUpdate.siret)) {
-          logger.warn(s"Company already associated with website")
-          Future.failed(CompanyAlreadyAssociatedToWebsite(website.id, companyToUpdate.siret))
-        } else {
-          logger.debug(s"Validation OK")
-          Future.successful(())
-        }
-    } yield ()
 
   def updateCompanyCountry(websiteId: UUID, companyCountry: String): Future[WebsiteAndCompany] = for {
     website <- {
@@ -90,18 +77,11 @@ class WebsitesOrchestrator @Inject() (
     )
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate)
+    _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
+    _ <- repository
+      .removeOtherWebsitesWithSameHost(website)
     _ = logger.debug(s"Website company country successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
-
-  private[this] def unvalidateOtherWebsites(updatedWebsite: Website): Future[Seq[Website]] =
-    for {
-      websitesWithSameHost <- repository
-        .searchOtherValidatedWebsiteWithSameHost(updatedWebsite)
-      unvalidatedWebsites: Seq[Website] <-
-        Future.sequence(
-          websitesWithSameHost.map(website => repository.update(website.copy(kind = WebsiteKind.PENDING)))
-        )
-    } yield unvalidatedWebsites
 
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(

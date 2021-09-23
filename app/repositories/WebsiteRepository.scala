@@ -79,14 +79,12 @@ class WebsiteRepository @Inject() (
         .result
     )
 
-  def searchOtherValidatedWebsiteWithSameHost(website: Website) =
+  def removeOtherWebsitesWithSameHost(website: Website) =
     db.run(
       websiteTableQuery
         .filter(_.host === website.host)
-        .filter(w => w.companyId.nonEmpty || w.companyCountry.nonEmpty)
         .filterNot(_.id === website.id)
-        .filter(_.kind === WebsiteKind.DEFAULT)
-        .result
+        .delete
     )
 
   def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] =

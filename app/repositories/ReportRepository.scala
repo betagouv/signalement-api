@@ -709,7 +709,7 @@ class ReportRepository @Inject() (
       reportTableQuery
         .filter(_.host.isDefined)
         .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
-        .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
+        .filter(x => x.companyId.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
