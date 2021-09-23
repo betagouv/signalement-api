@@ -29,7 +29,6 @@ import services.S3Service
 import utils.silhouette.auth.AuthEnv
 import utils.Fixtures
 import utils.FrontRoute
-import utils.silhouette.api.APIKeyEnv
 
 import scala.concurrent.Future
 
@@ -47,17 +46,16 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
         val controller = new ReportController(
-          mock[ReportOrchestrator],
-          mock[CompanyRepository],
-          mock[ReportRepository],
-          mock[EventRepository],
-          mock[CompaniesVisibilityOrchestrator],
-          mock[S3Service],
-          mock[PDFService],
-          mock[FrontRoute],
-          mock[Silhouette[AuthEnv]],
-          mock[Silhouette[APIKeyEnv]],
-          mock[Configuration]
+          reportOrchestrator = mock[ReportOrchestrator],
+          companyRepository = mock[CompanyRepository],
+          reportRepository = mock[ReportRepository],
+          eventRepository = mock[EventRepository],
+          companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator],
+          s3Service = mock[S3Service],
+          pdfService = mock[PDFService],
+          frontRoute = mock[FrontRoute],
+          silhouette = mock[Silhouette[AuthEnv]],
+          configuration = mock[Configuration]
         ) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
