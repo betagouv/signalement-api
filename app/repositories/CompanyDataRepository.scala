@@ -236,13 +236,16 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
   def searchHeadOfficeBySiren(siren: SIREN): Future[Option[(CompanyData, Option[CompanyActivity])]] =
     searchHeadOfficeBySiren(List(siren)).map(_.headOption)
 
-  def searchHeadOfficeBySiren(sirens: List[SIREN]): Future[List[(CompanyData, Option[CompanyActivity])]] =
+  def searchHeadOfficeBySiren(
+      sirens: List[SIREN],
+      includeClosed: Boolean = false
+  ): Future[List[(CompanyData, Option[CompanyActivity])]] =
     db.run(
       companyDataTableQuery
         .filter(_.siren inSetBind sirens)
         .filter(_.etablissementSiege === "true")
         .filter(_.denominationUsuelleEtablissement.isDefined)
-        .filter(filterClosedEtablissements)
+        .filterIf(!includeClosed)(filterClosedEtablissements)
         .joinLeft(companyActivityTableQuery)
         .on(_.activitePrincipaleEtablissement === _.code)
         .to[List]

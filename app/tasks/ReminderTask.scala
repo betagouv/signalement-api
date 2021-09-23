@@ -74,7 +74,7 @@ class ReminderTask @Inject() (
       onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(TRAITEMENT_EN_COURS)
       transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(SIGNALEMENT_TRANSMIS)
       reportEventsMap <- eventRepository.prefetchReportsEvents(
-        onGoingReportsWithAdmins.map(_._1) ::: transmittedReportsWithAdmins.map(_._1)
+        (onGoingReportsWithAdmins ::: transmittedReportsWithAdmins).map(_._1)
       )
       closedUnreadNoAccessReports <- Future.sequence(
         extractUnreadNoAccessReports(onGoingReportsWithAdmins, now)

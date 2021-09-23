@@ -32,13 +32,15 @@ class CompaniesVisibilityOrchestrator @Inject() (
 
   def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
-      admins <- companyRepo.fetchAdminsMapByCompany(companies.map(_._2))
-      headOfficesCompanyData <- companyDataRepo
-        .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)))
+      adminsByCompanyIdMap <- companyRepo.fetchAdminsMapByCompany(companies.map(_._2))
+      headOfficesCompany <- companyDataRepo
+        .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
         .map(_.map(_._1))
-      headOfficesCompany <- companyRepo.findBySirets(headOfficesCompanyData.map(_.siret))
+        .flatMap { companyDatas =>
+          companyRepo.findBySirets(companyDatas.map(_.siret))
+        }
       headOfficeAdminsMap <- companyRepo.fetchAdminsMapByCompany(headOfficesCompany.map(_.id))
-      mapHeadOfficeIdByCompanyId = companies
+      headOfficeIdByCompanyIdMap = companies
         .groupBy(_._2)
         .view
         .mapValues { values =>
@@ -46,10 +48,9 @@ class CompaniesVisibilityOrchestrator @Inject() (
           headOfficesCompany.find(c => siren.contains(SIREN(c.siret))).map(_.id)
         }
         .toMap
-
-    } yield admins.map { x =>
-      val headOfficeId = mapHeadOfficeIdByCompanyId(x._1)
-      val headOfficeAdmins = headOfficeId.map(headOfficeAdminsMap).getOrElse(List())
+    } yield adminsByCompanyIdMap.map { x =>
+      val headOfficeId = headOfficeIdByCompanyIdMap.get(x._1).flatten
+      val headOfficeAdmins = headOfficeId.flatMap(headOfficeAdminsMap.get).getOrElse(List())
       (x._1, (x._2 ++ headOfficeAdmins).distinctBy(_.id))
     }
 
