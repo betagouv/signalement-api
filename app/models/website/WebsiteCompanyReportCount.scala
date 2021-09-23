@@ -4,6 +4,7 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.Company
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
+import utils.Country
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -13,7 +14,7 @@ case class WebsiteCompanyReportCount(
     creationDate: OffsetDateTime,
     host: String,
     companyId: Option[UUID],
-    companyCountry: Option[String],
+    companyCountry: Option[Country],
     kind: WebsiteKind,
     company: Option[Company],
     count: Int
@@ -28,6 +29,7 @@ object WebsiteCompanyReportCount {
     website
       .into[WebsiteCompanyReportCount]
       .withFieldConst(_.company, maybeCompany)
+      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromName))
       .withFieldConst(_.count, count)
       .transform
   }
