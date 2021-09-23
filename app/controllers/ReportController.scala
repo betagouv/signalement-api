@@ -2,21 +2,33 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import orchestrators.{CompaniesVisibilityOrchestrator, ReportOrchestrator}
-import play.api.{Configuration, Logger}
-import play.api.libs.json.{JsError, Json}
+import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.ReportOrchestrator
+import play.api.Configuration
+import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
 import repositories._
-import services.{PDFService, S3Service}
+import services.PDFService
+import services.S3Service
 import utils.Constants.ActionEvent._
-import utils.Constants.{ActionEvent, EventType}
-import utils.{Constants, FrontRoute, SIRET}
-import utils.silhouette.auth.{AuthEnv, WithPermission, WithRole}
+import utils.Constants.ActionEvent
+import utils.Constants.EventType
+import utils.Constants
+import utils.FrontRoute
+import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithPermission
+import utils.silhouette.auth.WithRole
 
 import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
