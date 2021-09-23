@@ -1,6 +1,7 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
@@ -10,6 +11,8 @@ import models.website._
 import play.api.Logger
 import repositories.CompanyRepository
 import repositories.WebsiteRepository
+import utils.Country
+import utils.URL
 
 import java.util.UUID
 import javax.inject.Inject
@@ -24,6 +27,14 @@ class WebsitesOrchestrator @Inject() (
 ) {
 
   val logger: Logger = Logger(this.getClass)
+
+  def searchByHost(host: String): Future[Seq[Country]] =
+    for {
+      validHost <- URL(host).getHost.liftTo[Future](MalformedHost(host))
+      websites <- repository.searchCountriesByHost(validHost)
+    } yield websites
+      .flatMap(_.companyCountry)
+      .map(Country.fromName)
 
   def getWebsiteCompanyCount(
       maybeHost: Option[String],

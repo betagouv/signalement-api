@@ -80,6 +80,13 @@ class WebsiteController @Inject() (
       Future.successful(Ok)
     }
 
+  def searchByHost(host: String) = UnsecuredAction.async {
+    websitesOrchestrator
+      .searchByHost(host)
+      .map(countries => Ok(Json.toJson(countries)))
+      .recover { case e => handleError(e) }
+  }
+
   def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async {
     implicit request =>
       websitesOrchestrator

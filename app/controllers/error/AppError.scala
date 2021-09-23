@@ -56,4 +56,11 @@ object AppError {
       s"Company with siret ${siret.value} already associated to website ${websiteId.toString}"
   }
 
+  final case class MalformedHost(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0007"
+    override val title: String = "Malformed host"
+    override val details: String =
+      s"Host $host should be a valid hostname"
+  }
+
 }

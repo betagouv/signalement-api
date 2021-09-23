@@ -69,6 +69,15 @@ class WebsiteRepository @Inject() (
         .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite))
     )
 
+  def searchCountriesByHost(host: String) =
+    db.run(
+      websiteTableQuery
+        .filter(_.host === host)
+        .filter(_.companyId.isEmpty)
+        .filter(_.companyCountry.nonEmpty)
+        .result
+    )
+
   def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) =
     db.run(
       websiteTableQuery
