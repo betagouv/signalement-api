@@ -9,6 +9,7 @@ import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
+import utils.DateUtils.withDayOfWeek
 import utils._
 
 import java.time.OffsetDateTime
@@ -428,7 +429,7 @@ class ReportRepository @Inject() (
     getReportsCount(companyId, "day", (date, i) => date.minusDays(i))
 
   def getReportsCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsCount(companyId, "week", (date, i) => date.minusWeeks(i))
+    getReportsCount(companyId, "week", (date, i) => withDayOfWeek(date, DayOfWeek.MONDAY).minusWeeks(i))
 
   def getReportsCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
     getReportsCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
@@ -437,7 +438,7 @@ class ReportRepository @Inject() (
     getReportsResponsesCount(companyId, "day", (date, i) => date.minusDays(i))
 
   def getReportsResponsesCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsResponsesCount(companyId, "week", (date, i) => date.minusWeeks(i))
+    getReportsResponsesCount(companyId, "week", (date, i) => withDayOfWeek(date, DayOfWeek.MONDAY).minusWeeks(i))
 
   def getReportsResponsesCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
     getReportsResponsesCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))

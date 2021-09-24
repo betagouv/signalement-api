@@ -1,5 +1,6 @@
 package utils
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -26,5 +27,12 @@ object DateUtils {
       case None        => ""
       case Some(value) => value.format(TIME_FORMATTER)
     }
+
+  def withDayOfWeek(date: LocalDate, day: DayOfWeek) = {
+    var innerDate = date
+    while (innerDate.getDayOfWeek != day)
+      innerDate = innerDate.minusDays(1)
+    innerDate
+  }
 
 }
