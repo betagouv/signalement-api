@@ -48,7 +48,8 @@ trait BaseCompanyController extends BaseController {
         for {
           company <- companyRepository.findBySiret(SIRET(siret))
           accessLevel <-
-            if (request.identity.userRole == UserRoles.Admin) Future(Some(AccessLevel.ADMIN))
+            if (Seq(UserRoles.Admin, UserRoles.DGCCRF).contains(request.identity.userRole))
+              Future(Some(AccessLevel.ADMIN))
             else
               company
                 .map(c =>
