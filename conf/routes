@@ -12,12 +12,13 @@ GET           /api/stats/reports/forwarded/percentage                controllers
 GET           /api/stats/reports/read/percentage                     controllers.StatisticController.getReportReadByProPercentage()
 GET           /api/stats/reports/forwarded/percentage/monthly        controllers.StatisticController.getMonthlyReportForwardedToProPercentage()
 GET           /api/stats/reports/read/percentage/monthly             controllers.StatisticController.getMonthlyReportReadByProPercentage()
-GET           /api/stats/reports/read/delay                          controllers.StatisticController.getReportReadMedianDelay()
 GET           /api/stats/reports/responsed/percentage                controllers.StatisticController.getReportWithResponsePercentage()
 GET           /api/stats/reports/responsed/percentage/monthly        controllers.StatisticController.getMonthlyReportWithResponsePercentage()
-GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReportWithResponseMedianDelay()
 GET           /api/stats/reports/website/percentage                  controllers.StatisticController.getReportWithWebsitePercentage()
-POST          /api/stats/reports                                     controllers.StatisticController.updateReportData()
+GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReadAvgTimeInMinutes()
+GET           /api/stats/reports/read/delay                          controllers.StatisticController.getResponseAvgTimeInMinutes()
+GET           /api/stats/reports/responsed/delay/:companyId                     controllers.StatisticController.getReadAvgTimeInMinutesByCompany(companyId: java.util.UUID)
+GET           /api/stats/reports/read/delay/:companyId                          controllers.StatisticController.getResponseAvgTimeInMinutesByCompany(companyId: java.util.UUID)
 
 # Reports list API
 GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], websiteExists: Option[Boolean], phoneExists: Option[Boolean], siretSirenList: List[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])

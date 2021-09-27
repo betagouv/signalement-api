@@ -6,23 +6,16 @@ import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
-import services.MailerService
-import services.S3Service
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
 
-import java.time.Duration
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class StatisticController @Inject() (
     reportRepository: ReportRepository,
-    reportDataRepository: ReportDataRepository,
-    userRepository: UserRepository,
-    mailerService: MailerService,
-    s3Service: S3Service,
     val silhouette: Silhouette[AuthEnv],
     configuration: Configuration
 )(implicit val executionContext: ExecutionContext)
@@ -198,22 +191,19 @@ class StatisticController @Inject() (
     )
   }
 
-  def getReportReadMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportReadMedianDelay.map(count =>
-      Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong)))
-    )
+  def getReadAvgTimeInMinutes(companyId: Option[UUID] = None) = UnsecuredAction.async { implicit request =>
+    reportRepository
+      .getReadAvgTime(companyId)
+      .map(count => Ok(Json.obj("value" -> count.map(_.toMinutes))))
   }
 
-  def getReportWithResponseMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportResponseMedianDelay.map(count =>
-      Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong)))
-    )
+  def getResponseAvgTimeInMinutes(companyId: Option[UUID] = None) = UnsecuredAction.async { implicit request =>
+    reportRepository
+      .getResponseAvgTime(companyId)
+      .map(count => Ok(Json.obj("value" -> count.map(_.toMinutes))))
   }
 
-  def updateReportData() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    for {
-      _ <- reportDataRepository.updateReportReadDelay
-      _ <- reportDataRepository.updateReportResponseDelay
-    } yield Ok("ReportData updated")
-  }
+  def getReadAvgTimeInMinutesByCompany(companyId: UUID) = getReadAvgTimeInMinutes(Some(companyId))
+
+  def getResponseAvgTimeInMinutesByCompany(companyId: UUID) = getResponseAvgTimeInMinutes(Some(companyId))
 }

@@ -6,7 +6,8 @@ import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.DateUtils.withDayOfWeek
@@ -473,7 +474,7 @@ class ReportRepository @Inject() (
         .filter(_.companyId === companyId)
         .join(EventTables.tables)
         .on(_.id === _.reportId)
-        .filter(_._2.action === REPORT_PRO_RESPONSE.value)
+        .filter(_._2.action === ActionEvent.REPORT_PRO_RESPONSE.value)
         .filter(
           _._2.creationDate >= ZonedDateTime
             .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
@@ -736,4 +737,28 @@ class ReportRepository @Inject() (
         .to[List]
         .result
     )
+
+  def getReadAvgTime(companyId: Option[UUID] = None) =
+    getReportDelayFromEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
+
+  def getResponseAvgTime(companyId: Option[UUID] = None) =
+    getReportDelayFromEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
+
+  private[this] def getReportDelayFromEvent(
+      action: ActionEventValue,
+      companyId: Option[UUID]
+  ): Future[Option[Duration]] =
+    db
+      .run(
+        reportTableQuery
+          .join(EventTables.tables)
+          .on(_.id === _.reportId)
+          .filter(_._2.action === action.value)
+          .filterOpt(companyId) { case (table, companyId) =>
+            table._1.companyId === companyId
+          }
+          .map(x => x._2.creationDate - x._1.creationDate)
+          .avg
+          .result
+      )
 }
