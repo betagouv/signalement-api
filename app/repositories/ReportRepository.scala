@@ -561,7 +561,7 @@ class ReportRepository @Inject() (
       .filterOpt(filter.statusList) { case (table, statusList) =>
         table.status.inSet(statusList.map(_.defaultValue))
       }
-      .filterIf(!filter.tags.isEmpty) { case table =>
+      .filterIf(filter.tags.nonEmpty) { case table =>
         table.tags @& filter.tags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
@@ -570,15 +570,12 @@ class ReportRepository @Inject() (
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
-      .joinLeft(companyTableQuery)
-      .on(_.companyId === _.id)
-      .filterIf(filter.departments.length > 0) { case (report, company) =>
-        company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
+      .filterIf(filter.departments.nonEmpty) { case (table) =>
+        substr(table.companyPostalCode.asColumnOf[String], 0.bind, 3.bind) inSetBind filter.departments
       }
 
     for {
       reports <- query
-        .map(_._1)
         .sortBy(_.creationDate.desc)
         .drop(offset)
         .take(limit)
