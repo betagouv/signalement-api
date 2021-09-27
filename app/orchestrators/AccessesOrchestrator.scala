@@ -191,7 +191,10 @@ class AccessesOrchestrator @Inject() (
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))
-      applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
+      applied <- (for {
+        u <- user
+        t <- accessToken
+      } yield accessTokenRepository.applyCompanyToken(t, u))
         .getOrElse(Future(false))
       _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
       _ <- accessToken
