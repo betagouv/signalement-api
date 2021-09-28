@@ -738,13 +738,7 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def getReadAvgTime(companyId: Option[UUID] = None) =
-    getReportDelayFromEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
-
-  def getResponseAvgTime(companyId: Option[UUID] = None) =
-    getReportDelayFromEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
-
-  private[this] def getReportDelayFromEvent(
+  def getReportDelayFromEvent(
       action: ActionEventValue,
       companyId: Option[UUID]
   ): Future[Option[Duration]] =

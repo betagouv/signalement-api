@@ -2,6 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
+import orchestrators.CompanyStatsOrchestrator
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
@@ -9,12 +10,13 @@ import repositories._
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
 
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class StatisticController @Inject() (
+    _companyStats: CompanyStatsOrchestrator,
     reportRepository: ReportRepository,
     val silhouette: Silhouette[AuthEnv],
     configuration: Configuration
@@ -191,19 +193,19 @@ class StatisticController @Inject() (
     )
   }
 
-  def getReadAvgTimeInMinutes(companyId: Option[UUID] = None) = UnsecuredAction.async { implicit request =>
-    reportRepository
-      .getReadAvgTime(companyId)
-      .map(count => Ok(Json.obj("value" -> count.map(_.toMinutes))))
+  def getReportReadAvgDelayInHours() = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async { implicit request =>
+    _companyStats
+      .getReadAvgDelay()
+      .map(count => Ok(Json.obj("value" -> count.map(_.toHours))))
   }
 
-  def getResponseAvgTimeInMinutes(companyId: Option[UUID] = None) = UnsecuredAction.async { implicit request =>
-    reportRepository
-      .getResponseAvgTime(companyId)
-      .map(count => Ok(Json.obj("value" -> count.map(_.toMinutes))))
+  def getReportResponseAvgDelayInHours() = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async { implicit request =>
+    _companyStats
+      .getResponseAvgDelay()
+      .map(count => Ok(Json.obj("value" -> count.map(_.toHours))))
   }
-
-  def getReadAvgTimeInMinutesByCompany(companyId: UUID) = getReadAvgTimeInMinutes(Some(companyId))
-
-  def getResponseAvgTimeInMinutesByCompany(companyId: UUID) = getResponseAvgTimeInMinutes(Some(companyId))
 }

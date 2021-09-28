@@ -7,7 +7,7 @@ import models.Period
 import models.ReportReviewStats
 import play.api.libs.json.JsObject
 import repositories._
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ActionEvent
 import utils.Constants.ReportResponseReview
 
 import java.time.LocalDate
@@ -52,6 +52,9 @@ class CompanyStatsOrchestrator @Inject() (
       }
     }
 
-  def getResponseDelay(id: UUID): Future[Option[java.time.Duration]] =
-    _event.getAvgTimeUntilEvent(id, REPORT_PRO_RESPONSE)
+  def getReadAvgDelay(companyId: Option[UUID] = None) =
+    _report.getReportDelayFromEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
+
+  def getResponseAvgDelay(companyId: Option[UUID] = None) =
+    _report.getReportDelayFromEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
 }

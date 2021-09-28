@@ -15,10 +15,8 @@ GET           /api/stats/reports/read/percentage/monthly             controllers
 GET           /api/stats/reports/responsed/percentage                controllers.StatisticController.getReportWithResponsePercentage()
 GET           /api/stats/reports/responsed/percentage/monthly        controllers.StatisticController.getMonthlyReportWithResponsePercentage()
 GET           /api/stats/reports/website/percentage                  controllers.StatisticController.getReportWithWebsitePercentage()
-GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReadAvgTimeInMinutes()
-GET           /api/stats/reports/read/delay                          controllers.StatisticController.getResponseAvgTimeInMinutes()
-GET           /api/stats/reports/responsed/delay/:companyId                     controllers.StatisticController.getReadAvgTimeInMinutesByCompany(companyId: java.util.UUID)
-GET           /api/stats/reports/read/delay/:companyId                          controllers.StatisticController.getResponseAvgTimeInMinutesByCompany(companyId: java.util.UUID)
+GET           /api/stats/reports/responsed/delay                     controllers.StatisticController.getReportReadAvgDelayInHours()
+GET           /api/stats/reports/read/delay                          controllers.StatisticController.getReportResponseAvgDelayInHours()
 
 # Reports list API
 GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], websiteExists: Option[Boolean], phoneExists: Option[Boolean], siretSirenList: List[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
@@ -125,7 +123,8 @@ GET /api/company-stats/:id/hosts    controllers.CompanyStatsController.getHosts(
 GET /api/company-stats/:id/tags    controllers.CompanyStatsController.getReportsTagsDistribution(id: java.util.UUID)
 GET /api/company-stats/:id/status    controllers.CompanyStatsController.getReportsStatusDistribution(id: java.util.UUID)
 GET /api/company-stats/:id/reviews    controllers.CompanyStatsController.getReportResponseReviews(id: java.util.UUID)
-GET /api/company-stats/:id/response-delay-days    controllers.CompanyStatsController.getResponseDelayInDays(id: java.util.UUID)
+GET /api/company-stats/:id/read-delay-hours    controllers.CompanyStatsController.getReadAvgDelayInHours(id: java.util.UUID)
+GET /api/company-stats/:id/response-delay-hours    controllers.CompanyStatsController.getResponseAvgDelayInHours(id: java.util.UUID)
 
 # Rating API
 POST          /api/rating                                            controllers.RatingController.rate()

@@ -62,9 +62,19 @@ class CompanyStatsController @Inject() (
     _companyStats.getReportResponseReview(id).map(x => Ok(Json.toJson(x)))
   }
 
-  def getResponseDelayInDays(id: UUID) = SecuredAction(
+  def getReadAvgDelayInHours(companyId: UUID) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
-  ).async {
-    _companyStats.getResponseDelay(id).map(x => Ok(Json.toJson(x.map(_.toDays))))
+  ).async { implicit request =>
+    _companyStats
+      .getReadAvgDelay(Some(companyId))
+      .map(count => Ok(Json.obj("value" -> count.map(_.toHours))))
+  }
+
+  def getResponseAvgDelayInHours(companyId: UUID) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async { implicit request =>
+    _companyStats
+      .getResponseAvgDelay(Some(companyId))
+      .map(count => Ok(Json.obj("value" -> count.map(_.toHours))))
   }
 }
