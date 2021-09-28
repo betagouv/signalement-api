@@ -80,9 +80,9 @@ class WebsiteController @Inject() (
       Future.successful(Ok)
     }
 
-  def searchByHost(host: String) = UnsecuredAction.async {
+  def searchByHost(url: String) = UnsecuredAction.async {
     websitesOrchestrator
-      .searchByHost(host)
+      .searchByHost(url)
       .map(countries => Ok(Json.toJson(countries)))
       .recover { case e => handleError(e) }
   }
