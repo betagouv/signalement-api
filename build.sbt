@@ -64,7 +64,7 @@ scalacOptions ++= Seq(
 )
 
 routesImport ++= Seq(
-  "models.WebsiteKind",
+  "models.website.WebsiteKind",
   "controllers.WebsiteKindQueryStringBindable"
 )
 

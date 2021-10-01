@@ -2,6 +2,8 @@ package controllers.error
 
 import utils.SIRET
 
+import java.util.UUID
+
 sealed trait AppError extends Throwable with Product with Serializable {
   val `type`: String
   val title: String
@@ -39,6 +41,26 @@ object AppError {
     override val `type`: String = "SC-0004"
     override val title: String = "Company siret not found"
     override val details: String = s"Company with siret ${siret.value} could not be found"
+  }
+
+  final case class WebsiteNotFound(websiteId: UUID) extends NotFoundError {
+    override val `type`: String = "SC-0005"
+    override val title: String = "Website not found"
+    override val details: String = s"Website with id ${websiteId} could not be found"
+  }
+
+  final case class CompanyAlreadyAssociatedToWebsite(websiteId: UUID, siret: SIRET) extends BadRequestError {
+    override val `type`: String = "SC-0006"
+    override val title: String = "Company already associated to website"
+    override val details: String =
+      s"Company with siret ${siret.value} already associated to website ${websiteId.toString}"
+  }
+
+  final case class MalformedHost(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0007"
+    override val title: String = "Malformed host"
+    override val details: String =
+      s"Host $host should be a valid hostname"
   }
 
 }

@@ -1,7 +1,7 @@
 package repositories
 
-import models.Website
-import models.WebsiteKind
+import models.website.Website
+import models.website.WebsiteKind
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -20,10 +20,22 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val marketplaceCompany = Fixtures.genCompany.sample.get
   val pendingCompany = Fixtures.genCompany.sample.get
 
-  val defaultWebsite = Fixtures.genWebsite().sample.get.copy(companyId = defaultCompany.id, kind = WebsiteKind.DEFAULT)
+  val defaultWebsite = Fixtures
+    .genWebsite()
+    .sample
+    .get
+    .copy(companyCountry = None, companyId = Some(defaultCompany.id), kind = WebsiteKind.DEFAULT)
   val marketplaceWebsite =
-    Fixtures.genWebsite().sample.get.copy(companyId = marketplaceCompany.id, kind = WebsiteKind.MARKETPLACE)
-  val pendingWebsite = Fixtures.genWebsite().sample.get.copy(companyId = pendingCompany.id, kind = WebsiteKind.PENDING)
+    Fixtures
+      .genWebsite()
+      .sample
+      .get
+      .copy(companyCountry = None, companyId = Some(marketplaceCompany.id), kind = WebsiteKind.MARKETPLACE)
+  val pendingWebsite = Fixtures
+    .genWebsite()
+    .sample
+    .get
+    .copy(companyCountry = None, companyId = Some(pendingCompany.id), kind = WebsiteKind.PENDING)
 
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
@@ -64,12 +76,19 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
     Seq((marketplaceWebsite, marketplaceCompany))
   ).await
-  def e5 = websiteRepository.create(Website(host = defaultWebsite.host, companyId = defaultCompany.id)) must beEqualTo(
+  def e5 = websiteRepository.create(
+    Website(host = defaultWebsite.host, companyCountry = None, companyId = Some(defaultCompany.id))
+  ) must beEqualTo(
     defaultWebsite
   ).await
   def e7 = {
-    val newWebsite = websiteRepository.create(Website(host = newHost, companyId = defaultCompany.id))
+    val newWebsite =
+      websiteRepository.create(Website(host = newHost, companyCountry = None, companyId = Some(defaultCompany.id)))
     newWebsite
-      .map(w => (w.host, w.companyId, w.kind)) must beEqualTo(newHost, defaultCompany.id, WebsiteKind.PENDING).await
+      .map(w => (w.host, w.companyId, w.kind)) must beEqualTo(
+      newHost,
+      Some(defaultCompany.id),
+      WebsiteKind.PENDING
+    ).await
   }
 }
