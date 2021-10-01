@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
+import models.website.Website
 import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.Json
@@ -99,13 +100,16 @@ class ReportOrchestrator @Inject() (
 
   private[this] def createReportedWebsite(
       companyOpt: Option[Company],
+      companyCountry: Option[String],
       websiteURLOpt: Option[URL]
   ): Future[Option[Website]] = {
     val creationOpt = for {
       company <- companyOpt
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
-    } yield websiteRepository.create(Website(host = host, companyId = company.id))
+    } yield websiteRepository.create(
+      Website(host = host, companyCountry = companyCountry, companyId = companyOpt.map(_.id))
+    )
     creationOpt match {
       case Some(f) => f.map(Some(_))
       case None    => Future(None)
@@ -131,7 +135,8 @@ class ReportOrchestrator @Inject() (
                 .map(Some(_))
             )
             .getOrElse(Future(None))
-          _ <- createReportedWebsite(companyOpt, draftReport.websiteURL)
+          maybeCountry = draftReport.companyAddress.flatMap(_.country.map(_.name))
+          _ <- createReportedWebsite(companyOpt, maybeCountry, draftReport.websiteURL)
           report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
           _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
           files <- reportRepository.retrieveReportFiles(report.id)
