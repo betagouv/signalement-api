@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.Event.stringToDetailsJsValue
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.website.WebsiteKind
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.libs.json._
 import play.api.Configuration
