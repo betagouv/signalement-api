@@ -10,7 +10,6 @@ import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
-import java.time.OffsetDateTime
 import java.time._
 import java.util.UUID
 import javax.inject.Inject
@@ -324,7 +323,7 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def monthlyCount(
+  def getMonthlyCount(
       companyId: Option[UUID] = None,
       status: Seq[ReportStatusValue] = List(),
       ticks: Int = 7
@@ -342,7 +341,7 @@ class ReportRepository @Inject() (
       .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
       .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
 
-  def dailyCount(
+  def getDailyCount(
       companyId: Option[UUID] = None,
       status: Seq[ReportStatusValue] = List(),
       ticks: Int

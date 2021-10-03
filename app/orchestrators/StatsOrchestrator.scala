@@ -1,7 +1,8 @@
 package orchestrators
 
-import models.ReportReviewStats
 import models.CountByDate
+import models.CurveTickDuration
+import models.ReportReviewStats
 import play.api.Configuration
 import play.api.libs.json.JsObject
 import repositories._
@@ -52,52 +53,36 @@ class StatsOrchestrator @Inject() (
       )
     } yield count * 100 / baseCount
 
-  def getReportsCountDaily(
-      status: Seq[ReportStatusValue] = List(),
+  def getReportsCountCurve(
       companyId: Option[UUID] = None,
-      ticks: Int
-  ): Future[Seq[CountByDate]] =
-    _report.dailyCount(status = status, companyId = companyId, ticks = ticks)
-
-  def getReportsCountMonthly(
       status: Seq[ReportStatusValue] = List(),
-      companyId: Option[UUID] = None,
-      ticks: Int
+      ticks: Int = 7,
+      tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
-    _report.monthlyCount(status = status, companyId = companyId, ticks = ticks)
+    tickDuration match {
+      case CurveTickDuration.Month => _report.getMonthlyCount(companyId, status, ticks)
+      case CurveTickDuration.Day   => _report.getDailyCount(companyId, status, ticks)
+    }
 
-  def getMonthlyReportWithStatusPercentage(
+  def getReportWithStatusPercentageCurve(
       status: Seq[ReportStatusValue],
-      baseStatus: Seq[ReportStatusValue] = List(),
+      baseStatus: Seq[ReportStatusValue] = Seq(),
       companyId: Option[UUID] = None,
-      ticks: Int
+      ticks: Int,
+      tickDuration: CurveTickDuration = CurveTickDuration.Month
   ) =
     for {
-      monthlyCounts <- _report.monthlyCount(status = status, companyId = companyId, ticks = ticks)
-      monthlyBaseCounts <- _report.monthlyCount(status = baseStatus, companyId = companyId, ticks = ticks)
-    } yield monthlyBaseCounts.map(monthlyBaseCount =>
+      counts <- getReportsCountCurve(companyId, status, ticks, tickDuration)
+      baseCounts <- getReportsCountCurve(companyId, baseStatus, ticks, tickDuration)
+    } yield baseCounts.map(monthlyBaseCount =>
       CountByDate(
-        monthlyCounts
+        counts
           .find(_.date == monthlyBaseCount.date)
           .map(_.count)
           .getOrElse(0) * 100 / monthlyBaseCount.count,
         monthlyBaseCount.date
       )
     )
-
-//  def getReportsCountByDate(id: UUID, request: Period): Future[Seq[(LocalDate, Int)]] =
-//    request match {
-//      case Day   => _report.getReportsCountByDay(id)
-//      case Week  => _report.getReportsCountByWeek(id)
-//      case Month => _report.getReportsCountByMonth(id)
-//    }
-//
-//  def getReportsResponsesCountByDate(id: UUID, request: Period): Future[Seq[(LocalDate, Int)]] =
-//    request match {
-//      case Day   => _report.getReportsResponsesCountByDay(id)
-//      case Week  => _report.getReportsResponsesCountByWeek(id)
-//      case Month => _report.getReportsResponsesCountByMonth(id)
-//    }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = _report.getReportsTagsDistribution(companyId)
 

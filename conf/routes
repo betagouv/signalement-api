@@ -3,28 +3,24 @@
 # ~~~~
 
 # Static pages
-GET           /api                                                   controllers.StaticController.api
+GET           /api                                           controllers.StaticController.api
 
 # Statistics API
 GET           /api/stats/reports/count                               controllers.StatisticController.getReportCount(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/percentage/read                     controllers.StatisticController.getReportReadByProPercentage(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/percentage/responsed                controllers.StatisticController.getReportWithResponsePercentage(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/percentage/forwarded                controllers.StatisticController.getReportForwardedToProPercentage(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/percentage/website                  controllers.StatisticController.getReportWithWebsitePercentage(companyId: Option[java.util.UUID])
-
-GET           /api/stats/reports/daily/count                         controllers.StatisticController.getDailyReportCount(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/daily/count-responded               controllers.StatisticController.getDailyReportsWithResponseCount(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/monthly/count                       controllers.StatisticController.getMonthlyReportCount(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/monthly/count-responded             controllers.StatisticController.getMonthlyReportsWithResponseCount(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/monthly-percentage/read             controllers.StatisticController.getMonthlyReportReadByProPercentage(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/monthly-percentage/responsed        controllers.StatisticController.getMonthlyReportWithResponsePercentage(companyId: Option[java.util.UUID], ticks: Option[Int])
-GET           /api/stats/reports/monthly-percentage/forwarded        controllers.StatisticController.getMonthlyReportForwardedToProPercentage(companyId: Option[java.util.UUID], ticks: Option[Int])
-
-GET           /api/stats/reports/delay/responsed                     controllers.StatisticController.getReportReadAvgDelayInHours(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/delay/read                          controllers.StatisticController.getReportResponseAvgDelayInHours(companyId: Option[java.util.UUID])
-GET           /api/stats/tags                                        controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
-GET           /api/stats/status                                      controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
-GET           /api/stats/reviews                                     controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/percentage/read                     controllers.StatisticController.getPercentageReportReadByPro(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/percentage/responsed                controllers.StatisticController.getPercentageReportWithResponse(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/percentage/forwarded                controllers.StatisticController.getPercentageReportForwardedToPro(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/percentage/website                  controllers.StatisticController.getPercentageReportWithWebsite(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/curve/count                         controllers.StatisticController.getCurveReportCount(companyId: Option[java.util.UUID], ticks: Option[Int], tickDuration: Option[String])
+GET           /api/stats/reports/curve/count-responded               controllers.StatisticController.getCurveReportsWithResponseCount(companyId: Option[java.util.UUID], ticks: Option[Int], tickDuration: Option[String])
+GET           /api/stats/reports/curve/read-percentage               controllers.StatisticController.getCurveReportForwardedToProPercentage(companyId: Option[java.util.UUID], ticks: Option[Int], tickDuration: Option[String])
+GET           /api/stats/reports/curve/responded-percentage          controllers.StatisticController.getCurveReportReadByProPercentage(companyId: Option[java.util.UUID], ticks: Option[Int], tickDuration: Option[String])
+GET           /api/stats/reports/curve/forwarded-percentage          controllers.StatisticController.getCurveReportWithResponsePercentage(companyId: Option[java.util.UUID], ticks: Option[Int], tickDuration: Option[String])
+GET           /api/stats/reports/delay/responsed                     controllers.StatisticController.getDelayReportReadAvgInHours(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/delay/read                          controllers.StatisticController.getDelayReportResponseAvgInHours(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/tags                                controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/status                              controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/reviews                             controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
 
 
 # Reports list API
