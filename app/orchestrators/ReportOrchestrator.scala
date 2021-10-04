@@ -104,7 +104,6 @@ class ReportOrchestrator @Inject() (
       websiteURLOpt: Option[URL]
   ): Future[Option[Website]] = {
     val creationOpt = for {
-      company <- companyOpt
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
     } yield websiteRepository.create(
