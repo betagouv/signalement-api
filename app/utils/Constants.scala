@@ -313,7 +313,7 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
-        case code                           => Departments.ALL.find(postalCode.startsWith(_))
+        case code                           => Departments.ALL.find(postalCode.startsWith)
       }
   }
 
@@ -321,5 +321,6 @@ object Constants {
     val ReponseConso = "ReponseConso"
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
+    val Bloctel = "Bloctel"
   }
 }
