@@ -49,6 +49,7 @@ class ReportOrchestrator @Inject() (
   val logger = Logger(this.getClass)
   val bucketName = configuration.get[String]("play.buckets.report")
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
+  val skipEmailValidation = configuration.get[Boolean]("play.mail.skipReportEmailValidation")
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
@@ -116,60 +117,63 @@ class ReportOrchestrator @Inject() (
   }
 
   def newReport(draftReport: DraftReport): Future[Option[Report]] =
-    emailValidationOrchestrator.isEmailValid(draftReport.email).flatMap {
-      case true =>
-        for {
-          companyOpt <- draftReport.companySiret
-            .map(siret =>
-              companyRepository
-                .getOrCreate(
-                  siret,
-                  Company(
-                    siret = siret,
-                    name = draftReport.companyName.get,
-                    address = draftReport.companyAddress.get,
-                    activityCode = draftReport.companyActivityCode
+    emailValidationOrchestrator
+      .isEmailValid(draftReport.email)
+      .map(isValid => isValid || skipEmailValidation)
+      .flatMap {
+        case true =>
+          for {
+            companyOpt <- draftReport.companySiret
+              .map(siret =>
+                companyRepository
+                  .getOrCreate(
+                    siret,
+                    Company(
+                      siret = siret,
+                      name = draftReport.companyName.get,
+                      address = draftReport.companyAddress.get,
+                      activityCode = draftReport.companyActivityCode
+                    )
                   )
-                )
-                .map(Some(_))
+                  .map(Some(_))
+              )
+              .getOrElse(Future(None))
+            maybeCountry = draftReport.companyAddress.flatMap(_.country.map(_.name))
+            _ <- createReportedWebsite(companyOpt, maybeCountry, draftReport.websiteURL)
+            report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
+            _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
+            files <- reportRepository.retrieveReportFiles(report.id)
+            report <-
+              if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
+                notifyProfessionalOfNewReport(report, companyOpt.get)
+              else Future(report)
+            event <- eventRepository.createEvent(
+              Event(
+                Some(UUID.randomUUID()),
+                Some(report.id),
+                companyOpt.map(_.id),
+                None,
+                Some(OffsetDateTime.now()),
+                Constants.EventType.CONSO,
+                Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+              )
             )
-            .getOrElse(Future(None))
-          maybeCountry = draftReport.companyAddress.flatMap(_.country.map(_.name))
-          _ <- createReportedWebsite(companyOpt, maybeCountry, draftReport.websiteURL)
-          report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
-          _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-          files <- reportRepository.retrieveReportFiles(report.id)
-          report <-
-            if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
-              notifyProfessionalOfNewReport(report, companyOpt.get)
-            else Future(report)
-          event <- eventRepository.createEvent(
-            Event(
-              Some(UUID.randomUUID()),
-              Some(report.id),
-              companyOpt.map(_.id),
-              None,
-              Some(OffsetDateTime.now()),
-              Constants.EventType.CONSO,
-              Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-            )
-          )
-          ddEmails <-
-            if (report.tags.contains(Tags.DangerousProduct)) {
-              report.companyAddress.postalCode
-                .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-                .getOrElse(Future(Seq()))
-            } else Future(Seq())
-        } yield {
-          if (ddEmails.nonEmpty) {
-            mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
+            ddEmails <-
+              if (report.tags.contains(Tags.DangerousProduct)) {
+                report.companyAddress.postalCode
+                  .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+                  .getOrElse(Future(Seq()))
+              } else Future(Seq())
+          } yield {
+            if (ddEmails.nonEmpty) {
+              mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
+            }
+            mailService.Consumer.sendReportAcknowledgment(report, event, files)
+            logger.debug(s"Report ${report.id} created")
+            Some(report)
           }
-          mailService.Consumer.sendReportAcknowledgment(report, event, files)
-          logger.debug(s"Report ${report.id} created")
-          Some(report)
-        }
-      case false => Future(None)
-    }
+        case false => Future(None)
+      }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
