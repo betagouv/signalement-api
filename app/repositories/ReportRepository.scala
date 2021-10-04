@@ -381,12 +381,6 @@ class ReportRepository @Inject() (
         .getOrElse(0)
       CountByDate(count, date)
     }
-    println("<<<<<<<<")
-    println(start)
-    println(fetchedData)
-    println("--------------------")
-    println(res)
-    println(">>>>>>>>")
     res
   }
 

@@ -74,7 +74,7 @@ class StatisticController @Inject() (
   private[this] def getTickDuration(tickDuration: Option[String]): CurveTickDuration =
     tickDuration.flatMap(CurveTickDuration.namesToValuesMap.get).getOrElse(CurveTickDuration.Month)
 
-  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(11)
+  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
 
   def getCurveReportCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
     UserAwareAction.async {

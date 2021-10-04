@@ -74,15 +74,18 @@ class StatsOrchestrator @Inject() (
     for {
       counts <- getReportsCountCurve(companyId, status, ticks, tickDuration)
       baseCounts <- getReportsCountCurve(companyId, baseStatus, ticks, tickDuration)
-    } yield baseCounts.map(monthlyBaseCount =>
-      CountByDate(
-        counts
-          .find(_.date == monthlyBaseCount.date)
-          .map(_.count)
-          .getOrElse(0) * 100 / monthlyBaseCount.count,
-        monthlyBaseCount.date
+    } yield {
+      baseCounts.map(monthlyBaseCount =>
+        CountByDate(
+          counts
+            .find(_.date == monthlyBaseCount.date)
+            .map(_.count)
+            .map(_ * 100 / Math.max(monthlyBaseCount.count, 1))
+            .getOrElse(0),
+          monthlyBaseCount.date
+        )
       )
-    )
+    }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = _report.getReportsTagsDistribution(companyId)
 
