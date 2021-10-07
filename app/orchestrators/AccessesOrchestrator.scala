@@ -1,12 +1,11 @@
 package orchestrators
 
 import cats.implicits.toTraverseOps
-import controllers.error.AppError.CompanyActivationTokenNotFound
-import controllers.error.AppError.CompanySiretNotFound
-import controllers.error.AppError.DGCCRFActivationTokenNotFound
-import controllers.error.AppError.ServerError
+import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
+import models.UserRoles.Admin
+import models.UserRoles.Pro
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
 import models.access.ActivationOutcome
@@ -54,22 +53,27 @@ class AccessesOrchestrator @Inject() (
   def listAccesses(company: Company, user: User) =
     getHeadOffice(company).flatMap {
 
-      case headOffice if headOffice.siret == company.siret =>
+      case Some(headOffice) if headOffice.siret == company.siret =>
         logger.debug(s"$company is a head office, returning access for head office")
         for {
           userLevel <- companyRepository.getUserLevel(company.id, user)
-          access <- getHeadOfficeAccess(user.id, userLevel, company, editable = true)
+          access <- getHeadOfficeAccess(user, userLevel, company, editable = true)
         } yield access
 
-      case headOffice =>
+      case maybeHeadOffice =>
         logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
         for {
-          userLevel <- companyRepository.getUserLevel(company.id, user)
-          subsidiaryUserAccess <- getSubsidiaryAccess(user.id, userLevel, List(company), editable = true)
-          maybeHeadOfficeCompany <- companyRepository.findBySiret(headOffice.siret)
-          headOfficeAccess <- maybeHeadOfficeCompany
-            .map(headOfficeCompany => getHeadOfficeAccess(user.id, userLevel, headOfficeCompany, editable = false))
-            .sequence
+          userAccessLevel <- companyRepository.getUserLevel(company.id, user)
+          subsidiaryUserAccess <- getSubsidiaryAccess(user, userAccessLevel, List(company), editable = true)
+          maybeHeadOfficeCompany <- maybeHeadOffice match {
+            case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)
+            case None             =>
+              //No head office found in company database ( Company DB is not synced )
+              Future.successful(None)
+          }
+          headOfficeAccess <- maybeHeadOfficeCompany.map { headOfficeCompany =>
+            getHeadOfficeAccess(user, userAccessLevel, headOfficeCompany, editable = false)
+          }.sequence
           _ = logger.debug(s"Removing duplicate access")
           filteredHeadOfficeAccess = headOfficeAccess.map(
             _.filterNot(a => subsidiaryUserAccess.exists(_.userId == a.userId))
@@ -77,13 +81,13 @@ class AccessesOrchestrator @Inject() (
         } yield filteredHeadOfficeAccess.getOrElse(List.empty) ++ subsidiaryUserAccess
     }
 
-  private def getHeadOffice(company: Company): Future[Company] =
+  private def getHeadOffice(company: Company): Future[Option[CompanyData]] =
     companyDataRepository.getHeadOffice(company.siret).flatMap {
       case Nil =>
-        logger.warn(s"No head office for siret ${company.siret}, acting as if company is a head office")
-        Future.successful(company)
-      case _ :: Nil =>
-        Future.successful(company)
+        logger.warn(s"No head office for siret ${company.siret}")
+        Future.successful(None)
+      case c :: Nil =>
+        Future.successful(Some(c))
       case companies =>
         logger.error(s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} ")
         Future.failed(
@@ -92,23 +96,23 @@ class AccessesOrchestrator @Inject() (
     }
 
   private def getHeadOfficeAccess(
-      userId: UUID,
+      user: User,
       userLevel: AccessLevel,
       company: Company,
       editable: Boolean
   ): Future[List[UserWithAccessLevel]] =
-    getUserAccess(userId, userLevel, List(company), editable, isHeadOffice = true)
+    getUserAccess(user, userLevel, List(company), editable, isHeadOffice = true)
 
   private def getSubsidiaryAccess(
-      userId: UUID,
+      user: User,
       userLevel: AccessLevel,
       companies: List[Company],
       editable: Boolean
   ): Future[List[UserWithAccessLevel]] =
-    getUserAccess(userId, userLevel, companies, editable, isHeadOffice = false)
+    getUserAccess(user, userLevel, companies, editable, isHeadOffice = false)
 
   private def getUserAccess(
-      userId: UUID,
+      user: User,
       userLevel: AccessLevel,
       companies: List[Company],
       editable: Boolean,
@@ -117,21 +121,24 @@ class AccessesOrchestrator @Inject() (
     for {
       companyAccess <- companyRepository
         .fetchUsersWithLevel(companies.map(_.id))
-      userAccess =
-        if (userLevel != AccessLevel.ADMIN) {
-          logger.debug(s"User is not an admin : setting editable to false")
-          companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
-        } else {
-          companyAccess.map {
-            case (user, level) if user.id == userId =>
-              logger.debug(s"User cannot edit his own access : setting editable to false")
-              toApi(user, level, editable = false, isHeadOffice)
-            case (user, level) =>
-              toApi(user, level, editable, isHeadOffice)
-          }
-
+    } yield (userLevel, user.userRole) match {
+      case (_, Admin) =>
+        logger.debug(s"Signal conso admin user : setting editable to true")
+        companyAccess.map { case (user, level) => toApi(user, level, editable = true, isHeadOffice) }
+      case (AccessLevel.ADMIN, Pro) =>
+        companyAccess.map {
+          case (companyUser, level) if companyUser.id == user.id =>
+            toApi(companyUser, level, editable = false, isHeadOffice)
+          case (companyUser, level) =>
+            toApi(companyUser, level, editable, isHeadOffice)
         }
-    } yield userAccess
+      case (_, Pro) =>
+        logger.debug(s"User PRO does not have admin access to company : setting editable to false")
+        companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
+      case _ =>
+        logger.warn(s"User is not supposed to access this feature")
+        List.empty[UserWithAccessLevel]
+    }
 
   abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
