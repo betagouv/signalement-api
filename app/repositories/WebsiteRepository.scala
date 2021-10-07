@@ -109,7 +109,10 @@ class WebsiteRepository @Inject() (
       .joinLeft(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
-      .on((c, r) => c._1.host === r.host)
+      .on((c, r) =>
+        c._1.host === r.host &&
+          (c._1.companyId === r.companyId || c._1.companyCountry === r.companyCountry.map(_.asColumnOf[String]))
+      )
       .filter(
         _._2.map(reportTable => reportTable.host.isDefined)
       )
