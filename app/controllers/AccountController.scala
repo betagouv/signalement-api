@@ -1,5 +1,6 @@
 package controllers
 
+import _root_.controllers.error.AppErrorTransformer.handleError
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
@@ -17,7 +18,7 @@ import repositories._
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-import _root_.controllers.error.AppErrorTransformer.handleError
+
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -92,9 +93,7 @@ class AccountController @Inject() (
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           email =>
-            if (email.value.endsWith(ccrfEmailSuffix))
-              accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
-            else Future(Forbidden(s"Email invalide. Email acceptés : *${ccrfEmailSuffix}"))
+            accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err => handleError(err) }
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>

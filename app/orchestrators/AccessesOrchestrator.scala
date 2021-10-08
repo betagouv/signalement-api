@@ -1,5 +1,6 @@
 package orchestrators
 
+import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
@@ -48,6 +49,7 @@ class AccessesOrchestrator @Inject() (
 
   val logger = Logger(this.getClass)
   val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
+  implicit val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -342,6 +344,13 @@ class AccessesOrchestrator @Inject() (
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     for {
+      _ <-
+        if (email.value.endsWith(ccrfEmailSuffix)) {
+          Future.successful(())
+        } else {
+          Future.failed(InvalidDGCCRFEmail(email, ccrfEmailSuffix))
+        }
+      _ <- userRepository.list(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       token <-
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
