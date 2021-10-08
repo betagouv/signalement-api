@@ -137,6 +137,9 @@ class UserRepository @Inject() (
   def delete(userId: UUID): Future[Int] = db
     .run(userTableQuery.filter(_.id === userId).delete)
 
+  def list(email: EmailAddress): Future[Seq[User]] = db
+    .run(userTableQuery.filter(_.email === email).result)
+
   def delete(email: EmailAddress): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
