@@ -516,7 +516,7 @@ class ReportOrchestrator @Inject() (
         eventType = EventType.CONSO,
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(
-          s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive else ReportResponseReview.Negative}" +
+          s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive.entryName else ReportResponseReview.Negative.entryName}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )
