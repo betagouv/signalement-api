@@ -26,7 +26,7 @@ class StatisticController @Inject() (
     _companyStats.getReportCount(companyId).map(count => Ok(Json.obj("value" -> count)))
   }
 
-  def getPercentageReportForwardedToPro(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+  def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
     _companyStats
       .getReportWithStatusPercent(
         status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
@@ -35,7 +35,7 @@ class StatisticController @Inject() (
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
   }
 
-  def getPercentageReportReadByPro(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+  def getPercentageReportRead(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
     _companyStats
       .getReportWithStatusPercent(
         status = Seq(
@@ -51,7 +51,7 @@ class StatisticController @Inject() (
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
   }
 
-  def getPercentageReportWithResponse(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+  def getPercentageReportResponded(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
     _companyStats
       .getReportWithStatusPercent(
         status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
@@ -88,7 +88,7 @@ class StatisticController @Inject() (
         .map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getCurveReportsWithResponseCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+  def getCurveReportsRespondedCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
     UserAwareAction.async {
       _companyStats
         .getReportsCountCurve(
@@ -100,7 +100,7 @@ class StatisticController @Inject() (
         .map(stats => Ok(Json.toJson(stats)))
     }
 
-  def getCurveReportForwardedToProPercentage(
+  def getCurveReportForwardedPercentage(
       companyId: Option[UUID],
       ticks: Option[Int],
       tickDuration: Option[String]
@@ -116,7 +116,7 @@ class StatisticController @Inject() (
         .map(value => Ok(Json.toJson(value)))
     }
 
-  def getCurveReportReadByProPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+  def getCurveReportReadPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
     UserAwareAction.async {
       _companyStats
         .getReportWithStatusPercentageCurve(
@@ -135,7 +135,7 @@ class StatisticController @Inject() (
         .map(value => Ok(Json.toJson(value)))
     }
 
-  def getCurveReportWithResponsePercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+  def getCurveReportRespondedPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
     UserAwareAction.async {
       _companyStats
         .getReportWithStatusPercentageCurve(
@@ -154,7 +154,7 @@ class StatisticController @Inject() (
         .map(value => Ok(Json.toJson(value)))
     }
 
-  def getDelayReportReadAvgInHours(companyId: Option[UUID]) = SecuredAction(
+  def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
   ).async {
     _companyStats
@@ -162,7 +162,7 @@ class StatisticController @Inject() (
       .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getDelayReportResponseAvgInHours(companyId: Option[UUID]) = SecuredAction(
+  def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)
   ).async {
     _companyStats
