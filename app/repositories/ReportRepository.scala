@@ -571,7 +571,7 @@ class ReportRepository @Inject() (
         table.employeeConsumer === employeeConsumer
       }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
-        substr(table.companyPostalCode.asColumnOf[String], 0.bind, 3.bind) inSetBind filter.departments
+        filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
       }
 
     for {
