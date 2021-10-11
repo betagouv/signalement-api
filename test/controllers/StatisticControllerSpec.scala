@@ -65,7 +65,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 
   def getReportReadByProPercentage = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportReadPercentage(None).toString)
+    val request = FakeRequest(GET, routes.StatisticController.getPercentageReportRead(None).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -73,7 +73,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 
   def getReportForwardedToProPercentage = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportForwardedPercentage(None).toString)
+    val request = FakeRequest(GET, routes.StatisticController.getPercentageReportForwarded(None).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
