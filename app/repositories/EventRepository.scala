@@ -125,15 +125,15 @@ class EventRepository @Inject() (
       .result
   }
 
-  def getReportResponseReviews(companyId: UUID): Future[Seq[Event]] =
+  def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
     db.run(
       eventTableQuery
         .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
         .joinLeft(ReportTables.tables)
         .on(_.reportId === _.id)
-        .filter { x =>
-          val res1 = x._1.companyId === companyId
-          val res2 = x._2.map(_.companyId === companyId).flatten
+        .filterOpt(companyId) { case (table, id) =>
+          val res1 = table._1.companyId === id
+          val res2 = table._2.map(_.companyId === id).flatten
           res1 || res2
         }
         .map(_._1)
@@ -161,15 +161,30 @@ class EventRepository @Inject() (
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
-  def getAvgTimeUntilEvent(companyId: UUID, action: ActionEventValue): Future[Option[Duration]] =
+  def getAvgTimeUntilEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Option[Duration]] =
     db.run(
       ReportTables.tables
-        .filter(_.companyId === companyId)
+        .filterOpt(companyId) { case (table, companyId) =>
+          table.companyId === companyId
+        }
         .join(eventTableQuery)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
         .map(x => x._2.creationDate - x._1.creationDate)
         .avg
+        .result
+    )
+
+  def getReportCountHavingEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Int] =
+    db.run(
+      ReportTables.tables
+        .filterOpt(companyId) { case (table, companyId) =>
+          table.companyId === companyId
+        }
+        .join(eventTableQuery)
+        .on(_.id === _.reportId)
+        .filter(_._2.action === action.value)
+        .length
         .result
     )
 }

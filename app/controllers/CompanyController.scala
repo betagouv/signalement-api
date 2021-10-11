@@ -54,6 +54,10 @@ class CompanyController @Inject() (
   val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
   val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
 
+  def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
+    reportRepository.getHostsByCompany(companyId).map(x => Ok(Json.toJson(x)))
+  }
+
   def create() = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) { implicit request =>
     request.body
       .validate[CompanyCreation]
