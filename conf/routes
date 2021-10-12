@@ -48,8 +48,9 @@ GET           /api/companies/:siret/events                           controllers
 GET           /api/nbReportsGroupByCompany                           controllers.ReportController.getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int])
 
 # Report API for externals SI
-GET           /api/ext/reports/siret/:siret                    controllers.ReportToExternalController.searchReportsToExternal(siret: String)
+GET           /api/ext/reports/siret/:siret                          controllers.ReportToExternalController.searchReportsToExternal(siret: String)
 GET           /api/ext/reports/:uuid                                 controllers.ReportToExternalController.getReportToExternal(uuid)
+GET           /api/ext/reports                                       controllers.DataEconomieController.reportDataEcomonie()
 
 # Admin API
 
