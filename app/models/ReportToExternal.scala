@@ -22,32 +22,34 @@ case class ReportToExternal(
     email: EmailAddress,
     contactAgreement: Boolean,
     description: Option[String],
-    effectiveDate: Option[String]
+    effectiveDate: Option[String],
+    reponseconsoCode: List[String]
 ) {}
 
 object ReportToExternal {
-  def fromReport(report: Report) =
+  def fromReport(r: Report) =
     ReportToExternal(
-      id = report.id,
-      category = report.category,
-      subcategories = report.subcategories,
-      details = report.details,
-      siret = report.companySiret,
-      postalCode = report.companyAddress.postalCode,
-      websiteURL = report.websiteURL.websiteURL,
-      phone = report.phone,
-      firstName = report.firstName,
-      lastName = report.lastName,
-      email = report.email,
-      contactAgreement = report.contactAgreement,
-      description = report.details
+      id = r.id,
+      category = r.category,
+      subcategories = r.subcategories,
+      details = r.details,
+      siret = r.companySiret,
+      postalCode = r.companyAddress.postalCode,
+      websiteURL = r.websiteURL.websiteURL,
+      phone = r.phone,
+      firstName = r.firstName,
+      lastName = r.lastName,
+      email = r.email,
+      contactAgreement = r.contactAgreement,
+      description = r.details
         .filter(d => d.label.matches("Quel est le problème.*"))
         .map(_.value)
         .headOption,
-      effectiveDate = report.details
+      effectiveDate = r.details
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)
-        .headOption
+        .headOption,
+      reponseconsoCode = r.reponseconsoCode
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]

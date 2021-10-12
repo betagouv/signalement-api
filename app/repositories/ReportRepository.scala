@@ -45,6 +45,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
+  def reponseconsoCode = column[List[String]]("reponseconso_code")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(
     _.id.?,
@@ -79,6 +80,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
+      List[String],
       List[String]
   )
 
@@ -110,7 +112,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           forwardToReponseConso,
           status,
           vendor,
-          tags
+          tags,
+          reponseconsoCode
         ) =>
       Report(
         id = id,
@@ -139,7 +142,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         forwardToReponseConso = forwardToReponseConso,
         status = ReportStatus.fromDefaultValue(status),
         vendor = vendor,
-        tags = tags
+        tags = tags,
+        reponseconsoCode = reponseconsoCode
       )
   }
 
@@ -171,7 +175,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.forwardToReponseConso,
       r.status.defaultValue,
       r.vendor,
-      r.tags
+      r.tags,
+      r.reponseconsoCode
     )
   }
 
@@ -202,7 +207,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
     forwardToReponseConso,
     status,
     vendor,
-    tags
+    tags,
+    reponseconsoCode
   ) <> (constructReport, extractReport.lift)
 }
 
