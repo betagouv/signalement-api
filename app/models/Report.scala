@@ -37,7 +37,7 @@ case class DraftReport(
     fileIds: List[UUID],
     vendor: Option[String] = None,
     tags: List[String] = Nil,
-    reponseconsoCode: List[String] = Nil
+    reponseconsoCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
@@ -60,7 +60,7 @@ case class DraftReport(
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
-      reponseconsoCode = reponseconsoCode
+      reponseconsoCode = reponseconsoCode.getOrElse(Nil)
     )
     report.copy(status = report.initialStatus())
   }
