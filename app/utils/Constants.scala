@@ -22,11 +22,15 @@ object Constants {
     }
 
     object ReportStatusValue {
+
       implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
         def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
           userRole.flatMap(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
         )
       }
+
+      val ReportStatusValueWrites: Writes[ReportStatusValue] = (o: ReportStatusValue) => JsString(o.defaultValue)
+
       implicit val reportStatusValueReads: Reads[ReportStatusValue] =
         JsPath.read[String].map(fromDefaultValue(_))
     }
