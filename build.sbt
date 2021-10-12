@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
   "com.lightbend.akka" %% "akka-stream-alpakka-s3" % alpakkaVersion,
   "com.lightbend.akka" %% "akka-stream-alpakka-csv" % alpakkaVersion,
+  "com.lightbend.akka" %% "akka-stream-alpakka-file" % alpakkaVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
   "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",
