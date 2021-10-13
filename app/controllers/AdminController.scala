@@ -138,7 +138,7 @@ class AdminController @Inject() (
     "dgccrf_access_link" -> (() =>
       EmailContent(
         EmailSubjects.DGCCRF_ACCESS_LINK,
-        views.html.mails.dgccrf.accessLink(frontRoute.dashboard.registerDgccrf(token = "abc"))
+        views.html.mails.dgccrf.accessLink(frontRoute.dashboard.Dgccrf.register(token = "abc"))
       )
     ),
     "pro_report_notification" -> (() =>

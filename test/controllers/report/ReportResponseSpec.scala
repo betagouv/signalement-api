@@ -30,6 +30,7 @@ import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.SIREN
 
 import scala.concurrent.Await
@@ -96,6 +97,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
 }
 
 class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+
   override def is =
     s2"""
         Given an authenticated pro user which have rights on head office         ${step {
@@ -212,6 +214,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 

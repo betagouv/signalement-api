@@ -130,6 +130,7 @@ object Report {
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,
+        "companyId" -> report.companyId,
         "companyName" -> report.companyName,
         "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
