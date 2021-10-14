@@ -336,7 +336,7 @@ class AccessesOrchestrator @Inject() (
       mailService.Pro.sendCompanyAccessInvitation(
         company = company,
         email = email,
-        invitationUrl = frontRoute.dashboard.registerPro(company.siret, tokenCode),
+        invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
         invitedBy = invitedBy
       )
       logger.debug(s"Token sent to ${email} for company ${company.id}")
@@ -363,7 +363,7 @@ class AccessesOrchestrator @Inject() (
     } yield {
       mailService.Dgccrf.sendAccessLink(
         email = email,
-        invitationUrl = frontRoute.dashboard.registerDgccrf(token.token)
+        invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token)
       )
       logger.debug(s"Sent DGCCRF account invitation to ${email}")
     }
