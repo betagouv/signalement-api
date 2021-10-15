@@ -27,11 +27,7 @@ import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
-import utils.FrontRoute
-import utils.SIREN
+import utils.{AppSpec, EmailAddress, Fixtures, FrontRoute, SIREN}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
