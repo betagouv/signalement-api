@@ -7,15 +7,15 @@ import utils.DateUtils
 import java.time.LocalDate
 
 case class ReportFilter(
-    departments: Seq[String] = List(),
+    departments: Seq[String] = Nil,
     email: Option[String] = None,
     websiteURL: Option[String] = None,
     phone: Option[String] = None,
     websiteExists: Option[Boolean] = None,
     phoneExists: Option[Boolean] = None,
-    siretSirenList: List[String] = List(),
+    siretSirenList: Seq[String] = Nil,
     companyName: Option[String] = None,
-    companyCountries: Seq[String] = List(),
+    companyCountries: Seq[String] = Nil,
     start: Option[LocalDate] = None,
     end: Option[LocalDate] = None,
     category: Option[String] = None,
@@ -34,14 +34,14 @@ case class ReportFilterBody(
     phone: Option[String],
     websiteExists: Option[Boolean] = None,
     phoneExists: Option[Boolean] = None,
-    siretSirenList: List[String] = List(),
+    siretSirenList: Seq[String] = Nil,
     start: Option[String],
     end: Option[String],
     category: Option[String],
     status: Option[String],
     details: Option[String],
     hasCompany: Option[Boolean],
-    tags: List[String] = Nil
+    tags: Seq[String] = Nil
 ) {
   def toReportFilter(
       employeeConsumer: Option[Boolean],

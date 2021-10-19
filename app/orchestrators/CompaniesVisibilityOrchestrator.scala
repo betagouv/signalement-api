@@ -14,7 +14,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
+case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
   def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
@@ -94,7 +94,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
         )
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
-  def filterUnauthorizedSiretSirenList(siretSirenList: List[String], user: User): Future[List[String]] =
+  def filterUnauthorizedSiretSirenList(siretSirenList: Seq[String], user: User): Future[Seq[String]] =
     if (user.userRole == UserRoles.Pro) {
       val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
       fetchVisibleSiretsSirens(user).map { allowed =>
@@ -120,7 +120,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
       id.sirets.filter(siret => !id.sirens.contains(SIREN(siret)))
     )
 
-  private[this] def formatSiretSirenList(siretSirenList: List[String]): SiretsSirens =
+  private[this] def formatSiretSirenList(siretSirenList: Seq[String]): SiretsSirens =
     SiretsSirens(
       sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.apply),
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
