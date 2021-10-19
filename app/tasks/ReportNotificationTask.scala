@@ -61,8 +61,8 @@ class ReportNotificationTask @Inject() (
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       reports <- reportRepository.getReports(
-        0,
-        10000,
+        Some(0),
+        Some(10000),
         ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
       )
     } yield subscriptions.foreach { subscription =>

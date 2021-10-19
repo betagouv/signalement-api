@@ -23,7 +23,8 @@ case class ReportFilter(
     details: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
-    tags: Seq[String] = Nil
+    tags: Seq[String] = Nil,
+    activityCodes: Seq[String] = Nil
 )
 
 case class ReportFilterBody(
