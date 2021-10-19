@@ -527,8 +527,8 @@ class ReportOrchestrator @Inject() (
   def getReportsForUser(
       connectedUser: User,
       filter: ReportFilter,
-      offset: Long,
-      limit: Int
+      offset: Option[Long],
+      limit: Option[Int]
   ): Future[PaginatedResult[ReportWithFiles]] =
     for {
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(

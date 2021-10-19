@@ -303,7 +303,7 @@ class ReportsExtractActor @Inject() (
       statusList = statusList
     )
     for {
-      paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
+      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(

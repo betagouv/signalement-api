@@ -483,7 +483,11 @@ class ReportRepository @Inject() (
         .result
     ).map(_.map(_.getOrElse("")))
 
-  def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
+  def getReports(
+      offset: Option[Long],
+      limit: Option[Int],
+      filter: ReportFilter
+  ): Future[PaginatedResult[Report]] = {
     val query = reportTableQuery
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -537,7 +541,11 @@ class ReportRepository @Inject() (
         table.tags @& filter.tags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(
+          table.details,
+          ",",
+          ""
+        ) regexLike s"${details}"
       }
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
@@ -545,20 +553,15 @@ class ReportRepository @Inject() (
       .filterIf(filter.departments.nonEmpty) { case (table) =>
         filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
       }
-
-    for {
-      reports <- query
-        .sortBy(_.creationDate.desc)
-        .drop(offset)
-        .take(limit)
-        .to[List]
-        .result
-      count <- query.length.result
-    } yield PaginatedResult(
-      totalCount = count,
-      entities = reports,
-      hasNextPage = count - (offset + limit) > 0
-    )
+      .joinLeft(CompanyTables.tables)
+      .on(_.companyId === _.id)
+      .filterIf(filter.activityCodes.nonEmpty)(
+        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
+      )
+    query
+      .sortBy(_._1.creationDate.desc)
+      .map(_._1)
+      .withPagination(db)(offset, limit)
   }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
