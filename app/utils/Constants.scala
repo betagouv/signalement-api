@@ -326,5 +326,6 @@ object Constants {
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
     val Bloctel = "Bloctel"
+    val Influenceur = "Influenceur"
   }
 }
