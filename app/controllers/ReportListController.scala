@@ -40,7 +40,7 @@ class ReportListController @Inject() (
   def getReports(
       offset: Option[Long],
       limit: Option[Int],
-      departments: Option[String],
+      departments: Seq[String],
       email: Option[String],
       websiteURL: Option[String],
       phone: Option[String],
@@ -48,22 +48,21 @@ class ReportListController @Inject() (
       phoneExists: Option[Boolean],
       siretSirenList: List[String],
       companyName: Option[String],
-      companyCountries: Option[String],
+      companyCountries: Seq[String],
       start: Option[String],
       end: Option[String],
       category: Option[String],
       status: Option[String],
       details: Option[String],
       hasCompany: Option[Boolean],
-      tags: List[String]
+      tags: Seq[String],
+      activityCodes: Seq[String]
   ) = SecuredAction.async { implicit request =>
-    val limitDefault = 25
-    val limitMax = 250
     for {
       paginatedReports <- reportOrchestrator.getReportsForUser(
         connectedUser = request.identity,
         filter = ReportFilter(
-          departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          departments = departments,
           email = email,
           websiteURL = websiteURL,
           phone = phone,
@@ -71,7 +70,7 @@ class ReportListController @Inject() (
           phoneExists = phoneExists,
           siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
           companyName = companyName,
-          companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
+          companyCountries = companyCountries,
           start = DateUtils.parseDate(start),
           end = DateUtils.parseDate(end),
           category = category,
@@ -82,10 +81,11 @@ class ReportListController @Inject() (
             case _             => None
           },
           hasCompany = hasCompany,
-          tags = tags
+          tags = tags,
+          activityCodes = activityCodes
         ),
-        offset = offset.map(Math.max(_, 0)).getOrElse(0),
-        limit.map(Math.max(_, 0)).map(Math.min(_, limitMax)).getOrElse(limitDefault)
+        offset = offset,
+        limit = limit
       )
     } yield Ok(Json.toJson(paginatedReports))
   }
