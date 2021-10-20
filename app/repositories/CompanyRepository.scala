@@ -153,7 +153,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def searchWithReportsCount(
-      departments: Seq[String] = List(),
+      departments: Seq[String] = Nil,
+      activityCodes: Seq[String] = Nil,
       identity: Option[SearchCompanyIdentity] = None,
       offset: Option[Long],
       limit: Option[Int]
@@ -163,6 +164,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       .on(_.id === _.companyId)
       .filterIf(departments.nonEmpty) { case (company, report) =>
         company.department.map(a => a.inSet(departments)).getOrElse(false)
+      }
+      .filterIf(activityCodes.nonEmpty) { case (company, report) =>
+        company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
       }
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).map(_.map(_.id)).countDefined) }
