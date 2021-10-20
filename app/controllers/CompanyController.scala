@@ -84,6 +84,7 @@ class CompanyController @Inject() (
 
   def searchRegistered(
       departments: Option[Seq[String]],
+      activityCodes: Option[Seq[String]],
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
@@ -91,6 +92,7 @@ class CompanyController @Inject() (
     companyRepository
       .searchWithReportsCount(
         departments = departments.getOrElse(Seq()),
+        activityCodes = activityCodes.getOrElse(Seq()),
         identity = identity.map(SearchCompanyIdentity.fromString),
         offset = offset,
         limit = limit
