@@ -37,17 +37,15 @@ class CompanyController @Inject() (
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val configuration: Configuration,
-    val frontRoute: FrontRoute
+    val frontRoute: FrontRoute,
+    val appConfigLoader: AppConfigLoader
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass)
 
-  val reportReminderByPostDelay =
-    java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
-  val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
-  val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val contactAddress = appConfigLoader.get.mail.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))

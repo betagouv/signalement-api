@@ -14,13 +14,11 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class AsyncFileController @Inject() (
-    val configuration: Configuration,
     val asyncFileRepository: AsyncFileRepository,
     val silhouette: Silhouette[AuthEnv],
     val s3Service: S3Service
 )(implicit ec: ExecutionContext)
     extends BaseController {
-  val BucketName = configuration.get[String]("play.buckets.report")
 
   def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>
     for {
@@ -31,7 +29,7 @@ class AsyncFileController @Inject() (
         "creationDate" -> asyncFile.creationDate.toString,
         "filename" -> asyncFile.filename.getOrElse(""),
         "kind" -> asyncFile.kind.toString,
-        "url" -> asyncFile.storageFilename.map(s3Service.getSignedUrl(BucketName, _)).getOrElse("")
+        "url" -> asyncFile.storageFilename.map(s3Service.getSignedUrl(_)).getOrElse("")
       )
     }))
   }

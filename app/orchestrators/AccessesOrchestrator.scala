@@ -2,6 +2,7 @@ package orchestrators
 
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
+import config.AppConfigLoader
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
@@ -44,13 +45,12 @@ class AccessesOrchestrator @Inject() (
     userRepository: UserRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    configuration: Configuration,
-    frontRoute: FrontRoute
+    frontRoute: FrontRoute,
+    appConfig: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
-  implicit val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
+  implicit val ccrfEmailSuffix = appConfig.get.mail.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -325,18 +325,18 @@ class AccessesOrchestrator @Inject() (
         .map(Future(_))
         .getOrElse(
           accessTokenRepository.createToken(
-            CompanyJoin,
-            randomToken,
-            tokenDuration,
-            Some(company.id),
-            Some(level),
+            kind = CompanyJoin,
+            token = randomToken,
+            validity = appConfig.get.tokens.companyJoinDuration,
+            companyId = Some(company.id),
+            level = Some(level),
             emailedTo = Some(emailedTo)
           )
         )
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, tokenDuration, email).map { tokenCode =>
+    genInvitationToken(company, level, appConfig.get.tokens.companyJoinDuration, email).map { tokenCode =>
       mailService.Pro.sendCompanyAccessInvitation(
         company = company,
         email = email,
@@ -359,7 +359,7 @@ class AccessesOrchestrator @Inject() (
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
           token = randomToken,
-          validity = tokenDuration,
+          validity = appConfig.get.tokens.dgccrfJoinDuration,
           companyId = None,
           level = None,
           emailedTo = Some(email)
@@ -375,12 +375,12 @@ class AccessesOrchestrator @Inject() (
   def sendEmailValidation(user: User): Future[Unit] =
     for {
       token <- accessTokenRepository.createToken(
-        ValidateEmail,
-        randomToken,
-        Some(Duration.ofHours(1)),
-        None,
-        None,
-        Some(user.email)
+        kind = ValidateEmail,
+        token = randomToken,
+        validity = Some(Duration.ofHours(1)),
+        companyId = None,
+        level = None,
+        emailedTo = Some(user.email)
       )
     } yield {
       mailService.Common.sendValidateEmail(

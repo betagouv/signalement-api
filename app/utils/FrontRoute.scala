@@ -1,22 +1,23 @@
 package utils
 
+import config.AppConfig
+import config.AppConfigLoader
 import models.AuthToken
-import play.api.Configuration
 
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FrontRoute @Inject() (config: Configuration) {
+class FrontRoute @Inject() (appConfigLoader: AppConfigLoader) {
 
   object website {
-    val url = config.get[URI]("play.website.url")
+    val url = appConfigLoader.get.signalConsoAppUrl
     def litige = url.resolve(s"/litige")
   }
 
   object dashboard {
-    def url(path: String) = new URI(config.get[URI]("play.dashboard.url").toString + path)
+    def url(path: String) = new URI(appConfigLoader.get.signalConsoDashboardUrl.toString + path)
     def login = url("/connexion")
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
     def reportReview(id: String) = url(s"/suivi-des-signalements/$id/avis")

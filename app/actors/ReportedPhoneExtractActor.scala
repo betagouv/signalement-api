@@ -10,6 +10,7 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import config.AppConfigLoader
 import models._
 import play.api.Configuration
 import play.api.Logger
@@ -36,7 +37,7 @@ object ReportedPhonesExtractActor {
 
 @Singleton
 class ReportedPhonesExtractActor @Inject() (
-    configuration: Configuration,
+    appConfigLoader: AppConfigLoader,
     reportRepository: ReportRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service
@@ -45,13 +46,8 @@ class ReportedPhonesExtractActor @Inject() (
   import ReportedPhonesExtractActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val baseUrl = configuration.get[String]("play.application.url")
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
-
   val logger: Logger = Logger(this.getClass)
-  override def preStart() =
-    logger.debug("Starting")
+  override def preStart() = logger.debug("Starting")
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
@@ -150,7 +146,7 @@ class ReportedPhonesExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
       Workbook(extractSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath
@@ -159,7 +155,7 @@ class ReportedPhonesExtractActor @Inject() (
 
   def saveRemotely(localPath: Path, remoteName: String) = {
     val remotePath = s"reported-phones-extracts/${remoteName}"
-    s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
+    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }
 

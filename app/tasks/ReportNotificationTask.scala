@@ -1,6 +1,7 @@
 package tasks
 
 import akka.actor.ActorSystem
+import config.AppConfigLoader
 import models.ReportFilter
 import play.api.Configuration
 import play.api.Logger
@@ -19,18 +20,14 @@ class ReportNotificationTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepository,
     subscriptionRepository: SubscriptionRepository,
-    configuration: Configuration,
-    mailService: MailService
+    mailService: MailService,
+    appConfigLoader: AppConfigLoader
 )(implicit executionContext: ExecutionContext) {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = LocalTime.of(
-    configuration.get[Int]("play.tasks.report.notification.start.hour"),
-    configuration.get[Int]("play.tasks.report.notification.start.minute"),
-    0
-  )
+  val startTime = appConfigLoader.get.task.reportNotificationStartTime
 
   val startDate =
     if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
@@ -42,11 +39,7 @@ class ReportNotificationTask @Inject() (
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
 
-    if (
-      LocalDate.now.getDayOfWeek == DayOfWeek.valueOf(
-        configuration.get[String]("play.tasks.report.notification.weekly.dayOfWeek")
-      )
-    ) {
+    if (LocalDate.now.getDayOfWeek == appConfigLoader.get.task.reportNotificationStartDay) {
       runPeriodicNotificationTask(LocalDate.now, Period.ofDays(7))
     }
 

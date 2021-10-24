@@ -8,7 +8,7 @@ scalaVersion := "2.13.6"
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion = "5.0.0"
-val slickPgVersion = "0.19.5"
+val slickPgVersion = "0.19.7"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
 val AkkaHttpVersion = "10.1.12"
@@ -55,14 +55,6 @@ libraryDependencies ++= Seq(
 )
 
 scalafmtOnCompile := true
-scalacOptions ++= Seq(
-  "-Xfatal-warnings",
-  "-feature",
-  "-Xlint:deprecation",
-  "-Wunused:imports",
-  "-Wconf:cat=unused-imports&src=views/.*:s",
-  s"-Wconf:src=${target.value}/.*:s"
-)
 
 routesImport ++= Seq(
   "models.website.WebsiteKind",
