@@ -265,9 +265,8 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   implicit val env = new FakeEnvironment[AuthEnv](Seq().map(user => loginInfo(user) -> user))
 
   class FakeModule extends AppFakeModule {
-    override def configure() = {
+    override def configure() =
       super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
+    bind[Environment[AuthEnv]].toInstance(env)
   }
 }
