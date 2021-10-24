@@ -85,9 +85,10 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
     mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
 
     class FakeModule extends AbstractModule with ScalaModule {
-      override def configure() =
+      override def configure() = {
         bind[Environment[AuthEnv]].toInstance(env)
         bind[ReportRepository].toInstance(mockReportRepository)
+      }
     }
 
     lazy val application = new GuiceApplicationBuilder()

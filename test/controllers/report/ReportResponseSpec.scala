@@ -269,7 +269,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   override def setupData() = {
     reviewUrl = new URI(
-      config.signalConsoDashboardUrl.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+      app.configuration.get[URI]("play.dashboard.url").toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
     )
     Await.result(
       for {
@@ -336,7 +336,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         Seq(recipient),
         Nil,
         subject,

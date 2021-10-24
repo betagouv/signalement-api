@@ -61,7 +61,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress = config.mail.contactAddress
+  implicit lazy val contactAddress = injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   implicit val ec = ee.executionContext
 
@@ -180,7 +180,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         recipients,
         Nil,
         subject,

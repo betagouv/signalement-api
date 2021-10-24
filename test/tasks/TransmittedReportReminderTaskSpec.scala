@@ -206,7 +206,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   implicit val ec = ee.executionContext
-  val mailReminderDelay = config.report.mailReminderDelay
+  val mailReminderDelay = java.time.Period.parse(app.configuration.get[String]("play.reports.mailReminderDelay"))
 
   val runningDateTime = OffsetDateTime.now
 
@@ -232,7 +232,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        EmailAddress(app.configuration.get[String]("play.mail.from")),
         Seq(recipient),
         Nil,
         subject,
@@ -283,7 +283,8 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
   implicit lazy val frontRoute = app.injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress = config.mail.contactAddress
+  implicit lazy val contactAddress =
+    app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   def setupUser(user: User) =
     Await.result(

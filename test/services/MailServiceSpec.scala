@@ -102,9 +102,10 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   )
 
   class FakeModule extends AppFakeModule {
-    override def configure() =
+    override def configure() = {
       super.configure()
-    bind[Environment[AuthEnv]].toInstance(env)
+      bind[Environment[AuthEnv]].toInstance(env)
+    }
   }
 
   protected def sendEmail(emails: List[EmailAddress], report: Report) = {
