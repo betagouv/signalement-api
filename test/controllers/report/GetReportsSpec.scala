@@ -197,9 +197,10 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   )
 
   class FakeModule extends AppFakeModule {
-    override def configure() =
+    override def configure() = {
       super.configure
-    bind[Environment[AuthEnv]].toInstance(env)
+      bind[Environment[AuthEnv]].toInstance(env)
+    }
   }
 
   def getReports(status: Option[String] = None) =

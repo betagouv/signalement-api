@@ -28,7 +28,8 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     .build()
 
   def injector = app.injector
-  val config = injector.instanceOf[AppConfigLoader].get
+  lazy val configLoader = injector.instanceOf[AppConfigLoader]
+  lazy val config = configLoader.get
 
   private lazy val database = injector.instanceOf[DBApi].database("default")
   private lazy val company_database = injector.instanceOf[DBApi].database("company_db")
