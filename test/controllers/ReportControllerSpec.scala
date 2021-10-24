@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import config.AppConfigLoader
 import models._
 import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -55,7 +56,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
           pdfService = mock[PDFService],
           frontRoute = mock[FrontRoute],
           silhouette = mock[Silhouette[AuthEnv]],
-          configuration = mock[Configuration]
+          appConfigLoader = mock[AppConfigLoader]
         ) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }

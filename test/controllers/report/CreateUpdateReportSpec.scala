@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
+import config.AppConfigLoader
 import controllers.ReportController
 import models._
 import org.specs2.Specification
@@ -219,8 +220,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress =
-    app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
+  implicit lazy val contactAddress = config.mail.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -333,7 +333,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
