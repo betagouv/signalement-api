@@ -319,7 +319,7 @@ class AccessesOrchestrator @Inject() (
       emailedTo: EmailAddress
   ): Future[String] =
     for {
-      existingToken <- accessTokenRepository.fetchToken(company, emailedTo)
+      existingToken <- accessTokenRepository.fetchValidToken(company, emailedTo)
       _ <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
       token <- existingToken
         .map(Future(_))

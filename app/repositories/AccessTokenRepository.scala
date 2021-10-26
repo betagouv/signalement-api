@@ -89,7 +89,7 @@ class AccessTokenRepository @Inject() (
   private def fetchCompanyValidTokens(company: Company): Query[AccessTokenTable, AccessToken, Seq] =
     fetchCompanyValidTokens(company.id)
 
-  def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
+  def fetchValidToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.emailedTo === emailedTo)
@@ -98,7 +98,17 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  def fetchCompanyInitToken(companyId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.companyId === companyId)
+        .filter(_.kind === (CompanyInit: TokenKind))
+        .sortBy(_.creationDate.desc)
+        .result
+        .headOption
+    )
+
+  def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
@@ -237,8 +247,8 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def fetchActivationCode(company: Company): Future[Option[String]] =
-    fetchActivationToken(company.id).map(_.map(_.token))
+  def fetchValidActivationCode(company: Company): Future[Option[String]] =
+    fetchValidActivationToken(company.id).map(_.map(_.token))
 
   def useEmailValidationToken(token: AccessToken, user: User) =
     db.run(

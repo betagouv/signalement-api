@@ -1,10 +1,12 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppError.CompanyToActivateNotFound
 import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.AccessesOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.CompanyAccessOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import repositories._
@@ -22,6 +24,7 @@ import scala.concurrent.Future
 @Singleton
 class CompanyAccessController @Inject() (
     val userRepository: UserRepository,
+    val companyAccessOrchestrator: CompanyAccessOrchestrator,
     val companyRepository: CompanyRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
@@ -144,20 +147,16 @@ class CompanyAccessController @Inject() (
       .validate[ActivationLinkRequest]
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        activationLinkRequest =>
+        body =>
           for {
-            company <- companyRepository.findBySiret(SIRET(siret))
-            isValid <- company
-              .map(c =>
-                accessTokenRepository
-                  .fetchActivationCode(c)
-                  .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
-              )
-              .getOrElse(Future(false))
+            company <- companyRepository
+              .findBySiret(SIRET(siret))
+              .flatMap(_.map(Future.successful).getOrElse(Future.failed(CompanyToActivateNotFound(siret))))
+            isValid <- companyAccessOrchestrator.checkCompanyInitToken(company, body.token)
             sent <-
               if (isValid)
                 accessesOrchestrator
-                  .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
+                  .addUserOrInvite(company, body.email, AccessLevel.ADMIN, None)
                   .map(_ => true)
               else Future(false)
           } yield if (sent) Ok else NotFound

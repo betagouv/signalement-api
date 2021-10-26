@@ -78,4 +78,27 @@ object AppError {
       s"Ce compte existe déjà. Merci de demander à l'utilisateur de regénérer son mot de passe pour se connecter"
   }
 
+  final case class AlreadyActivatedCompany(siret: String) extends ForbiddenError {
+    override val `type` = "SC-0009"
+    override val title = "Already activated company"
+    override val details = s"Company $siret has already been activated."
+  }
+
+  final case class CompanyToActivateNotFound(siret: String) extends NotFoundError {
+    override val `type` = "SC-0010"
+    override val title = "Company to activate not found"
+    override val details = s"Company $siret to activate not found"
+  }
+
+  final case class CompanyToActivateTokenOutdated(siret: String) extends ForbiddenError {
+    override val `type` = "SC-0009"
+    override val title = "Company to activate token outdated"
+    override val details = s"Company $siret to activate token outdated."
+  }
+
+  final case class CompanyToActivateInvalidToken(siret: String) extends ForbiddenError {
+    override val `type` = "SC-0011"
+    override val title = "Company to activate invalid token"
+    override val details = s"Company $siret to activate invalid token."
+  }
 }
