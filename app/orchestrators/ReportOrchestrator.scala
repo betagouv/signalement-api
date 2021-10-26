@@ -92,7 +92,7 @@ class ReportOrchestrator @Inject() (
           )
           .flatMap(event => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
       } else {
-        genActivationToken(company.id, appConf.get.tokens.companyInitDuration).map(_ => report)
+        genActivationToken(company.id, appConf.signalConsoConfiguration.token.companyInitDuration).map(_ => report)
       }
     }
 
@@ -116,7 +116,7 @@ class ReportOrchestrator @Inject() (
   def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator
       .isEmailValid(draftReport.email)
-      .map(isValid => isValid || appConf.get.mail.skipReportEmailValidation)
+      .map(isValid => isValid || appConf.signalConsoConfiguration.mail.skipReportEmailValidation)
       .flatMap {
         case true =>
           for {

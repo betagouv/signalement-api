@@ -35,9 +35,9 @@ class MailService @Inject() (
 ) {
 
   private[this] val logger = Logger(this.getClass)
-  private[this] val mailFrom = appConfigLoader.get.mail.from
-  implicit private[this] val contactAddress = appConfigLoader.get.mail.contactAddress
-  implicit private[this] val ccrfEmailSuffix = appConfigLoader.get.mail.ccrfEmailSuffix
+  private[this] val mailFrom = appConfigLoader.signalConsoConfiguration.mail.from
+  implicit private[this] val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
+  implicit private[this] val ccrfEmailSuffix = appConfigLoader.signalConsoConfiguration.mail.ccrfEmailSuffix
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(
@@ -209,14 +209,14 @@ class MailService @Inject() (
       )
 
     def sendReportNotification(admins: List[EmailAddress], report: Report): Unit =
-      sendIfAuthorized(admins, report)(filteredAdminEmails =>
+      sendIfAuthorized(admins, report) { filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
           subject = EmailSubjects.NEW_REPORT,
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
-      )
+      }
 
     def sendNewCompanyAccessNotification(user: User, company: Company, invitedBy: Option[User]): Unit =
       send(

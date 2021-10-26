@@ -146,7 +146,7 @@ class ReportedPhonesExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(extractSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

@@ -269,7 +269,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   override def setupData() = {
     reviewUrl = new URI(
-      config.signalConsoDashboardUrl.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+      config.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
     )
     Await.result(
       for {

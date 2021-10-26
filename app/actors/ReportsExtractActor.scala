@@ -186,7 +186,9 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${appConfigLoader.get.signalConsoApiUrl.toString}${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}"
+              s"${appConfigLoader.signalConsoConfiguration.apiURL.toString}${routes.ReportController
+                .downloadReportFile(file.id.toString, file.filename)
+                .url}"
             )
             .mkString("\n"),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -364,7 +366,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

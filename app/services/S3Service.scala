@@ -24,7 +24,7 @@ class S3Service @Inject() (implicit
     val executionContext: ExecutionContext,
     val appConfigLoader: AppConfigLoader
 ) {
-  private[this] val bucketName = appConfigLoader.get.s3BucketName
+  private[this] val bucketName = appConfigLoader.signalConsoConfiguration.amazonBucketName
 
   private val alpakkaS3Client = S3
   private val awsS3Client = AmazonS3ClientBuilder
@@ -34,7 +34,10 @@ class S3Service @Inject() (implicit
     )
     .withCredentials(
       new AWSStaticCredentialsProvider(
-        new BasicAWSCredentials(appConfigLoader.get.akka.keyId, appConfigLoader.get.akka.secretKey)
+        new BasicAWSCredentials(
+          appConfigLoader.AlpakkaS3Configuration.keyId,
+          appConfigLoader.AlpakkaS3Configuration.secretKey
+        )
       )
     )
     .build()

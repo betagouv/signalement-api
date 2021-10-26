@@ -23,7 +23,7 @@ class StatsOrchestrator @Inject() (
     appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
+  private[this] lazy val cutoff = appConfigLoader.signalConsoConfiguration.stats.globalStatsCutoff
 
   def getReportCount(companyId: Option[UUID] = None): Future[Int] =
     _report.count(companyId)

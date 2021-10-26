@@ -50,7 +50,7 @@ class AccessesOrchestrator @Inject() (
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = appConfig.get.mail.ccrfEmailSuffix
+  implicit val ccrfEmailSuffix = appConfig.signalConsoConfiguration.mail.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -327,7 +327,7 @@ class AccessesOrchestrator @Inject() (
           accessTokenRepository.createToken(
             kind = CompanyJoin,
             token = randomToken,
-            validity = appConfig.get.tokens.companyJoinDuration,
+            validity = appConfig.signalConsoConfiguration.token.companyJoinDuration,
             companyId = Some(company.id),
             level = Some(level),
             emailedTo = Some(emailedTo)
@@ -336,14 +336,15 @@ class AccessesOrchestrator @Inject() (
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, appConfig.get.tokens.companyJoinDuration, email).map { tokenCode =>
-      mailService.Pro.sendCompanyAccessInvitation(
-        company = company,
-        email = email,
-        invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
-        invitedBy = invitedBy
-      )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
+    genInvitationToken(company, level, appConfig.signalConsoConfiguration.token.companyJoinDuration, email).map {
+      tokenCode =>
+        mailService.Pro.sendCompanyAccessInvitation(
+          company = company,
+          email = email,
+          invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
+          invitedBy = invitedBy
+        )
+        logger.debug(s"Token sent to ${email} for company ${company.id}")
     }
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
@@ -359,7 +360,7 @@ class AccessesOrchestrator @Inject() (
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
           token = randomToken,
-          validity = appConfig.get.tokens.dgccrfJoinDuration,
+          validity = appConfig.signalConsoConfiguration.token.dgccrfJoinDuration,
           companyId = None,
           level = None,
           emailedTo = Some(email)

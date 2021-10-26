@@ -23,7 +23,7 @@ class PDFService @Inject() (
 ) {
 
   val logger: Logger = Logger(this.getClass)
-  val tmpDirectory = appConfigLoader.get.tmpDirectory
+  val tmpDirectory = appConfigLoader.signalConsoConfiguration.tmpDirectory
 
   def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
     val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
@@ -32,7 +32,7 @@ class PDFService @Inject() (
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(appConfigLoader.get.signalConsoApiUrl.toString)
+    converterProperties.setBaseUri(appConfigLoader.signalConsoConfiguration.apiURL.toString)
 
     HtmlConverter.convertToPdf(
       new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()),
@@ -47,7 +47,7 @@ class PDFService @Inject() (
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(appConfigLoader.get.signalConsoApiUrl.toString())
+    converterProperties.setBaseUri(appConfigLoader.signalConsoConfiguration.apiURL.toString())
 
     val pdfOutputStream = new ByteArrayOutputStream
 

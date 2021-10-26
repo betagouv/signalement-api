@@ -64,7 +64,8 @@ class AuthController @Inject() (
                             && user.lastEmailValidation
                               .exists(
                                 _.isBefore(
-                                  OffsetDateTime.now.minus(appConfigLoader.get.tokens.dgccrfDelayBeforeRevalidation)
+                                  OffsetDateTime.now
+                                    .minus(appConfigLoader.signalConsoConfiguration.token.dgccrfDelayBeforeRevalidation)
                                 )
                               ) =>
                         accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)

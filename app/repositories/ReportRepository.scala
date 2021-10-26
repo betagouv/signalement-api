@@ -228,7 +228,7 @@ class ReportRepository @Inject() (
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = appConfigLoader.get.zoneId
+  val zoneId = appConfigLoader.signalConsoConfiguration.zoneId
 
   import dbConfig._
 
@@ -279,7 +279,7 @@ class ReportRepository @Inject() (
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
   private[this] val backofficeAdminStartDate = OffsetDateTime.of(
-    appConfigLoader.get.stats.backofficeAdminStartDate,
+    appConfigLoader.signalConsoConfiguration.stats.backofficeAdminStartDate,
     LocalTime.MIDNIGHT,
     ZoneOffset.UTC
   )

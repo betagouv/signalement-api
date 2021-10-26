@@ -51,7 +51,8 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
   "io.sentry" % "sentry-logback" % "1.7.30",
-  "org.typelevel" %% "cats-core" % "2.4.2"
+  "org.typelevel" %% "cats-core" % "2.4.2",
+  "com.github.pureconfig" %% "pureconfig" % "0.17.0"
 )
 
 scalafmtOnCompile := true
@@ -63,9 +64,9 @@ routesImport ++= Seq(
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-mappings in Universal ++=
+Universal / mappings ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
 
-javaOptions in Test += "-Dconfig.resource=test.application.conf"
+Test / javaOptions += "-Dconfig.resource=test.application.conf"
 javaOptions += "-Dakka.http.parsing.max-uri-length=16k"
