@@ -148,7 +148,7 @@ class CompanyAccessController @Inject() (
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         body =>
-          for {
+          (for {
             company <- companyRepository
               .findBySiret(SIRET(siret))
               .flatMap(_.map(Future.successful).getOrElse(Future.failed(CompanyToActivateNotFound(siret))))
@@ -159,7 +159,9 @@ class CompanyAccessController @Inject() (
                   .addUserOrInvite(company, body.email, AccessLevel.ADMIN, None)
                   .map(_ => true)
               else Future(false)
-          } yield if (sent) Ok else NotFound
+          } yield sent)
+            .map(sent => if (sent) Ok else NotFound)
+            .recover { case e => handleError(e) }
       )
   }
 

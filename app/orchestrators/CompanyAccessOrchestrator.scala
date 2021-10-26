@@ -20,10 +20,9 @@ class CompanyAccessOrchestrator @Inject() (
     for {
       tokenOpt <- _accessToken.fetchCompanyInitToken(company.id)
       notOutdatedToken <- tokenOpt
-        .filter(_.expirationDate.exists(a => a.isBefore(OffsetDateTime.now)))
+        .filter(_.expirationDate.exists(_.isAfter(OffsetDateTime.now)))
         .map(Future.successful)
         .getOrElse(Future.failed(CompanyToActivateTokenOutdated(siret)))
-      _ = println("notOutdatedToken" + notOutdatedToken)
       validToken <-
         if (notOutdatedToken.token == token) Future(notOutdatedToken)
         else Future.failed(CompanyToActivateInvalidToken(siret))
