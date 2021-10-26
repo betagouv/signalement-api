@@ -18,7 +18,7 @@ class APIKeyRequestProvider @Inject() (
   def authenticate[B](request: Request[B]): Future[Option[LoginInfo]] = {
 
     val hasher = passwordHasherRegistry.current
-    
+
     Future.successful(
       (
         request.headers.get(configuration.get[String]("silhouette.apiKeyAuthenticator.headerName")),
@@ -26,10 +26,7 @@ class APIKeyRequestProvider @Inject() (
       ) match {
         case (Some(headerValue), secretValue)
             if hasher
-              .matches(
-                toPasswordInfo(secretValue),
-                headerValue
-              ) =>
+              .matches(toPasswordInfo(headerValue), secretValue) =>
           Some(LoginInfo(id, headerValue))
         case _ => None
       }
