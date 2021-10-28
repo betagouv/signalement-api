@@ -5,16 +5,16 @@ import akka.stream.Materializer
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.HttpMethod
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
-import com.amazonaws.HttpMethod
 import play.api.Configuration
+
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 
 @Singleton

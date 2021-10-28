@@ -13,9 +13,13 @@ package object repositories {
         db: JdbcBackend#DatabaseDef
     )(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
 
-      val offset: Long = maybeOffset.getOrElse(0L)
+      val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
+      val limit = maybeLimit
+        .map(Math.max(_, 0))
+        .getOrElse(25)
+
       val queryWithOffset = query.drop(offset)
-      val queryWithOffsetAndLimit: Query[A, B, Seq] = maybeLimit.map(queryWithOffset.take).getOrElse(queryWithOffset)
+      val queryWithOffsetAndLimit: Query[A, B, Seq] = queryWithOffset.take(limit)
 
       val resultF: Future[Seq[B]] = db.run(queryWithOffsetAndLimit.result)
       val countF: Future[Int] = db.run(query.length.result)

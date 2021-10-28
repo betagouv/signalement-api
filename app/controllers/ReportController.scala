@@ -1,32 +1,29 @@
 package controllers
 
-import java.net.URI
-import java.nio.file.Paths
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
-import play.api.libs.json.JsError
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
 import repositories._
 import services.PDFService
 import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.silhouette.api.APIKeyEnv
+import utils.Constants
+import utils.FrontRoute
+import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
-import utils.Constants
-import utils.SIRET
 
+import java.nio.file.Paths
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -41,8 +38,8 @@ class ReportController @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     s3Service: S3Service,
     pdfService: PDFService,
+    frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv],
     configuration: Configuration
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
@@ -50,7 +47,6 @@ class ReportController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   val BucketName = configuration.get[String]("play.buckets.report")
-  implicit val websiteUrl = configuration.get[URI]("play.application.url")
   val tmpDirectory = configuration.get[String]("play.tmpDirectory")
   val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
@@ -138,13 +134,14 @@ class ReportController @Inject() (
         review =>
           for {
             events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
-            result <- if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
-                        Future(Forbidden)
-                      } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
-                        Future(Conflict)
-                      } else {
-                        reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
-                      }
+            result <-
+              if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
+                Future(Forbidden)
+              } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
+                Future(Conflict)
+              } else {
+                reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
+              }
           } yield result
       )
   }
@@ -202,64 +199,18 @@ class ReportController @Inject() (
   }
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+//    reminderTask.runTask(LocalDate.now.atStartOfDay())
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
           visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
           viewedReport <- visibleReport
-                            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
-                            .getOrElse(Future(None))
+            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
+            .getOrElse(Future(None))
           reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield viewedReport
           .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
-          .getOrElse(NotFound)
-    }
-  }
-
-  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
-    implicit def reportFilewriter = new Writes[ReportFile] {
-      def writes(reportFile: ReportFile) =
-        Json.obj(
-          "id" -> reportFile.id,
-          "filename" -> reportFile.filename
-        )
-    }
-    implicit def reportWriter = new Writes[Report] {
-      def writes(report: Report) =
-        Json.obj(
-          "id" -> report.id,
-          "category" -> report.category,
-          "subcategories" -> report.subcategories,
-          "details" -> report.details,
-          "siret" -> report.companySiret,
-          "address" -> report.companyAddress,
-          "websiteURL" -> report.websiteURL.websiteURL,
-          "firstName" -> report.firstName,
-          "lastName" -> report.lastName,
-          "email" -> report.email,
-          "contactAgreement" -> report.contactAgreement,
-          "description" -> report.details
-            .filter(d => d.label.matches("Quel est le problème.*"))
-            .map(_.value)
-            .headOption,
-          "effectiveDate" -> report.details
-            .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
-            .map(_.value)
-            .headOption
-        )
-    }
-    implicit def writer = Json.writes[ReportWithFiles]
-    Try(UUID.fromString(uuid)) match {
-      case Failure(_) => Future.successful(PreconditionFailed)
-      case Success(id) =>
-        for {
-          report <- reportRepository.getReport(id)
-          reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
-        } yield report
-          .map(report =>
-            Ok(Json.toJson(ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER))))
-          )
           .getOrElse(NotFound)
     }
   }
@@ -272,9 +223,9 @@ class ReportController @Inject() (
           visibleReport <- getVisibleReportForUser(id, request.identity)
           events <- eventRepository.getEventsWithUsers(id, EventFilter())
           companyEvents <- visibleReport
-                             .flatMap(_.companyId)
-                             .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-                             .getOrElse(Future(List.empty))
+            .flatMap(_.companyId)
+            .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
+            .getOrElse(Future(List.empty))
           reportFiles <- reportRepository.retrieveReportFiles(id)
         } yield {
           val responseOption = events
@@ -286,7 +237,11 @@ class ReportController @Inject() (
           visibleReport
             .map(report =>
               pdfService.Ok(
-                List(views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles))
+                List(
+                  views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
+                    frontRoute
+                  )
+                )
               )
             )
             .getOrElse(NotFound)
@@ -299,10 +254,6 @@ class ReportController @Inject() (
       case Failure(_)  => Future.successful(PreconditionFailed)
       case Success(id) => reportOrchestrator.deleteReport(id).map(if (_) NoContent else NotFound)
     }
-  }
-
-  def getReportCountBySiret(siret: String) = silhouetteAPIKey.SecuredAction.async {
-    reportRepository.count(Some(SIRET(siret))).map(count => Ok(Json.obj("siret" -> siret, "count" -> count)))
   }
 
   def getEvents(reportId: String, eventType: Option[String]) =
@@ -357,9 +308,9 @@ class ReportController @Inject() (
       for {
         company <- companyRepository.findBySiret(SIRET(siret))
         events <- company
-                    .map(_.id)
-                    .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
-                    .getOrElse(Future(None))
+          .map(_.id)
+          .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
+          .getOrElse(Future(None))
       } yield company match {
         case Some(_) =>
           Ok(
@@ -415,9 +366,9 @@ class ReportController @Inject() (
         else {
           companiesVisibilityOrchestrator
             .fetchVisibleCompanies(user)
-            .map(_.map(v => Some(v.siret)))
-            .map { viewableSirets =>
-              report.filter(r => viewableSirets.contains(r.companySiret))
+            .map(_.map(v => Some(v.company.siret)))
+            .map { visibleSirets =>
+              report.filter(r => visibleSirets.contains(r.companySiret))
             }
         }
     } yield visibleReport

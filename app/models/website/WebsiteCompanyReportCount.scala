@@ -1,11 +1,11 @@
 package models.website
 
+import io.scalaland.chimney.dsl.TransformerOps
 import models.Company
-import models.Website
-import models.WebsiteKind
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
-import io.scalaland.chimney.dsl.TransformerOps
+import utils.Country
+
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -13,9 +13,10 @@ case class WebsiteCompanyReportCount(
     id: UUID,
     creationDate: OffsetDateTime,
     host: String,
-    companyId: UUID,
+    companyId: Option[UUID],
+    companyCountry: Option[Country],
     kind: WebsiteKind,
-    company: Company,
+    company: Option[Company],
     count: Int
 )
 
@@ -23,11 +24,12 @@ object WebsiteCompanyReportCount {
 
   implicit val WebsiteCompanyCountWrites: Writes[WebsiteCompanyReportCount] = Json.writes[WebsiteCompanyReportCount]
 
-  def toApi(countByWebsiteCompany: ((Website, Company), Int)): WebsiteCompanyReportCount = {
-    val ((website, company), count) = countByWebsiteCompany
+  def toApi(countByWebsiteCompany: ((Website, Option[Company]), Int)): WebsiteCompanyReportCount = {
+    val ((website, maybeCompany), count) = countByWebsiteCompany
     website
       .into[WebsiteCompanyReportCount]
-      .withFieldConst(_.company, company)
+      .withFieldConst(_.company, maybeCompany)
+      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromName))
       .withFieldConst(_.count, count)
       .transform
   }

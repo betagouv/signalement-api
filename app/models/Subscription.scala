@@ -1,14 +1,14 @@
 package models
 
-import java.time.OffsetDateTime
-import java.time.Period
-import java.util.UUID
-
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
+
+import java.time.OffsetDateTime
+import java.time.Period
+import java.util.UUID
 
 case class SubscriptionCreation(
     departments: List[String],

@@ -1,10 +1,5 @@
 package actors
 
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -16,12 +11,10 @@ import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import controllers.routes
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
-import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.Constants.Departments
@@ -29,11 +22,17 @@ import utils.Constants.ReportStatus
 import utils.Constants
 import utils.DateUtils
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportsExtractActor {
-  def props = Props[ReportsExtractActor]
+  def props = Props[ReportsExtractActor]()
 
   case class ExtractRequest(requestedBy: User, filters: ReportFilterBody)
 }
@@ -67,7 +66,7 @@ class ReportsExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(requestedBy, filters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
@@ -304,10 +303,13 @@ class ReportsExtractActor @Inject() (
       statusList = statusList
     )
     for {
-      paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
+      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
+      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
+        paginatedReports.entities.flatMap(_.companyId),
+        Seq(AccessLevel.ADMIN)
+      )
     } yield {
       val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")

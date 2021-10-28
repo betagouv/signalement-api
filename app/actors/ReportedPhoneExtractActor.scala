@@ -1,10 +1,5 @@
 package actors
 
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -15,21 +10,25 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
-import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.DateUtils
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportedPhonesExtractActor {
-  def props = Props[ReportedPhonesExtractActor]
+  def props = Props[ReportedPhonesExtractActor]()
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
   case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)
@@ -62,7 +61,7 @@ class ReportedPhonesExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.ReportedPhones)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(rawFilters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)

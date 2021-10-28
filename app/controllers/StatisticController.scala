@@ -1,220 +1,190 @@
 package controllers
 
-import java.time.Duration
-
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
 import models._
-import play.api.libs.json.Json
-import play.api.Configuration
+import orchestrators.StatsOrchestrator
 import play.api.Logger
-import repositories._
-import services.MailerService
-import services.S3Service
+import play.api.libs.json.Json
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class StatisticController @Inject() (
-    reportRepository: ReportRepository,
-    reportDataRepository: ReportDataRepository,
-    userRepository: UserRepository,
-    mailerService: MailerService,
-    s3Service: S3Service,
-    val silhouette: Silhouette[AuthEnv],
-    configuration: Configuration
+    _companyStats: StatsOrchestrator,
+    val silhouette: Silhouette[AuthEnv]
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  val cutoff = configuration.getOptional[String]("play.stats.globalStatsCutoff").map(java.time.Duration.parse(_))
 
-  def getReportCount = UserAwareAction.async { implicit request =>
-    reportRepository.count().map(count => Ok(Json.obj("value" -> count)))
+  def getReportCount(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+    _companyStats.getReportCount(companyId).map(count => Ok(Json.obj("value" -> count)))
   }
 
-  def getMonthlyReportCount = UserAwareAction.async { implicit request =>
-    reportRepository.monthlyCount.map(monthlyStats => Ok(Json.toJson(monthlyStats)))
-  }
-
-  def getReportForwardedToProPercentage = UserAwareAction.async { implicit request =>
-    for {
-      count <- reportRepository.countWithStatus(
-                 ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
-                 cutoff
-               )
-      baseCount <- reportRepository.countWithStatus(
-                     ReportStatus.reportStatusList.toList,
-                     cutoff
-                   )
-    } yield Ok(
-      Json.obj(
-        "value" -> count * 100 / baseCount
+  def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+    _companyStats
+      .getReportWithStatusPercent(
+        status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+        companyId = companyId
       )
-    )
+      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
   }
 
-  def getReportReadByProPercentage = UserAwareAction.async { implicit request =>
-    for {
-      count <- reportRepository.countWithStatus(
-                 List(
-                   SIGNALEMENT_TRANSMIS,
-                   PROMESSE_ACTION,
-                   SIGNALEMENT_INFONDE,
-                   SIGNALEMENT_MAL_ATTRIBUE,
-                   SIGNALEMENT_CONSULTE_IGNORE
-                 ),
-                 cutoff
-               )
-      baseCount <- reportRepository.countWithStatus(
-                     ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
-                     cutoff
-                   )
-    } yield Ok(
-      Json.obj(
-        "value" -> count * 100 / baseCount
+  def getPercentageReportRead(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+    _companyStats
+      .getReportWithStatusPercent(
+        status = Seq(
+          SIGNALEMENT_TRANSMIS,
+          PROMESSE_ACTION,
+          SIGNALEMENT_INFONDE,
+          SIGNALEMENT_MAL_ATTRIBUE,
+          SIGNALEMENT_CONSULTE_IGNORE
+        ),
+        baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+        companyId = companyId
       )
-    )
+      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
   }
 
-  def getMonthlyReportForwardedToProPercentage = UserAwareAction.async { implicit request =>
-    for {
-      monthlyCounts <- reportRepository.countMonthlyWithStatus(
-                         ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList
-                       )
-      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(ReportStatus.reportStatusList.toList)
-    } yield Ok(
-      Json.toJson(
-        monthlyBaseCounts.map(monthlyBaseCount =>
-          MonthlyStat(
-            monthlyCounts
-              .find(_.yearMonth == monthlyBaseCount.yearMonth)
-              .map(_.value)
-              .getOrElse(0) * 100 / monthlyBaseCount.value,
-            monthlyBaseCount.yearMonth
-          )
+  def getPercentageReportResponded(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+    _companyStats
+      .getReportWithStatusPercent(
+        status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+        baseStatus = Seq(
+          SIGNALEMENT_TRANSMIS,
+          PROMESSE_ACTION,
+          SIGNALEMENT_INFONDE,
+          SIGNALEMENT_MAL_ATTRIBUE,
+          SIGNALEMENT_CONSULTE_IGNORE
+        ),
+        companyId = companyId
+      )
+      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
+  }
+
+  def getPercentageReportWithWebsite(companyId: Option[UUID]) = UserAwareAction.async { implicit request =>
+    _companyStats.getReportHavingWebsitePercentage(companyId).map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
+  }
+
+  private[this] def getTickDuration(tickDuration: Option[String]): CurveTickDuration =
+    tickDuration.flatMap(CurveTickDuration.namesToValuesMap.get).getOrElse(CurveTickDuration.Month)
+
+  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
+
+  def getCurveReportCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+    UserAwareAction.async {
+      _companyStats
+        .getReportsCountCurve(
+          companyId = companyId,
+          status = Seq(),
+          ticks = getTicks(ticks),
+          tickDuration = getTickDuration(tickDuration)
         )
-      )
-    )
-  }
+        .map(curve => Ok(Json.toJson(curve)))
+    }
 
-  def getMonthlyReportReadByProPercentage = UserAwareAction.async { implicit request =>
-    for {
-      monthlyCounts <- reportRepository.countMonthlyWithStatus(
-                         List(
-                           SIGNALEMENT_TRANSMIS,
-                           PROMESSE_ACTION,
-                           SIGNALEMENT_INFONDE,
-                           SIGNALEMENT_MAL_ATTRIBUE,
-                           SIGNALEMENT_CONSULTE_IGNORE
-                         )
-                       )
-      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(
-                             ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList
-                           )
-    } yield Ok(
-      Json.toJson(
-        monthlyBaseCounts.map(monthlyBaseCount =>
-          MonthlyStat(
-            monthlyCounts
-              .find(_.yearMonth == monthlyBaseCount.yearMonth)
-              .map(_.value)
-              .getOrElse(0) * 100 / monthlyBaseCount.value,
-            monthlyBaseCount.yearMonth
-          )
+  def getCurveReportsRespondedCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+    UserAwareAction.async {
+      _companyStats
+        .getReportsCountCurve(
+          companyId = companyId,
+          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+          ticks = getTicks(ticks),
+          tickDuration = getTickDuration(tickDuration)
         )
-      )
-    )
-  }
+        .map(stats => Ok(Json.toJson(stats)))
+    }
 
-  def getReportWithResponsePercentage = UserAwareAction.async { implicit request =>
-    for {
-      count <- reportRepository.countWithStatus(
-                 List(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
-                 cutoff
-               )
-      baseCount <- reportRepository.countWithStatus(
-                     List(
-                       SIGNALEMENT_TRANSMIS,
-                       PROMESSE_ACTION,
-                       SIGNALEMENT_INFONDE,
-                       SIGNALEMENT_MAL_ATTRIBUE,
-                       SIGNALEMENT_CONSULTE_IGNORE
-                     ),
-                     cutoff
-                   )
-    } yield Ok(
-      Json.obj(
-        "value" -> count * 100 / baseCount
-      )
-    )
-  }
-
-  def getMonthlyReportWithResponsePercentage = UserAwareAction.async { implicit request =>
-    for {
-      monthlyCounts <-
-        reportRepository.countMonthlyWithStatus(List(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE))
-      monthlyBaseCounts <- reportRepository.countMonthlyWithStatus(
-                             List(
-                               SIGNALEMENT_TRANSMIS,
-                               PROMESSE_ACTION,
-                               SIGNALEMENT_INFONDE,
-                               SIGNALEMENT_MAL_ATTRIBUE,
-                               SIGNALEMENT_CONSULTE_IGNORE
-                             )
-                           )
-    } yield Ok(
-      Json.toJson(
-        monthlyBaseCounts.map(monthlyBaseCount =>
-          MonthlyStat(
-            monthlyCounts
-              .find(_.yearMonth == monthlyBaseCount.yearMonth)
-              .map(_.value)
-              .getOrElse(0) * 100 / monthlyBaseCount.value,
-            monthlyBaseCount.yearMonth
-          )
+  def getCurveReportForwardedPercentage(
+      companyId: Option[UUID],
+      ticks: Option[Int],
+      tickDuration: Option[String]
+  ) =
+    UserAwareAction.async {
+      _companyStats
+        .getReportWithStatusPercentageCurve(
+          companyId = companyId,
+          status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+          ticks = getTicks(ticks),
+          tickDuration = getTickDuration(tickDuration)
         )
-      )
-    )
+        .map(value => Ok(Json.toJson(value)))
+    }
+
+  def getCurveReportReadPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+    UserAwareAction.async {
+      _companyStats
+        .getReportWithStatusPercentageCurve(
+          companyId = companyId,
+          status = Seq(
+            SIGNALEMENT_TRANSMIS,
+            PROMESSE_ACTION,
+            SIGNALEMENT_INFONDE,
+            SIGNALEMENT_MAL_ATTRIBUE,
+            SIGNALEMENT_CONSULTE_IGNORE
+          ),
+          baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+          ticks = getTicks(ticks),
+          tickDuration = getTickDuration(tickDuration)
+        )
+        .map(value => Ok(Json.toJson(value)))
+    }
+
+  def getCurveReportRespondedPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+    UserAwareAction.async {
+      _companyStats
+        .getReportWithStatusPercentageCurve(
+          companyId = companyId,
+          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+          baseStatus = Seq(
+            SIGNALEMENT_TRANSMIS,
+            PROMESSE_ACTION,
+            SIGNALEMENT_INFONDE,
+            SIGNALEMENT_MAL_ATTRIBUE,
+            SIGNALEMENT_CONSULTE_IGNORE
+          ),
+          ticks = getTicks(ticks),
+          tickDuration = getTickDuration(tickDuration)
+        )
+        .map(value => Ok(Json.toJson(value)))
+    }
+
+  def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats
+      .getReadAvgDelay(companyId)
+      .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getReportWithWebsitePercentage = UserAwareAction.async { implicit request =>
-    for {
-      count <- reportRepository.countWithStatus(
-                 ReportStatus.reportStatusList.toList,
-                 cutoff,
-                 Some(true)
-               )
-      baseCount <- reportRepository.countWithStatus(
-                     ReportStatus.reportStatusList.toList,
-                     cutoff
-                   )
-    } yield Ok(
-      Json.obj(
-        "value" -> count * 100 / baseCount
-      )
-    )
+  def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats
+      .getResponseAvgDelay(companyId: Option[UUID])
+      .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getReportReadMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportReadMedianDelay.map(count =>
-      Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong)))
-    )
+  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportWithResponseMedianDelay = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    reportDataRepository.getReportResponseMedianDelay.map(count =>
-      Ok(Json.obj("value" -> Duration.ofMinutes(count.toLong)))
-    )
+  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def updateReportData() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
-    for {
-      _ <- reportDataRepository.updateReportReadDelay
-      _ <- reportDataRepository.updateReportResponseDelay
-    } yield Ok("ReportData updated")
+  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction(
+    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+  ).async {
+    _companyStats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 }

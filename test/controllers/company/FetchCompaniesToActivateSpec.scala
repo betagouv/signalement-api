@@ -2,7 +2,6 @@ package controllers.company
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -10,6 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import controllers.routes
 import models._
+import models.token.TokenKind.CompanyInit
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -60,14 +60,14 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     for {
       c <- companyRepository.getOrCreate(company.siret, company)
       a <- accessTokenRepository.createToken(
-             TokenKind.COMPANY_INIT,
-             f"${Random.nextInt(1000000)}%06d",
-             Some(tokenDuration),
-             Some(company.id),
-             Some(AccessLevel.ADMIN),
-             None,
-             defaultTokenCreationDate
-           )
+        CompanyInit,
+        f"${Random.nextInt(1000000)}%06d",
+        Some(tokenDuration),
+        Some(company.id),
+        Some(AccessLevel.ADMIN),
+        None,
+        defaultTokenCreationDate
+      )
     } yield (c, a)
   }
 
@@ -80,96 +80,96 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     for {
       (c, a) <- initCase
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minusDays(1))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minusDays(1))
+          )
+      )
     } yield ()
 
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
       (c, a) <- initCase
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+          )
+      )
     } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedTwice =
     for {
       (c, a) <- initCase
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+          )
+      )
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+          )
+      )
     } yield ()
 
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
       (c, a) <- initCase
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2))
+          )
+      )
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(
-                 creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
-               )
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(
+            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+          )
+      )
     } yield ()
 
   def setupCaseCompanyNoticeRequired =
     for {
       (c, a) <- initCase
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
-               .sample
-               .get
-               .copy(creationDate = Some(OffsetDateTime.now.minusDays(2)))
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
+          .sample
+          .get
+          .copy(creationDate = Some(OffsetDateTime.now.minusDays(2)))
+      )
       _ <- eventRepository.createEvent(
-             Fixtures
-               .genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED)
-               .sample
-               .get
-               .copy(creationDate = Some(OffsetDateTime.now.minusDays(1)))
-           )
+        Fixtures
+          .genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED)
+          .sample
+          .get
+          .copy(creationDate = Some(OffsetDateTime.now.minusDays(1)))
+      )
     } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -179,7 +179,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
         _ <- setupCaseCompanyNotifiedTwice
         _ <- setupCaseCompanyNoticeRequired
 
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

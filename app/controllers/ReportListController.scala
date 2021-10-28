@@ -1,34 +1,31 @@
 package controllers
 
-import java.util.UUID
 import actors.ReportsExtractActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories._
 import utils.Constants.ReportStatus._
 import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import scala.concurrent.duration._
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (
-    reportRepository: ReportRepository,
     reportOrchestrator: ReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
@@ -43,7 +40,7 @@ class ReportListController @Inject() (
   def getReports(
       offset: Option[Long],
       limit: Option[Int],
-      departments: Option[String],
+      departments: Seq[String],
       email: Option[String],
       websiteURL: Option[String],
       phone: Option[String],
@@ -51,45 +48,45 @@ class ReportListController @Inject() (
       phoneExists: Option[Boolean],
       siretSirenList: List[String],
       companyName: Option[String],
-      companyCountries: Option[String],
+      companyCountries: Seq[String],
       start: Option[String],
       end: Option[String],
       category: Option[String],
       status: Option[String],
       details: Option[String],
       hasCompany: Option[Boolean],
-      tags: List[String]
+      tags: Seq[String],
+      activityCodes: Seq[String]
   ) = SecuredAction.async { implicit request =>
-    val limitDefault = 25
-    val limitMax = 250
     for {
       paginatedReports <- reportOrchestrator.getReportsForUser(
-                            connectedUser = request.identity,
-                            filter = ReportFilter(
-                              departments = departments.map(d => d.split(",").toSeq).getOrElse(Seq()),
-                              email = email,
-                              websiteURL = websiteURL,
-                              phone = phone,
-                              websiteExists = websiteExists,
-                              phoneExists = phoneExists,
-                              siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
-                              companyName = companyName,
-                              companyCountries = companyCountries.map(d => d.split(",").toSeq).getOrElse(Seq()),
-                              start = DateUtils.parseDate(start),
-                              end = DateUtils.parseDate(end),
-                              category = category,
-                              statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-                              details = details,
-                              employeeConsumer = request.identity.userRole match {
-                                case UserRoles.Pro => Some(false)
-                                case _             => None
-                              },
-                              hasCompany = hasCompany,
-                              tags = tags
-                            ),
-                            offset = offset.map(Math.max(_, 0)).getOrElse(0),
-                            limit.map(Math.max(_, 0)).map(Math.min(_, limitMax)).getOrElse(limitDefault)
-                          )
+        connectedUser = request.identity,
+        filter = ReportFilter(
+          departments = departments,
+          email = email,
+          websiteURL = websiteURL,
+          phone = phone,
+          websiteExists = websiteExists,
+          phoneExists = phoneExists,
+          siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
+          companyName = companyName,
+          companyCountries = companyCountries,
+          start = DateUtils.parseDate(start),
+          end = DateUtils.parseDate(end),
+          category = category,
+          statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
+          details = details,
+          employeeConsumer = request.identity.userRole match {
+            case UserRoles.Pro => Some(false)
+            case _             => None
+          },
+          hasCompany = hasCompany,
+          tags = tags,
+          activityCodes = activityCodes
+        ),
+        offset = offset,
+        limit = limit
+      )
     } yield Ok(Json.toJson(paginatedReports))
   }
 

@@ -1,15 +1,14 @@
 package repositories
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

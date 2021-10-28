@@ -1,11 +1,8 @@
 package tasks
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
-import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -17,6 +14,7 @@ import utils.AppSpec
 import utils.Country
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -24,9 +22,9 @@ import scala.concurrent.duration.Duration
 class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNotificationTaskSpec {
   override def is =
     s2"""
-      When weekly reportNotificationTask task run               ${step(
+      When weekly reportNotificationTask task run               ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf)
-    )}
+    }}
       A mail is sent to the subscribed user                     ${mailMustHaveBeenSent(
       Seq(user.email),
       s"[SignalConso] 3 nouveaux signalements",
@@ -62,8 +60,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
-
-  implicit lazy val websiteUrl = injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
   implicit val ec = ee.executionContext
@@ -162,7 +159,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(companyAddress = Address(country = Some(Country.Argentine)), creationDate = OffsetDateTime.now.minusDays(4))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(user)
@@ -176,7 +173,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- subscriptionRepository.create(userSubscriptionCountries)
         _ <- subscriptionRepository.create(officeSubscription)
         _ <- subscriptionRepository.create(userSubscriptionWithoutReport)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 

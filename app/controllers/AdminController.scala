@@ -1,55 +1,49 @@
 package controllers
 
-import java.net.URI
-import java.time.OffsetDateTime
-import java.util.UUID
-
-import actors.EmailActor
-import akka.actor.ActorRef
-import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
+import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.libs.json.JsError
-import repositories._
-import play.api.libs.json.Json
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.Json
+import repositories.CompanyRepository
+import repositories.EventRepository
+import repositories.ReportRepository
+import services.MailService
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus.NA
-import utils.Constants.ReportStatus.reportStatusList
+import utils.Constants.Tags
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
+import utils.Country
 import utils.EmailAddress
 import utils.EmailSubjects
+import utils.FrontRoute
 import utils.SIRET
-import utils._
 
-import scala.concurrent.duration._
 import java.time.LocalDate
-
-import services.MailerService
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.Tags
-
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import javax.inject.Singleton
 
 @Singleton
 class AdminController @Inject() (
+    val configuration: Configuration,
+    val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepository,
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
-    mailerService: MailerService,
-    val configuration: Configuration,
-    val silhouette: Silhouette[AuthEnv],
-    @Named("email-actor") emailActor: ActorRef
+    mailService: MailService,
+    implicit val frontRoute: FrontRoute
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
   implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
   val mailFrom = configuration.get[EmailAddress]("play.mail.from")
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -60,7 +54,7 @@ class AdminController @Inject() (
     id = UUID.randomUUID,
     category = "Test",
     subcategories = List("test"),
-    details = List("test"),
+    details = List(toDetailInputValue("test")),
     companyId = None,
     companyName = None,
     companyAddress = Address(None, None, None, None),
@@ -131,7 +125,7 @@ class AdminController @Inject() (
       val company = genCompany
       EmailContent(
         EmailSubjects.NEW_COMPANY_ACCESS(company.name),
-        views.html.mails.professional.newCompanyAccessNotification(websiteUrl.resolve("/connexion"), company, None)
+        views.html.mails.professional.newCompanyAccessNotification(frontRoute.dashboard.login, company, None)
       )
     }),
     "pro_access_invitation" -> (() => {
@@ -144,7 +138,7 @@ class AdminController @Inject() (
     "dgccrf_access_link" -> (() =>
       EmailContent(
         EmailSubjects.DGCCRF_ACCESS_LINK,
-        views.html.mails.dgccrf.accessLink(websiteUrl.resolve(s"/dgccrf/rejoindre/?token=abc"))
+        views.html.mails.dgccrf.accessLink(frontRoute.dashboard.Dgccrf.register(token = "abc"))
       )
     ),
     "pro_report_notification" -> (() =>
@@ -253,7 +247,7 @@ class AdminController @Inject() (
         views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
           genReport,
           genReportResponse,
-          websiteUrl.resolve(s"/suivi-des-signalements/abc/avis")
+          frontRoute.dashboard.reportReview("abc")
         )
       )
     ),
@@ -303,9 +297,9 @@ class AdminController @Inject() (
       Future(
         availableEmails
           .get(templateRef)
-          .map(_.apply)
+          .map(_.apply())
           .map { case EmailContent(subject, body) =>
-            emailActor ? EmailActor.EmailRequest(
+            mailService.send(
               from = mailFrom,
               recipients = Seq(EmailAddress(to)),
               subject = subject,
@@ -330,24 +324,11 @@ class AdminController @Inject() (
           } yield reports.foreach { report =>
             eventsMap
               .get(report.id)
-              .map(_.find(_.action == REPORT_PRO_RESPONSE))
-              .flatten
+              .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
               .map { responseEvent =>
-                emailActor ? EmailActor.EmailRequest(
-                  from = mailFrom,
-                  recipients = Seq(report.email),
-                  subject = EmailSubjects.REPORT_ACK_PRO_CONSUMER,
-                  bodyHtml = views.html.mails.consumer
-                    .reportToConsumerAcknowledgmentPro(
-                      report,
-                      responseEvent.details.as[ReportResponse],
-                      configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${report.id}/avis")
-                    )
-                    .toString,
-                  attachments = mailerService.attachmentSeqForWorkflowStepN(4)
-                )
+                mailService.Consumer
+                  .sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
               }
-              .getOrElse()
           }
           Future(Ok)
         }
@@ -365,18 +346,10 @@ class AdminController @Inject() (
             .getReportsByIds(results.reportIds)
             .map(_.foreach { report =>
               report.companyId.map { companyId =>
-                companyRepository.fetchAdmins(companyId).map(_.map(_.email).distinct).flatMap { adminsEmails =>
-                  if (adminsEmails.nonEmpty) {
-                    emailActor ? EmailActor.EmailRequest(
-                      from = mailFrom,
-                      recipients = adminsEmails,
-                      subject = EmailSubjects.NEW_REPORT,
-                      bodyHtml = views.html.mails.professional.reportNotification(report).toString
-                    )
-                  } else {
-                    Future.successful(())
-                  }
-                }
+                companyRepository
+                  .fetchAdmins(companyId)
+                  .map(_.map(_.email).distinct)
+                  .map(adminsEmails => mailService.Pro.sendReportNotification(adminsEmails, report))
               }
             })
           Future(Ok)

@@ -1,51 +1,41 @@
 package tasks
 
-import java.net.URI
-import java.time.temporal.ChronoUnit
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import akka.actor.ActorSystem
-import akka.actor.ActorRef
-import akka.pattern.ask
-import actors.EmailActor
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject.Inject
-import javax.inject.Named
 import models.Event._
 import models._
+import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Configuration
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
-import repositories.UserRepository
-import services.MailerService
-import services.S3Service
+import services.MailService
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
-import utils.Constants.EventType.PRO
 import utils.Constants.EventType.SYSTEM
 import utils.Constants.ReportStatus._
+import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
-import utils.EmailAddress
-import utils.EmailSubjects
 
-import scala.concurrent.duration._
+import java.net.URI
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
+import java.util.UUID
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class ReminderTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
-    userRepository: UserRepository,
-    mailerService: MailerService,
-    @Named("email-actor") emailActor: ActorRef,
-    s3Service: S3Service,
+    mailService: MailService,
+    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     configuration: Configuration
@@ -70,7 +60,7 @@ class ReminderTask @Inject() (
     else LocalDate.now.atTime(startTime)
   val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
 
-  actorSystem.scheduler.schedule(initialDelay = initialDelay, interval = interval) {
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
     runTask(LocalDate.now.atStartOfDay())
   }
@@ -81,15 +71,15 @@ class ReminderTask @Inject() (
     logger.debug(s"taskDate - ${now}");
 
     for {
-      onGoingReportsWithAdmins <- reportRepository.getReportsForStatusWithAdmins(TRAITEMENT_EN_COURS)
-      transmittedReportsWithAdmins <- reportRepository.getReportsForStatusWithAdmins(SIGNALEMENT_TRANSMIS)
+      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(TRAITEMENT_EN_COURS)
+      transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(SIGNALEMENT_TRANSMIS)
       reportEventsMap <- eventRepository.prefetchReportsEvents(
-                           onGoingReportsWithAdmins.map(_._1) ::: transmittedReportsWithAdmins.map(_._1)
-                         )
+        (onGoingReportsWithAdmins ::: transmittedReportsWithAdmins).map(_._1)
+      )
       closedUnreadNoAccessReports <- Future.sequence(
-                                       extractUnreadNoAccessReports(onGoingReportsWithAdmins, now)
-                                         .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
-                                     )
+        extractUnreadNoAccessReports(onGoingReportsWithAdmins, now)
+          .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
+      )
       onGoingReportsMailReminders <-
         Future.sequence(
           extractUnreadReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, now)
@@ -98,9 +88,9 @@ class ReminderTask @Inject() (
             )
         )
       closedUnreadWithAccessReports <- Future.sequence(
-                                         extractUnreadWithAccessReports(onGoingReportsWithAdmins, reportEventsMap, now)
-                                           .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
-                                       )
+        extractUnreadWithAccessReports(onGoingReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
+      )
       transmittedReportsMailReminders <-
         Future.sequence(
           extractTransmittedReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, now)
@@ -109,15 +99,28 @@ class ReminderTask @Inject() (
             )
         )
       closedByNoAction <- Future.sequence(
-                            extractTransmittedWithAccessReports(transmittedReportsWithAdmins, reportEventsMap, now)
-                              .map(reportWithAdmins => closeTransmittedReportByNoAction(reportWithAdmins._1))
-                          )
+        extractTransmittedWithAccessReports(transmittedReportsWithAdmins, reportEventsMap, now)
+          .map(reportWithAdmins => closeTransmittedReportByNoAction(reportWithAdmins._1))
+      )
     } yield (closedUnreadWithAccessReports :::
       onGoingReportsMailReminders ::: closedUnreadNoAccessReports :::
       transmittedReportsMailReminders ::: closedByNoAction).map(reminder =>
       logger.debug(s"Relance [${reminder.reportId} - ${reminder.value}]")
     )
   }
+
+  private[this] def getReportsWithAdminsByStatus(status: ReportStatusValue): Future[List[(Report, List[User])]] =
+    for {
+      reports <- reportRepository.getByStatus(status)
+      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(
+        reports.flatMap(c =>
+          for {
+            siret <- c.companySiret
+            id <- c.companyId
+          } yield (siret, id)
+        )
+      )
+    } yield reports.flatMap(r => r.companyId.map(companyId => (r, mapAdminsByCompanyId.getOrElse(companyId, Nil))))
 
   def extractEventsWithAction(
       reportId: UUID,
@@ -160,7 +163,7 @@ class ReminderTask @Inject() (
             reportWithAdmins._1.id,
             reportEventsMap,
             EMAIL_PRO_REMIND_NO_READING
-          ).head.creationDate.map(_.toLocalDateTime.isBefore(now.minusDays(7))).getOrElse(false)
+          ).head.creationDate.exists(_.toLocalDateTime.isBefore(now.minusDays(7)))
         )
 
   def remindUnreadReportByMail(
@@ -187,12 +190,7 @@ class ReminderTask @Inject() (
         )
       )
       .map { newEvent =>
-        emailActor ? EmailActor.EmailRequest(
-          from = configuration.get[EmailAddress]("play.mail.from"),
-          recipients = adminMails,
-          subject = EmailSubjects.REPORT_UNREAD_REMINDER,
-          bodyHtml = views.html.mails.professional.reportUnreadReminder(report, expirationDate).toString
-        )
+        mailService.Pro.sendReportUnreadReminder(adminMails, report, expirationDate)
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
   }
@@ -221,8 +219,7 @@ class ReminderTask @Inject() (
         .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
         .filter(reportWithAdmins =>
           extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).head.creationDate
-            .map(_.toLocalDateTime.isBefore(now.minusDays(7)))
-            .getOrElse(false)
+            .exists(_.toLocalDateTime.isBefore(now.minusDays(7)))
         )
 
   def remindTransmittedReportByMail(
@@ -249,12 +246,7 @@ class ReminderTask @Inject() (
         )
       )
       .map { newEvent =>
-        emailActor ? EmailActor.EmailRequest(
-          from = configuration.get[EmailAddress]("play.mail.from"),
-          recipients = adminMails,
-          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, expirationDate).toString
-        )
+        mailService.Pro.sendReportTransmittedReminder(adminMails, report, expirationDate)
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
   }
@@ -268,44 +260,37 @@ class ReminderTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING)
-          .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay))).getOrElse(false))
-          .length == 2
+          .count(_.creationDate.exists(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay)))) == 2
       )
 
   def closeUnreadReport(report: Report) =
     for {
       _ <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               report.companyId,
-               None,
-               Some(OffsetDateTime.now()),
-               SYSTEM,
-               REPORT_CLOSED_BY_NO_READING,
-               stringToDetailsJsValue("Clôture automatique : signalement non consulté")
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          SYSTEM,
+          REPORT_CLOSED_BY_NO_READING,
+          stringToDetailsJsValue("Clôture automatique : signalement non consulté")
+        )
+      )
       _ <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               report.companyId,
-               None,
-               Some(OffsetDateTime.now()),
-               CONSO,
-               EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          CONSO,
+          EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
+        )
+      )
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_NON_CONSULTE))
     } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment)
-      )
+      mailService.Consumer.sendReportClosedByNoReading(report)
       Reminder(report.id, ReminderValue.CloseUnreadReport)
     }
 
@@ -318,44 +303,37 @@ class ReminderTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email != EmailAddress("")))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION)
-          .filter(_.creationDate.map(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay))).getOrElse(false))
-          .length == 2
+          .count(_.creationDate.exists(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay)))) == 2
       )
 
   def closeTransmittedReportByNoAction(report: Report) =
     for {
       _ <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               report.companyId,
-               None,
-               Some(OffsetDateTime.now()),
-               SYSTEM,
-               REPORT_CLOSED_BY_NO_ACTION,
-               stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré")
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          SYSTEM,
+          REPORT_CLOSED_BY_NO_ACTION,
+          stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré")
+        )
+      )
       _ <- eventRepository.createEvent(
-             Event(
-               Some(UUID.randomUUID()),
-               Some(report.id),
-               report.companyId,
-               None,
-               Some(OffsetDateTime.now()),
-               CONSO,
-               EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
-             )
-           )
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          report.companyId,
+          None,
+          Some(OffsetDateTime.now()),
+          CONSO,
+          EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
+        )
+      )
       _ <- reportRepository.update(report.copy(status = SIGNALEMENT_CONSULTE_IGNORE))
     } yield {
-      emailActor ? EmailActor.EmailRequest(
-        from = configuration.get[EmailAddress]("play.mail.from"),
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = mailerService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment)
-      )
+      mailService.Consumer.sendAttachmentSeqForWorkflowStepN(report)
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
     }
 

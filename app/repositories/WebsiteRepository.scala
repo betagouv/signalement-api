@@ -1,16 +1,17 @@
 package repositories
 
+import models._
+import models.website.Website
+import models.website.WebsiteKind
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.URL
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import models._
-import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcBackend
-import slick.jdbc.JdbcProfile
-import utils.URL
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -33,11 +34,11 @@ class WebsiteRepository @Inject() (
     def id = column[UUID]("id", O.PrimaryKey)
     def creationDate = column[OffsetDateTime]("creation_date")
     def host = column[String]("host")
-    def companyId = column[UUID]("company_id")
+    def companyCountry = column[Option[String]]("company_country")
+    def companyId = column[Option[UUID]]("company_id")
     def kind = column[WebsiteKind]("kind")
-    def * = (id, creationDate, host, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
+    def * = (id, creationDate, host, companyCountry, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
   }
-
   val websiteTableQuery = TableQuery[WebsiteTable]
 
   def find(id: UUID): Future[Option[Website]] = db
@@ -68,6 +69,15 @@ class WebsiteRepository @Inject() (
         .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite))
     )
 
+  def searchCountriesByHost(host: String) =
+    db.run(
+      websiteTableQuery
+        .filter(_.host === host)
+        .filter(_.companyId.isEmpty)
+        .filter(_.companyCountry.nonEmpty)
+        .result
+    )
+
   def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) =
     db.run(
       websiteTableQuery
@@ -78,6 +88,14 @@ class WebsiteRepository @Inject() (
         .result
     )
 
+  def removeOtherWebsitesWithSameHost(website: Website) =
+    db.run(
+      websiteTableQuery
+        .filter(_.host === website.host)
+        .filterNot(_.id === website.id)
+        .delete
+    )
+
   def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] =
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
 
@@ -86,15 +104,19 @@ class WebsiteRepository @Inject() (
       kinds: Option[Seq[WebsiteKind]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
-  ): Future[PaginatedResult[((Website, Company), Int)]] = {
+  ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
     val baseQuery = websiteTableQuery
-      .join(companyRepository.companyTableQuery)
+      .joinLeft(companyRepository.companyTableQuery)
       .on(_.companyId === _.id)
       .joinLeft(reportRepository.reportTableQuery)
-      .on((c, r) => c._1.host === r.host)
+      .on((c, r) =>
+        c._1.host === r.host &&
+          (c._1.companyId === r.companyId || c._1.companyCountry === r.companyCountry.map(_.asColumnOf[String]))
+      )
       .filter(
         _._2.map(reportTable => reportTable.host.isDefined)
       )
+      .filter(x => x._1._1.companyId.nonEmpty || x._1._1.companyCountry.nonEmpty)
       .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
       .filter(websiteCompanyTable =>
         kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)

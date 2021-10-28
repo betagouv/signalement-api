@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.actions.UserAwareRequest
 import models._
-import play.api.mvc.InjectedController
+import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
 import repositories._
 import utils.SIRET
@@ -35,7 +35,7 @@ trait BaseController extends InjectedController {
 trait BaseCompanyController extends BaseController {
   type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
   def companyRepository: CompanyRepository
-  def accessTokenRepository: AccessTokenRepository
+  def companyVisibilityOrch: CompaniesVisibilityOrchestrator
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: SecuredRequestWrapper[A])
       extends WrappedRequest[A](request) {
@@ -47,11 +47,17 @@ trait BaseCompanyController extends BaseController {
       def refine[A](request: SecuredRequestWrapper[A]) =
         for {
           company <- companyRepository.findBySiret(SIRET(siret))
-          accessLevel <- if (request.identity.userRole == UserRoles.Admin) Future(Some(AccessLevel.ADMIN))
-                         else
-                           company
-                             .map(c => companyRepository.getUserLevel(c.id, request.identity).map(Some(_)))
-                             .getOrElse(Future(None))
+          accessLevel <-
+            if (Seq(UserRoles.Admin, UserRoles.DGCCRF).contains(request.identity.userRole))
+              Future(Some(AccessLevel.ADMIN))
+            else
+              company
+                .map(c =>
+                  companyVisibilityOrch
+                    .fetchVisibleCompanies(request.identity)
+                    .map(_.find(_.company.id == c.id).map(_.level))
+                )
+                .getOrElse(Future(None))
         } yield company
           .flatMap(c => accessLevel.map((c, _)))
           .filter { case (_, l) => authorizedLevels.contains(l) }

@@ -2,22 +2,22 @@ package actors
 
 import akka.actor._
 import akka.stream.Materializer
+import com.google.inject.AbstractModule
 import play.api.Configuration
 import play.api.Logger
-
-import javax.inject.Inject
-import javax.inject.Singleton
-
-import scala.concurrent.ExecutionContext
-import com.google.inject.AbstractModule
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
+
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object EmailActor {
-  def props = Props[EmailActor]
+  def props = Props[EmailActor]()
 
   case class EmailRequest(
       from: EmailAddress,

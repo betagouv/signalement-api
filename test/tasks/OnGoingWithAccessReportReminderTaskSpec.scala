@@ -1,36 +1,27 @@
 package tasks
 
-import java.net.URI
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
-
-import models.UserRoles.Pro
 import models._
-import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.libs.mailer.Attachment
-import play.api.libs.mailer.AttachmentFile
 import repositories._
 import services.MailerService
 import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
-import utils.Constants.EventType.EventTypeValue
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,9 +32,9 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "TRAITEMENT_EN_COURS" created more than 7 days    ${step(setupReport(report))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
       report.id,
       ActionEvent.EMAIL_PRO_REMIND_NO_READING
@@ -68,9 +59,9 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "TRAITEMENT_EN_COURS" created less than 7 days    ${step(setupReport(report))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
       List.empty
@@ -78,7 +69,7 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -91,9 +82,9 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
       report.id,
       ActionEvent.EMAIL_PRO_REMIND_NO_READING
@@ -118,9 +109,9 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
       List(event)
@@ -128,7 +119,7 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -146,9 +137,9 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWith
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
       report.id,
       ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -180,9 +171,9 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
          Given a report with status "TRAITEMENT_EN_COURS"                             ${step(setupReport(report))}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
       List(event1, event2)
@@ -190,7 +181,7 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
    """
   }
 }
@@ -263,7 +254,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
 
   def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
-      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+      (report.exists(report => status == report.status), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
@@ -277,7 +268,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress =
     app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
 
@@ -287,7 +278,7 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
         company <- companyRepository.getOrCreate(company.siret, company)
         admin <- userRepository.create(user)
         _ <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   def setupReport(report: Report) =
