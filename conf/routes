@@ -116,7 +116,6 @@ GET           /api/companies/to-activate                             controllers
 GET           /api/companies/hosts/:companyId                        controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument()
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
 GET           /api/companies/search-url                              controllers.CompanyController.searchCompanyByWebsite(url: String)
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
