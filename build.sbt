@@ -12,7 +12,7 @@ val slickPgVersion = "0.19.5"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
 val AkkaHttpVersion = "10.1.14"
-val alpakkaVersion = "2.0.2"
+val alpakkaVersion = "3.0.3"
 
 libraryDependencies ++= Seq(
   guice,
