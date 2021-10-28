@@ -3,7 +3,6 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
