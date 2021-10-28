@@ -16,7 +16,6 @@ package object repositories {
       val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
       val limit = maybeLimit
         .map(Math.max(_, 0))
-        .map(Math.min(_, 250))
         .getOrElse(25)
 
       val queryWithOffset = query.drop(offset)
