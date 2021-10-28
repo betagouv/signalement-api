@@ -6,6 +6,7 @@ import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models.UserRoles.Admin
+import models.UserRoles.DGCCRF
 import models.UserRoles.Pro
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
@@ -127,6 +128,9 @@ class AccessesOrchestrator @Inject() (
       case (_, Admin) =>
         logger.debug(s"Signal conso admin user : setting editable to true")
         companyAccess.map { case (user, level) => toApi(user, level, editable = true, isHeadOffice) }
+      case (_, DGCCRF) =>
+        logger.debug(s"Signal conso dgccrf user : setting editable to false")
+        companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
       case (AccessLevel.ADMIN, Pro) =>
         companyAccess.map {
           case (companyUser, level) if companyUser.id == user.id =>

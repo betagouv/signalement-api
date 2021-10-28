@@ -210,7 +210,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         .getReports(
           offset = None,
           limit = None,
-          departments = None,
+          departments = Nil,
           websiteURL = None,
           phone = None,
           websiteExists = None,
@@ -218,14 +218,15 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           email = None,
           siretSirenList = Nil,
           companyName = None,
-          companyCountries = None,
+          companyCountries = Nil,
           start = None,
           end = None,
           category = None,
           status = status,
           details = None,
           hasCompany = None,
-          tags = Nil
+          tags = Nil,
+          activityCodes = Nil
         )
         .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf

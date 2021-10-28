@@ -78,14 +78,19 @@ object CompanyCreation {
   implicit val format: OFormat[CompanyCreation] = Json.format[CompanyCreation]
 }
 
-case class CompanyWithNbReports(company: Company, count: Int)
+case class CompanyWithNbReports(
+    id: UUID = UUID.randomUUID(),
+    siret: SIRET,
+    creationDate: OffsetDateTime = OffsetDateTime.now,
+    name: String,
+    address: Address,
+    activityCode: Option[String],
+    count: Int,
+    responseRate: Int
+)
 
 object CompanyWithNbReports {
-
-  implicit def writes: Writes[CompanyWithNbReports] = (data: CompanyWithNbReports) => {
-    val companyJson = Json.toJson(data.company).as[JsObject]
-    companyJson + ("count" -> Json.toJson(data.count))
-  }
+  implicit val writes: Writes[CompanyWithNbReports] = Json.writes[CompanyWithNbReports]
 }
 
 case class CompanyAddressUpdate(

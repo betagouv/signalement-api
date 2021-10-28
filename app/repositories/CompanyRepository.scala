@@ -5,6 +5,9 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
+import utils.Constants.ReportStatus.PROMESSE_ACTION
+import utils.Constants.ReportStatus.SIGNALEMENT_INFONDE
+import utils.Constants.ReportStatus.SIGNALEMENT_MAL_ATTRIBUE
 import utils.SIREN
 import utils.SIRET
 
@@ -153,19 +156,48 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def searchWithReportsCount(
-      departments: Seq[String] = List(),
+      departments: Seq[String] = Nil,
+      activityCodes: Seq[String] = Nil,
       identity: Option[SearchCompanyIdentity] = None,
       offset: Option[Long],
       limit: Option[Int]
-  ): Future[PaginatedResult[CompanyWithNbReports]] = {
+  ): Future[PaginatedResult[(Company, Int, Int)]] = {
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
       .filterIf(departments.nonEmpty) { case (company, report) =>
         company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
+      .filterIf(activityCodes.nonEmpty) { case (company, report) =>
+        company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
+      }
       .groupBy(_._1)
-      .map { case (grouped, all) => (grouped, all.map(_._2).map(_.map(_.id)).countDefined) }
+      .map { case (grouped, all) =>
+        (
+          grouped,
+          all.map(_._2).map(_.map(_.id)).countDefined,
+          /** Response rate
+            * Equivalent to following select clause
+            * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
+            */
+          (
+            all
+              .map(_._2)
+              .map(b =>
+                b.flatMap { a =>
+                  Case If a.status.inSet(
+                    Seq(
+                      PROMESSE_ACTION.defaultValue,
+                      SIGNALEMENT_INFONDE.defaultValue,
+                      SIGNALEMENT_MAL_ATTRIBUE.defaultValue
+                    )
+                  ) Then a.id
+                }
+              )
+            )
+            .countDefined: Rep[Int]
+        )
+      }
       .sortBy(_._2.desc)
     val filterQuery = identity
       .map {
@@ -176,9 +208,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         case id: SearchCompanyIdentityId   => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
-    toPaginate(filterQuery, offset, limit).map(res =>
-      res.copy(entities = res.entities.map { case (company, count) => CompanyWithNbReports(company, count) })
-    )
+
+    toPaginate(filterQuery, offset, limit)
   }
 
   def toPaginate[A, B](
@@ -219,9 +250,6 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
-
-  def findByShortId(id: String): Future[List[Company]] =
-    db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
 
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)

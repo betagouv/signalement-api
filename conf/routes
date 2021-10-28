@@ -24,7 +24,7 @@ GET           /api/stats/reports/reviews                             controllers
 
 
 # Reports list API
-GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Option[String], email: Option[String], websiteURL: Option[String], phone: Option[String], websiteExists: Option[Boolean], phoneExists: Option[Boolean], siretSirenList: List[String], companyName: Option[String], companyCountries: Option[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: List[String])
+GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Seq[String], email: Option[String], websiteURL: Option[String], phone: Option[String], websiteExists: Option[Boolean], phoneExists: Option[Boolean], siretSirenList: List[String], companyName: Option[String], companyCountries: Seq[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: Seq[String], activityCodes: Seq[String])
 POST          /api/reports/extract                                   controllers.ReportListController.extractReports()
 
 # Report API
@@ -110,13 +110,12 @@ POST          /api/email/validate                                    controllers
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create()
-GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
+GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], activityCodes: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
 GET           /api/companies/connected-user                          controllers.CompanyController.visibleCompanies()
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate()
 GET           /api/companies/hosts/:companyId                        controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 POST          /api/companies/activation-document                     controllers.CompanyController.getActivationDocument()
 POST          /api/companies/companies-posted                        controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET           /api/companies/search/registered                       controllers.CompanyController.searchRegisteredCompany(q: String)
 GET           /api/companies/search/:identity                        controllers.CompanyController.searchCompanyByIdentity(identity: String)
 GET           /api/companies/search-url                              controllers.CompanyController.searchCompanyByWebsite(url: String)
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
