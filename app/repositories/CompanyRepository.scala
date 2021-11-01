@@ -176,9 +176,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         (
           grouped,
           all.map(_._2).map(_.map(_.id)).countDefined,
-          /** Response rate
-            * Equivalent to following select clause
-            * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
+          /** Response rate Equivalent to following select clause count((case when (status in ('Promesse
+            * action','Signalement infondé','Signalement mal attribué') then id end))
             */
           (
             all
