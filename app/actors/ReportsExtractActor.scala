@@ -146,7 +146,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
+        (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available = requestedBy.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -185,7 +185,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Pièces jointes",
         leftAlignmentColumn,
-        (report, files, _, _) =>
+        (_, files, _, _) =>
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
@@ -270,7 +270,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Actions DGCCRF",
         leftAlignmentColumn,
-        (report, _, events, _) =>
+        (_, _, events, _) =>
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
@@ -283,8 +283,12 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Contrôle effectué",
         centerAlignmentColumn,
-        (report, _, events, _) =>
-          if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
+        (
+            _,
+            _,
+            events,
+            _
+        ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
         available = requestedBy.userRole == UserRoles.DGCCRF
       )
     ).filter(_.available)

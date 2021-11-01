@@ -56,10 +56,27 @@ libraryDependencies ++= Seq(
 
 scalafmtOnCompile := true
 scalacOptions ++= Seq(
-  "-Xfatal-warnings",
-  "-feature",
-  "-Xlint:deprecation",
-  "-Wunused:imports",
+  "-deprecation", // Emit warning and location for usages of deprecated APIs.
+  "-encoding",
+  "utf-8", // Specify character encoding used by source files.
+  "-explaintypes", // Explain type errors in more detail.
+  "-feature", // Emit warning and location for usages of features that should be imported explicitly.
+  "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
+  "-language:higherKinds", // Allow higher-kinded types
+  "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+  "-Xcheckinit", // Wrap field accessors to throw an exception on uninitialized access.
+  "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+  "-Xlint:adapted-args", // Warn if an argument list is modified to match the receiver.
+  "-Xlint:constant", // Evaluation of a constant arithmetic expression results in an error.
+  "-Xlint:delayedinit-select", // Selecting member of DelayedInit.
+  "-Xlint:doc-detached", // A Scaladoc comment appears to be detached from its element.
+  "-Xlint:inaccessible", // Warn about inaccessible types in method signatures.
+  "-Xlint:infer-any", // Warn when a type argument is inferred to be `Any`.
+  "-Ywarn-unused:imports",
+  "-Ywarn-macros:after",
+  "-Ywarn-unused:params",
+  "-Ywarn-unused:implicits",
+  "-Ywarn-unused:patvars",
   "-Wconf:cat=unused-imports&src=views/.*:s",
   s"-Wconf:src=${target.value}/.*:s"
 )
@@ -71,9 +88,9 @@ routesImport ++= Seq(
 
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
-mappings in Universal ++=
+Universal / mappings ++=
   (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
 
-javaOptions in Test += "-Dconfig.resource=test.application.conf"
+Test / javaOptions += "-Dconfig.resource=test.application.conf"
 javaOptions += "-Dakka.http.parsing.max-uri-length=16k"

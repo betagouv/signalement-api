@@ -146,7 +146,8 @@ class AccessesOrchestrator @Inject() (
         List.empty[UserWithAccessLevel]
     }
 
-  abstract class TokenWorkflow(draftUser: DraftUser, token: String) {
+  abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
+
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
 
     def fetchToken: Future[Option[AccessToken]]

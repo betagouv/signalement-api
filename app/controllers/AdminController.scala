@@ -289,26 +289,25 @@ class AdminController @Inject() (
     )
   )
 
-  def getEmailCodes = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def getEmailCodes = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     Future(Ok(Json.toJson(availableEmails.keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRoles.Admin)).async {
-    implicit request =>
-      Future(
-        availableEmails
-          .get(templateRef)
-          .map(_.apply())
-          .map { case EmailContent(subject, body) =>
-            mailService.send(
-              from = mailFrom,
-              recipients = Seq(EmailAddress(to)),
-              subject = subject,
-              bodyHtml = body.toString
-            )
-          }
-          .map(_ => Ok)
-          .getOrElse(NotFound)
-      )
+  def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+    Future(
+      availableEmails
+        .get(templateRef)
+        .map(_.apply())
+        .map { case EmailContent(subject, body) =>
+          mailService.send(
+            from = mailFrom,
+            recipients = Seq(EmailAddress(to)),
+            subject = subject,
+            bodyHtml = body.toString
+          )
+        }
+        .map(_ => Ok)
+        .getOrElse(NotFound)
+    )
   }
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>

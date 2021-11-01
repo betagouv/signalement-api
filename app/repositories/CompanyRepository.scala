@@ -54,7 +54,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
           addressSupplement,
           postalCode,
           city,
-          department,
+          _,
           activityCode
         ) =>
       Company(
@@ -163,10 +163,10 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty) { case (company, report) =>
+      .filterIf(departments.nonEmpty) { case (company, _) =>
         company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
-      .filterIf(activityCodes.nonEmpty) { case (company, report) =>
+      .filterIf(activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
       }
       .groupBy(_._1)
