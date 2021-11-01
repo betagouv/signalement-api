@@ -301,7 +301,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   private[this] def fetchUsersAndAccessesByCompanies(
       companyIds: List[UUID],
-      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+      levels: Seq[AccessLevel]
   ): Future[List[(UUID, User)]] =
     db.run(
       (for {

@@ -267,11 +267,7 @@ class ReportRepository @Inject() (
 
   private val companyTableQuery = CompanyTables.tables
 
-  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
-
-  private val trunc = SimpleFunction.binary[String, OffsetDateTime, OffsetDateTime]("date_trunc")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
