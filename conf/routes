@@ -6,7 +6,7 @@
 GET           /api                                           controllers.StaticController.api
 
 # Statistics API
-GET           /api/stats/reports/count                               controllers.StatisticController.getReportCount(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/count                               controllers.StatisticController.getReportCount(companyId: Option[java.util.UUID], status: Seq[String])
 GET           /api/stats/reports/percentage/read                     controllers.StatisticController.getPercentageReportRead(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/percentage/responsed                controllers.StatisticController.getPercentageReportResponded(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/percentage/forwarded                controllers.StatisticController.getPercentageReportForwarded(companyId: Option[java.util.UUID])
