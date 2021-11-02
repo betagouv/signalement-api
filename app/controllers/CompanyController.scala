@@ -103,6 +103,12 @@ class CompanyController @Inject() (
       .map(results => Ok(Json.toJson(results)))
   }
 
+  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRoles.DGCCRF, UserRoles.Admin)).async {
+    companyOrchestrator
+      .getResponseRate(companyId)
+      .map(results => Ok(Json.toJson(results)))
+  }
+
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
     for {
       company <- companyOrchestrator.companyDetails(SIRET(siret))

@@ -319,11 +319,14 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
         .filterOpt(companyId) { case (table, siret) =>
           table.companyId === companyId
+        }
+        .filterIf(status.nonEmpty) { case table =>
+          table.status inSet (status.map(_.defaultValue))
         }
         .length
         .result

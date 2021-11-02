@@ -119,6 +119,12 @@ object Constants {
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
+    val responseStatusList = Seq(
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE
+    )
+
     def fromDefaultValue(value: String) =
       reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
