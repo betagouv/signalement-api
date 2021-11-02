@@ -26,8 +26,8 @@ class StatsOrchestrator @Inject() (
   private[this] lazy val cutoff =
     configuration.getOptional[String]("play.stats.globalStatsCutoff").map(java.time.Duration.parse(_))
 
-  def getReportCount(companyId: Option[UUID] = None): Future[Int] =
-    _report.count(companyId)
+  def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatusValue]): Future[Int] =
+    _report.count(companyId, status)
 
   def getReportWithStatusPercent(
       status: Seq[ReportStatusValue],

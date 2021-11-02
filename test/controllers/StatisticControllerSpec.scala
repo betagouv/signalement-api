@@ -44,7 +44,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     have(allOf(monthlyStats: _*))
 
   def getReportCount = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportCount(None).toString)
+    val request = FakeRequest(GET, routes.StatisticController.getReportCount(None, Seq()).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -52,7 +52,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 
   def getMonthlyReportCount = {
-    val request = FakeRequest(GET, routes.StatisticController.getCurveReportCount(None, Some(3), None).toString)
+    val request = FakeRequest(GET, routes.StatisticController.getCurveReportCount(None, Some(3), None, Seq()).toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
