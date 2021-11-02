@@ -159,7 +159,7 @@ The get visible companies endpoint should
       companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(List((headOfficeCompany.siret, headOfficeCompany.id))),
       Duration.Inf
     )
-    val headOfficeViewers = Await.result(
+    Await.result(
       companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(headOfficeCompany.siret),
       Duration.Inf
     )

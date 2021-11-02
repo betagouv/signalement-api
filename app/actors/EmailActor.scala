@@ -3,7 +3,6 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
@@ -31,8 +30,7 @@ object EmailActor {
 }
 
 @Singleton
-class EmailActor @Inject() (configuration: Configuration, mailerService: MailerService)(implicit val mat: Materializer)
-    extends Actor {
+class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
   import EmailActor._
   implicit val ec: ExecutionContext = context.dispatcher
 

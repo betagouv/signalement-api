@@ -46,7 +46,7 @@ class WebsiteController @Inject() (
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
-    SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+    SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -60,7 +60,7 @@ class WebsiteController @Inject() (
     }
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
       reportRepository
         .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(_.collect { case (Some(host), count) =>
@@ -87,12 +87,11 @@ class WebsiteController @Inject() (
       .recover { case e => handleError(e) }
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async {
-    implicit request =>
-      websitesOrchestrator
-        .updateWebsiteKind(uuid, kind)
-        .map(website => Ok(Json.toJson(website)))
-        .recover { case e => handleError(e) }
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+    websitesOrchestrator
+      .updateWebsiteKind(uuid, kind)
+      .map(website => Ok(Json.toJson(website)))
+      .recover { case e => handleError(e) }
   }
 
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
@@ -109,7 +108,7 @@ class WebsiteController @Inject() (
   }
 
   def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRoles.Admin)).async {
-    implicit request =>
+    _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
@@ -117,7 +116,7 @@ class WebsiteController @Inject() (
 
   }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     websiteRepository
       .delete(uuid)
       .map(_ => Ok)

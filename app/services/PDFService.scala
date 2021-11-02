@@ -1,6 +1,5 @@
 package services
 
-import akka.actor.ActorSystem
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
 import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
@@ -20,7 +19,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class PDFService @Inject() (system: ActorSystem, val configuration: Configuration) {
+class PDFService @Inject() (val configuration: Configuration) {
 
   val logger: Logger = Logger(this.getClass)
   val websiteUrl = configuration.get[URI]("play.application.url")

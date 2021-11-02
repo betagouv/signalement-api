@@ -32,7 +32,7 @@ class ReportedPhoneController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
       reportRepository
         .getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(reports =>

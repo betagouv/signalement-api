@@ -241,10 +241,8 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def haveReports(reports: Matcher[String]*): Matcher[String] =
     /("entities").andHave(allOf(reports: _*))
 
-  def reportsMustBeRenderedForUser(user: User) = {
-
-    implicit val someUserRole = Some(user.userRole)
-
+  def reportsMustBeRenderedForUser(user: User) =
+//    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
       case (UserRoles.Admin, _) =>
         contentAsJson(Future(someResult.get)).toString must
@@ -273,7 +271,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
-  }
 
   def noReportsMustBeRendered() =
     contentAsJson(Future(someResult.get)).toString must

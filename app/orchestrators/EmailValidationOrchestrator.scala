@@ -4,7 +4,6 @@ import models.EmailValidation
 import models.EmailValidationCreate
 import play.api.mvc.Request
 import play.api.Configuration
-import play.api.Logger
 import repositories._
 import services.MailService
 import utils.EmailAddress
@@ -22,7 +21,6 @@ class EmailValidationOrchestrator @Inject() (
 ) {
 
   val skipEmailValidation = configuration.get[Boolean]("play.mail.skipReportEmailValidation")
-  private[this] val logger = Logger(this.getClass)
 
   private[this] def findOrCreate(email: EmailAddress): Future[EmailValidation] =
     emailValidationRepository.findByEmail(email).flatMap {
