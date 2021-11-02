@@ -76,17 +76,34 @@ class StatisticController @Inject() (
 
   private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
 
-  def getCurveReportCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+  def getCurveReportCount(
+      companyId: Option[UUID],
+      ticks: Option[Int],
+      tickDuration: Option[String],
+      status: Seq[String]
+  ) =
     UserAwareAction.async {
       _companyStats
         .getReportsCountCurve(
           companyId = companyId,
-          status = Seq(),
+          status = status.map(ReportStatus.fromDefaultValue),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
         .map(curve => Ok(Json.toJson(curve)))
     }
+
+//  def getCurveReportsRespondedCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+//    UserAwareAction.async {
+//      _companyStats
+//        .getReportsCountCurve(
+//          companyId = companyId,
+//          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+//          ticks = getTicks(ticks),
+//          tickDuration = getTickDuration(tickDuration)
+//        )
+//        .map(stats => Ok(Json.toJson(stats)))
+//    }
 
   def getCurveReportsRespondedCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
     UserAwareAction.async {
