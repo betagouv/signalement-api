@@ -47,7 +47,7 @@ class UploadActor @Inject() (configuration: Configuration, reportRepository: Rep
         .fromPath(file.toPath)
         .to(s3Service.upload(BucketName, reportFile.storageFilename))
         .run()
-        .foreach { res =>
+        .foreach { _ =>
           logger.debug(s"Uploaded file ${reportFile.id}")
           file.delete()
         }

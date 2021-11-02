@@ -121,6 +121,7 @@ GET           /api/companies/search-url                              controllers
 GET           /api/companies/search                                  controllers.CompanyController.searchCompany(q: String, postalCode: String)
 GET           /api/companies/:siret                                  controllers.CompanyController.companyDetails(siret)
 PUT           /api/companies/:id/address                             controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
+GET           /api/companies/:id/response-rate                       controllers.CompanyController.getResponseRate(id: java.util.UUID)
 POST          /api/companies/:siret/undelivered-document             controllers.CompanyController.handleUndeliveredDocument(siret)
 
 # Rating API

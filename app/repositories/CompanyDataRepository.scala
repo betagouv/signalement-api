@@ -228,8 +228,7 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
     )
 
   def searchBySiren(
-      siren: SIREN,
-      includeClosed: Boolean = false
+      siren: SIREN
   ): Future[List[(CompanyData, Option[CompanyActivity])]] =
     searchBySirens(List(siren))
 

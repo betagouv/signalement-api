@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit
+class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     ec: ExecutionContext
 ) {
 

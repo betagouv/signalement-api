@@ -217,7 +217,7 @@ class EnterpriseSyncActor @Inject() (
 
     stream
       .flatMap(_ => enterpriseSyncInfoRepo.updateEndedAt(jobId))
-      .recover { case err =>
+      .recoverWith { case err =>
         logger.error(s"Error occurred while importing ${companyFile.url}", err)
         enterpriseSyncInfoRepo.updateError(jobId, err.toString)
       }

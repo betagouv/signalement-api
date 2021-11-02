@@ -120,7 +120,7 @@ class UserRepository @Inject() (
     db.run(
       queryUser
         .map(u => (u.firstName, u.lastName, u.email))
-        .update(user.firstName, user.lastName, user.email)
+        .update((user.firstName, user.lastName, user.email))
     )
   }
 

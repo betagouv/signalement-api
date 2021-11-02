@@ -54,7 +54,7 @@ class ReportOrchestrator @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
-  private def genActivationToken(companyId: UUID, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
+  private def genActivationToken(companyId: UUID): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(companyId)
       _ <- existingToken
@@ -93,9 +93,9 @@ class ReportOrchestrator @Inject() (
               )
             )
           )
-          .flatMap(event => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
+          .flatMap(_ => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
       } else {
-        genActivationToken(company.id, tokenDuration).map(_ => report)
+        genActivationToken(company.id).map(_ => report)
       }
     }
 
@@ -347,7 +347,7 @@ class ReportOrchestrator @Inject() (
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {
-      event <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -362,22 +362,22 @@ class ReportOrchestrator @Inject() (
         if (report.status.isFinal) {
           Future(report)
         } else {
-          notifyConsumerOfReportTransmission(report, userUUID)
+          notifyConsumerOfReportTransmission(report)
         }
     } yield updatedReport
 
-  private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
+  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] = {
     mailService.Consumer.sendReportTransmission(report)
     for {
-      event <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
-          Some(report.id),
-          report.companyId,
-          None,
-          Some(OffsetDateTime.now()),
-          Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
+          id = Some(UUID.randomUUID()),
+          reportId = Some(report.id),
+          companyId = report.companyId,
+          userId = None,
+          creationDate = Some(OffsetDateTime.now()),
+          eventType = Constants.EventType.CONSO,
+          action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
       newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
@@ -407,7 +407,7 @@ class ReportOrchestrator @Inject() (
             .map(Some(_))
         case _ => Future(None)
       }
-      updatedReport: Option[Report] <- (report, newEvent) match {
+      _ <- (report, newEvent) match {
         case (Some(r), Some(event)) =>
           reportRepository
             .update(
@@ -422,7 +422,7 @@ class ReportOrchestrator @Inject() (
     } yield {
       newEvent.foreach(event =>
         event.action match {
-          case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get, user.id)
+          case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get)
           case _                     => ()
         }
       )
@@ -432,7 +432,7 @@ class ReportOrchestrator @Inject() (
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
-      newEvent <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -454,8 +454,8 @@ class ReportOrchestrator @Inject() (
           }
         )
       )
-      - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
-      - <- eventRepository.createEvent(
+      _ <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -466,7 +466,7 @@ class ReportOrchestrator @Inject() (
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
-      - <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),

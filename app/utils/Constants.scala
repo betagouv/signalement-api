@@ -119,6 +119,12 @@ object Constants {
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
+    val responseStatusList = Seq(
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
+      SIGNALEMENT_MAL_ATTRIBUE
+    )
+
     def fromDefaultValue(value: String) =
       reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
@@ -317,7 +323,7 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
-        case code                           => Departments.ALL.find(postalCode.startsWith)
+        case _                              => Departments.ALL.find(postalCode.startsWith)
       }
   }
 

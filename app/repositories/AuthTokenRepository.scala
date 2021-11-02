@@ -1,6 +1,5 @@
 package repositories
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import models.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -19,8 +18,7 @@ import scala.concurrent.Future
   */
 @Singleton
 class AuthTokenRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider,
-    passwordHasherRegistry: PasswordHasherRegistry
+    dbConfigProvider: DatabaseConfigProvider
 )(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]

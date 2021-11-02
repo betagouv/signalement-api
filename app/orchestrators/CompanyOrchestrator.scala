@@ -18,6 +18,7 @@ import repositories.WebsiteRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Constants.ReportStatus
 import utils.SIREN
 import utils.SIRET
 
@@ -76,6 +77,15 @@ class CompanyOrchestrator @Inject() (
             .transform
         })
       )
+
+  def getResponseRate(companyId: UUID): Future[Int] = {
+    val totalF = reportRepository.count(Some(companyId))
+    val responsesF = reportRepository.count(Some(companyId), ReportStatus.responseStatusList)
+    for {
+      total <- totalF
+      responses <- responsesF
+    } yield (responses.toFloat / total * 100).round
+  }
 
   def searchCompany(q: String, postalCode: String): Future[List[CompanySearchResult]] = {
     logger.debug(s"searchCompany $postalCode $q")

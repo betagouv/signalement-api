@@ -5,9 +5,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
-import utils.Constants.ReportStatus.PROMESSE_ACTION
-import utils.Constants.ReportStatus.SIGNALEMENT_INFONDE
-import utils.Constants.ReportStatus.SIGNALEMENT_MAL_ATTRIBUE
+import utils.Constants.ReportStatus.responseStatusList
 import utils.SIREN
 import utils.SIRET
 
@@ -56,7 +54,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
           addressSupplement,
           postalCode,
           city,
-          department,
+          _,
           activityCode
         ) =>
       Company(
@@ -165,10 +163,10 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty) { case (company, report) =>
+      .filterIf(departments.nonEmpty) { case (company, _) =>
         company.department.map(a => a.inSet(departments)).getOrElse(false)
       }
-      .filterIf(activityCodes.nonEmpty) { case (company, report) =>
+      .filterIf(activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
       }
       .groupBy(_._1)
@@ -176,20 +174,17 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         (
           grouped,
           all.map(_._2).map(_.map(_.id)).countDefined,
-          /** Response rate Equivalent to following select clause count((case when (status in ('Promesse
-            * action','Signalement infondé','Signalement mal attribué') then id end))
-            */
+          /* Response rate
+           * Equivalent to following select clause
+           * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
+           */
           (
             all
               .map(_._2)
               .map(b =>
                 b.flatMap { a =>
                   Case If a.status.inSet(
-                    Seq(
-                      PROMESSE_ACTION.defaultValue,
-                      SIGNALEMENT_INFONDE.defaultValue,
-                      SIGNALEMENT_MAL_ATTRIBUE.defaultValue
-                    )
+                    responseStatusList.map(_.defaultValue)
                   ) Then a.id
                 }
               )
@@ -306,7 +301,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   private[this] def fetchUsersAndAccessesByCompanies(
       companyIds: List[UUID],
-      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+      levels: Seq[AccessLevel]
   ): Future[List[(UUID, User)]] =
     db.run(
       (for {

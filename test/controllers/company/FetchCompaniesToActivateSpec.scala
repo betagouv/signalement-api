@@ -73,8 +73,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseNewCompany =
     for {
-      (c, a) <- initCase
-    } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
+      (c, _) <- initCase
+    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedOnce =
     for {
@@ -102,7 +102,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
             creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
           )
       )
-    } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
+    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedTwice =
     for {
@@ -167,7 +167,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .get
           .copy(creationDate = Some(OffsetDateTime.now.minusDays(1)))
       )
-    } yield (companyCases = companyCases :+ (c, None, defaultTokenCreationDate))
+    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
 
   override def setupData() =
     Await.result(
