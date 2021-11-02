@@ -22,8 +22,10 @@ class StatisticController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportCount(companyId: Option[UUID]) = UserAwareAction.async { _ =>
-    _companyStats.getReportCount(companyId).map(count => Ok(Json.obj("value" -> count)))
+  def getReportCount(companyId: Option[UUID], status: Seq[String]) = UserAwareAction.async { _ =>
+    _companyStats
+      .getReportCount(companyId, status.map(ReportStatus.fromDefaultValue))
+      .map(count => Ok(Json.obj("value" -> count)))
   }
 
   def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
