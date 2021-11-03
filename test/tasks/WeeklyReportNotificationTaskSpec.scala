@@ -7,7 +7,6 @@ import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import play.api.Configuration
 import repositories._
 import services.MailerService
 import utils.AppSpec

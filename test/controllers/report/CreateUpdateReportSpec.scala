@@ -8,12 +8,10 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import config.AppConfigLoader
 import controllers.ReportController
 import models._
 import org.specs2.Specification
 import org.specs2.matcher._
-import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._

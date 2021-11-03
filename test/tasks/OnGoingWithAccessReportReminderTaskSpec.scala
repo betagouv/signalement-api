@@ -7,7 +7,6 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
