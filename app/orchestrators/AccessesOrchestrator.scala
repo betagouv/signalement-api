@@ -336,14 +336,15 @@ class AccessesOrchestrator @Inject() (
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, appConfig.signalConsoConfiguration.token.companyJoinDuration, email).map { tokenCode =>
-      mailService.Pro.sendCompanyAccessInvitation(
-        company = company,
-        email = email,
-        invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
-        invitedBy = invitedBy
-      )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
+    genInvitationToken(company, level, appConfig.signalConsoConfiguration.token.companyJoinDuration, email).map {
+      tokenCode =>
+        mailService.Pro.sendCompanyAccessInvitation(
+          company = company,
+          email = email,
+          invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
+          invitedBy = invitedBy
+        )
+        logger.debug(s"Token sent to ${email} for company ${company.id}")
     }
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
