@@ -1,17 +1,16 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
-import utils.EmailAddress
 import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -37,17 +36,15 @@ class CompanyController @Inject() (
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val configuration: Configuration,
-    val frontRoute: FrontRoute
+    val frontRoute: FrontRoute,
+    val appConfigLoader: AppConfigLoader
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass)
 
-  val reportReminderByPostDelay =
-    java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
-  val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
-  val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val contactAddress = appConfigLoader.get.mail.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
@@ -71,7 +68,7 @@ class CompanyController @Inject() (
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
     companyOrchestrator
       .searchRegistered(
         departments = departments.getOrElse(Seq()),
@@ -83,33 +80,39 @@ class CompanyController @Inject() (
       .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
   }
 
-  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>
+  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { _ =>
     logger.debug(s"searchCompany $postalCode $q")
     companyOrchestrator
       .searchCompany(q, postalCode)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { implicit request =>
+  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { _ =>
     logger.debug(s"searchCompanyByIdentity $identity")
     companyOrchestrator
       .searchCompanyByIdentity(identity)
       .map(res => Ok(Json.toJson(res)))
   }
 
-  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
+  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { _ =>
     companyOrchestrator
       .searchCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRoles.DGCCRF, UserRoles.Admin)).async {
+    companyOrchestrator
+      .getResponseRate(companyId)
+      .map(results => Ok(Json.toJson(results)))
+  }
+
+  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     for {
       company <- companyOrchestrator.companyDetails(SIRET(siret))
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
-  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     companyOrchestrator
       .companiesToActivate()
       .map(result => Ok(Json.toJson(result)))

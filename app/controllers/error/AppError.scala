@@ -34,7 +34,7 @@ object AppError {
 
   final case class CompanyActivationTokenNotFound(token: String, siret: SIRET) extends NotFoundError {
     override val `type`: String = "SC-0003"
-    override val title: String = "Company user token $token with siret ${siret.value} not found"
+    override val title: String = s"Company user token $token with siret ${siret.value} not found"
     override val details: String = "Le lien d'activation n'est pas valide. Merci de contacter le support"
   }
 
@@ -52,7 +52,7 @@ object AppError {
 
   final case class CompanyAlreadyAssociatedToWebsite(websiteId: UUID, siret: SIRET) extends BadRequestError {
     override val `type`: String = "SC-0006"
-    override val title: String = "Company already associated to website  ${websiteId.toString}"
+    override val title: String = s"Company already associated to website  ${websiteId.toString}"
     override val details: String =
       s"Le SIRET ${siret.value} est déjà associé au site internet"
   }

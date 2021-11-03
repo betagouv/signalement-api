@@ -1,10 +1,11 @@
 package orchestrators
 
+import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
-import play.api.Configuration
 import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 import repositories._
 import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
@@ -19,14 +20,13 @@ import scala.concurrent.Future
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
     _event: EventRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val cutoff =
-    configuration.getOptional[String]("play.stats.globalStatsCutoff").map(java.time.Duration.parse(_))
+  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
 
-  def getReportCount(companyId: Option[UUID] = None): Future[Int] =
-    _report.count(companyId)
+  def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatusValue]): Future[Int] =
+    _report.count(companyId, status)
 
   def getReportWithStatusPercent(
       status: Seq[ReportStatusValue],
@@ -92,7 +92,7 @@ class StatsOrchestrator @Inject() (
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     _event.getReportResponseReviews(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
-        val review = event.details.as[JsObject].value.getOrElse("description", "").toString
+        val review = event.details.as[JsObject].value.getOrElse("description", JsString("")).toString
         ReportReviewStats(
           acc.positive + (if (review.contains(ReportResponseReview.Positive.entryName)) 1 else 0),
           acc.negative + (if (review.contains(ReportResponseReview.Negative.entryName)) 1 else 0)

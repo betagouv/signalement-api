@@ -3,8 +3,8 @@ package services
 import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
 import akka.pattern.ask
+import config.AppConfigLoader
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
-    configuration: Configuration,
+    appConfigLoader: AppConfigLoader,
     mailerService: MailerService,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
     implicit val frontRoute: FrontRoute,
@@ -35,9 +35,8 @@ class MailService @Inject() (
 ) {
 
   private[this] val logger = Logger(this.getClass)
-  private[this] val mailFrom = configuration.get[EmailAddress]("play.mail.from")
-  implicit private[this] val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
-  implicit private[this] val ccrfEmailSuffix = configuration.get[String]("play.mail.ccrfEmailSuffix")
+  private[this] val mailFrom = appConfigLoader.get.mail.from
+  implicit private[this] val contactAddress = appConfigLoader.get.mail.contactAddress
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(
@@ -209,14 +208,14 @@ class MailService @Inject() (
       )
 
     def sendReportNotification(admins: List[EmailAddress], report: Report): Unit =
-      sendIfAuthorized(admins, report)(filteredAdminEmails =>
+      sendIfAuthorized(admins, report) { filteredAdminEmails =>
         send(
           from = mailFrom,
           recipients = filteredAdminEmails,
           subject = EmailSubjects.NEW_REPORT,
           bodyHtml = views.html.mails.professional.reportNotification(report).toString
         )
-      )
+      }
 
     def sendNewCompanyAccessNotification(user: User, company: Company, invitedBy: Option[User]): Unit =
       send(

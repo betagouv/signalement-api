@@ -18,6 +18,7 @@ import repositories._
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.SIREN
 import utils.silhouette.auth.AuthEnv
 
@@ -39,6 +40,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
   lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val mailService = injector.instanceOf[MailService]
 
@@ -172,3 +174,7 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
     checkRecipients(Seq())
   }
 }
+
+//MailServiceSpecNoBlock
+//MailServiceSpecSomeBlock
+//MailServiceSpecAllBlock

@@ -2,13 +2,13 @@ package orchestrators
 
 import actors.UploadActor
 import akka.actor.ActorRef
+import config.AppConfigLoader
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
 import models.website.Website
-import play.api.Configuration
-import play.api.Logger
 import play.api.libs.json.Json
+import play.api.Logger
 import repositories._
 import services.MailService
 import services.S3Service
@@ -21,14 +21,14 @@ import utils.Constants.Tags
 import utils.Constants
 import utils.URL
 
-import java.net.URI
 import java.time.OffsetDateTime
+import java.time.temporal.TemporalAmount
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator @Inject() (
@@ -43,22 +43,18 @@ class ReportOrchestrator @Inject() (
     emailValidationOrchestrator: EmailValidationOrchestrator,
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
-    configuration: Configuration
+    appConf: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  val bucketName = configuration.get[String]("play.buckets.report")
-  val tokenDuration = configuration.getOptional[String]("play.tokens.duration").map(java.time.Period.parse(_))
-  val skipEmailValidation = configuration.get[Boolean]("play.mail.skipReportEmailValidation")
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
 
-  private def genActivationToken(companyId: UUID, validity: Option[java.time.temporal.TemporalAmount]): Future[String] =
+  private def genActivationToken(companyId: UUID, validity: Option[TemporalAmount]): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchActivationToken(companyId)
       _ <- existingToken
-        .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, tokenDuration))
+        .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, validity))
         .getOrElse(Future(None))
       token <- existingToken
         .map(Future(_))
@@ -66,7 +62,7 @@ class ReportOrchestrator @Inject() (
           accessTokenRepository.createToken(
             kind = CompanyInit,
             token = f"${Random.nextInt(1000000)}%06d",
-            validity = tokenDuration,
+            validity = validity,
             companyId = Some(companyId),
             level = Some(AccessLevel.ADMIN)
           )
@@ -93,9 +89,9 @@ class ReportOrchestrator @Inject() (
               )
             )
           )
-          .flatMap(event => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
+          .flatMap(_ => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
       } else {
-        genActivationToken(company.id, tokenDuration).map(_ => report)
+        genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
       }
     }
 
@@ -119,7 +115,7 @@ class ReportOrchestrator @Inject() (
   def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator
       .isEmailValid(draftReport.email)
-      .map(isValid => isValid || skipEmailValidation)
+      .map(isValid => isValid || appConf.get.mail.skipReportEmailValidation)
       .flatMap {
         case true =>
           for {
@@ -321,7 +317,7 @@ class ReportOrchestrator @Inject() (
     for {
       reportFile <- reportRepository.getFile(id)
       _ <- reportFile.map(f => reportRepository.deleteFile(f.id)).getOrElse(Future(None))
-      _ <- reportFile.map(f => s3Service.delete(bucketName, f.storageFilename)).getOrElse(Future(None))
+      _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
   private def removeAccessToken(companyId: UUID) =
@@ -347,7 +343,7 @@ class ReportOrchestrator @Inject() (
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {
-      event <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -362,22 +358,22 @@ class ReportOrchestrator @Inject() (
         if (report.status.isFinal) {
           Future(report)
         } else {
-          notifyConsumerOfReportTransmission(report, userUUID)
+          notifyConsumerOfReportTransmission(report)
         }
     } yield updatedReport
 
-  private def notifyConsumerOfReportTransmission(report: Report, userUUID: UUID): Future[Report] = {
+  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] = {
     mailService.Consumer.sendReportTransmission(report)
     for {
-      event <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
-          Some(report.id),
-          report.companyId,
-          None,
-          Some(OffsetDateTime.now()),
-          Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
+          id = Some(UUID.randomUUID()),
+          reportId = Some(report.id),
+          companyId = report.companyId,
+          userId = None,
+          creationDate = Some(OffsetDateTime.now()),
+          eventType = Constants.EventType.CONSO,
+          action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
       newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
@@ -407,7 +403,7 @@ class ReportOrchestrator @Inject() (
             .map(Some(_))
         case _ => Future(None)
       }
-      updatedReport: Option[Report] <- (report, newEvent) match {
+      _ <- (report, newEvent) match {
         case (Some(r), Some(event)) =>
           reportRepository
             .update(
@@ -422,7 +418,7 @@ class ReportOrchestrator @Inject() (
     } yield {
       newEvent.foreach(event =>
         event.action match {
-          case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get, user.id)
+          case REPORT_READING_BY_PRO => notifyConsumerOfReportTransmission(report.get)
           case _                     => ()
         }
       )
@@ -432,7 +428,7 @@ class ReportOrchestrator @Inject() (
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
-      newEvent <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -454,8 +450,8 @@ class ReportOrchestrator @Inject() (
           }
         )
       )
-      - <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
-      - <- eventRepository.createEvent(
+      _ <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),
@@ -466,7 +462,7 @@ class ReportOrchestrator @Inject() (
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
-      - <- eventRepository.createEvent(
+      _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
           Some(report.id),

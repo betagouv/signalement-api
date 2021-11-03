@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
+import config.AppConfigLoader
 import controllers.ReportController
 import models._
 import net.codingwell.scalaguice.ScalaModule
@@ -189,7 +190,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(application.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -321,6 +322,7 @@ trait GetReportContext extends Mockito {
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
   lazy val mailService = application.injector.instanceOf[MailService]
+  val config = application.injector.instanceOf[AppConfigLoader].get
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(

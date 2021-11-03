@@ -269,7 +269,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   override def setupData() = {
     reviewUrl = new URI(
-      app.configuration.get[URI]("play.dashboard.url").toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+      config.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
     )
     Await.result(
       for {
@@ -287,7 +287,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        - <- reportRepository.createFile(reportResponseFile)
+        _ <- reportRepository.createFile(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -336,7 +336,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
