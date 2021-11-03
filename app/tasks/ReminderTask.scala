@@ -42,13 +42,13 @@ class ReminderTask @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val websiteUrl = appConfigLoader.signalConsoConfiguration.websiteURL
+  implicit val websiteUrl = appConfigLoader.get.websiteURL
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = appConfigLoader.signalConsoConfiguration.task.reminder.startTime
-  val interval = appConfigLoader.signalConsoConfiguration.task.reminder.intervalInHours
-  val noAccessReadingDelay = appConfigLoader.signalConsoConfiguration.report.noAccessReadingDelay
-  val mailReminderDelay = appConfigLoader.signalConsoConfiguration.report.mailReminderDelay
+  val startTime = appConfigLoader.get.task.reminder.startTime
+  val interval = appConfigLoader.get.task.reminder.intervalInHours
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
 
   val startDate =
     if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)

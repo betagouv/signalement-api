@@ -38,8 +38,8 @@ class AccountController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
-  implicit val ccrfEmailSuffix = appConfigLoader.signalConsoConfiguration.mail.ccrfEmailSuffix
+  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
+  implicit val ccrfEmailSuffix = appConfigLoader.get.mail.ccrfEmailSuffix
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {

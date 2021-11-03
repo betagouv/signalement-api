@@ -32,7 +32,7 @@ class EmailValidationOrchestrator @Inject() (
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
   def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] =
-    if (appConfigLoader.signalConsoConfiguration.mail.skipReportEmailValidation) {
+    if (appConfigLoader.get.mail.skipReportEmailValidation) {
       Future.successful(true)
     } else {
       for {

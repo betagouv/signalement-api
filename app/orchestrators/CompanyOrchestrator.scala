@@ -162,7 +162,7 @@ class CompanyOrchestrator @Inject() (
           _.isAfter(
             lastRequirement.getOrElse(
               OffsetDateTime.now.minus(
-                appConfigLoader.signalConsoConfiguration.report.reportReminderByPostDelay
+                appConfigLoader.get.report.reportReminderByPostDelay
                   .multipliedBy(Math.min(noticeCount, 3))
               )
             )

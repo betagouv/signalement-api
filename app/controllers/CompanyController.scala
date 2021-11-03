@@ -43,8 +43,8 @@ class CompanyController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.signalConsoConfiguration.report.noAccessReadingDelay
-  val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val contactAddress = appConfigLoader.get.mail.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
