@@ -33,7 +33,7 @@ class UploadActor @Inject() (
   import UploadActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val avScanEnabled = appConfigLoader.get.upload.avScanEnabled
+  val avScanEnabled = appConfigLoader.signalConsoConfiguration.upload.avScanEnabled
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =

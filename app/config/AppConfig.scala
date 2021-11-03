@@ -23,12 +23,12 @@ case class AppConfigAkkaCredentials(
 )
 @Singleton
 class AppConfigLoader @Inject() (c: Configuration) {
-
+k
   implicit val localDateConvert = localDateConfigConvert(DateTimeFormatter.ISO_DATE)
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader = deriveReader[EmailAddress]
 
-  lazy val get: SignalConsoConfiguration =
+  lazy val signalConsoConfiguration: SignalConsoConfiguration =
     ConfigSource.default
       .loadOrThrow[ApplicationConfiguration]
       .app

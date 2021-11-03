@@ -35,8 +35,8 @@ class MailService @Inject() (
 ) {
 
   private[this] val logger = Logger(this.getClass)
-  private[this] val mailFrom = appConfigLoader.get.mail.from
-  implicit private[this] val contactAddress = appConfigLoader.get.mail.contactAddress
+  private[this] val mailFrom = appConfigLoader.signalConsoConfiguration.mail.from
+  implicit private[this] val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(

@@ -24,7 +24,7 @@ class S3Service @Inject() (implicit
     val executionContext: ExecutionContext,
     val appConfigLoader: AppConfigLoader
 ) {
-  private[this] val bucketName = appConfigLoader.get.amazonBucketName
+  private[this] val bucketName = appConfigLoader.signalConsoConfiguration.amazonBucketName
 
   private val alpakkaS3Client = S3
   private val awsS3Client = AmazonS3ClientBuilder

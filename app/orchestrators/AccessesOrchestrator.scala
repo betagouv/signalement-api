@@ -49,7 +49,7 @@ class AccessesOrchestrator @Inject() (
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = appConfig.get.mail.ccrfEmailSuffix
+  implicit val ccrfEmailSuffix = appConfig.signalConsoConfiguration.mail.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -327,7 +327,7 @@ class AccessesOrchestrator @Inject() (
           accessTokenRepository.createToken(
             kind = CompanyJoin,
             token = randomToken,
-            validity = appConfig.get.token.companyJoinDuration,
+            validity = appConfig.signalConsoConfiguration.token.companyJoinDuration,
             companyId = Some(company.id),
             level = Some(level),
             emailedTo = Some(emailedTo)
@@ -336,7 +336,7 @@ class AccessesOrchestrator @Inject() (
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, appConfig.get.token.companyJoinDuration, email).map { tokenCode =>
+    genInvitationToken(company, level, appConfig.signalConsoConfiguration.token.companyJoinDuration, email).map { tokenCode =>
       mailService.Pro.sendCompanyAccessInvitation(
         company = company,
         email = email,
@@ -359,7 +359,7 @@ class AccessesOrchestrator @Inject() (
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
           token = randomToken,
-          validity = appConfig.get.token.dgccrfJoinDuration,
+          validity = appConfig.signalConsoConfiguration.token.dgccrfJoinDuration,
           companyId = None,
           level = None,
           emailedTo = Some(email)
