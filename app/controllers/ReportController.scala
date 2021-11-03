@@ -1,10 +1,10 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -40,15 +40,11 @@ class ReportController @Inject() (
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
-  val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
@@ -149,10 +145,14 @@ class ReportController @Inject() (
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
     request.body
       .file("reportFile")
-      .filter(f => allowedExtensions.contains(f.filename.toLowerCase.toString.split("\\.").last))
+      .filter(f =>
+        appConfigLoader.get.upload.allowedExtensions
+          .contains(f.filename.toLowerCase.toString.split("\\.").last)
+      )
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
-        val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_${filename}")
+        val tmpFile =
+          new java.io.File(s"${appConfigLoader.get.tmpDirectory}/${UUID.randomUUID}_${filename}")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
@@ -168,41 +168,40 @@ class ReportController @Inject() (
       .getOrElse(Future(InternalServerError("Echec de l'upload")))
   }
 
-  def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { implicit request =>
+  def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { _ =>
     reportRepository
       .getFile(UUID.fromString(uuid))
-      .map(_ match {
+      .map {
         case Some(file) if file.avOutput.isEmpty =>
           Conflict("Analyse antivirus en cours, veuillez réessayer d'ici 30 secondes") // HTTP 409
         case Some(file) if file.filename == filename && file.avOutput.isDefined =>
-          Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
+          Redirect(s3Service.getSignedUrl(file.storageFilename))
         case _ => NotFound
-      })
+      }
   }
 
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
     val uuid = UUID.fromString(id)
     reportRepository
       .getFile(uuid)
-      .flatMap(_ match {
+      .flatMap {
         case Some(file) if file.filename == filename =>
           (file.reportId, request.identity) match {
             case (None, _) =>
               reportOrchestrator.removeReportFile(uuid).map(_ => NoContent)
-            case (Some(reportId), Some(identity))
-                if identity.userRole.permissions.contains(UserPermission.deleteFile) =>
+            case (Some(_), Some(identity)) if identity.userRole.permissions.contains(UserPermission.deleteFile) =>
               reportOrchestrator.removeReportFile(uuid).map(_ => NoContent)
             case (_, _) => Future(Forbidden)
           }
         case _ => Future(NotFound)
-      })
+      }
   }
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
 //    reminderTask.runTask(LocalDate.now.atStartOfDay())
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
-      case Success(id) =>
+      case Success(_) =>
         for {
           visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
           viewedReport <- visibleReport
@@ -342,7 +341,7 @@ class ReportController @Inject() (
 
   /** @deprecated replaced by CompanyController.searchRegistered */
   def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
       // valeurs par défaut
       val LIMIT_DEFAULT = 25
       val LIMIT_MAX = 250

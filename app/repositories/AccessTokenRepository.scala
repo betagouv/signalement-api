@@ -66,7 +66,6 @@ class AccessTokenRepository @Inject() (
   ): Future[AccessToken] =
     db.run(
       AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
-        id = UUID.randomUUID(),
         creationDate = creationDate,
         kind = kind,
         token = token,
@@ -165,7 +164,7 @@ class AccessTokenRepository @Inject() (
     )
 
   def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] =
-    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
+    if (!token.valid || token.expirationDate.exists(_.isBefore(OffsetDateTime.now))) {
       logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
       Future(false)
     } else

@@ -41,7 +41,7 @@ trait BaseCompanyController extends BaseController {
       extends WrappedRequest[A](request) {
     def identity = request.identity
   }
-  def withCompany[A](siret: String, authorizedLevels: Seq[AccessLevel])(implicit ec: ExecutionContext) =
+  def withCompany(siret: String, authorizedLevels: Seq[AccessLevel])(implicit ec: ExecutionContext) =
     SecuredAction andThen new ActionRefiner[SecuredRequestWrapper, CompanyRequest] {
       def executionContext = ec
       def refine[A](request: SecuredRequestWrapper[A]) =

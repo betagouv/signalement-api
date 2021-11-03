@@ -86,9 +86,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       websiteRepository.create(Website(host = newHost, companyCountry = None, companyId = Some(defaultCompany.id)))
     newWebsite
       .map(w => (w.host, w.companyId, w.kind)) must beEqualTo(
-      newHost,
-      Some(defaultCompany.id),
-      WebsiteKind.PENDING
+      (newHost, Some(defaultCompany.id), WebsiteKind.PENDING)
     ).await
   }
 }

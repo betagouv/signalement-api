@@ -9,12 +9,10 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends SlickEnumSupport {
+class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider) extends SlickEnumSupport {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 

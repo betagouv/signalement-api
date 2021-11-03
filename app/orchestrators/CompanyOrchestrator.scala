@@ -1,5 +1,6 @@
 package orchestrators
 
+import config.AppConfigLoader
 import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
@@ -18,6 +19,7 @@ import repositories.WebsiteRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.Constants.ReportStatus
 import utils.SIREN
 import utils.SIRET
 
@@ -36,13 +38,11 @@ class CompanyOrchestrator @Inject() (
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,
     val pdfService: PDFService,
+    val appConfigLoader: AppConfigLoader,
     val configuration: Configuration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
-
-  val reportReminderByPostDelay =
-    java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def create(companyCreation: CompanyCreation): Future[Company] =
     companyRepository
@@ -76,6 +76,15 @@ class CompanyOrchestrator @Inject() (
             .transform
         })
       )
+
+  def getResponseRate(companyId: UUID): Future[Int] = {
+    val totalF = reportRepository.count(Some(companyId))
+    val responsesF = reportRepository.count(Some(companyId), ReportStatus.responseStatusList)
+    for {
+      total <- totalF
+      responses <- responsesF
+    } yield (responses.toFloat / total * 100).round
+  }
 
   def searchCompany(q: String, postalCode: String): Future[List[CompanySearchResult]] = {
     logger.debug(s"searchCompany $postalCode $q")
@@ -152,7 +161,10 @@ class CompanyOrchestrator @Inject() (
         !lastNotice.exists(
           _.isAfter(
             lastRequirement.getOrElse(
-              OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))
+              OffsetDateTime.now.minus(
+                appConfigLoader.get.report.reportReminderByPostDelay
+                  .multipliedBy(Math.min(noticeCount, 3))
+              )
             )
           )
         )

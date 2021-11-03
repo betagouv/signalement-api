@@ -16,6 +16,6 @@ object PaginatedResult {
 
   def paginatedResultWrites[T](implicit tWrites: Writes[T]) = Json.writes[PaginatedResult[T]]
 
-  implicit def paginatedReportWithFilesWriter(implicit userRole: Option[UserRole]) =
+  implicit def paginatedReportWithFilesWriter =
     Json.writes[PaginatedResult[ReportWithFiles]]
 }

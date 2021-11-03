@@ -1,8 +1,8 @@
 package repositories
 
+import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
@@ -221,13 +221,13 @@ class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
+  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
 
@@ -267,18 +267,14 @@ class ReportRepository @Inject() (
 
   private val companyTableQuery = CompanyTables.tables
 
-  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
-
-  private val trunc = SimpleFunction.binary[String, OffsetDateTime, OffsetDateTime]("date_trunc")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-  val backofficeAdminStartDate = OffsetDateTime.of(
-    LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
+  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
+    appConfigLoader.get.stats.backofficeAdminStartDate,
     LocalTime.MIDNIGHT,
     ZoneOffset.UTC
   )
@@ -319,11 +315,14 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
-        .filterOpt(companyId) { case (table, siret) =>
+        .filterOpt(companyId) { case (table, _) =>
           table.companyId === companyId
+        }
+        .filterIf(status.nonEmpty) { case table =>
+          table.status inSet (status.map(_.defaultValue))
         }
         .length
         .result
