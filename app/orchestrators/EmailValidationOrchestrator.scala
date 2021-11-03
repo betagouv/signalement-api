@@ -1,9 +1,9 @@
 package orchestrators
 
+import config.AppConfigLoader
 import models.EmailValidation
 import models.EmailValidationCreate
 import play.api.mvc.Request
-import play.api.Configuration
 import repositories._
 import services.MailService
 import utils.EmailAddress
@@ -15,12 +15,10 @@ import scala.concurrent.Future
 class EmailValidationOrchestrator @Inject() (
     mailService: MailService,
     emailValidationRepository: EmailValidationRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit
     executionContext: ExecutionContext
 ) {
-
-  val skipEmailValidation = configuration.get[Boolean]("play.mail.skipReportEmailValidation")
 
   private[this] def findOrCreate(email: EmailAddress): Future[EmailValidation] =
     emailValidationRepository.findByEmail(email).flatMap {
@@ -34,7 +32,7 @@ class EmailValidationOrchestrator @Inject() (
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
   def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] =
-    if (skipEmailValidation) {
+    if (appConfigLoader.get.mail.skipReportEmailValidation) {
       Future.successful(true)
     } else {
       for {

@@ -62,7 +62,9 @@ class ReportNotificationBlockedRepository @Inject() (
         .map(_.email)
         .to[List]
         .result
-    ).map(blockedEmails => email.diff(blockedEmails))
+    ).map { blockedEmails =>
+      email.diff(blockedEmails)
+    }
 
   def create(userId: UUID, companyIds: Seq[UUID]): Future[Seq[ReportBlockedNotification]] = {
     val entities = companyIds.map(companyId => ReportBlockedNotification(userId = userId, companyId = companyId))

@@ -4,8 +4,8 @@ import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
+import config.AppConfigLoader
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -23,15 +23,17 @@ object UploadActor {
 }
 
 @Singleton
-class UploadActor @Inject() (configuration: Configuration, reportRepository: ReportRepository, s3Service: S3Service)(
-    implicit val mat: Materializer
+class UploadActor @Inject() (
+    appConfigLoader: AppConfigLoader,
+    reportRepository: ReportRepository,
+    s3Service: S3Service
+)(implicit
+    val mat: Materializer
 ) extends Actor {
   import UploadActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
-  val avScanEnabled = configuration.get[Boolean]("play.upload.avScanEnabled")
+  val avScanEnabled = appConfigLoader.get.upload.avScanEnabled
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =
@@ -45,7 +47,7 @@ class UploadActor @Inject() (configuration: Configuration, reportRepository: Rep
     if (!avScanEnabled || av_scan(reportFile, file)) {
       FileIO
         .fromPath(file.toPath)
-        .to(s3Service.upload(BucketName, reportFile.storageFilename))
+        .to(s3Service.upload(reportFile.storageFilename))
         .run()
         .foreach { _ =>
           logger.debug(s"Uploaded file ${reportFile.id}")

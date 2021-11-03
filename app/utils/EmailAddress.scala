@@ -26,8 +26,9 @@ object EmailAddress {
     def load(rootConfig: Config, path: String): EmailAddress =
       EmailAddress(rootConfig.getString(path))
   }
-  implicit val listConfigLoader: ConfigLoader[List[EmailAddress]] = new ConfigLoader[List[EmailAddress]] {
-    def load(rootConfig: Config, path: String): List[EmailAddress] =
-      rootConfig.getString(path).split(",").map(EmailAddress(_)).toList
-  }
+//  implicit val listConfigLoader: ConfigLoader[List[EmailAddress]] = new ConfigLoader[List[EmailAddress]] {
+//    def load(rootConfig: Config, path: String): List[EmailAddress] =
+//      rootConfig.getString(path).split(",").map(EmailAddress(_)).toList
+//  }
+
 }

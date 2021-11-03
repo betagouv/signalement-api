@@ -1,8 +1,8 @@
 package repositories
 
+import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
@@ -221,13 +221,13 @@ class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
+  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
 
@@ -273,8 +273,8 @@ class ReportRepository @Inject() (
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-  val backofficeAdminStartDate = OffsetDateTime.of(
-    LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
+  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
+    appConfigLoader.get.stats.backofficeAdminStartDate,
     LocalTime.MIDNIGHT,
     ZoneOffset.UTC
   )

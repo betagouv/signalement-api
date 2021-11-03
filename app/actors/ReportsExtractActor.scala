@@ -10,9 +10,9 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import config.AppConfigLoader
 import controllers.routes
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -39,20 +39,16 @@ object ReportsExtractActor {
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    configuration: Configuration,
     companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service
+    s3Service: S3Service,
+    appConfigLoader: AppConfigLoader
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
   implicit val ec: ExecutionContext = context.dispatcher
-
-  val baseUrl = configuration.get[String]("play.application.url")
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =
@@ -189,7 +185,9 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${baseUrl}${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}"
+              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
+                .downloadReportFile(file.id.toString, file.filename)
+                .url}"
             )
             .mkString("\n"),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -371,7 +369,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath
@@ -380,7 +378,7 @@ class ReportsExtractActor @Inject() (
 
   def saveRemotely(localPath: Path, remoteName: String) = {
     val remotePath = s"extracts/${remoteName}"
-    s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
+    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }
 

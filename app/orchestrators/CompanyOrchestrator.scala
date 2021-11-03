@@ -1,5 +1,6 @@
 package orchestrators
 
+import config.AppConfigLoader
 import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
@@ -37,13 +38,11 @@ class CompanyOrchestrator @Inject() (
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,
     val pdfService: PDFService,
+    val appConfigLoader: AppConfigLoader,
     val configuration: Configuration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
-
-  val reportReminderByPostDelay =
-    java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
 
   def create(companyCreation: CompanyCreation): Future[Company] =
     companyRepository
@@ -162,7 +161,10 @@ class CompanyOrchestrator @Inject() (
         !lastNotice.exists(
           _.isAfter(
             lastRequirement.getOrElse(
-              OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(Math.min(noticeCount, 3)))
+              OffsetDateTime.now.minus(
+                appConfigLoader.get.report.reportReminderByPostDelay
+                  .multipliedBy(Math.min(noticeCount, 3))
+              )
             )
           )
         )

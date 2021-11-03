@@ -1,9 +1,9 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -14,38 +14,33 @@ import services.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ReportStatus.NA
 import utils.Constants.Tags
+import utils._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
-import utils.Country
-import utils.EmailAddress
-import utils.EmailSubjects
-import utils.FrontRoute
-import utils.SIRET
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import javax.inject.Singleton
 
 @Singleton
 class AdminController @Inject() (
-    val configuration: Configuration,
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepository,
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
     mailService: MailService,
+    appConfigLoader: AppConfigLoader,
     implicit val frontRoute: FrontRoute
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
-  val mailFrom = configuration.get[EmailAddress]("play.mail.from")
+  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
@@ -299,7 +294,7 @@ class AdminController @Inject() (
         .map(_.apply())
         .map { case EmailContent(subject, body) =>
           mailService.send(
-            from = mailFrom,
+            from = appConfigLoader.get.mail.from,
             recipients = Seq(EmailAddress(to)),
             subject = subject,
             bodyHtml = body.toString

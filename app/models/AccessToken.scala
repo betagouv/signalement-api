@@ -9,7 +9,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class AccessToken(
-    id: UUID,
+    id: UUID = UUID.randomUUID(),
     creationDate: OffsetDateTime,
     kind: TokenKind,
     token: String,

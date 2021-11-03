@@ -1,9 +1,9 @@
 package orchestrators
 
+import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import repositories._
@@ -20,11 +20,10 @@ import scala.concurrent.Future
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
     _event: EventRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val cutoff =
-    configuration.getOptional[String]("play.stats.globalStatsCutoff").map(java.time.Duration.parse(_))
+  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
 
   def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatusValue]): Future[Int] =
     _report.count(companyId, status)

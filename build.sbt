@@ -8,7 +8,7 @@ scalaVersion := "2.13.7"
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion = "5.0.0"
-val slickPgVersion = "0.19.5"
+val slickPgVersion = "0.19.7"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
 val AkkaHttpVersion = "10.1.14"
@@ -51,7 +51,8 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
   "io.sentry" % "sentry-logback" % "1.7.30",
-  "org.typelevel" %% "cats-core" % "2.4.2"
+  "org.typelevel" %% "cats-core" % "2.4.2",
+  "com.github.pureconfig" %% "pureconfig" % "0.17.0"
 )
 
 scalafmtOnCompile := true

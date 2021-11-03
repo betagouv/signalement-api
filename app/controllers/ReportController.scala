@@ -1,10 +1,10 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -40,15 +40,11 @@ class ReportController @Inject() (
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
-  val allowedExtensions = configuration.get[Seq[String]]("play.upload.allowedExtensions")
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
@@ -149,10 +145,14 @@ class ReportController @Inject() (
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
     request.body
       .file("reportFile")
-      .filter(f => allowedExtensions.contains(f.filename.toLowerCase.toString.split("\\.").last))
+      .filter(f =>
+        appConfigLoader.get.upload.allowedExtensions
+          .contains(f.filename.toLowerCase.toString.split("\\.").last)
+      )
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
-        val tmpFile = new java.io.File(s"$tmpDirectory/${UUID.randomUUID}_${filename}")
+        val tmpFile =
+          new java.io.File(s"${appConfigLoader.get.tmpDirectory}/${UUID.randomUUID}_${filename}")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
@@ -175,7 +175,7 @@ class ReportController @Inject() (
         case Some(file) if file.avOutput.isEmpty =>
           Conflict("Analyse antivirus en cours, veuillez réessayer d'ici 30 secondes") // HTTP 409
         case Some(file) if file.filename == filename && file.avOutput.isDefined =>
-          Redirect(s3Service.getSignedUrl(BucketName, file.storageFilename))
+          Redirect(s3Service.getSignedUrl(file.storageFilename))
         case _ => NotFound
       }
   }

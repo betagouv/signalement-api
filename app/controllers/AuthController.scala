@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import config.AppConfigLoader
 import models._
 import orchestrators.AccessesOrchestrator
 import play.api._
@@ -33,16 +34,14 @@ class AuthController @Inject() (
     authTokenRepository: AuthTokenRepository,
     userService: UserService,
     mailService: MailService,
-    configuration: Configuration,
-    credentialsProvider: CredentialsProvider
+    credentialsProvider: CredentialsProvider,
+    appConfigLoader: AppConfigLoader
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
-  val logger: Logger = Logger(this.getClass())
+  val logger: Logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
-  implicit val dgccrfEmailValidation =
-    java.time.Period.parse(configuration.get[String]("play.tokens.dgccrfEmailValidation"))
 
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
@@ -66,7 +65,12 @@ class AuthController @Inject() (
                       case Some(user)
                           if user.userRole == UserRoles.DGCCRF
                             && user.lastEmailValidation
-                              .exists(_.isBefore(OffsetDateTime.now.minus(dgccrfEmailValidation))) =>
+                              .exists(
+                                _.isBefore(
+                                  OffsetDateTime.now
+                                    .minus(appConfigLoader.get.token.dgccrfDelayBeforeRevalidation)
+                                )
+                              ) =>
                         accessesOrchestrator.sendEmailValidation(user).map(_ => Locked)
                       case Some(user) =>
                         silhouette.env.authenticatorService.create(loginInfo).flatMap { authenticator =>

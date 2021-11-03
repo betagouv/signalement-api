@@ -1,17 +1,16 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
-import utils.EmailAddress
 import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -37,17 +36,15 @@ class CompanyController @Inject() (
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val configuration: Configuration,
-    val frontRoute: FrontRoute
+    val frontRoute: FrontRoute,
+    val appConfigLoader: AppConfigLoader
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass)
 
-  val reportReminderByPostDelay =
-    java.time.Period.parse(configuration.get[String]("play.reports.reportReminderByPostDelay"))
-  val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
-  val contactAddress = configuration.get[EmailAddress]("play.mail.contactAddress")
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val contactAddress = appConfigLoader.get.mail.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))

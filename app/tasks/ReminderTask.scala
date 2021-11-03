@@ -2,10 +2,10 @@ package tasks
 
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models.Event._
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
@@ -18,7 +18,6 @@ import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -38,22 +37,18 @@ class ReminderTask @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val websiteUrl = configuration.get[URI]("play.website.url")
+  implicit val websiteUrl = appConfigLoader.get.websiteURL
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = LocalTime.of(
-    configuration.get[Int]("play.tasks.reminder.start.hour"),
-    configuration.get[Int]("play.tasks.reminder.start.minute"),
-    0
-  )
-  val interval = configuration.get[Int]("play.tasks.reminder.intervalInHours").hours
-  val noAccessReadingDelay = java.time.Period.parse(configuration.get[String]("play.reports.noAccessReadingDelay"))
-  val mailReminderDelay = java.time.Period.parse(configuration.get[String]("play.reports.mailReminderDelay"))
+  val startTime = appConfigLoader.get.task.reminder.startTime
+  val interval = appConfigLoader.get.task.reminder.intervalInHours
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
 
   val startDate =
     if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
