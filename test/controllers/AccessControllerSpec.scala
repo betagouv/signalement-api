@@ -5,8 +5,8 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
+
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
@@ -15,31 +15,33 @@ import play.api.libs.json.Json
 import play.api.test._
 import play.api.test.Helpers._
 import utils.silhouette.auth.AuthEnv
-
 import utils.AppSpec
 import utils.Fixtures
-
 import models._
+import models.token.TokenKind.CompanyJoin
 import repositories._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
   val proMemberUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
+  val companyData = Fixtures.genCompanyData(Some(company)).sample.get.copy(etablissementSiege = Some("true"))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         admin <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
         c <- companyRepository.getOrCreate(company.siret, company)
+        _ <- companyDataRepository.create(companyData)
         _ <- companyRepository.setUserLevel(c, admin, AccessLevel.ADMIN)
         _ <- companyRepository.setUserLevel(c, member, AccessLevel.MEMBER)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =
@@ -78,14 +80,18 @@ The listAccesses endpoint should
             "email":"${proAdminUser.email}",
             "firstName":"${proAdminUser.firstName}",
             "lastName":"${proAdminUser.lastName}",
-            "level":"admin"
+            "level":"admin",
+            "editable": false,
+            "isHeadOffice" : true
           },
           {
             "userId":"${proMemberUser.id}",
             "email":"${proMemberUser.email}",
             "firstName":"${proMemberUser.firstName}",
             "lastName":"${proMemberUser.lastName}",
-            "level":"member"
+            "level":"member",
+            "editable": true,
+            "isHeadOffice" : true
           }]
         """
       )
@@ -112,7 +118,7 @@ The myCompanies endpoint should
       .withAuthenticator[AuthEnv](loginInfo(user))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
-    contentAsJson(result) must beEqualTo(Json.toJson(Seq((company, level))))
+    contentAsJson(result) must beEqualTo(Json.toJson(Seq(CompanyWithAccess(company, level))))
   }
   def checkNotConnected = {
     val request = FakeRequest(GET, routes.CompanyAccessController.myCompanies().toString)
@@ -214,7 +220,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .createToken(CompanyJoin, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
       Duration.Inf
     )
     token must haveClass[AccessToken]

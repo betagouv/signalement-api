@@ -1,34 +1,27 @@
 package tasks
 
-import java.net.URI
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
-
-import models.Event._
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
-import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -38,13 +31,13 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given an event "REPORT_READING_BY_PRO" created more than 7 days              ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
       ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
@@ -68,13 +61,13 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Trans
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given an event "REPORT_READING_BY_PRO" created less than 7 days              ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
       List(event)
@@ -82,7 +75,7 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Trans
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -92,13 +85,13 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
       ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
@@ -122,13 +115,13 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
       List(reminderEvent)
@@ -136,7 +129,7 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -150,14 +143,14 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
     )
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then an event "REPORT_CLOSED_BY_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
       ActionEvent.REPORT_CLOSED_BY_NO_ACTION
@@ -185,14 +178,14 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Transm
     )
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
-         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step(
+         Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
       setupReport(transmittedReport)
-    )}
+    }}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
-         When remind task run                                                         ${step(
+         When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
-    )}
+    }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
       List(event1, event2)
@@ -200,7 +193,7 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Transm
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
       transmittedReport
     )}
-         And no mail is sent                                                          ${mailMustNotHaveBeenSent}
+         And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
    """
   }
 }
@@ -212,7 +205,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   implicit val ec = ee.executionContext
-  val mailReminderDelay = java.time.Period.parse(app.configuration.get[String]("play.reports.mailReminderDelay"))
+  val mailReminderDelay = config.report.mailReminderDelay
 
   val runningDateTime = OffsetDateTime.now
 
@@ -238,7 +231,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -288,9 +281,8 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
-  implicit lazy val contactAddress =
-    app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
+  implicit lazy val frontRoute = app.injector.instanceOf[FrontRoute]
+  implicit lazy val contactAddress = config.mail.contactAddress
 
   def setupUser(user: User) =
     Await.result(
@@ -298,12 +290,12 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
         company <- companyRepository.getOrCreate(company.siret, company)
         admin <- userRepository.create(user)
         _ <- companyRepository.setUserLevel(company, admin, AccessLevel.ADMIN)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)
   def setupEvent(event: Event) =
     Await.result(eventRepository.createEvent(event), Duration.Inf)
-  override def setupData() {}
+  override def setupData() = {}
 }

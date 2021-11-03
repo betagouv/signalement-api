@@ -5,7 +5,6 @@ import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import models.User
 import models.UserPermission
 import models.UserRole
-import models.UserRoles
 import play.api.mvc.Request
 
 import scala.concurrent.Future

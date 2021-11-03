@@ -1,7 +1,7 @@
 @import java.time.LocalDate
 @import utils.EmailAddress
-@import java.net.URI
-@(subscription: Subscription, reports: Seq[Report], startDate: LocalDate)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@import utils.FrontRoute
+@(subscription: Subscription, reports: Seq[Report], startDate: LocalDate)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
     <p>
@@ -121,7 +121,7 @@
                         @if(report.websiteURL.websiteURL.isDefined) {
                         <b>Site web</b>
                         <p style="text-align: center;">
-                        Site internet : @report.shortURL.get
+                        Site internet : @report.shortURL().get
                         </p>
                         }
                         @if(report.vendor.isDefined) {
@@ -144,7 +144,7 @@
         Pour consulter l'intégralité des signalements, notamment les pièces jointes :
     </p>
     <ul>
-        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@websiteUrl.resolve("/dgccrf")">@websiteUrl.resolve("/dgccrf")</a></li>
+        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@frontRoute.dashboard.login">@frontRoute.dashboard.login</a></li>
         <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:@contactAddress">@contactAddress</a></li>
     </ul>
 

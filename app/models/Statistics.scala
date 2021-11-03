@@ -1,37 +1,29 @@
 package models
 
-import java.time.YearMonth
-
+import java.time.LocalDate
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.OFormat
 
-case class Statistics(
-    reportsDurationsForEnvoiSignalement: Int
-)
+case class StatsValue(value: Option[Int])
 
-object Statistics {
-
-  implicit val statisticsWrites = new Writes[Statistics] {
-
-    def writes(statistics: Statistics) = Json.obj(
-      "reportsDurationsForEnvoiSignalement" -> statistics.reportsDurationsForEnvoiSignalement
-    )
-  }
-
+object StatsValue {
+  implicit val format: OFormat[StatsValue] = Json.format[StatsValue]
 }
 
-case class MonthlyStat(
-    value: Int,
-    yearMonth: YearMonth
+case class CountByDate(
+    count: Int,
+    date: LocalDate
 )
 
-object MonthlyStat {
+object CountByDate {
+  implicit val format: OFormat[CountByDate] = Json.format[CountByDate]
+}
 
-  implicit val monthlyStatWrites = new Writes[MonthlyStat] {
-    def writes(monthlyCount: MonthlyStat) = Json.obj(
-      "month" -> (monthlyCount.yearMonth.getMonthValue - 1),
-      "year" -> monthlyCount.yearMonth.getYear,
-      "value" -> monthlyCount.value
-    )
-  }
+case class ReportReviewStats(
+    positive: Int = 0,
+    negative: Int = 0
+)
+
+object ReportReviewStats {
+  implicit val format: OFormat[ReportReviewStats] = Json.format[ReportReviewStats]
 }

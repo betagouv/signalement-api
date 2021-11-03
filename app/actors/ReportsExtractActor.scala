@@ -1,10 +1,5 @@
 package actors
 
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -15,13 +10,11 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import config.AppConfigLoader
 import controllers.routes
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
-import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.Configuration
 import play.api.Logger
+import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.Constants.Departments
@@ -29,31 +22,33 @@ import utils.Constants.ReportStatus
 import utils.Constants
 import utils.DateUtils
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportsExtractActor {
-  def props = Props[ReportsExtractActor]
+  def props = Props[ReportsExtractActor]()
 
   case class ExtractRequest(requestedBy: User, filters: ReportFilterBody)
 }
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    configuration: Configuration,
     companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service
+    s3Service: S3Service,
+    appConfigLoader: AppConfigLoader
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
   implicit val ec: ExecutionContext = context.dispatcher
-
-  val baseUrl = configuration.get[String]("play.application.url")
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =
@@ -67,7 +62,7 @@ class ReportsExtractActor @Inject() (
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(requestedBy, filters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
@@ -147,7 +142,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
+        (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available = requestedBy.userRole == UserRoles.Admin
       ),
       ReportColumn(
@@ -186,11 +181,13 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Pièces jointes",
         leftAlignmentColumn,
-        (report, files, _, _) =>
+        (_, files, _, _) =>
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${baseUrl}${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}"
+              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
+                .downloadReportFile(file.id.toString, file.filename)
+                .url}"
             )
             .mkString("\n"),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
@@ -271,7 +268,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Actions DGCCRF",
         leftAlignmentColumn,
-        (report, _, events, _) =>
+        (_, _, events, _) =>
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
@@ -284,8 +281,12 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Contrôle effectué",
         centerAlignmentColumn,
-        (report, _, events, _) =>
-          if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
+        (
+            _,
+            _,
+            events,
+            _
+        ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
         available = requestedBy.userRole == UserRoles.DGCCRF
       )
     ).filter(_.available)
@@ -304,10 +305,13 @@ class ReportsExtractActor @Inject() (
       statusList = statusList
     )
     for {
-      paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
+      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
+      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
+        paginatedReports.entities.flatMap(_.companyId),
+        Seq(AccessLevel.ADMIN)
+      )
     } yield {
       val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")
@@ -365,7 +369,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath
@@ -374,7 +378,7 @@ class ReportsExtractActor @Inject() (
 
   def saveRemotely(localPath: Path, remoteName: String) = {
     val remotePath = s"extracts/${remoteName}"
-    s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
+    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }
 

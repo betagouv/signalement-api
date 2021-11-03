@@ -1,5 +1,7 @@
 package utils
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import models.UserRole
 import models.UserRoles
 import play.api.libs.json.Reads._
@@ -20,11 +22,15 @@ object Constants {
     }
 
     object ReportStatusValue {
+
       implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
         def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
           userRole.flatMap(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
         )
       }
+
+      val ReportStatusValueWrites: Writes[ReportStatusValue] = (o: ReportStatusValue) => JsString(o.defaultValue)
+
       implicit val reportStatusValueReads: Reads[ReportStatusValue] =
         JsPath.read[String].map(fromDefaultValue(_))
     }
@@ -110,6 +116,12 @@ object Constants {
       SIGNALEMENT_INFONDE,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE,
+      SIGNALEMENT_MAL_ATTRIBUE
+    )
+
+    val responseStatusList = Seq(
+      PROMESSE_ACTION,
+      SIGNALEMENT_INFONDE,
       SIGNALEMENT_MAL_ATTRIBUE
     )
 
@@ -265,6 +277,17 @@ object Constants {
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
 
+  sealed abstract class ReportResponseReview(override val entryName: String) extends EnumEntry
+
+  object ReportResponseReview extends PlayEnum[ReportResponseReview] {
+
+    val values = findValues
+
+    case object Positive extends ReportResponseReview("Avis positif")
+
+    case object Negative extends ReportResponseReview("Avis négatif")
+  }
+
   object Departments {
 
     val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
@@ -300,7 +323,7 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
-        case code                           => Departments.ALL.find(postalCode.startsWith(_))
+        case _                              => Departments.ALL.find(postalCode.startsWith)
       }
   }
 
@@ -308,5 +331,7 @@ object Constants {
     val ReponseConso = "ReponseConso"
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
+    val Bloctel = "Bloctel"
+    val Influenceur = "Influenceur"
   }
 }

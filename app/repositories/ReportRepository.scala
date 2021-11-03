@@ -1,20 +1,19 @@
 package repositories
 
-import java.time._
-import java.util.UUID
-
-import javax.inject.Inject
-import javax.inject.Singleton
+import config.AppConfigLoader
+import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.Departments
 import utils.Constants.ReportStatus
+import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
+import java.time._
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -46,6 +45,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
+  def reponseconsoCode = column[List[String]]("reponseconso_code")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(
     _.id.?,
@@ -80,6 +80,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
+      List[String],
       List[String]
   )
 
@@ -111,13 +112,14 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           forwardToReponseConso,
           status,
           vendor,
-          tags
+          tags,
+          reponseconsoCode
         ) =>
       Report(
         id = id,
         category = category,
         subcategories = subcategories,
-        details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
+        details = details.filter(_ != null).map(toDetailInputValue),
         companyId = companyId,
         companyName = companyName,
         companyAddress = Address(
@@ -140,7 +142,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         forwardToReponseConso = forwardToReponseConso,
         status = ReportStatus.fromDefaultValue(status),
         vendor = vendor,
-        tags = tags
+        tags = tags,
+        reponseconsoCode = reponseconsoCode
       )
   }
 
@@ -172,7 +175,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.forwardToReponseConso,
       r.status.defaultValue,
       r.vendor,
-      r.tags
+      r.tags,
+      r.reponseconsoCode
     )
   }
 
@@ -203,7 +207,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
     forwardToReponseConso,
     status,
     vendor,
-    tags
+    tags,
+    reponseconsoCode
   ) <> (constructReport, extractReport.lift)
 }
 
@@ -214,207 +219,17 @@ object ReportTables {
 @Singleton
 class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
-    accessTokenRepository: AccessTokenRepository,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
+  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
-
-  class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def category = column[String]("category")
-    def subcategories = column[List[String]]("subcategories")
-    def details = column[List[String]]("details")
-    def companyId = column[Option[UUID]]("company_id")
-    def companyName = column[Option[String]]("company_name")
-    def companySiret = column[Option[SIRET]]("company_siret")
-    def companyStreetNumber = column[Option[String]]("company_street_number")
-    def companyStreet = column[Option[String]]("company_street")
-    def companyAddressSupplement = column[Option[String]]("company_address_supplement")
-    def companyPostalCode = column[Option[String]]("company_postal_code")
-    def companyCity = column[Option[String]]("company_city")
-    def companyCountry = column[Option[Country]]("company_country")
-    def websiteURL = column[Option[URL]]("website_url")
-    def host = column[Option[String]]("host")
-    def phone = column[Option[String]]("phone")
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def firstName = column[String]("first_name")
-    def lastName = column[String]("last_name")
-    def email = column[EmailAddress]("email")
-    def contactAgreement = column[Boolean]("contact_agreement")
-    def employeeConsumer = column[Boolean]("employee_consumer")
-    def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
-    def status = column[String]("status")
-    def vendor = column[Option[String]]("vendor")
-    def tags = column[List[String]]("tags")
-
-    def company = foreignKey("COMPANY_FK", companyId, companyRepository.companyTableQuery)(
-      _.id.?,
-      onUpdate = ForeignKeyAction.Restrict,
-      onDelete = ForeignKeyAction.Cascade
-    )
-
-    type ReportData = (
-        UUID,
-        String,
-        List[String],
-        List[String],
-        (
-            Option[UUID],
-            Option[String],
-            Option[SIRET],
-            Option[String],
-            Option[String],
-            Option[String],
-            Option[String],
-            Option[String],
-            Option[Country]
-        ),
-        (Option[URL], Option[String]),
-        Option[String],
-        OffsetDateTime,
-        String,
-        String,
-        EmailAddress,
-        Boolean,
-        Boolean,
-        Boolean,
-        String,
-        Option[String],
-        List[String]
-    )
-
-    def constructReport: ReportData => Report = {
-      case (
-            id,
-            category,
-            subcategories,
-            details,
-            (
-              companyId,
-              companyName,
-              companySiret,
-              companyStreetNumber,
-              companyStreet,
-              companyAddressSupplement,
-              companyPostalCode,
-              companyCity,
-              companyCountry
-            ),
-            (websiteURL, host),
-            phone,
-            creationDate,
-            firstName,
-            lastName,
-            email,
-            contactAgreement,
-            employeeConsumer,
-            forwardToReponseConso,
-            status,
-            vendor,
-            tags
-          ) =>
-        Report(
-          id = id,
-          category = category,
-          subcategories = subcategories,
-          details = details.filter(_ != null).map(DetailInputValue.string2detailInputValue),
-          companyId = companyId,
-          companyName = companyName,
-          companyAddress = Address(
-            number = companyStreetNumber,
-            street = companyStreet,
-            addressSupplement = companyAddressSupplement,
-            postalCode = companyPostalCode,
-            city = companyCity,
-            country = companyCountry
-          ),
-          companySiret = companySiret,
-          websiteURL = WebsiteURL(websiteURL, host),
-          phone = phone,
-          creationDate = creationDate,
-          firstName = firstName,
-          lastName = lastName,
-          email = email,
-          contactAgreement = contactAgreement,
-          employeeConsumer = employeeConsumer,
-          forwardToReponseConso = forwardToReponseConso,
-          status = ReportStatus.fromDefaultValue(status),
-          vendor = vendor,
-          tags = tags
-        )
-    }
-
-    def extractReport: PartialFunction[Report, ReportData] = { case r =>
-      (
-        r.id,
-        r.category,
-        r.subcategories,
-        r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"),
-        (
-          r.companyId,
-          r.companyName,
-          r.companySiret,
-          r.companyAddress.number,
-          r.companyAddress.street,
-          r.companyAddress.addressSupplement,
-          r.companyAddress.postalCode,
-          r.companyAddress.city,
-          r.companyAddress.country
-        ),
-        (r.websiteURL.websiteURL, r.websiteURL.host),
-        r.phone,
-        r.creationDate,
-        r.firstName,
-        r.lastName,
-        r.email,
-        r.contactAgreement,
-        r.employeeConsumer,
-        r.forwardToReponseConso,
-        r.status.defaultValue,
-        r.vendor,
-        r.tags
-      )
-    }
-
-    def * = (
-      id,
-      category,
-      subcategories,
-      details,
-      (
-        companyId,
-        companyName,
-        companySiret,
-        companyStreetNumber,
-        companyStreet,
-        companyAddressSupplement,
-        companyPostalCode,
-        companyCity,
-        companyCountry
-      ),
-      (websiteURL, host),
-      phone,
-      creationDate,
-      firstName,
-      lastName,
-      email,
-      contactAgreement,
-      employeeConsumer,
-      forwardToReponseConso,
-      status,
-      vendor,
-      tags
-    ) <> (constructReport, extractReport.lift)
-  }
 
   implicit val ReportFileOriginColumnType =
     MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
@@ -452,16 +267,14 @@ class ReportRepository @Inject() (
 
   private val companyTableQuery = CompanyTables.tables
 
-  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-  val backofficeAdminStartDate = OffsetDateTime.of(
-    LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
+  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
+    appConfigLoader.get.stats.backofficeAdminStartDate,
     LocalTime.MIDNIGHT,
     ZoneOffset.UTC
   )
@@ -494,63 +307,111 @@ class ReportRepository @Inject() (
       .map(_ => report)
   }
 
-  def count(siret: Option[SIRET] = None): Future[Int] = db
+  def count(siret: SIRET): Future[Int] = db
     .run(
       reportTableQuery
-        .filterOpt(siret) { case (table, siret) =>
-          table.companySiret === siret
+        .filter(_.companySiret === siret)
+        .length
+        .result
+    )
+
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
+    .run(
+      reportTableQuery
+        .filterOpt(companyId) { case (table, _) =>
+          table.companyId === companyId
+        }
+        .filterIf(status.nonEmpty) { case table =>
+          table.status inSet (status.map(_.defaultValue))
         }
         .length
         .result
     )
 
-  def monthlyCount: Future[List[MonthlyStat]] = db
+  def getMonthlyCount(
+      companyId: Option[UUID] = None,
+      status: Seq[ReportStatusValue] = List(),
+      ticks: Int = 7
+  ): Future[Seq[CountByDate]] =
+    db
+      .run(
+        reportTableQuery
+          .filterOpt(companyId)((table, id) => table.companyId === id)
+          .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
+          .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
+          .map { case ((month, year), group) => (month, year, group.length) }
+          .result
+      )
+      .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
+      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
+
+  def getDailyCount(
+      companyId: Option[UUID] = None,
+      status: Seq[ReportStatusValue] = List(),
+      ticks: Int
+  ): Future[Seq[CountByDate]] = db
     .run(
       reportTableQuery
-        .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
-        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map { case ((month, year), group) =>
-          (month, year, group.length)
+        .filterOpt(companyId)((table, id) => table.companyId === id)
+        .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
+        .groupBy(report =>
+          (
+            date_part("day", report.creationDate),
+            date_part("month", report.creationDate),
+            date_part("year", report.creationDate)
+          )
+        )
+        .map { case ((day, month, year), group) =>
+          (day, month, year, group.length)
         }
-        .to[List]
         .result
     )
-    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
+    .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
+    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i)))
 
-  val baseStatReportTableQuery = reportTableQuery
-    .filter(_.creationDate > backofficeAdminStartDate)
+  private[this] def fillFullPeriod(
+      ticks: Int,
+      dateOperator: (LocalDate, Int) => LocalDate
+  )(
+      fetchedData: Seq[CountByDate]
+  ): Seq[CountByDate] = {
+    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
+    val res = (1 to ticks).map { i =>
+      val date = dateOperator(start, -i)
+      val count = fetchedData
+        .find(_.date.equals(date))
+        .map(_.count)
+        .getOrElse(0)
+      CountByDate(count, date)
+    }
+    res
+  }
+
+  val baseStatReportTableQuery = reportTableQuery.filter(_.creationDate > backofficeAdminStartDate)
+
   val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report =>
     report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1)
   )
 
   def countWithStatus(
-      statusList: List[ReportStatusValue],
+      status: Seq[ReportStatusValue],
       cutoff: Option[Duration],
-      withWebsite: Option[Boolean] = None
+      withWebsite: Option[Boolean] = None,
+      companyId: Option[UUID] = None
   ) = db
     .run(
       baseStatReportTableQuery
         .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
-        .filter(_.status inSet statusList.map(_.defaultValue))
+        .filterOpt(companyId)((table, id) => table.companyId === id)
+        .filter(_.status inSet status.map(_.defaultValue))
         .filterOpt(withWebsite) { case (table, withWebsite) =>
           table.websiteURL.isDefined === withWebsite
         }
         .length
         .result
     )
-
-  def countMonthlyWithStatus(statusList: List[ReportStatusValue]): Future[List[MonthlyStat]] = db
-    .run(
-      baseMonthlyStatReportTableQuery
-        .filter(_.status inSet statusList.map(_.defaultValue))
-        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map { case ((month, year), group) =>
-          (month, year, group.length)
-        }
-        .to[List]
-        .result
-    )
-    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
 
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
@@ -586,7 +447,46 @@ class ReportRepository @Inject() (
       .result
   }
 
-  def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
+  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]] =
+    db.run(
+      reportTableQuery
+        .filterOpt(companyId)(_.companyId === _)
+        .groupBy(_.status)
+        .map { case (status, report) => status -> report.size }
+        .result
+    ).map(_.toMap)
+
+  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[String, Int]] = {
+    def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
+      map.foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
+        acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
+      }
+
+    db.run(
+      reportTableQuery
+        .filterOpt(companyId)(_.companyId === _)
+        .groupBy(_.tags)
+        .map { case (status, report) => (status, report.size) }
+        .sortBy(_._2.desc)
+        .result
+    ).map(spreadListOfTags)
+  }
+
+  def getHostsByCompany(companyId: UUID): Future[Seq[String]] =
+    db.run(
+      reportTableQuery
+        .filter(_.companyId === companyId)
+        .filter(_.host.isDefined)
+        .map(_.host)
+        .distinct
+        .result
+    ).map(_.map(_.getOrElse("")))
+
+  def getReports(
+      offset: Option[Long],
+      limit: Option[Int],
+      filter: ReportFilter
+  ): Future[PaginatedResult[Report]] = {
     val query = reportTableQuery
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -636,35 +536,31 @@ class ReportRepository @Inject() (
       .filterOpt(filter.statusList) { case (table, statusList) =>
         table.status.inSet(statusList.map(_.defaultValue))
       }
-      .filterIf(!filter.tags.isEmpty) { case table =>
+      .filterIf(filter.tags.nonEmpty) { case table =>
         table.tags @& filter.tags.toList.bind
       }
       .filterOpt(filter.details) { case (table, details) =>
-        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(
+          table.details,
+          ",",
+          ""
+        ) regexLike s"${details}"
       }
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
-      .joinLeft(companyTableQuery)
-      .on(_.companyId === _.id)
-      .filterIf(filter.departments.length > 0) { case (report, company) =>
-        company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
+      .filterIf(filter.departments.nonEmpty) { case (table) =>
+        filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
       }
-
-    for {
-      reports <- query
-                   .map(_._1)
-                   .sortBy(_.creationDate.desc)
-                   .drop(offset)
-                   .take(limit)
-                   .to[List]
-                   .result
-      count <- query.length.result
-    } yield PaginatedResult(
-      totalCount = count,
-      entities = reports,
-      hasNextPage = count - (offset + limit) > 0
-    )
+      .joinLeft(CompanyTables.tables)
+      .on(_.companyId === _.id)
+      .filterIf(filter.activityCodes.nonEmpty)(
+        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
+      )
+    query
+      .sortBy(_._1.creationDate.desc)
+      .map(_._1)
+      .withPagination(db)(offset, limit)
   }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
@@ -727,7 +623,7 @@ class ReportRepository @Inject() (
         .update(Some(output))
     )
 
-  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[CompanyWithNbReports]] = {
+  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[DeprecatedCompanyWithNbReports]] = {
     val q = db.run(
       companyTableQuery
         .joinLeft(reportTableQuery)
@@ -740,7 +636,7 @@ class ReportRepository @Inject() (
     )
 
     for {
-      res <- q.map(_.map { case (company, cnt) => CompanyWithNbReports(company, cnt) })
+      res <- q.map(_.map { case (company, cnt) => DeprecatedCompanyWithNbReports(company, cnt) })
     } yield PaginatedResult(
       totalCount = res.length,
       entities = res.drop(offset.toInt).take(limit).toList,
@@ -748,16 +644,8 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getReportsForStatusWithAdmins(status: ReportStatusValue): Future[List[(Report, List[User])]] =
-    for {
-      reports <- db.run {
-                   reportTableQuery
-                     .filter(_.status === status.defaultValue)
-                     .to[List]
-                     .result
-                 }
-      adminsMap <- companyRepository.fetchAdminsByCompany(reports.flatMap(_.companyId))
-    } yield reports.flatMap(r => r.companyId.map(companyId => (r, adminsMap.getOrElse(companyId, Nil))))
+  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
@@ -775,7 +663,7 @@ class ReportRepository @Inject() (
     .run(
       reportTableQuery
         .filter(_.websiteURL.isDefined)
-        .filter(_.companyId.isEmpty)
+        .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
@@ -787,13 +675,15 @@ class ReportRepository @Inject() (
     )
 
   def getUnkonwnReportCountByHost(
+      host: Option[String],
       start: Option[LocalDate] = None,
       end: Option[LocalDate] = None
   ): Future[List[(Option[String], Int)]] = db
     .run(
       reportTableQuery
         .filter(_.host.isDefined)
-        .filter(_.companyId.isEmpty)
+        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
+        .filter(x => x.companyId.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
@@ -802,6 +692,7 @@ class ReportRepository @Inject() (
         }
         .groupBy(_.host)
         .map { case (host, report) => (host, report.size) }
+        .sortBy(_._2.desc)
         .to[List]
         .result
     )

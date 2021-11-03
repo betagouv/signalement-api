@@ -1,34 +1,25 @@
 package tasks
 
-import java.net.URI
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
-
-import models.UserRoles.Pro
 import models._
-import models.Event._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
-import play.api.Configuration
 import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 import utils.Constants.ActionEvent
 import utils.Constants.ReportStatus
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
-import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
-import utils.Constants.EventType.PRO
 import utils.Constants.ReportStatus.ReportStatusValue
 import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
-import utils.Fixtures
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -39,9 +30,9 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     s2"""
        Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and expired reading delay   ${step(setupReport(report))}
-       When remind task run                                                         ${step(
+       When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
-    )}
+    }}
        Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
       report.id,
       ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -66,9 +57,9 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
     s2"""
        Given a company with no activated accout
        Given a report with status "TRAITEMENT_EN_COURS" and no expired reading delay    ${step(setupReport(report))}
-       When remind task run                                                             ${step(
+       When remind task run                                                             ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
-    )}
+    }}
        Then no event is created                                                         ${eventMustNotHaveBeenCreated(
       report.id,
       List.empty
@@ -76,7 +67,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
        And the report is not updated                                                    ${reporStatustMustNotHaveBeenUpdated(
       report
     )}
-       And no mail is sent                                                              ${mailMustNotHaveBeenSent}
+       And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
     """
   }
 }
@@ -87,12 +78,12 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
     with Mockito
     with FutureMatchers {
 
-  implicit lazy val websiteUrl = app.injector.instanceOf[Configuration].get[URI]("play.website.url")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   implicit val ec = ee.executionContext
 
   val runningDateTime = LocalDateTime.now
-  val noAccessReadingDelay = java.time.Period.parse(app.configuration.get[String]("play.reports.noAccessReadingDelay"))
+  val noAccessReadingDelay = config.report.noAccessReadingDelay
 
   val company = Fixtures.genCompany.sample.get
   val onGoingReport = Fixtures
@@ -111,7 +102,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -120,7 +111,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
       )
 
   def mailMustNotHaveBeenSent() =
-    there was no(app.injector.instanceOf[MailerService])
+    there was no(mailerService)
       .sendEmail(
         EmailAddress(anyString),
         any[Seq[EmailAddress]],

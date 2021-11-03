@@ -1,16 +1,11 @@
 package tasks
 
-import java.net.URI
 import java.time.LocalDate
 import java.time.Period
-import java.util.UUID
-
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import play.api.Configuration
-import play.api.libs.mailer.Attachment
 import repositories._
 import services.MailerService
 import utils.Constants.Tags
@@ -18,6 +13,7 @@ import utils.AppSpec
 import utils.Country
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -25,9 +21,9 @@ import scala.concurrent.duration.Duration
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
   override def is =
     s2"""
-         When daily reportNotificationTask task run                                      ${step(
+         When daily reportNotificationTask task run                                      ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    )}
+    }}
          And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
       Seq(covidEmail),
       s"[SignalConso] Un nouveau signalement",
@@ -59,8 +55,8 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
 
-  implicit lazy val websiteUrl = injector.instanceOf[Configuration].get[URI]("play.website.url")
-  implicit lazy val contactAddress = injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  implicit lazy val contactAddress = config.mail.contactAddress
 
   implicit val ec = ee.executionContext
 
@@ -110,7 +106,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   val countryReport =
     Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Suisse)))
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
@@ -120,14 +116,14 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- subscriptionRepository.create(covidSubscription)
         _ <- subscriptionRepository.create(tagSubscription)
         _ <- subscriptionRepository.create(countrySubscription)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         recipients,
         Nil,
         subject,

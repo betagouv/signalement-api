@@ -1,25 +1,24 @@
 package orchestrators
 
-import javax.inject.Inject
+import config.AppConfigLoader
 import models.EmailValidation
 import models.EmailValidationCreate
-import play.api.Logger
 import play.api.mvc.Request
 import repositories._
 import services.MailService
 import utils.EmailAddress
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class EmailValidationOrchestrator @Inject() (
     mailService: MailService,
-    emailValidationRepository: EmailValidationRepository
+    emailValidationRepository: EmailValidationRepository,
+    appConfigLoader: AppConfigLoader
 )(implicit
     executionContext: ExecutionContext
 ) {
-
-  private[this] val logger = Logger(this.getClass)
 
   private[this] def findOrCreate(email: EmailAddress): Future[EmailValidation] =
     emailValidationRepository.findByEmail(email).flatMap {
@@ -33,11 +32,15 @@ class EmailValidationOrchestrator @Inject() (
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
   def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] =
-    for {
-      emailValidation <- findOrCreate(email)
-    } yield
-      if (emailValidation.lastValidationDate.isEmpty) {
-        mailService.sendConsumerEmailConfirmation(emailValidation)
-        false
-      } else true
+    if (appConfigLoader.get.mail.skipReportEmailValidation) {
+      Future.successful(true)
+    } else {
+      for {
+        emailValidation <- findOrCreate(email)
+      } yield
+        if (emailValidation.lastValidationDate.isEmpty) {
+          mailService.Consumer.sendEmailConfirmation(emailValidation)
+          false
+        } else true
+    }
 }

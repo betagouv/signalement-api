@@ -1,16 +1,14 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import javax.inject._
 import utils.silhouette.auth.AuthEnv
 
-import scala.concurrent.ExecutionContext
+import javax.inject._
 
 @Singleton
-class StaticController @Inject() (val silhouette: Silhouette[AuthEnv])(implicit ec: ExecutionContext)
-    extends BaseController {
+class StaticController @Inject() (val silhouette: Silhouette[AuthEnv]) extends BaseController {
 
-  def api = UserAwareAction { implicit request =>
+  def api = UserAwareAction { _ =>
     Ok(views.html.api())
   }
 }

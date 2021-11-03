@@ -1,17 +1,16 @@
 package actors
 
 import akka.NotUsed
-
-import java.io.BufferedInputStream
-import java.time.OffsetDateTime
-import java.util.UUID
-import java.util.zip.ZipInputStream
 import akka.actor.Actor
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.stream.FlowShape
 import akka.stream.KillSwitches
 import akka.stream.SharedKillSwitch
+import akka.stream.alpakka.csv.scaladsl.CsvParsing
+import akka.stream.alpakka.csv.scaladsl.CsvToMap
+import akka.stream.alpakka.slick.scaladsl.Slick
+import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.GraphDSL
@@ -20,14 +19,7 @@ import akka.stream.scaladsl.Partition
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
-import akka.stream.alpakka.csv.scaladsl.CsvParsing
-import akka.stream.alpakka.csv.scaladsl.CsvToMap
-import akka.stream.alpakka.slick.scaladsl.Slick
-import akka.stream.alpakka.slick.scaladsl.SlickSession
 import com.google.inject.AbstractModule
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.CompanyFile
 import models.EnterpriseImportInfo
 import models.EtablissementFile
@@ -37,13 +29,19 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import utils.SIREN
 
+import java.io.BufferedInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.util.UUID
+import java.util.zip.ZipInputStream
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object EnterpriseSyncActor {
-  def props = Props[EnterpriseSyncActor]
+  def props = Props[EnterpriseSyncActor]()
 
   sealed trait Command
 
@@ -91,13 +89,13 @@ class EnterpriseSyncActor @Inject() (
         _ <- cancel(companyFile.name)
         jobId = UUID.randomUUID()
         _ <- enterpriseSyncInfoRepo.create(
-               EnterpriseImportInfo(
-                 id = jobId,
-                 fileName = companyFile.name,
-                 fileUrl = companyFile.url.toString,
-                 linesCount = companyFile.approximateSize
-               )
-             )
+          EnterpriseImportInfo(
+            id = jobId,
+            fileName = companyFile.name,
+            fileUrl = companyFile.url.toString,
+            linesCount = companyFile.approximateSize
+          )
+        )
         filePath = s"./${companyFile.name}.csv"
         _ = logger.debug(s"------------------  Downloading ${companyFile.name} file ------------------")
         _ <- {
@@ -118,9 +116,9 @@ class EnterpriseSyncActor @Inject() (
     _ <- enterpriseSyncInfoRepo.updateAllError(name, "<CANCELLED>")
     _ <- enterpriseSyncInfoRepo.updateAllEndedAt(name, OffsetDateTime.now)
     _ <- Future.successful(processedFiles.get(name).map { processFile =>
-           processedFiles = processedFiles - name
-           processFile.stream.shutdown()
-         })
+      processedFiles = processedFiles - name
+      processFile.stream.shutdown()
+    })
   } yield ()
 
   private[this] def ingestFile[T](
@@ -140,13 +138,13 @@ class EnterpriseSyncActor @Inject() (
 
     val EtablissementIngestionFlow: Flow[Map[String, String], Int, NotUsed] =
       Flow[Map[String, String]]
-        .map(_.mapValues(x => Option(x).filter(_.trim.nonEmpty)): Map[String, Option[String]])
+        .map(_.view.mapValues(x => Option(x).filter(_.trim.nonEmpty)).toMap: Map[String, Option[String]])
         .filter { columnsValueMap =>
           columnsValueMap.contains("siret") && columnsValueMap.contains("siren")
         }
         .grouped(batchSize)
         .via(
-          Slick.flow(4, group => group.map(companyDataRepository.insertAll(_)).reduceLeft(_.andThen(_)))
+          Slick.flow(4, group => group.map(companyDataRepository.insertAll).reduceLeft(_.andThen(_)))
         )
         .via(sharedKillSwitch.flow)
 
@@ -174,7 +172,7 @@ class EnterpriseSyncActor @Inject() (
         }
         .grouped(batchSize)
         .map { x =>
-          logger.debug("Processing ${x.size} elements")
+          logger.debug(s"Processing ${x.size} elements")
           x
         }
         .via(
@@ -219,7 +217,7 @@ class EnterpriseSyncActor @Inject() (
 
     stream
       .flatMap(_ => enterpriseSyncInfoRepo.updateEndedAt(jobId))
-      .recover { case err =>
+      .recoverWith { case err =>
         logger.error(s"Error occurred while importing ${companyFile.url}", err)
         enterpriseSyncInfoRepo.updateError(jobId, err.toString)
       }

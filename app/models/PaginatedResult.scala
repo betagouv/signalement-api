@@ -1,8 +1,6 @@
 package models
 
-import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import play.api.libs.json.Writes
 
 case class PaginatedResult[T](
@@ -16,6 +14,8 @@ object PaginatedResult {
   implicit def paginatedReportWriter(implicit userRole: Option[UserRole]) = Json.writes[PaginatedResult[Report]]
   implicit val paginatedReportReader = Json.reads[PaginatedResult[Report]]
 
-  implicit def paginatedReportWithFilesWriter(implicit userRole: Option[UserRole]) =
+  def paginatedResultWrites[T](implicit tWrites: Writes[T]) = Json.writes[PaginatedResult[T]]
+
+  implicit def paginatedReportWithFilesWriter =
     Json.writes[PaginatedResult[ReportWithFiles]]
 }

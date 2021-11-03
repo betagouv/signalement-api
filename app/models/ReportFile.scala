@@ -1,9 +1,9 @@
 package models
 
+import play.api.libs.json._
+
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import play.api.libs.json._
 
 sealed case class ReportFileOrigin(value: String)
 

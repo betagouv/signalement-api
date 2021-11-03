@@ -1,13 +1,13 @@
 package services
 
-import akka.actor.ActorSystem
-import javax.inject.Inject
 import play.api.Environment
 import play.api.Logger
 import play.api.libs.mailer._
 import utils.EmailAddress
 
-class MailerService @Inject() (mailerClient: MailerClient, system: ActorSystem, environment: Environment) {
+import javax.inject.Inject
+
+class MailerService @Inject() (mailerClient: MailerClient, environment: Environment) {
 
   val logger: Logger = Logger(this.getClass)
 

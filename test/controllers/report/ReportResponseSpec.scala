@@ -3,7 +3,6 @@ package controllers.report
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -31,6 +30,7 @@ import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.SIREN
 
 import scala.concurrent.Await
@@ -39,10 +39,10 @@ import scala.concurrent.duration.Duration
 class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step(someLoginInfo = None)}
-         When post a response                                         ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         When post a response                                         ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
          Then result status is not authorized                         ${resultStatusMustBe(Status.UNAUTHORIZED)}
     """
 }
@@ -50,12 +50,12 @@ class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends Rep
 class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-         Given an authenticated pro user which is not concerned by the report   ${step(someLoginInfo =
-      Some(notConcernedProLoginInfo)
-    )}
-         When post a response                                                   ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+         Given an authenticated pro user which is not concerned by the report   ${step {
+      someLoginInfo = Some(notConcernedProLoginInfo)
+    }}
+         When post a response                                                   ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
          Then result status is not found                                        ${resultStatusMustBe(Status.NOT_FOUND)}
     """
 }
@@ -63,12 +63,12 @@ class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends Rep
 class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "ACCEPTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "ACCEPTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -97,14 +97,15 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
 }
 
 class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+
   override def is =
     s2"""
-        Given an authenticated pro user which have rights on head office         ${step(someLoginInfo =
-      Some(concernedHeadOfficeProLoginInfo)
-    )}
-        When post a response with type "ACCEPTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseAccepted))
-    )}
+        Given an authenticated pro user which have rights on head office         ${step {
+      someLoginInfo = Some(concernedHeadOfficeProLoginInfo)
+    }}
+        When post a response with type "ACCEPTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseAccepted))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -135,12 +136,12 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
 class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "REJECTED"                                ${step(someResult =
-      Some(postReportResponse(reportResponseRejected))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "REJECTED"                                ${step {
+      someResult = Some(postReportResponse(reportResponseRejected))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -170,12 +171,12 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
 class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
   override def is =
     s2"""
-        Given an authenticated pro user which is concerned by the report         ${step(someLoginInfo =
-      Some(concernedProLoginInfo)
-    )}
-        When post a response with type "NOT_CONCERNED"                           ${step(someResult =
-      Some(postReportResponse(reportResponseNotConcerned))
-    )}
+        Given an authenticated pro user which is concerned by the report         ${step {
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
+        When post a response with type "NOT_CONCERNED"                           ${step {
+      someResult = Some(postReportResponse(reportResponseNotConcerned))
+    }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_PRO_RESPONSE
     )}
@@ -213,6 +214,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -265,9 +267,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseNotConcerned =
     ReportResponse(ReportResponseType.NOT_CONCERNED, "details for consumer", Some("details for dgccrf"), List.empty)
 
-  override def setupData = {
-    reviewUrl =
-      app.configuration.get[URI]("play.website.url").resolve(s"/suivi-des-signalements/${reportFixture.id}/avis")
+  override def setupData() = {
+    reviewUrl = new URI(
+      config.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+    )
     Await.result(
       for {
         _ <- userRepository.create(concernedProUser)
@@ -284,8 +287,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        - <- reportRepository.createFile(reportResponseFile)
-      } yield Unit,
+        _ <- reportRepository.createFile(reportResponseFile)
+      } yield (),
       Duration.Inf
     )
   }
@@ -333,7 +336,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,

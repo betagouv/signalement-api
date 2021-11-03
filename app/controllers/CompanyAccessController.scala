@@ -1,22 +1,23 @@
 package controllers
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import java.util.UUID
-
-import repositories._
+import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.AccessesOrchestrator
-import play.api.libs.json._
+import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import com.mohiva.play.silhouette.api.Silhouette
-import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
+import play.api.libs.json._
+import repositories._
 import utils.EmailAddress
 import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
+
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class CompanyAccessController @Inject() (
@@ -24,23 +25,20 @@ class CompanyAccessController @Inject() (
     val companyRepository: CompanyRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
+    val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass())
+
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
-    for {
-      userAccesses <- companyRepository.fetchUsersWithLevel(request.company)
-    } yield Ok(Json.toJson(userAccesses.map { case (user, level) =>
-      Map(
-        "userId" -> user.id.toString,
-        "firstName" -> user.firstName,
-        "lastName" -> user.lastName,
-        "email" -> user.email.value,
-        "level" -> level.value
-      )
-    }))
+    accessesOrchestrator
+      .listAccesses(request.company, request.identity)
+      .map(res => Ok(Json.toJson(res)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
@@ -56,7 +54,7 @@ class CompanyAccessController @Inject() (
         .map(level =>
           for {
             user <- userRepository.get(userId)
-            _ <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(Unit))
+            _ <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(()))
           } yield if (user.isDefined) Ok else NotFound
         )
         .getOrElse(Future(NotFound))
@@ -66,7 +64,7 @@ class CompanyAccessController @Inject() (
     implicit request =>
       for {
         user <- userRepository.get(userId)
-        _ <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(Unit))
+        _ <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(()))
       } yield if (user.isDefined) Ok else NotFound
   }
 
@@ -125,19 +123,17 @@ class CompanyAccessController @Inject() (
     implicit request =>
       for {
         token <- accessTokenRepository.getToken(request.company, tokenId)
-        _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(Unit))
+        _ <- token.map(accessTokenRepository.invalidateToken(_)).getOrElse(Future(()))
       } yield if (token.isDefined) Ok else NotFound
   }
 
-  def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
-    for {
-      company <- companyRepository.findBySiret(SIRET(siret))
-      token <- company
-                 .map(accessTokenRepository.findToken(_, token))
-                 .getOrElse(Future(None))
-    } yield token
-      .flatMap(t => company.map(c => Ok(Json.toJson(TokenInfo(t.token, t.kind, Some(c.siret), t.emailedTo)))))
-      .getOrElse(NotFound)
+  def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { _ =>
+    accessesOrchestrator
+      .fetchCompanyUserActivationToken(SIRET(siret), token)
+      .map(token => Ok(Json.toJson(token)))
+      .recover { case err =>
+        handleError(err)
+      }
   }
 
   case class ActivationLinkRequest(token: String, email: EmailAddress)
@@ -152,17 +148,18 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             isValid <- company
-                         .map(c =>
-                           accessTokenRepository
-                             .fetchActivationCode(c)
-                             .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
-                         )
-                         .getOrElse(Future(false))
-            sent <- if (isValid)
-                      accessesOrchestrator
-                        .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
-                        .map(_ => true)
-                    else Future(false)
+              .map(c =>
+                accessTokenRepository
+                  .fetchActivationCode(c)
+                  .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
+              )
+              .getOrElse(Future(false))
+            sent <-
+              if (isValid)
+                accessesOrchestrator
+                  .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
+                  .map(_ => true)
+              else Future(false)
           } yield if (sent) Ok else NotFound
       )
   }
@@ -179,22 +176,22 @@ class CompanyAccessController @Inject() (
           for {
             company <- companyRepository.findBySiret(SIRET(siret))
             token <- company
-                       .map(
-                         accessTokenRepository
-                           .findToken(_, acceptTokenRequest.token)
-                           .map(
-                             _.filter(
-                               _.emailedTo.filter(email => email != request.identity.email).isEmpty
-                             )
-                           )
-                       )
-                       .getOrElse(Future(None))
+              .map(
+                accessTokenRepository
+                  .findToken(_, acceptTokenRequest.token)
+                  .map(
+                    _.filter(
+                      _.emailedTo.filter(email => email != request.identity.email).isEmpty
+                    )
+                  )
+              )
+              .getOrElse(Future(None))
             applied <- token
-                         .map(t =>
-                           accessTokenRepository
-                             .applyCompanyToken(t, request.identity)
-                         )
-                         .getOrElse(Future(false))
+              .map(t =>
+                accessTokenRepository
+                  .applyCompanyToken(t, request.identity)
+              )
+              .getOrElse(Future(false))
           } yield if (applied) Ok else NotFound
       )
   }

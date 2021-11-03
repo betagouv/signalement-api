@@ -1,10 +1,9 @@
 package utils
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import models.Event._
 import models._
+import models.website.Website
+import models.website.WebsiteKind
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -12,6 +11,8 @@ import utils.Constants.EventType.EventTypeValue
 import utils.Constants.ReportStatus
 import utils.Constants.ReportStatus.ReportStatusValue
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.util.Random
 
 object Fixtures {
@@ -62,7 +63,7 @@ object Fixtures {
   )
 
   val genCompany = for {
-    id <- arbitrary[UUID]
+    _ <- arbitrary[UUID]
     name <- arbString.arbitrary
     siret <- genSiret()
     address <- genAddress()
@@ -219,6 +220,6 @@ object Fixtures {
     companyId <- arbitrary[UUID]
     websiteUrl <- genWebsiteURL
     kind <- Gen.oneOf(WebsiteKind.values)
-  } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, companyId, kind)
+  } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, None, Some(companyId), kind)
 
 }

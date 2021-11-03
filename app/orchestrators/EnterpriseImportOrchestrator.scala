@@ -3,14 +3,13 @@ package orchestrators
 import actors.EnterpriseSyncActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-
-import javax.inject.Inject
-import javax.inject.Named
 import models.EnterpriseImportInfo
 import models.EtablissementFile
 import models.UniteLegaleFile
 import repositories.EnterpriseImportInfoRepository
 
+import javax.inject.Inject
+import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._

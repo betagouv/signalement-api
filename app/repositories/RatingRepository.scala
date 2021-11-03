@@ -1,19 +1,18 @@
 package repositories
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
-import javax.inject.Inject
-import javax.inject.Singleton
 import models.Rating
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, reportRepository: ReportRepository)(implicit
+class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     ec: ExecutionContext
 ) {
 

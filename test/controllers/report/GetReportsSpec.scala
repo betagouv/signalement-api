@@ -33,17 +33,19 @@ import scala.concurrent.Future
 class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an unauthenticated user                                ${step(someLoginInfo = None)}
-         When retrieving reports                                      ${step(someResult = Some(getReports()))}
-         Then user is not authorized                                  ${userMustBeUnauthorized}
+         Given an unauthenticated user                                ${step { someLoginInfo = None }}
+         When retrieving reports                                      ${step { someResult = Some(getReports()) }}
+         Then user is not authorized                                  ${userMustBeUnauthorized()}
     """
 }
 
 class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated admin user                            ${step(someLoginInfo = Some(loginInfo(adminUser)))}
-         When retrieving reports                                      ${step(someResult = Some(getReports()))}
+         Given an authenticated admin user                            ${step {
+      someLoginInfo = Some(loginInfo(adminUser))
+    }}
+         When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUser(adminUser)}
     """
 }
@@ -51,10 +53,10 @@ class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
 class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated dgccrf user                           ${step(someLoginInfo =
-      Some(loginInfo(dgccrfUser))
-    )}
-         When retrieving reports                                      ${step(someResult = Some(getReports()))}
+         Given an authenticated dgccrf user                           ${step {
+      someLoginInfo = Some(loginInfo(dgccrfUser))
+    }}
+         When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUser(dgccrfUser)}
     """
 }
@@ -62,12 +64,12 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
 class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated pro user who access to the headOffice               ${step(someLoginInfo =
-      Some(loginInfo(proUserWithAccessToHeadOffice))
-    )}
-         When retrieving reports                                                    ${step(someResult =
-      Some(getReports())
-    )}
+         Given an authenticated pro user who access to the headOffice               ${step {
+      someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+    }}
+         When retrieving reports                                                    ${step {
+      someResult = Some(getReports())
+    }}
          Then headOffice and subsidiary reports are rendered to the user as a Pro   ${reportsMustBeRenderedForUser(
       proUserWithAccessToHeadOffice
     )}
@@ -77,23 +79,25 @@ class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) exten
 class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated pro user                                            ${step(someLoginInfo =
-      Some(loginInfo(proUserWithAccessToHeadOffice))
-    )}
-         When retrieving reports                                                    ${step(someResult =
-      Some(getReports(Some("badvalue")))
-    )}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered}
+         Given an authenticated pro user                                            ${step {
+      someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+    }}
+         When retrieving reports                                                    ${step {
+      someResult = Some(getReports(Some("badvalue")))
+    }}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered()}
     """
 }
 
 class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
-         Given an authenticated pro user who only access to the subsidiary      ${step(someLoginInfo =
-      Some(loginInfo(proUserWithAccessToSubsidiary))
-    )}
-         When retrieving reports                                                ${step(someResult = Some(getReports()))}
+         Given an authenticated pro user who only access to the subsidiary      ${step {
+      someLoginInfo = Some(loginInfo(proUserWithAccessToSubsidiary))
+    }}
+         When retrieving reports                                                ${step {
+      someResult = Some(getReports())
+    }}
          Then subsidiary reports are rendered to the user as a Pro              ${reportsMustBeRenderedForUser(
       proUserWithAccessToSubsidiary
     )}
@@ -147,7 +151,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -168,16 +172,16 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
         _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
         _ <- reportRepository.create(reportNAOnHeadOffice)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
-  override def cleanupData =
+  override def cleanupData() =
     Await.result(
       for {
         _ <- companyDataRepository.delete(headOfficeCompanyData.id)
         _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
@@ -206,7 +210,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         .getReports(
           offset = None,
           limit = None,
-          departments = None,
+          departments = Nil,
           websiteURL = None,
           phone = None,
           websiteExists = None,
@@ -214,14 +218,15 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           email = None,
           siretSirenList = Nil,
           companyName = None,
-          companyCountries = None,
+          companyCountries = Nil,
           start = None,
           end = None,
           category = None,
           status = status,
           details = None,
           hasCompany = None,
-          tags = Nil
+          tags = Nil,
+          activityCodes = Nil
         )
         .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf
@@ -236,10 +241,8 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def haveReports(reports: Matcher[String]*): Matcher[String] =
     /("entities").andHave(allOf(reports: _*))
 
-  def reportsMustBeRenderedForUser(user: User) = {
-
-    implicit val someUserRole = Some(user.userRole)
-
+  def reportsMustBeRenderedForUser(user: User) =
+//    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
       case (UserRoles.Admin, _) =>
         contentAsJson(Future(someResult.get)).toString must
@@ -268,7 +271,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
-  }
 
   def noReportsMustBeRendered() =
     contentAsJson(Future(someResult.get)).toString must

@@ -1,17 +1,20 @@
 package repositories
 
+import models._
+import models.token.TokenKind
+import models.token.TokenKind.CompanyInit
+import models.token.TokenKind.DGCCRFAccount
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.Logger
-import slick.jdbc.JdbcProfile
-
-import models._
-import utils.EmailAddress
 
 @Singleton
 class AccessTokenRepository @Inject() (
@@ -23,9 +26,9 @@ class AccessTokenRepository @Inject() (
   val logger: Logger = Logger(this.getClass())
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
-  import dbConfig._
   import companyRepository.AccessLevelColumnType
-  implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.value, TokenKind.fromValue(_))
+  import dbConfig._
+  implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.entryName, TokenKind.withName(_))
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
@@ -63,7 +66,6 @@ class AccessTokenRepository @Inject() (
   ): Future[AccessToken] =
     db.run(
       AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
-        id = UUID.randomUUID(),
         creationDate = creationDate,
         kind = kind,
         token = token,
@@ -98,7 +100,7 @@ class AccessTokenRepository @Inject() (
   def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
-        .filter(_.kind === TokenKind.COMPANY_INIT)
+        .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
         .result
         .headOption
@@ -156,13 +158,13 @@ class AccessTokenRepository @Inject() (
       AccessTokenTableQuery
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
         .filter(_.valid)
-        .filter(_.kind === TokenKind.DGCCRF_ACCOUNT)
+        .filter(_.kind === (DGCCRFAccount: TokenKind))
         .to[List]
         .result
     )
 
   def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] =
-    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
+    if (!token.valid || token.expirationDate.exists(_.isBefore(OffsetDateTime.now))) {
       logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
       Future(false)
     } else
@@ -192,7 +194,7 @@ class AccessTokenRepository @Inject() (
             .update(false)
         )
         .transactionally
-    ).map(_ => Unit)
+    ).map(_ => ())
 
   def invalidateToken(token: AccessToken): Future[Int] =
     db.run(
@@ -216,7 +218,7 @@ class AccessTokenRepository @Inject() (
         .filter(_.companyId inSetBind companyIds.distinct)
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
         .filter(_.valid)
-        .filter(_.kind === TokenKind.COMPANY_INIT)
+        .filter(_.kind === (CompanyInit: TokenKind))
         .to[List]
         .result
     ).map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
@@ -229,7 +231,7 @@ class AccessTokenRepository @Inject() (
         .filter(_._1.creationDate < OffsetDateTime.now.withHour(0).withMinute(0).withSecond(0).withNano(0))
         .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
         .filter(_._1.valid)
-        .filter(_._1.kind === TokenKind.COMPANY_INIT)
+        .filter(_._1.kind === (CompanyInit: TokenKind))
         .to[List]
         .result
     )
