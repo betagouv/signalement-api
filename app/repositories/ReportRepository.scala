@@ -268,11 +268,7 @@ class ReportRepository @Inject() (
 
   private val companyTableQuery = CompanyTables.tables
 
-  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
-
-  private val trunc = SimpleFunction.binary[String, OffsetDateTime, OffsetDateTime]("date_trunc")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
@@ -320,11 +316,14 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
-        .filterOpt(companyId) { case (table, siret) =>
+        .filterOpt(companyId) { case (table, _) =>
           table.companyId === companyId
+        }
+        .filterIf(status.nonEmpty) { case table =>
+          table.status inSet (status.map(_.defaultValue))
         }
         .length
         .result

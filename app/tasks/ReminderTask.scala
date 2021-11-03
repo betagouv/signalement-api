@@ -184,7 +184,7 @@ class ReminderTask @Inject() (
           stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
         )
       )
-      .map { newEvent =>
+      .map { _ =>
         mailService.Pro.sendReportUnreadReminder(adminMails, report, expirationDate)
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }
@@ -240,7 +240,7 @@ class ReminderTask @Inject() (
           stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
         )
       )
-      .map { newEvent =>
+      .map { _ =>
         mailService.Pro.sendReportTransmittedReminder(adminMails, report, expirationDate)
         Reminder(report.id, ReminderValue.RemindReportByMail)
       }

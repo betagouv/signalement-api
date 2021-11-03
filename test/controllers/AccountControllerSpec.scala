@@ -107,7 +107,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       "use preexisting tokens with same email, if any" in {
         val newUser = Fixtures.genUser.sample.get
         val otherCompany = Fixtures.genCompany.sample.get
-        val otherToken = Await.result(
+        Await.result(
           for {
             _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
             _ <- accessTokenRepository.createToken(

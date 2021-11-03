@@ -69,7 +69,7 @@ class CompanyController @Inject() (
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
     companyOrchestrator
       .searchRegistered(
         departments = departments.getOrElse(Seq()),
@@ -81,33 +81,39 @@ class CompanyController @Inject() (
       .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
   }
 
-  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { implicit request =>
+  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { _ =>
     logger.debug(s"searchCompany $postalCode $q")
     companyOrchestrator
       .searchCompany(q, postalCode)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { implicit request =>
+  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { _ =>
     logger.debug(s"searchCompanyByIdentity $identity")
     companyOrchestrator
       .searchCompanyByIdentity(identity)
       .map(res => Ok(Json.toJson(res)))
   }
 
-  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { implicit request =>
+  def searchCompanyByWebsite(url: String) = UnsecuredAction.async { _ =>
     companyOrchestrator
       .searchCompanyByWebsite(url)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRoles.DGCCRF, UserRoles.Admin)).async {
+    companyOrchestrator
+      .getResponseRate(companyId)
+      .map(results => Ok(Json.toJson(results)))
+  }
+
+  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     for {
       company <- companyOrchestrator.companyDetails(SIRET(siret))
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
-  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { implicit request =>
+  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
     companyOrchestrator
       .companiesToActivate()
       .map(result => Ok(Json.toJson(result)))

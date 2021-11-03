@@ -6,6 +6,7 @@ import models.CurveTickDuration
 import models.ReportReviewStats
 import play.api.Configuration
 import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
 import repositories._
 import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
@@ -25,8 +26,8 @@ class StatsOrchestrator @Inject() (
 
   private[this] lazy val cutoff = appConfigLoader.signalConsoConfiguration.stats.globalStatsCutoff
 
-  def getReportCount(companyId: Option[UUID] = None): Future[Int] =
-    _report.count(companyId)
+  def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatusValue]): Future[Int] =
+    _report.count(companyId, status)
 
   def getReportWithStatusPercent(
       status: Seq[ReportStatusValue],
@@ -92,7 +93,7 @@ class StatsOrchestrator @Inject() (
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     _event.getReportResponseReviews(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
-        val review = event.details.as[JsObject].value.getOrElse("description", "").toString
+        val review = event.details.as[JsObject].value.getOrElse("description", JsString("")).toString
         ReportReviewStats(
           acc.positive + (if (review.contains(ReportResponseReview.Positive.entryName)) 1 else 0),
           acc.negative + (if (review.contains(ReportResponseReview.Negative.entryName)) 1 else 0)

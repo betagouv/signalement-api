@@ -47,7 +47,10 @@ class AuthController @Inject() (
     request.body
       .validate[UserLogin]
       .fold(
-        err => Future(BadRequest),
+        err => {
+          logger.error(s"Failure parsing UserLogin ${err}")
+          Future(BadRequest)
+        },
         data =>
           for {
             _ <- userRepository.saveAuthAttempt(data.login)
@@ -91,7 +94,10 @@ class AuthController @Inject() (
     request.body
       .validate[String]((JsPath \ "login").read[String])
       .fold(
-        err => Future(BadRequest),
+        err => {
+          logger.error(s"Failure parsing UserLogin ${err}")
+          Future(BadRequest)
+        },
         login =>
           userService.retrieve(LoginInfo(CredentialsProvider.ID, login)).flatMap {
             case Some(user) =>

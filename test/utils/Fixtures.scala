@@ -63,7 +63,7 @@ object Fixtures {
   )
 
   val genCompany = for {
-    id <- arbitrary[UUID]
+    _ <- arbitrary[UUID]
     name <- arbString.arbitrary
     siret <- genSiret()
     address <- genAddress()

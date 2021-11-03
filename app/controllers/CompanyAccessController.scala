@@ -127,7 +127,7 @@ class CompanyAccessController @Inject() (
       } yield if (token.isDefined) Ok else NotFound
   }
 
-  def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { implicit request =>
+  def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
       .fetchCompanyUserActivationToken(SIRET(siret), token)
       .map(token => Ok(Json.toJson(token)))

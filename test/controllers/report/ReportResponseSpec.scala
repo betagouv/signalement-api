@@ -287,7 +287,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        - <- reportRepository.createFile(reportResponseFile)
+        _ <- reportRepository.createFile(reportResponseFile)
       } yield (),
       Duration.Inf
     )

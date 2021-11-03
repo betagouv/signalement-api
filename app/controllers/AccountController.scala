@@ -59,11 +59,12 @@ class AccountController @Inject() (
         passwordChange =>
           {
             for {
-              identLogin <-
+              _ <-
                 credentialsProvider.authenticate(Credentials(request.identity.email.value, passwordChange.oldPassword))
               _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
             } yield NoContent
           }.recover { case e =>
+            logger.error("Unexpected error", e)
             Unauthorized
           }
       )
@@ -95,7 +96,7 @@ class AccountController @Inject() (
             accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err => handleError(err) }
         )
   }
-  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>
+  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
       accessToken <- accessTokenRepository.fetchPendingTokensDGCCRF
     } yield Ok(
@@ -110,7 +111,7 @@ class AccountController @Inject() (
       )
     )
   }
-  def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { implicit request =>
+  def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
       users <- userRepository.list(UserRoles.DGCCRF)
     } yield Ok(
@@ -126,7 +127,7 @@ class AccountController @Inject() (
       )
     )
   }
-  def fetchTokenInfo(token: String) = UnsecuredAction.async { implicit request =>
+  def fetchTokenInfo(token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))

@@ -7,10 +7,7 @@ import utils.EmailAddress
 
 import javax.inject.Inject
 
-class MailerService @Inject() (
-    mailerClient: MailerClient,
-    environment: Environment
-) {
+class MailerService @Inject() (mailerClient: MailerClient, environment: Environment) {
 
   val logger: Logger = Logger(this.getClass)
 

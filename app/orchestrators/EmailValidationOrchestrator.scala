@@ -5,7 +5,6 @@ import models.EmailValidation
 import models.EmailValidationCreate
 import play.api.mvc.Request
 import play.api.Configuration
-import play.api.Logger
 import repositories._
 import services.MailService
 import utils.EmailAddress
