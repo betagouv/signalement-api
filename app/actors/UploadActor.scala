@@ -6,7 +6,6 @@ import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
 import config.AppConfigLoader
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -34,7 +33,7 @@ class UploadActor @Inject() (
   import UploadActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val avScanEnabled = appConfigLoader.signalConsoConfiguration.upload.avScanEnabled
+  val avScanEnabled = appConfigLoader.get.upload.avScanEnabled
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =

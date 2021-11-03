@@ -1,17 +1,16 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import config.AppConfigLoader
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json._
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent
-import utils.EmailAddress
 import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -44,8 +43,8 @@ class CompanyController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.signalConsoConfiguration.report.noAccessReadingDelay
-  val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
+  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
+  val contactAddress = appConfigLoader.get.mail.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))

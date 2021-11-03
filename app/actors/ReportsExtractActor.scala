@@ -13,7 +13,6 @@ import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.AppConfigLoader
 import controllers.routes
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -186,7 +185,7 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${appConfigLoader.signalConsoConfiguration.apiURL.toString}${routes.ReportController
+              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
                 .downloadReportFile(file.id.toString, file.filename)
                 .url}"
             )
@@ -370,7 +369,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.signalConsoConfiguration.tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

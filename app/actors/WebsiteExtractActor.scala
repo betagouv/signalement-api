@@ -12,7 +12,6 @@ import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.AppConfigLoader
 import models._
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -140,7 +139,7 @@ class WebsitesExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.signalConsoConfiguration.tmpDirectory, targetFilename)
+      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
       Workbook(extractSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

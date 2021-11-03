@@ -40,7 +40,7 @@ class AdminController @Inject() (
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = appConfigLoader.signalConsoConfiguration.mail.contactAddress
+  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
@@ -294,7 +294,7 @@ class AdminController @Inject() (
         .map(_.apply())
         .map { case EmailContent(subject, body) =>
           mailService.send(
-            from = mailFrom,
+            from = appConfigLoader.get.mail.from,
             recipients = Seq(EmailAddress(to)),
             subject = subject,
             bodyHtml = body.toString
@@ -303,7 +303,6 @@ class AdminController @Inject() (
         .map(_ => Ok)
         .getOrElse(NotFound)
     )
-              from = appConfigLoader.signalConsoConfiguration.mail.from,
   }
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>

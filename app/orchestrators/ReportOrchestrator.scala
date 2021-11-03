@@ -8,7 +8,6 @@ import models._
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
-import play.api.Configuration
 import play.api.Logger
 import repositories._
 import services.MailService
@@ -92,7 +91,7 @@ class ReportOrchestrator @Inject() (
           )
           .flatMap(_ => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
       } else {
-        genActivationToken(company.id, appConf.signalConsoConfiguration.token.companyInitDuration).map(_ => report)
+        genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
       }
     }
 
@@ -116,7 +115,7 @@ class ReportOrchestrator @Inject() (
   def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator
       .isEmailValid(draftReport.email)
-      .map(isValid => isValid || appConf.signalConsoConfiguration.mail.skipReportEmailValidation)
+      .map(isValid => isValid || appConf.get.mail.skipReportEmailValidation)
       .flatMap {
         case true =>
           for {

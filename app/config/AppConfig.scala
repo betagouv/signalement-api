@@ -28,12 +28,12 @@ class AppConfigLoader @Inject() (c: Configuration) {
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader = deriveReader[EmailAddress]
 
-  lazy val signalConsoConfiguration: SignalConsoConfiguration =
+  lazy val get: SignalConsoConfiguration =
     ConfigSource.default
       .loadOrThrow[ApplicationConfiguration]
       .app
 
-  lazy val AlpakkaS3Configuration: AppConfigAkkaCredentials = AppConfigAkkaCredentials(
+  lazy val s3: AppConfigAkkaCredentials = AppConfigAkkaCredentials(
     keyId = c.get[String]("alpakka.s3.aws.credentials.access-key-id"),
     secretKey = c.get[String]("alpakka.s3.aws.credentials.secret-access-key")
   )

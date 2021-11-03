@@ -4,7 +4,6 @@ import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
-import play.api.Configuration
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import repositories._
@@ -24,7 +23,7 @@ class StatsOrchestrator @Inject() (
     appConfigLoader: AppConfigLoader
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val cutoff = appConfigLoader.signalConsoConfiguration.stats.globalStatsCutoff
+  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
 
   def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatusValue]): Future[Int] =
     _report.count(companyId, status)

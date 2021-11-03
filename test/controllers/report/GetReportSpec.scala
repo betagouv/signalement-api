@@ -322,7 +322,7 @@ trait GetReportContext extends Mockito {
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
   lazy val mailService = application.injector.instanceOf[MailService]
-  val config = application.injector.instanceOf[AppConfigLoader].signalConsoConfiguration
+  val config = application.injector.instanceOf[AppConfigLoader].get
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(

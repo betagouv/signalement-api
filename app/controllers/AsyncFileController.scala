@@ -2,7 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import play.api.Configuration
 import play.api.libs.json._
 import repositories._
 import services.S3Service

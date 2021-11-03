@@ -4,7 +4,6 @@ import config.AppConfigLoader
 import models.EmailValidation
 import models.EmailValidationCreate
 import play.api.mvc.Request
-import play.api.Configuration
 import repositories._
 import services.MailService
 import utils.EmailAddress
@@ -33,7 +32,7 @@ class EmailValidationOrchestrator @Inject() (
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
   def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] =
-    if (appConfigLoader.signalConsoConfiguration.mail.skipReportEmailValidation) {
+    if (appConfigLoader.get.mail.skipReportEmailValidation) {
       Future.successful(true)
     } else {
       for {

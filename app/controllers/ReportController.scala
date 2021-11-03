@@ -5,7 +5,6 @@ import config.AppConfigLoader
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -147,13 +146,13 @@ class ReportController @Inject() (
     request.body
       .file("reportFile")
       .filter(f =>
-        appConfigLoader.signalConsoConfiguration.upload.allowedExtensions
+        appConfigLoader.get.upload.allowedExtensions
           .contains(f.filename.toLowerCase.toString.split("\\.").last)
       )
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
         val tmpFile =
-          new java.io.File(s"${appConfigLoader.signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
+          new java.io.File(s"${appConfigLoader.get.tmpDirectory}/${UUID.randomUUID}_${filename}")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
