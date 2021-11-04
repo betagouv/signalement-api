@@ -37,27 +37,13 @@ class ReportListController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def getReports(
-      offset: Option[Long],
-      limit: Option[Int],
-      departments: Seq[String],
-      email: Option[String],
-      websiteURL: Option[String],
-      phone: Option[String],
-      websiteExists: Option[Boolean],
-      phoneExists: Option[Boolean],
-      siretSirenList: List[String],
-      companyName: Option[String],
-      companyCountries: Seq[String],
-      start: Option[String],
-      end: Option[String],
-      category: Option[String],
-      status: Option[String],
-      details: Option[String],
-      hasCompany: Option[Boolean],
-      tags: Seq[String],
-      activityCodes: Seq[String]
-  ) = SecuredAction.async { implicit request =>
+  def getReports = SecuredAction.async { implicit request =>
+    request.body
+      .validate[ReportFilterBody]
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        filters =>
+      )
     for {
       paginatedReports <- reportOrchestrator.getReportsForUser(
         connectedUser = request.identity,
@@ -93,7 +79,6 @@ class ReportListController @Inject() (
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
     request.body
       .validate[ReportFilterBody]
-      .map(filters => filters.copy(siretSirenList = filters.siretSirenList.map(_.replaceAll("\\s", ""))))
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         filters =>
@@ -104,7 +89,7 @@ class ReportListController @Inject() (
             logger.debug(s"Requesting report for user ${request.identity.email}")
             reportsExtractActor ? ReportsExtractActor.ExtractRequest(
               request.identity,
-              filters.copy(siretSirenList = sanitizedSirenSirets)
+              filters.copy(siretSirenList = sanitizedSirenSirets).toReportFilter(request.identity.userRole)
             )
             Ok
           }

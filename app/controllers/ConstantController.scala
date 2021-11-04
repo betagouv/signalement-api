@@ -20,7 +20,7 @@ class ConstantController @Inject() (val silhouette: Silhouette[AuthEnv])(implici
     Future.successful(
       Ok(
         Json.toJson(
-          reportStatusList.flatMap(_.getValueWithUserRole(request.identity.userRole)).distinct
+          reportStatusList.flatMap(_.getValueByRole(request.identity.userRole)).distinct
         )
       )
     )

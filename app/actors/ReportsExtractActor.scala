@@ -195,7 +195,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _) => report.status.getValueWithUserRole(requestedBy.userRole).getOrElse(""),
+        (report, _, _, _) => report.status.getValueByRole(requestedBy.userRole).getOrElse(""),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -292,16 +292,12 @@ class ReportsExtractActor @Inject() (
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: ReportFilterBody) = {
+  def genTmpFile(requestedBy: User, filters: ReportFilter) = {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val reportColumns = buildColumns(requestedBy)
     val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
-    val reportFilter = filters.toReportFilter(
-      employeeConsumer = requestedBy.userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
-      },
+    val reportFilter = filters.copy(,
       statusList = statusList.getOrElse(Nil)
     )
     for {

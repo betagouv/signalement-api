@@ -31,42 +31,41 @@ case class ReportFilter(
     activityCodes: Seq[String] = Nil
 )
 
-object ReportFilter {
-  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): ReportFilter = {
-    def parseString(k: String): Option[String] = q.get(k).flatMap(_.headOption)
-    def parseArray(k: String): Seq[String] = q.getOrElse(k, Nil)
-    def parseDate(k: String): Option[LocalDate] = DateUtils.parseDate(parseString(k))
-    def parseBoolean(k: String): Option[Boolean] = parseString(k) match {
-      case "true"  => Some(true)
-      case "false" => Some(false)
-      case _       => None
-    }
-    ReportFilter(
-      departments = parseArray("departments"),
-      email = parseString("email"),
-      websiteURL = parseString("websiteURL"),
-      phone = parseString("phone"),
-      websiteExists = parseBoolean("websiteExists"),
-      phoneExists = parseBoolean("phoneExists"),
-      siretSirenList = parseArray("siretSirenList"),
-      companyName = parseString("companyName"),
-      companyCountries = parseArray("companyCountries"),
-      start = parseDate("start"),
-      end = parseDate("end"),
-      category = parseString("category"),
-      statusList = getStatusListForValueWithUserRole(parseArray("status"), userRole),
-      details = parseString("details"),
-      employeeConsumer = userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
-      },
-      hasCompany = parseBoolean("hasCompany"),
-      tags = parseArray("tags"),
-      activityCodes = parseArray("activityCode")
-    )
-  }
-
-}
+//object ReportFilter {
+//  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): ReportFilter = {
+//    def parseString(k: String): Option[String] = q.get(k).flatMap(_.headOption)
+//    def parseArray(k: String): Seq[String] = q.getOrElse(k, Nil)
+//    def parseDate(k: String): Option[LocalDate] = DateUtils.parseDate(parseString(k))
+//    def parseBoolean(k: String): Option[Boolean] = parseString(k) match {
+//      case "true"  => Some(true)
+//      case "false" => Some(false)
+//      case _       => None
+//    }
+//    ReportFilter(
+//      departments = parseArray("departments"),
+//      email = parseString("email"),
+//      websiteURL = parseString("websiteURL"),
+//      phone = parseString("phone"),
+//      websiteExists = parseBoolean("websiteExists"),
+//      phoneExists = parseBoolean("phoneExists"),
+//      siretSirenList = parseArray("siretSirenList"),
+//      companyName = parseString("companyName"),
+//      companyCountries = parseArray("companyCountries"),
+//      start = parseDate("start"),
+//      end = parseDate("end"),
+//      category = parseString("category"),
+//      statusList = getStatusListForValueWithUserRole(parseArray("status"), userRole),
+//      details = parseString("details"),
+//      employeeConsumer = userRole match {
+//        case UserRoles.Pro => Some(false)
+//        case _             => None
+//      },
+//      hasCompany = parseBoolean("hasCompany"),
+//      tags = parseArray("tags"),
+//      activityCodes = parseArray("activityCode")
+//    )
+//  }
+//}
 
 case class ReportFilterBody(
     departments: Option[Seq[String]],
@@ -80,15 +79,12 @@ case class ReportFilterBody(
     start: Option[String],
     end: Option[String],
     category: Option[String],
-    status: Option[String],
+  statusList: Seq[String] = Nil,
     details: Option[String],
     hasCompany: Option[Boolean],
-    tags: Seq[String] = Nil
+    tags: Seq[String] = Nil,
 ) {
-  def toReportFilter(
-      employeeConsumer: Option[Boolean],
-      statusList: Seq[ReportStatusValue]
-  ): ReportFilter =
+  def toReportFilter(userRole: UserRole,): ReportFilter =
     ReportFilter(
       departments = departments.getOrElse(Seq()),
       email = email,
@@ -96,15 +92,18 @@ case class ReportFilterBody(
       phone = phone,
       websiteExists = websiteExists,
       phoneExists = phoneExists,
-      siretSirenList = siretSirenList,
+      siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
       companyName = None,
       companyCountries = Seq(),
       start = DateUtils.parseDate(start),
       end = DateUtils.parseDate(end),
       category = category,
-      statusList = statusList,
+      statusList = statusList.map(ReportStatus.fromDefaultValue),
       details = details,
-      employeeConsumer = employeeConsumer,
+      employeeConsumer = userRole match {
+        case UserRoles.Pro => Some(false)
+        case _             => None
+      },
       hasCompany = hasCompany,
       tags = tags
     )

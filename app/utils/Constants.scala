@@ -17,15 +17,16 @@ object Constants {
         isFinal: Boolean = false
     ) {
 
-      def getValueWithUserRole(userRole: UserRole) =
+      def getValueByRole(userRole: UserRole): Option[String] = {
         valueByRole.get(userRole).getOrElse(Some(defaultValue))
+      }
     }
 
     object ReportStatusValue {
 
       implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
         def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
-          userRole.flatMap(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
+          userRole.flatMap(reportStatusValue.getValueByRole(_)).getOrElse("")
         )
       }
 
@@ -128,10 +129,10 @@ object Constants {
     def fromDefaultValue(value: String) =
       reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
-    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) =
+    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole): Option[Seq[ReportStatusValue]] =
       (value, userRole) match {
-        case (Some(value), _)      => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
-        case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined))
+        case (Some(value), _)      => Some(reportStatusList.filter(_.getValueByRole(userRole) == Some(value)))
+        case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueByRole(userRole).isDefined))
         case (None, _)             => None
       }
 
