@@ -22,52 +22,84 @@ class StatisticController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
+//  def getReportsCountCurve(
+//    companyId: Option[UUID],
+//    status: Seq[String],
+//    tags: Seq[String],
+//    hasWebsite: Option[Boolean],
+//  ) = UserAwareAction.async { _ =>
+//  }
+
   def getReportCount(companyId: Option[UUID], status: Seq[String]) = UserAwareAction.async { _ =>
     _companyStats
-      .getReportCount(companyId, status.map(ReportStatus.fromDefaultValue))
+      .getReportCount(ReportFilter(
+        companyIds = companyId.map(Seq(_)).getOrElse(Nil),
+        statusList = Some(status.map(ReportStatus.fromDefaultValue))
+      ))
       .map(count => Ok(Json.obj("value" -> count)))
   }
 
-  def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
+  def getPercentageReportForwarded(
+    companyId: Option[UUID],
+    status: Seq[String],
+    tags: Seq[String],
+    hasWebsite: Option[Boolean],
+    baseStatus: Seq[String],
+    baseTags: Seq[String],
+  ) = UserAwareAction.async { _ =>
     _companyStats
       .getReportWithStatusPercent(
-        status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+        status = status.map(ReportStatus.fromDefaultValue),
+        tags = tags,
+        baseStatus = baseStatus.map(ReportStatus.fromDefaultValue),
+        baseTags = baseTags,
         companyId = companyId
       )
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
   }
 
-  def getPercentageReportRead(companyId: Option[UUID]) = UserAwareAction.async { _ =>
-    _companyStats
-      .getReportWithStatusPercent(
-        status = Seq(
-          SIGNALEMENT_TRANSMIS,
-          PROMESSE_ACTION,
-          SIGNALEMENT_INFONDE,
-          SIGNALEMENT_MAL_ATTRIBUE,
-          SIGNALEMENT_CONSULTE_IGNORE
-        ),
-        baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
-        companyId = companyId
-      )
-      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
-  }
-
-  def getPercentageReportResponded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
-    _companyStats
-      .getReportWithStatusPercent(
-        status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
-        baseStatus = Seq(
-          SIGNALEMENT_TRANSMIS,
-          PROMESSE_ACTION,
-          SIGNALEMENT_INFONDE,
-          SIGNALEMENT_MAL_ATTRIBUE,
-          SIGNALEMENT_CONSULTE_IGNORE
-        ),
-        companyId = companyId
-      )
-      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
-  }
+//  def getPercentageReportForwarded(
+//    companyId: Option[UUID],
+//  ) = UserAwareAction.async { _ =>
+//    _companyStats
+//      .getReportWithStatusPercent(
+//        status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+//        companyId = companyId
+//      )
+//      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
+//  }
+//
+//  def getPercentageReportRead(companyId: Option[UUID]) = UserAwareAction.async { _ =>
+//    _companyStats
+//      .getReportWithStatusPercent(
+//        status = Seq(
+//          SIGNALEMENT_TRANSMIS,
+//          PROMESSE_ACTION,
+//          SIGNALEMENT_INFONDE,
+//          SIGNALEMENT_MAL_ATTRIBUE,
+//          SIGNALEMENT_CONSULTE_IGNORE
+//        ),
+//        baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+//        companyId = companyId
+//      )
+//      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
+//  }
+//
+//  def getPercentageReportResponded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
+//    _companyStats
+//      .getReportWithStatusPercent(
+//        status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+//        baseStatus = Seq(
+//          SIGNALEMENT_TRANSMIS,
+//          PROMESSE_ACTION,
+//          SIGNALEMENT_INFONDE,
+//          SIGNALEMENT_MAL_ATTRIBUE,
+//          SIGNALEMENT_CONSULTE_IGNORE
+//        ),
+//        companyId = companyId
+//      )
+//      .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
+//  }
 
   def getPercentageReportWithWebsite(companyId: Option[UUID]) = UserAwareAction.async { _ =>
     _companyStats.getReportHavingWebsitePercentage(companyId).map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
@@ -82,7 +114,8 @@ class StatisticController @Inject() (
       companyId: Option[UUID],
       ticks: Option[Int],
       tickDuration: Option[String],
-      status: Seq[String]
+      status: Seq[String],
+      tags: Seq[String],
   ) =
     UserAwareAction.async {
       _companyStats
@@ -90,7 +123,8 @@ class StatisticController @Inject() (
           companyId = companyId,
           status = status.map(ReportStatus.fromDefaultValue),
           ticks = getTicks(ticks),
-          tickDuration = getTickDuration(tickDuration)
+          tickDuration = getTickDuration(tickDuration),
+          tags = tags,
         )
         .map(curve => Ok(Json.toJson(curve)))
     }
@@ -107,20 +141,11 @@ class StatisticController @Inject() (
 //        .map(stats => Ok(Json.toJson(stats)))
 //    }
 
-  def getCurveReportsRespondedCount(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
-    UserAwareAction.async {
-      _companyStats
-        .getReportsCountCurve(
-          companyId = companyId,
-          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
-          ticks = getTicks(ticks),
-          tickDuration = getTickDuration(tickDuration)
-        )
-        .map(stats => Ok(Json.toJson(stats)))
-    }
-
-  def getCurveReportForwardedPercentage(
+  def getCurveReportPercentage(
       companyId: Option[UUID],
+      status: Seq[String],
+      baseStatus: Seq[String],
+      tags: Seq[String],
       ticks: Option[Int],
       tickDuration: Option[String]
   ) =
@@ -128,50 +153,68 @@ class StatisticController @Inject() (
       _companyStats
         .getReportWithStatusPercentageCurve(
           companyId = companyId,
-          status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+          status = status.map(ReportStatus.fromDefaultValue),
+          baseStatus = baseStatus.map(ReportStatus.fromDefaultValue),
+          tags = tags,
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
         .map(value => Ok(Json.toJson(value)))
     }
 
-  def getCurveReportReadPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
-    UserAwareAction.async {
-      _companyStats
-        .getReportWithStatusPercentageCurve(
-          companyId = companyId,
-          status = Seq(
-            SIGNALEMENT_TRANSMIS,
-            PROMESSE_ACTION,
-            SIGNALEMENT_INFONDE,
-            SIGNALEMENT_MAL_ATTRIBUE,
-            SIGNALEMENT_CONSULTE_IGNORE
-          ),
-          baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
-          ticks = getTicks(ticks),
-          tickDuration = getTickDuration(tickDuration)
-        )
-        .map(value => Ok(Json.toJson(value)))
-    }
+//  def getCurveReportForwardedPercentage(
+//      companyId: Option[UUID],
+//      ticks: Option[Int],
+//      tickDuration: Option[String]
+//  ) =
+//    UserAwareAction.async {
+//      _companyStats
+//        .getReportWithStatusPercentageCurve(
+//          companyId = companyId,
+//          status = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+//          ticks = getTicks(ticks),
+//          tickDuration = getTickDuration(tickDuration)
+//        )
+//        .map(value => Ok(Json.toJson(value)))
+//    }
 
-  def getCurveReportRespondedPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
-    UserAwareAction.async {
-      _companyStats
-        .getReportWithStatusPercentageCurve(
-          companyId = companyId,
-          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
-          baseStatus = Seq(
-            SIGNALEMENT_TRANSMIS,
-            PROMESSE_ACTION,
-            SIGNALEMENT_INFONDE,
-            SIGNALEMENT_MAL_ATTRIBUE,
-            SIGNALEMENT_CONSULTE_IGNORE
-          ),
-          ticks = getTicks(ticks),
-          tickDuration = getTickDuration(tickDuration)
-        )
-        .map(value => Ok(Json.toJson(value)))
-    }
+//  def getCurveReportReadPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+//    UserAwareAction.async {
+//      _companyStats
+//        .getReportWithStatusPercentageCurve(
+//          companyId = companyId,
+//          status = Seq(
+//            SIGNALEMENT_TRANSMIS,
+//            PROMESSE_ACTION,
+//            SIGNALEMENT_INFONDE,
+//            SIGNALEMENT_MAL_ATTRIBUE,
+//            SIGNALEMENT_CONSULTE_IGNORE
+//          ),
+//          baseStatus = ReportStatus.reportStatusList.filterNot(Set(NA, EMPLOYEE_REPORT)).toList,
+//          ticks = getTicks(ticks),
+//          tickDuration = getTickDuration(tickDuration)
+//        )
+//        .map(value => Ok(Json.toJson(value)))
+//    }
+
+//  def getCurveReportRespondedPercentage(companyId: Option[UUID], ticks: Option[Int], tickDuration: Option[String]) =
+//    UserAwareAction.async {
+//      _companyStats
+//        .getReportWithStatusPercentageCurve(
+//          companyId = companyId,
+//          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+//          baseStatus = Seq(
+//            SIGNALEMENT_TRANSMIS,
+//            PROMESSE_ACTION,
+//            SIGNALEMENT_INFONDE,
+//            SIGNALEMENT_MAL_ATTRIBUE,
+//            SIGNALEMENT_CONSULTE_IGNORE
+//          ),
+//          ticks = getTicks(ticks),
+//          tickDuration = getTickDuration(tickDuration)
+//        )
+//        .map(value => Ok(Json.toJson(value)))
+//    }
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRoles.Admin, UserRoles.DGCCRF)

@@ -302,7 +302,7 @@ class ReportsExtractActor @Inject() (
         case UserRoles.Pro => Some(false)
         case _             => None
       },
-      statusList = statusList
+      statusList = statusList.getOrElse(Nil)
     )
     for {
       paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)

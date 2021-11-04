@@ -315,29 +315,12 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
-    .run(
-      reportTableQuery
-        .filterOpt(companyId) { case (table, _) =>
-          table.companyId === companyId
-        }
-        .filterIf(status.nonEmpty) { case table =>
-          table.status inSet (status.map(_.defaultValue))
-        }
-        .length
-        .result
-    )
+  def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
 
-  def getMonthlyCount(
-      companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
-      ticks: Int = 7
-  ): Future[Seq[CountByDate]] =
+  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
     db
       .run(
-        reportTableQuery
-          .filterOpt(companyId)((table, id) => table.companyId === id)
-          .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+        queryFilter(filter)
           .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
           .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -347,14 +330,11 @@ class ReportRepository @Inject() (
       .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
 
   def getDailyCount(
-      companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
+      filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
-      reportTableQuery
-        .filterOpt(companyId)((table, id) => table.companyId === id)
-        .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+      queryFilter(filter)
         .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
         .groupBy(report =>
           (
@@ -395,23 +375,98 @@ class ReportRepository @Inject() (
     report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1)
   )
 
-  def countWithStatus(
-      status: Seq[ReportStatusValue],
-      cutoff: Option[Duration],
-      withWebsite: Option[Boolean] = None,
-      companyId: Option[UUID] = None
-  ) = db
-    .run(
-      baseStatReportTableQuery
-        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
-        .filterOpt(companyId)((table, id) => table.companyId === id)
-        .filter(_.status inSet status.map(_.defaultValue))
-        .filterOpt(withWebsite) { case (table, withWebsite) =>
-          table.websiteURL.isDefined === withWebsite
-        }
-        .length
-        .result
-    )
+//  def countWithStatus(
+//      status: Seq[ReportStatusValue],
+//    tags: Seq[String] = Seq(),
+//      cutoff: Option[Duration],
+//      withWebsite: Option[Boolean] = None,
+//      companyId: Option[UUID] = None
+//  ) = db
+//    .run(
+//      baseStatReportTableQuery
+//        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
+//        .filterOpt(companyId)((table, id) => table.companyId === id)
+//        .filterIf(tags.nonEmpty)(_.tags @& tags.toList.bind)
+//        .filter(_.status inSet status.map(_.defaultValue))
+//        .filterOpt(withWebsite) { case (table, withWebsite) =>
+//          table.websiteURL.isDefined === withWebsite
+//        }
+//        .length
+//        .result
+//    )
+
+  private[this] def queryFilter(filter: ReportFilter) =
+    reportTableQuery
+      .filterOpt(filter.email) { case (table, email) =>
+        table.email === EmailAddress(email)
+      }
+      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
+        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      }
+      .filterOpt(filter.phone) { case (table, reportedPhone) =>
+        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      }
+      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) { case (table, websiteRequired) =>
+        table.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
+        table.phone.isDefined === phoneRequired
+      }
+      .filterIf(filter.companyIds.nonEmpty)(_.companyId inSet filter.companiesIds)
+      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
+        table.companySiret
+          .map(siret =>
+            (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
+              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
+                .filter(_.matches(SIREN.pattern))
+                .distinct)
+          )
+          .getOrElse(false)
+      }
+      .filterOpt(filter.companyName) { case (table, companyName) =>
+        table.companyName like s"${companyName}%"
+      }
+      .filterIf(filter.companyCountries.nonEmpty) { case table =>
+        table.companyCountry
+          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
+          .getOrElse(false)
+      }
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+      }
+      .filterOpt(filter.category) { case (table, category) =>
+        table.category === category
+      }
+      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
+        table.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.statusList) { case (table, statusList) =>
+        table.status.inSet(statusList.map(_.defaultValue))
+      }
+      .filterIf(filter.tags.nonEmpty) { case table =>
+        table.tags @& filter.tags.toList.bind
+      }
+      .filterOpt(filter.details) { case (table, details) =>
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(
+          table.details,
+          ",",
+          ""
+        ) regexLike s"${details}"
+      }
+      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
+        table.employeeConsumer === employeeConsumer
+      }
+      .filterIf(filter.departments.nonEmpty) { case (table) =>
+        filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
+      }
+      .joinLeft(CompanyTables.tables)
+      .on(_.companyId === _.id)
+      .filterIf(filter.activityCodes.nonEmpty)(
+        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
+      )
 
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
@@ -483,85 +538,14 @@ class ReportRepository @Inject() (
     ).map(_.map(_.getOrElse("")))
 
   def getReports(
-      offset: Option[Long],
-      limit: Option[Int],
+      offset: Option[Long] = None,
+      limit: Option[Int] = None,
       filter: ReportFilter
-  ): Future[PaginatedResult[Report]] = {
-    val query = reportTableQuery
-      .filterOpt(filter.email) { case (table, email) =>
-        table.email === EmailAddress(email)
-      }
-      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
-        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
-      }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
-      }
-      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) { case (table, websiteRequired) =>
-        table.websiteURL.isDefined === websiteRequired
-      }
-      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
-        table.phone.isDefined === phoneRequired
-      }
-      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
-        table.companySiret
-          .map(siret =>
-            (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
-              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
-                .filter(_.matches(SIREN.pattern))
-                .distinct)
-          )
-          .getOrElse(false)
-      }
-      .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
-      }
-      .filterIf(filter.companyCountries.nonEmpty) { case table =>
-        table.companyCountry
-          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
-          .getOrElse(false)
-      }
-      .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
-      }
-      .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
-      }
-      .filterOpt(filter.category) { case (table, category) =>
-        table.category === category
-      }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
-      }
-      .filterOpt(filter.statusList) { case (table, statusList) =>
-        table.status.inSet(statusList.map(_.defaultValue))
-      }
-      .filterIf(filter.tags.nonEmpty) { case table =>
-        table.tags @& filter.tags.toList.bind
-      }
-      .filterOpt(filter.details) { case (table, details) =>
-        array_to_string(table.subcategories, ",", "") ++ array_to_string(
-          table.details,
-          ",",
-          ""
-        ) regexLike s"${details}"
-      }
-      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
-        table.employeeConsumer === employeeConsumer
-      }
-      .filterIf(filter.departments.nonEmpty) { case (table) =>
-        filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
-      }
-      .joinLeft(CompanyTables.tables)
-      .on(_.companyId === _.id)
-      .filterIf(filter.activityCodes.nonEmpty)(
-        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
-      )
-    query
+  ): Future[PaginatedResult[Report]] =
+    queryFilter(filter)
       .sortBy(_._1.creationDate.desc)
       .map(_._1)
       .withPagination(db)(offset, limit)
-  }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery
@@ -622,27 +606,6 @@ class ReportRepository @Inject() (
         .map(_.avOutput)
         .update(Some(output))
     )
-
-  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[DeprecatedCompanyWithNbReports]] = {
-    val q = db.run(
-      companyTableQuery
-        .joinLeft(reportTableQuery)
-        .on(_.id === _.companyId)
-        .groupBy(_._1)
-        .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-        .to[List]
-        .sortBy(_._2.desc)
-        .result
-    )
-
-    for {
-      res <- q.map(_.map { case (company, cnt) => DeprecatedCompanyWithNbReports(company, cnt) })
-    } yield PaginatedResult(
-      totalCount = res.length,
-      entities = res.drop(offset.toInt).take(limit).toList,
-      hasNextPage = res.length - (offset + limit) > 0
-    )
-  }
 
   def getByStatus(status: ReportStatusValue): Future[List[Report]] =
     db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)

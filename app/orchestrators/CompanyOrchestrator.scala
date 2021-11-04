@@ -20,6 +20,7 @@ import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ReportStatus
+import utils.Constants.ReportStatus.ReportStatusValue
 import utils.SIREN
 import utils.SIRET
 
@@ -78,8 +79,8 @@ class CompanyOrchestrator @Inject() (
       )
 
   def getResponseRate(companyId: UUID): Future[Int] = {
-    val totalF = reportRepository.count(Some(companyId))
-    val responsesF = reportRepository.count(Some(companyId), ReportStatus.responseStatusList)
+    val totalF = reportRepository.count(ReportFilter(companyIds = Seq(companyId)))
+    val responsesF = reportRepository.count(ReportFilter(companyIds= Seq(companyId), statusList = Some(ReportStatus.responseStatusList)))
     for {
       total <- totalF
       responses <- responsesF
