@@ -92,7 +92,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       ActionEvent.REPORT_READING_BY_PRO
     )}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_TRANSMIS
+      Report2Status.Transmis
     )}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
       neverRequestedReport.email,
@@ -101,7 +101,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       mailerService.attachmentSeqForWorkflowStepN(3)
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-      neverRequestedReport.copy(status = ReportStatus.SIGNALEMENT_TRANSMIS),
+      neverRequestedReport.copy(status = Report2Status.Transmis),
       UserRoles.Pro
     )}
       """
@@ -258,7 +258,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus2.TraitementEnCours
+    status = Report2Status.TraitementEnCours
   )
 
   val neverRequestedFinalReport = Report(
@@ -276,7 +276,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = SIGNALEMENT_CONSULTE_IGNORE
+    status = Report2Status.ConsulteIgnore
   )
 
   val alreadyRequestedReport = Report(
@@ -294,7 +294,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = SIGNALEMENT_TRANSMIS
+    status = Report2Status.Transmis
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

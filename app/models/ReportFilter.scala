@@ -18,7 +18,7 @@ case class ReportFilter(
     start: Option[LocalDate] = None,
     end: Option[LocalDate] = None,
     category: Option[String] = None,
-    statusList: Option[Seq[ReportStatus2]] = None,
+    status: Seq[Report2Status] = Nil,
     details: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
@@ -42,10 +42,7 @@ case class ReportFilterBody(
     hasCompany: Option[Boolean],
     tags: Seq[String] = Nil
 ) {
-  def toReportFilter(
-      employeeConsumer: Option[Boolean],
-      statusList: Option[Seq[ReportStatus2]]
-  ): ReportFilter =
+  def toReportFilter(userRole: UserRole): ReportFilter =
     ReportFilter(
       departments = departments.getOrElse(Seq()),
       email = email,
@@ -53,15 +50,18 @@ case class ReportFilterBody(
       phone = phone,
       websiteExists = websiteExists,
       phoneExists = phoneExists,
-      siretSirenList = siretSirenList,
+      siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
       companyName = None,
       companyCountries = Seq(),
       start = DateUtils.parseDate(start),
       end = DateUtils.parseDate(end),
       category = category,
-      statusList = statusList,
+      status = status.map(Report2Status.withName),
       details = details,
-      employeeConsumer = employeeConsumer,
+      employeeConsumer = userRole match {
+        case UserRoles.Pro => Some(false)
+        case _             => None
+      },
       hasCompany = hasCompany,
       tags = tags
     )

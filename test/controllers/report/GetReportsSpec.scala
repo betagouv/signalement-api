@@ -134,14 +134,18 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus2.TraitementEnCours)
+    .copy(employeeConsumer = false, status = Report2Status.TraitementEnCours)
   val reportToProcessOnSubsidiary = Fixtures
     .genReportForCompany(subsidiaryCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = ReportStatus2.TraitementEnCours)
+    .copy(employeeConsumer = false, status = Report2Status.TraitementEnCours)
   val reportFromEmployeeOnHeadOffice =
-    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = ReportStatus2.EmployeeReport)
+    Fixtures
+      .genReportForCompany(headOfficeCompany)
+      .sample
+      .get
+      .copy(employeeConsumer = true, status = Report2Status.EmployeeReport)
   val reportNAOnHeadOffice =
     Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = NA)
   val allReports =

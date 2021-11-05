@@ -26,7 +26,9 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).minusDays(1))
     s2"""
        Given a company with no activated accout
-       Given a report with status "ReportStatus2.TraitementEnCours" and expired reading delay   ${step(setupReport(report))}
+       Given a report with status "Report2Status.TraitementEnCours" and expired reading delay   ${step(
+      setupReport(report)
+    )}
        When remind task run                                                         ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
     }}
@@ -36,7 +38,7 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     )}
        And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(
       report.id,
-      ReportStatus.SIGNALEMENT_NON_CONSULTE
+      Report2Status.NonConsulte
     )}
        And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
       report.email,
@@ -53,7 +55,9 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).plusDays(1))
     s2"""
        Given a company with no activated accout
-       Given a report with status "ReportStatus2.TraitementEnCours" and no expired reading delay    ${step(setupReport(report))}
+       Given a report with status "Report2Status.TraitementEnCours" and no expired reading delay    ${step(
+      setupReport(report)
+    )}
        When remind task run                                                             ${step {
       Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
     }}
@@ -88,7 +92,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
-      status = ReportStatus2.TraitementEnCours
+      status = Report2Status.TraitementEnCours
     )
 
   def mailMustHaveBeenSent(
@@ -130,10 +134,10 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) =
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatus2) =
+  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: Report2Status) =
     reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
 
-  def reportStatusMatcher(status: ReportStatus2): org.specs2.matcher.Matcher[Option[Report]] = {
+  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
       (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }

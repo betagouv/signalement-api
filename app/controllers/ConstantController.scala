@@ -7,7 +7,8 @@ import utils.Country
 import utils.silhouette.auth.AuthEnv
 
 import javax.inject._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class ConstantController @Inject() (val silhouette: Silhouette[AuthEnv])(implicit ec: ExecutionContext)

@@ -18,7 +18,6 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.Constants.Departments
-import utils.Constants.ReportStatus2
 import utils.Constants
 import utils.DateUtils
 
@@ -34,7 +33,7 @@ import scala.util.Random
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
 
-  case class ExtractRequest(requestedBy: User, filters: ReportFilterBody)
+  case class ExtractRequest(requestedBy: User, filters: ReportFilter)
 }
 
 @Singleton
@@ -56,7 +55,7 @@ class ReportsExtractActor @Inject() (
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(requestedBy: User, filters: ReportFilterBody) =>
+    case ExtractRequest(requestedBy: User, filters: ReportFilter) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
@@ -195,7 +194,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _) => report.status.getValueWithUserRole(requestedBy.userRole).getOrElse(""),
+        (report, _, _, _) => Report2Status.translate(report.status, requestedBy.userRole),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -205,9 +204,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus2.PromesseAction,
-                ReportStatus2.SignalementMalAttribue,
-                ReportStatus2.SignalementInfonde
+                Report2Status.PromesseAction,
+                Report2Status.MalAttribue,
+                Report2Status.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -224,9 +223,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus2.PromesseAction,
-                ReportStatus2.SignalementMalAttribue,
-                ReportStatus2.SignalementInfonde
+                Report2Status.PromesseAction,
+                Report2Status.MalAttribue,
+                Report2Status.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -292,20 +291,11 @@ class ReportsExtractActor @Inject() (
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: ReportFilterBody) = {
+  def genTmpFile(requestedBy: User, filters: ReportFilter) = {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
     val reportColumns = buildColumns(requestedBy)
-    val statusList = ReportStatus2.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
-    val reportFilter = filters.toReportFilter(
-      employeeConsumer = requestedBy.userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
-      },
-      statusList = filters.status
-    )
     for {
-      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)
+      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
       companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
@@ -344,9 +334,9 @@ class ReportsExtractActor @Inject() (
               )
             ),
             Some(filters.departments)
-              .filter(_.isDefined)
+              .filter(_.nonEmpty)
               .map(departments => Row().withCellValues("Départment(s)", departments.mkString(","))),
-            (reportFilter.start, DateUtils.parseDate(filters.end)) match {
+            (filters.start, filters.end) match {
               case (Some(startDate), Some(endDate)) =>
                 Some(
                   Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}")
@@ -359,10 +349,10 @@ class ReportsExtractActor @Inject() (
             Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
             filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
-            filters.status.map(status => Row().withCellValues("Statut", status)),
+            filters.status.map(Report2Status.translate(_, requestedBy.userRole)).map(status => Row().withCellValues("Statut", status)),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
-          ).filter(_.isDefined).map(_.get)
+          ).filter(x => x.isDefined).map(_.get)
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),

@@ -88,7 +88,7 @@ class ReportOrchestrator @Inject() (
               )
             )
           )
-          .flatMap(_ => reportRepository.update(report.copy(status = ReportStatus2.TraitementEnCours)))
+          .flatMap(_ => reportRepository.update(report.copy(status = Report2Status.TraitementEnCours)))
       } else {
         genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
       }
@@ -139,7 +139,7 @@ class ReportOrchestrator @Inject() (
             _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
             files <- reportRepository.retrieveReportFiles(report.id)
             report <-
-              if (report.status == ReportStatus2.TraitementEnCours && companyOpt.isDefined)
+              if (report.status == Report2Status.TraitementEnCours && companyOpt.isDefined)
                 notifyProfessionalOfNewReport(report, companyOpt.get)
               else Future(report)
             event <- eventRepository.createEvent(
@@ -210,7 +210,7 @@ class ReportOrchestrator @Inject() (
         )
         .getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.status == ReportStatus2.TraitementEnCours)
+        .filter(_.status == Report2Status.TraitementEnCours)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
@@ -354,7 +354,7 @@ class ReportOrchestrator @Inject() (
         )
       )
       updatedReport <-
-        if (report.status.isFinal) {
+        if (Report2Status.isFinal(report.status)) {
           Future(report)
         } else {
           notifyConsumerOfReportTransmission(report)
@@ -375,7 +375,7 @@ class ReportOrchestrator @Inject() (
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
-      newReport <- reportRepository.update(report.copy(status = SIGNALEMENT_TRANSMIS))
+      newReport <- reportRepository.update(report.copy(status = Report2Status.Transmis))
     } yield newReport
   }
 
@@ -407,7 +407,7 @@ class ReportOrchestrator @Inject() (
           reportRepository
             .update(
               r.copy(status = event.action match {
-                case POST_ACCOUNT_ACTIVATION_DOC => ReportStatus2.TraitementEnCours
+                case POST_ACCOUNT_ACTIVATION_DOC => Report2Status.TraitementEnCours
                 case _                           => r.status
               })
             )
@@ -443,9 +443,9 @@ class ReportOrchestrator @Inject() (
       updatedReport <- reportRepository.update(
         report.copy(
           status = reportResponse.responseType match {
-            case ReportResponseType.ACCEPTED      => ReportStatus2.PromesseAction
-            case ReportResponseType.REJECTED      => ReportStatus2.SignalementInfonde
-            case ReportResponseType.NOT_CONCERNED => ReportStatus2.SignalementMalAttribue
+            case ReportResponseType.ACCEPTED      => Report2Status.PromesseAction
+            case ReportResponseType.REJECTED      => Report2Status.Infonde
+            case ReportResponseType.NOT_CONCERNED => Report2Status.MalAttribue
           }
         )
       )

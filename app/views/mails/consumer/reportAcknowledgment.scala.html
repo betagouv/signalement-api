@@ -1,7 +1,8 @@
 @import utils.EmailAddress
-@import models.ReportStatus2
+@import models.Report2Status
 @import utils.FrontRoute
 @import utils.Country
+@import models.Report2Status
 @(report: Report, files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
 
 
@@ -11,7 +12,7 @@
         Bonjour @report.firstName @report.lastName,
     </p>
     @report.status match {
-        case ReportStatus2.EmployeeReport => {
+        case Report2Status.EmployeeReport => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
@@ -25,7 +26,7 @@
                 <b>Par contre les enquêteurs de la répression des fraudes seront informés de votre signalement.</b>
             </p>
         }
-        case ReportStatus2.Na if report.companyAddress.country.isDefined => {
+        case Report2Status.NA if report.companyAddress.country.isDefined => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
@@ -62,7 +63,7 @@
             }
             @views.html.fragments.chargeBack(report)
         }
-        case NA => {
+        case Report2Status.NA => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             <p>

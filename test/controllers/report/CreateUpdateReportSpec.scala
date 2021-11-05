@@ -41,8 +41,8 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
     }}
          When create the report                                             ${step(createReport())}
-         Then create the report with reportStatusList "ReportStatus2.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.ReportStatus2.TraitementEnCours
+         Then create the report with reportStatusList "Report2Status.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
+      Report2StatusTraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
       draftReport.email,
@@ -64,7 +64,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.ReportStatus2.EmployeeReport
+      Report2StatusEmployeeReport
     )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
       draftReport.email,
@@ -83,8 +83,8 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
     }}
          When create the report                                               ${step(createReport())}
-         Then create the report with reportStatusList "ReportStatus2.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.ReportStatus2.TraitementEnCours
+         Then create the report with reportStatusList "Report2Status.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
+      Report2StatusTraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -106,8 +106,8 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
     }}
          When create the report                                         ${step(createReport())}
-         Then create the report with status "ReportStatus2.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.ReportStatus2.TraitementEnCours
+         Then create the report with status "Report2Status.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
+      Report2StatusTraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -138,7 +138,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus2.Na
+      Report2Status.NA
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -197,7 +197,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
         companyName = Some(reportCompanyAnotherSiret.name),
         companyAddress = reportCompanyAnotherSiret.address,
         companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = ReportStatus.ReportStatus2.TraitementEnCours
+        status = Report2StatusTraitementEnCours
       )
     )}
     """
@@ -228,7 +228,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val anotherCompanyData =
     Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus2.Na)
+  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = Report2Status.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
   var report = draftReport.generateReport

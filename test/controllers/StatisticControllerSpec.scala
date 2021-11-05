@@ -142,27 +142,27 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val company = Fixtures.genCompany.sample.get
 
   val lastYearReportsToProcess = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.TraitementEnCours)
+    .genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsAccepted = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.PromesseAction)
+    .genReportsForCompanyWithStatus(company, Report2Status.PromesseAction)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsRejected = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.Infonde)
+    .genReportsForCompanyWithStatus(company, Report2Status.Infonde)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotConcerned = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.MalAttribue)
+    .genReportsForCompanyWithStatus(company, Report2Status.MalAttribue)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsClosedByNoAction = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.ConsulteIgnore)
+    .genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
@@ -172,7 +172,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, ReportStatus2.EmployeeReport)
+      .genReportsForCompanyWithStatus(company, Report2Status.EmployeeReport)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
@@ -183,37 +183,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val lastYearReports = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
 
   val lastMonthReportsToProcess = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.TraitementEnCours)
+    .genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsAccepted = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.PromesseAction)
+    .genReportsForCompanyWithStatus(company, Report2Status.PromesseAction)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsRejected = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.Infonde)
+    .genReportsForCompanyWithStatus(company, Report2Status.Infonde)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsNotConcerned = Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.MalAttribue)
+    .genReportsForCompanyWithStatus(company, Report2Status.MalAttribue)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsClosedByNoAction = Fixtures
-    .genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE)
+    .genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsNotForwarded = Fixtures
-    .genReportsForCompanyWithStatus(company, NA)
+    .genReportsForCompanyWithStatus(company, Report2Status.NA)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, ReportStatus2.EmployeeReport)
+      .genReportsForCompanyWithStatus(company, Report2Status.EmployeeReport)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
@@ -224,16 +224,18 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val lastMonthReportsForwardedToPro = lastMonthReportsToProcess ::: lastMonthReportsReadByPro
   val lastMonthReports = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
 
-  val currentMonthReportsToProcess = Fixtures.genReportsForCompanyWithStatus(company, ReportStatus2.TraitementEnCours).sample.get
-  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_TRANSMIS).sample.get
-  val currentMonthReportsAccepted = Fixtures.genReportsForCompanyWithStatus(company, ReportStatus2.PromesseAction).sample.get
-  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, ReportStatus2.Infonde).sample.get
+  val currentMonthReportsToProcess =
+    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours).sample.get
+  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, Report2Status.Transmis).sample.get
+  val currentMonthReportsAccepted =
+    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.PromesseAction).sample.get
+  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Report2Status.Infonde).sample.get
   val currentMonthReportsNotConcerned =
-    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus2.MalAttribue).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.MalAttribue).sample.get
   val currentMonthReportsClosedByNoAction =
-    Fixtures.genReportsForCompanyWithStatus(company, SIGNALEMENT_CONSULTE_IGNORE).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore).sample.get
   val currentMonthReportsNotForwarded = Fixtures.genReportsForCompanyWithStatus(company, NA).sample.get ::: Fixtures
-    .genReportsForCompanyWithStatus(company, ReportStatus2.EmployeeReport)
+    .genReportsForCompanyWithStatus(company, Report2Status.EmployeeReport)
     .sample
     .get
 

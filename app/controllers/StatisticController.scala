@@ -5,8 +5,6 @@ import models._
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
@@ -24,14 +22,14 @@ class StatisticController @Inject() (
 
   def getReportCount(companyId: Option[UUID], status: Seq[String]) = UserAwareAction.async { _ =>
     _companyStats
-      .getReportCount(companyId, status.map(ReportStatus2.withName))
+      .getReportCount(companyId, status.map(Report2Status.withName))
       .map(count => Ok(Json.obj("value" -> count)))
   }
 
   def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
     _companyStats
       .getReportWithStatusPercent(
-        status = ReportStatus2.values.filterNot(Set(ReportStatus2.Na, ReportStatus2.EmployeeReport)).toList,
+        status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
         companyId = companyId
       )
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
@@ -41,13 +39,13 @@ class StatisticController @Inject() (
     _companyStats
       .getReportWithStatusPercent(
         status = Seq(
-          ReportStatus2.SignalementTransmis,
-          ReportStatus2.PromesseAction,
-          ReportStatus2.SignalementInfonde,
-          ReportStatus2.SignalementMalAttribue,
-          ReportStatus2.SignalementConsulteIgnore
+          Report2Status.Transmis,
+          Report2Status.PromesseAction,
+          Report2Status.Infonde,
+          Report2Status.MalAttribue,
+          Report2Status.ConsulteIgnore
         ),
-        baseStatus = ReportStatus2.values.filterNot(Set(ReportStatus2.Na, ReportStatus2.EmployeeReport)).toList,
+        baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
         companyId = companyId
       )
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
@@ -57,16 +55,16 @@ class StatisticController @Inject() (
     _companyStats
       .getReportWithStatusPercent(
         status = Seq(
-          ReportStatus2.PromesseAction,
-          ReportStatus2.SignalementInfonde,
-          ReportStatus2.SignalementMalAttribue
+          Report2Status.PromesseAction,
+          Report2Status.Infonde,
+          Report2Status.MalAttribue
         ),
         baseStatus = Seq(
-          ReportStatus2.SignalementTransmis,
-          ReportStatus2.PromesseAction,
-          ReportStatus2.SignalementInfonde,
-          ReportStatus2.SignalementMalAttribue,
-          ReportStatus2.SignalementConsulteIgnore
+          Report2Status.Transmis,
+          Report2Status.PromesseAction,
+          Report2Status.Infonde,
+          Report2Status.MalAttribue,
+          Report2Status.ConsulteIgnore
         ),
         companyId = companyId
       )
@@ -92,7 +90,7 @@ class StatisticController @Inject() (
       _companyStats
         .getReportsCountCurve(
           companyId = companyId,
-          status = status.map(ReportStatus2.withName),
+          status = status.map(Report2Status.withName),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
@@ -104,7 +102,7 @@ class StatisticController @Inject() (
 //      _companyStats
 //        .getReportsCountCurve(
 //          companyId = companyId,
-//          status = Seq(ReportStatus2.PromesseAction, ReportStatus2.SignalementInfonde, ReportStatus2.SignalementMalAttribue),
+//          status = Seq(Report2Status.PromesseAction, Report2Status.Infonde, Report2Status.MalAttribue),
 //          ticks = getTicks(ticks),
 //          tickDuration = getTickDuration(tickDuration)
 //        )
@@ -117,9 +115,9 @@ class StatisticController @Inject() (
         .getReportsCountCurve(
           companyId = companyId,
           status = Seq(
-            ReportStatus2.PromesseAction,
-            ReportStatus2.SignalementInfonde,
-            ReportStatus2.SignalementMalAttribue
+            Report2Status.PromesseAction,
+            Report2Status.Infonde,
+            Report2Status.MalAttribue
           ),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
@@ -136,7 +134,7 @@ class StatisticController @Inject() (
       _companyStats
         .getReportWithStatusPercentageCurve(
           companyId = companyId,
-          status = ReportStatus.reportStatusList.filterNot(Set(ReportStatus2.Na, ReportStatus2.EmployeeReport)).toList,
+          status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
@@ -149,13 +147,13 @@ class StatisticController @Inject() (
         .getReportWithStatusPercentageCurve(
           companyId = companyId,
           status = Seq(
-            ReportStatus2.SignalementTransmis,
-            ReportStatus2.PromesseAction,
-            ReportStatus2.SignalementInfonde,
-            ReportStatus2.SignalementMalAttribue,
-            ReportStatus2.SignalementConsulteIgnore
+            Report2Status.Transmis,
+            Report2Status.PromesseAction,
+            Report2Status.Infonde,
+            Report2Status.MalAttribue,
+            Report2Status.ConsulteIgnore
           ),
-          baseStatus = ReportStatus.reportStatusList.filterNot(Set(ReportStatus2.Na, ReportStatus2.EmployeeReport)).toList,
+          baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
@@ -167,13 +165,13 @@ class StatisticController @Inject() (
       _companyStats
         .getReportWithStatusPercentageCurve(
           companyId = companyId,
-          status = Seq(ReportStatus2.PromesseAction, ReportStatus2.SignalementInfonde, ReportStatus2.SignalementMalAttribue),
+          status = Seq(Report2Status.PromesseAction, Report2Status.Infonde, Report2Status.MalAttribue),
           baseStatus = Seq(
-            ReportStatus2.SignalementTransmis,
-            ReportStatus2.PromesseAction,
-            ReportStatus2.SignalementInfonde,
-            ReportStatus2.SignalementMalAttribue,
-            ReportStatus2.SignalementConsulteIgnore
+            Report2Status.Transmis,
+            Report2Status.PromesseAction,
+            Report2Status.Infonde,
+            Report2Status.MalAttribue,
+            Report2Status.ConsulteIgnore
           ),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
