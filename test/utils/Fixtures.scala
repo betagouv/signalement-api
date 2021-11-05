@@ -8,8 +8,6 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -165,7 +163,7 @@ object Fixtures {
     status = status
   )
 
-  def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
+  def genReportsForCompanyWithStatus(company: Company, status: ReportStatus2) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
   def genReportConsumer = for {

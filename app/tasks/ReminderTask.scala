@@ -13,7 +13,6 @@ import services.MailService
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-import utils.Constants.ReportStatus._
 import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -66,7 +65,7 @@ class ReminderTask @Inject() (
     logger.debug(s"taskDate - ${now}");
 
     for {
-      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(TRAITEMENT_EN_COURS)
+      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus2.TraitementEnCours)
       transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(SIGNALEMENT_TRANSMIS)
       reportEventsMap <- eventRepository.prefetchReportsEvents(
         (onGoingReportsWithAdmins ::: transmittedReportsWithAdmins).map(_._1)
@@ -104,7 +103,7 @@ class ReminderTask @Inject() (
     )
   }
 
-  private[this] def getReportsWithAdminsByStatus(status: ReportStatusValue): Future[List[(Report, List[User])]] =
+  private[this] def getReportsWithAdminsByStatus(status: ReportStatus2): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
       mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(

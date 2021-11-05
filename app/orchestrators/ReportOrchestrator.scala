@@ -13,7 +13,6 @@ import repositories._
 import services.MailService
 import services.S3Service
 import utils.Constants.ActionEvent._
-import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ReportResponseReview
@@ -89,7 +88,7 @@ class ReportOrchestrator @Inject() (
               )
             )
           )
-          .flatMap(_ => reportRepository.update(report.copy(status = TRAITEMENT_EN_COURS)))
+          .flatMap(_ => reportRepository.update(report.copy(status = ReportStatus2.TraitementEnCours)))
       } else {
         genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
       }
@@ -140,7 +139,7 @@ class ReportOrchestrator @Inject() (
             _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
             files <- reportRepository.retrieveReportFiles(report.id)
             report <-
-              if (report.status == TRAITEMENT_EN_COURS && companyOpt.isDefined)
+              if (report.status == ReportStatus2.TraitementEnCours && companyOpt.isDefined)
                 notifyProfessionalOfNewReport(report, companyOpt.get)
               else Future(report)
             event <- eventRepository.createEvent(
@@ -211,7 +210,7 @@ class ReportOrchestrator @Inject() (
         )
         .getOrElse(Future(reportWithNewData))
       updatedReport <- reportWithNewStatus
-        .filter(_.status == TRAITEMENT_EN_COURS)
+        .filter(_.status == ReportStatus2.TraitementEnCours)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
@@ -408,7 +407,7 @@ class ReportOrchestrator @Inject() (
           reportRepository
             .update(
               r.copy(status = event.action match {
-                case POST_ACCOUNT_ACTIVATION_DOC => TRAITEMENT_EN_COURS
+                case POST_ACCOUNT_ACTIVATION_DOC => ReportStatus2.TraitementEnCours
                 case _                           => r.status
               })
             )
@@ -444,9 +443,9 @@ class ReportOrchestrator @Inject() (
       updatedReport <- reportRepository.update(
         report.copy(
           status = reportResponse.responseType match {
-            case ReportResponseType.ACCEPTED      => PROMESSE_ACTION
-            case ReportResponseType.REJECTED      => SIGNALEMENT_INFONDE
-            case ReportResponseType.NOT_CONCERNED => SIGNALEMENT_MAL_ATTRIBUE
+            case ReportResponseType.ACCEPTED      => ReportStatus2.PromesseAction
+            case ReportResponseType.REJECTED      => ReportStatus2.SignalementInfonde
+            case ReportResponseType.NOT_CONCERNED => ReportStatus2.SignalementMalAttribue
           }
         )
       )

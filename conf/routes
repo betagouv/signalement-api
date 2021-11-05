@@ -65,7 +65,6 @@ GET           /api/async-files                                       controllers
 # Events API
 
 # Constants API
-GET           /api/constants/reportStatus                            controllers.ConstantController.getReportStatus()
 GET           /api/constants/countries                               controllers.ConstantController.getCountries()
 
 # Authentication API

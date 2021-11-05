@@ -19,7 +19,6 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.contentAsJson
 import play.mvc.Http.Status
 import repositories._
-import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
@@ -135,14 +134,14 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+    .copy(employeeConsumer = false, status = ReportStatus2.TraitementEnCours)
   val reportToProcessOnSubsidiary = Fixtures
     .genReportForCompany(subsidiaryCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+    .copy(employeeConsumer = false, status = ReportStatus2.TraitementEnCours)
   val reportFromEmployeeOnHeadOffice =
-    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
+    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = ReportStatus2.EmployeeReport)
   val reportNAOnHeadOffice =
     Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = NA)
   val allReports =

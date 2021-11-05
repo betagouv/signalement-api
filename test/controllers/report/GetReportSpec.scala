@@ -29,10 +29,8 @@ import repositories._
 import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
@@ -260,7 +258,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = TRAITEMENT_EN_COURS
+    status = ReportStatus2.TraitementEnCours
   )
 
   val neverRequestedFinalReport = Report(

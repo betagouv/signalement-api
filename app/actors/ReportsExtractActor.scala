@@ -18,7 +18,7 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
 import utils.Constants.Departments
-import utils.Constants.ReportStatus
+import utils.Constants.ReportStatus2
 import utils.Constants
 import utils.DateUtils
 
@@ -205,9 +205,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus.PROMESSE_ACTION,
-                ReportStatus.SIGNALEMENT_MAL_ATTRIBUE,
-                ReportStatus.SIGNALEMENT_INFONDE
+                ReportStatus2.PromesseAction,
+                ReportStatus2.SignalementMalAttribue,
+                ReportStatus2.SignalementInfonde
               ) contains _
             )
             .flatMap(_ =>
@@ -224,9 +224,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus.PROMESSE_ACTION,
-                ReportStatus.SIGNALEMENT_MAL_ATTRIBUE,
-                ReportStatus.SIGNALEMENT_INFONDE
+                ReportStatus2.PromesseAction,
+                ReportStatus2.SignalementMalAttribue,
+                ReportStatus2.SignalementInfonde
               ) contains _
             )
             .flatMap(_ =>
@@ -296,13 +296,13 @@ class ReportsExtractActor @Inject() (
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     val reportColumns = buildColumns(requestedBy)
-    val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
+    val statusList = ReportStatus2.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
     val reportFilter = filters.toReportFilter(
       employeeConsumer = requestedBy.userRole match {
         case UserRoles.Pro => Some(false)
         case _             => None
       },
-      statusList = statusList
+      statusList = filters.status
     )
     for {
       paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = reportFilter)

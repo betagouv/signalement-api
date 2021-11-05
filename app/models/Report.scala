@@ -3,7 +3,6 @@ package models
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
@@ -56,7 +55,7 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = NA,
+      status = ReportStatus2.Na,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
@@ -97,19 +96,19 @@ case class Report(
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
-    status: ReportStatusValue = NA,
+    status: ReportStatus2 = ReportStatus2.Na,
     vendor: Option[String] = None,
     tags: List[String] = Nil,
     reponseconsoCode: List[String] = Nil
 ) {
 
   def initialStatus() =
-    if (employeeConsumer) EMPLOYEE_REPORT
+    if (employeeConsumer) ReportStatus2.EmployeeReport
     else if (
       companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
     )
-      TRAITEMENT_EN_COURS
-    else NA
+      ReportStatus2.TraitementEnCours
+    else ReportStatus2.Na
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 

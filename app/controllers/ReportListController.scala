@@ -10,7 +10,6 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import utils.Constants.ReportStatus._
 import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv

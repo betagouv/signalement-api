@@ -6,8 +6,6 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
 import java.time._
@@ -315,7 +313,7 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatus2] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
         .filterOpt(companyId) { case (table, _) =>
@@ -330,7 +328,7 @@ class ReportRepository @Inject() (
 
   def getMonthlyCount(
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
+      status: Seq[ReportStatus2] = Seq(),
       ticks: Int = 7
   ): Future[Seq[CountByDate]] =
     db
@@ -348,7 +346,7 @@ class ReportRepository @Inject() (
 
   def getDailyCount(
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
+      status: Seq[ReportStatus2] = Seq(),
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
@@ -396,7 +394,7 @@ class ReportRepository @Inject() (
   )
 
   def countWithStatus(
-      status: Seq[ReportStatusValue],
+      status: Seq[ReportStatus2],
       cutoff: Option[Duration],
       withWebsite: Option[Boolean] = None,
       companyId: Option[UUID] = None
@@ -644,13 +642,13 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
+  def getByStatus(status: ReportStatus2): Future[List[Report]] =
     db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
+        .filter(_.status === ReportStatus.ReportStatus2.TraitementEnCours.defaultValue)
         .filter(_.companyId inSet companiesIds)
         .to[List]
         .result

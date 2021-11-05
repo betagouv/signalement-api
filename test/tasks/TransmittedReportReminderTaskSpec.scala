@@ -14,10 +14,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.PRO
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.Constants.ActionEvent
-import utils.Constants.ReportStatus
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -217,7 +214,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
-      status = SIGNALEMENT_TRANSMIS
+      status = ReportStatus2.Transmis
     )
 
   val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, EMAIL_PRO_REMIND_NO_ACTION).sample.get
@@ -262,10 +259,10 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) =
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatusValue) =
+  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatus2) =
     reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Option[Report]] = {
+  def reportStatusMatcher(status: ReportStatus2): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
       (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }

@@ -18,10 +18,8 @@ import play.api.test._
 import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import utils.Constants.ReportStatus
 import utils.Constants.Tags
 import utils.AppSpec
 import utils.EmailAddress
@@ -43,8 +41,8 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
     }}
          When create the report                                             ${step(createReport())}
-         Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with reportStatusList "ReportStatus2.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.ReportStatus2.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
       draftReport.email,
@@ -66,7 +64,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.EMPLOYEE_REPORT
+      ReportStatus.ReportStatus2.EmployeeReport
     )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
       draftReport.email,
@@ -85,8 +83,8 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
     }}
          When create the report                                               ${step(createReport())}
-         Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with reportStatusList "ReportStatus2.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.ReportStatus2.TraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -108,8 +106,8 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
     }}
          When create the report                                         ${step(createReport())}
-         Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with status "ReportStatus2.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.ReportStatus2.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -140,7 +138,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.NA
+      ReportStatus2.Na
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -199,7 +197,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
         companyName = Some(reportCompanyAnotherSiret.name),
         companyAddress = reportCompanyAnotherSiret.address,
         companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = ReportStatus.TRAITEMENT_EN_COURS
+        status = ReportStatus.ReportStatus2.TraitementEnCours
       )
     )}
     """
@@ -230,7 +228,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val anotherCompanyData =
     Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
+  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus2.Na)
 
   var draftReport = Fixtures.genDraftReport.sample.get
   var report = draftReport.generateReport

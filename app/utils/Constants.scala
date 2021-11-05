@@ -9,8 +9,9 @@ import play.api.libs.json._
 
 object Constants {
 
+  /** @deprecated */
   object ReportStatus {
-
+    /** @deprecated */
     case class ReportStatusValue(
         defaultValue: String,
         valueByRole: Map[UserRole, Option[String]] = Map(),
@@ -43,7 +44,7 @@ object Constants {
           ),
           isFinal = true
         )
-    object EMPLOYEE_REPORT
+    object ReportStatus2.EmployeeReport
         extends ReportStatusValue(
           "Lanceur d'alerte",
           Map(
@@ -51,7 +52,7 @@ object Constants {
           ),
           isFinal = true
         )
-    object TRAITEMENT_EN_COURS
+    object ReportStatus2.TraitementEnCours
         extends ReportStatusValue(
           "Traitement en cours",
           Map(
@@ -66,7 +67,7 @@ object Constants {
             UserRoles.Pro -> Some("À répondre")
           )
         )
-    object PROMESSE_ACTION
+    object ReportStatus2.PromesseAction
         extends ReportStatusValue(
           "Promesse action",
           Map(
@@ -74,7 +75,7 @@ object Constants {
           ),
           isFinal = true
         )
-    object SIGNALEMENT_INFONDE
+    object ReportStatus2.SignalementInfonde
         extends ReportStatusValue(
           "Signalement infondé",
           Map(
@@ -98,7 +99,7 @@ object Constants {
           ),
           isFinal = true
         )
-    object SIGNALEMENT_MAL_ATTRIBUE
+    object ReportStatus2.SignalementMalAttribue
         extends ReportStatusValue(
           "Signalement mal attribué",
           Map(
@@ -109,26 +110,26 @@ object Constants {
 
     val reportStatusList = Seq(
       NA,
-      EMPLOYEE_REPORT,
-      TRAITEMENT_EN_COURS,
+      ReportStatus2.EmployeeReport,
+      ReportStatus2.TraitementEnCours,
       SIGNALEMENT_TRANSMIS,
-      PROMESSE_ACTION,
-      SIGNALEMENT_INFONDE,
+      ReportStatus2.PromesseAction,
+      ReportStatus2.SignalementInfonde,
       SIGNALEMENT_NON_CONSULTE,
       SIGNALEMENT_CONSULTE_IGNORE,
-      SIGNALEMENT_MAL_ATTRIBUE
+      ReportStatus2.SignalementMalAttribue
     )
 
     val responseStatusList = Seq(
-      PROMESSE_ACTION,
-      SIGNALEMENT_INFONDE,
-      SIGNALEMENT_MAL_ATTRIBUE
+      ReportStatus2.PromesseAction,
+      ReportStatus2.SignalementInfonde,
+      ReportStatus2.SignalementMalAttribue
     )
 
     def fromDefaultValue(value: String) =
       reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
 
-    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) =
+    def getStatusListForValueWithUserRonnle(value: Option[String], userRole: UserRole) =
       (value, userRole) match {
         case (Some(value), _)      => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
         case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined))
