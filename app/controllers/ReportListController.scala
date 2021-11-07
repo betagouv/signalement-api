@@ -8,18 +8,16 @@ import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
@@ -35,52 +33,40 @@ class ReportListController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def getReports(offset: Option[Long], limit: Option[Int]) = SecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportFilterBody]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        filter =>
-          for {
-            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-              filter.siretSirenList,
-              request.identity
-            )
-            paginatedReports <- reportOrchestrator.getReportsForUser(
-              connectedUser = request.identity,
-              filter = filter.copy(siretSirenList = sanitizedSirenSirets).toReportFilter(request.identity.userRole),
-              offset = offset,
-              limit = limit
-            )
-          } yield Ok(Json.toJson(paginatedReports))
+  def getReports() = SecuredAction.async { implicit request =>
+    val filters = ReportFilter.fromQueryString(request.queryString, request.identity.userRole)
+    val mapper = new QueryStringMapper(request.queryString)
+    val offset = mapper.long("offset")
+    val limit = mapper.int("limit")
+
+    for {
+      sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+        filters.siretSirenList,
+        request.identity
       )
+      paginatedReports <- reportOrchestrator.getReportsForUser(
+        connectedUser = request.identity,
+        filter = filters.copy(siretSirenList = sanitizedSirenSirets),
+        offset = offset,
+        limit = limit
+      )
+    } yield Ok(Json.toJson(paginatedReports))
   }
 
-  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportFilterBody]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        filters =>
-          for {
-            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-              filters.siretSirenList,
-              request.identity
-            )
-          } yield {
-            logger.debug(s"Requesting report for user ${request.identity.email}")
-            reportsExtractActor ? ReportsExtractActor.ExtractRequest(
-              request.identity,
-              filters.copy(siretSirenList = sanitizedSirenSirets).toReportFilter(request.identity.userRole)
-            )
-            Ok
-          }
+  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    val filters = ReportFilter.fromQueryString(request.queryString, request.identity.userRole)
+    for {
+      sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+        filters.siretSirenList,
+        request.identity
       )
+    } yield {
+      logger.debug(s"Requesting report for user ${request.identity.email}")
+      reportsExtractActor ? ReportsExtractActor.ExtractRequest(
+        request.identity,
+        filters.copy(siretSirenList = sanitizedSirenSirets)
+      )
+      Ok
+    }
   }
-}
-
-object ReportListObjects {
-
-  case class ReportList(reportIds: List[UUID])
-
 }

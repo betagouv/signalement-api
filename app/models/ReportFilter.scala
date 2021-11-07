@@ -1,7 +1,7 @@
 package models
 
-import play.api.libs.json.Json
 import utils.DateUtils
+import utils.QueryStringMapper
 
 import java.time.LocalDate
 
@@ -26,48 +26,31 @@ case class ReportFilter(
     activityCodes: Seq[String] = Nil
 )
 
-case class ReportFilterBody(
-    departments: Option[Seq[String]],
-    email: Option[String],
-    websiteURL: Option[String],
-    phone: Option[String],
-    websiteExists: Option[Boolean] = None,
-    phoneExists: Option[Boolean] = None,
-    siretSirenList: Seq[String] = Nil,
-    start: Option[String],
-    end: Option[String],
-    category: Option[String],
-    status: Seq[String] = Nil,
-    details: Option[String],
-    hasCompany: Option[Boolean],
-    tags: Seq[String] = Nil
-) {
-  def toReportFilter(userRole: UserRole): ReportFilter =
+object ReportFilter {
+  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): ReportFilter = {
+    val mapper = new QueryStringMapper(q)
     ReportFilter(
-      departments = departments.getOrElse(Seq()),
-      email = email,
-      websiteURL = websiteURL,
-      phone = phone,
-      websiteExists = websiteExists,
-      phoneExists = phoneExists,
-      siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
-      companyName = None,
-      companyCountries = Seq(),
-      start = DateUtils.parseDate(start),
-      end = DateUtils.parseDate(end),
-      category = category,
-      status = status.map(Report2Status.withName),
-      details = details,
+      departments = mapper.seq("departments"),
+      email = mapper.string("email"),
+      websiteURL = mapper.string("websiteURL"),
+      phone = mapper.string("phone"),
+      websiteExists = mapper.boolean("websiteExists"),
+      phoneExists = mapper.boolean("phoneExists"),
+      siretSirenList = mapper.seq("siretSirenList"),
+      companyName = mapper.string("companyName"),
+      companyCountries = mapper.seq("companyCountries"),
+      start = mapper.localDate("start"),
+      end = mapper.localDate("end"),
+      category = mapper.string("category"),
+      status = mapper.seq("status").map(Report2Status.withName),
+      details = mapper.string("details"),
       employeeConsumer = userRole match {
         case UserRoles.Pro => Some(false)
         case _             => None
       },
-      hasCompany = hasCompany,
-      tags = tags
+      hasCompany = mapper.boolean("hasCompany"),
+      tags = mapper.seq("tags"),
+      activityCodes = mapper.seq("activityCode")
     )
-}
-
-object ReportFilterBody {
-  implicit val reads = Json.using[Json.MacroOptions with Json.DefaultValues].reads[ReportFilterBody]
-
+  }
 }

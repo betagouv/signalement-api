@@ -355,7 +355,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

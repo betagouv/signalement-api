@@ -103,7 +103,7 @@ case class Report(
 ) {
 
   def initialStatus() =
-    if (employeeConsumer) Report2Status.EmployeeReport
+    if (employeeConsumer) Report2Status.LanceurAlerte
     else if (
       companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
     )

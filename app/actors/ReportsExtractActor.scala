@@ -349,7 +349,12 @@ class ReportsExtractActor @Inject() (
             Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
             filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
-            filters.status.map(Report2Status.translate(_, requestedBy.userRole)).map(status => Row().withCellValues("Statut", status)),
+            Some(filters.status)
+              .filter(_.nonEmpty)
+              .map(status =>
+                Row()
+                  .withCellValues("Statut", status.map(Report2Status.translate(_, requestedBy.userRole)).mkString(","))
+              ),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
           ).filter(x => x.isDefined).map(_.get)

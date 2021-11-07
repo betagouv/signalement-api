@@ -531,8 +531,8 @@ class ReportRepository @Inject() (
       .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
         table.companyId.isDefined === hasCompany
       }
-      .filterOpt(filter.status) { case (table, statusList) =>
-        table.status.inSet(statusList.map(_.entryName))
+      .filterIf(filter.status.nonEmpty) { case table =>
+        table.status.inSet(filter.status.map(_.entryName))
       }
       .filterIf(filter.tags.nonEmpty) { case table =>
         table.tags @& filter.tags.toList.bind

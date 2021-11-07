@@ -29,7 +29,7 @@ class StatisticController @Inject() (
   def getPercentageReportForwarded(companyId: Option[UUID]) = UserAwareAction.async { _ =>
     _companyStats
       .getReportWithStatusPercent(
-        status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
+        status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.LanceurAlerte)).toList,
         companyId = companyId
       )
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
@@ -45,7 +45,7 @@ class StatisticController @Inject() (
           Report2Status.MalAttribue,
           Report2Status.ConsulteIgnore
         ),
-        baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
+        baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.LanceurAlerte)).toList,
         companyId = companyId
       )
       .map(percent => Ok(Json.toJson(StatsValue(Some(percent)))))
@@ -134,7 +134,7 @@ class StatisticController @Inject() (
       _companyStats
         .getReportWithStatusPercentageCurve(
           companyId = companyId,
-          status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
+          status = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.LanceurAlerte)).toList,
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )
@@ -153,7 +153,7 @@ class StatisticController @Inject() (
             Report2Status.MalAttribue,
             Report2Status.ConsulteIgnore
           ),
-          baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.EmployeeReport)).toList,
+          baseStatus = Report2Status.values.filterNot(Set(Report2Status.NA, Report2Status.LanceurAlerte)).toList,
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration)
         )

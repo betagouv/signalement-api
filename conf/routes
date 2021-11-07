@@ -24,7 +24,7 @@ GET           /api/stats/reports/reviews                             controllers
 
 
 # Reports list API
-GET           /api/reports                                           controllers.ReportListController.getReports(offset: Option[Long], limit: Option[Int], departments: Seq[String], email: Option[String], websiteURL: Option[String], phone: Option[String], websiteExists: Option[Boolean], phoneExists: Option[Boolean], siretSirenList: List[String], companyName: Option[String], companyCountries: Seq[String], start: Option[String], end: Option[String], category: Option[String], status: Option[String], details: Option[String], hasCompany: Option[Boolean], tags: Seq[String], activityCodes: Seq[String])
+GET           /api/reports                                           controllers.ReportListController.getReports()
 POST          /api/reports/extract                                   controllers.ReportListController.extractReports()
 
 # Report API
