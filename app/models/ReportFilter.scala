@@ -43,7 +43,7 @@ object ReportFilter {
       end = mapper.localDate("end"),
       category = mapper.string("category"),
       status = Report2Status.filterByUserRole(
-        mapper.seq("status").map(Report2Status.withName),
+        mapper.seq("status").flatMap(Report2Status.withNameOption),
         userRole
       ),
       details = mapper.string("details"),
