@@ -167,7 +167,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotForwarded = Fixtures
-    .genReportsForCompanyWithStatus(company, NA)
+    .genReportsForCompanyWithStatus(company, Report2Status.NA)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1))) :::
@@ -234,10 +234,11 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     Fixtures.genReportsForCompanyWithStatus(company, Report2Status.MalAttribue).sample.get
   val currentMonthReportsClosedByNoAction =
     Fixtures.genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore).sample.get
-  val currentMonthReportsNotForwarded = Fixtures.genReportsForCompanyWithStatus(company, NA).sample.get ::: Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.LanceurAlerte)
-    .sample
-    .get
+  val currentMonthReportsNotForwarded =
+    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.NA).sample.get ::: Fixtures
+      .genReportsForCompanyWithStatus(company, Report2Status.LanceurAlerte)
+      .sample
+      .get
 
   val currentMonthReportsWithResponse =
     currentMonthReportsAccepted ::: currentMonthReportsRejected ::: currentMonthReportsNotConcerned

@@ -77,7 +77,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      Report2StatusPromesseAction
+      Report2Status.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -114,7 +114,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      Report2StatusPromesseAction
+      Report2Status.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -149,7 +149,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "Report2Status.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
-      Report2StatusSignalementInfonde
+      Report2Status.Infonde
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -184,7 +184,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(
-      Report2StatusSignalementMalAttribue
+      Report2Status.MalAttribue
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,

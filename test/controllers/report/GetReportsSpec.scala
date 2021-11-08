@@ -7,16 +7,16 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import controllers.ReportListController
 import models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
+import play.api.test.Helpers._
+import play.api.test._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.test.Helpers.contentAsJson
 import play.mvc.Http.Status
 import repositories._
 import utils.silhouette.auth.AuthEnv
@@ -206,34 +206,19 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  def getReports(status: Option[String] = None) =
+  def getReports(status: Option[String] = None) = {
+    val request = FakeRequest(
+      play.api.http.HttpVerbs.GET,
+      controllers.routes.ReportListController.getReports().toString + status.map(s"?status=$_").getOrElse("")
+    )
+    val loggedRequest = someLoginInfo.map(request.withAuthenticator[AuthEnv](_)).getOrElse(request)
+    val result = route(app, loggedRequest).get
+
     Await.result(
-      app.injector
-        .instanceOf[ReportListController]
-        .getReports(
-          offset = None,
-          limit = None,
-          departments = Nil,
-          websiteURL = None,
-          phone = None,
-          websiteExists = None,
-          phoneExists = None,
-          email = None,
-          siretSirenList = Nil,
-          companyName = None,
-          companyCountries = Nil,
-          start = None,
-          end = None,
-          category = None,
-          status = status,
-          details = None,
-          hasCompany = None,
-          tags = Nil,
-          activityCodes = Nil
-        )
-        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
+      result,
       Duration.Inf
     )
+  }
 
   def userMustBeUnauthorized() =
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
@@ -248,20 +233,20 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 //    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
       case (UserRoles.Admin, _) =>
-        contentAsJson(Future(someResult.get)).toString must
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRoles.DGCCRF, _) =>
-        contentAsJson(Future(someResult.get)).toString must
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
       case (UserRoles.Pro, pro) if pro == proUserWithAccessToHeadOffice =>
-        contentAsJson(Future(someResult.get)).toString must
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
           not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportNAOnHeadOffice)))
       case (UserRoles.Pro, pro) if pro == proUserWithAccessToSubsidiary =>
-        contentAsJson(Future(someResult.get)).toString must
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and
           not(
@@ -276,7 +261,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     }
 
   def noReportsMustBeRendered() =
-    contentAsJson(Future(someResult.get)).toString must
+    play.api.test.Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
 

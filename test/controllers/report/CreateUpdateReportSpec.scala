@@ -42,7 +42,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
     }}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "Report2Status.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
-      Report2StatusTraitementEnCours
+      Report2Status.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
       draftReport.email,
@@ -64,7 +64,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      Report2StatusEmployeeReport
+      Report2Status.LanceurAlerte
     )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
       draftReport.email,
@@ -84,7 +84,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
     }}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "Report2Status.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
-      Report2StatusTraitementEnCours
+      Report2Status.TraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -107,7 +107,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "Report2Status.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
-      Report2StatusTraitementEnCours
+      Report2Status.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -197,7 +197,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
         companyName = Some(reportCompanyAnotherSiret.name),
         companyAddress = reportCompanyAnotherSiret.address,
         companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = Report2StatusTraitementEnCours
+        status = Report2Status.TraitementEnCours
       )
     )}
     """
