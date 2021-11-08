@@ -356,7 +356,7 @@ class ReportsExtractActor @Inject() (
               ),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
-          ).filter(x => x.isDefined).map(_.get)
+          ).filter(_.isDefined).map(_.get)
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),

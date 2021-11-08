@@ -20,8 +20,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.Failure
-import scala.util.Success
 
 @Singleton
 class ReportListController @Inject() (
