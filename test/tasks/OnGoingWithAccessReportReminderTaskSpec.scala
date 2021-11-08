@@ -27,7 +27,7 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
     val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours" created more than 7 days    ${step(
+         Given a report with status "ReportStatus.TraitementEnCours" created more than 7 days    ${step(
       setupReport(report)
     )}
          When remind task run                                                         ${step {
@@ -56,7 +56,7 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
     val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours" created less than 7 days    ${step(
+         Given a report with status "ReportStatus.TraitementEnCours" created less than 7 days    ${step(
       setupReport(report)
     )}
          When remind task run                                                         ${step {
@@ -80,7 +80,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours"                             ${step(
+         Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
       setupReport(report)
     )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
@@ -109,7 +109,7 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours"                             ${step(
+         Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
       setupReport(report)
     )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
@@ -138,7 +138,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWith
     )
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours"                             ${step(
+         Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
       setupReport(report)
     )}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
@@ -174,7 +174,7 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
     )
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
-         Given a report with status "Report2Status.TraitementEnCours"                             ${step(
+         Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
       setupReport(report)
     )}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}

@@ -76,7 +76,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
       ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
@@ -113,7 +113,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
       ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
@@ -148,7 +148,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
-        And the report reportStatusList is updated to "Report2Status.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
+        And the report reportStatusList is updated to "ReportStatus.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
       ReportStatus.Infonde
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(

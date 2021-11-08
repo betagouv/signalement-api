@@ -102,7 +102,7 @@ class StatisticController @Inject() (
 //      _companyStats
 //        .getReportsCountCurve(
 //          companyId = companyId,
-//          status = Seq(Report2Status.PromesseAction, Report2Status.Infonde, Report2Status.MalAttribue),
+//          status = Seq(ReportStatus.PromesseAction, ReportStatus.Infonde, ReportStatus.MalAttribue),
 //          ticks = getTicks(ticks),
 //          tickDuration = getTickDuration(tickDuration)
 //        )

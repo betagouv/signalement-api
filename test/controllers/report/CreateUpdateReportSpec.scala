@@ -41,7 +41,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
     }}
          When create the report                                             ${step(createReport())}
-         Then create the report with reportStatusList "Report2Status.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
+         Then create the report with reportStatusList "ReportStatus.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
@@ -83,7 +83,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
     }}
          When create the report                                               ${step(createReport())}
-         Then create the report with reportStatusList "Report2Status.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
+         Then create the report with reportStatusList "ReportStatus.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
@@ -106,7 +106,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
     }}
          When create the report                                         ${step(createReport())}
-         Then create the report with status "Report2Status.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
+         Then create the report with status "ReportStatus.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
       ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(

@@ -26,7 +26,7 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).minusDays(1))
     s2"""
        Given a company with no activated accout
-       Given a report with status "Report2Status.TraitementEnCours" and expired reading delay   ${step(
+       Given a report with status "ReportStatus.TraitementEnCours" and expired reading delay   ${step(
       setupReport(report)
     )}
        When remind task run                                                         ${step {
@@ -55,7 +55,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).plusDays(1))
     s2"""
        Given a company with no activated accout
-       Given a report with status "Report2Status.TraitementEnCours" and no expired reading delay    ${step(
+       Given a report with status "ReportStatus.TraitementEnCours" and no expired reading delay    ${step(
       setupReport(report)
     )}
        When remind task run                                                             ${step {
