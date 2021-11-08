@@ -22,10 +22,7 @@ import play.mvc.Http.Status
 import repositories._
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.Constants.ActionEvent
-import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
@@ -79,8 +76,8 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PROMESSE_ACTION
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -116,8 +113,8 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PROMESSE_ACTION
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -151,8 +148,8 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
-        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_INFONDE
+        And the report reportStatusList is updated to "ReportStatus.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.Infonde
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -187,7 +184,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_MAL_ATTRIBUE
+      ReportStatus.MalAttribue
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -229,7 +226,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
+  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
   var reviewUrl = new URI("")
   var report = reportFixture
@@ -353,12 +350,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     (action == event.action, s"action doesn't match ${action}")
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

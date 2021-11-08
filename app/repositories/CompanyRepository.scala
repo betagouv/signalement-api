@@ -5,7 +5,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
-import utils.Constants.ReportStatus.responseStatusList
 import utils.SIREN
 import utils.SIRET
 
@@ -184,7 +183,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
               .map(b =>
                 b.flatMap { a =>
                   Case If a.status.inSet(
-                    responseStatusList.map(_.defaultValue)
+                    ReportStatus.values.map(_.entryName)
                   ) Then a.id
                 }
               )

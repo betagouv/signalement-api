@@ -6,8 +6,6 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
 import java.time._
@@ -140,7 +138,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         contactAgreement = contactAgreement,
         employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
-        status = ReportStatus.fromDefaultValue(status),
+        status = ReportStatus.withName(status),
         vendor = vendor,
         tags = tags,
         reponseconsoCode = reponseconsoCode
@@ -173,7 +171,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.contactAgreement,
       r.employeeConsumer,
       r.forwardToReponseConso,
-      r.status.defaultValue,
+      r.status.entryName,
       r.vendor,
       r.tags,
       r.reponseconsoCode
@@ -315,14 +313,14 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None, status: Seq[ReportStatusValue] = Seq()): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatus] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
         .filterOpt(companyId) { case (table, _) =>
           table.companyId === companyId
         }
         .filterIf(status.nonEmpty) { case table =>
-          table.status inSet (status.map(_.defaultValue))
+          table.status inSet (status.map(_.entryName))
         }
         .length
         .result
@@ -330,14 +328,14 @@ class ReportRepository @Inject() (
 
   def getMonthlyCount(
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
+      status: Seq[ReportStatus] = Seq(),
       ticks: Int = 7
   ): Future[Seq[CountByDate]] =
     db
       .run(
         reportTableQuery
           .filterOpt(companyId)((table, id) => table.companyId === id)
-          .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+          .filterIf(status.nonEmpty)(_.status inSet status.map(_.entryName))
           .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
           .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
           .map { case ((month, year), group) => (month, year, group.length) }
@@ -348,13 +346,13 @@ class ReportRepository @Inject() (
 
   def getDailyCount(
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatusValue] = List(),
+      status: Seq[ReportStatus] = Seq(),
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
       reportTableQuery
         .filterOpt(companyId)((table, id) => table.companyId === id)
-        .filterIf(status.nonEmpty)(_.status inSet status.map(_.defaultValue))
+        .filterIf(status.nonEmpty)(_.status inSet status.map(_.entryName))
         .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
         .groupBy(report =>
           (
@@ -396,7 +394,7 @@ class ReportRepository @Inject() (
   )
 
   def countWithStatus(
-      status: Seq[ReportStatusValue],
+      status: Seq[ReportStatus],
       cutoff: Option[Duration],
       withWebsite: Option[Boolean] = None,
       companyId: Option[UUID] = None
@@ -405,7 +403,7 @@ class ReportRepository @Inject() (
       baseStatReportTableQuery
         .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
         .filterOpt(companyId)((table, id) => table.companyId === id)
-        .filter(_.status inSet status.map(_.defaultValue))
+        .filter(_.status inSet status.map(_.entryName))
         .filterOpt(withWebsite) { case (table, withWebsite) =>
           table.websiteURL.isDefined === withWebsite
         }
@@ -533,8 +531,8 @@ class ReportRepository @Inject() (
       .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
         table.companyId.isDefined === hasCompany
       }
-      .filterOpt(filter.statusList) { case (table, statusList) =>
-        table.status.inSet(statusList.map(_.defaultValue))
+      .filterIf(filter.status.nonEmpty) { case table =>
+        table.status.inSet(filter.status.map(_.entryName))
       }
       .filterIf(filter.tags.nonEmpty) { case table =>
         table.tags @& filter.tags.toList.bind
@@ -644,13 +642,13 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
-    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
+  def getByStatus(status: ReportStatus): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.entryName).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
+        .filter(_.status === ReportStatus.TraitementEnCours.entryName)
         .filter(_.companyId inSet companiesIds)
         .to[List]
         .result
