@@ -1,6 +1,5 @@
 package models
 
-import utils.DateUtils
 import utils.QueryStringMapper
 
 import java.time.LocalDate

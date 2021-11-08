@@ -14,7 +14,6 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
-import play.api.test._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.mvc.Http.Status

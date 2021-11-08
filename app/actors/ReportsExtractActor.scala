@@ -19,7 +19,6 @@ import repositories._
 import services.S3Service
 import utils.Constants.Departments
 import utils.Constants
-import utils.DateUtils
 
 import java.nio.file.Path
 import java.nio.file.Paths
