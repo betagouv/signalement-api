@@ -65,8 +65,8 @@ class ReminderTask @Inject() (
     logger.debug(s"taskDate - ${now}");
 
     for {
-      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(Report2Status.TraitementEnCours)
-      transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(Report2Status.Transmis)
+      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
+      transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
       reportEventsMap <- eventRepository.prefetchReportsEvents(
         (onGoingReportsWithAdmins ::: transmittedReportsWithAdmins).map(_._1)
       )
@@ -103,7 +103,7 @@ class ReminderTask @Inject() (
     )
   }
 
-  private[this] def getReportsWithAdminsByStatus(status: Report2Status): Future[List[(Report, List[User])]] =
+  private[this] def getReportsWithAdminsByStatus(status: ReportStatus): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
       mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(
@@ -282,7 +282,7 @@ class ReminderTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
         )
       )
-      _ <- reportRepository.update(report.copy(status = Report2Status.NonConsulte))
+      _ <- reportRepository.update(report.copy(status = ReportStatus.NonConsulte))
     } yield {
       mailService.Consumer.sendReportClosedByNoReading(report)
       Reminder(report.id, ReminderValue.CloseUnreadReport)
@@ -325,7 +325,7 @@ class ReminderTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
         )
       )
-      _ <- reportRepository.update(report.copy(status = Report2Status.ConsulteIgnore))
+      _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
     } yield {
       mailService.Consumer.sendAttachmentSeqForWorkflowStepN(report)
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)

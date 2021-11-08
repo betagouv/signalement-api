@@ -92,7 +92,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       ActionEvent.REPORT_READING_BY_PRO
     )}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(
-      Report2Status.Transmis
+      ReportStatus.Transmis
     )}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
       neverRequestedReport.email,
@@ -101,7 +101,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       mailerService.attachmentSeqForWorkflowStepN(3)
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-      neverRequestedReport.copy(status = Report2Status.Transmis),
+      neverRequestedReport.copy(status = ReportStatus.Transmis),
       UserRoles.Pro
     )}
       """
@@ -207,10 +207,10 @@ trait GetReportSpec extends Spec with GetReportContext {
         any
       )
 
-  def reportMustHaveBeenUpdatedWithStatus(status: Report2Status) =
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) =
     there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
 
-  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
@@ -258,7 +258,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = Report2Status.TraitementEnCours
+    status = ReportStatus.TraitementEnCours
   )
 
   val neverRequestedFinalReport = Report(
@@ -276,7 +276,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = Report2Status.ConsulteIgnore
+    status = ReportStatus.ConsulteIgnore
   )
 
   val alreadyRequestedReport = Report(
@@ -294,7 +294,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = Report2Status.Transmis
+    status = ReportStatus.Transmis
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

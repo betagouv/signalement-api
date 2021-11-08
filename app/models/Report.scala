@@ -55,7 +55,7 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = Report2Status.NA,
+      status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
@@ -96,19 +96,19 @@ case class Report(
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
-    status: Report2Status = Report2Status.NA,
+    status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
     tags: List[String] = Nil,
     reponseconsoCode: List[String] = Nil
 ) {
 
   def initialStatus() =
-    if (employeeConsumer) Report2Status.LanceurAlerte
+    if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (
       companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
     )
-      Report2Status.TraitementEnCours
-    else Report2Status.NA
+      ReportStatus.TraitementEnCours
+    else ReportStatus.NA
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 

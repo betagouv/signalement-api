@@ -183,7 +183,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
               .map(b =>
                 b.flatMap { a =>
                   Case If a.status.inSet(
-                    Report2Status.values.map(_.entryName)
+                    ReportStatus.values.map(_.entryName)
                   ) Then a.id
                 }
               )

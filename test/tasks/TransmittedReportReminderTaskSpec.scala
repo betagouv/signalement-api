@@ -154,7 +154,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
     )}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(
       transmittedReport.id,
-      Report2Status.ConsulteIgnore
+      ReportStatus.ConsulteIgnore
     )}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
       transmittedReport.email,
@@ -214,7 +214,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
-      status = Report2Status.Transmis
+      status = ReportStatus.Transmis
     )
 
   val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, EMAIL_PRO_REMIND_NO_ACTION).sample.get
@@ -259,10 +259,10 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) =
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
 
-  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: Report2Status) =
+  def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatus) =
     reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
 
-  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Option[Report]] = {
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
       (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
   }

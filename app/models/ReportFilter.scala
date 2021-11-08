@@ -18,7 +18,7 @@ case class ReportFilter(
     start: Option[LocalDate] = None,
     end: Option[LocalDate] = None,
     category: Option[String] = None,
-    status: Seq[Report2Status] = Nil,
+    status: Seq[ReportStatus] = Nil,
     details: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
@@ -42,8 +42,8 @@ object ReportFilter {
       start = mapper.localDate("start"),
       end = mapper.localDate("end"),
       category = mapper.string("category"),
-      status = Report2Status.filterByUserRole(
-        mapper.seq("status").flatMap(Report2Status.withNameOption),
+      status = ReportStatus.filterByUserRole(
+        mapper.seq("status").flatMap(ReportStatus.withNameOption),
         userRole
       ),
       details = mapper.string("details"),

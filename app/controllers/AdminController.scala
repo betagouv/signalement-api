@@ -61,7 +61,7 @@ class AdminController @Inject() (
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = Report2Status.TraitementEnCours
+    status = ReportStatus.TraitementEnCours
   )
 
   private def genReportResponse = ReportResponse(
@@ -151,7 +151,7 @@ class AdminController @Inject() (
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
-          genReport.copy(status = Report2Status.NA, companyAddress = Address(country = Some(Country.Italie))),
+          genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Italie))),
           Nil
         )
       )
@@ -161,7 +161,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
           genReport.copy(
-            status = Report2Status.NA,
+            status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Islande)),
             tags = List(Tags.ContractualDispute)
           ),
@@ -174,7 +174,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
           .reportAcknowledgment(
-            genReport.copy(status = Report2Status.NA, companyAddress = Address(country = Some(Country.Andorre)))
+            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Andorre)))
           )
       )
     ),
@@ -183,7 +183,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
           genReport.copy(
-            status = Report2Status.NA,
+            status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Andorre)),
             tags = List(Tags.ContractualDispute)
           )
@@ -195,7 +195,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
           .reportAcknowledgment(
-            genReport.copy(status = Report2Status.NA, companyAddress = Address(country = Some(Country.Suisse)))
+            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Suisse)))
           )
       )
     ),
@@ -204,7 +204,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
           genReport.copy(
-            status = Report2Status.NA,
+            status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Suisse)),
             tags = List(Tags.ContractualDispute)
           )
@@ -216,7 +216,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
           .reportAcknowledgment(
-            genReport.copy(status = Report2Status.NA, companyAddress = Address(country = Some(Country.Bahamas)))
+            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Bahamas)))
           )
       )
     ),
@@ -225,7 +225,7 @@ class AdminController @Inject() (
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
           genReport.copy(
-            status = Report2Status.NA,
+            status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Mexique)),
             tags = List(Tags.ContractualDispute)
           )

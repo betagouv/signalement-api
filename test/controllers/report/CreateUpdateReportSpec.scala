@@ -42,7 +42,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
     }}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "Report2Status.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
-      Report2Status.TraitementEnCours
+      ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
       draftReport.email,
@@ -64,7 +64,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      Report2Status.LanceurAlerte
+      ReportStatus.LanceurAlerte
     )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
       draftReport.email,
@@ -84,7 +84,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
     }}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "Report2Status.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
-      Report2Status.TraitementEnCours
+      ReportStatus.TraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -107,7 +107,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "Report2Status.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
-      Report2Status.TraitementEnCours
+      ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -138,7 +138,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
-      Report2Status.NA
+      ReportStatus.NA
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
@@ -197,7 +197,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
         companyName = Some(reportCompanyAnotherSiret.name),
         companyAddress = reportCompanyAnotherSiret.address,
         companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = Report2Status.TraitementEnCours
+        status = ReportStatus.TraitementEnCours
       )
     )}
     """
@@ -228,7 +228,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val anotherCompanyData =
     Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = Report2Status.NA)
+  val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
   var report = draftReport.generateReport
@@ -337,7 +337,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         attachments
       )
 
-  def reportMustHaveBeenCreatedWithStatus(status: Report2Status) = {
+  def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list, Duration.Inf).filter(_.id != existingReport.id)
     val expectedReport = draftReport.generateReport.copy(
       id = reports.head.id,

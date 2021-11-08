@@ -77,7 +77,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      Report2Status.PromesseAction
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -114,7 +114,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "Report2Status.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      Report2Status.PromesseAction
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -149,7 +149,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "Report2Status.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
-      Report2Status.Infonde
+      ReportStatus.Infonde
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -184,7 +184,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(
-      Report2Status.MalAttribue
+      ReportStatus.MalAttribue
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -226,7 +226,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = Report2Status.Transmis)
+  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
   var reviewUrl = new URI("")
   var report = reportFixture
@@ -350,12 +350,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     (action == event.action, s"action doesn't match ${action}")
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: Report2Status) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

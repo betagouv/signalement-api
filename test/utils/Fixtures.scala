@@ -143,7 +143,7 @@ object Fixtures {
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-    status <- Gen.oneOf(Report2Status.values)
+    status <- Gen.oneOf(ReportStatus.values)
   } yield Report(
     id = id,
     category = category,
@@ -163,7 +163,7 @@ object Fixtures {
     status = status
   )
 
-  def genReportsForCompanyWithStatus(company: Company, status: Report2Status) =
+  def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
   def genReportConsumer = for {

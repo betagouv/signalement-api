@@ -138,7 +138,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         contactAgreement = contactAgreement,
         employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
-        status = Report2Status.withName(status),
+        status = ReportStatus.withName(status),
         vendor = vendor,
         tags = tags,
         reponseconsoCode = reponseconsoCode
@@ -313,7 +313,7 @@ class ReportRepository @Inject() (
         .result
     )
 
-  def count(companyId: Option[UUID] = None, status: Seq[Report2Status] = Seq()): Future[Int] = db
+  def count(companyId: Option[UUID] = None, status: Seq[ReportStatus] = Seq()): Future[Int] = db
     .run(
       reportTableQuery
         .filterOpt(companyId) { case (table, _) =>
@@ -328,7 +328,7 @@ class ReportRepository @Inject() (
 
   def getMonthlyCount(
       companyId: Option[UUID] = None,
-      status: Seq[Report2Status] = Seq(),
+      status: Seq[ReportStatus] = Seq(),
       ticks: Int = 7
   ): Future[Seq[CountByDate]] =
     db
@@ -346,7 +346,7 @@ class ReportRepository @Inject() (
 
   def getDailyCount(
       companyId: Option[UUID] = None,
-      status: Seq[Report2Status] = Seq(),
+      status: Seq[ReportStatus] = Seq(),
       ticks: Int
   ): Future[Seq[CountByDate]] = db
     .run(
@@ -394,7 +394,7 @@ class ReportRepository @Inject() (
   )
 
   def countWithStatus(
-      status: Seq[Report2Status],
+      status: Seq[ReportStatus],
       cutoff: Option[Duration],
       withWebsite: Option[Boolean] = None,
       companyId: Option[UUID] = None
@@ -642,13 +642,13 @@ class ReportRepository @Inject() (
     )
   }
 
-  def getByStatus(status: Report2Status): Future[List[Report]] =
+  def getByStatus(status: ReportStatus): Future[List[Report]] =
     db.run(reportTableQuery.filter(_.status === status.entryName).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === Report2Status.TraitementEnCours.entryName)
+        .filter(_.status === ReportStatus.TraitementEnCours.entryName)
         .filter(_.companyId inSet companiesIds)
         .to[List]
         .result

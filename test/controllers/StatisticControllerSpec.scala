@@ -142,37 +142,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val company = Fixtures.genCompany.sample.get
 
   val lastYearReportsToProcess = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours)
+    .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsAccepted = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.PromesseAction)
+    .genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsRejected = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.Infonde)
+    .genReportsForCompanyWithStatus(company, ReportStatus.Infonde)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotConcerned = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.MalAttribue)
+    .genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsClosedByNoAction = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore)
+    .genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
   val lastYearReportsNotForwarded = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.NA)
+    .genReportsForCompanyWithStatus(company, ReportStatus.NA)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, Report2Status.LanceurAlerte)
+      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
@@ -183,37 +183,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val lastYearReports = lastYearReportsForwardedToPro ::: lastYearReportsNotForwarded
 
   val lastMonthReportsToProcess = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours)
+    .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsAccepted = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.PromesseAction)
+    .genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsRejected = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.Infonde)
+    .genReportsForCompanyWithStatus(company, ReportStatus.Infonde)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsNotConcerned = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.MalAttribue)
+    .genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsClosedByNoAction = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore)
+    .genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
   val lastMonthReportsNotForwarded = Fixtures
-    .genReportsForCompanyWithStatus(company, Report2Status.NA)
+    .genReportsForCompanyWithStatus(company, ReportStatus.NA)
     .sample
     .get
     .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1))) :::
     Fixtures
-      .genReportsForCompanyWithStatus(company, Report2Status.LanceurAlerte)
+      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
       .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
@@ -225,18 +225,18 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
   val lastMonthReports = lastMonthReportsForwardedToPro ::: lastMonthReportsNotForwarded
 
   val currentMonthReportsToProcess =
-    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.TraitementEnCours).sample.get
-  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, Report2Status.Transmis).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours).sample.get
+  val currentMonthReportsSend = Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.Transmis).sample.get
   val currentMonthReportsAccepted =
-    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.PromesseAction).sample.get
-  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, Report2Status.Infonde).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction).sample.get
+  val currentMonthReportsRejected = Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.Infonde).sample.get
   val currentMonthReportsNotConcerned =
-    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.MalAttribue).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue).sample.get
   val currentMonthReportsClosedByNoAction =
-    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.ConsulteIgnore).sample.get
+    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore).sample.get
   val currentMonthReportsNotForwarded =
-    Fixtures.genReportsForCompanyWithStatus(company, Report2Status.NA).sample.get ::: Fixtures
-      .genReportsForCompanyWithStatus(company, Report2Status.LanceurAlerte)
+    Fixtures.genReportsForCompanyWithStatus(company, ReportStatus.NA).sample.get ::: Fixtures
+      .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
 

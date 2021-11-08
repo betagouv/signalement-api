@@ -68,13 +68,13 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   val company = Fixtures.genCompany.sample.get
 
-  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = Report2Status.Transmis)
+  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
-  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = Report2Status.PromesseAction)
+  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseEvent =
     Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
 
-  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = Report2Status.PromesseAction)
+  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseWithReviewEvent =
     Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
   val reviewEvent =
@@ -120,12 +120,12 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     events.length must beEqualTo(1)
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: Report2Status) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     val report = Await.result(reportRepository.getReport(reportId), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: Report2Status): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 }

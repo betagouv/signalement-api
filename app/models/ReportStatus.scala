@@ -2,23 +2,23 @@ package models
 
 import enumeratum._
 
-sealed trait Report2Status extends EnumEntry
+sealed trait ReportStatus extends EnumEntry
 
-object Report2Status extends PlayEnum[Report2Status] {
+object ReportStatus extends PlayEnum[ReportStatus] {
 
   val values = findValues
 
-  case object NA extends Report2Status
-  case object LanceurAlerte extends Report2Status
-  case object TraitementEnCours extends Report2Status
-  case object Transmis extends Report2Status
-  case object PromesseAction extends Report2Status
-  case object Infonde extends Report2Status
-  case object NonConsulte extends Report2Status
-  case object ConsulteIgnore extends Report2Status
-  case object MalAttribue extends Report2Status
+  case object NA extends ReportStatus
+  case object LanceurAlerte extends ReportStatus
+  case object TraitementEnCours extends ReportStatus
+  case object Transmis extends ReportStatus
+  case object PromesseAction extends ReportStatus
+  case object Infonde extends ReportStatus
+  case object NonConsulte extends ReportStatus
+  case object ConsulteIgnore extends ReportStatus
+  case object MalAttribue extends ReportStatus
 
-  val statusVisibleByPro: Seq[Report2Status] =
+  val statusVisibleByPro: Seq[ReportStatus] =
     Seq(
       TraitementEnCours,
       Transmis,
@@ -29,18 +29,18 @@ object Report2Status extends PlayEnum[Report2Status] {
       MalAttribue
     )
 
-  def filterByUserRole(status: Seq[Report2Status], userRole: UserRole) = {
-    val requestedStatus = if (status.isEmpty) Report2Status.values else status
+  def filterByUserRole(status: Seq[ReportStatus], userRole: UserRole) = {
+    val requestedStatus = if (status.isEmpty) ReportStatus.values else status
     userRole match {
       case UserRoles.Pro => requestedStatus.intersect(statusVisibleByPro)
       case _             => requestedStatus
     }
   }
 
-  def isFinal(status: Report2Status): Boolean =
+  def isFinal(status: ReportStatus): Boolean =
     Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)
 
-  def translate(status: Report2Status, userRole: UserRole): String = {
+  def translate(status: ReportStatus, userRole: UserRole): String = {
     def isPro = userRole == UserRoles.Pro
     status match {
       case NA                => if (isPro) "" else "NA"

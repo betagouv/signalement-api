@@ -1,6 +1,6 @@
 package models.dataeconomie
 
-import models.Report2Status
+import models.ReportStatus
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 
@@ -15,7 +15,7 @@ case class ReportDataEconomie(
     postalCode: Option[String],
     creationDate: OffsetDateTime,
     contactAgreement: Boolean,
-    status: Report2Status,
+    status: ReportStatus,
     forwardToReponseConso: Boolean,
     vendor: Option[String],
     tags: List[String]

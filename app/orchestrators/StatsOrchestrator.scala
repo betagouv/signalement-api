@@ -4,7 +4,7 @@ import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
-import models.Report2Status
+import models.ReportStatus
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import repositories._
@@ -24,12 +24,12 @@ class StatsOrchestrator @Inject() (
 
   private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
 
-  def getReportCount(companyId: Option[UUID] = None, status: Seq[Report2Status]): Future[Int] =
+  def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatus]): Future[Int] =
     _report.count(companyId, status)
 
   def getReportWithStatusPercent(
-      status: Seq[Report2Status],
-      baseStatus: Seq[Report2Status] = Report2Status.values,
+      status: Seq[ReportStatus],
+      baseStatus: Seq[ReportStatus] = ReportStatus.values,
       companyId: Option[UUID] = None
   ): Future[Int] =
     for {
@@ -40,13 +40,13 @@ class StatsOrchestrator @Inject() (
   def getReportHavingWebsitePercentage(companyId: Option[UUID] = None): Future[Int] =
     for {
       count <- _report.countWithStatus(
-        status = Report2Status.values,
+        status = ReportStatus.values,
         cutoff = cutoff,
         withWebsite = Some(true),
         companyId = companyId
       )
       baseCount <- _report.countWithStatus(
-        status = Report2Status.values,
+        status = ReportStatus.values,
         cutoff = cutoff,
         companyId = companyId
       )
@@ -54,7 +54,7 @@ class StatsOrchestrator @Inject() (
 
   def getReportsCountCurve(
       companyId: Option[UUID] = None,
-      status: Seq[Report2Status] = Seq(),
+      status: Seq[ReportStatus] = Seq(),
       ticks: Int = 7,
       tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
@@ -64,8 +64,8 @@ class StatsOrchestrator @Inject() (
     }
 
   def getReportWithStatusPercentageCurve(
-      status: Seq[Report2Status],
-      baseStatus: Seq[Report2Status] = Seq(),
+      status: Seq[ReportStatus],
+      baseStatus: Seq[ReportStatus] = Seq(),
       companyId: Option[UUID] = None,
       ticks: Int,
       tickDuration: CurveTickDuration = CurveTickDuration.Month

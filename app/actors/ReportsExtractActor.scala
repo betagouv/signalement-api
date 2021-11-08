@@ -194,7 +194,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _) => Report2Status.translate(report.status, requestedBy.userRole),
+        (report, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
         available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
@@ -204,9 +204,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                Report2Status.PromesseAction,
-                Report2Status.MalAttribue,
-                Report2Status.Infonde
+                ReportStatus.PromesseAction,
+                ReportStatus.MalAttribue,
+                ReportStatus.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -223,9 +223,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                Report2Status.PromesseAction,
-                Report2Status.MalAttribue,
-                Report2Status.Infonde
+                ReportStatus.PromesseAction,
+                ReportStatus.MalAttribue,
+                ReportStatus.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -353,7 +353,7 @@ class ReportsExtractActor @Inject() (
               .filter(_.nonEmpty)
               .map(status =>
                 Row()
-                  .withCellValues("Statut", status.map(Report2Status.translate(_, requestedBy.userRole)).mkString(","))
+                  .withCellValues("Statut", status.map(ReportStatus.translate(_, requestedBy.userRole)).mkString(","))
               ),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
