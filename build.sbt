@@ -96,7 +96,7 @@ scalacOptions ++= Seq(
   "-Ywarn-unused:patvars",
   "-Wconf:cat=unused-imports&src=views/.*:s",
   s"-Wconf:src=${target.value}/.*:s"
-//)
+)
 
 routesImport ++= Seq(
   "models.website.WebsiteKind",
