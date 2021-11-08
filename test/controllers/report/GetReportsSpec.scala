@@ -16,6 +16,7 @@ import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
+import play.api.test.Helpers
 import play.mvc.Http.Status
 import repositories._
 import utils.silhouette.auth.AuthEnv
@@ -83,7 +84,7 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
          When retrieving reports                                                    ${step {
       someResult = Some(getReports(Some("badvalue")))
     }}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered()}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${mustBeBadRequest()}
     """
 }
 
@@ -260,8 +261,10 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     }
 
   def noReportsMustBeRendered() =
-    play.api.test.Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
+    Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
 
+  def mustBeBadRequest() =
+    someResult must beSome and someResult.get.header.status === Status.BAD_REQUEST
 }

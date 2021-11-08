@@ -3,6 +3,7 @@ package models
 import utils.QueryStringMapper
 
 import java.time.LocalDate
+import scala.util.Try
 
 case class ReportFilter(
     departments: Seq[String] = Nil,
@@ -26,7 +27,7 @@ case class ReportFilter(
 )
 
 object ReportFilter {
-  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): ReportFilter = {
+  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
@@ -42,7 +43,7 @@ object ReportFilter {
       end = mapper.localDate("end"),
       category = mapper.string("category"),
       status = ReportStatus.filterByUserRole(
-        mapper.seq("status").flatMap(ReportStatus.withNameOption),
+        mapper.seq("status").map(ReportStatus.withName),
         userRole
       ),
       details = mapper.string("details"),
