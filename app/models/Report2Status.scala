@@ -18,12 +18,30 @@ object Report2Status extends PlayEnum[Report2Status] {
   case object ConsulteIgnore extends Report2Status
   case object MalAttribue extends Report2Status
 
+  val statusVisibleByPro: Seq[Report2Status] =
+    Seq(
+      TraitementEnCours,
+      Transmis,
+      PromesseAction,
+      Infonde,
+      NonConsulte,
+      ConsulteIgnore,
+      MalAttribue
+    )
+
+  def filterByUserRole(status: Seq[Report2Status], userRole: UserRole) = {
+    val requestedStatus = if (status.isEmpty) Report2Status.values else status
+    userRole match {
+      case UserRoles.Pro => requestedStatus.intersect(statusVisibleByPro)
+      case _             => requestedStatus
+    }
+  }
+
   def isFinal(status: Report2Status): Boolean =
     Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)
 
   def translate(status: Report2Status, userRole: UserRole): String = {
     def isPro = userRole == UserRoles.Pro
-    def isDGCCRF = userRole == UserRoles.DGCCRF
     status match {
       case NA                => if (isPro) "" else "NA"
       case LanceurAlerte     => if (isPro) "" else "Lanceur d'alerte"

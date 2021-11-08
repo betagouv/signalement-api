@@ -42,7 +42,10 @@ object ReportFilter {
       start = mapper.localDate("start"),
       end = mapper.localDate("end"),
       category = mapper.string("category"),
-      status = mapper.seq("status").map(Report2Status.withName),
+      status = Report2Status.filterByUserRole(
+        mapper.seq("status").map(Report2Status.withName),
+        userRole
+      ),
       details = mapper.string("details"),
       employeeConsumer = userRole match {
         case UserRoles.Pro => Some(false)
