@@ -28,7 +28,8 @@ case class UserAccess(
     companyId: UUID,
     userId: UUID,
     level: AccessLevel,
-    updateDate: OffsetDateTime
+    updateDate: OffsetDateTime,
+    creationDate: Option[OffsetDateTime]
 )
 
 case class Company(

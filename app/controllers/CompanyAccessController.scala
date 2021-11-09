@@ -7,6 +7,7 @@ import orchestrators.AccessesOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.json.Json
 import repositories._
 import utils.EmailAddress
 import utils.SIRET
@@ -54,7 +55,9 @@ class CompanyAccessController @Inject() (
         .map(level =>
           for {
             user <- userRepository.get(userId)
-            _ <- user.map(u => companyRepository.setUserLevel(request.company, u, level)).getOrElse(Future(()))
+            _ <- user
+              .map(u => companyRepository.createUserAccess(request.company.id, u.id, level))
+              .getOrElse(Future(()))
           } yield if (user.isDefined) Ok else NotFound
         )
         .getOrElse(Future(NotFound))
@@ -64,7 +67,9 @@ class CompanyAccessController @Inject() (
     implicit request =>
       for {
         user <- userRepository.get(userId)
-        _ <- user.map(u => companyRepository.setUserLevel(request.company, u, AccessLevel.NONE)).getOrElse(Future(()))
+        _ <- user
+          .map(u => companyRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
+          .getOrElse(Future(()))
       } yield if (user.isDefined) Ok else NotFound
   }
 
@@ -195,4 +200,9 @@ class CompanyAccessController @Inject() (
           } yield if (applied) Ok else NotFound
       )
   }
+
+  def reportOverCompanyAccessRate() = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.reportOverCompanyAccessRate().map(x => Ok(Json.toJson(x)))
+  }
+
 }

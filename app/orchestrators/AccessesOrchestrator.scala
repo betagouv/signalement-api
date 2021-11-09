@@ -145,6 +145,8 @@ class AccessesOrchestrator @Inject() (
         List.empty[UserWithAccessLevel]
     }
 
+  def reportOverCompanyAccessRate() = companyRepository.companyAccessesReportsRate()
+
   abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
 
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -195,12 +197,14 @@ class AccessesOrchestrator @Inject() (
       company <- fetchCompany
       accessToken <- company.map(accessTokenRepository.findToken(_, token)).getOrElse(Future(None))
     } yield accessToken
+
     def bindPendingTokens(user: User) =
       accessTokenRepository
         .fetchPendingTokens(user.email)
         .flatMap(tokens =>
           Future.sequence(tokens.filter(_.companyId.isDefined).map(accessTokenRepository.applyCompanyToken(_, user)))
         )
+
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))
