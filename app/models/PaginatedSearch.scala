@@ -10,6 +10,5 @@ case class PaginatedSearch(
 
 object PaginatedSearch {
   val form = Form(
-
   )
 }

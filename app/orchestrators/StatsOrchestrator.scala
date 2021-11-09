@@ -5,7 +5,10 @@ import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
 import models.ReportStatus
-import models.{CountByDate, CurveTickDuration, ReportFilter, ReportReviewStats}
+import models.CountByDate
+import models.CurveTickDuration
+import models.ReportFilter
+import models.ReportReviewStats
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import repositories._
@@ -27,9 +30,8 @@ class StatsOrchestrator @Inject() (
 
   def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatus]): Future[Int] =
     _report.count(companyId, status)
-  def getReportCount(reportFilter: ReportFilter): Future[Int] = {
+  def getReportCount(reportFilter: ReportFilter): Future[Int] =
     _report.count(reportFilter)
-  }
 
   def getReportWithStatusPercent(
       status: Seq[ReportStatus],

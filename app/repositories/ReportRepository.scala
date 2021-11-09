@@ -374,7 +374,7 @@ class ReportRepository @Inject() (
   )
 
 //  def countWithStatus(
-//      status: Seq[ReportStatusValue],
+//      status: Seq[ReportStatus],
 //    tags: Seq[String] = Seq(),
 //      cutoff: Option[Duration],
 //      withWebsite: Option[Boolean] = None,
@@ -441,8 +441,8 @@ class ReportRepository @Inject() (
       .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
         table.companyId.isDefined === hasCompany
       }
-      .filterOpt(filter.statusList) { case (table, statusList) =>
-        table.status.inSet(statusList.map(_.defaultValue))
+      .filterIf(filter.status.nonEmpty) { case table =>
+        table.status.inSet(filter.status.map(_.entryName))
       }
       .filterIf(filter.tags.nonEmpty) { case table =>
         table.tags @& filter.tags.toList.bind
@@ -605,8 +605,8 @@ class ReportRepository @Inject() (
         .update(Some(output))
     )
 
-  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
-    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
+  def getByStatus(status: ReportStatus): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.entryName).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(

@@ -30,20 +30,22 @@ class StatisticController @Inject() (
 
   def getReportCount(companyId: Option[UUID], status: Seq[String]) = UserAwareAction.async { _ =>
     _companyStats
-      .getReportCount(ReportFilter(
-        companyIds = companyId.map(Seq(_)).getOrElse(Nil),
-        statusList = Some(status.map(ReportStatus.fromDefaultValue))
-      ))
+      .getReportCount(
+        ReportFilter(
+          companyIds = companyId.map(Seq(_)).getOrElse(Nil),
+          statusList = Some(status.map(ReportStatus.fromDefaultValue))
+        )
+      )
       .map(count => Ok(Json.obj("value" -> count)))
   }
 
   def getPercentageReportForwarded(
-    companyId: Option[UUID],
-    status: Seq[String],
-    tags: Seq[String],
-    hasWebsite: Option[Boolean],
-    baseStatus: Seq[String],
-    baseTags: Seq[String],
+      companyId: Option[UUID],
+      status: Seq[String],
+      tags: Seq[String],
+      hasWebsite: Option[Boolean],
+      baseStatus: Seq[String],
+      baseTags: Seq[String]
   ) = UserAwareAction.async { _ =>
     _companyStats
       .getReportWithStatusPercent(
@@ -113,7 +115,7 @@ class StatisticController @Inject() (
       ticks: Option[Int],
       tickDuration: Option[String],
       status: Seq[String],
-      tags: Seq[String],
+      tags: Seq[String]
   ) =
     UserAwareAction.async {
       _companyStats
@@ -122,7 +124,7 @@ class StatisticController @Inject() (
           status = status.map(ReportStatus.withName),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration),
-          tags = tags,
+          tags = tags
         )
         .map(curve => Ok(Json.toJson(curve)))
     }

@@ -3,6 +3,7 @@ package models
 import utils.QueryStringMapper
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.util.Try
 
 case class ReportFilter(
