@@ -8,15 +8,12 @@ import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import utils.Constants.ReportStatus._
-import utils.DateUtils
+import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -37,54 +34,48 @@ class ReportListController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)
 
-  def getReports = SecuredAction.async { implicit request =>
-    request.body
-      .validate[ReportFilterBody]
+  def getReports() = SecuredAction.async { implicit request =>
+    ReportFilter
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        filters =>
+        error => {
+          logger.error("Cannot parse querystring", error)
+          Future.successful(BadRequest)
+        },
+        filters => {
+          val mapper = new QueryStringMapper(request.queryString)
+          val offset = mapper.long("offset")
+          val limit = mapper.int("limit")
+          for {
+            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+              filters.siretSirenList,
+              request.identity
+            )
+            paginatedReports <- reportOrchestrator.getReportsForUser(
+              connectedUser = request.identity,
+              filter = filters.copy(siretSirenList = sanitizedSirenSirets),
+              offset = offset,
+              limit = limit
+            )
+          } yield Ok(Json.toJson(paginatedReports))
+        }
       )
-    for {
-      paginatedReports <- reportOrchestrator.getReportsForUser(
-        connectedUser = request.identity,
-        filter = ReportFilter(
-          departments = departments,
-          email = email,
-          websiteURL = websiteURL,
-          phone = phone,
-          websiteExists = websiteExists,
-          phoneExists = phoneExists,
-          siretSirenList = siretSirenList.map(_.replaceAll("\\s", "")),
-          companyName = companyName,
-          companyCountries = companyCountries,
-          start = DateUtils.parseDate(start),
-          end = DateUtils.parseDate(end),
-          category = category,
-          statusList = getStatusListForValueWithUserRole(status, request.identity.userRole),
-          details = details,
-          employeeConsumer = request.identity.userRole match {
-            case UserRoles.Pro => Some(false)
-            case _             => None
-          },
-          hasCompany = hasCompany,
-          tags = tags,
-          activityCodes = activityCodes
-        ),
-        offset = offset,
-        limit = limit
-      )
-    } yield Ok(Json.toJson(paginatedReports))
   }
 
-  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async(parse.json) { implicit request =>
-    request.body
-      .validate[ReportFilterBody]
+  def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    ReportFilter
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        error => {
+          logger.error("Cannot parse querystring", error)
+          Future.successful(BadRequest)
+        },
         filters =>
           for {
-            sanitizedSirenSirets <-
-              companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(filters.siretSirenList, request.identity)
+            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
+              filters.siretSirenList,
+              request.identity
+            )
           } yield {
             logger.debug(s"Requesting report for user ${request.identity.email}")
             reportsExtractActor ? ReportsExtractActor.ExtractRequest(
@@ -95,10 +86,4 @@ class ReportListController @Inject() (
           }
       )
   }
-}
-
-object ReportListObjects {
-
-  case class ReportList(reportIds: List[UUID])
-
 }

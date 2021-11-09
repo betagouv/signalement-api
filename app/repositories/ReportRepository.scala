@@ -6,8 +6,6 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
 import utils._
 
 import java.time._
@@ -140,7 +138,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         contactAgreement = contactAgreement,
         employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
-        status = ReportStatus.fromDefaultValue(status),
+        status = ReportStatus.withName(status),
         vendor = vendor,
         tags = tags,
         reponseconsoCode = reponseconsoCode
@@ -173,7 +171,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.contactAgreement,
       r.employeeConsumer,
       r.forwardToReponseConso,
-      r.status.defaultValue,
+      r.status.entryName,
       r.vendor,
       r.tags,
       r.reponseconsoCode
@@ -613,7 +611,7 @@ class ReportRepository @Inject() (
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
+        .filter(_.status === ReportStatus.TraitementEnCours.entryName)
         .filter(_.companyId inSet companiesIds)
         .to[List]
         .result

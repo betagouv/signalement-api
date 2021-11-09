@@ -15,9 +15,6 @@ import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus.PROMESSE_ACTION
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.AppSpec
 import utils.Fixtures
 
@@ -71,13 +68,13 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   val company = Fixtures.genCompany.sample.get
 
-  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
+  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
-  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
+  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseEvent =
     Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
 
-  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
+  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseWithReviewEvent =
     Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
   val reviewEvent =
@@ -123,12 +120,12 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     events.length must beEqualTo(1)
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     val report = Await.result(reportRepository.getReport(reportId), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 }

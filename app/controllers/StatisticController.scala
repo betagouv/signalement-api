@@ -5,8 +5,6 @@ import models._
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
@@ -121,7 +119,7 @@ class StatisticController @Inject() (
       _companyStats
         .getReportsCountCurve(
           companyId = companyId,
-          status = status.map(ReportStatus.fromDefaultValue),
+          status = status.map(ReportStatus.withName),
           ticks = getTicks(ticks),
           tickDuration = getTickDuration(tickDuration),
           tags = tags,
@@ -134,7 +132,7 @@ class StatisticController @Inject() (
 //      _companyStats
 //        .getReportsCountCurve(
 //          companyId = companyId,
-//          status = Seq(PROMESSE_ACTION, SIGNALEMENT_INFONDE, SIGNALEMENT_MAL_ATTRIBUE),
+//          status = Seq(ReportStatus.PromesseAction, ReportStatus.Infonde, ReportStatus.MalAttribue),
 //          ticks = getTicks(ticks),
 //          tickDuration = getTickDuration(tickDuration)
 //        )
