@@ -13,7 +13,6 @@ import services.MailService
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-import utils.Constants.ReportStatus._
 import utils.EmailAddress
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -66,8 +65,8 @@ class ReminderTask @Inject() (
     logger.debug(s"taskDate - ${now}");
 
     for {
-      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(TRAITEMENT_EN_COURS)
-      transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(SIGNALEMENT_TRANSMIS)
+      onGoingReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
+      transmittedReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
       reportEventsMap <- eventRepository.prefetchReportsEvents(
         (onGoingReportsWithAdmins ::: transmittedReportsWithAdmins).map(_._1)
       )
@@ -104,7 +103,7 @@ class ReminderTask @Inject() (
     )
   }
 
-  private[this] def getReportsWithAdminsByStatus(status: ReportStatusValue): Future[List[(Report, List[User])]] =
+  private[this] def getReportsWithAdminsByStatus(status: ReportStatus): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
       mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(
@@ -283,7 +282,7 @@ class ReminderTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
         )
       )
-      _ <- reportRepository.update(report.copy(status = SIGNALEMENT_NON_CONSULTE))
+      _ <- reportRepository.update(report.copy(status = ReportStatus.NonConsulte))
     } yield {
       mailService.Consumer.sendReportClosedByNoReading(report)
       Reminder(report.id, ReminderValue.CloseUnreadReport)
@@ -326,7 +325,7 @@ class ReminderTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
         )
       )
-      _ <- reportRepository.update(report.copy(status = SIGNALEMENT_CONSULTE_IGNORE))
+      _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
     } yield {
       mailService.Consumer.sendAttachmentSeqForWorkflowStepN(report)
       Reminder(report.id, ReminderValue.CloseTransmittedReportByNoAction)
