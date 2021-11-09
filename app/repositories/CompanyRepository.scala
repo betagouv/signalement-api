@@ -137,7 +137,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     def userId = column[UUID]("user_id")
     def level = column[AccessLevel]("level")
     def updateDate = column[OffsetDateTime]("update_date")
-    def creationDate = column[Option[OffsetDateTime]]("creation_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def pk = primaryKey("pk_company_user", (companyId, userId))
     def * = (companyId, userId, level, updateDate, creationDate) <> (UserAccess.tupled, UserAccess.unapply)
 
@@ -345,7 +345,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         userId = userId,
         level = level,
         updateDate = OffsetDateTime.now,
-        creationDate = Some(OffsetDateTime.now)
+        creationDate = OffsetDateTime.now
       )
     )
 
@@ -361,17 +361,26 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
+  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
+
   def companyAccessesReportsRate(
+      ticks: Option[Int] = None,
       ignoreBefore: OffsetDateTime = OffsetDateTime.of(2021, 11, 9, 0, 0, 0, 0, ZoneOffset.UTC)
   ) = {
     val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     println(s"------------------ ignoreBefore = ${fmt.format(ignoreBefore)} ------------------")
-    db.run(sql"""select  
+
+    val beginDate = OffsetDateTime.now().minusMonths(getTicks(ticks)).withDayOfMonth(1)
+
+    db.run(sql"""
+    select  
        my_date_trunc('month'::text, r.creation_date),
        count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
        count(distinct(r.company_id))
-  from reports r left join company_accesses a on r.company_id = a.company_id
-    where r.company_id is not null and r.creation_date >= '#${fmt.format(ignoreBefore)}'::timestamp 
+    from reports r left join company_accesses a on r.company_id = a.company_id
+        where r.company_id is not null
+         and r.creation_date >= '#${fmt.format(ignoreBefore)}'::timestamp 
+          and r.creation_date <= '#${fmt.format(beginDate)}'::timestamp
     group by  my_date_trunc('month'::text, r.creation_date)
     order by  my_date_trunc('month'::text, r.creation_date)""".as[(String, Int, Int)])
   }
