@@ -1,14 +1,17 @@
 package models
 
-import play.api.data.Form
-import play.api.data.Forms._
+import utils.QueryStringMapper
+
+import scala.util.Try
 
 case class PaginatedSearch(
-    offset: Option[Int] = Some(0),
+    offset: Option[Long] = Some(0),
     limit: Option[Int] = None
 )
 
 object PaginatedSearch {
-  val form = Form(
-  )
+  def fromQueryString(queryString: Map[String, Seq[String]]): Try[PaginatedSearch] = Try {
+    val mapper = new QueryStringMapper(queryString)
+    PaginatedSearch(offset = mapper.long("offset"), limit = mapper.int("limit"))
+  }
 }

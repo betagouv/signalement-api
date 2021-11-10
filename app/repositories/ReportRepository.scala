@@ -275,7 +275,7 @@ class ReportRepository @Inject() (
 //    ZoneOffset.UTC
 //  )
 
-  private[this] def queryFilter(filter: ReportFilter) =
+  private[this] def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
     reportTableQuery
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -292,7 +292,7 @@ class ReportRepository @Inject() (
       .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
         table.phone.isDefined === phoneRequired
       }
-      .filterIf(filter.companyIds.nonEmpty)(_.companyId inSet filter.companiesIds)
+      .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
       .filterIf(filter.siretSirenList.nonEmpty) { case table =>
         table.companySiret
           .map(siret =>
@@ -347,6 +347,7 @@ class ReportRepository @Inject() (
       .filterIf(filter.activityCodes.nonEmpty)(
         _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
       )
+      .map(_._1)
 
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
@@ -505,8 +506,7 @@ class ReportRepository @Inject() (
       limit: Option[Int] = None
   ): Future[PaginatedResult[Report]] =
     queryFilter(filter)
-      .sortBy(_._1.creationDate.desc)
-      .map(_._1)
+      .sortBy(_.creationDate.desc)
       .withPagination(db)(offset, limit)
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(

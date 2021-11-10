@@ -52,7 +52,7 @@ class ReportToExternalController @Inject() (
       end = end
     )
     for {
-      reports <- reportRepository.getReports(Some(0), Some(1000000), filter)
+      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
 }

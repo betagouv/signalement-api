@@ -39,7 +39,7 @@ class StatisticController @Inject() (
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = UserAwareAction.async {
+  def getReportsCountCurve() = UserAwareAction.async { request =>
     ReportFilter
       .fromQueryString(request.queryString, Some(UserRoles.Admin))
       .fold(

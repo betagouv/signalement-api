@@ -7,10 +7,8 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
-import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -24,7 +22,6 @@ import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (
-    statsOrchestrator: StatsOrchestrator,
     reportOrchestrator: ReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
@@ -39,28 +36,25 @@ class ReportListController @Inject() (
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter
       .fromQueryString(request.queryString, Some(request.identity.userRole))
+      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
-          logger.error("Cannot parse querystring", error)
+          logger.error("Cannot parse querystring" + request.queryString, error)
           Future.successful(BadRequest)
         },
-        filters => {
-          val mapper = new QueryStringMapper(request.queryString)
-          val offset = mapper.long("offset")
-          val limit = mapper.int("limit")
+        filters =>
           for {
             sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-              filters.siretSirenList,
+              filters._1.siretSirenList,
               request.identity
             )
             paginatedReports <- reportOrchestrator.getReportsForUser(
               connectedUser = request.identity,
-              filter = filters.copy(siretSirenList = sanitizedSirenSirets),
-              offset = offset,
-              limit = limit
+              filter = filters._1.copy(siretSirenList = sanitizedSirenSirets),
+              offset = filters._2.offset,
+              limit = filters._2.limit
             )
           } yield Ok(Json.toJson(paginatedReports))
-        }
       )
   }
 
