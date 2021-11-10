@@ -263,135 +263,17 @@ class ReportRepository @Inject() (
 
   private val fileTableQuery = TableQuery[FileTable]
 
-  private val companyTableQuery = CompanyTables.tables
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
-    appConfigLoader.get.stats.backofficeAdminStartDate,
-    LocalTime.MIDNIGHT,
-    ZoneOffset.UTC
-  )
-
-  implicit class RegexLikeOps(s: Rep[String]) {
-    def regexLike(p: Rep[String]): Rep[Boolean] = {
-      val expr = SimpleExpression.binary[String, String, Boolean] { (s, p, qb) =>
-        qb.expr(s)
-        qb.sqlBuilder += " ~* "
-        qb.expr(p)
-      }
-      expr.apply(s, p)
-    }
-  }
-
-  def create(report: Report): Future[Report] = db
-    .run(reportTableQuery += report)
-    .map(_ => report)
-
-  def list: Future[List[Report]] = db.run(reportTableQuery.to[List].result)
-
-  def findByEmail(email: EmailAddress): Future[Seq[Report]] =
-    db.run(reportTableQuery.filter(_.email === email).result)
-
-  def update(report: Report): Future[Report] = {
-    val queryReport =
-      for (refReport <- reportTableQuery if refReport.id === report.id)
-        yield refReport
-    db.run(queryReport.update(report))
-      .map(_ => report)
-  }
-
-  def count(siret: SIRET): Future[Int] = db
-    .run(
-      reportTableQuery
-        .filter(_.companySiret === siret)
-        .length
-        .result
-    )
-
-  def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
-
-  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
-    db
-      .run(
-        queryFilter(filter)
-          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
-          .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-          .map { case ((month, year), group) => (month, year, group.length) }
-          .result
-      )
-      .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
-      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
-
-  def getDailyCount(
-      filter: ReportFilter,
-      ticks: Int
-  ): Future[Seq[CountByDate]] = db
-    .run(
-      queryFilter(filter)
-        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
-        .groupBy(report =>
-          (
-            date_part("day", report.creationDate),
-            date_part("month", report.creationDate),
-            date_part("year", report.creationDate)
-          )
-        )
-        .map { case ((day, month, year), group) =>
-          (day, month, year, group.length)
-        }
-        .result
-    )
-    .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
-    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i)))
-
-  private[this] def fillFullPeriod(
-      ticks: Int,
-      dateOperator: (LocalDate, Int) => LocalDate
-  )(
-      fetchedData: Seq[CountByDate]
-  ): Seq[CountByDate] = {
-    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
-    val res = (1 to ticks).map { i =>
-      val date = dateOperator(start, -i)
-      val count = fetchedData
-        .find(_.date.equals(date))
-        .map(_.count)
-        .getOrElse(0)
-      CountByDate(count, date)
-    }
-    res
-  }
-
-  val baseStatReportTableQuery = reportTableQuery.filter(_.creationDate > backofficeAdminStartDate)
-
-  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report =>
-    report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1)
-  )
-
-//  def countWithStatus(
-//      status: Seq[ReportStatus],
-//    tags: Seq[String] = Seq(),
-//      cutoff: Option[Duration],
-//      withWebsite: Option[Boolean] = None,
-//      companyId: Option[UUID] = None
-//  ) = db
-//    .run(
-//      baseStatReportTableQuery
-//        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
-//        .filterOpt(companyId)((table, id) => table.companyId === id)
-//        .filterIf(tags.nonEmpty)(_.tags @& tags.toList.bind)
-//        .filter(_.status inSet status.map(_.defaultValue))
-//        .filterOpt(withWebsite) { case (table, withWebsite) =>
-//          table.websiteURL.isDefined === withWebsite
-//        }
-//        .length
-//        .result
-//    )
+//  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
+//    appConfigLoader.get.stats.backofficeAdminStartDate,
+//    LocalTime.MIDNIGHT,
+//    ZoneOffset.UTC
+//  )
 
   private[this] def queryFilter(filter: ReportFilter) =
     reportTableQuery
@@ -466,6 +348,88 @@ class ReportRepository @Inject() (
         _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
       )
 
+  implicit class RegexLikeOps(s: Rep[String]) {
+    def regexLike(p: Rep[String]): Rep[Boolean] = {
+      val expr = SimpleExpression.binary[String, String, Boolean] { (s, p, qb) =>
+        qb.expr(s)
+        qb.sqlBuilder += " ~* "
+        qb.expr(p)
+      }
+      expr.apply(s, p)
+    }
+  }
+
+  def create(report: Report): Future[Report] = db
+    .run(reportTableQuery += report)
+    .map(_ => report)
+
+  def list: Future[List[Report]] = db.run(reportTableQuery.to[List].result)
+
+  def findByEmail(email: EmailAddress): Future[Seq[Report]] =
+    db.run(reportTableQuery.filter(_.email === email).result)
+
+  def update(report: Report): Future[Report] = {
+    val queryReport =
+      for (refReport <- reportTableQuery if refReport.id === report.id)
+        yield refReport
+    db.run(queryReport.update(report))
+      .map(_ => report)
+  }
+
+  def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
+
+  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
+    db
+      .run(
+        queryFilter(filter)
+          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
+          .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
+          .map { case ((month, year), group) => (month, year, group.length) }
+          .result
+      )
+      .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
+      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
+
+  def getDailyCount(
+      filter: ReportFilter,
+      ticks: Int
+  ): Future[Seq[CountByDate]] = db
+    .run(
+      queryFilter(filter)
+        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
+        .groupBy(report =>
+          (
+            date_part("day", report.creationDate),
+            date_part("month", report.creationDate),
+            date_part("year", report.creationDate)
+          )
+        )
+        .map { case ((day, month, year), group) =>
+          (day, month, year, group.length)
+        }
+        .result
+    )
+    .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
+    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i)))
+
+  private[this] def fillFullPeriod(
+      ticks: Int,
+      dateOperator: (LocalDate, Int) => LocalDate
+  )(
+      fetchedData: Seq[CountByDate]
+  ): Seq[CountByDate] = {
+    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
+    val res = (1 to ticks).map { i =>
+      val date = dateOperator(start, -i)
+      val count = fetchedData
+        .find(_.date.equals(date))
+        .map(_.count)
+        .getOrElse(0)
+      CountByDate(count, date)
+    }
+    res
+  }
+
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
       .filter(_.id === id)
@@ -536,9 +500,9 @@ class ReportRepository @Inject() (
     ).map(_.map(_.getOrElse("")))
 
   def getReports(
+      filter: ReportFilter,
       offset: Option[Long] = None,
-      limit: Option[Int] = None,
-      filter: ReportFilter
+      limit: Option[Int] = None
   ): Future[PaginatedResult[Report]] =
     queryFilter(filter)
       .sortBy(_._1.creationDate.desc)

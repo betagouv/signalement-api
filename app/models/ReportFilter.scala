@@ -1,5 +1,7 @@
 package models
 
+import models.UserRoles.Admin
+import models.UserRoles.DGCCRF
 import utils.QueryStringMapper
 
 import java.time.LocalDate
@@ -29,7 +31,7 @@ case class ReportFilter(
 )
 
 object ReportFilter {
-  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
+  def fromQueryString(q: Map[String, Seq[String]], userRole: Option[UserRole] = None): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
@@ -50,8 +52,9 @@ object ReportFilter {
       ),
       details = mapper.string("details"),
       employeeConsumer = userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
+        case Some(Admin)  => None
+        case Some(DGCCRF) => None
+        case _            => Some(false)
       },
       hasCompany = mapper.boolean("hasCompany"),
       tags = mapper.seq("tags"),

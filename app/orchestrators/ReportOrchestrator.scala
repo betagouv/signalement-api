@@ -322,7 +322,9 @@ class ReportOrchestrator @Inject() (
   private def removeAccessToken(companyId: UUID) =
     for {
       company <- companyRepository.fetchCompany(companyId)
-      reports <- company.map(c => reportRepository.getReports(c.id)).getOrElse(Future(Nil))
+      reports <- company
+        .map(c => reportRepository.getReports(ReportFilter(companyIds = Seq(c.id))).map(_.entities))
+        .getOrElse(Future(Nil))
       cnt <- if (reports.isEmpty) accessTokenRepository.removePendingTokens(company.get) else Future(0)
     } yield {
       logger.debug(s"Removed ${cnt} tokens for company ${companyId}")
@@ -531,9 +533,9 @@ class ReportOrchestrator @Inject() (
         connectedUser
       )
       paginatedReports <- reportRepository.getReports(
+        filter.copy(siretSirenList = sanitizedSirenSirets),
         offset,
-        limit,
-        filter.copy(siretSirenList = sanitizedSirenSirets)
+        limit
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities =

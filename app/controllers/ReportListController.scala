@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
+import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import utils.QueryStringMapper
@@ -23,6 +24,7 @@ import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (
+    statsOrchestrator: StatsOrchestrator,
     reportOrchestrator: ReportOrchestrator,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
@@ -36,7 +38,7 @@ class ReportListController @Inject() (
 
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString, Some(request.identity.userRole))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -64,7 +66,7 @@ class ReportListController @Inject() (
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
+      .fromQueryString(request.queryString, Some(request.identity.userRole))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -80,7 +82,7 @@ class ReportListController @Inject() (
             logger.debug(s"Requesting report for user ${request.identity.email}")
             reportsExtractActor ? ReportsExtractActor.ExtractRequest(
               request.identity,
-              filters.copy(siretSirenList = sanitizedSirenSirets).toReportFilter(request.identity.userRole)
+              filters.copy(siretSirenList = sanitizedSirenSirets)
             )
             Ok
           }
