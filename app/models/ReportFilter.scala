@@ -46,6 +46,7 @@ object ReportFilter {
       start = mapper.localDate("start"),
       end = mapper.localDate("end"),
       category = mapper.string("category"),
+      companyIds = mapper.seq("companyIds").map(UUID.fromString),
       status = ReportStatus.filterByUserRole(
         mapper.seq("status").map(ReportStatus.withName),
         userRole
