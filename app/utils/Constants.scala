@@ -205,5 +205,6 @@ object Constants {
     val DangerousProduct = "Produit dangereux"
     val Bloctel = "Bloctel"
     val Influenceur = "Influenceur"
+    val CompagnieAerienne = "Compagnie aerienne"
   }
 }
