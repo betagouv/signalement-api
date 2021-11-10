@@ -27,12 +27,8 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   override def is =
     s2"""it should
        return reports count                               ${getReportCount}
-       return monthly reports count                       ${getMonthlyReportCount}
-       return reports read by pro percentage              ${getReportReadByProPercentage}
-       return reports forwarded to pro percentage         ${getReportForwardedToProPercentage}
-       return monthly reports read by pro percentage      ${getMonthlyReportWithResponsePercentage}
-       return reports with response percentage            ${getReportWithResponsePercentage}
-       return monthly reports with response percentage    ${getMonthlyReportWithResponsePercentage}
+       return reports curve                               ${getReportsCurve}
+       return reports curve filted by status              ${getReportsCurveFilteredByStatus}
        """
 
   def aMonthlyStat(monthlyStat: CountByDate): Matcher[String] =
@@ -43,15 +39,15 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     have(allOf(monthlyStats: _*))
 
   def getReportCount = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportCount(None, Seq()).toString)
+    val request = FakeRequest(GET, routes.StatisticController.getReportCount().toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must /("value" -> allReports.length)
   }
 
-  def getMonthlyReportCount = {
-    val request = FakeRequest(GET, routes.StatisticController.getCurveReportCount(None, Some(3), None, Seq()).toString)
+  def getReportsCurve = {
+    val request = FakeRequest(GET, routes.StatisticController.getReportsCount().toString + "?ticks=3")
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -63,69 +59,20 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     )
   }
 
-  def getReportReadByProPercentage = {
-    val request = FakeRequest(GET, routes.StatisticController.getPercentageReportRead(None).toString)
-    val result = route(app, request).get
-    status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
-    content must /("value" -> reportsReadByProCutoff.length * 100 / reportsForwardedToProCutoff.length)
-  }
-
-  def getReportForwardedToProPercentage = {
-    val request = FakeRequest(GET, routes.StatisticController.getPercentageReportForwarded(None).toString)
-    val result = route(app, request).get
-    status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
-    content must /("value" -> reportsForwardedToProCutoff.length * 100 / (lastYearReports ::: lastMonthReports).length)
-  }
-
-  def getMonthlyReportReadByProPercentage = {
+  def getReportsCurveFilteredByStatus = {
     val request =
-      FakeRequest(GET, routes.StatisticController.getCurveReportReadPercentage(None, Some(2), None).toString)
+      FakeRequest(
+        GET,
+        routes.StatisticController
+          .getReportsCountCurve()
+          .toString + "?ticks=2&status=Transmis&status=PromesseAction&status=Infonde&status=MalAttribue&status=ConsulteIgnore"
+      )
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must haveMonthlyStats(
-      aMonthlyStat(CountByDate(currentMonthReportsReadByPro.length * 100 / currentMonthReports.length, LocalDate.now)),
-      aMonthlyStat(
-        CountByDate(lastMonthReportsWithResponse.length * 100 / lastMonthReports.length, LocalDate.now.minusMonths(1))
-      )
-    )
-  }
-
-  def getReportWithResponsePercentage = {
-    val request = FakeRequest(GET, routes.StatisticController.getPercentageReportResponded(None).toString)
-    val result = route(app, request).get
-    status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
-    content must /(
-      "value" -> reportsWithResponseCutoff.length * 100 /
-        (reportsWithResponseCutoff ::: reportsClosedByNoActionCutoff).length
-    )
-  }
-
-  def getMonthlyReportWithResponsePercentage = {
-    val request =
-      FakeRequest(GET, routes.StatisticController.getCurveReportRespondedPercentage(None, Some(2), None).toString)
-    val result = route(app, request).get
-    status(result) must beEqualTo(OK)
-    val content = contentAsJson(result).toString
-    val startDate = LocalDate.now.withDayOfMonth(1)
-    content must haveMonthlyStats(
-      aMonthlyStat(
-        CountByDate(
-          lastMonthReportsWithResponse.length * 100 /
-            (lastMonthReportsWithResponse ::: lastMonthReportsClosedByNoAction).length,
-          startDate.minusMonths(1)
-        )
-      ),
-      aMonthlyStat(
-        CountByDate(
-          currentMonthReportsWithResponse.length * 100 /
-            (currentMonthReportsSend ::: currentMonthReportsWithResponse ::: currentMonthReportsClosedByNoAction).length,
-          startDate
-        )
-      )
+      aMonthlyStat(CountByDate(currentMonthReportsReadByPro.length, LocalDate.now)),
+      aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, LocalDate.now.minusMonths(1)))
     )
   }
 }
