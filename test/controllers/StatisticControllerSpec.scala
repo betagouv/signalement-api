@@ -39,7 +39,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     have(allOf(monthlyStats: _*))
 
   def getReportCount = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportCount().toString)
+    val request = FakeRequest(GET, routes.StatisticController.getReportsCount().toString)
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -47,7 +47,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 
   def getReportsCurve = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportsCount().toString + "?ticks=3")
+    val request = FakeRequest(GET, routes.StatisticController.getReportsCountCurve().toString + "?ticks=3")
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -65,14 +65,15 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
         GET,
         routes.StatisticController
           .getReportsCountCurve()
-          .toString + "?ticks=2&status=Transmis&status=PromesseAction&status=Infonde&status=MalAttribue&status=ConsulteIgnore"
+          .toString + "?ticks=2&status=PromesseAction&status=Infonde&status=MalAttribue"
       )
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
+    val startDate = LocalDate.now.withDayOfMonth(1)
     content must haveMonthlyStats(
-      aMonthlyStat(CountByDate(currentMonthReportsReadByPro.length, LocalDate.now)),
-      aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, LocalDate.now.minusMonths(1)))
+      aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1))),
+      aMonthlyStat(CountByDate(currentMonthReportsWithResponse.length, startDate))
     )
   }
 }
