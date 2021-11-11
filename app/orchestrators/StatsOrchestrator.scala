@@ -1,5 +1,6 @@
 package orchestrators
 
+import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportFilter
@@ -17,10 +18,11 @@ import scala.concurrent.Future
 
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
-    _event: EventRepository
+    _event: EventRepository,
+  appConfigLoader: AppConfigLoader,
 )(implicit val executionContext: ExecutionContext) {
 
-//  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
+  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
 
   def getReportCount(reportFilter: ReportFilter): Future[Int] =
     _report.count(reportFilter)
