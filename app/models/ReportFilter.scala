@@ -1,8 +1,11 @@
 package models
 
+import models.UserRoles.Admin
+import models.UserRoles.DGCCRF
 import utils.QueryStringMapper
 
 import java.time.LocalDate
+import java.util.UUID
 import scala.util.Try
 
 case class ReportFilter(
@@ -13,6 +16,7 @@ case class ReportFilter(
     websiteExists: Option[Boolean] = None,
     phoneExists: Option[Boolean] = None,
     siretSirenList: Seq[String] = Nil,
+    companyIds: Seq[UUID] = Nil,
     companyName: Option[String] = None,
     companyCountries: Seq[String] = Nil,
     start: Option[LocalDate] = None,
@@ -27,7 +31,7 @@ case class ReportFilter(
 )
 
 object ReportFilter {
-  def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
+  def fromQueryString(q: Map[String, Seq[String]], userRole: Option[UserRole] = None): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
@@ -42,14 +46,16 @@ object ReportFilter {
       start = mapper.localDate("start"),
       end = mapper.localDate("end"),
       category = mapper.string("category"),
+      companyIds = mapper.seq("companyIds").map(UUID.fromString),
       status = ReportStatus.filterByUserRole(
         mapper.seq("status").map(ReportStatus.withName),
         userRole
       ),
       details = mapper.string("details"),
       employeeConsumer = userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
+        case Some(Admin)  => None
+        case Some(DGCCRF) => None
+        case _            => Some(false)
       },
       hasCompany = mapper.boolean("hasCompany"),
       tags = mapper.seq("tags"),

@@ -77,8 +77,10 @@ class CompanyOrchestrator @Inject() (
       )
 
   def getResponseRate(companyId: UUID): Future[Int] = {
-    val totalF = reportRepository.count(Some(companyId))
-    val responsesF = reportRepository.count(Some(companyId), ReportStatus.values)
+    val totalF = reportRepository.count(ReportFilter(companyIds = Seq(companyId)))
+    val responsesF = reportRepository.count(
+      ReportFilter(companyIds = Seq(companyId), status = ReportStatus.values)
+    )
     for {
       total <- totalF
       responses <- responsesF

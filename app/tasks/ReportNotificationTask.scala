@@ -53,9 +53,9 @@ class ReportNotificationTask @Inject() (
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       reports <- reportRepository.getReports(
+        ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate)),
         Some(0),
-        Some(10000),
-        ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate))
+        Some(10000)
       )
     } yield subscriptions.foreach { subscription =>
       mailService.Dgccrf.sendMailReportNotification(
