@@ -269,12 +269,6 @@ class ReportRepository @Inject() (
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-//  private[this] val backofficeAdminStartDate = OffsetDateTime.of(
-//    appConfigLoader.get.stats.backofficeAdminStartDate,
-//    LocalTime.MIDNIGHT,
-//    ZoneOffset.UTC
-//  )
-
   private[this] def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
     reportTableQuery
       .filterOpt(filter.email) { case (table, email) =>

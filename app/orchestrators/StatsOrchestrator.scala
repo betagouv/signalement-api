@@ -1,6 +1,5 @@
 package orchestrators
 
-import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportFilter
@@ -10,7 +9,6 @@ import play.api.libs.json.JsString
 import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.ReportResponseReview
-import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -18,20 +16,11 @@ import scala.concurrent.Future
 
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
-    _event: EventRepository,
-    _config: AppConfigLoader
+    _event: EventRepository
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val startDate = _config.get.stats.backofficeAdminStartDate
-  private[this] lazy val cutoff = _config.get.stats.globalStatsCutoff
-
-  def getReportCount(reportFilter: ReportFilter): Future[Int] = {
-    val boundedFilter = reportFilter.copy(
-      start = reportFilter.start.orElse(Some(startDate)),
-      end = reportFilter.end.orElse(cutoff.map(OffsetDateTime.now().minus(_).toLocalDate))
-    )
-    _report.count(boundedFilter)
-  }
+  def getReportCount(reportFilter: ReportFilter): Future[Int] =
+    _report.count(reportFilter)
 
   def getReportsCountCurve(
       reportFilter: ReportFilter,
