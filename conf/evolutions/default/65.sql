@@ -1,6 +1,6 @@
 -- !Ups
 
-ALTER TABLE company_accesses ADD COLUMN creation_date TIMESTAMPTZ DEFAULT now() ;
+ALTER TABLE company_accesses ADD COLUMN creation_date TIMESTAMPTZ NOT NULL DEFAULT now() ;
 
 -- !Downs
 
