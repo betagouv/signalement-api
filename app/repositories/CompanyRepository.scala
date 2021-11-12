@@ -8,6 +8,8 @@ import utils.Constants.Departments
 import utils.SIREN
 import utils.SIRET
 
+import java.sql.Timestamp
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -365,24 +367,27 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   def companyAccessesReportsRate(
       ticks: Option[Int] = None,
-      ignoreBefore: OffsetDateTime = OffsetDateTime.of(2021, 11, 9, 0, 0, 0, 0, ZoneOffset.UTC)
+      ignoreBefore: LocalDate
   ) = {
-    val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    println(s"------------------ ignoreBefore = ${fmt.format(ignoreBefore)} ------------------")
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(getTicks(ticks)).withDayOfMonth(1)
 
-    val beginDate = OffsetDateTime.now().minusMonths(getTicks(ticks)).withDayOfMonth(1)
+    val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
+
+    val startingDate =
+      if (userDefinedStartingDate.toEpochSecond > ignoreBeforeOffsetDateTime.toEpochSecond) userDefinedStartingDate
+      else ignoreBefore
 
     db.run(sql"""
     select  
-       my_date_trunc('month'::text, r.creation_date),
+       my_date_trunc('month'::text, r.creation_date)::timestamp ,
        count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
        count(distinct(r.company_id))
     from reports r left join company_accesses a on r.company_id = a.company_id
         where r.company_id is not null
-         and r.creation_date >= '#${fmt.format(ignoreBefore)}'::timestamp 
-          and r.creation_date <= '#${fmt.format(beginDate)}'::timestamp
+         and r.creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
     group by  my_date_trunc('month'::text, r.creation_date)
-    order by  my_date_trunc('month'::text, r.creation_date)""".as[(String, Int, Int)])
+    order by  my_date_trunc('month'::text, r.creation_date)""".as[(Timestamp, Int, Int)])
   }
 
 }

@@ -72,7 +72,7 @@ GET           /api/enterprises-sync/info                             controllers
 
 # Accesses API
 GET           /api/accesses/connected-user                           controllers.CompanyAccessController.myCompanies()
-GET           /api/accesses/pro-account-rate                         controllers.CompanyAccessController.reportOverCompanyAccessRate()
+GET           /api/accesses/pro-account-rate                         controllers.CompanyAccessController.reportOverCompanyAccessRate(ticks: Option[Int])
 GET           /api/accesses/:siret                                   controllers.CompanyAccessController.listAccesses(siret: String)
 GET           /api/accesses/:siret/pending                           controllers.CompanyAccessController.listPendingTokens(siret: String)
 PUT           /api/accesses/:siret/:userId                           controllers.CompanyAccessController.updateAccess(siret: String, userId: java.util.UUID)

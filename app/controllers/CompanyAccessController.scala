@@ -201,8 +201,8 @@ class CompanyAccessController @Inject() (
       )
   }
 
-  def reportOverCompanyAccessRate() = SecuredAction.async(parse.empty) { _ =>
-    accessesOrchestrator.reportOverCompanyAccessRate().map(x => Ok(Json.toJson(x)))
+  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.reportOverCompanyAccessRate(ticks).map(x => Ok(Json.toJson(x)))
   }
 
 }

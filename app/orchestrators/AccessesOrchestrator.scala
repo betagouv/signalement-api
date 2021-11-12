@@ -12,6 +12,7 @@ import models.UserRoles.Pro
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
 import models.access.ActivationOutcome
+import models.access.ProAccountActivationRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
@@ -30,6 +31,7 @@ import utils.FrontRoute
 import utils.SIRET
 
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -145,7 +147,17 @@ class AccessesOrchestrator @Inject() (
         List.empty[UserWithAccessLevel]
     }
 
-  def reportOverCompanyAccessRate() = companyRepository.companyAccessesReportsRate()
+  def reportOverCompanyAccessRate(ticks: Option[Int]) =
+    for {
+      stats <- companyRepository
+        .companyAccessesReportsRate(ticks, appConfig.get.stats.proAccessStartingPoint)
+      rateStats =
+        stats.map { case (timestamp, accessCount, reportCount) =>
+          val rate: Float = if (reportCount > 0) (accessCount.toFloat / reportCount) * 100 else 0.0f
+          val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
+          ProAccountActivationRateStat(rate, date)
+        }.toList
+    } yield rateStats
 
   abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
 

@@ -4,6 +4,7 @@ import utils.EmailAddress
 
 import java.net.URI
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Period
 import java.time.ZoneId
@@ -18,6 +19,7 @@ case class SignalConsoConfiguration(
     dashboardURL: URI,
     token: TokenConfiguration,
     upload: UploadConfiguration,
+    stats: StatsConfiguration,
     report: ReportConfiguration,
     mail: EmailConfiguration,
     task: TaskConfiguration
@@ -36,6 +38,10 @@ case class ReportConfiguration(
     noAccessReadingDelay: Period,
     mailReminderDelay: Period,
     reportReminderByPostDelay: Period
+)
+
+case class StatsConfiguration(
+    proAccessStartingPoint: LocalDate
 )
 
 case class EmailConfiguration(
