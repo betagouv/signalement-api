@@ -12,6 +12,7 @@ import models.UserRoles.Pro
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
 import models.access.ActivationOutcome
+import models.access.ProAccountActivationRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
@@ -30,6 +31,7 @@ import utils.FrontRoute
 import utils.SIRET
 
 import java.time.Duration
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -145,6 +147,18 @@ class AccessesOrchestrator @Inject() (
         List.empty[UserWithAccessLevel]
     }
 
+  def reportOverCompanyAccessRate(ticks: Option[Int]) =
+    for {
+      stats <- companyRepository
+        .companyAccessesReportsRate(ticks, appConfig.get.stats.proAccessStartingPoint)
+      rateStats =
+        stats.map { case (timestamp, accessCount, reportCount) =>
+          val rate: Float = if (reportCount > 0) (accessCount.toFloat / reportCount) * 100 else 0.0f
+          val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
+          ProAccountActivationRateStat(rate, date)
+        }.toList
+    } yield rateStats
+
   abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
 
     def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
@@ -195,12 +209,14 @@ class AccessesOrchestrator @Inject() (
       company <- fetchCompany
       accessToken <- company.map(accessTokenRepository.findToken(_, token)).getOrElse(Future(None))
     } yield accessToken
+
     def bindPendingTokens(user: User) =
       accessTokenRepository
         .fetchPendingTokens(user.email)
         .flatMap(tokens =>
           Future.sequence(tokens.filter(_.companyId.isDefined).map(accessTokenRepository.applyCompanyToken(_, user)))
         )
+
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))

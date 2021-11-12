@@ -165,8 +165,16 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
-        _ <- companyRepository.setUserLevel(headOfficeCompany, proUserWithAccessToHeadOffice, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, proUserWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(
+          headOfficeCompany.id,
+          proUserWithAccessToHeadOffice.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyRepository.createUserAccess(
+          subsidiaryCompany.id,
+          proUserWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)
