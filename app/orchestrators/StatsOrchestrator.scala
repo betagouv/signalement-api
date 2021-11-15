@@ -1,16 +1,14 @@
 package orchestrators
 
-import config.AppConfigLoader
 import models.CountByDate
 import models.CurveTickDuration
+import models.ReportFilter
 import models.ReportReviewStats
-import models.ReportStatus
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.ReportResponseReview
-
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -18,71 +16,21 @@ import scala.concurrent.Future
 
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
-    _event: EventRepository,
-    appConfigLoader: AppConfigLoader
+    _event: EventRepository
 )(implicit val executionContext: ExecutionContext) {
 
-  private[this] lazy val cutoff = appConfigLoader.get.stats.globalStatsCutoff
-
-  def getReportCount(companyId: Option[UUID] = None, status: Seq[ReportStatus]): Future[Int] =
-    _report.count(companyId, status)
-
-  def getReportWithStatusPercent(
-      status: Seq[ReportStatus],
-      baseStatus: Seq[ReportStatus] = ReportStatus.values,
-      companyId: Option[UUID] = None
-  ): Future[Int] =
-    for {
-      count <- _report.countWithStatus(status = status, cutoff = cutoff, companyId = companyId)
-      baseCount <- _report.countWithStatus(status = baseStatus, cutoff = cutoff, companyId = companyId)
-    } yield count * 100 / baseCount
-
-  def getReportHavingWebsitePercentage(companyId: Option[UUID] = None): Future[Int] =
-    for {
-      count <- _report.countWithStatus(
-        status = ReportStatus.values,
-        cutoff = cutoff,
-        withWebsite = Some(true),
-        companyId = companyId
-      )
-      baseCount <- _report.countWithStatus(
-        status = ReportStatus.values,
-        cutoff = cutoff,
-        companyId = companyId
-      )
-    } yield count * 100 / baseCount
+  def getReportCount(reportFilter: ReportFilter): Future[Int] =
+    _report.count(reportFilter)
 
   def getReportsCountCurve(
-      companyId: Option[UUID] = None,
-      status: Seq[ReportStatus] = Seq(),
-      ticks: Int = 7,
-      tickDuration: CurveTickDuration = CurveTickDuration.Month
+      reportFilter: ReportFilter,
+      ticks: Int,
+      tickDuration: CurveTickDuration
   ): Future[Seq[CountByDate]] =
     tickDuration match {
-      case CurveTickDuration.Month => _report.getMonthlyCount(companyId, status, ticks)
-      case CurveTickDuration.Day   => _report.getDailyCount(companyId, status, ticks)
+      case CurveTickDuration.Month => _report.getMonthlyCount(reportFilter, ticks)
+      case CurveTickDuration.Day   => _report.getDailyCount(reportFilter, ticks)
     }
-
-  def getReportWithStatusPercentageCurve(
-      status: Seq[ReportStatus],
-      baseStatus: Seq[ReportStatus] = Seq(),
-      companyId: Option[UUID] = None,
-      ticks: Int,
-      tickDuration: CurveTickDuration = CurveTickDuration.Month
-  ) =
-    for {
-      counts <- getReportsCountCurve(companyId, status, ticks, tickDuration)
-      baseCounts <- getReportsCountCurve(companyId, baseStatus, ticks, tickDuration)
-    } yield baseCounts.map(monthlyBaseCount =>
-      CountByDate(
-        counts
-          .find(_.date == monthlyBaseCount.date)
-          .map(_.count)
-          .map(_ * 100 / Math.max(monthlyBaseCount.count, 1))
-          .getOrElse(0),
-        monthlyBaseCount.date
-      )
-    )
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = _report.getReportsTagsDistribution(companyId)
 

@@ -78,10 +78,22 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
-        _ <- companyRepository.setUserLevel(headOfficeCompany, proUserWithAccessToHeadOffice, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(headOfficeCompany, adminWithAccessToHeadOffice, AccessLevel.ADMIN)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, proUserWithAccessToSubsidiary, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, adminWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(
+          headOfficeCompany.id,
+          proUserWithAccessToHeadOffice.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyRepository.createUserAccess(headOfficeCompany.id, adminWithAccessToHeadOffice.id, AccessLevel.ADMIN)
+        _ <- companyRepository.createUserAccess(
+          subsidiaryCompany.id,
+          proUserWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyRepository.createUserAccess(
+          subsidiaryCompany.id,
+          adminWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)

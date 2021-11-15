@@ -8,7 +8,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.Period
 import java.time.ZoneId
-import java.time.{Duration => JavaDuration}
 import scala.concurrent.duration.FiniteDuration
 
 case class SignalConsoConfiguration(
@@ -42,9 +41,7 @@ case class ReportConfiguration(
 )
 
 case class StatsConfiguration(
-    backofficeAdminStartDate: LocalDate,
-    backofficeProStartDate: LocalDate,
-    globalStatsCutoff: Option[JavaDuration]
+    proAccessStartingPoint: LocalDate
 )
 
 case class EmailConfiguration(

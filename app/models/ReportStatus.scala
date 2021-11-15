@@ -1,6 +1,8 @@
 package models
 
 import enumeratum._
+import models.UserRoles.Admin
+import models.UserRoles.DGCCRF
 
 sealed trait ReportStatus extends EnumEntry
 
@@ -29,11 +31,14 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       MalAttribue
     )
 
-  def filterByUserRole(status: Seq[ReportStatus], userRole: UserRole) = {
+  val ReportStatusProResponse = Seq(ReportStatus.PromesseAction, ReportStatus.Infonde, ReportStatus.MalAttribue)
+
+  def filterByUserRole(status: Seq[ReportStatus], userRole: Option[UserRole]) = {
     val requestedStatus = if (status.isEmpty) ReportStatus.values else status
     userRole match {
-      case UserRoles.Pro => requestedStatus.intersect(statusVisibleByPro)
-      case _             => requestedStatus
+      case Some(Admin)  => requestedStatus
+      case Some(DGCCRF) => requestedStatus
+      case _            => requestedStatus.intersect(statusVisibleByPro)
     }
   }
 

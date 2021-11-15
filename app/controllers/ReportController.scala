@@ -339,23 +339,6 @@ class ReportController @Inject() (
       }
     }
 
-  /** @deprecated replaced by CompanyController.searchRegistered */
-  def getNbReportsGroupByCompany(offset: Option[Long], limit: Option[Int]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
-      // valeurs par défaut
-      val LIMIT_DEFAULT = 25
-      val LIMIT_MAX = 250
-
-      // normalisation des entrées
-      val offsetNormalized: Long = offset.map(Math.max(_, 0)).getOrElse(0)
-      val limitNormalized = limit.map(Math.max(_, 0)).map(Math.min(_, LIMIT_MAX)).getOrElse(LIMIT_DEFAULT)
-
-      reportRepository.getNbReportsGroupByCompany(offsetNormalized, limitNormalized).map { paginatedReports =>
-        Ok(Json.toJson(paginatedReports))
-      }
-
-    }
-
   private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
       report <- reportRepository.getReport(reportId)

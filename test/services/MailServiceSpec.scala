@@ -75,9 +75,9 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
         _ <- companyRepository.getOrCreate(unrelatedCompany.siret, unrelatedCompany)
 
-        _ <- companyRepository.setUserLevel(headOfficeCompany, proWithAccessToHeadOffice, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(unrelatedCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(headOfficeCompany.id, proWithAccessToHeadOffice.id, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(subsidiaryCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(unrelatedCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)

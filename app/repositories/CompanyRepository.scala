@@ -1,5 +1,6 @@
 package repositories
 
+import models.ReportStatus.ReportStatusProResponse
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
@@ -8,7 +9,11 @@ import utils.Constants.Departments
 import utils.SIREN
 import utils.SIRET
 
+import java.sql.Timestamp
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -135,8 +140,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
     def userId = column[UUID]("user_id")
     def level = column[AccessLevel]("level")
     def updateDate = column[OffsetDateTime]("update_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def pk = primaryKey("pk_company_user", (companyId, userId))
-    def * = (companyId, userId, level, updateDate) <> (UserAccess.tupled, UserAccess.unapply)
+    def * = (companyId, userId, level, updateDate, creationDate) <> (UserAccess.tupled, UserAccess.unapply)
 
     def company = foreignKey("COMPANY_FK", companyId, companyTableQuery)(
       _.id,
@@ -183,7 +189,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
               .map(b =>
                 b.flatMap { a =>
                   Case If a.status.inSet(
-                    ReportStatus.values.map(_.entryName)
+                    ReportStatusProResponse.map(_.entryName)
                   ) Then a.id
                 }
               )
@@ -335,16 +341,54 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .result
     )
 
-  def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+  def createCompanyUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(
       UserAccess(
         companyId = companyId,
         userId = userId,
         level = level,
-        updateDate = OffsetDateTime.now
+        updateDate = OffsetDateTime.now,
+        creationDate = OffsetDateTime.now
       )
     )
 
+  def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+    db.run(createCompanyUserAccess(companyId, userId, level))
+
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
-    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => ())
+    db.run(
+      UserAccessTableQuery
+        .filter(_.companyId === company.id)
+        .filter(_.userId === user.id)
+        .map(companyAccess => (companyAccess.level, companyAccess.updateDate))
+        .update((level, OffsetDateTime.now()))
+    ).map(_ => ())
+
+  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
+
+  def companyAccessesReportsRate(
+      ticks: Option[Int] = None,
+      ignoreBefore: LocalDate
+  ) = {
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(getTicks(ticks)).withDayOfMonth(1)
+
+    val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
+
+    val startingDate =
+      if (userDefinedStartingDate.toEpochSecond > ignoreBeforeOffsetDateTime.toEpochSecond) userDefinedStartingDate
+      else ignoreBefore
+
+    db.run(sql"""
+    select  
+       my_date_trunc('month'::text, r.creation_date)::timestamp ,
+       count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
+       count(distinct(r.company_id))
+    from reports r left join company_accesses a on r.company_id = a.company_id
+        where r.company_id is not null
+         and r.creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+    group by  my_date_trunc('month'::text, r.creation_date)
+    order by  my_date_trunc('month'::text, r.creation_date)""".as[(Timestamp, Int, Int)])
+  }
+
 }
