@@ -1,5 +1,6 @@
 package repositories
 
+import models.ReportStatus.ReportStatusProResponse
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
@@ -188,7 +189,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
               .map(b =>
                 b.flatMap { a =>
                   Case If a.status.inSet(
-                    ReportStatus.values.map(_.entryName)
+                    ReportStatusProResponse.map(_.entryName)
                   ) Then a.id
                 }
               )
