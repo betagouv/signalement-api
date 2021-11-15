@@ -31,6 +31,8 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       MalAttribue
     )
 
+  val ReportStatusProResponse = Seq(ReportStatus.PromesseAction, ReportStatus.Infonde, ReportStatus.MalAttribue)
+
   def filterByUserRole(status: Seq[ReportStatus], userRole: Option[UserRole]) = {
     val requestedStatus = if (status.isEmpty) ReportStatus.values else status
     userRole match {
