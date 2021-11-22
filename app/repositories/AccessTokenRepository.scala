@@ -9,6 +9,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -255,4 +256,38 @@ class AccessTokenRepository @Inject() (
         )
         .transactionally
     ).map(_ => true)
+
+  def dgccrfAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select
+      my_date_trunc('month'::text, creation_date)::timestamp,
+      sum(count(*)) over (order by my_date_trunc('month'::text, creation_date) rows between unbounded preceding and current row )
+      from access_tokens
+        where kind = 'DGCCRF_ACCOUNT' and valid = false
+      group by  my_date_trunc('month'::text, creation_date)
+      order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
+    db.run(
+      sql"""select  my_date_trunc('month'::text,creation_date)::timestamp,
+ sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
+  from subscriptions s
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} )as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
+  def dgccrfActiveAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp ,
+      sum(count(*)) over (order by my_date_trunc('month'::text, creation_date) rows between 2 preceding and current row )
+      from access_tokens
+        where kind = 'VALIDATE_EMAIL' and valid = false
+      group by  my_date_trunc('month'::text, creation_date)
+      order by 1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfControlsCurve(ticks: Int) =
+    db.run(sql"""select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
+  from events
+    where action = 'Contrôle effectué'
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
 }

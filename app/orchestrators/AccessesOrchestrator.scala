@@ -150,7 +150,7 @@ class AccessesOrchestrator @Inject() (
   def reportOverCompanyAccessRate(ticks: Option[Int]) =
     for {
       stats <- companyRepository
-        .companyAccessesReportsRate(ticks, appConfig.get.stats.proAccessStartingPoint)
+        .companyAccessesReportsRate(ticks.getOrElse(12), appConfig.get.stats.proAccessStartingPoint)
       rateStats =
         stats.map { case (timestamp, accessCount, reportCount) =>
           val rate: Float = if (reportCount > 0) (accessCount.toFloat / reportCount) * 100 else 0.0f
@@ -414,4 +414,25 @@ class AccessesOrchestrator @Inject() (
       logger.debug(s"Validated email ${token.emailedTo.get}")
       u
     }
+
+  def dgccrfAccountsCurve(ticks: Int) =
+    accessTokenRepository
+      .dgccrfAccountsCurve(ticks)
+      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
+
+  def dgccrfSubscription(ticks: Int) =
+    accessTokenRepository
+      .dgccrfSubscription(ticks)
+      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
+
+  def dgccrfActiveAccountsCurve(ticks: Int) =
+    accessTokenRepository
+      .dgccrfActiveAccountsCurve(ticks)
+      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
+
+  def dgccrfControlsCurve(ticks: Int) =
+    accessTokenRepository
+      .dgccrfControlsCurve(ticks)
+      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
+
 }

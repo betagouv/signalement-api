@@ -13,6 +13,11 @@ GET           /api/stats/reports/delay/read                          controllers
 GET           /api/stats/reports/tags                                controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                              controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/reviews                             controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/pro-account-rate                            controllers.CompanyAccessController.reportOverCompanyAccessRate(ticks: Option[Int])
+GET           /api/stats/dgccrf-account                              controllers.AccountController.dgccrfAccountsCurve(ticks: Option[Int])
+GET           /api/stats/dgccrf-active-account                       controllers.AccountController.dgccrfActiveAccountsCurve(ticks: Option[Int])
+GET           /api/stats/dgccrf-subscription                         controllers.AccountController.dgccrfSubscription(ticks: Option[Int])
+GET           /api/stats/dgccrf-controls                             controllers.AccountController.dgccrfControlsCurve(ticks: Option[Int])
 
 
 # Reports list API

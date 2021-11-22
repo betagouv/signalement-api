@@ -364,14 +364,12 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
-  private[this] def getTicks(ticks: Option[Int]): Int = ticks.getOrElse(12)
-
   def companyAccessesReportsRate(
-      ticks: Option[Int] = None,
+      ticks: Int = 12,
       ignoreBefore: LocalDate
   ) = {
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(getTicks(ticks)).withDayOfMonth(1)
+    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1)
 
     val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
 
