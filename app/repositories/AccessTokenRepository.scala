@@ -268,7 +268,7 @@ class AccessTokenRepository @Inject() (
 
   def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(
-      sql"""select  my_date_trunc('month'::text,creation_date)::timestamp,
+      sql"""select * from ( select  my_date_trunc('month'::text,creation_date)::timestamp,
  sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
   from subscriptions s
   group by  my_date_trunc('month'::text,creation_date)
@@ -284,10 +284,12 @@ class AccessTokenRepository @Inject() (
       order by 1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
   def dgccrfControlsCurve(ticks: Int) =
-    db.run(sql"""select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
   from events
     where action = 'Contrôle effectué'
   group by  my_date_trunc('month'::text,creation_date)
-  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
 
 }
