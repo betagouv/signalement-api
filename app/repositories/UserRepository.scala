@@ -91,6 +91,14 @@ class UserRepository @Inject() (
           .result
       )
 
+//  def count(role: UserRole): Future[Seq[User]] =
+//    db
+//      .run(
+//        userTableQuery
+//          .filter(_.role === role.name)
+//          .result
+//      )
+
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
@@ -145,6 +153,7 @@ class UserRepository @Inject() (
 
   def findById(id: UUID): Future[Option[User]] =
     db.run(userTableQuery.filter(_.id === id).result.headOption)
+
   def findByLogin(login: String): Future[Option[User]] =
     db.run(
       userTableQuery

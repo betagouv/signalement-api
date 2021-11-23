@@ -6,6 +6,7 @@ import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
+import utils.Constants.Departments.toPostalCode
 import utils._
 
 import java.time._
@@ -334,7 +335,10 @@ class ReportRepository @Inject() (
         table.employeeConsumer === employeeConsumer
       }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
-        filter.departments.map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%").reduceLeft(_ || _)
+        filter.departments
+          .flatMap(toPostalCode)
+          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
+          .reduceLeft(_ || _)
       }
       .joinLeft(CompanyTables.tables)
       .on(_.companyId === _.id)
