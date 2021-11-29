@@ -46,7 +46,7 @@ class CompanyController @Inject() (
   val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
   val contactAddress = appConfigLoader.get.mail.contactAddress
 
-  def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async {
+  def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
   }
 
@@ -68,7 +68,7 @@ class CompanyController @Inject() (
       identity: Option[String],
       offset: Option[Long],
       limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
+  ) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
     companyOrchestrator
       .searchRegistered(
         departments = departments.getOrElse(Seq()),
@@ -100,25 +100,25 @@ class CompanyController @Inject() (
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRoles.DGCCRF, UserRoles.Admin)).async {
+  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRole.DGCCRF, UserRole.Admin)).async {
     companyOrchestrator
       .getResponseRate(companyId)
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def companyDetails(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def companyDetails(siret: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     for {
       company <- companyOrchestrator.companyDetails(SIRET(siret))
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
-  def companiesToActivate() = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def companiesToActivate() = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     companyOrchestrator
       .companiesToActivate()
       .map(result => Ok(Json.toJson(result)))
   }
 
-  def visibleCompanies() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+  def visibleCompanies() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
       .map(x => Ok(Json.toJson(x)))
@@ -191,7 +191,7 @@ class CompanyController @Inject() (
       )(frontRoute = frontRoute, contactAddress = contactAddress)
   }
 
-  def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) {
+  def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
     implicit request =>
       import CompanyObjects.CompanyList
       request.body
@@ -221,7 +221,7 @@ class CompanyController @Inject() (
         )
   }
 
-  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) {
+  def handleUndeliveredDocument(siret: String) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
     implicit request =>
       request.body
         .validate[UndeliveredDocument]

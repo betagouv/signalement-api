@@ -91,7 +91,7 @@ class CompanyAccessController @Inject() (
 
   case class AccessInvitationList(email: EmailAddress, level: AccessLevel, sirets: List[SIRET])
 
-  def sendGroupedInvitations = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+  def sendGroupedInvitations = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     implicit val reads = Json.reads[AccessInvitationList]
     request.body
       .validate[AccessInvitationList]

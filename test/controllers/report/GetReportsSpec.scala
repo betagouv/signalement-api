@@ -240,20 +240,20 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def reportsMustBeRenderedForUser(user: User) =
 //    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
-      case (UserRoles.Admin, _) =>
+      case (UserRole.Admin, _) =>
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
-      case (UserRoles.DGCCRF, _) =>
+      case (UserRole.DGCCRF, _) =>
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
-      case (UserRoles.Pro, pro) if pro == proUserWithAccessToHeadOffice =>
+      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToHeadOffice =>
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
           not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportNAOnHeadOffice)))
-      case (UserRoles.Pro, pro) if pro == proUserWithAccessToSubsidiary =>
+      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
         contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and

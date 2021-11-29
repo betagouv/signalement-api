@@ -83,23 +83,24 @@ class ReportController @Inject() (
         )
     }
 
-  def reportResponse(uuid: String) = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
-    logger.debug(s"reportResponse ${uuid}")
-    request.body
-      .validate[ReportResponse]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        reportResponse =>
-          for {
-            visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
-            updatedReport <-
-              visibleReport
-                .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_)))
-                .getOrElse(Future(None))
-          } yield updatedReport
-            .map(r => Ok(Json.toJson(r)))
-            .getOrElse(NotFound)
-      )
+  def reportResponse(uuid: String) = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) {
+    implicit request =>
+      logger.debug(s"reportResponse ${uuid}")
+      request.body
+        .validate[ReportResponse]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          reportResponse =>
+            for {
+              visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
+              updatedReport <-
+                visibleReport
+                  .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_)))
+                  .getOrElse(Future(None))
+            } yield updatedReport
+              .map(r => Ok(Json.toJson(r)))
+              .getOrElse(NotFound)
+        )
   }
 
   def createReportAction(uuid: String) =
@@ -275,8 +276,9 @@ class ReportController @Inject() (
                   events
                     .filter(event =>
                       request.identity.userRole match {
-                        case UserRoles.Pro => List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
-                        case _             => true
+                        case UserRole.Professionnel =>
+                          List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
+                        case _ => true
                       }
                     )
                     .map { case (event, user) =>
@@ -286,7 +288,7 @@ class ReportController @Inject() (
                           Json.obj(
                             "firstName" -> u.firstName,
                             "lastName" -> u.lastName,
-                            "role" -> u.userRole.name
+                            "role" -> u.userRole.entryName
                           )
                         )
                       )
@@ -317,8 +319,9 @@ class ReportController @Inject() (
               events.get
                 .filter(event =>
                   request.identity.userRole match {
-                    case UserRoles.Pro => List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
-                    case _             => true
+                    case UserRole.Professionnel =>
+                      List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
+                    case _ => true
                   }
                 )
                 .map { case (event, user) =>
@@ -328,7 +331,7 @@ class ReportController @Inject() (
                       Json.obj(
                         "firstName" -> u.firstName,
                         "lastName" -> u.lastName,
-                        "role" -> u.userRole.name
+                        "role" -> u.userRole.entryName
                       )
                     )
                   )
@@ -343,7 +346,7 @@ class ReportController @Inject() (
     for {
       report <- reportRepository.getReport(reportId)
       visibleReport <-
-        if (Seq(UserRoles.DGCCRF, UserRoles.Admin).contains(user.userRole))
+        if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)
         else {
           companiesVisibilityOrchestrator

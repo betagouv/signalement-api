@@ -24,7 +24,7 @@ class StatisticController @Inject() (
 
   def getReportsCount() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(UserRoles.Admin))
+      .fromQueryString(request.queryString, UserRole.Admin)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -41,7 +41,7 @@ class StatisticController @Inject() (
     */
   def getReportsCountCurve() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(UserRoles.Admin))
+      .fromQueryString(request.queryString, UserRole.Admin)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -60,7 +60,7 @@ class StatisticController @Inject() (
   }
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats
       .getReadAvgDelay(companyId)
@@ -68,7 +68,7 @@ class StatisticController @Inject() (
   }
 
   def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats
       .getResponseAvgDelay(companyId: Option[UUID])
@@ -76,19 +76,19 @@ class StatisticController @Inject() (
   }
 
   def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }

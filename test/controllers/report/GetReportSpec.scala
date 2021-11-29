@@ -61,7 +61,7 @@ object GetReportByAdminUser extends GetReportSpec {
     }}
          Then the report is rendered to the user as an Admin          ${reportMustBeRenderedForUserRole(
       neverRequestedReport,
-      UserRoles.Admin
+      UserRole.Admin
     )}
     """
 }
@@ -102,7 +102,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedReport.copy(status = ReportStatus.Transmis),
-      UserRoles.Pro
+      UserRole.Professionnel
     )}
       """
 }
@@ -123,7 +123,7 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedFinalReport,
-      UserRoles.Pro
+      UserRole.Professionnel
     )}
     """
 }
@@ -142,7 +142,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       alreadyRequestedReport,
-      UserRoles.Pro
+      UserRole.Professionnel
     )}
 
     """

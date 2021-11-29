@@ -24,7 +24,7 @@ object Fixtures {
     password <- arbString.arbitrary
     firstName <- genFirstName
     lastName <- genLastName
-    userRole <- Gen.oneOf(UserRoles.userRoles)
+    userRole <- Gen.oneOf(UserRole.values)
     email <- genEmailAddress(firstName, lastName)
   } yield User(id, password, email, firstName, lastName, userRole, None)
 
@@ -34,9 +34,9 @@ object Fixtures {
     s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
 
-  val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
-  val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-  val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
+  val genAdminUser = genUser.map(_.copy(userRole = UserRole.Admin))
+  val genProUser = genUser.map(_.copy(userRole = UserRole.Professionnel))
+  val genDgccrfUser = genUser.map(_.copy(userRole = UserRole.DGCCRF))
 
   val genSiren = for {
     randInt <- Gen.choose(0, 999999999)
