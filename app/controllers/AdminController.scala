@@ -91,7 +91,7 @@ class AdminController @Inject() (
     email = EmailAddress("text@example.com"),
     firstName = "Jeanne",
     lastName = "Dupont",
-    userRole = UserRoles.Admin,
+    userRole = UserRole.Admin,
     lastEmailValidation = None
   )
 
@@ -289,10 +289,10 @@ class AdminController @Inject() (
     )
   )
 
-  def getEmailCodes = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def getEmailCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availableEmails.keys)))
   }
-  def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(
       availableEmails
         .get(templateRef)
@@ -310,7 +310,7 @@ class AdminController @Inject() (
     )
   }
 
-  def sendProAckToConsumer = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+  def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     import AdminObjects.ReportList
     request.body
       .validate[ReportList](Json.reads[ReportList])
@@ -334,7 +334,7 @@ class AdminController @Inject() (
       )
   }
 
-  def sendNewReportToPro = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+  def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     import AdminObjects.ReportList
     request.body
       .validate[ReportList](Json.reads[ReportList])

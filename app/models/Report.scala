@@ -145,7 +145,7 @@ object Report {
         "tags" -> report.tags,
         "reponseconsoCode" -> report.reponseconsoCode
       ) ++ ((userRole, report.contactAgreement) match {
-        case (Some(UserRoles.Pro), false) => Json.obj()
+        case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>
           Json.obj(
             "firstName" -> report.firstName,

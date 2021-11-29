@@ -28,12 +28,12 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
   type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
 
   def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-    User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
+    User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation)
   }
 
   def extractUser: PartialFunction[User, UserData] = {
     case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      (id, password, email, firstName, lastName, role.name, lastEmailValidation)
+      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation)
   }
 
   def * = (
@@ -87,17 +87,9 @@ class UserRepository @Inject() (
     db
       .run(
         userTableQuery
-          .filter(_.role === role.name)
+          .filter(_.role === role.entryName)
           .result
       )
-
-//  def count(role: UserRole): Future[Seq[User]] =
-//    db
-//      .run(
-//        userTableQuery
-//          .filter(_.role === role.name)
-//          .result
-//      )
 
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
