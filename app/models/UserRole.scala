@@ -1,9 +1,6 @@
 package models
 
 import enumeratum._
-//import play.api.libs.json.JsPath
-//import play.api.libs.json.Json
-//import play.api.libs.json.Reads
 
 sealed trait UserRole extends EnumEntry {
   val permissions: Seq[UserPermission.Value]
@@ -31,7 +28,4 @@ object UserRole extends Enum[UserRole] {
   }
 
   override def values: IndexedSeq[UserRole] = findValues
-//  implicit val userRoleWrites = Json.writes[UserRole]
-//
-//  implicit val userRoleReads: Reads[UserRole] = ((JsPath \ "role").read[String]).map(UserRole.withName(_))
 }

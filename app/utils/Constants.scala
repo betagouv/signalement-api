@@ -42,7 +42,6 @@ object Constants {
         case UserRole.Admin         => ADMIN
         case UserRole.DGCCRF        => DGCCRF
         case UserRole.Professionnel => PRO
-        case _                      => CONSO
       }
 
   }
