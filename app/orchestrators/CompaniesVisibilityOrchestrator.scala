@@ -4,7 +4,7 @@ import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
 import models.User
-import models.UserRoles
+import models.UserRole
 import repositories._
 import utils.SIREN
 import utils.SIRET
@@ -95,7 +95,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
   def filterUnauthorizedSiretSirenList(siretSirenList: Seq[String], user: User): Future[Seq[String]] =
-    if (user.userRole == UserRoles.Pro) {
+    if (user.userRole == UserRole.Professionnel) {
       val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
       fetchVisibleSiretsSirens(user).map { allowed =>
         val filteredSiretsSirens = SiretsSirens(

@@ -32,7 +32,7 @@ class ReportedPhoneController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def fetchGrouped(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       reportRepository
         .getPhoneReports(DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(reports =>
@@ -60,7 +60,7 @@ class ReportedPhoneController @Inject() (
     }
 
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       reportedPhonesExtractActor ? ReportedPhonesExtractActor.ExtractRequest(
         request.identity,

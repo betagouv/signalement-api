@@ -35,7 +35,7 @@ class ReportListController @Inject() (
 
   def getReports() = SecuredAction.async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(request.identity.userRole))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
@@ -60,7 +60,7 @@ class ReportListController @Inject() (
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(request.identity.userRole))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)

@@ -3,7 +3,6 @@ package utils
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.UserRole
-import models.UserRoles
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -40,10 +39,9 @@ object Constants {
 
     def fromUserRole(userRole: UserRole) =
       userRole match {
-        case UserRoles.Admin  => ADMIN
-        case UserRoles.DGCCRF => DGCCRF
-        case UserRoles.Pro    => PRO
-        case _                => CONSO
+        case UserRole.Admin         => ADMIN
+        case UserRole.DGCCRF        => DGCCRF
+        case UserRole.Professionnel => PRO
       }
 
   }
@@ -141,9 +139,9 @@ object Constants {
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
       Map(
-        UserRoles.Pro -> List(COMMENT),
-        UserRoles.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
-        UserRoles.DGCCRF -> List(COMMENT, CONTROL)
+        UserRole.Professionnel -> List(COMMENT),
+        UserRole.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
+        UserRole.DGCCRF -> List(COMMENT, CONTROL)
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))

@@ -6,9 +6,9 @@ import config.AppConfigLoader
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
-import models.UserRoles.Admin
-import models.UserRoles.DGCCRF
-import models.UserRoles.Pro
+import models.UserRole.Admin
+import models.UserRole.DGCCRF
+import models.UserRole.Professionnel
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
 import models.access.ActivationOutcome
@@ -132,14 +132,14 @@ class AccessesOrchestrator @Inject() (
       case (_, DGCCRF) =>
         logger.debug(s"Signal conso dgccrf user : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
-      case (AccessLevel.ADMIN, Pro) =>
+      case (AccessLevel.ADMIN, Professionnel) =>
         companyAccess.map {
           case (companyUser, level) if companyUser.id == user.id =>
             toApi(companyUser, level, editable = false, isHeadOffice)
           case (companyUser, level) =>
             toApi(companyUser, level, editable, isHeadOffice)
         }
-      case (_, Pro) =>
+      case (_, Professionnel) =>
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
       case _ =>
@@ -193,7 +193,7 @@ class AccessesOrchestrator @Inject() (
       accessToken <- fetchToken
       user <- accessToken
         .filter(_.kind == DGCCRFAccount)
-        .map(t => createUser(t, UserRoles.DGCCRF).map(Some(_)))
+        .map(t => createUser(t, UserRole.DGCCRF).map(Some(_)))
         .getOrElse(Future(None))
       _ <- user
         .flatMap(_ => accessToken)
@@ -219,7 +219,7 @@ class AccessesOrchestrator @Inject() (
 
     def run = for {
       accessToken <- fetchToken
-      user <- accessToken.map(t => createUser(t, UserRoles.Pro).map(Some(_))).getOrElse(Future(None))
+      user <- accessToken.map(t => createUser(t, UserRole.Professionnel).map(Some(_))).getOrElse(Future(None))
       applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
         .getOrElse(Future(false))
       _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))

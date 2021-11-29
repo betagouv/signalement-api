@@ -63,7 +63,7 @@ class AuthController @Inject() (
                   .flatMap { loginInfo =>
                     userService.retrieve(loginInfo).flatMap {
                       case Some(user)
-                          if user.userRole == UserRoles.DGCCRF
+                          if user.userRole == UserRole.DGCCRF
                             && user.lastEmailValidation
                               .exists(
                                 _.isBefore(

@@ -112,13 +112,13 @@ class ReportsExtractActor @Inject() (
         "Code postal",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Siret",
@@ -129,37 +129,37 @@ class ReportsExtractActor @Inject() (
         "Nom de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyName.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyAddress.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
         (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
-        available = requestedBy.userRole == UserRoles.Admin
+        available = requestedBy.userRole == UserRole.Admin
       ),
       ReportColumn(
         "Site web de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.phone.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
         (report, _, _, _) => report.vendor.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie",
@@ -188,13 +188,13 @@ class ReportsExtractActor @Inject() (
                 .url}"
             )
             .mkString("\n"),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
         (report, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Réponse au consommateur",
@@ -238,25 +238,25 @@ class ReportsExtractActor @Inject() (
         "Identifiant",
         centerAlignmentColumn,
         (report, _, _, _) => report.id.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
         (report, _, _, _) => report.firstName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
         (report, _, _, _) => report.lastName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
         (report, _, _, _) => report.email.value,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Accord pour contact",
@@ -274,7 +274,7 @@ class ReportsExtractActor @Inject() (
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRole.DGCCRF
       ),
       ReportColumn(
         "Contrôle effectué",
@@ -285,7 +285,7 @@ class ReportsExtractActor @Inject() (
             events,
             _
         ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRole.DGCCRF
       )
     ).filter(_.available)
   }

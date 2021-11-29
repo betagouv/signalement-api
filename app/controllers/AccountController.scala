@@ -113,7 +113,7 @@ class AccountController @Inject() (
   }
   def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
-      users <- userRepository.list(UserRoles.DGCCRF)
+      users <- userRepository.list(UserRole.DGCCRF)
     } yield Ok(
       Json.toJson(
         users.map(u =>

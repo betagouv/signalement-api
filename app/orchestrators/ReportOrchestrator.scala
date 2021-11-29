@@ -280,7 +280,7 @@ class ReportOrchestrator @Inject() (
     } yield updatedReport
 
   def handleReportView(report: Report, user: User): Future[Report] =
-    if (user.userRole == UserRoles.Pro) {
+    if (user.userRole == UserRole.Professionnel) {
       eventRepository
         .getEvents(report.id, EventFilter(None))
         .flatMap(events =>
