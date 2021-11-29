@@ -13,7 +13,7 @@ ALTER TABLE reports DROP COLUMN done;
 
 ALTER TABLE companies ADD COLUMN address_old_version VARCHAR;
 ALTER TABLE companies ADD COLUMN postal_code_old_version VARCHAR;
-ALTER TABLE companies ADD COLUMN department_old_version;
+ALTER TABLE companies ADD COLUMN department_old_version VARCHAR;
 ALTER TABLE companies ADD COLUMN done VARCHAR;
 
 ALTER TABLE reports ADD COLUMN company_address_old_version VARCHAR;
