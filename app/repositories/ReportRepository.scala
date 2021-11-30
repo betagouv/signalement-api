@@ -281,11 +281,17 @@ class ReportRepository @Inject() (
       .filterOpt(filter.phone) { case (table, reportedPhone) =>
         table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
       }
-      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) { case (table, websiteRequired) =>
+      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
         table.websiteURL.isDefined === websiteRequired
       }
-      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
+      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
         table.phone.isDefined === phoneRequired
+      }
+      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
+        table.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
+        table.companyCountry.isDefined === hasForeignCountry
       }
       .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
       .filterIf(filter.siretSirenList.nonEmpty) { case table =>
@@ -314,9 +320,6 @@ class ReportRepository @Inject() (
       }
       .filterOpt(filter.category) { case (table, category) =>
         table.category === category
-      }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
       }
       .filterIf(filter.status.nonEmpty) { case table =>
         table.status.inSet(filter.status.map(_.entryName))
