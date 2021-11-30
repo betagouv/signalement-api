@@ -66,7 +66,8 @@ object AuthAttemptTables {
 
 /** A repository for user.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class UserRepository @Inject() (

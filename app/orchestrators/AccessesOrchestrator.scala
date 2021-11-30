@@ -72,7 +72,7 @@ class AccessesOrchestrator @Inject() (
           maybeHeadOfficeCompany <- maybeHeadOffice match {
             case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)
             case None             =>
-              //No head office found in company database ( Company DB is not synced )
+              // No head office found in company database ( Company DB is not synced )
               Future.successful(None)
           }
           headOfficeAccess <- maybeHeadOfficeCompany.map { headOfficeCompany =>
@@ -220,7 +220,10 @@ class AccessesOrchestrator @Inject() (
     def run = for {
       accessToken <- fetchToken
       user <- accessToken.map(t => createUser(t, UserRole.Professionnel).map(Some(_))).getOrElse(Future(None))
-      applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
+      applied <- (for {
+        u <- user
+        t <- accessToken
+      } yield accessTokenRepository.applyCompanyToken(t, u))
         .getOrElse(Future(false))
       _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
       _ <- accessToken

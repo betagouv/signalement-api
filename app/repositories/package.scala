@@ -1,4 +1,5 @@
 import models.PaginatedResult
+
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
 
