@@ -61,6 +61,7 @@ class ReportFilterTest extends Specification {
         "phone" -> expectedReportFilter.phone.toSeq,
         "hasWebsite" -> expectedReportFilter.hasWebsite.toSeq.map(_.toString),
         "hasPhone" -> expectedReportFilter.hasPhone.toSeq.map(_.toString),
+        "hasForeignCountry" -> expectedReportFilter.hasPhone.toSeq.map(_.toString),
         "siretSirenList" -> expectedReportFilter.siretSirenList,
         "companyName" -> expectedReportFilter.companyName.toSeq,
         "companyCountries" -> expectedReportFilter.companyCountries,
