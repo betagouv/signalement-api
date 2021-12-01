@@ -13,8 +13,6 @@ case class ReportFilter(
     email: Option[String] = None,
     websiteURL: Option[String] = None,
     phone: Option[String] = None,
-    websiteExists: Option[Boolean] = None,
-    phoneExists: Option[Boolean] = None,
     siretSirenList: Seq[String] = Seq.empty,
     companyIds: Seq[UUID] = Seq.empty,
     companyName: Option[String] = None,
@@ -25,6 +23,9 @@ case class ReportFilter(
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
+    hasForeignCountry: Option[Boolean] = None,
+    hasWebsite: Option[Boolean] = None,
+    hasPhone: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
     tags: Seq[String] = Seq.empty,
     activityCodes: Seq[String] = Seq.empty
@@ -38,8 +39,6 @@ object ReportFilter {
       email = mapper.string("email"),
       websiteURL = mapper.string("websiteURL"),
       phone = mapper.string("phone"),
-      websiteExists = mapper.boolean("websiteExists"),
-      phoneExists = mapper.boolean("phoneExists"),
       siretSirenList = mapper.seq("siretSirenList"),
       companyName = mapper.string("companyName"),
       companyCountries = mapper.seq("companyCountries"),
@@ -57,6 +56,9 @@ object ReportFilter {
         case DGCCRF => None
         case _      => Some(false)
       },
+      hasForeignCountry = mapper.boolean("hasForeignCountry"),
+      hasWebsite = mapper.boolean("hasWebsite"),
+      hasPhone = mapper.boolean("hasPhone"),
       hasCompany = mapper.boolean("hasCompany"),
       tags = mapper.seq("tags"),
       activityCodes = mapper.seq("activityCodes")
