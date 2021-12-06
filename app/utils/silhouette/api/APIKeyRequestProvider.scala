@@ -23,21 +23,20 @@ class APIKeyRequestProvider @Inject() (
   def authenticate[B](request: Request[B]): Future[Option[LoginInfo]] = {
     val hasher = passwordHasherRegistry.current
     val headerValueOpt = request.headers.get("X-Api-Key")
-    println(hasher.hash("toto"))
-    println(hasher.hash("toto"))
-    println(hasher.hash("toto"))
-    println(hasher.hash("toto"))
-    println("---")
 
     headerValueOpt
       .map(headerValue =>
         _consumer.getAll().map { consumers =>
-          val keyMatchOpt = consumers.find(c => hasher.matches(toPasswordInfo(headerValueOpt.get), c.apiKey))
+          val keyMatchOpt = consumers.find { c =>
+            hasher.matches(toPasswordInfo(c.apiKey), headerValue)
+          }
           keyMatchOpt match {
-            case Some(keyMatch) if hasher.matches(toPasswordInfo(headerValue), keyMatch.apiKey) =>
+            case Some(keyMatch) =>
               logger.debug(s"Access to the API with token ${keyMatch.name}.")
               Some(LoginInfo(id, headerValue))
-            case _ => None
+            case _ =>
+              logger.debug(s"Access denied to the API with pass ${headerValue}.")
+              None
           }
         }
       )
