@@ -1,5 +1,6 @@
 package models.dataeconomie
 
+import models.Address
 import models.ReportStatus
 import play.api.libs.json.Format
 import play.api.libs.json.Json
@@ -18,7 +19,8 @@ case class ReportDataEconomie(
     status: ReportStatus,
     forwardToReponseConso: Boolean,
     vendor: Option[String],
-    tags: List[String]
+    tags: List[String],
+    companyAddress: Option[Address]
 )
 
 object ReportDataEconomie {

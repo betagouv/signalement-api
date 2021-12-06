@@ -10,7 +10,7 @@ import controllers.error.AppErrorTransformer.handleError
 import orchestrators.DataEconomieOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.Action
+import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
 import javax.inject.Inject
@@ -19,13 +19,14 @@ import scala.concurrent.Future
 
 class DataEconomieController @Inject() (
     service: DataEconomieOrchestrator,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    val silhouetteAPIKey: Silhouette[APIKeyEnv]
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def reportDataEcomonie(): Action[Unit] = UnsecuredAction.async(parse.empty) { _ =>
+  def reportDataEcomonie() = silhouetteAPIKey.SecuredAction.async(parse.empty) { _ =>
     val source: Source[ByteString, Any] =
       service
         .getReportDataEconomie()
