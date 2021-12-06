@@ -8,7 +8,8 @@ import slick.jdbc.JdbcProfile
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class ConsumerTable(tag: Tag) extends Table[Consumer](tag, "consumer") {
 
@@ -41,8 +42,7 @@ class ConsumerRepository @Inject() (
 
   val query = ConsumerTables.tables
 
-  def getAll(): Future[Seq[Consumer]] = {
+  def getAll(): Future[Seq[Consumer]] =
     db.run(query.result)
-  }
 
 }
