@@ -20,7 +20,8 @@ case class ReportDataEconomie(
     forwardToReponseConso: Boolean,
     vendor: Option[String],
     tags: List[String],
-    companyAddress: Option[Address]
+    companyAddress: Option[Address],
+    activityCode: Option[String]
 )
 
 object ReportDataEconomie {

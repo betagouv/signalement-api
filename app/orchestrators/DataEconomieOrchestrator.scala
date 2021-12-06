@@ -19,9 +19,11 @@ class DataEconomieOrchestrator @Inject() (
   def getReportDataEconomie(): Source[ReportDataEconomie, NotUsed] =
     reportRepository
       .reports()
-      .map(
-        _.into[ReportDataEconomie]
+      .map(x =>
+        x._1
+          .into[ReportDataEconomie]
           .withFieldComputed(_.postalCode, _.companyAddress.postalCode)
+          .withFieldConst(_.activityCode, x._2.flatMap(_.activityCode))
           .transform
       )
 }
