@@ -1,14 +1,14 @@
 -- !Ups
 DROP INDEX IF EXISTS no_similar_report;
 
-ALTER TABLE companies DROP COLUMN address_old_version;
-ALTER TABLE companies DROP COLUMN postal_code_old_version;
-ALTER TABLE companies DROP COLUMN department_old_version;
-ALTER TABLE companies DROP COLUMN done;
+ALTER TABLE companies DROP IF EXISTS address_old_version;
+ALTER TABLE companies DROP IF EXISTS postal_code_old_version;
+ALTER TABLE companies DROP IF EXISTS department_old_version;
+ALTER TABLE companies DROP IF EXISTS done;
 
-ALTER TABLE reports DROP COLUMN company_address_old_version;
-ALTER TABLE reports DROP COLUMN company_postal_code_old_version;
-ALTER TABLE reports DROP COLUMN done;
+ALTER TABLE reports DROP IF EXISTS company_address_old_version;
+ALTER TABLE reports DROP IF EXISTS company_postal_code_old_version;
+ALTER TABLE reports DROP IF EXISTS done;
 
 create unique index no_similar_report on reports (
     email,
@@ -22,8 +22,6 @@ create unique index no_similar_report on reports (
     company_address_supplement,
     company_city
 );
-
-
 
 -- !Downs
 
