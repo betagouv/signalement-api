@@ -1,4 +1,5 @@
 -- !Ups
+DROP INDEX IF EXISTS no_similar_report;
 
 ALTER TABLE companies DROP COLUMN address_old_version;
 ALTER TABLE companies DROP COLUMN postal_code_old_version;
