@@ -12,7 +12,7 @@ import models.UserRole.Professionnel
 import models._
 import models.access.ActivationOutcome.ActivationOutcome
 import models.access.ActivationOutcome
-import models.access.ProAccountActivationRateStat
+import models.access.ProInactiveAccountRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
@@ -152,11 +152,18 @@ class AccessesOrchestrator @Inject() (
       stats <- companyRepository
         .companyAccessesReportsRate(ticks.getOrElse(12), appConfig.get.stats.proAccessStartingPoint)
       rateStats =
-        stats.map { case (timestamp, accessCount, reportCount) =>
-          val rate: Float = if (reportCount > 0) (accessCount.toFloat / reportCount) * 100 else 0.0f
-          val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
-          ProAccountActivationRateStat(rate, date)
-        }.toList
+        stats
+          .map {
+            case (timestamp, accessCount, reportCount) if reportCount > 0 && accessCount > 0 =>
+              val inactiveRate: Float = 100 - ((accessCount.toFloat / reportCount) * 100)
+              (timestamp, inactiveRate.round.toFloat)
+            case (timestamp, _, _) => (timestamp, 0.0f)
+          }
+          .map { case (timestamp, inactiveRate) =>
+            val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
+            ProInactiveAccountRateStat(inactiveRate, date)
+          }
+          .toList
     } yield rateStats
 
   abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
