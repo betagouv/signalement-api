@@ -22,7 +22,12 @@ class DataEconomieOrchestrator @Inject() (
       .map(x =>
         x._1
           .into[ReportDataEconomie]
-          .withFieldComputed(_.postalCode, _.companyAddress.postalCode)
+          .withFieldComputed(_.companyNumber, _.companyAddress.number)
+          .withFieldComputed(_.companyStreet, _.companyAddress.street)
+          .withFieldComputed(_.companyAddressSupplement, _.companyAddress.addressSupplement)
+          .withFieldComputed(_.companyCity, _.companyAddress.city)
+          .withFieldComputed(_.companyCountry, _.companyAddress.country)
+          .withFieldComputed(_.companyPostalCode, _.companyAddress.postalCode)
           .withFieldConst(_.activityCode, x._2.flatMap(_.activityCode))
           .transform
       )
