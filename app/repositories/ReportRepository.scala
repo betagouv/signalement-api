@@ -370,6 +370,21 @@ class ReportRepository @Inject() (
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(reportTableQuery.filter(_.email === email).result)
 
+  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+    db.run(
+      reportTableQuery
+        .filterOpt(start) { case (table, s) =>
+          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, zoneId).toOffsetDateTime
+        }
+        .filterOpt(end) { case (table, e) =>
+          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, zoneId).toOffsetDateTime
+        }
+        .groupBy(_.companyPostalCode.map(x => substr(x, 1, 2)).getOrElse(""))
+        .map { case (department, group) => (department, group.length) }
+        .sortBy(_._2.desc)
+        .result
+    )
+
   def update(report: Report): Future[Report] = {
     val queryReport =
       for (refReport <- reportTableQuery if refReport.id === report.id)
