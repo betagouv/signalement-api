@@ -33,7 +33,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
 
     "return unauthorized when there no X-Api-Key header" should {
 
-      "ReportController" in new Context {
+      "ReportController1" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture")
           val result = route(application, request).get
@@ -44,10 +44,10 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
 
     "return unauthorized when X-Api-Key header is invalid" should {
 
-      "ReportController" in new Context {
+      "ReportController2" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
-            "X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2"
+            "X-Api-Key" -> "invalid_key"
           )
           val result = route(application, request).get
           Helpers.status(result) must beEqualTo(UNAUTHORIZED)
@@ -57,10 +57,10 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
 
     "return report count when X-Api-Key header is valid" should {
 
-      "ReportController" in new Context {
+      "ReportController3" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
-            "X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq"
+            "X-Api-Key" -> "test"
           )
           val result = route(application, request).get
           Helpers.status(result) must beEqualTo(OK)
