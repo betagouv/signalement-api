@@ -6,18 +6,20 @@
 GET           /api                                           controllers.StaticController.api
 
 # Statistics API
-GET           /api/stats/reports/count                               controllers.StatisticController.getReportsCount()
-GET           /api/stats/reports/curve                               controllers.StatisticController.getReportsCountCurve()
-GET           /api/stats/reports/delay/responsed                     controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/delay/read                          controllers.StatisticController.getDelayReportReadInHours(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/tags                                controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/status                              controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/reviews                             controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
-GET           /api/stats/pro-account-rate                            controllers.CompanyAccessController.reportOverCompanyAccessRate(ticks: Option[Int])
-GET           /api/stats/dgccrf-account                              controllers.AccountController.dgccrfAccountsCurve(ticks: Option[Int])
-GET           /api/stats/dgccrf-active-account                       controllers.AccountController.dgccrfActiveAccountsCurve(ticks: Option[Int])
-GET           /api/stats/dgccrf-subscriptions                         controllers.AccountController.dgccrfSubscription(ticks: Option[Int])
-GET           /api/stats/dgccrf-controls                             controllers.AccountController.dgccrfControlsCurve(ticks: Option[Int])
+GET           /api/stats/reports/count                          controllers.StatisticController.getReportsCount()
+GET           /api/stats/reports/curve                          controllers.StatisticController.getReportsCountCurve()
+GET           /api/stats/reports/delay/responsed                controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/delay/read                     controllers.StatisticController.getDelayReportReadInHours(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/tags                           controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/status                         controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/reviews                        controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat(ticks: Option[Int])
+GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]])
+GET           /api/stats/pro-account-rate                       controllers.CompanyAccessController.reportOverCompanyAccessRate(ticks: Option[Int])
+GET           /api/stats/dgccrf-account                         controllers.AccountController.dgccrfAccountsCurve(ticks: Option[Int])
+GET           /api/stats/dgccrf-active-account                  controllers.AccountController.dgccrfActiveAccountsCurve(ticks: Option[Int])
+GET           /api/stats/dgccrf-subscriptions                   controllers.AccountController.dgccrfSubscription(ticks: Option[Int])
+GET           /api/stats/dgccrf-controls                        controllers.AccountController.dgccrfControlsCurve(ticks: Option[Int])
 
 
 # Reports list API

@@ -1,6 +1,9 @@
 package controllers
 
+import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppErrorTransformer.handleError
+import models.ReportResponseType
 import models._
 import orchestrators.StatsOrchestrator
 import play.api.Logger
@@ -92,4 +95,34 @@ class StatisticController @Inject() (
   ).async {
     _stats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
+
+  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err)
+    }
+  }
+
+  def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
+    SecuredAction.async(parse.empty) { _ =>
+      val reportResponseStatus =
+        NonEmptyList
+          .fromList(responseStatusQuery.getOrElse(List.empty))
+          .getOrElse(
+            NonEmptyList.of(
+              ReportResponseType.ACCEPTED,
+              ReportResponseType.NOT_CONCERNED,
+              ReportResponseType.REJECTED
+            )
+          )
+
+      _stats
+        .getProReportResponseStat(
+          ticks.getOrElse(12),
+          reportResponseStatus
+        )
+        .map(x => Ok(Json.toJson(x)))
+        .recover { case err =>
+          handleError(err)
+        }
+    }
 }
