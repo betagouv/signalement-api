@@ -30,7 +30,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def addressSupplement = column[Option[String]]("address_supplement")
   def city = column[Option[String]]("city")
   def postalCode = column[Option[String]]("postal_code")
-  def department = column[Option[String]]("department_old_version")
+  def department = column[Option[String]]("department")
   def activityCode = column[Option[String]]("activity_code")
 
   type CompanyData = (
