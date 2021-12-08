@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import models.Consumer
 import models.PaginatedResult
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.concurrent.ExecutionEnv
@@ -17,23 +18,42 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
+import repositories.ConsumerRepository
 import repositories.ReportRepository
+import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
 import scala.concurrent.Future
 
-class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
+class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
+    extends Specification
+    with AppSpec
+    with Results
+    with Mockito {
 
   val logger: Logger = Logger(this.getClass)
+  lazy val consumerRepo = injector.instanceOf[ConsumerRepository]
+
+  override def setupData() =
+    Await.result(
+      for {
+        _ <- consumerRepo.create(
+          Consumer(name = "test", apiKey = "$2a$10$UQef47G7Lhns033SSGde6emWEKe/TsgtzpUXSe9BcE1gWoRciMpBW")
+        )
+      } yield (),
+      Duration.Inf
+    )
 
   "getReportCountBySiret" should {
     val siretFixture = Fixtures.genSiret().sample.get
 
     "return unauthorized when there no X-Api-Key header" should {
 
-      "ReportController" in new Context {
+      "ReportController1" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture")
           val result = route(application, request).get
@@ -44,10 +64,10 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
 
     "return unauthorized when X-Api-Key header is invalid" should {
 
-      "ReportController" in new Context {
+      "ReportController2" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
-            "X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2"
+            "X-Api-Key" -> "invalid_key"
           )
           val result = route(application, request).get
           Helpers.status(result) must beEqualTo(UNAUTHORIZED)
@@ -57,10 +77,10 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specific
 
     "return report count when X-Api-Key header is valid" should {
 
-      "ReportController" in new Context {
+      "ReportController3" in new Context {
         new WithApplication(application) {
           val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
-            "X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq"
+            "X-Api-Key" -> "test"
           )
           val result = route(application, request).get
           Helpers.status(result) must beEqualTo(OK)
