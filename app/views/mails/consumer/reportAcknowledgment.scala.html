@@ -3,6 +3,7 @@
 @import utils.FrontRoute
 @import utils.Country
 @import models.ReportStatus
+@import utils.Constants.Tags
 @(report: Report, files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
 
 
@@ -118,6 +119,12 @@
                 Que l'entreprise lise ou non votre signalement,
                 <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
             </p>
+            @if(report.tags.contains(Tags.CompagnieAerienne)) {
+                <p>
+                    Vous souhaitez connaitre vos droits sur l’indemnisation lié à une annulation, un retard, un refus d’embarquement ou un déclassement, consultez le site :
+                    <a href="https://droits-passagers-aeriens.aviation-civile.gouv.fr/">Direction générale de l'Aviation civile</a>
+                </p>
+            }
         }
         case _ if report.forwardToReponseConso => {
             <p>
