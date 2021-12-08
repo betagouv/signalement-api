@@ -42,6 +42,8 @@ class ConsumerRepository @Inject() (
 
   val query = ConsumerTables.tables
 
+  def create(consumer: Consumer) = db.run(query += consumer)
+
   def getAll(): Future[Seq[Consumer]] =
     db.run(query.filter(_.deleteDate.isEmpty).result)
 

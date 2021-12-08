@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import models.Consumer
 import models.PaginatedResult
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.concurrent.ExecutionEnv
@@ -17,16 +18,35 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
+import repositories.ConsumerRepository
 import repositories.ReportRepository
+import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
 import scala.concurrent.Future
 
-class ReportToExternalControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
+class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
+    extends Specification
+    with AppSpec
+    with Results
+    with Mockito {
 
   val logger: Logger = Logger(this.getClass)
+  lazy val consumerRepo = injector.instanceOf[ConsumerRepository]
+
+  override def setupData() =
+    Await.result(
+      for {
+        _ <- consumerRepo.create(
+          Consumer(name = "test", apiKey = "$2a$10$UQef47G7Lhns033SSGde6emWEKe/TsgtzpUXSe9BcE1gWoRciMpBW")
+        )
+      } yield (),
+      Duration.Inf
+    )
 
   "getReportCountBySiret" should {
     val siretFixture = Fixtures.genSiret().sample.get

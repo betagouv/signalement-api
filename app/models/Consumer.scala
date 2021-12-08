@@ -4,9 +4,9 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class Consumer(
-    id: UUID,
+    id: UUID = UUID.randomUUID(),
     name: String,
-    creationDate: OffsetDateTime,
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     apiKey: String,
-    deleteDate: Option[OffsetDateTime]
+    deleteDate: Option[OffsetDateTime] = None
 )
