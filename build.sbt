@@ -100,10 +100,12 @@ scalacOptions ++= Seq(
 
 routesImport ++= Seq(
   "models.website.WebsiteKind",
-  "controllers.WebsiteKindQueryStringBindable"
+  "models.ReportResponseType",
+  "controllers.WebsiteKindQueryStringBindable",
+  "controllers.ReportResponseTypeQueryStringBindable"
 )
 
-resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
 Universal / mappings ++=
   (baseDirectory.value / "appfiles" * "*" get) map

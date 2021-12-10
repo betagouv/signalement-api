@@ -20,6 +20,7 @@ import utils.Constants.Tags
 import utils.Constants
 import utils.URL
 
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.temporal.TemporalAmount
 import java.util.UUID
@@ -541,4 +542,7 @@ class ReportOrchestrator @Inject() (
     } yield paginatedReports.copy(entities =
       paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
     )
+
+  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+    reportRepository.countByDepartments(start, end)
 }

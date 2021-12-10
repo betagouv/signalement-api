@@ -1,12 +1,15 @@
 package repositories
 
+import cats.data.NonEmptyList
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
+import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -16,6 +19,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import java.time.Duration
 import slick.jdbc.JdbcProfile
+
+import java.sql.Timestamp
 
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
@@ -187,4 +192,31 @@ class EventRepository @Inject() (
         .length
         .result
     )
+
+  def getProReportStat(ticks: Int, actions: NonEmptyList[ActionEventValue]): Future[Vector[(Timestamp, Int)]] =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
+  from events
+    where event_type = '#${PRO.value}'
+    and report_id is not null
+    and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
+  def getProReportResponseStat(
+      ticks: Int,
+      responseTypes: NonEmptyList[ReportResponseType]
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
+  from events
+    where event_type = '#${PRO.value}'
+    and report_id is not null
+    and action = '#${REPORT_PRO_RESPONSE.value}'
+    and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
 }
