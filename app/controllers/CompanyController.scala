@@ -62,22 +62,20 @@ class CompanyController @Inject() (
       )
   }
 
-  def searchRegistered(
-      departments: Option[Seq[String]],
-      activityCodes: Option[Seq[String]],
-      identity: Option[String],
-      offset: Option[Long],
-      limit: Option[Int]
-  ) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
-    companyOrchestrator
-      .searchRegistered(
-        departments = departments.getOrElse(Seq()),
-        activityCodes = activityCodes.getOrElse(Seq()),
-        identity = identity,
-        offset = offset,
-        limit = limit
+  def searchRegistered() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
+    CompanyRegisteredSearch
+      .fromQueryString(request.queryString)
+      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
+      .fold(
+        error => {
+          logger.error("Cannot parse querystring" + request.queryString, error)
+          Future.successful(BadRequest)
+        },
+        filters =>
+          companyOrchestrator
+            .searchRegistered(filters._1, filters._2)
+            .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
       )
-      .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
   }
 
   def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { _ =>
