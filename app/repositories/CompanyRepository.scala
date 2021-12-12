@@ -179,7 +179,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       .filterOpt(search.emailsWithAccess) { case (table, email) =>
         table._2.email === EmailAddress(email)
       }
-      .groupBy(_._1._1)
+      .map(_._1._1)
+      .groupBy(_._1)
       .map { case (grouped, all) =>
         (
           grouped,
