@@ -259,41 +259,38 @@ class AccessTokenRepository @Inject() (
         .transactionally
     ).map(_ => true)
 
-  def dgccrfAccountsCurve(ticks: Int, startingDate: OffsetDateTime) =
+  def dgccrfAccountsCurve(ticks: Int) =
     db.run(sql"""select * from (select
       my_date_trunc('month'::text, creation_date)::timestamp,
-      sum(count(*)) over (order by my_date_trunc('month'::text, creation_date) rows between unbounded preceding and current row )
+      sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
       from access_tokens
         where kind = 'DGCCRF_ACCOUNT' and valid = false
-        and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
       group by  my_date_trunc('month'::text, creation_date)
       order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
 
-  def dgccrfSubscription(ticks: Int, startingDate: OffsetDateTime): Future[Vector[(Timestamp, Int)]] =
+  def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(
       sql"""select * from ( select  my_date_trunc('month'::text,creation_date)::timestamp,
  sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
   from subscriptions s
-  where creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} )as res order by 1 ASC""".as[(Timestamp, Int)]
     )
 
-  def dgccrfActiveAccountsCurve(ticks: Int, startingDate: OffsetDateTime) =
+  def dgccrfActiveAccountsCurve(ticks: Int) =
     db.run(sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp ,
-      sum(count(*)) over (order by my_date_trunc('month'::text, creation_date) rows between 2 preceding and current row )
+      sum(count(distinct emailed_to)) over (order by my_date_trunc('month'::text, creation_date) rows between 2 preceding and current row )
       from access_tokens
         where kind = 'VALIDATE_EMAIL' and valid = false
-        and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
       group by  my_date_trunc('month'::text, creation_date)
       order by 1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
-  def dgccrfControlsCurve(ticks: Int, startingDate: OffsetDateTime) =
+  def dgccrfControlsCurve(ticks: Int) =
     db.run(
       sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
   from events
     where action = 'Contrôle effectué'
-     and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
