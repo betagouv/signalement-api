@@ -11,6 +11,7 @@ import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
 import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -21,6 +22,7 @@ import java.time.Duration
 import slick.jdbc.JdbcProfile
 
 import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
 
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
@@ -72,6 +74,7 @@ class EventRepository @Inject() (
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
 
@@ -193,19 +196,25 @@ class EventRepository @Inject() (
         .result
     )
 
-  def getProReportStat(ticks: Int, actions: NonEmptyList[ActionEventValue]): Future[Vector[(Timestamp, Int)]] =
+  def getProReportStat(
+      ticks: Int,
+      startingDate: OffsetDateTime,
+      actions: NonEmptyList[ActionEventValue]
+  ): Future[Vector[(Timestamp, Int)]] =
     db.run(
       sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
   from events
     where event_type = '#${PRO.value}'
     and report_id is not null
     and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
+and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
 
   def getProReportResponseStat(
       ticks: Int,
+      startingDate: OffsetDateTime,
       responseTypes: NonEmptyList[ReportResponseType]
   ): Future[Vector[(Timestamp, Int)]] =
     db.run(
@@ -215,6 +224,7 @@ class EventRepository @Inject() (
     and report_id is not null
     and action = '#${REPORT_PRO_RESPONSE.value}'
     and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
+and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )

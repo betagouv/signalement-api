@@ -125,4 +125,28 @@ class StatisticController @Inject() (
           handleError(err)
         }
     }
+
+  def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err)
+    }
+  }
+
+  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err)
+    }
+  }
+
+  def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err)
+    }
+  }
+
+  def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err)
+    }
+  }
 }
