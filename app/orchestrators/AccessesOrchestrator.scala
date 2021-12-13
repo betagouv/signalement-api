@@ -424,39 +424,4 @@ class AccessesOrchestrator @Inject() (
       logger.debug(s"Validated email ${token.emailedTo.get}")
       u
     }
-
-  def dgccrfAccountsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfAccountsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) })
-      .map(handleMissingData(_, ticks))
-
-  def dgccrfSubscription(ticks: Int) =
-    accessTokenRepository
-      .dgccrfSubscription(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) })
-      .map(handleMissingData(_, ticks))
-
-  def dgccrfActiveAccountsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfActiveAccountsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) })
-      .map(handleMissingData(_, ticks))
-
-  def dgccrfControlsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfControlsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) })
-      .map(handleMissingData(_, ticks))
-
-  /** Temporary means to fill data with default value, will not be necessary in a few months
-    */
-  private def handleMissingData(data: Vector[CountByDate], ticks: Int): Seq[CountByDate] = {
-    val diff = ticks - data.length
-    if (diff >= 0) {
-      val minDate = data.map(_.date).min
-      val missingData = Seq.iterate(minDate, diff)(_.minusMonths(1)).map(CountByDate(0, _))
-      missingData ++ data
-    } else data
-  }
 }
