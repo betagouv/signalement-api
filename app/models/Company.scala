@@ -1,11 +1,13 @@
 package models
 
 import play.api.libs.json._
+import utils.QueryStringMapper
 import utils.SIRET
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
+import scala.util.Try
 
 sealed case class AccessLevel(value: String)
 
@@ -41,6 +43,25 @@ case class Company(
     activityCode: Option[String]
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
+}
+
+case class CompanyRegisteredSearch(
+    departments: Seq[String],
+    activityCodes: Seq[String],
+    identity: Option[SearchCompanyIdentity],
+    emailsWithAccess: Option[String]
+)
+
+object CompanyRegisteredSearch {
+  def fromQueryString(q: Map[String, Seq[String]]): Try[CompanyRegisteredSearch] = Try {
+    val mapper = new QueryStringMapper(q)
+    CompanyRegisteredSearch(
+      departments = mapper.seq("departments"),
+      activityCodes = mapper.seq("activityCodes"),
+      emailsWithAccess = mapper.string("emailsWithAccess"),
+      identity = mapper.string("identity").map(SearchCompanyIdentity.fromString)
+    )
+  }
 }
 
 object Company {

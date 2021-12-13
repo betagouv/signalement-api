@@ -51,20 +51,11 @@ class CompanyOrchestrator @Inject() (
     reportRepository.getHostsByCompany(companyId)
 
   def searchRegistered(
-      departments: Seq[String],
-      activityCodes: Seq[String],
-      identity: Option[String],
-      offset: Option[Long],
-      limit: Option[Int]
+      search: CompanyRegisteredSearch,
+      paginate: PaginatedSearch
   ): Future[PaginatedResult[CompanyWithNbReports]] =
     companyRepository
-      .searchWithReportsCount(
-        departments = departments,
-        activityCodes = activityCodes,
-        identity = identity.map(SearchCompanyIdentity.fromString),
-        offset = offset,
-        limit = limit
-      )
+      .searchWithReportsCount(search, paginate)
       .map(x =>
         x.copy(entities = x.entities.map { case (company, count, responseCount) =>
           val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
