@@ -27,6 +27,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import utils.ErrorHandler
 import net.ceedubs.ficus.readers.EnumerationReader._
@@ -37,6 +38,10 @@ import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.PasswordInfoDAO
 import utils.silhouette.auth.UserService
+import utils.silhouette.responseconso.ReponseConsoAPIKey
+import utils.silhouette.responseconso.ReponseConsoAPIKeyEnv
+import utils.silhouette.responseconso.ReponseConsoApiKeyService
+import utils.silhouette.responseconso.ResponseConsoAPIKeyRequestProvider
 
 /** The Guice module which wires all Silhouette dependencies.
   */
@@ -47,10 +52,12 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   override def configure(): Unit = {
     bind[Silhouette[AuthEnv]].to[SilhouetteProvider[AuthEnv]]
     bind[Silhouette[APIKeyEnv]].to[SilhouetteProvider[APIKeyEnv]]
+    bind[Silhouette[ReponseConsoAPIKeyEnv]].to[SilhouetteProvider[ReponseConsoAPIKeyEnv]]
     bind[SecuredErrorHandler].to[ErrorHandler]
     bind[UnsecuredErrorHandler].to[ErrorHandler]
     bind[IdentityService[User]].to[UserService]
     bind[IdentityService[APIKey]].to[ApiKeyService]
+    bind[IdentityService[ReponseConsoAPIKey]].to[ReponseConsoApiKeyService]
 
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator)
     bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
@@ -102,6 +109,31 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       eventBus: EventBus
   ): Environment[APIKeyEnv] =
     Environment[APIKeyEnv](
+      apiKeyService,
+      authenticatorService,
+      Seq(apiKeyRequestProvider),
+      eventBus
+    )
+
+  /** Provides the Silhouette Api environment.
+    *
+    * @param apiKeyService
+    *   The api key service implementation.
+    * @param authenticatorService
+    *   The authentication service implementation.
+    * @param eventBus
+    *   The event bus instance.
+    * @return
+    *   The Silhouette environment.
+    */
+  @Provides
+  def provideResponseConsoApiEnvironment(
+      apiKeyService: ReponseConsoApiKeyService,
+      authenticatorService: AuthenticatorService[DummyAuthenticator],
+      apiKeyRequestProvider: ResponseConsoAPIKeyRequestProvider,
+      eventBus: EventBus
+  ): Environment[ReponseConsoAPIKeyEnv] =
+    Environment[ReponseConsoAPIKeyEnv](
       apiKeyService,
       authenticatorService,
       Seq(apiKeyRequestProvider),

@@ -6,8 +6,8 @@ import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
 import utils.DateUtils
-import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
+import utils.silhouette.responseconso.ReponseConsoAPIKeyEnv
 
 import java.util.UUID
 import javax.inject.Inject
@@ -20,7 +20,7 @@ import scala.util.Try
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
     val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv]
+    val silhouetteAPIKey: Silhouette[ReponseConsoAPIKeyEnv]
 )(implicit val executionContext: ExecutionContext)
     extends BaseController {
 
