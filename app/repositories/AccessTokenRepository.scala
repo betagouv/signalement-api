@@ -26,7 +26,6 @@ class AccessTokenRepository @Inject() (
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
-  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
   import companyRepository.AccessLevelColumnType
@@ -269,22 +268,21 @@ class AccessTokenRepository @Inject() (
       order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
 
   def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
-    db.run(
-      sql"""select * from ( select  my_date_trunc('month'::text,creation_date)::timestamp,
- sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
-  from subscriptions s
+    db.run(sql"""select * from (select v.a, count(distinct s.user_id) from subscriptions s right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date <= (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval)
 
-  group by  my_date_trunc('month'::text,creation_date)
-  order by  1 DESC LIMIT #${ticks} )as res order by 1 ASC""".as[(Timestamp, Int)]
-    )
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
   def dgccrfActiveAccountsCurve(ticks: Int) =
-    db.run(sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp ,
-      sum(count(distinct emailed_to)) over (order by my_date_trunc('month'::text, creation_date) rows between 2 preceding and current row )
-      from access_tokens
-        where kind = 'VALIDATE_EMAIL' and valid = false
-      group by  my_date_trunc('month'::text, creation_date)
-      order by 1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)])
+    db.run(sql"""select * from (select v.a, count(distinct ac.emailed_to) from access_tokens ac right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date between (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) - '4 month'::interval 
+                                                         and (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) and kind = 'VALIDATE_EMAIL' and valid = false
+
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
   def dgccrfControlsCurve(ticks: Int) =
     db.run(
@@ -294,5 +292,12 @@ class AccessTokenRepository @Inject() (
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
+
+  private def computeTickValues(ticks: Int) = Seq
+    .iterate(OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .map(_.toLocalDate)
+    .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
+    .map(t => s"('$t'::timestamp)")
+    .mkString(",")
 
 }
