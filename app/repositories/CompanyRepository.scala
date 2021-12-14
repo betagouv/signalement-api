@@ -6,6 +6,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
+import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
 
@@ -159,21 +160,26 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def searchWithReportsCount(
-      departments: Seq[String] = Nil,
-      activityCodes: Seq[String] = Nil,
-      identity: Option[SearchCompanyIdentity] = None,
-      offset: Option[Long],
-      limit: Option[Int]
+      search: CompanyRegisteredSearch,
+      paginate: PaginatedSearch
   ): Future[PaginatedResult[(Company, Int, Int)]] = {
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty) { case (company, _) =>
-        company.department.map(a => a.inSet(departments)).getOrElse(false)
+      .filterIf(search.departments.nonEmpty) { case (company, _) =>
+        company.department.map(a => a.inSet(search.departments)).getOrElse(false)
       }
-      .filterIf(activityCodes.nonEmpty) { case (company, _) =>
-        company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
+      .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
+        company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
       }
+      .join(UserAccessTableQuery)
+      .on(_._1.id === _.companyId)
+      .join(UserTables.tables)
+      .on(_._2.userId === _.id)
+      .filterOpt(search.emailsWithAccess) { case (table, email) =>
+        table._2.email === EmailAddress(email)
+      }
+      .map(_._1._1)
       .groupBy(_._1)
       .map { case (grouped, all) =>
         (
@@ -198,7 +204,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         )
       }
       .sortBy(_._2.desc)
-    val filterQuery = identity
+    val filterQuery = search.identity
       .map {
         case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
@@ -208,7 +214,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       }
       .getOrElse(query)
 
-    toPaginate(filterQuery, offset, limit)
+    toPaginate(filterQuery, paginate.offset, paginate.limit)
   }
 
   def toPaginate[A, B](

@@ -108,7 +108,7 @@ POST          /api/email/validate                                    controllers
 
 # Company details API
 POST          /api/companies                                         controllers.CompanyController.create()
-GET           /api/companies                                         controllers.CompanyController.searchRegistered(departments: Option[Seq[String]], activityCodes: Option[Seq[String]], identity: Option[String], offset: Option[Long], limit: Option[Int])
+GET           /api/companies                                         controllers.CompanyController.searchRegistered()
 GET           /api/companies/connected-user                          controllers.CompanyController.visibleCompanies()
 GET           /api/companies/to-activate                             controllers.CompanyController.companiesToActivate()
 GET           /api/companies/hosts/:companyId                        controllers.CompanyController.fetchHosts(companyId: java.util.UUID)

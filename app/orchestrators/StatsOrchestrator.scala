@@ -94,22 +94,22 @@ class StatsOrchestrator @Inject() (
 
   def dgccrfAccountsCurve(ticks: Int) =
     accessTokenRepository
-      .dgccrfAccountsCurve(ticks, computeStartingDate(ticks))
+      .dgccrfAccountsCurve(ticks)
       .map(formatStatData(_, ticks))
 
   def dgccrfSubscription(ticks: Int) =
     accessTokenRepository
-      .dgccrfSubscription(ticks, computeStartingDate(ticks))
+      .dgccrfSubscription(ticks)
       .map(formatStatData(_, ticks))
 
   def dgccrfActiveAccountsCurve(ticks: Int) =
     accessTokenRepository
-      .dgccrfActiveAccountsCurve(ticks, computeStartingDate(ticks))
+      .dgccrfActiveAccountsCurve(ticks)
       .map(formatStatData(_, ticks))
 
   def dgccrfControlsCurve(ticks: Int) =
     accessTokenRepository
-      .dgccrfControlsCurve(ticks, computeStartingDate(ticks))
+      .dgccrfControlsCurve(ticks)
       .map(formatStatData(_, ticks))
 
 }
