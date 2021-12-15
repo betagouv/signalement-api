@@ -158,7 +158,7 @@ class AdminController @Inject() (
     ),
     "dgccrf.report_dangerous_product_notification" -> (() =>
       EmailContent(
-        EmailSubjects.DGCCRF_ACCESS_LINK,
+        EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] ")),
         views.html.mails.dgccrf.reportDangerousProductNotification(genReport)
       )
     ),
