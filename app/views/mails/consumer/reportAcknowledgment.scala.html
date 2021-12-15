@@ -126,12 +126,12 @@
                 </p>
             }
         }
-        case _ if report.forwardToReponseConso => {
+        case _ if report.tags.contains(Tags.ReponseConso) => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
             </p>
             <p>
-                Vous avez souhaitez contacter les enquêteurs de la répression des fraudes, il ne sera donc pas transmis à l'entreprise.
+                Un répondant reviendra vers vous si nécessaire pour des compléments éventuels. Puis vous recevrez, dans les plus brefs délais  une réponse définitive ou vous serez réorientée vers le service compétent.
             </p>
         }
         case _ => {
