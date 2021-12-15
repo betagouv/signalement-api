@@ -64,6 +64,15 @@
             }
             @views.html.fragments.chargeBack(report)
         }
+        case ReportStatus.NA if report.tags.contains(Tags.ReponseConso) => {
+            <p>
+                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Un répondant reviendra vers vous si nécessaire pour des compléments éventuels. Puis vous recevrez, dans les plus brefs délais
+                une réponse définitive ou vous serez réorientée vers le service compétent.
+            </p>
+        }
         case ReportStatus.NA => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
@@ -125,14 +134,6 @@
                     <a href="https://droits-passagers-aeriens.aviation-civile.gouv.fr/">Direction générale de l'Aviation civile</a>
                 </p>
             }
-        }
-        case _ if report.tags.contains(Tags.ReponseConso) => {
-            <p>
-                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
-            </p>
-            <p>
-                Un répondant reviendra vers vous si nécessaire pour des compléments éventuels. Puis vous recevrez, dans les plus brefs délais  une réponse définitive ou vous serez réorientée vers le service compétent.
-            </p>
         }
         case _ => {
             <p>
