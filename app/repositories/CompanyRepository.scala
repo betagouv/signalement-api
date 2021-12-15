@@ -163,12 +163,10 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch
   ): Future[PaginatedResult[(Company, Int, Int)]] = {
-    val companyIdByEmailTable = UserAccessTableQuery
+    def companyIdByEmailTable(emailWithAccess: EmailAddress) = UserAccessTableQuery
       .join(UserTables.tables)
       .on(_.userId === _.id)
-      .filterOpt(search.emailsWithAccess) { case (table, email) =>
-        table._2.email === EmailAddress(email)
-      }
+      .filter(_._2.email === emailWithAccess)
       .map(_._1.companyId)
 
     val query = companyTableQuery
@@ -213,7 +211,9 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         case id: SearchCompanyIdentityId   => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
-      .filter(_._1.id.in(companyIdByEmailTable))
+      .filterOpt(search.emailsWithAccess) { case (table, email) =>
+        table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
+      }
 
     toPaginate(filterQuery, paginate.offset, paginate.limit)
   }
