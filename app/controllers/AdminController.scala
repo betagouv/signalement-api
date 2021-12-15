@@ -178,7 +178,8 @@ class AdminController @Inject() (
     "consumer.report_ack_case_reponseconso" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(genReport.copy(status = ReportStatus.NA, tags = List(Tags.ReponseConso)), Nil)
+        views.html.mails.consumer
+          .reportAcknowledgment(genReport.copy(status = ReportStatus.NA, tags = List(Tags.ReponseConso)))
       )
     ),
     "consumer.report_ack_case_dispute" -> (() =>
