@@ -121,13 +121,19 @@
                         @if(report.websiteURL.websiteURL.isDefined) {
                         <b>Site web</b>
                         <p style="text-align: center;">
-                        Site internet : @report.shortURL().get
+                            Site internet : @report.shortURL().get
                         </p>
                         }
                         @if(report.vendor.isDefined) {
                         <b>Nom du vendeur</b>
                         <p style="text-align: center;">
-                        Nom du vendeur : @report.vendor.get
+                            Nom du vendeur : @report.vendor.get
+                        </p>
+                        }
+                        @if(report.tags.nonEmpty) {
+                        <b>Tags:</b>
+                        <p style="text-align: center;">
+                            @report.tags.mkString(", ")
                         </p>
                         }
 
