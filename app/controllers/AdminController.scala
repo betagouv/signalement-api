@@ -112,42 +112,83 @@ class AdminController @Inject() (
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
   val availableEmails = Map[String, () => EmailContent](
-    "reset_password" -> (() =>
+    "common.reset_password" -> (() =>
       EmailContent(EmailSubjects.RESET_PASSWORD, views.html.mails.resetPassword(genUser, genAuthToken))
     ),
-    "new_company_access" -> (() => {
-      val company = genCompany
-      EmailContent(
-        EmailSubjects.NEW_COMPANY_ACCESS(company.name),
-        views.html.mails.professional.newCompanyAccessNotification(frontRoute.dashboard.login, company, None)
-      )
-    }),
-    "pro_access_invitation" -> (() => {
+    "pro.access_invitation" -> (() => {
       val company = genCompany
       EmailContent(
         EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
         views.html.mails.professional.companyAccessInvitation(dummyURL, company, None)
       )
     }),
-    "dgccrf_access_link" -> (() =>
+    "pro.new_company_access" -> (() => {
+      val company = genCompany
+      EmailContent(
+        EmailSubjects.NEW_COMPANY_ACCESS(company.name),
+        views.html.mails.professional.newCompanyAccessNotification(frontRoute.dashboard.login, company, None)
+      )
+    }),
+    "pro.report_ack_pro" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_ACK_PRO,
+        views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser)
+      )
+    ),
+    "pro.report_notification" -> (() =>
+      EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))
+    ),
+    "pro.report_transmitted_reminder" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_TRANSMITTED_REMINDER,
+        views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10))
+      )
+    ),
+    "pro.report_unread_reminder" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_UNREAD_REMINDER,
+        views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10))
+      )
+    ),
+    "dgccrf.access_link" -> (() =>
       EmailContent(
         EmailSubjects.DGCCRF_ACCESS_LINK,
         views.html.mails.dgccrf.accessLink(frontRoute.dashboard.Dgccrf.register(token = "abc"))
       )
     ),
-    "pro_report_notification" -> (() =>
-      EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))
+    "dgccrf.report_dangerous_product_notification" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] ")),
+        views.html.mails.dgccrf.reportDangerousProductNotification(genReport)
+      )
     ),
-    "consumer_report_ack" -> (() =>
+    "dgccrf.report_notif_dgccrf" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_NOTIF_DGCCRF(1, None),
+        views.html.mails.dgccrf.reportNotification(
+          genSubscription,
+          List(genReport, genReport.copy(tags = List(Tags.ReponseConso))),
+          LocalDate.now.minusDays(10)
+        )
+      )
+    ),
+    "consumer.report_ack" -> (() =>
       EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))
     ),
-    "consumer_report_ack_case_dispute" -> (() =>
+    "consumer.report_ack_case_reponseconso" -> (() =>
+      EmailContent(
+        EmailSubjects.REPORT_ACK,
+        views.html.mails.consumer
+          .reportAcknowledgment(genReport.copy(status = ReportStatus.NA, tags = List(Tags.ReponseConso)))
+      )
+    ),
+    "consumer.report_ack_case_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(genReport.copy(tags = List(Tags.ContractualDispute)), Nil)
       )
     ),
-    "consumer_report_ack_case_euro" -> (() =>
+    "consumer.report_ack_case_euro" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
@@ -156,7 +197,7 @@ class AdminController @Inject() (
         )
       )
     ),
-    "consumer_report_ack_case_euro_and_dispute" -> (() =>
+    "consumer.report_ack_case_euro_and_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
@@ -169,7 +210,7 @@ class AdminController @Inject() (
         )
       )
     ),
-    "consumer_report_ack_case_andorre" -> (() =>
+    "consumer.report_ack_case_andorre" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
@@ -178,7 +219,7 @@ class AdminController @Inject() (
           )
       )
     ),
-    "consumer_report_ack_case_andorre_and_dispute" -> (() =>
+    "consumer.report_ack_case_andorre_and_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
@@ -190,7 +231,7 @@ class AdminController @Inject() (
         )
       )
     ),
-    "consumer_report_ack_case_suisse" -> (() =>
+    "consumer.report_ack_case_suisse" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
@@ -199,7 +240,7 @@ class AdminController @Inject() (
           )
       )
     ),
-    "consumer_report_ack_case_suisse_and_dispute" -> (() =>
+    "consumer.report_ack_case_suisse_and_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
@@ -211,7 +252,7 @@ class AdminController @Inject() (
         )
       )
     ),
-    "consumer_report_ack_case_abroad_default" -> (() =>
+    "consumer.report_ack_case_abroad_default" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer
@@ -220,7 +261,7 @@ class AdminController @Inject() (
           )
       )
     ),
-    "consumer_report_ack_case_abroad_default_and_dispute" -> (() =>
+    "consumer.report_ack_case_abroad_default_and_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK,
         views.html.mails.consumer.reportAcknowledgment(
@@ -232,16 +273,10 @@ class AdminController @Inject() (
         )
       )
     ),
-    "report_transmitted" -> (() =>
+    "consumer.report_transmitted" -> (() =>
       EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))
     ),
-    "report_ack_pro" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK_PRO,
-        views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser)
-      )
-    ),
-    "report_ack_pro_consumer" -> (() =>
+    "consumer.report_ack_pro_consumer" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_ACK_PRO_CONSUMER,
         views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
@@ -251,40 +286,22 @@ class AdminController @Inject() (
         )
       )
     ),
-    "report_unread_reminder" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_UNREAD_REMINDER,
-        views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10))
-      )
-    ),
-    "report_transmitted_reminder" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-        views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10))
-      )
-    ),
-    "report_closed_no_reading" -> (() =>
+    "consumer.report_closed_no_reading" -> (() =>
       EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport))
     ),
-    "report_closed_no_reading_case_dispute" -> (() =>
+    "consumer.report_closed_no_reading_case_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_CLOSED_NO_READING,
         views.html.mails.consumer.reportClosedByNoReading(genReport.copy(tags = List(Tags.ContractualDispute)))
       )
     ),
-    "report_closed_no_action" -> (() =>
+    "consumer.report_closed_no_action" -> (() =>
       EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport))
     ),
-    "report_closed_no_action_case_dispute" -> (() =>
+    "consumer.report_closed_no_action_case_dispute" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_CLOSED_NO_ACTION,
         views.html.mails.consumer.reportClosedByNoAction(genReport.copy(tags = List(Tags.ContractualDispute)))
-      )
-    ),
-    "report_notif_dgccrf" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_NOTIF_DGCCRF(1, None),
-        views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))
       )
     )
   )
