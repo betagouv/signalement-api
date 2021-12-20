@@ -45,6 +45,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
   def reponseconsoCode = column[List[String]]("reponseconso_code")
+  def ccrfCode = column[List[String]]("ccrf_code")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(
     _.id.?,
@@ -80,6 +81,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       String,
       Option[String],
       List[String],
+      List[String],
       List[String]
   )
 
@@ -112,7 +114,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           status,
           vendor,
           tags,
-          reponseconsoCode
+          reponseconsoCode,
+          ccrfCode
         ) =>
       Report(
         id = id,
@@ -142,7 +145,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         status = ReportStatus.withName(status),
         vendor = vendor,
         tags = tags,
-        reponseconsoCode = reponseconsoCode
+        reponseconsoCode = reponseconsoCode,
+        ccrfCode = ccrfCode
       )
   }
 
@@ -175,7 +179,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.status.entryName,
       r.vendor,
       r.tags,
-      r.reponseconsoCode
+      r.reponseconsoCode,
+      r.ccrfCode
     )
   }
 
@@ -207,7 +212,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
     status,
     vendor,
     tags,
-    reponseconsoCode
+    reponseconsoCode,
+    ccrfCode
   ) <> (constructReport, extractReport.lift)
 }
 
