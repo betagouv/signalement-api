@@ -36,7 +36,8 @@ case class DraftReport(
     fileIds: List[UUID],
     vendor: Option[String] = None,
     tags: List[String] = Nil,
-    reponseconsoCode: Option[List[String]] = None
+    reponseconsoCode: Option[List[String]] = None,
+    ccrfCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
@@ -59,7 +60,8 @@ case class DraftReport(
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
-      reponseconsoCode = reponseconsoCode.getOrElse(Nil)
+      reponseconsoCode = reponseconsoCode.getOrElse(Nil),
+      ccrfCode = ccrfCode.getOrElse(Nil)
     )
     report.copy(status = report.initialStatus())
   }
@@ -99,7 +101,8 @@ case class Report(
     status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
     tags: List[String] = Nil,
-    reponseconsoCode: List[String] = Nil
+    reponseconsoCode: List[String] = Nil,
+    ccrfCode: List[String] = Nil
 ) {
 
   def initialStatus() =
@@ -145,7 +148,8 @@ object Report {
         "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags,
-        "reponseconsoCode" -> report.reponseconsoCode
+        "reponseconsoCode" -> report.reponseconsoCode,
+        "ccrfCode" -> report.ccrfCode
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>

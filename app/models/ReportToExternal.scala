@@ -23,7 +23,8 @@ case class ReportToExternal(
     contactAgreement: Boolean,
     description: Option[String],
     effectiveDate: Option[String],
-    reponseconsoCode: List[String]
+    reponseconsoCode: List[String],
+    ccrfCode: List[String]
 ) {}
 
 object ReportToExternal {
@@ -49,7 +50,8 @@ object ReportToExternal {
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)
         .headOption,
-      reponseconsoCode = r.reponseconsoCode
+      reponseconsoCode = r.reponseconsoCode,
+      ccrfCode = r.ccrfCode
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]
