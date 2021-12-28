@@ -118,6 +118,10 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     Thread.sleep(100)
   }
 
+  def filterAndSendEmail(emails: List[EmailAddress], report: Report) =
+    mailService
+      .filterAndSend(emails, "Subject", "body", report)
+
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
       there was no(mailerService).sendEmail(any, any, any, any, any, any)
@@ -141,6 +145,17 @@ class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceS
   }
 }
 
+class MailServiceSpecFilterAndSendNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+  override def is = s2"""Email must be sent to admin and admin of head office $e1"""
+  def e1 = {
+    Await.result(
+      filterAndSendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary),
+      Duration.Inf
+    )
+    checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+  }
+}
+
 class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""Email must be sent only to the user that didn't block the notifications $e1"""
 
@@ -152,6 +167,46 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
     )
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email))
+  }
+}
+
+class MailServiceSpecFilterAndSendSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+  override def is = s2"""Email must be sent only to the user that didn't block the notifications $e1"""
+
+  def e1 = {
+    Await.result(
+      reportNotificationBlocklistRepository
+        .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
+      Duration.Inf
+    )
+    Await.result(
+      filterAndSendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary),
+      Duration.Inf
+    )
+    checkRecipients(Seq(proWithAccessToHeadOffice.email))
+  }
+}
+
+class MailServiceSpecFilterAndSendAllBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+  override def is = s2"""No email must be sent since all users blocked the notifications $e1"""
+
+  def e1 = {
+    Await.result(
+      Future.sequence(
+        Seq(
+          reportNotificationBlocklistRepository
+            .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
+          reportNotificationBlocklistRepository
+            .create(proWithAccessToHeadOffice.id, Seq(reportForSubsidiary.companyId.get))
+        )
+      ),
+      Duration.Inf
+    )
+    Await.result(
+      filterAndSendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary),
+      Duration.Inf
+    )
+    checkRecipients(Seq())
   }
 }
 
@@ -170,6 +225,7 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       ),
       Duration.Inf
     )
+
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }

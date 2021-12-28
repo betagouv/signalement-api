@@ -105,6 +105,8 @@ routesImport ++= Seq(
   "controllers.ReportResponseTypeQueryStringBindable"
 )
 
+ThisBuild / coverageEnabled := true
+
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
 Universal / mappings ++=

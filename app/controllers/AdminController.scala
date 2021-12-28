@@ -316,7 +316,6 @@ class AdminController @Inject() (
         .map(_.apply())
         .map { case EmailContent(subject, body) =>
           mailService.send(
-            from = appConfigLoader.get.mail.from,
             recipients = Seq(EmailAddress(to)),
             subject = subject,
             bodyHtml = body.toString

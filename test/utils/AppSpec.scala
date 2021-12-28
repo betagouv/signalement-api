@@ -8,6 +8,7 @@ import org.specs2.specification._
 import play.api.db.DBApi
 import play.api.db.evolutions._
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.mailer.Attachment
 import services.MailerService
 
 trait AppSpec extends BeforeAfterAll with Mockito {
@@ -19,6 +20,15 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     val appConfigLoader = mock[AppConfigLoader]
     val mailerServiceMock = mock[MailerService]
     mailerServiceMock.attachmentSeqForWorkflowStepN(any[Int]) returns Seq()
+    mailerServiceMock.sendEmail(
+      any[EmailAddress],
+      anyListOf[EmailAddress],
+      anyListOf[EmailAddress],
+      anyString,
+      anyString,
+      anyListOf[Attachment]
+    ) returns ""
+
     override def configure() =
       bind[MailerService].toInstance(mailerServiceMock)
   }

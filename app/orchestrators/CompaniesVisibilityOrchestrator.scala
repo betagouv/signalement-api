@@ -32,14 +32,14 @@ class CompaniesVisibilityOrchestrator @Inject() (
 
   def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
-      adminsByCompanyIdMap <- companyRepo.fetchAdminsMapByCompany(companies.map(_._2))
+      adminsByCompanyIdMap <- companyRepo.fetchUsersByCompanyId(companies.map(_._2))
       headOfficesCompany <- companyDataRepo
         .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
         .map(_.map(_._1))
         .flatMap { companyDatas =>
           companyRepo.findBySirets(companyDatas.map(_.siret))
         }
-      headOfficeAdminsMap <- companyRepo.fetchAdminsMapByCompany(headOfficesCompany.map(_.id))
+      headOfficeAdminsMap <- companyRepo.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
       headOfficeIdByCompanyIdMap = companies
         .groupBy(_._2)
         .view

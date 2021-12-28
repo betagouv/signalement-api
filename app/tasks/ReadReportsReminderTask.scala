@@ -1,0 +1,140 @@
+package tasks
+
+import config.AppConfigLoader
+import models.Event.stringToDetailsJsValue
+import models.Event
+import models.Report
+import models.User
+import play.api.Logger
+import repositories.EventRepository
+import services.MailService
+import tasks.ReportTask.MaxReminderCount
+import tasks.ReportTask.extractEventsWithAction
+import tasks.model.TaskOutcome.FailedTask
+import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.model.TaskOutcome
+import tasks.model.TaskType
+import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
+import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
+import utils.Constants.EventType.SYSTEM
+import utils.EmailAddress
+import utils.EmailSubjects
+import utils.FrontRoute
+
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+class ReadReportsReminderTask @Inject() (
+    appConfigLoader: AppConfigLoader,
+    eventRepository: EventRepository,
+    emailService: MailService
+)(implicit
+    ec: ExecutionContext,
+    frontRoute: FrontRoute
+) {
+
+  val logger: Logger = Logger(this.getClass)
+
+  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
+
+  def sendReminder(
+      transmittedReportsWithAdmins: List[(Report, List[User])],
+      reportEventsMap: Map[UUID, List[Event]],
+      startingPoint: LocalDateTime
+  ): Future[List[TaskOutcome]] = Future.sequence(
+    extractTransmittedReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, startingPoint)
+      .map { case (report, users) =>
+        remindTransmittedReportByMail(report, users.map(_.email), reportEventsMap)
+      }
+  )
+
+  private def extractTransmittedReportsToRemindByMail(
+      readReportsWithAdmins: List[(Report, List[User])],
+      reportIdEventsMap: Map[UUID, List[Event]],
+      startingDate: LocalDateTime
+  ): List[(Report, List[User])] = {
+
+    val reportsWithNoRemindSent: List[(Report, List[User])] = readReportsWithAdmins
+      .filter { case (report, _) =>
+        // Filter reports with no "NO_ACTION" reminder events
+        extractEventsWithAction(report.id, reportIdEventsMap, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
+      }
+      .filter { case (_, users) =>
+        // Filter reports with activated accounts
+        users.exists(_.email.nonEmpty)
+      }
+      .filter { case (report, _) =>
+        // Filter reports read by pro before 7 days ago
+        extractEventsWithAction(report.id, reportIdEventsMap, REPORT_READING_BY_PRO).headOption
+          .flatMap(_.creationDate)
+          .getOrElse(report.creationDate)
+          .toLocalDateTime
+          .isBefore(startingDate.minusDays(7))
+      }
+
+    val reportsWithUniqueRemindSent: List[(Report, List[User])] = readReportsWithAdmins
+      .filter { case (report, _) =>
+        extractEventsWithAction(report.id, reportIdEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length == 1
+      }
+      .filter { case (_, users) =>
+        // Filter reports with activated accounts
+        users.exists(_.email.nonEmpty)
+      }
+      .filter { case (report, _) =>
+        // Filter reports with one EMAIL_PRO_REMIND_NO_ACTION remind before 7 days ago
+        extractEventsWithAction(
+          report.id,
+          reportIdEventsMap,
+          EMAIL_PRO_REMIND_NO_ACTION
+        ).head.creationDate
+          .exists(_.toLocalDateTime.isBefore(startingDate.minusDays(7)))
+      }
+
+    reportsWithNoRemindSent ::: reportsWithUniqueRemindSent
+  }
+
+  private def remindTransmittedReportByMail(
+      report: Report,
+      adminMails: List[EmailAddress],
+      reportEventsMap: Map[UUID, List[Event]]
+  ): Future[TaskOutcome] = {
+
+    val remind = for {
+      _ <- eventRepository
+        .createEvent(
+          Event(
+            Some(UUID.randomUUID()),
+            Some(report.id),
+            report.companyId,
+            None,
+            Some(OffsetDateTime.now()),
+            SYSTEM,
+            EMAIL_PRO_REMIND_NO_ACTION,
+            stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
+          )
+        )
+      // Delay given to a pro to reply depending on how much remind he had before ( maxMaxReminderCount )
+      reportExpirationDate = OffsetDateTime.now.plus(
+        mailReminderDelay.multipliedBy(
+          MaxReminderCount - extractEventsWithAction(report.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length
+        )
+      )
+      _ <-
+        emailService.filterAndSend(
+          recipients = adminMails,
+          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
+          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, reportExpirationDate).toString,
+          report
+        )
+
+    } yield SuccessfulTask(report.id, TaskType.RemindReportByMail)
+    remind.recoverWith { case err =>
+      logger.error("Error processing reminder task", err)
+      Future.successful(FailedTask(report.id, TaskType.RemindReportByMail, err))
+    }
+  }
+}

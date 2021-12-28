@@ -51,14 +51,19 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
           req.attachments
         )
         logger.debug(s"Sent email to ${req.recipients}")
+        sender() ! Status.Success
       } catch {
         case e: Exception =>
           logger.error(e.getMessage, e)
           if (req.times < 2) {
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
+          } else {
+            sender() ! Status.Failure(e)
           }
       }
-    case _ => logger.debug("Could not handle request")
+    case _ =>
+      logger.debug("Could not handle request, ignoring message")
+      sender() ! Status.Success
   }
 }
 
