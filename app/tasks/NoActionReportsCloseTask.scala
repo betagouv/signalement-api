@@ -9,8 +9,8 @@ import models.User
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
+import services.Email.ConsumerReportClosedNoAction
 import services.MailService
-import services.MailerService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome.FailedTask
@@ -22,8 +22,6 @@ import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-import utils.EmailSubjects
-import utils.FrontRoute
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -36,11 +34,9 @@ class NoActionReportsCloseTask @Inject() (
     appConfigLoader: AppConfigLoader,
     eventRepository: EventRepository,
     reportRepository: ReportRepository,
-    emailService: MailService,
-    attachementService: MailerService
+    emailService: MailService
 )(implicit
-    ec: ExecutionContext,
-    frontRoute: FrontRoute
+    ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
@@ -103,12 +99,7 @@ class NoActionReportsCloseTask @Inject() (
         )
       )
       _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
-      _ <- emailService.send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = attachementService.attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment())
-      )
+      _ <- emailService.send(ConsumerReportClosedNoAction(report))
     } yield SuccessfulTask(report.id, TaskType.CloseTransmittedReportByNoAction)
 
     successfulTaskOrError.recoverWith { case err =>

@@ -2,7 +2,7 @@
 @import utils.EmailAddress
 @import utils.FrontRoute
 
-@(report: Report)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
+@(report: Report)(frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
 

@@ -7,6 +7,7 @@ import models.Report
 import models.User
 import play.api.Logger
 import repositories.EventRepository
+import services.Email.ProReportReadReminder
 import services.MailService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
@@ -18,8 +19,6 @@ import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.SYSTEM
 import utils.EmailAddress
-import utils.EmailSubjects
-import utils.FrontRoute
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -33,8 +32,7 @@ class ReadReportsReminderTask @Inject() (
     eventRepository: EventRepository,
     emailService: MailService
 )(implicit
-    ec: ExecutionContext,
-    frontRoute: FrontRoute
+    ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
@@ -124,11 +122,12 @@ class ReadReportsReminderTask @Inject() (
         )
       )
       _ <-
-        emailService.filterAndSend(
-          recipients = adminMails,
-          subject = EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-          bodyHtml = views.html.mails.professional.reportTransmittedReminder(report, reportExpirationDate).toString,
-          report
+        emailService.send(
+          ProReportReadReminder(
+            recipients = adminMails,
+            report,
+            reportExpirationDate
+          )
         )
 
     } yield SuccessfulTask(report.id, TaskType.RemindReportByMail)

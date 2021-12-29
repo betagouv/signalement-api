@@ -9,8 +9,8 @@ import models.User
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
+import services.Email.ConsumerReportClosedNoReading
 import services.MailService
-import services.MailerService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome.FailedTask
@@ -22,8 +22,6 @@ import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-import utils.EmailSubjects
-import utils.FrontRoute
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -36,11 +34,9 @@ class UnreadReportsCloseTask @Inject() (
     appConfigLoader: AppConfigLoader,
     eventRepository: EventRepository,
     reportRepository: ReportRepository,
-    emailService: MailService,
-    attachementService: MailerService
+    emailService: MailService
 )(implicit
-    ec: ExecutionContext,
-    frontRoute: FrontRoute
+    ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
@@ -136,12 +132,7 @@ class UnreadReportsCloseTask @Inject() (
         )
       )
       _ <- reportRepository.update(report.copy(status = ReportStatus.NonConsulte))
-      _ <- emailService.send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = attachementService.attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment())
-      )
+      _ <- emailService.send(ConsumerReportClosedNoReading(report))
     } yield SuccessfulTask(report.id, TaskType.CloseUnreadReport)
 
     remind.recoverWith { case err =>

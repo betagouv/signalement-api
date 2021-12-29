@@ -120,7 +120,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   def filterAndSendEmail(emails: List[EmailAddress], report: Report) =
     mailService
-      .filterAndSend(emails, "Subject", "body", report)
+      .filterBlockedAndSend(emails, "Subject", "body", report)
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {

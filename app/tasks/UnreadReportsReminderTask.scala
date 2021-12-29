@@ -7,6 +7,7 @@ import models.Report
 import models.User
 import play.api.Logger
 import repositories.EventRepository
+import services.Email.ProReportUnreadReminder
 import services.MailService
 import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome.FailedTask
@@ -17,8 +18,6 @@ import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.SYSTEM
 import utils.EmailAddress
-import utils.EmailSubjects
-import utils.FrontRoute
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -32,8 +31,7 @@ class UnreadReportsReminderTask @Inject() (
     eventRepository: EventRepository,
     emailService: MailService
 )(implicit
-    ec: ExecutionContext,
-    frontRoute: FrontRoute
+    ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
@@ -112,16 +110,7 @@ class UnreadReportsReminderTask @Inject() (
         EMAIL_PRO_REMIND_NO_READING
       )
       _ = logger.debug(s"Sending email")
-      recipient = adminMails
-      subject = EmailSubjects.REPORT_UNREAD_REMINDER
-      content = views.html.mails.professional.reportUnreadReminder(report, reportExpirationDate).toString
-      _ <-
-        emailService.filterAndSend(
-          recipient,
-          subject,
-          content,
-          report
-        )
+      _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
 
     } yield SuccessfulTask(report.id, TaskType.RemindReportByMail)
 

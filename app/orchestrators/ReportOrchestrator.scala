@@ -10,6 +10,10 @@ import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
 import repositories._
+import services.Email.ConsumerProResponseNotification
+import services.Email.DgccrfDangerousProductReportNotification
+import services.Email.ProNewReportNotification
+import services.Email.ProResponseAcknowledgment
 import services.MailService
 import services.S3Service
 import utils.Constants.ActionEvent._
@@ -72,7 +76,7 @@ class ReportOrchestrator @Inject() (
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
     companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(company.siret).flatMap { admins =>
       if (admins.nonEmpty) {
-        mailService.Pro.sendReportNotification(admins.map(_.email), report)
+        mailService.send(ProNewReportNotification(admins.map(_.email), report))
         val user = admins.head // We must chose one as Event links to a single User
         eventRepository
           .createEvent(
@@ -162,7 +166,7 @@ class ReportOrchestrator @Inject() (
               } else Future(Seq())
           } yield {
             if (ddEmails.nonEmpty) {
-              mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
+              mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
             }
             mailService.Consumer.sendReportAcknowledgment(report, event, files)
             logger.debug(s"Report ${report.id} created")
@@ -382,10 +386,10 @@ class ReportOrchestrator @Inject() (
     } yield newReport
   }
 
-  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    mailService.Pro.sendReportAcknowledgmentPro(user, report, reportResponse)
-    mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, reportResponse)
-  }
+  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
+    _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
+    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse))
+  } yield ()
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
@@ -452,7 +456,7 @@ class ReportOrchestrator @Inject() (
           }
         )
       )
-      _ <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),

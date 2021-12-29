@@ -1,5 +1,6 @@
 package controllers
 
+import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
 import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
@@ -10,6 +11,9 @@ import play.api.libs.json.Json
 import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories.ReportRepository
+import services.Email.ConsumerProResponseNotification
+import services.Email.ProNewReportNotification
+import services.Email
 import services.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.Tags
@@ -159,7 +163,7 @@ class AdminController @Inject() (
     "dgccrf.report_dangerous_product_notification" -> (() =>
       EmailContent(
         EmailSubjects.REPORT_NOTIF_DGCCRF(1, Some("[Produits dangereux] ")),
-        views.html.mails.dgccrf.reportDangerousProductNotification(genReport)
+        views.html.mails.dgccrf.reportDangerousProductNotification(genReport)(frontRoute, contactAddress)
       )
     ),
     "dgccrf.report_notif_dgccrf" -> (() =>
@@ -306,20 +310,21 @@ class AdminController @Inject() (
     )
   )
 
-  def getEmailCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    Future(Ok(Json.toJson(availableEmails.keys)))
+  def getEmailCodes = UnsecuredAction.async { _ =>
+    Future(Ok(Json.toJson(Email.values.map(_.entryName))))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(
       availableEmails
         .get(templateRef)
         .map(_.apply())
-        .map { case EmailContent(subject, body) =>
-          mailService.send(
-            recipients = Seq(EmailAddress(to)),
-            subject = subject,
-            bodyHtml = body.toString
-          )
+        .map { case EmailContent(_, _) =>
+          println(s"------------------ to = ${to} ------------------")
+//          mailService.send(
+//            recipients = Seq(EmailAddress(to)),
+//            subject = subject,
+//            bodyHtml = body.toString
+//          )
         }
         .map(_ => Ok)
         .getOrElse(NotFound)
@@ -332,21 +337,20 @@ class AdminController @Inject() (
       .validate[ReportList](Json.reads[ReportList])
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        results => {
+        results =>
           for {
             reports <- reportRepository.getReportsByIds(results.reportIds)
             eventsMap <- eventRepository.prefetchReportsEvents(reports)
-          } yield reports.foreach { report =>
-            eventsMap
-              .get(report.id)
-              .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
-              .map { responseEvent =>
-                mailService.Consumer
-                  .sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
-              }
-          }
-          Future(Ok)
-        }
+            filteredEvents = reports.flatMap { report =>
+              eventsMap
+                .get(report.id)
+                .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
+                .map(evt => (report, evt))
+            }
+            _ <- filteredEvents.map { case (report, responseEvent) =>
+              mailService.send(ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse]))
+            }.sequence
+          } yield Ok
       )
   }
 
@@ -364,7 +368,7 @@ class AdminController @Inject() (
                 companyRepository
                   .fetchAdmins(companyId)
                   .map(_.map(_.email).distinct)
-                  .map(adminsEmails => mailService.Pro.sendReportNotification(adminsEmails, report))
+                  .map(adminsEmails => mailService.send(ProNewReportNotification(adminsEmails, report)))
               }
             })
           Future(Ok)
