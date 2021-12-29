@@ -26,6 +26,7 @@ import repositories._
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
+import services.Email
 import services.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -410,13 +411,13 @@ class AccessesOrchestrator @Inject() (
         level = None,
         emailedTo = Some(user.email)
       )
-    } yield {
-      mailService.Common.sendValidateEmail(
-        user = user,
-        validationUrl = frontRoute.dashboard.validateEmail(token.token)
+      _ <- mailService.send(
+        Email.ValidateEmail(
+          user,
+          frontRoute.dashboard.validateEmail(token.token)
+        )
       )
-      logger.debug(s"Sent email validation to ${user.email}")
-    }
+    } yield logger.debug(s"Sent email validation to ${user.email}")
 
   def validateEmail(token: AccessToken): Future[Option[User]] =
     for {

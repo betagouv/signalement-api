@@ -1,6 +1,6 @@
 package services
 
-import enumeratum._
+import models.AuthToken
 import models.Company
 import models.EmailValidation
 import models.Event
@@ -9,7 +9,6 @@ import models.ReportFile
 import models.ReportResponse
 import models.Subscription
 import models.User
-import models.UserRole
 import play.api.libs.mailer.Attachment
 import utils.Constants.Tags
 import utils.EmailAddress
@@ -20,7 +19,7 @@ import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
-sealed trait Email extends EnumEntry {
+sealed trait Email {
   val recipients: Seq[EmailAddress]
   val subject: String
   def getBody: (FrontRoute, EmailAddress) => String
@@ -35,7 +34,23 @@ sealed trait ProFilteredEmail extends ProEmail {
 }
 sealed trait ConsumerEmail extends Email
 
-object Email extends Enum[Email] {
+object Email {
+
+  final case class ResetPassword(user: User, authToken: AuthToken) extends ConsumerEmail {
+    override val recipients: Seq[EmailAddress] = Seq(user.email)
+    override val subject: String = EmailSubjects.RESET_PASSWORD
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
+      views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
+  }
+
+  final case class ValidateEmail(user: User, validationUrl: URI) extends ConsumerEmail {
+    override val recipients: Seq[EmailAddress] = Seq(user.email)
+    override val subject: String = EmailSubjects.VALIDATE_EMAIL
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.validateEmail(validationUrl).toString
+  }
 
   final case class ProCompanyAccessInvitation(
       recipient: EmailAddress,
@@ -139,8 +154,7 @@ object Email extends Enum[Email] {
   final case class ConsumerReportAcknowledgment(
       report: Report,
       event: Event,
-      files: Seq[ReportFile],
-      userRole: Option[UserRole]
+      files: Seq[ReportFile]
   ) extends ConsumerEmail {
     override val recipients: Seq[EmailAddress] = Seq(report.email)
     override val subject: String = EmailSubjects.REPORT_ACK
@@ -149,7 +163,7 @@ object Email extends Enum[Email] {
       views.html.mails.consumer.reportAcknowledgment(report, files.toList)(frontRoute).toString
 
     override def getAttachements: AttachementService => Seq[Attachment] =
-      _.reportAcknowledgmentAttachement(report, event, files, userRole)
+      _.reportAcknowledgmentAttachement(report, event, files)
   }
 
   final case class ConsumerProResponseNotification(report: Report, reportResponse: ReportResponse)
@@ -204,5 +218,15 @@ object Email extends Enum[Email] {
         .toString
   }
 
-  override def values: IndexedSeq[Email] = findValues
+  final case class ConsumerReportReadByProNotification(report: Report) extends ConsumerEmail {
+    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val subject: String = EmailSubjects.REPORT_TRANSMITTED
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.consumer.reportTransmission(report).toString
+
+    override def getAttachements: AttachementService => Seq[Attachment] =
+      _.attachmentSeqForWorkflowStepN(3)
+  }
+
 }

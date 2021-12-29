@@ -4,18 +4,12 @@ import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
 import akka.pattern.ask
 import config.AppConfigLoader
-import models._
-import play.api.Environment
 import play.api.Logger
 import play.api.libs.mailer.Attachment
-import play.api.libs.mailer.AttachmentData
-import play.api.libs.mailer.AttachmentFile
 import repositories.ReportNotificationBlockedRepository
 import utils.EmailAddress
-import utils.EmailSubjects
 import utils.FrontRoute
 
-import java.net.URI
 import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
@@ -28,8 +22,7 @@ class MailService @Inject() (
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
     implicit val frontRoute: FrontRoute,
     val pdfService: PDFService,
-    attachementService: AttachementService,
-    environment: Environment
+    attachementService: AttachementService
 )(implicit
     private[this] val executionContext: ExecutionContext
 ) {
@@ -41,7 +34,10 @@ class MailService @Inject() (
 
   def send(
       email: Email
-  ): Future[Unit] =
+  ): Future[Unit] = {
+
+    email.recipients.filter(_.nonEmpty)
+
     email match {
       case email: ProFilteredEmail => filterBlockedAndSend(email)
       case email =>
@@ -52,6 +48,7 @@ class MailService @Inject() (
           email.getAttachements(attachementService)
         )
     }
+  }
 
   /** Filter pro user recipients that are excluded from notifications and send email
     */
@@ -81,12 +78,12 @@ class MailService @Inject() (
       recipients: Seq[EmailAddress],
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Seq.empty
+      attachments: Seq[Attachment]
   ): Future[Unit] =
-    if (recipients.exists(_.value != "")) {
+    if (recipients.exists(_.nonEmpty)) {
       (actor ? EmailRequest(
         from = mailFrom,
-        recipients = recipients,
+        recipients = recipients.filter(_.nonEmpty),
         subject = subject,
         bodyHtml = bodyHtml,
         attachments = attachments
@@ -120,13 +117,13 @@ class MailService @Inject() (
 //        Future.successful(())
 //    }
 
-  def attachmentSeqForWorkflowStepN(n: Int) = Seq(
-    AttachmentFile(
-      s"schemaSignalConso-Etape$n.png",
-      environment.getFile(s"/appfiles/schemaSignalConso-Etape$n.png"),
-      contentId = Some(s"schemaSignalConso-Etape$n")
-    )
-  )
+//  def attachmentSeqForWorkflowStepN(n: Int) = Seq(
+//    AttachmentFile(
+//      s"schemaSignalConso-Etape$n.png",
+//      environment.getFile(s"/appfiles/schemaSignalConso-Etape$n.png"),
+//      contentId = Some(s"schemaSignalConso-Etape$n")
+//    )
+//  )
 
 //  private[this] def sendIfAuthorized(adminMails: List[EmailAddress], report: Report)(
 //      cb: (List[EmailAddress]) => Unit
@@ -143,26 +140,26 @@ class MailService @Inject() (
 //        Future.successful(())
 //    }
 
-  object Common {
+//  object Common {
 
-    def sendResetPassword(user: User, authToken: AuthToken): Unit = {
-      send(
-        recipients = Seq(user.email),
-        subject = EmailSubjects.RESET_PASSWORD,
-        bodyHtml = views.html.mails.resetPassword(user, authToken).toString
-      )
-      logger.debug(s"Sent password reset to ${user.email}")
-    }
+//    def sendResetPassword(user: User, authToken: AuthToken): Unit = {
+//      send(
+//        recipients = Seq(user.email),
+//        subject = EmailSubjects.RESET_PASSWORD,
+//        bodyHtml = views.html.mails.resetPassword(user, authToken).toString
+//      )
+//      logger.debug(s"Sent password reset to ${user.email}")
+//    }
 
-    def sendValidateEmail(user: User, validationUrl: URI): Unit =
-      send(
-        recipients = Seq(user.email),
-        subject = EmailSubjects.VALIDATE_EMAIL,
-        bodyHtml = views.html.mails.validateEmail(validationUrl).toString
-      )
-  }
+//    def sendValidateEmail(user: User, validationUrl: URI): Unit =
+//      send(
+//        recipients = Seq(user.email),
+//        subject = EmailSubjects.VALIDATE_EMAIL,
+//        bodyHtml = views.html.mails.validateEmail(validationUrl).toString
+//      )
+//  }
 
-  object Consumer {
+//  object Consumer {
 
 //    def sendEmailConfirmation(email: EmailValidation)(implicit request: Request[Any]) =
 //      send(
@@ -171,21 +168,21 @@ class MailService @Inject() (
 //        bodyHtml = views.html.mails.consumer.confirmEmail(email.email, email.confirmationCode).toString
 //      )
 
-    def sendReportClosedByNoReading(report: Report): Unit =
-      send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
-        attachments = attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment())
-      )
+//    def sendReportClosedByNoReading(report: Report): Unit =
+//      send(
+//        recipients = Seq(report.email),
+//        subject = EmailSubjects.REPORT_CLOSED_NO_READING,
+//        bodyHtml = views.html.mails.consumer.reportClosedByNoReading(report).toString,
+//        attachments = attachmentSeqForWorkflowStepN(3).filter(_ => report.needWorkflowAttachment())
+//      )
 
-    def sendAttachmentSeqForWorkflowStepN(report: Report): Unit =
-      send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
-        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
-        attachments = attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment())
-      )
+//    def sendAttachmentSeqForWorkflowStepN(report: Report): Unit =
+//      send(
+//        recipients = Seq(report.email),
+//        subject = EmailSubjects.REPORT_CLOSED_NO_ACTION,
+//        bodyHtml = views.html.mails.consumer.reportClosedByNoAction(report).toString,
+//        attachments = attachmentSeqForWorkflowStepN(4).filter(_ => report.needWorkflowAttachment())
+//      )
 
 //    def sendReportToConsumerAcknowledgmentPro(report: Report, reportResponse: ReportResponse): Future[Unit] =
 //      send(
@@ -201,29 +198,29 @@ class MailService @Inject() (
 //        attachments = attachmentSeqForWorkflowStepN(4)
 //      )
 
-    def sendReportTransmission(report: Report): Unit =
-      send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_TRANSMITTED,
-        bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
-        attachments = attachmentSeqForWorkflowStepN(3)
-      )
+//    def sendReportTransmission(report: Report): Unit =
+//      send(
+//        recipients = Seq(report.email),
+//        subject = EmailSubjects.REPORT_TRANSMITTED,
+//        bodyHtml = views.html.mails.consumer.reportTransmission(report).toString,
+//        attachments = attachmentSeqForWorkflowStepN(3)
+//      )
 
-    def sendReportAcknowledgment(report: Report, event: Event, files: Seq[ReportFile]): Unit =
-      send(
-        recipients = Seq(report.email),
-        subject = EmailSubjects.REPORT_ACK,
-        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files.toList).toString,
-        attachments = attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
-          Seq(
-            AttachmentData(
-              "Signalement.pdf",
-              pdfService.getPdfData(views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)),
-              "application/pdf"
-            )
-          ).filter(_ => report.isContractualDispute() && report.companyId.isDefined)
-      )
-  }
+//    def sendReportAcknowledgment(report: Report, event: Event, files: Seq[ReportFile]): Unit =
+//      send(
+//        recipients = Seq(report.email),
+//        subject = EmailSubjects.REPORT_ACK,
+//        bodyHtml = views.html.mails.consumer.reportAcknowledgment(report, files.toList).toString,
+//        attachments = attachmentSeqForWorkflowStepN(2).filter(_ => report.needWorkflowAttachment()) ++
+//          Seq(
+//            AttachmentData(
+//              "Signalement.pdf",
+//              pdfService.getPdfData(views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)),
+//              "application/pdf"
+//            )
+//          ).filter(_ => report.isContractualDispute() && report.companyId.isDefined)
+//      )
+//  }
 
 //  object Pro {
 //

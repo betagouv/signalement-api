@@ -13,7 +13,6 @@ import repositories.EventRepository
 import repositories.ReportRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ProNewReportNotification
-import services.Email
 import services.MailService
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.Tags
@@ -311,7 +310,7 @@ class AdminController @Inject() (
   )
 
   def getEmailCodes = UnsecuredAction.async { _ =>
-    Future(Ok(Json.toJson(Email.values.map(_.entryName))))
+    Future(Ok(Json.toJson(availableEmails.keys)))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(

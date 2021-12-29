@@ -11,6 +11,8 @@ import play.api.libs.json.Json
 import play.api.Logger
 import repositories._
 import services.Email.ConsumerProResponseNotification
+import services.Email.ConsumerReportAcknowledgment
+import services.Email.ConsumerReportReadByProNotification
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.ProNewReportNotification
 import services.Email.ProResponseAcknowledgment
@@ -164,14 +166,14 @@ class ReportOrchestrator @Inject() (
                   .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
                   .getOrElse(Future(Seq()))
               } else Future(Seq())
-          } yield {
-            if (ddEmails.nonEmpty) {
-              mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
-            }
-            mailService.Consumer.sendReportAcknowledgment(report, event, files)
-            logger.debug(s"Report ${report.id} created")
-            Some(report)
-          }
+            _ <-
+              if (ddEmails.nonEmpty) {
+                mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+              } else { Future.unit }
+            _ <- mailService.send(ConsumerReportAcknowledgment(report, event, files))
+            _ = logger.debug(s"Report ${report.id} created")
+          } yield Some(report)
+
         case false => Future(None)
       }
 
@@ -368,9 +370,9 @@ class ReportOrchestrator @Inject() (
         }
     } yield updatedReport
 
-  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] = {
-    mailService.Consumer.sendReportTransmission(report)
+  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
+      _ <- mailService.send(ConsumerReportReadByProNotification(report))
       _ <- eventRepository.createEvent(
         Event(
           id = Some(UUID.randomUUID()),
@@ -384,7 +386,6 @@ class ReportOrchestrator @Inject() (
       )
       newReport <- reportRepository.update(report.copy(status = ReportStatus.Transmis))
     } yield newReport
-  }
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
     _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))

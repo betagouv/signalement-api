@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import models.Event
 import models.Report
 import models.ReportFile
-import models.UserRole
 import play.api.Environment
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
@@ -40,15 +39,14 @@ class AttachementService @Inject() (environment: Environment, pdfService: PDFSer
   def reportAcknowledgmentAttachement(
       report: Report,
       event: Event,
-      files: Seq[ReportFile],
-      userRole: Option[UserRole]
+      files: Seq[ReportFile]
   ): Seq[Attachment] =
     needWorkflowSeqForWorkflowStepN(2, report) ++
       Seq(
         AttachmentData(
           "Signalement.pdf",
           pdfService.getPdfData(
-            views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)(frontRoute, userRole)
+            views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)(frontRoute, None)
           ),
           "application/pdf"
         )
