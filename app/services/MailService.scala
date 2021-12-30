@@ -34,20 +34,15 @@ class MailService @Inject() (
 
   def send(
       email: Email
-  ): Future[Unit] = {
-
-    email.recipients.filter(_.nonEmpty)
-
-    email match {
-      case email: ProFilteredEmail => filterBlockedAndSend(email)
-      case email =>
-        send(
-          email.recipients,
-          email.subject,
-          email.getBody(frontRoute, contactAddress),
-          email.getAttachements(attachementService)
-        )
-    }
+  ): Future[Unit] = email match {
+    case email: ProFilteredEmail => filterBlockedAndSend(email)
+    case email =>
+      send(
+        email.recipients,
+        email.subject,
+        email.getBody(frontRoute, contactAddress),
+        email.getAttachements(attachementService)
+      )
   }
 
   /** Filter pro user recipients that are excluded from notifications and send email
@@ -86,7 +81,7 @@ class MailService @Inject() (
         recipients = recipients.filter(_.nonEmpty),
         subject = subject,
         bodyHtml = bodyHtml,
-        attachments = attachments
+        attachments = attachmentsw
       )
       println(s"------------------REQ  = ${r} ------------------")
       (actor ? r).map(_ => ())
