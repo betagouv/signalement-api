@@ -76,15 +76,15 @@ class MailService @Inject() (
       attachments: Seq[Attachment]
   ): Future[Unit] =
     if (recipients.exists(_.nonEmpty)) {
-      val r = EmailRequest(
+      val emailRequest = EmailRequest(
         from = mailFrom,
         recipients = recipients.filter(_.nonEmpty),
         subject = subject,
         bodyHtml = bodyHtml,
         attachments = attachments
       )
-      println(s"------------------REQ  = ${r} ------------------")
-      (actor ? r).map(_ => ())
+
+      (actor ? emailRequest).map(_ => ())
     } else Future.successful(())
 
 //  /** Filter pro user recipients that are excluded from notifications and send email
