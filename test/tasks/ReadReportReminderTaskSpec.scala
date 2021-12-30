@@ -271,7 +271,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(

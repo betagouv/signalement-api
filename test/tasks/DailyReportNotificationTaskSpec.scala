@@ -7,6 +7,7 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.Constants.Tags
 import utils.AppSpec
@@ -54,6 +55,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
+  lazy val attachementService = injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = config.mail.contactAddress
@@ -128,6 +130,6 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         Nil,
         subject,
         bodyHtml,
-        Nil
+        attachementService.defaultAttachments
       )
 }

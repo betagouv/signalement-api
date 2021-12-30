@@ -327,7 +327,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(

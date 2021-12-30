@@ -8,6 +8,7 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.AppSpec
 import utils.Country
@@ -32,22 +33,21 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
         .reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7))
         .toString
     )}
+    A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
+      Seq(user.email),
+      s"[SignalConso] Un nouveau signalement",
+      views.html.mails.dgccrf
+        .reportNotification(userSubscriptionCountries, Seq(reportArgentine), runningDate.minusDays(7))
+        .toString
+    )}
+        And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
+      Seq(officeEmail),
+      s"[SignalConso] 3 nouveaux signalements",
+      views.html.mails.dgccrf
+        .reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7))
+        .toString
+    )}
       """
-
-//  A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
-//    Seq(user.email),
-//    s"[SignalConso] Un nouveau signalement",
-//    views.html.mails.dgccrf
-//      .reportNotification(userSubscriptionCountries, Seq(reportArgentine), runningDate.minusDays(7))
-//      .toString
-//  )}
-//  And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
-//    Seq(officeEmail),
-//    s"[SignalConso] 3 nouveaux signalements",
-//    views.html.mails.dgccrf
-//      .reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7))
-//      .toString
-//  )}
 
 }
 
@@ -62,6 +62,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
+  lazy val attachementService = injector.instanceOf[AttachementService]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = config.mail.contactAddress
 
@@ -187,6 +188,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         Nil,
         subject,
         bodyHtml,
-        Nil
+        attachementService.defaultAttachments
       )
 }
