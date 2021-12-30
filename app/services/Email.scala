@@ -162,8 +162,12 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportAcknowledgment(report, files.toList)(frontRoute).toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
-      _.reportAcknowledgmentAttachement(report, event, files)
+    override def getAttachements: AttachementService => Seq[Attachment] = { w =>
+      println("-------------///////////-------------------------------")
+      println(s"------------------ w.reportAcknowledgmentAttachement(report, event, files) = ${w
+        .reportAcknowledgmentAttachement(report, event, files)} ------------------")
+      w.reportAcknowledgmentAttachement(report, event, files)
+    }
   }
 
   final case class ConsumerProResponseNotification(report: Report, reportResponse: ReportResponse)

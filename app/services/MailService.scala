@@ -81,7 +81,7 @@ class MailService @Inject() (
         recipients = recipients.filter(_.nonEmpty),
         subject = subject,
         bodyHtml = bodyHtml,
-        attachments = attachmentsw
+        attachments = attachments
       )
       println(s"------------------REQ  = ${r} ------------------")
       (actor ? r).map(_ => ())
