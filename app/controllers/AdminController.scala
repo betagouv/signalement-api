@@ -298,7 +298,7 @@ class AdminController @Inject() (
     )
   )
 
-  def getEmailCodes = UnsecuredAction.async { _ =>
+  def getEmailCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availableEmails.keys)))
   }
   def sendTestEmail(templateRef: String, to: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
