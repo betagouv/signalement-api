@@ -16,6 +16,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
@@ -48,7 +49,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachementService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -70,7 +71,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachementService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -93,7 +94,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachementService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -113,7 +114,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachementService.attachmentSeqForWorkflowStepN(2)
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -144,7 +145,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachementService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -212,6 +213,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 

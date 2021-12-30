@@ -9,6 +9,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.AttachementService
 import services.MailerService
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
@@ -197,7 +198,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
       report.email,
       "L'entreprise n'a pas souhaité consulter votre signalement",
       views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
     )}
     And outcome is successful CloseUnreadReport                                    ${result mustEqual List(
       SuccessfulTask(report.id, CloseUnreadReport)
@@ -324,6 +325,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = config.mail.contactAddress

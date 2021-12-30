@@ -9,6 +9,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.AttachementService
 import services.MailerService
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
@@ -198,7 +199,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
       transmittedReport.email,
       "L'entreprise n'a pas répondu au signalement",
       views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}    
     And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, CloseTransmittedReportByNoAction))}
    """
@@ -323,6 +324,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = app.injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = config.mail.contactAddress

@@ -60,7 +60,7 @@ class ReportNotificationTask @Inject() (
         Some(0),
         Some(10000)
       )
-      t = subscriptions.map { case (subscription, emailAddress) =>
+      subscriptionsEmailAndReports = subscriptions.map { case (subscription, emailAddress) =>
         val filteredReport = reports.entities
           .filter(report =>
             subscription.departments.isEmpty || subscription.departments
@@ -81,8 +81,10 @@ class ReportNotificationTask @Inject() (
           .filter(report => subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty)
         (subscription, emailAddress, filteredReport)
       }
-      _ <- t.map {
-        case (subscription, emailAddress, filteredReport) if filteredReport.nonEmpty =>
+      _ <- subscriptionsEmailAndReports.map {
+        case (subscription, emailAddress, filteredReport)
+//          if filteredReport.nonEmpty
+            =>
           mailService.send(
             DgccrfReportNotification(
               Seq(emailAddress),
@@ -91,9 +93,9 @@ class ReportNotificationTask @Inject() (
               taskDate.minus(period)
             )
           )
-        case _ =>
-          logger.debug("Reports empty skiping email delivery")
-          Future.unit
+//        case _ =>
+//          logger.debug("Reports empty skiping email delivery")
+//          Future.unit
       }.sequence
     } yield ()
   }

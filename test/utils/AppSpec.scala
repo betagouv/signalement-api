@@ -9,6 +9,7 @@ import play.api.db.DBApi
 import play.api.db.evolutions._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.mailer.Attachment
+import services.AttachementService
 import services.MailerService
 
 trait AppSpec extends BeforeAfterAll with Mockito {
@@ -19,7 +20,8 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   class AppFakeModule extends AbstractModule with ScalaModule {
     val appConfigLoader = mock[AppConfigLoader]
     val mailerServiceMock = mock[MailerService]
-    mailerServiceMock.attachmentSeqForWorkflowStepN(any[Int]) returns Seq()
+    val attachementServiceMock = mock[AttachementService]
+    attachementServiceMock.attachmentSeqForWorkflowStepN(any[Int]) returns Seq()
     mailerServiceMock.sendEmail(
       any[EmailAddress],
       anyListOf[EmailAddress],
