@@ -13,8 +13,6 @@ import services.Email.ConsumerReportClosedNoAction
 import services.MailService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
@@ -74,7 +72,7 @@ class NoActionReportsCloseTask @Inject() (
       )
 
   private def closeTransmittedReportByNoAction(report: Report): Future[TaskOutcome] = {
-    val successfulTaskOrError: Future[SuccessfulTask] = for {
+    val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
@@ -100,12 +98,8 @@ class NoActionReportsCloseTask @Inject() (
       )
       _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
       _ <- emailService.send(ConsumerReportClosedNoAction(report))
-    } yield SuccessfulTask(report.id, TaskType.CloseTransmittedReportByNoAction)
-
-    successfulTaskOrError.recoverWith { case err =>
-      logger.error("Error processing reminder task", err)
-      Future.successful(FailedTask(report.id, TaskType.CloseTransmittedReportByNoAction, err))
-    }
+    } yield ()
+    toTaskOutCome(taskExecution, report.id, TaskType.CloseTransmittedReportByNoAction)
 
   }
 

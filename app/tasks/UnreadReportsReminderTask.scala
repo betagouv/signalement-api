@@ -10,8 +10,6 @@ import repositories.EventRepository
 import services.Email.ProReportUnreadReminder
 import services.MailService
 import tasks.ReportTask.extractEventsWithAction
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -90,7 +88,8 @@ class UnreadReportsReminderTask @Inject() (
       adminMails: List[EmailAddress],
       reportEventsMap: Map[UUID, List[Event]]
   ): Future[TaskOutcome] = {
-    val remind: Future[SuccessfulTask] = for {
+
+    val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
@@ -111,14 +110,9 @@ class UnreadReportsReminderTask @Inject() (
       )
       _ = logger.debug(s"Sending email")
       _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
+    } yield ()
 
-    } yield SuccessfulTask(report.id, TaskType.RemindReportByMail)
-
-    remind.recoverWith { case err =>
-      logger.error("Error processing reminder task", err)
-      Future.successful(FailedTask(report.id, TaskType.RemindReportByMail, err))
-    }
-
+    toTaskOutCome(taskExecution, report.id, TaskType.RemindReportByMail)
   }
 
 }

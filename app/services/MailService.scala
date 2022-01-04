@@ -54,7 +54,7 @@ class MailService @Inject() (
           .filterBlockedEmails(email.recipients, companyId)
           .flatMap {
             case Nil =>
-              logger.debug("All emails filtered, ignoring email delivery")
+              logger.warn("All emails filtered, ignoring email delivery")
               Future.successful(())
             case filteredRecipients =>
               send(
@@ -84,7 +84,10 @@ class MailService @Inject() (
         attachments = attachments
       )
 
-      (actor ? emailRequest).map(_ => ())
+      (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
+        logger.error("Unexpected error when sending email request to mail actor", err)
+        Future.failed(err)
+      }
     } else Future.successful(())
 
 }

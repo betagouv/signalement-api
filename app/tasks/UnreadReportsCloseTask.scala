@@ -13,8 +13,6 @@ import services.Email.ConsumerReportClosedNoReading
 import services.MailService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
@@ -107,7 +105,7 @@ class UnreadReportsCloseTask @Inject() (
       )
 
   private def closeUnreadReport(report: Report): Future[TaskOutcome] = {
-    val remind: Future[SuccessfulTask] = for {
+    val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
@@ -133,11 +131,8 @@ class UnreadReportsCloseTask @Inject() (
       )
       _ <- reportRepository.update(report.copy(status = ReportStatus.NonConsulte))
       _ <- emailService.send(ConsumerReportClosedNoReading(report))
-    } yield SuccessfulTask(report.id, TaskType.CloseUnreadReport)
+    } yield ()
 
-    remind.recoverWith { case err =>
-      logger.error("Error processing reminder task", err)
-      Future.successful(FailedTask(report.id, TaskType.CloseUnreadReport, err))
-    }
+    toTaskOutCome(taskExecution, report.id, TaskType.CloseUnreadReport)
   }
 }

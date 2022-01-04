@@ -7,6 +7,7 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
+import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.FailedTask
 import tasks.model.TaskOutcome.SuccessfulTask
 import utils.Constants.ActionEvent._
@@ -59,7 +60,7 @@ class ReportTask @Inject() (
     logger.info("Traitement de relance automatique")
     logger.info(s"taskDate - ${now}")
 
-    for {
+    val taskRanOrError: Future[List[TaskOutcome]] = for {
 
       unreadReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
       readReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
@@ -102,9 +103,17 @@ class ReportTask @Inject() (
       _ = logger.info("Failed reminders :")
       _ = reminders
         .filter(_.isInstanceOf[FailedTask])
-        .map(reminder => logger.debug(s"Relance échouée pour [${reminder.reportId} - ${reminder.value}]"))
+        .map(reminder => logger.warn(s"Failed report tasks [${reminder.reportId} - ${reminder.value}]"))
 
     } yield reminders
+
+    taskRanOrError.recoverWith { case err =>
+      logger.error(
+        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay, startDate: $startDate )",
+        err
+      )
+      Future.failed(err)
+    }
   }
 
   private[this] def getReportsWithAdminsByStatus(status: ReportStatus): Future[List[(Report, List[User])]] =

@@ -11,8 +11,6 @@ import services.Email.ProReportReadReminder
 import services.MailService
 import tasks.ReportTask.MaxReminderCount
 import tasks.ReportTask.extractEventsWithAction
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
@@ -101,7 +99,7 @@ class ReadReportsReminderTask @Inject() (
       reportEventsMap: Map[UUID, List[Event]]
   ): Future[TaskOutcome] = {
 
-    val remind = for {
+    val taskExecution = for {
       _ <- eventRepository
         .createEvent(
           Event(
@@ -130,10 +128,7 @@ class ReadReportsReminderTask @Inject() (
           )
         )
 
-    } yield SuccessfulTask(report.id, TaskType.RemindReportByMail)
-    remind.recoverWith { case err =>
-      logger.error("Error processing reminder task", err)
-      Future.successful(FailedTask(report.id, TaskType.RemindReportByMail, err))
-    }
+    } yield ()
+    toTaskOutCome(taskExecution, report.id, TaskType.RemindReportByMail)
   }
 }
