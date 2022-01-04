@@ -14,7 +14,7 @@ import services.MailerService
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskType.CloseUnreadReport
-import tasks.model.TaskType.RemindReportByMail
+import tasks.model.TaskType.RemindUnreadReportsByEmail
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -58,7 +58,7 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unread
         .reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2)))
         .toString
     )}
-     And outcome is empty ${result mustEqual List(SuccessfulTask(report.id, RemindReportByMail))}
+     And outcome is empty ${result mustEqual List(SuccessfulTask(report.id, RemindUnreadReportsByEmail))}
     """
   }
 }
@@ -125,7 +125,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unrea
       views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString
     )}
     And outcome is successful RemindReportByMail reminder ${result mustEqual List(
-      SuccessfulTask(report.id, RemindReportByMail)
+      SuccessfulTask(report.id, RemindUnreadReportsByEmail)
     )}
     """
   }

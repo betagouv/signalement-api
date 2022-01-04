@@ -9,9 +9,9 @@ object TaskType extends Enum[TaskType] {
 
   val values = findValues
 
-  case object RemindOnGoingReportByPost extends TaskType
+  case object RemindUnreadReportsByEmail extends TaskType
+  case object RemindReadReportByMail extends TaskType
+  case object CloseReadReportWithNoAction extends TaskType
   case object CloseUnreadReport extends TaskType
-  case object RemindReportByMail extends TaskType
-  case object CloseTransmittedReportByNoAction extends TaskType
 
 }

@@ -129,6 +129,6 @@ class ReadReportsReminderTask @Inject() (
         )
 
     } yield ()
-    toTaskOutCome(taskExecution, report.id, TaskType.RemindReportByMail)
+    toTaskOutCome(taskExecution, report.id, TaskType.RemindReadReportByMail)
   }
 }

@@ -99,7 +99,7 @@ class NoActionReportsCloseTask @Inject() (
       _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
       _ <- emailService.send(ConsumerReportClosedNoAction(report))
     } yield ()
-    toTaskOutCome(taskExecution, report.id, TaskType.CloseTransmittedReportByNoAction)
+    toTaskOutCome(taskExecution, report.id, TaskType.CloseReadReportWithNoAction)
 
   }
 

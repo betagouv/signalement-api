@@ -13,8 +13,8 @@ import services.AttachementService
 import services.MailerService
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
-import tasks.model.TaskType.CloseTransmittedReportByNoAction
-import tasks.model.TaskType.RemindReportByMail
+import tasks.model.TaskType.CloseReadReportWithNoAction
+import tasks.model.TaskType.RemindReadReportByMail
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
@@ -60,7 +60,7 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRe
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(14))
         .toString
     )}
-     And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReportByMail))}
+     And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
     """
   }
 }
@@ -128,7 +128,7 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends R
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(7))
         .toString
     )}
-    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReportByMail))}
+    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
     """
   }
 }
@@ -201,7 +201,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
       views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
       attachementService.attachmentSeqForWorkflowStepN(4)
     )}    
-    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, CloseTransmittedReportByNoAction))}
+    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, CloseReadReportWithNoAction))}
    """
   }
 }

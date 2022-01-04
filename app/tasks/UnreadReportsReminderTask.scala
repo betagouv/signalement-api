@@ -112,7 +112,7 @@ class UnreadReportsReminderTask @Inject() (
       _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
     } yield ()
 
-    toTaskOutCome(taskExecution, report.id, TaskType.RemindReportByMail)
+    toTaskOutCome(taskExecution, report.id, TaskType.RemindUnreadReportsByEmail)
   }
 
 }
