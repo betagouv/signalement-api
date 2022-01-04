@@ -32,7 +32,7 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka" %% "akka-stream-alpakka-file" % alpakkaVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
-  "com.amazonaws" % "aws-java-sdk-s3" % "1.11.889",
+  "com.amazonaws" % "aws-java-sdk-s3" % "1.12.132",
   "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-password-bcrypt" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-persistence" % playSilhouetteVersion,
