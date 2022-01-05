@@ -3,8 +3,8 @@ package orchestrators
 import config.AppConfigLoader
 import models.EmailValidation
 import models.EmailValidationCreate
-import play.api.mvc.Request
 import repositories._
+import services.Email.ConsumerValidateEmail
 import services.MailService
 import utils.EmailAddress
 
@@ -31,16 +31,17 @@ class EmailValidationOrchestrator @Inject() (
       emailValidation <- emailValidationRepository.findByEmail(email)
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
-  def sendEmailConfirmationIfNeeded(email: EmailAddress)(implicit request: Request[Any]): Future[Boolean] =
+  def sendEmailConfirmationIfNeeded(email: EmailAddress): Future[Boolean] =
     if (appConfigLoader.get.mail.skipReportEmailValidation) {
       Future.successful(true)
     } else {
       for {
         emailValidation <- findOrCreate(email)
-      } yield
-        if (emailValidation.lastValidationDate.isEmpty) {
-          mailService.Consumer.sendEmailConfirmation(emailValidation)
-          false
-        } else true
+        res <-
+          if (emailValidation.lastValidationDate.isEmpty) {
+            mailService.send(ConsumerValidateEmail(emailValidation)).map(_ => false)
+          } else Future.successful(true)
+      } yield res
+
     }
 }

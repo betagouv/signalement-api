@@ -15,6 +15,7 @@ import play.api.Logger
 import repositories.CompanyRepository
 import repositories.ReportNotificationBlockedRepository
 import repositories._
+import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -110,13 +111,16 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  protected def sendEmail(emails: List[EmailAddress], report: Report) = {
-    mailService.Pro.sendReportNotification(
-      emails,
-      report
+  protected def sendEmail(emails: List[EmailAddress], report: Report) =
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          emails,
+          report
+        )
+      ),
+      Duration.Inf
     )
-    Thread.sleep(100)
-  }
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
@@ -170,6 +174,7 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       ),
       Duration.Inf
     )
+
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }

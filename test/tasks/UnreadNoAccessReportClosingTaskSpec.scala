@@ -10,7 +10,11 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.AttachementService
 import services.MailerService
+import tasks.model.TaskOutcome
+import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.model.TaskType.CloseUnreadReport
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -22,6 +26,9 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).minusDays(1))
     s2"""
@@ -30,7 +37,10 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
       setupReport(report)
     )}
        When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime),
+        Duration.Inf
+      )
     }}
        Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
       report.id,
@@ -44,13 +54,16 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
       report.email,
       "L'entreprise n'a pas souhaité consulter votre signalement",
       views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
     )}
+    And outcome is empty ${result mustEqual List(SuccessfulTask(report.id, CloseUnreadReport))}
     """
   }
 }
 
 class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
+
+  var result = List.empty[TaskOutcome]
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).plusDays(1))
     s2"""
@@ -59,7 +72,10 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
       setupReport(report)
     )}
        When remind task run                                                             ${step {
-      Await.result(reminderTask.runTask(runningDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime),
+        Duration.Inf
+      )
     }}
        Then no event is created                                                         ${eventMustNotHaveBeenCreated(
       report.id,
@@ -69,6 +85,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
       report
     )}
        And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
+       And outcome is empty ${result mustEqual List.empty[TaskOutcome]}     
     """
   }
 }
@@ -99,7 +116,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
@@ -139,7 +156,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
 
   def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
-      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+      (report.exists(report => status == report.status), s"status doesn't match ${status}")
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
@@ -148,8 +165,9 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
-  lazy val reminderTask = injector.instanceOf[ReminderTask]
+  lazy val reminderTask = injector.instanceOf[ReportTask]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)
