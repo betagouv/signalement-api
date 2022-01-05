@@ -1,6 +1,7 @@
 package controllers.error
 
 import controllers.error.AppError.ServerError
+import controllers.error.ErrorPayload.AuthenticationErrorPayload
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -43,5 +44,9 @@ object AppErrorTransformer {
       case error: InternalAppError =>
         logger.error(error.details, error)
         Results.InternalServerError(Json.toJson(ErrorPayload(error)))
+
+      case error: UnauthorizedError =>
+        logger.warn(error.details, error)
+        Results.Unauthorized(Json.toJson(AuthenticationErrorPayload))
     }
 }

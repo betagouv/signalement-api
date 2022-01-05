@@ -4,13 +4,15 @@ import utils.EmailAddress
 import utils.SIRET
 
 import java.util.UUID
+import scala.util.control.NoStackTrace
 
-sealed trait AppError extends Throwable with Product with Serializable {
+sealed trait AppError extends Throwable with Product with Serializable with NoStackTrace {
   val `type`: String
   val title: String
   val details: String
 }
 
+sealed trait UnauthorizedError extends AppError
 sealed trait NotFoundError extends AppError
 sealed trait BadRequestError extends AppError
 sealed trait ForbiddenError extends AppError
@@ -64,7 +66,7 @@ object AppError {
       s"Le site $host doit être un site valide."
   }
 
-  final case class InvalidDGCCRFEmail(email: EmailAddress, suffix: String) extends ForbiddenError {
+  final case class InvalidDGCCRFEmail(email: EmailAddress, suffix: String) extends BadRequestError {
     override val `type`: String = "SC-0008"
     override val title: String = "Invalid Dgccrf email"
     override val details: String =
@@ -76,6 +78,40 @@ object AppError {
     override val title: String = "User already exist"
     override val details: String =
       s"Ce compte existe déjà. Merci de demander à l'utilisateur de regénérer son mot de passe pour se connecter"
+  }
+
+  final case class TooMuchAuthAttempts(userId: UUID) extends ForbiddenError {
+    override val `type`: String = "SC-0010"
+    override val title: String = s"Max auth attempt reached for user id : $userId"
+    override val details: String =
+      "Le nombre maximum de tentative d'authentification a été dépassé, merci de rééssayer un peu plus tard."
+  }
+
+  final case class InvalidPassword(login: String) extends UnauthorizedError {
+    override val `type`: String = "SC-0011"
+    override val title: String = "Invalid password"
+    override val details: String =
+      s"Mot de passe invalide pour $login"
+  }
+
+  final case class UserNotFound(login: String) extends UnauthorizedError {
+    override val `type`: String = "SC-0012"
+    override val title: String = "User not found"
+    override val details: String =
+      s"Aucun utilisateur trouvé pour $login"
+  }
+
+  final case class DGCCRFUserEmailValidationExpired(login: String) extends ForbiddenError {
+    override val `type`: String = "SC-0013"
+    override val title: String = "DGCCRF user needs email revalidation"
+    override val details: String =
+      s"Votre compte DGCCRF a besoin d'être revalidé, un email vous a été envoyé pour réactiver votre compte."
+  }
+
+  final case object MalformedBody extends BadRequestError {
+    override val `type`: String = "SC-0014"
+    override val title: String = "Malformed request body"
+    override val details: String = s"Le corps de la requête ne correspond pas à ce qui est attendu par l'API."
   }
 
 }

@@ -64,7 +64,9 @@ case class UserLogin(
 case class AuthAttempt(
     id: UUID,
     login: String,
-    timestamp: OffsetDateTime
+    timestamp: OffsetDateTime,
+    isSuccess: Option[Boolean],
+    failureCause: Option[String] = None
 )
 
 object UserLogin {
