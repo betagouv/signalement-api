@@ -297,7 +297,7 @@ class ReportsExtractActor @Inject() (
       paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
+      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
         paginatedReports.entities.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )

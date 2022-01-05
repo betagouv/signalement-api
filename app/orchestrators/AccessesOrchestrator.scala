@@ -23,6 +23,10 @@ import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.AccessTokenRepository
 import repositories._
+import services.Email.DgccrfAccessLink
+import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompanyAccess
+import services.Email
 import services.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -330,11 +334,9 @@ class AccessesOrchestrator @Inject() (
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
-    } yield {
-      mailService.Pro.sendNewCompanyAccessNotification(user, company, invitedBy)
-      logger.debug(s"User ${user.id} may now access company ${company.id}")
-      ()
-    }
+      _ <- mailService.send(ProNewCompanyAccess(user.email, company, invitedBy))
+      _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
+    } yield ()
 
   private def randomToken = UUID.randomUUID.toString
 
@@ -362,15 +364,18 @@ class AccessesOrchestrator @Inject() (
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, appConfig.get.token.companyJoinDuration, email).map { tokenCode =>
-      mailService.Pro.sendCompanyAccessInvitation(
-        company = company,
-        email = email,
-        invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
-        invitedBy = invitedBy
+    for {
+      tokenCode <- genInvitationToken(company, level, appConfig.get.token.companyJoinDuration, email)
+      _ <- mailService.send(
+        ProCompanyAccessInvitation(
+          recipient = email,
+          company = company,
+          invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
+          invitedBy = invitedBy
+        )
       )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
-    }
+      _ = logger.debug(s"Token sent to ${email} for company ${company.id}")
+    } yield ()
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     for {
@@ -390,13 +395,11 @@ class AccessesOrchestrator @Inject() (
           level = None,
           emailedTo = Some(email)
         )
-    } yield {
-      mailService.Dgccrf.sendAccessLink(
-        email = email,
-        invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token)
+      _ <- mailService.send(
+        DgccrfAccessLink(recipient = email, invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token))
       )
-      logger.debug(s"Sent DGCCRF account invitation to ${email}")
-    }
+      _ = logger.debug(s"Sent DGCCRF account invitation to ${email}")
+    } yield ()
 
   def sendEmailValidation(user: User): Future[Unit] =
     for {
@@ -408,13 +411,13 @@ class AccessesOrchestrator @Inject() (
         level = None,
         emailedTo = Some(user.email)
       )
-    } yield {
-      mailService.Common.sendValidateEmail(
-        user = user,
-        validationUrl = frontRoute.dashboard.validateEmail(token.token)
+      _ <- mailService.send(
+        Email.ValidateEmail(
+          user,
+          frontRoute.dashboard.validateEmail(token.token)
+        )
       )
-      logger.debug(s"Sent email validation to ${user.email}")
-    }
+    } yield logger.debug(s"Sent email validation to ${user.email}")
 
   def validateEmail(token: AccessToken): Future[Option[User]] =
     for {

@@ -10,6 +10,14 @@ case class EmailAddress(value: String) {
 }
 
 object EmailAddress {
+
+  val EmptyEmailAddress = EmailAddress("")
+
+  implicit class EmailAddressOps(emailAddress: EmailAddress) {
+    implicit def isEmpty: Boolean = emailAddress == EmptyEmailAddress
+    implicit def nonEmpty: Boolean = emailAddress != EmptyEmailAddress
+  }
+
   def apply(value: String) = new EmailAddress(value.trim.toLowerCase)
   implicit val EmailColumnType = MappedColumnType.base[EmailAddress, String](
     _.value,

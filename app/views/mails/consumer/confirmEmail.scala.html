@@ -2,7 +2,7 @@
 @import utils.FrontRoute
 @import java.util.UUID
 
-@(email: EmailAddress, confirmationCode: String)(implicit request: Request[Any], frontRoute: FrontRoute, contactAddress: EmailAddress)
+@(email: EmailAddress, confirmationCode: String)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Validation de l'adresse email") {
     <p>
