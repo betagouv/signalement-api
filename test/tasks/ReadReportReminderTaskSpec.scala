@@ -9,7 +9,12 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.AttachementService
 import services.MailerService
+import tasks.model.TaskOutcome
+import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.model.TaskType.CloseReadReportWithNoAction
+import tasks.model.TaskType.RemindReadReportByMail
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
@@ -23,7 +28,10 @@ import utils.FrontRoute
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
@@ -32,8 +40,11 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
       setupReport(transmittedReport)
     }}
          Given an event "REPORT_READING_BY_PRO" created more than 7 days              ${step(setupEvent(event))}
-         When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+         When remind task run                 ${step {
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
@@ -49,11 +60,15 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transm
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(14))
         .toString
     )}
+     And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
     """
   }
 }
 
-class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
@@ -63,7 +78,10 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Trans
     }}
          Given an event "REPORT_READING_BY_PRO" created less than 7 days              ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
@@ -73,11 +91,15 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Trans
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
     """
   }
 }
 
-class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
@@ -87,7 +109,10 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
     }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
@@ -103,11 +128,15 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends T
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(7))
         .toString
     )}
+    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
     """
   }
 }
 
-class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
@@ -117,7 +146,10 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
     }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
@@ -127,11 +159,15 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
     """
   }
 }
 
-class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(
@@ -146,7 +182,10 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "REPORT_CLOSED_BY_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
       transmittedReport.id,
@@ -160,13 +199,17 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends Transmi
       transmittedReport.email,
       "L'entreprise n'a pas répondu au signalement",
       views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
-    )}
+      attachementService.attachmentSeqForWorkflowStepN(4)
+    )}    
+    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, CloseReadReportWithNoAction))}
    """
   }
 }
 
-class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends TransmittedReportReminderTaskSpec {
+class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
+
+  var result = List.empty[TaskOutcome]
+
   override def is = {
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(
@@ -181,7 +224,10 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Transm
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reminderTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       transmittedReport.id,
@@ -191,11 +237,12 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends Transm
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
    """
   }
 }
 
-abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
+abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
     extends Specification
     with AppSpec
     with Mockito
@@ -224,7 +271,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
@@ -264,7 +311,7 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
 
   def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
-      (report.map(report => status == report.status).getOrElse(false), s"status doesn't match ${status}")
+      (report.exists(report => status == report.status), s"status doesn't match ${status}")
   }
 
   def reportStatusMustNotHaveBeenUpdated(report: Report) =
@@ -273,10 +320,11 @@ abstract class TransmittedReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
-  lazy val reminderTask = injector.instanceOf[ReminderTask]
+  lazy val reminderTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = app.injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = config.mail.contactAddress

@@ -55,7 +55,7 @@ class ReportNotificationBlockedRepository @Inject() (
   def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] =
     db.run(query.filter(_.userId === userId).result)
 
-  def filterBlockedEmails(email: List[EmailAddress], companyId: UUID): Future[List[EmailAddress]] =
+  def filterBlockedEmails(email: Seq[EmailAddress], companyId: UUID): Future[Seq[EmailAddress]] =
     db.run(
       queryUser
         .filter(_.id in (query.filter(_.companyId === companyId).map(_.userId)))

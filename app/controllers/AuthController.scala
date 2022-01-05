@@ -14,6 +14,7 @@ import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import repositories.AuthTokenRepository
 import repositories.UserRepository
+import services.Email.ResetPassword
 import services.MailService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
@@ -105,7 +106,7 @@ class AuthController @Inject() (
                 _ <- authTokenRepository.deleteForUserId(user.id)
                 authToken <-
                   authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, OffsetDateTime.now.plusDays(1)))
-                _ <- Future(mailService.Common.sendResetPassword(user, authToken))
+                _ <- mailService.send(ResetPassword(user, authToken))
               } yield Ok
             case _ =>
               Future.successful(

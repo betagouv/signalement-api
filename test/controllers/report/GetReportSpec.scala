@@ -26,6 +26,7 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.AttachementService
 import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -98,7 +99,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       neverRequestedReport.email,
       "L'entreprise a pris connaissance de votre signalement",
       views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedReport.copy(status = ReportStatus.Transmis),
@@ -184,7 +185,7 @@ trait GetReportSpec extends Spec with GetReportContext {
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
@@ -319,6 +320,7 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
+  lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
   val config = application.injector.instanceOf[AppConfigLoader].get
 

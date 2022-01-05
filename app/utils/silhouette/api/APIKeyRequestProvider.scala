@@ -23,7 +23,6 @@ class APIKeyRequestProvider @Inject() (
   def authenticate[B](request: Request[B]): Future[Option[LoginInfo]] = {
     val hasher = passwordHasherRegistry.current
     val headerValueOpt = request.headers.get("X-Api-Key")
-    println("------" + hasher.hash("$2a$10$QJsVdvDlCrqF.2V5W8sMGeM/UNLNWbtXFbyINHHjILVbv..z4hwJu"))
 
     headerValueOpt
       .map(headerValue =>
