@@ -2,9 +2,6 @@ package controllers
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
-import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models._
 import orchestrators.AuthOrchestrator
@@ -12,7 +9,6 @@ import play.api._
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
-import play.api.mvc.Request
 import repositories.AuthTokenRepository
 import repositories.UserRepository
 import services.Email.ResetPassword
@@ -27,7 +23,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import error.AppError._
 
 @Singleton
 class AuthController @Inject() (
@@ -36,8 +31,7 @@ class AuthController @Inject() (
     authOrchestrator: AuthOrchestrator,
     authTokenRepository: AuthTokenRepository,
     userService: UserService,
-    mailService: MailService,
-    credentialsProvider: CredentialsProvider
+    mailService: MailService
 )(implicit ec: ExecutionContext)
     extends BaseController {
 
@@ -48,27 +42,12 @@ class AuthController @Inject() (
   def authenticate = UnsecuredAction.async(parse.json) { implicit request =>
     val resultOrError = for {
       userLogin <- request.parseBody[UserLogin]()
-      token <- getToken(userLogin)
-      userSession <- authOrchestrator.login(userLogin, token)
+      userSession <- authOrchestrator.login(userLogin, request)
     } yield Ok(Json.toJson(userSession))
 
     resultOrError.recover { case err => handleError(err) }
 
   }
-
-  private def getToken(userLogin: UserLogin)(implicit req: Request[_]): Future[String] = for {
-    loginInfo <- credentialsProvider
-      .authenticate(Credentials(userLogin.login, userLogin.password))
-      .recoverWith {
-        case _: InvalidPasswordException =>
-          Future.failed(InvalidPassword(userLogin.login))
-        case _: IdentityNotFoundException => Future.failed(UserNotFound(userLogin.login))
-        case err =>
-          Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
-      }
-    authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-    token <- silhouette.env.authenticatorService.init(authenticator)
-  } yield token
 
   def forgotPassword = UnsecuredAction.async(parse.json) { implicit request =>
     request.body

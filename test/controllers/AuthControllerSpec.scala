@@ -3,13 +3,16 @@ package controllers
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import controllers.error.ErrorPayload
+import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.MalformedBody
+import controllers.error.AppError.UserNotFound
 import controllers.error.ErrorPayload.AuthenticationErrorPayload
 import models._
 import models.token.TokenKind.CompanyJoin
@@ -34,8 +37,11 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
+  val validPassword = "test"
   val identity = Fixtures.genAdminUser.sample.get
-    .copy(password = PasswordInfo(BCryptPasswordHasher.ID, password = "test", salt = Some("SignalConso")).password)
+    .copy(password =
+      PasswordInfo(BCryptPasswordHasher.ID, password = validPassword, salt = Some("SignalConso")).password
+    )
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
@@ -43,6 +49,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   lazy val passwordHasherRegistry = app.injector.instanceOf[PasswordHasherRegistry]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val silhouette = app.injector.instanceOf[Silhouette[AuthEnv]]
 
   override def configureFakeModule(): AbstractModule =
     new FakeModule
@@ -75,7 +82,6 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
-          //            .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(jsonBody)
 
         val result = route(app, request).get
@@ -84,65 +90,86 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         Helpers.contentAsJson(result) must beEqualTo(
           Json.toJson(ErrorPayload(MalformedBody))
         )
+
       }
 
       "fail on invalid password " in {
 
-        val jsonBody = Json.obj("login" -> proUser.email, "password" -> "password")
+        val login = proUser.email.value
+        val jsonBody = Json.obj("login" -> login, "password" -> "password")
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
-        val result = route(app, request).get
+        val result = for {
+          res <- route(app, request).get
+          authAttempts <- userRepository.listAuthAttempts(login)
+        } yield (res, authAttempts)
 
-        Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-        Helpers.contentAsJson(result) must beEqualTo(
+        Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
+        Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
           Json.toJson(AuthenticationErrorPayload)
         )
+
+        val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+        authAttempts.length shouldEqual 1
+        authAttempts.headOption.map(_.login) shouldEqual Some(login)
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(InvalidPassword(login).details))
+
       }
 
       "fail on unknown user " in {
 
+        val login = "login"
         val jsonBody = Json.obj("login" -> "login", "password" -> "password")
 
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
-        val result = route(app, request).get
+        val result = for {
+          res <- route(app, request).get
+          authAttempts <- userRepository.listAuthAttempts(login)
+        } yield (res, authAttempts)
 
-        Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-        Helpers.contentAsJson(result) must beEqualTo(
+        Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
+        Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
           Json.toJson(AuthenticationErrorPayload)
         )
+
+        val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+        authAttempts.length shouldEqual 1
+        authAttempts.headOption.map(_.login) shouldEqual Some(login)
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(UserNotFound(login).details))
+
       }
 
     }
 
     "success on known user " in {
 
-      val jsonBody = Json.obj("login" -> identity.email, "password" -> "test")
+      val login = identity.email.value
+      val jsonBody = Json.obj("login" -> login, "password" -> validPassword)
 
       val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
         .withJsonBody(jsonBody)
 
-      val result = route(app, request).get
+      val result = for {
+        res <- route(app, request).get
+        authAttempts <- userRepository.listAuthAttempts(login)
+      } yield (res, authAttempts)
 
-      Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-      Helpers.contentAsJson(result) must beEqualTo(
-        Json.toJson(AuthenticationErrorPayload)
-      )
+      Helpers.status(result.map(_._1)) must beEqualTo(OK)
+
+      val authAttempts = Await.result(result.map(_._2), Duration.Inf)
+      authAttempts.length shouldEqual 1
+      authAttempts.headOption.map(_.login) shouldEqual Some(login)
+      authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(true))
+      authAttempts.headOption.flatMap(_.failureCause) shouldEqual None
+
     }
 
   }
-
-//
-//      "send a DGCCRF invitation" in {
-//        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
-//          .withAuthenticator[AuthEnv](identLoginInfo)
-//          .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
-//
-//        val result = route(app, request).get
-//        Helpers.status(result) must beEqualTo(200)
-//      }
 
 }

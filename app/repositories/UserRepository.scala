@@ -112,6 +112,13 @@ class UserRepository @Inject() (
         .result
     )
 
+  def listAuthAttempts(login: String) = db
+    .run(
+      authAttemptTableQuery
+        .filter(_.login === login)
+        .result
+    )
+
   def saveAuthAttempt(login: String, isSuccess: Boolean, failureCause: Option[String] = None) = {
 
     val authAttempt = AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
