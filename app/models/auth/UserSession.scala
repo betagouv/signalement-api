@@ -1,4 +1,4 @@
-package models.token
+package models.auth
 
 import models.User
 import play.api.libs.json.Json

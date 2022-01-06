@@ -114,4 +114,11 @@ object AppError {
     override val details: String = s"Le corps de la requête ne correspond pas à ce qui est attendu par l'API."
   }
 
+  final case class TokenNotFoundOrInvalid(token: UUID) extends NotFoundError {
+    override val `type`: String = "SC-0015"
+    override val title: String = s"Token not found / invalid ${token.toString}"
+    override val details: String =
+      s"Lien invalide ou expiré, merci de recommencer la demande de changement de mot de passe."
+  }
+
 }

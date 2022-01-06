@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
+import models.auth.AuthToken
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json

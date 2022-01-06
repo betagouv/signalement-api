@@ -2,6 +2,7 @@ package repositories
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import models._
+import models.auth.AuthAttempt
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._

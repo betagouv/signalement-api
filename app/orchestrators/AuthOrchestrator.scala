@@ -5,11 +5,12 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.error.AppError.DGCCRFUserEmailValidationExpired
 import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.ServerError
+import controllers.error.AppError.TokenNotFoundOrInvalid
 import controllers.error.AppError.TooMuchAuthAttempts
 import controllers.error.AppError.UserNotFound
 import models.User
-import models.UserLogin
 import models.UserRole
+import repositories.AuthTokenRepository
 import repositories.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
@@ -29,21 +30,32 @@ import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import config.AppConfigLoader
 import controllers.error.AppError
-import models.token.UserSession
+import models.auth.AuthToken
+import models.auth.UserCredentials
+import models.auth.UserLogin
+import models.auth.UserPassword
+import models.auth.UserSession
 import orchestrators.AuthOrchestrator.AuthAttemptPeriod
 import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
+import orchestrators.AuthOrchestrator.authTokenExpiration
+import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
+import services.Email.ResetPassword
+import services.MailService
 
 import java.time.OffsetDateTime
 import java.time.Period
+import java.util.UUID
 
 class AuthOrchestrator @Inject() (
     userService: UserService,
     userRepository: UserRepository,
     accessesOrchestrator: AccessesOrchestrator,
+    authTokenRepository: AuthTokenRepository,
     appConfigLoader: AppConfigLoader,
     credentialsProvider: CredentialsProvider,
+    mailService: MailService,
     val silhouette: Silhouette[AuthEnv]
 )(implicit
     ec: ExecutionContext
@@ -52,30 +64,34 @@ class AuthOrchestrator @Inject() (
   private val logger: Logger = Logger(this.getClass)
   private val dgccrfDelayBeforeRevalidation: Period = appConfigLoader.get.token.dgccrfDelayBeforeRevalidation
 
-  def login(userLogin: UserLogin, request: Request[_]): Future[UserSession] = {
+  def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
 
     val eventualUserSession: Future[UserSession] = for {
-      maybeUser <- userService.retrieve(LoginInfo(CredentialsProvider.ID, userLogin.login))
+      maybeUser <- userService.retrieve(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user")
       _ = logger.debug(s"Validate auth attempts count")
       _ <- validateAuthenticationAttempts(user)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
       _ <- validateDGCCRFAccountLastEmailValidation(user)
-      _ = logger.debug(s"Successful login for user ${userLogin.login}")
+      _ = logger.debug(s"Successful login for user")
       token <- getToken(userLogin)(request)
+      _ = logger.debug(s"Successful generated token for user")
     } yield UserSession(token, user)
 
     eventualUserSession
       .flatMap { session =>
+        logger.debug(s"Saving auth attempts for user")
         userRepository.saveAuthAttempt(userLogin.login, isSuccess = true).map(_ => session)
       }
       .recoverWith {
         case error: AppError =>
+          logger.debug(s"Saving failed auth attempt for user")
           userRepository
             .saveAuthAttempt(userLogin.login, isSuccess = false, failureCause = Some(error.details))
             .flatMap(_ => Future.failed(error))
         case error =>
+          logger.debug(s"Saving failed auth attempt for user")
           userRepository
             .saveAuthAttempt(
               userLogin.login,
@@ -88,7 +104,38 @@ class AuthOrchestrator @Inject() (
 
   }
 
-  private def getToken(userLogin: UserLogin)(implicit req: Request[_]): Future[String] = for {
+  def forgotPassword(resetPasswordLogin: UserLogin): Future[Unit] =
+    userService.retrieve(toLoginInfo(resetPasswordLogin.login)).flatMap {
+      case Some(user) =>
+        for {
+          _ <- authTokenRepository.deleteForUserId(user.id)
+          _ = logger.debug(s"Creating auth token for ${user.id}")
+          authToken <- authTokenRepository.create(AuthToken(UUID.randomUUID(), user.id, authTokenExpiration))
+          _ = logger.debug(s"Sending reset email to ${user.id}")
+          _ <- mailService.send(ResetPassword(user, authToken))
+        } yield ()
+      case _ =>
+        logger.warn("Unable to reset password for user")
+        Future.successful(())
+    }
+
+  def resetPassword(token: UUID, userPassword: UserPassword): Future[Unit] =
+    authTokenRepository.findValid(token).flatMap {
+      case Some(authToken) =>
+        logger.debug(s"Found token for user id ${authToken.userID}")
+        for {
+          _ <- userRepository.updatePassword(authToken.userID, userPassword.password)
+          _ = logger.debug(s"Password updated successfully for user id ${authToken.userID}")
+          _ <- authTokenRepository.deleteForUserId(authToken.userID)
+          _ = logger.debug(s"Token deleted successfully for user id ${authToken.userID}")
+        } yield ()
+      case None =>
+        val error = TokenNotFoundOrInvalid(token)
+        logger.warn(error.title)
+        Future.failed(error)
+    }
+
+  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] = for {
     loginInfo <- credentialsProvider
       .authenticate(Credentials(userLogin.login, userLogin.password))
       .recoverWith {
@@ -133,4 +180,6 @@ class AuthOrchestrator @Inject() (
 object AuthOrchestrator {
   val AuthAttemptPeriod: Duration = 30 minutes
   val MaxAllowedAuthAttempts: Int = 15
+  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now.plusDays(1)
+  def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
 }
