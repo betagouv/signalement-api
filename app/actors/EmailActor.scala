@@ -63,7 +63,6 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
       }
     case _ =>
       logger.debug("Could not handle request, ignoring message")
-      sender() ! Status.Success
   }
 }
 
