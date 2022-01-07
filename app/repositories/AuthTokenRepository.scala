@@ -1,6 +1,6 @@
 package repositories
 
-import models.AuthToken
+import models.auth.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -29,7 +29,9 @@ class AuthTokenRepository @Inject() (
   private class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
 
     def id = column[UUID]("id", O.PrimaryKey)
+
     def userId = column[UUID]("user_id")
+
     def expiry = column[OffsetDateTime]("expiry")
 
     type AuthTokenData = (UUID, UUID, OffsetDateTime)
@@ -66,4 +68,15 @@ class AuthTokenRepository @Inject() (
       .filter(_.userId === userId)
       .delete
   }
+
+  def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery
+      .filter(_.userId === userId)
+      .result
+  }
+
+  def list(): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery.result
+  }
+
 }

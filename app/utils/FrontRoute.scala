@@ -1,7 +1,7 @@
 package utils
 
 import config.AppConfigLoader
-import models.AuthToken
+import models.auth.AuthToken
 
 import java.net.URI
 import javax.inject.Inject

@@ -56,21 +56,6 @@ object User {
   )(User.apply _)
 }
 
-case class UserLogin(
-    login: String,
-    password: String
-)
-
-case class AuthAttempt(
-    id: UUID,
-    login: String,
-    timestamp: OffsetDateTime
-)
-
-object UserLogin {
-  implicit val userLoginFormat = Json.format[UserLogin]
-}
-
 object UserPermission extends Enumeration {
   val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
       editDocuments, subscribeReports, inviteDGCCRF = Value
@@ -79,23 +64,3 @@ object UserPermission extends Enumeration {
 
   implicit def enumWrites: Writes[UserPermission.Value] = EnumUtils.enumWrites
 }
-
-case class PasswordChange(
-    newPassword: String,
-    oldPassword: String
-)
-
-object PasswordChange {
-  implicit val userReads: Reads[PasswordChange] = (
-    (JsPath \ "newPassword").read[String] and
-      (JsPath \ "oldPassword").read[String]
-  )(PasswordChange.apply _).filter(JsonValidationError("Passwords must not be equals"))(passwordChange =>
-    passwordChange.newPassword != passwordChange.oldPassword
-  )
-}
-
-case class AuthToken(
-    id: UUID,
-    userID: UUID,
-    expiry: OffsetDateTime
-)

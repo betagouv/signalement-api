@@ -2,18 +2,20 @@ package repositories
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import models._
+import models.auth.AuthAttempt
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
-import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
@@ -52,8 +54,10 @@ class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts")
   def id = column[UUID]("id", O.PrimaryKey)
   def login = column[String]("login")
   def timestamp = column[OffsetDateTime]("timestamp")
+  def isSuccess = column[Option[Boolean]]("is_success")
+  def failureCause = column[Option[String]]("failure_cause")
 
-  def * = (id, login, timestamp) <> (AuthAttempt.tupled, AuthAttempt.unapply)
+  def * = (id, login, timestamp, isSuccess, failureCause) <> (AuthAttempt.tupled, AuthAttempt.unapply)
 }
 
 object UserTables {
@@ -76,6 +80,7 @@ class UserRepository @Inject() (
 )(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val logger: Logger = Logger(this.getClass)
 
   import dbConfig._
 
@@ -103,15 +108,27 @@ class UserRepository @Inject() (
     .run(
       authAttemptTableQuery
         .filter(_.login === login)
-        .filter(_.timestamp >= OffsetDateTime.now.minus(delay))
+        .filter(_.timestamp >= OffsetDateTime.now.minusMinutes(delay.toMinutes))
         .length
         .result
     )
 
-  def saveAuthAttempt(login: String) = db
+  def listAuthAttempts(login: String) = db
     .run(
-      authAttemptTableQuery += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now)
+      authAttemptTableQuery
+        .filter(_.login === login)
+        .result
     )
+
+  def saveAuthAttempt(login: String, isSuccess: Boolean, failureCause: Option[String] = None) = {
+
+    val authAttempt = AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
+    logger.debug(s"Saving auth attempt $authAttempt")
+    db
+      .run(
+        authAttemptTableQuery += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
+      )
+  }
 
   def update(user: User): Future[Int] = {
     val queryUser =
