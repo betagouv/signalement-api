@@ -31,13 +31,13 @@ object AppError {
   final case class DGCCRFActivationTokenNotFound(token: String) extends NotFoundError {
     override val `type`: String = "SC-0002"
     override val title: String = s"DGCCRF user token $token not found"
-    override val details: String = "Le lien d'activation n'est pas valide. Merci de contacter le support"
+    override val details: String = s"Le lien d'activation n'est pas valide ($token). Merci de contacter le support"
   }
 
   final case class CompanyActivationTokenNotFound(token: String, siret: SIRET) extends NotFoundError {
     override val `type`: String = "SC-0003"
     override val title: String = s"Company user token $token with siret ${siret.value} not found"
-    override val details: String = "Le lien d'activation n'est pas valide. Merci de contacter le support"
+    override val details: String = s"Le lien d'activation ($token) n'est pas valide. Merci de contacter le support"
   }
 
   final case class CompanySiretNotFound(siret: SIRET) extends NotFoundError {
