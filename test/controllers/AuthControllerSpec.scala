@@ -285,6 +285,46 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       )
     }
 
+    "reset password" in {
+
+      val userId = UUID.randomUUID()
+      val newPassword = "new_pass"
+
+      val user = Fixtures.genAdminUser.sample.get
+        .copy(
+          id = userId,
+          password = passwordHasherRegistry.current.hash(validPassword).password
+        )
+      val tokenId = UUID.randomUUID()
+      val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().plusMonths(10))
+      val jsonBody = Json.obj("password" -> newPassword)
+
+      val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
+        .withJsonBody(jsonBody)
+
+      val result = for {
+        _ <- userRepository.create(user)
+        _ <- authTokenRepository.create(expiredToken)
+        res <- route(app, request).get
+        updatedUser <- userRepository.get(user.id)
+
+      } yield (res, updatedUser)
+
+      Helpers.status(result.map(_._1)) must beEqualTo(NO_CONTENT)
+      val updatedUser = Await.result(result.map(_._2), Duration.Inf)
+      updatedUser.isDefined shouldEqual true
+
+      updatedUser.map(u =>
+        passwordHasherRegistry.current.matches(
+          PasswordInfo(BCryptPasswordHasher.ID, password = u.password, salt = Some("SignalConso")),
+          newPassword
+        )
+      ) shouldEqual Some(
+        true
+      )
+
+    }
+
   }
 
 }
