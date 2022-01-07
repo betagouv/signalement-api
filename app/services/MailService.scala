@@ -54,7 +54,7 @@ class MailService @Inject() (
           .filterBlockedEmails(email.recipients, companyId)
           .flatMap {
             case Nil =>
-              logger.warn("All emails filtered, ignoring email delivery")
+              logger.debug("All emails filtered, ignoring email delivery")
               Future.successful(())
             case filteredRecipients =>
               send(

@@ -147,7 +147,7 @@ class AccessesOrchestrator @Inject() (
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
       case _ =>
-        logger.warn(s"User is not supposed to access this feature")
+        logger.error(s"User is not supposed to access this feature")
         List.empty[UserWithAccessLevel]
     }
 
