@@ -1,6 +1,5 @@
 package services
 
-import models.AuthToken
 import models.Company
 import models.EmailValidation
 import models.Event
@@ -9,6 +8,7 @@ import models.ReportFile
 import models.ReportResponse
 import models.Subscription
 import models.User
+import models.auth.AuthToken
 import play.api.libs.mailer.Attachment
 import utils.Constants.Tags
 import utils.EmailAddress

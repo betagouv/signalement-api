@@ -56,13 +56,19 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
         case e: Exception =>
           logger.error(s"Unexpected error when sending email from request (number of attempt ${req.times + 1})", e)
           if (req.times < 2) {
+            logger.debug(s"Failed attempt, rescheduling email")
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
+            logger.debug(s"Rescheduling done.")
+            sender() ! Status.Success
           } else {
             sender() ! Status.Failure(e)
           }
       }
     case _ =>
-      logger.debug("Could not handle request, ignoring message")
+      if (sender() != self) {
+        logger.debug("Could not handle request, ignoring message")
+        sender() ! Status.Success
+      }
   }
 }
 
