@@ -36,7 +36,7 @@ package object controllers {
       .validate[B]
       .asEither
       .leftMap { errors =>
-        logger.warn(s"Malformed request body : ${JsError.toJson(errors)}")
+        logger.error(s"Malformed request body : ${JsError.toJson(errors)}")
         MalformedBody
       }
       .liftTo[Future]
