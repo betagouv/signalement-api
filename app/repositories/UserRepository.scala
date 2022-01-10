@@ -1,6 +1,7 @@
 package repositories
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import controllers.error.AppError.EmailAlreadyExist
 import models._
 import models.auth.AuthAttempt
 import play.api.Logger
@@ -100,6 +101,11 @@ class UserRepository @Inject() (
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
+    .recoverWith {
+      case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
+        logger.warn("Cannot create user, provided email already exists")
+        Future.failed(EmailAlreadyExist)
+    }
 
   def get(userId: UUID): Future[Option[User]] = db
     .run(userTableQuery.filter(_.id === userId).to[List].result.headOption)

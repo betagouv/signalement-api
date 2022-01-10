@@ -1,6 +1,7 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxMonadError
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.AppConfigLoader
 import controllers.error.AppError._
@@ -9,14 +10,14 @@ import models.Event.stringToDetailsJsValue
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
+import models.ActivationRequest
 import models._
-import models.access.ActivationOutcome.ActivationOutcome
-import models.access.ActivationOutcome
 import models.access.ProInactiveAccountRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
+import models.token.TokenKind
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
@@ -170,103 +171,80 @@ class AccessesOrchestrator @Inject() (
           .toList
     } yield rateStats
 
-  abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
+  private def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
+    maybeAccessToken <- accessTokenRepository.findToken(token)
+    accessToken <- maybeAccessToken
+      .find(_.kind == TokenKind.DGCCRFAccount)
+      .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
+    _ = logger.debug(s"Token $token found, creating user")
+    _ <- createUser(draftUser, accessToken, UserRole.DGCCRF)
+    _ = logger.debug(s"User created successfully, invalidating token")
+    _ <- accessTokenRepository.invalidateToken(accessToken)
+    _ = logger.debug(s"Token has been revoked")
+  } yield ()
 
-    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
+  private def activateCompany(draftUser: DraftUser, token: String, siret: SIRET) = for {
+    token <- fetchCompanyToken(token, siret)
+    user <- createUser(draftUser, token, UserRole.Professionnel)
+    _ <- bindPendingTokens(user)
+    _ <- eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        None,
+        token.companyId,
+        Some(user.id),
+        Some(OffsetDateTime.now),
+        EventType.PRO,
+        ActionEvent.ACCOUNT_ACTIVATION,
+        stringToDetailsJsValue(s"Email du compte : ${token.emailedTo.getOrElse("")}")
+      )
+    )
+  } yield ()
 
-    def fetchToken: Future[Option[AccessToken]]
-    def run: Future[Boolean]
-    def createUser(accessToken: AccessToken, role: UserRole): Future[User] = {
-      // If invited on emailedTo, user should register using that email
-      val email = accessToken.emailedTo.getOrElse(draftUser.email)
-      userRepository
-        .create(
-          User(
-            UUID.randomUUID,
-            draftUser.password,
-            email,
-            draftUser.firstName,
-            draftUser.lastName,
-            role,
-            Some(OffsetDateTime.now)
-          )
+  private def bindPendingTokens(user: User) =
+    accessTokenRepository
+      .fetchPendingTokens(user.email)
+      .flatMap(tokens =>
+        Future.sequence(
+          tokens.filter(_.companyId.isDefined).map(accessTokenRepository.createCompanyAccessAndRevokeToken(_, user))
         )
-        .map { u =>
-          log(s"User with id ${u.id} created through token ${accessToken.id}")
-          u
-        }
+      )
+
+  private def fetchCompanyToken(token: String, siret: SIRET): Future[AccessToken] = for {
+    company <- companyRepository
+      .findBySiret(siret)
+      .flatMap(maybeCompany => maybeCompany.liftTo[Future](CompanySiretNotFound(siret)))
+    accessToken <- accessTokenRepository
+      .findValidToken(company, token)
+      .flatMap(maybeToken => maybeToken.liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token)))
+  } yield accessToken
+
+  private def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
+    val email: EmailAddress = accessToken.emailedTo.getOrElse(draftUser.email)
+    val user = User(
+      id = UUID.randomUUID,
+      password = draftUser.password,
+      email = email,
+      firstName = draftUser.firstName,
+      lastName = draftUser.lastName,
+      userRole = role,
+      lastEmailValidation = Some(OffsetDateTime.now)
+    )
+    for {
+      _ <- userRepository.findByLogin(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
+      _ <- userRepository.create(user)
+    } yield user
+  }
+
+  def handleActivationRequest(activateAccount: ActivationRequest): Future[Unit] =
+    activateAccount.companySiret match {
+      case Some(siret) =>
+        logger.info(s"Activating pro user for company $siret with token $activateAccount.token")
+        activateCompany(activateAccount.draftUser, activateAccount.token, siret)
+      case None =>
+        logger.info(s"Activating DGCCRF user with token ${activateAccount.token}")
+        activateDGCCRFUser(activateAccount.draftUser, activateAccount.token)
     }
-  }
-
-  class GenericTokenWorkflow(draftUser: DraftUser, token: String) extends TokenWorkflow(draftUser, token) {
-    def fetchToken = accessTokenRepository.findToken(token)
-    def run = for {
-      accessToken <- fetchToken
-      user <- accessToken
-        .filter(_.kind == DGCCRFAccount)
-        .map(t => createUser(t, UserRole.DGCCRF).map(Some(_)))
-        .getOrElse(Future(None))
-      _ <- user
-        .flatMap(_ => accessToken)
-        .map(accessTokenRepository.invalidateToken)
-        .getOrElse(Future(0))
-    } yield user.isDefined
-  }
-
-  class CompanyTokenWorkflow(draftUser: DraftUser, token: String, siret: SIRET)
-      extends TokenWorkflow(draftUser, token) {
-    def fetchCompany: Future[Option[Company]] = companyRepository.findBySiret(siret)
-    def fetchToken: Future[Option[AccessToken]] = for {
-      company <- fetchCompany
-      accessToken <- company.map(accessTokenRepository.findToken(_, token)).getOrElse(Future(None))
-    } yield accessToken
-
-    def bindPendingTokens(user: User) =
-      accessTokenRepository
-        .fetchPendingTokens(user.email)
-        .flatMap(tokens =>
-          Future.sequence(tokens.filter(_.companyId.isDefined).map(accessTokenRepository.applyCompanyToken(_, user)))
-        )
-
-    def run = for {
-      accessToken <- fetchToken
-      user <- accessToken.map(t => createUser(t, UserRole.Professionnel).map(Some(_))).getOrElse(Future(None))
-      applied <- (for {
-        u <- user
-        t <- accessToken
-      } yield accessTokenRepository.applyCompanyToken(t, u))
-        .getOrElse(Future(false))
-      _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
-      _ <- accessToken
-        .map(t =>
-          eventRepository.createEvent(
-            Event(
-              Some(UUID.randomUUID()),
-              None,
-              t.companyId,
-              user.map(_.id),
-              Some(OffsetDateTime.now),
-              EventType.PRO,
-              ActionEvent.ACCOUNT_ACTIVATION,
-              stringToDetailsJsValue(s"Email du compte : ${t.emailedTo.getOrElse("")}")
-            )
-          )
-        )
-        .getOrElse(Future(None))
-    } yield applied
-  }
-
-  def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
-    val workflow = siret
-      .map(s => new CompanyTokenWorkflow(draftUser, token, s))
-      .getOrElse(new GenericTokenWorkflow(draftUser, token))
-    workflow.run
-      .map(if (_) ActivationOutcome.Success else ActivationOutcome.NotFound)
-      .recover {
-        case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
-          ActivationOutcome.EmailConflict
-      }
-  }
 
   def fetchDGCCRFUserActivationToken(token: String): Future[DGCCRFUserActivationToken] = for {
     maybeAccessToken <- accessTokenRepository
@@ -289,7 +267,7 @@ class AccessesOrchestrator @Inject() (
     for {
       company <- companyRepository.findBySiret(siret)
       maybeAccessToken <- company
-        .map(accessTokenRepository.findToken(_, token))
+        .map(accessTokenRepository.findValidToken(_, token))
         .getOrElse(Future.failed[Option[AccessToken]](CompanySiretNotFound(siret)))
       accessToken <- maybeAccessToken
         .map(Future.successful)

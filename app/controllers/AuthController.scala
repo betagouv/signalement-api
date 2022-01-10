@@ -7,6 +7,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import utils.silhouette.auth.AuthEnv
 import error.AppErrorTransformer.handleError
+import models.auth.PasswordChange
 import models.auth.UserCredentials
 import models.auth.UserLogin
 import models.auth.UserPassword
@@ -54,6 +55,16 @@ class AuthController @Inject() (
     } yield NoContent
 
     resultOrError.recover { case err => handleError(err) }
+  }
+
+  def changePassword = SecuredAction.async(parse.json) { implicit request =>
+    val resultOrError = for {
+      updatePassword <- request.parseBody[PasswordChange]()
+      _ <- authOrchestrator.changePassword(request.identity, updatePassword)
+    } yield NoContent
+
+    resultOrError.recover { case err => handleError(err) }
+
   }
 
 }
