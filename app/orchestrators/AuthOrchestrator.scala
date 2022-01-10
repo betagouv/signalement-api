@@ -1,11 +1,13 @@
 package orchestrators
 
+import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.error.AppError.DGCCRFUserEmailValidationExpired
 import controllers.error.AppError.InvalidPassword
+import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
+import controllers.error.AppError.SamePasswordError
 import controllers.error.AppError.ServerError
-import controllers.error.AppError.TokenNotFoundOrInvalid
 import controllers.error.AppError.TooMuchAuthAttempts
 import controllers.error.AppError.UserNotFound
 import models.User
@@ -31,6 +33,7 @@ import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import config.AppConfigLoader
 import controllers.error.AppError
 import models.auth.AuthToken
+import models.auth.PasswordChange
 import models.auth.UserCredentials
 import models.auth.UserLogin
 import models.auth.UserPassword
@@ -130,24 +133,37 @@ class AuthOrchestrator @Inject() (
           _ = logger.debug(s"Token deleted successfully for user id ${authToken.userID}")
         } yield ()
       case None =>
-        val error = TokenNotFoundOrInvalid(token)
+        val error = PasswordTokenNotFoundOrInvalid(token)
         logger.warn(error.title)
         Future.failed(error)
     }
 
-  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] = for {
-    loginInfo <- credentialsProvider
-      .authenticate(Credentials(userLogin.login, userLogin.password))
-      .recoverWith {
-        case _: InvalidPasswordException =>
-          Future.failed(InvalidPassword(userLogin.login))
-        case _: IdentityNotFoundException => Future.failed(UserNotFound(userLogin.login))
-        case err =>
-          Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
+  def changePassword(user: User, passwordChange: PasswordChange) = for {
+    _ <-
+      if (passwordChange.oldPassword === passwordChange.newPassword) {
+        Future.failed(SamePasswordError)
+      } else {
+        Future.unit
       }
+    _ <- authenticate(user.email.value, passwordChange.oldPassword)
+    _ = logger.debug(s"Successfully checking old password  user id ${user.id}, updating password")
+    _ <- userRepository.updatePassword(user.id, passwordChange.newPassword)
+    _ = logger.debug(s"Password updated for user id ${user.id}")
+  } yield ()
+
+  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] = for {
+    loginInfo <- authenticate(userLogin.login, userLogin.password)
     authenticator <- silhouette.env.authenticatorService.create(loginInfo)
     token <- silhouette.env.authenticatorService.init(authenticator)
   } yield token
+
+  private def authenticate(login: String, password: String) = credentialsProvider
+    .authenticate(Credentials(login, password))
+    .recoverWith {
+      case _: InvalidPasswordException  => Future.failed(InvalidPassword(login))
+      case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
+      case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
+    }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>

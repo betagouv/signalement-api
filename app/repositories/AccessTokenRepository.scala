@@ -99,9 +99,19 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
+        .filter(_.kind === (CompanyInit: TokenKind))
+        .filter(_.level === AccessLevel.ADMIN)
+        .result
+        .headOption
+    )
+
+  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.companyId === companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
         .result
@@ -125,7 +135,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
+  def findValidToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.token === token)
@@ -165,28 +175,24 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] =
-    if (!token.valid || token.expirationDate.exists(_.isBefore(OffsetDateTime.now))) {
-      logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
-      Future(false)
-    } else
-      db.run(
-        DBIO
-          .seq(
-            companyRepository.createCompanyUserAccess(
-              token.companyId.get,
-              user.id,
-              token.companyLevel.get
-            ),
-            AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
-            AccessTokenTableQuery
-              .filter(_.companyId === token.companyId)
-              .filter(_.emailedTo.isEmpty)
-              .map(_.valid)
-              .update(false)
-          )
-          .transactionally
-      ).map(_ => true)
+  def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean] =
+    db.run(
+      DBIO
+        .seq(
+          companyRepository.createCompanyUserAccess(
+            token.companyId.get,
+            user.id,
+            token.companyLevel.get
+          ),
+          AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
+          AccessTokenTableQuery
+            .filter(_.companyId === token.companyId)
+            .filter(_.emailedTo.isEmpty)
+            .map(_.valid)
+            .update(false)
+        )
+        .transactionally
+    ).map(_ => true)
 
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
@@ -243,7 +249,7 @@ class AccessTokenRepository @Inject() (
     )
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
-    fetchActivationToken(company.id).map(_.map(_.token))
+    fetchValidActivationToken(company.id).map(_.map(_.token))
 
   def useEmailValidationToken(token: AccessToken, user: User) =
     db.run(

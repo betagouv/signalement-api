@@ -4,12 +4,9 @@ import _root_.controllers.error.AppErrorTransformer.handleError
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import config.AppConfigLoader
 import models._
-import models.access.ActivationOutcome
-import models.auth.PasswordChange
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
@@ -32,7 +29,6 @@ class AccountController @Inject() (
     userRepository: UserRepository,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
-    credentialsProvider: CredentialsProvider,
     appConfigLoader: AppConfigLoader
 )(implicit ec: ExecutionContext)
     extends BaseController {
@@ -52,40 +48,13 @@ class AccountController @Inject() (
       .getOrElse(NotFound)
   }
 
-  def changePassword = SecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[PasswordChange]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        passwordChange =>
-          {
-            for {
-              _ <-
-                credentialsProvider.authenticate(Credentials(request.identity.email.value, passwordChange.oldPassword))
-              _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
-            } yield NoContent
-          }.recover { case e =>
-            logger.error("Unexpected error", e)
-            Unauthorized
-          }
-      )
-  }
-
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[ActivationRequest]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        { case ActivationRequest(draftUser, token, companySiret) =>
-          accessesOrchestrator
-            .handleActivationRequest(draftUser, token, companySiret)
-            .map {
-              case ActivationOutcome.NotFound      => NotFound
-              case ActivationOutcome.EmailConflict => Conflict // HTTP 409
-              case ActivationOutcome.Success       => NoContent
-            }
-        }
-      )
+    val activatedOrError = for {
+      activationRequest <- request.parseBody[ActivationRequest]()
+      _ <- accessesOrchestrator.handleActivationRequest(activationRequest)
+    } yield NoContent
+
+    activatedOrError.recover { case err => handleError(err) }
   }
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>

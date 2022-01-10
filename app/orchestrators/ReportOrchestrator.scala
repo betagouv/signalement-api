@@ -58,7 +58,7 @@ class ReportOrchestrator @Inject() (
 
   private def genActivationToken(companyId: UUID, validity: Option[TemporalAmount]): Future[String] =
     for {
-      existingToken <- accessTokenRepository.fetchActivationToken(companyId)
+      existingToken <- accessTokenRepository.fetchValidActivationToken(companyId)
       _ <- existingToken
         .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, validity))
         .getOrElse(Future(None))

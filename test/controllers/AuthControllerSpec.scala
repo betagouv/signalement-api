@@ -8,10 +8,12 @@ import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import controllers.error.ErrorPayload
 import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.MalformedBody
-import controllers.error.AppError.TokenNotFoundOrInvalid
+import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
+import controllers.error.AppError.SamePasswordError
 import controllers.error.AppError.UserNotFound
 import controllers.error.ErrorPayload.AuthenticationErrorPayload
 import models._
@@ -232,6 +234,23 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
   }
 
+  "changePassword" should {
+    "return a BadRequest with errors if passwords are equals" in {
+      val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
+
+      val request = FakeRequest(POST, routes.AuthController.changePassword().toString)
+        .withAuthenticator[AuthEnv](identLoginInfo)
+        .withJsonBody(jsonBody)
+
+      val result = route(app, request).get
+
+      Helpers.status(result) must beEqualTo(BAD_REQUEST)
+      Helpers.contentAsJson(result) must beEqualTo(
+        Json.toJson(ErrorPayload(SamePasswordError))
+      )
+    }
+  }
+
   "reset password" should {
 
     "fail on invalid body" in {
@@ -265,7 +284,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       Helpers.status(result.map(_._1)) must beEqualTo(NOT_FOUND)
       Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-        Json.toJson(ErrorPayload(TokenNotFoundOrInvalid(tokenId)))
+        Json.toJson(ErrorPayload(PasswordTokenNotFoundOrInvalid(tokenId)))
       )
     }
 
@@ -281,7 +300,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       Helpers.status(result) must beEqualTo(NOT_FOUND)
       Helpers.contentAsJson(result) must beEqualTo(
-        Json.toJson(ErrorPayload(TokenNotFoundOrInvalid(tokenId)))
+        Json.toJson(ErrorPayload(PasswordTokenNotFoundOrInvalid(tokenId)))
       )
     }
 
@@ -322,7 +341,6 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       ) shouldEqual Some(
         true
       )
-
     }
 
   }
