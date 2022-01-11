@@ -11,9 +11,7 @@ object ErrorPayload {
   val AuthenticationErrorPayload = ErrorPayload(
     "SC-AUTH",
     "Cannot authenticate user",
-    """Impossible de vous authentifier,
-      | merci de vérifier que votre mot de passe ou identifiant est correct.
-      | Si vous avez oublié votre mot de passe, cliquez sur "MOT DE PASSE OUBLIÉ" pour le récupérer.""".stripMargin
+    """ Email ou mot de passe incorrect. Si vous avez oublié votre mot de passe, cliquez sur 'mot de passe oublié' pour le récupérer.""".stripMargin
   )
 
   implicit val ErrorPayloadFormat: Format[ErrorPayload] = Json.format[ErrorPayload]
