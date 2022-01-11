@@ -18,8 +18,13 @@ import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import models._
+import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import repositories._
+
+import java.time.OffsetDateTime
+import java.time.{Duration => JavaDuration}
+import java.util.UUID
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
@@ -198,6 +203,196 @@ The invitation workflow should
     latestToken.id must beEqualTo(invitationToken.id)
     latestToken.expirationDate.get must beGreaterThan(invitationToken.expirationDate.get)
   }
+}
+
+class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
+
+  override def is = s2"""
+
+  Given company not registered with activation code sent by postal mail $e1
+  And an initial token to join the company    $e2
+  when user activate account                  $e4
+  Then activation token should still be valid $e5
+  Then access should not be created           $e6
+  Then user creation account token should exist $e7
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  val newProUser = Fixtures.genProUser.sample.get
+  var token: AccessToken = null
+
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass[Company]
+  }
+
+  def e2 = {
+    token = Await.result(
+      accessTokenRepository
+        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+      Duration.Inf
+    )
+    token must haveClass[AccessToken]
+  }
+
+  def e4 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendActivationLink(newCompany.siret.value).toString)
+      .withBody(Json.obj("token" -> "123456", "email" -> newProUser.email.value))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+  }
+
+  def e5 = {
+    val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
+    invalidToken.map(_.valid) shouldEqual (Some(true))
+  }
+
+  def e6 = {
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List.empty)
+  }
+
+  def e7 = {
+    val userCreationToken = Await.result(accessTokenRepository.fetchPendingTokens(newProUser.email), Duration.Inf)
+    userCreationToken.length shouldEqual 1
+    userCreationToken.headOption.map(_.kind) shouldEqual (Some(CompanyJoin))
+    userCreationToken.headOption.map(_.valid) shouldEqual (Some(true))
+  }
+
+}
+
+class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee: ExecutionEnv)
+    extends BaseAccessControllerSpec {
+
+  override def is = s2"""
+  Given company not registered with activation code sent by postal mail $e1
+  And an initial token to join the company    $e2
+  and an existing ${CompanyJoin.entryName} token for that user  $e8
+  when user activate account                  $e4
+  Then activation token should still be valid $e5
+  Then access should not be created           $e6
+  Then user creation account token should exist $e7
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  val existingProUser = Fixtures.genProUser.sample.get
+  var companyActivationToken: AccessToken = null
+  var initialUserCreationToken: AccessToken = null
+  var initialUserTokenValidity = JavaDuration.ofMinutes(1)
+
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass[Company]
+  }
+
+  def e2 = {
+    companyActivationToken = Await.result(
+      accessTokenRepository
+        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+      Duration.Inf
+    )
+    companyActivationToken must haveClass[AccessToken]
+  }
+
+  def e8 = {
+    initialUserCreationToken = Await.result(
+      accessTokenRepository
+        .createToken(
+          kind = CompanyJoin,
+          token = UUID.randomUUID().toString,
+          validity = Some(initialUserTokenValidity),
+          companyId = Some(newCompany.id),
+          level = Some(AccessLevel.ADMIN),
+          emailedTo = Some(existingProUser.email)
+        ),
+      Duration.Inf
+    )
+    initialUserCreationToken must haveClass[AccessToken]
+  }
+
+  def e4 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendActivationLink(newCompany.siret.value).toString)
+      .withBody(Json.obj("token" -> "123456", "email" -> existingProUser.email.value))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+  }
+
+  def e5 = {
+    val invalidToken = Await.result(accessTokenRepository.get(companyActivationToken.id), Duration.Inf)
+    invalidToken.map(_.valid) shouldEqual (Some(true))
+  }
+
+  def e6 = {
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List.empty)
+  }
+
+  def e7 = {
+    val userCreationTokenList =
+      Await.result(accessTokenRepository.fetchPendingTokens(existingProUser.email), Duration.Inf)
+    userCreationTokenList.length shouldEqual 1
+    userCreationTokenList.headOption.map(_.kind) shouldEqual (Some(CompanyJoin))
+    userCreationTokenList.headOption.map(_.valid) shouldEqual (Some(true))
+    userCreationTokenList.headOption.map(_.id) shouldEqual (Some(initialUserCreationToken.id))
+    userCreationTokenList.headOption.flatMap(
+      _.expirationDate.map(_.isAfter(OffsetDateTime.now().plus(initialUserTokenValidity)))
+    ) shouldEqual Some(true)
+  }
+
+}
+
+class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
+
+  override def is = s2"""
+
+  Given company not registered with activation code sent by postal mail $e1
+  And an initial token to join the company    $e2
+  and an already existing user                $e3
+  when user activate account                  $e4
+  Then token should be not valid anymore      $e5
+  Then access should be created               $e6
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  val existingProUser = Fixtures.genProUser.sample.get
+  var token: AccessToken = null
+
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass[Company]
+  }
+
+  def e2 = {
+    token = Await.result(
+      accessTokenRepository
+        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+      Duration.Inf
+    )
+    token must haveClass[AccessToken]
+  }
+
+  def e3 = {
+    val user = Await.result(userRepository.create(existingProUser), Duration.Inf)
+    user must haveClass[User]
+  }
+
+  def e4 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendActivationLink(newCompany.siret.value).toString)
+      .withBody(Json.obj("token" -> "123456", "email" -> existingProUser.email.value))
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+  }
+
+  def e5 = {
+    val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
+    invalidToken.map(_.valid) shouldEqual (Some(false))
+  }
+
+  def e6 = {
+    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List(existingProUser.id))
+  }
+
 }
 
 class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {

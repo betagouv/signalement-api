@@ -80,7 +80,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  "AccountController" should {
+  "AuthController" should {
     "login" should {
       "fail on invalid body" in {
 

@@ -290,8 +290,12 @@ class AccessesOrchestrator @Inject() (
       invitedBy: Option[User]
   ): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap {
-      case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
-      case None       => sendInvitation(company, email, level, invitedBy)
+      case Some(user) =>
+        logger.debug("User with email already exist, creating access")
+        addInvitedUserAndNotify(user, company, level, invitedBy)
+      case None =>
+        logger.debug("No user found for given email, sending invitation")
+        sendInvitation(company, email, level, invitedBy)
     }
 
   def addUserOrInvite(
@@ -326,10 +330,16 @@ class AccessesOrchestrator @Inject() (
   ): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchToken(company, emailedTo)
-      _ <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
+      _ <- existingToken
+        .map { existingToken =>
+          logger.debug("Found existing token for that user and company, updating existing token")
+          accessTokenRepository.updateToken(existingToken, level, validity)
+        }
+        .getOrElse(Future(None))
       token <- existingToken
         .map(Future(_))
-        .getOrElse(
+        .getOrElse {
+          logger.debug("Creating user invitation token")
           accessTokenRepository.createToken(
             kind = CompanyJoin,
             token = randomToken,
@@ -338,7 +348,7 @@ class AccessesOrchestrator @Inject() (
             level = Some(level),
             emailedTo = Some(emailedTo)
           )
-        )
+        }
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
