@@ -12,7 +12,13 @@ object ReportStatus extends PlayEnum[ReportStatus] {
 
   case object NA extends ReportStatus
   case object LanceurAlerte extends ReportStatus
+
+  /** Not read by pro status
+    */
   case object TraitementEnCours extends ReportStatus
+
+  /** Read by pro status
+    */
   case object Transmis extends ReportStatus
   case object PromesseAction extends ReportStatus
   case object Infonde extends ReportStatus

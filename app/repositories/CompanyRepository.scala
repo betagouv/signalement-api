@@ -328,7 +328,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
-  def fetchAdminsMapByCompany(
+  def fetchUsersByCompanyId(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =

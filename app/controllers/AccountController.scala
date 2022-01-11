@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import config.AppConfigLoader
 import models._
 import models.access.ActivationOutcome
+import models.auth.PasswordChange
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
