@@ -118,6 +118,14 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
+  def get(tokenId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.id === tokenId)
+        .result
+        .headOption
+    )
+
   def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
