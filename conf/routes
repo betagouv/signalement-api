@@ -69,6 +69,7 @@ GET           /api/constants/countries                               controllers
 POST          /api/authenticate                                      controllers.AuthController.authenticate()
 POST          /api/authenticate/password/forgot                      controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                       controllers.AuthController.resetPassword(token: java.util.UUID)
+POST          /api/account/password                                  controllers.AuthController.changePassword()
 
 # Enterprises sync
 POST          /api/enterprises-sync/start-etablissement              controllers.EnterpriseImportController.startEtablissementFile()
@@ -95,7 +96,6 @@ POST          /api/accesses/:siret/invitation                        controllers
 # Account API
 GET           /api/account                                           controllers.AccountController.fetchUser
 GET           /api/account/token                                     controllers.AccountController.fetchTokenInfo(token: String)
-POST          /api/account/password                                  controllers.AccountController.changePassword()
 POST          /api/account/activation                                controllers.AccountController.activateAccount()
 POST          /api/account/dgccrf/invitation                         controllers.AccountController.sendDGCCRFInvitation()
 GET           /api/account/dgccrf/pending                            controllers.AccountController.fetchPendingDGCCRF()
