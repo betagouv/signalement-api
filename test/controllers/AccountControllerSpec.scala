@@ -188,7 +188,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> "user@dgccrf",
+                "email" -> "user@dgccrf.gouv.fr",
                 "firstName" -> ccrfUser.firstName,
                 "lastName" -> ccrfUser.lastName,
                 "password" -> ccrfUser.password

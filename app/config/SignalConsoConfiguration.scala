@@ -48,7 +48,8 @@ case class EmailConfiguration(
     from: EmailAddress,
     contactAddress: EmailAddress,
     skipReportEmailValidation: Boolean,
-    ccrfEmailSuffix: String
+    ccrfEmailSuffix: String,
+    emailProviderBlocklist: List[String]
 )
 
 case class TaskConfiguration(report: ReportTaskConfiguration, reminder: ReminderTaskConfiguration)
