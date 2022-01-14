@@ -2,6 +2,7 @@ package actors
 
 import akka.actor._
 import akka.stream.Materializer
+import cats.data.NonEmptyList
 import com.google.inject.AbstractModule
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -20,7 +21,7 @@ object EmailActor {
 
   case class EmailRequest(
       from: EmailAddress,
-      recipients: Seq[EmailAddress],
+      recipients: NonEmptyList[EmailAddress],
       subject: String,
       bodyHtml: String,
       blindRecipients: Seq[EmailAddress] = Seq.empty,
@@ -44,7 +45,7 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
       try {
         mailerService.sendEmail(
           req.from,
-          req.recipients,
+          req.recipients.toList,
           req.blindRecipients,
           req.subject,
           req.bodyHtml,

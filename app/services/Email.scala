@@ -37,7 +37,7 @@ sealed trait ConsumerEmail extends Email
 object Email {
 
   final case class ResetPassword(user: User, authToken: AuthToken) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(user.email)
+    override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String = EmailSubjects.RESET_PASSWORD
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
@@ -45,7 +45,7 @@ object Email {
   }
 
   final case class ValidateEmail(user: User, validationUrl: URI) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(user.email)
+    override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
@@ -58,7 +58,7 @@ object Email {
       invitationUrl: URI,
       invitedBy: Option[User]
   ) extends ProEmail {
-    override val recipients: Seq[EmailAddress] = Seq(recipient)
+    override val recipients: List[EmailAddress] = List(recipient)
     override val subject: String = EmailSubjects.COMPANY_ACCESS_INVITATION(company.name)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
@@ -70,7 +70,7 @@ object Email {
       company: Company,
       invitedBy: Option[User]
   ) extends ProEmail {
-    override val recipients: Seq[EmailAddress] = Seq(recipient)
+    override val recipients: List[EmailAddress] = List(recipient)
     override val subject: String = EmailSubjects.NEW_COMPANY_ACCESS(company.name)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
@@ -113,7 +113,7 @@ object Email {
 
   final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
       extends ProFilteredEmail {
-    override val recipients: Seq[EmailAddress] = Seq(user.email)
+    override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String = EmailSubjects.REPORT_ACK_PRO
 
     override def getBody: (FrontRoute, EmailAddress) => String =
@@ -122,7 +122,7 @@ object Email {
   }
 
   final case class DgccrfReportNotification(
-      recipients: Seq[EmailAddress],
+      recipients: List[EmailAddress],
       subscription: Subscription,
       reports: Seq[Report],
       startDate: LocalDate
@@ -148,7 +148,7 @@ object Email {
     override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.dgccrf.accessLink(invitationUrl).toString
-    override val recipients: Seq[EmailAddress] = Seq(recipient)
+    override val recipients: List[EmailAddress] = List(recipient)
   }
 
   final case class ConsumerReportAcknowledgment(
@@ -156,7 +156,7 @@ object Email {
       event: Event,
       files: Seq[ReportFile]
   ) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_ACK
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
@@ -168,7 +168,7 @@ object Email {
 
   final case class ConsumerProResponseNotification(report: Report, reportResponse: ReportResponse)
       extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_ACK_PRO_CONSUMER
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
@@ -185,7 +185,7 @@ object Email {
   }
 
   final case class ConsumerReportClosedNoAction(report: Report) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_CLOSED_NO_ACTION
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
@@ -197,7 +197,7 @@ object Email {
   }
 
   final case class ConsumerReportClosedNoReading(report: Report) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_CLOSED_NO_READING
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
@@ -209,7 +209,7 @@ object Email {
   }
 
   final case class ConsumerValidateEmail(emailValidation: EmailValidation) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(emailValidation.email)
+    override val recipients: List[EmailAddress] = List(emailValidation.email)
     override val subject: String = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
@@ -219,7 +219,7 @@ object Email {
   }
 
   final case class ConsumerReportReadByProNotification(report: Report) extends ConsumerEmail {
-    override val recipients: Seq[EmailAddress] = Seq(report.email)
+    override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_TRANSMITTED
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
