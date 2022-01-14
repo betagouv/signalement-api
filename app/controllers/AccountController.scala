@@ -63,7 +63,9 @@ class AccountController @Inject() (
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           email =>
-            accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err => handleError(err) }
+            accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err =>
+              handleError(err, Some(request.identity.id))
+            }
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>

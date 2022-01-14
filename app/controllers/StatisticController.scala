@@ -96,14 +96,17 @@ class StatisticController @Inject() (
     _stats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
+    _stats
+      .getProReportTransmittedStat(ticks.getOrElse(12))
+      .map(x => Ok(Json.toJson(x)))
+      .recover { err =>
+        handleError(err, Some(request.identity.id))
+      }
   }
 
   def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
-    SecuredAction.async(parse.empty) { _ =>
+    SecuredAction.async(parse.empty) { request =>
       val reportResponseStatus =
         NonEmptyList
           .fromList(responseStatusQuery.getOrElse(List.empty))
@@ -121,32 +124,30 @@ class StatisticController @Inject() (
           reportResponseStatus
         )
         .map(x => Ok(Json.toJson(x)))
-        .recover { case err =>
-          handleError(err)
-        }
+        .recover(err => handleError(err, Some(request.identity.id)))
     }
 
-  def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
     _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
+      handleError(err, Some(request.identity.id))
     }
   }
 
-  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
     _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
+      handleError(err, Some(request.identity.id))
     }
   }
 
-  def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
     _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
+      handleError(err, Some(request.identity.id))
     }
   }
 
-  def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
     _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
+      handleError(err, Some(request.identity.id))
     }
   }
 }
