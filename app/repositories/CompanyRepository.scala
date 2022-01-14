@@ -371,29 +371,18 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
-  def companyAccessesReportsRate(
-      ticks: Int = 12,
-      ignoreBefore: LocalDate
-  ) = {
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val userDefinedStartingDate = OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks).withDayOfMonth(1)
-
-    val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
-
-    val startingDate =
-      if (userDefinedStartingDate.toEpochSecond > ignoreBeforeOffsetDateTime.toEpochSecond) userDefinedStartingDate
-      else ignoreBefore
-
-    db.run(sql"""
-    select  
-       my_date_trunc('month'::text, r.creation_date)::timestamp ,
-       count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
-       count(distinct(r.company_id))
-    from reports r left join company_accesses a on r.company_id = a.company_id
-        where r.company_id is not null
-         and r.creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-    group by  my_date_trunc('month'::text, r.creation_date)
-    order by  my_date_trunc('month'::text, r.creation_date)""".as[(Timestamp, Int, Int)])
-  }
+  def proFirstActivationCount(
+      ticks: Int = 12
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (
+          select my_date_trunc('month'::text, t.creation_date)::timestamp, count(distinct id)
+          from (select distinct company_id as id, min(creation_date) as creation_date
+                from company_accesses
+                group by company_id
+                order by min(creation_date) desc) as t
+          group by my_date_trunc('month'::text, creation_date)
+          order by  1 DESC LIMIT #${ticks}
+    ) as res order by 1 ASC;    
+         """.as[(Timestamp, Int)])
 
 }

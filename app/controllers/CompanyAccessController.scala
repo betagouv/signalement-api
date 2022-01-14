@@ -190,8 +190,8 @@ class CompanyAccessController @Inject() (
       )
   }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    accessesOrchestrator.reportOverCompanyAccessRate(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
+  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
       handleError(err)
     }
   }
