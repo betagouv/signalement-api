@@ -1,6 +1,7 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppErrorTransformer.handleError
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -26,8 +27,8 @@ class ReportToExternalController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
-    Try(UUID.fromString(uuid)) match {
+  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async { implicit request =>
+    val reportsOrError = Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
@@ -39,6 +40,8 @@ class ReportToExternalController @Inject() (
           .map(report => Ok(Json.toJson(report)))
           .getOrElse(NotFound)
     }
+
+    reportsOrError.recover { case err => handleError(err, Some(request.identity.id)) }
   }
 
   def searchReportsToExternal(
@@ -51,8 +54,10 @@ class ReportToExternalController @Inject() (
       start = start,
       end = end
     )
-    for {
+    val reportsOrError = for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
+
+    reportsOrError.recover { case err => handleError(err, Some(request.identity.id)) }
   }
 }

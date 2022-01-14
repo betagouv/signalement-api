@@ -26,7 +26,7 @@ class DataEconomieController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def reportDataEcomonie() = silhouetteAPIKey.SecuredAction.async(parse.empty) { _ =>
+  def reportDataEcomonie() = silhouetteAPIKey.SecuredAction.async(parse.empty) { request =>
     val source: Source[ByteString, Any] =
       service
         .getReportDataEconomie()
@@ -43,7 +43,7 @@ class DataEconomieController @Inject() (
         Ok.chunked(zipSource)
           .withHeaders(("Content-Disposition", s"attachment; filename=${DataEconomieController.ReportFileName}.zip"))
       )
-      .recover { case err => handleError(err) }
+      .recover { case err => handleError(err, Some(request.identity.id)) }
   }
 }
 
