@@ -3,6 +3,7 @@ package services
 import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
 import akka.pattern.ask
+import cats.data.NonEmptyList
 import config.AppConfigLoader
 import play.api.Logger
 import play.api.libs.mailer.Attachment
@@ -52,18 +53,26 @@ class MailService @Inject() (
       case Some(companyId) =>
         reportNotificationBlocklistRepo
           .filterBlockedEmails(email.recipients, companyId)
-          .flatMap {
-            case Nil =>
-              logger.debug("All emails filtered, ignoring email delivery")
-              Future.successful(())
-            case filteredRecipients =>
-              send(
-                filteredRecipients,
-                email.subject,
-                email.getBody(frontRoute, contactAddress),
-                email.getAttachements(attachementService)
-              )
-          }
+          .flatMap(recipient =>
+            send(
+              recipient.toList,
+              email.subject,
+              email.getBody(frontRoute, contactAddress),
+              email.getAttachements(attachementService)
+            )
+          )
+//          .flatMap {
+//            case None =>
+//              logger.debug("All emails filtered, ignoring email delivery")
+//              Future.successful(())
+//            case Some(filteredRecipients) =>
+//              send(
+//                filteredRecipients,
+//                email.subject,
+//                email.getBody(frontRoute, contactAddress),
+//                email.getAttachements(attachementService)
+//              )
+//          }
       case None =>
         logger.debug("No company linked to report, not sending emails")
         Future.successful(())
@@ -74,20 +83,24 @@ class MailService @Inject() (
       subject: String,
       bodyHtml: String,
       attachments: Seq[Attachment]
-  ): Future[Unit] =
-    if (recipients.exists(_.nonEmpty)) {
-      val emailRequest = EmailRequest(
-        from = mailFrom,
-        recipients = recipients.filter(_.nonEmpty),
-        subject = subject,
-        bodyHtml = bodyHtml,
-        attachments = attachments
-      )
+  ): Future[Unit] = {
+    val filteredEmptyEmail: Seq[EmailAddress] = recipients.filter(_.nonEmpty)
+    NonEmptyList.fromList(filteredEmptyEmail.toList) match {
+      case None => Future.successful(())
+      case Some(filteredRecipients) =>
+        val emailRequest = EmailRequest(
+          from = mailFrom,
+          recipients = filteredRecipients,
+          subject = subject,
+          bodyHtml = bodyHtml,
+          attachments = attachments
+        )
 
-      (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
-        logger.error("Unexpected error when sending email request to mail actor", err)
-        Future.failed(err)
-      }
-    } else Future.successful(())
+        (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
+          logger.error("Unexpected error when sending email request to mail actor", err)
+          Future.failed(err)
+        }
+    }
+  }
 
 }
