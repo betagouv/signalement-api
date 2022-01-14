@@ -41,14 +41,14 @@ trait BaseCompanyController extends BaseController {
       extends WrappedRequest[A](request) {
     def identity = request.identity
   }
-  def withCompany[A](siret: String, authorizedLevels: Seq[AccessLevel])(implicit ec: ExecutionContext) =
+  def withCompany(siret: String, authorizedLevels: Seq[AccessLevel])(implicit ec: ExecutionContext) =
     SecuredAction andThen new ActionRefiner[SecuredRequestWrapper, CompanyRequest] {
       def executionContext = ec
       def refine[A](request: SecuredRequestWrapper[A]) =
         for {
           company <- companyRepository.findBySiret(SIRET(siret))
           accessLevel <-
-            if (Seq(UserRoles.Admin, UserRoles.DGCCRF).contains(request.identity.userRole))
+            if (Seq(UserRole.Admin, UserRole.DGCCRF).contains(request.identity.userRole))
               Future(Some(AccessLevel.ADMIN))
             else
               company

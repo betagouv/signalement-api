@@ -3,129 +3,10 @@ package utils
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.UserRole
-import models.UserRoles
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 object Constants {
-
-  object ReportStatus {
-
-    case class ReportStatusValue(
-        defaultValue: String,
-        valueByRole: Map[UserRole, Option[String]] = Map(),
-        isFinal: Boolean = false
-    ) {
-
-      def getValueWithUserRole(userRole: UserRole) =
-        valueByRole.get(userRole).getOrElse(Some(defaultValue))
-    }
-
-    object ReportStatusValue {
-      implicit def reportStatusValueWrites(implicit userRole: Option[UserRole]) = new Writes[ReportStatusValue] {
-        def writes(reportStatusValue: ReportStatusValue) = Json.toJson(
-          userRole.flatMap(reportStatusValue.getValueWithUserRole(_)).getOrElse("")
-        )
-      }
-      implicit val reportStatusValueReads: Reads[ReportStatusValue] =
-        JsPath.read[String].map(fromDefaultValue(_))
-    }
-
-    object NA
-        extends ReportStatusValue(
-          "NA",
-          Map(
-            UserRoles.Pro -> None
-          ),
-          isFinal = true
-        )
-    object EMPLOYEE_REPORT
-        extends ReportStatusValue(
-          "Lanceur d'alerte",
-          Map(
-            UserRoles.Pro -> None
-          ),
-          isFinal = true
-        )
-    object TRAITEMENT_EN_COURS
-        extends ReportStatusValue(
-          "Traitement en cours",
-          Map(
-            UserRoles.Pro -> Some("Non consulté")
-          )
-        )
-    object SIGNALEMENT_TRANSMIS
-        extends ReportStatusValue(
-          "Signalement transmis",
-          Map(
-            UserRoles.DGCCRF -> Some("Traitement en cours"),
-            UserRoles.Pro -> Some("À répondre")
-          )
-        )
-    object PROMESSE_ACTION
-        extends ReportStatusValue(
-          "Promesse action",
-          Map(
-            UserRoles.Pro -> Some("Clôturé")
-          ),
-          isFinal = true
-        )
-    object SIGNALEMENT_INFONDE
-        extends ReportStatusValue(
-          "Signalement infondé",
-          Map(
-            UserRoles.Pro -> Some("Clôturé")
-          ),
-          isFinal = true
-        )
-    object SIGNALEMENT_NON_CONSULTE
-        extends ReportStatusValue(
-          "Signalement non consulté",
-          Map(
-            UserRoles.Pro -> Some("Clôturé")
-          ),
-          isFinal = true
-        )
-    object SIGNALEMENT_CONSULTE_IGNORE
-        extends ReportStatusValue(
-          "Signalement consulté ignoré",
-          Map(
-            UserRoles.Pro -> Some("Clôturé")
-          ),
-          isFinal = true
-        )
-    object SIGNALEMENT_MAL_ATTRIBUE
-        extends ReportStatusValue(
-          "Signalement mal attribué",
-          Map(
-            UserRoles.Pro -> Some("Clôturé")
-          ),
-          isFinal = true
-        )
-
-    val reportStatusList = Seq(
-      NA,
-      EMPLOYEE_REPORT,
-      TRAITEMENT_EN_COURS,
-      SIGNALEMENT_TRANSMIS,
-      PROMESSE_ACTION,
-      SIGNALEMENT_INFONDE,
-      SIGNALEMENT_NON_CONSULTE,
-      SIGNALEMENT_CONSULTE_IGNORE,
-      SIGNALEMENT_MAL_ATTRIBUE
-    )
-
-    def fromDefaultValue(value: String) =
-      reportStatusList.find(_.defaultValue == value).getOrElse(ReportStatusValue(""))
-
-    def getStatusListForValueWithUserRole(value: Option[String], userRole: UserRole) =
-      (value, userRole) match {
-        case (Some(value), _)      => Some(reportStatusList.filter(_.getValueWithUserRole(userRole) == Some(value)))
-        case (None, UserRoles.Pro) => Some(reportStatusList.filter(_.getValueWithUserRole(userRole).isDefined))
-        case (None, _)             => None
-      }
-
-  }
 
   object EventType {
 
@@ -158,10 +39,9 @@ object Constants {
 
     def fromUserRole(userRole: UserRole) =
       userRole match {
-        case UserRoles.Admin  => ADMIN
-        case UserRoles.DGCCRF => DGCCRF
-        case UserRoles.Pro    => PRO
-        case _                => CONSO
+        case UserRole.Admin         => ADMIN
+        case UserRole.DGCCRF        => DGCCRF
+        case UserRole.Professionnel => PRO
       }
 
   }
@@ -259,9 +139,9 @@ object Constants {
 
     val actionsForUserRole: Map[UserRole, List[ActionEventValue]] =
       Map(
-        UserRoles.Pro -> List(COMMENT),
-        UserRoles.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
-        UserRoles.DGCCRF -> List(COMMENT, CONTROL)
+        UserRole.Professionnel -> List(COMMENT),
+        UserRole.Admin -> List(COMMENT, CONSUMER_ATTACHMENTS, PROFESSIONAL_ATTACHMENTS),
+        UserRole.DGCCRF -> List(COMMENT, CONTROL)
       )
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
@@ -313,7 +193,16 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
-        case code                           => Departments.ALL.find(postalCode.startsWith(_))
+        case _                              => Departments.ALL.find(postalCode.startsWith)
+      }
+
+    def toPostalCode(postalCode: String) =
+      postalCode match {
+        case "978" => Seq("978", "97150")
+        case "977" => Seq("977", "97133")
+        case "2A"  => Seq("200", "201", "2A")
+        case "2B"  => Seq("202", "2B")
+        case other => Seq(other)
       }
   }
 
@@ -321,5 +210,8 @@ object Constants {
     val ReponseConso = "ReponseConso"
     val ContractualDispute = "Litige contractuel"
     val DangerousProduct = "Produit dangereux"
+    val Bloctel = "Bloctel"
+    val Influenceur = "Influenceur"
+    val CompagnieAerienne = "Compagnie aerienne"
   }
 }

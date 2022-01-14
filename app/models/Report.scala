@@ -3,7 +3,6 @@ package models
 import com.github.tminglei.slickpg.composite.Struct
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
@@ -36,7 +35,9 @@ case class DraftReport(
     forwardToReponseConso: Option[Boolean] = Some(false),
     fileIds: List[UUID],
     vendor: Option[String] = None,
-    tags: List[String] = Nil
+    tags: List[String] = Nil,
+    reponseconsoCode: Option[List[String]] = None,
+    ccrfCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
@@ -55,10 +56,12 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = NA,
+      status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
+      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
+      reponseconsoCode = reponseconsoCode.getOrElse(Nil),
+      ccrfCode = ccrfCode.getOrElse(Nil)
     )
     report.copy(status = report.initialStatus())
   }
@@ -70,6 +73,7 @@ object DraftReport {
     .filter(draft =>
       draft.companySiret.isDefined
         || draft.websiteURL.isDefined
+        || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
         || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
         || draft.phone.isDefined
     )
@@ -94,22 +98,28 @@ case class Report(
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
-    status: ReportStatusValue = NA,
+    status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
-    tags: List[String] = Nil
+    tags: List[String] = Nil,
+    reponseconsoCode: List[String] = Nil,
+    ccrfCode: List[String] = Nil
 ) {
 
   def initialStatus() =
-    if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct)).isEmpty)
-      TRAITEMENT_EN_COURS
-    else NA
+    if (employeeConsumer) ReportStatus.LanceurAlerte
+    else if (
+      companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
+    )
+      ReportStatus.TraitementEnCours
+    else ReportStatus.NA
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute() && !tags.contains(Tags.DangerousProduct)
+  def needWorkflowAttachment() = !employeeConsumer &&
+    !isContractualDispute() &&
+    tags.intersect(Seq(Tags.DangerousProduct, Tags.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }
@@ -125,6 +135,7 @@ object Report {
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,
+        "companyId" -> report.companyId,
         "companyName" -> report.companyName,
         "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
@@ -136,9 +147,11 @@ object Report {
         "host" -> report.websiteURL.host,
         "phone" -> report.phone,
         "vendor" -> report.vendor,
-        "tags" -> report.tags
+        "tags" -> report.tags,
+        "reponseconsoCode" -> report.reponseconsoCode,
+        "ccrfCode" -> report.ccrfCode
       ) ++ ((userRole, report.contactAgreement) match {
-        case (Some(UserRoles.Pro), false) => Json.obj()
+        case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>
           Json.obj(
             "firstName" -> report.firstName,

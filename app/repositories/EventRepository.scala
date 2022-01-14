@@ -1,13 +1,17 @@
 package repositories
 
+import cats.data.NonEmptyList
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import utils.Constants
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
+import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -16,6 +20,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import java.time.Duration
 import slick.jdbc.JdbcProfile
+
+import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
 
 case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
 
@@ -67,6 +74,7 @@ class EventRepository @Inject() (
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
 
@@ -125,15 +133,15 @@ class EventRepository @Inject() (
       .result
   }
 
-  def getReportResponseReviews(companyId: UUID): Future[Seq[Event]] =
+  def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
     db.run(
       eventTableQuery
         .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
         .joinLeft(ReportTables.tables)
         .on(_.reportId === _.id)
-        .filter { x =>
-          val res1 = x._1.companyId === companyId
-          val res2 = x._2.map(_.companyId === companyId).flatten
+        .filterOpt(companyId) { case (table, id) =>
+          val res1 = table._1.companyId === id
+          val res2 = table._2.map(_.companyId === id).flatten
           res1 || res2
         }
         .map(_._1)
@@ -161,10 +169,12 @@ class EventRepository @Inject() (
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
-  def getAvgTimeUntilEvent(companyId: UUID, action: ActionEventValue): Future[Option[Duration]] =
+  def getAvgTimeUntilEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Option[Duration]] =
     db.run(
       ReportTables.tables
-        .filter(_.companyId === companyId)
+        .filterOpt(companyId) { case (table, companyId) =>
+          table.companyId === companyId
+        }
         .join(eventTableQuery)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
@@ -172,4 +182,51 @@ class EventRepository @Inject() (
         .avg
         .result
     )
+
+  def getReportCountHavingEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Int] =
+    db.run(
+      ReportTables.tables
+        .filterOpt(companyId) { case (table, companyId) =>
+          table.companyId === companyId
+        }
+        .join(eventTableQuery)
+        .on(_.id === _.reportId)
+        .filter(_._2.action === action.value)
+        .length
+        .result
+    )
+
+  def getProReportStat(
+      ticks: Int,
+      startingDate: OffsetDateTime,
+      actions: NonEmptyList[ActionEventValue]
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
+  from events
+    where event_type = '#${PRO.value}'
+    and report_id is not null
+    and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
+and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
+  def getProReportResponseStat(
+      ticks: Int,
+      startingDate: OffsetDateTime,
+      responseTypes: NonEmptyList[ReportResponseType]
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
+  from events
+    where event_type = '#${PRO.value}'
+    and report_id is not null
+    and action = '#${REPORT_PRO_RESPONSE.value}'
+    and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
+and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
 }

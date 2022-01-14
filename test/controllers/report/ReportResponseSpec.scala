@@ -20,16 +20,15 @@ import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.Constants.ActionEvent
-import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.SIREN
 
 import scala.concurrent.Await
@@ -78,14 +77,14 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PROMESSE_ACTION
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -96,6 +95,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
 }
 
 class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+
   override def is =
     s2"""
         Given an authenticated pro user which have rights on head office         ${step {
@@ -114,14 +114,14 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
-        And the report reportStatusList is updated to "PROMESSE_ACTION"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PROMESSE_ACTION
+        And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.PromesseAction
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedHeadOfficeProUser.email,
@@ -149,14 +149,14 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
-        And the report reportStatusList is updated to "SIGNALEMENT_INFONDE"      ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_INFONDE
+        And the report reportStatusList is updated to "ReportStatus.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
+      ReportStatus.Infonde
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -185,7 +185,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
     )}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_MAL_ATTRIBUE
+      ReportStatus.MalAttribue
     )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
       reportFixture.email,
@@ -193,7 +193,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       views.html.mails.consumer
         .reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl)
         .toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -212,6 +212,8 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -226,7 +228,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
 
-  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
+  val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
   var reviewUrl = new URI("")
   var report = reportFixture
@@ -266,7 +268,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   override def setupData() = {
     reviewUrl = new URI(
-      app.configuration.get[URI]("play.dashboard.url").toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+      config.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
     )
     Await.result(
       for {
@@ -277,14 +279,14 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
 
-        _ <- companyRepository.setUserLevel(company, concernedProUser, AccessLevel.ADMIN)
-        _ <- companyRepository.setUserLevel(headOfficeCompany, concernedHeadOfficeProUser, AccessLevel.ADMIN)
+        _ <- companyRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
+        _ <- companyRepository.createUserAccess(headOfficeCompany.id, concernedHeadOfficeProUser.id, AccessLevel.ADMIN)
 
         _ <- companyDataRepository.create(companyData)
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        - <- reportRepository.createFile(reportResponseFile)
+        _ <- reportRepository.createFile(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -329,11 +331,11 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -350,12 +352,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     (action == event.action, s"action doesn't match ${action}")
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 

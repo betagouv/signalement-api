@@ -15,9 +15,11 @@ import play.api.Logger
 import repositories.CompanyRepository
 import repositories.ReportNotificationBlockedRepository
 import repositories._
+import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.FrontRoute
 import utils.SIREN
 import utils.silhouette.auth.AuthEnv
 
@@ -39,6 +41,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
   lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
+  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val mailService = injector.instanceOf[MailService]
 
@@ -73,9 +76,9 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
         _ <- companyRepository.getOrCreate(unrelatedCompany.siret, unrelatedCompany)
 
-        _ <- companyRepository.setUserLevel(headOfficeCompany, proWithAccessToHeadOffice, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(unrelatedCompany, proWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(headOfficeCompany.id, proWithAccessToHeadOffice.id, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(subsidiaryCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(unrelatedCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)
@@ -108,13 +111,16 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  protected def sendEmail(emails: List[EmailAddress], report: Report) = {
-    mailService.Pro.sendReportNotification(
-      emails,
-      report
+  protected def sendEmail(emails: List[EmailAddress], report: Report) =
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          emails,
+          report
+        )
+      ),
+      Duration.Inf
     )
-    Thread.sleep(100)
-  }
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
@@ -168,7 +174,12 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       ),
       Duration.Inf
     )
+
     sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }
 }
+
+//MailServiceSpecNoBlock
+//MailServiceSpecSomeBlock
+//MailServiceSpecAllBlock

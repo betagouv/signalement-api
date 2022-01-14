@@ -7,19 +7,18 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import controllers.ReportListController
 import models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
+import play.api.test.Helpers._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import play.api.test.Helpers.contentAsJson
+import play.api.test.Helpers
 import play.mvc.Http.Status
 import repositories._
-import utils.Constants.ReportStatus._
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
@@ -85,7 +84,7 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
          When retrieving reports                                                    ${step {
       someResult = Some(getReports(Some("badvalue")))
     }}
-         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${noReportsMustBeRendered()}
+         Then headOffice and subsidiary reports are rendered to the user as a Pro   ${mustBeBadRequest()}
     """
 }
 
@@ -135,16 +134,20 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(headOfficeCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
   val reportToProcessOnSubsidiary = Fixtures
     .genReportForCompany(subsidiaryCompany)
     .sample
     .get
-    .copy(employeeConsumer = false, status = TRAITEMENT_EN_COURS)
+    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
   val reportFromEmployeeOnHeadOffice =
-    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = true, status = EMPLOYEE_REPORT)
+    Fixtures
+      .genReportForCompany(headOfficeCompany)
+      .sample
+      .get
+      .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte)
   val reportNAOnHeadOffice =
-    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = NA)
+    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = ReportStatus.NA)
   val allReports =
     Seq(reportToProcessOnHeadOffice, reportToProcessOnSubsidiary, reportFromEmployeeOnHeadOffice, reportNAOnHeadOffice)
 
@@ -162,8 +165,16 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
-        _ <- companyRepository.setUserLevel(headOfficeCompany, proUserWithAccessToHeadOffice, AccessLevel.MEMBER)
-        _ <- companyRepository.setUserLevel(subsidiaryCompany, proUserWithAccessToSubsidiary, AccessLevel.MEMBER)
+        _ <- companyRepository.createUserAccess(
+          headOfficeCompany.id,
+          proUserWithAccessToHeadOffice.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyRepository.createUserAccess(
+          subsidiaryCompany.id,
+          proUserWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)
@@ -203,33 +214,19 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  def getReports(status: Option[String] = None) =
+  def getReports(status: Option[String] = None) = {
+    val request = FakeRequest(
+      play.api.http.HttpVerbs.GET,
+      controllers.routes.ReportListController.getReports().toString + status.map(x => s"?status=$x").getOrElse("")
+    )
+    val loggedRequest = someLoginInfo.map(request.withAuthenticator[AuthEnv](_)).getOrElse(request)
+    val result = route(app, loggedRequest).get
+
     Await.result(
-      app.injector
-        .instanceOf[ReportListController]
-        .getReports(
-          offset = None,
-          limit = None,
-          departments = None,
-          websiteURL = None,
-          phone = None,
-          websiteExists = None,
-          phoneExists = None,
-          email = None,
-          siretSirenList = Nil,
-          companyName = None,
-          companyCountries = None,
-          start = None,
-          end = None,
-          category = None,
-          status = status,
-          details = None,
-          hasCompany = None,
-          tags = Nil
-        )
-        .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
+      result,
       Duration.Inf
     )
+  }
 
   def userMustBeUnauthorized() =
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
@@ -240,26 +237,24 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def haveReports(reports: Matcher[String]*): Matcher[String] =
     /("entities").andHave(allOf(reports: _*))
 
-  def reportsMustBeRenderedForUser(user: User) = {
-
-    implicit val someUserRole = Some(user.userRole)
-
+  def reportsMustBeRenderedForUser(user: User) =
+//    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
-      case (UserRoles.Admin, _) =>
-        contentAsJson(Future(someResult.get)).toString must
+      case (UserRole.Admin, _) =>
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
-      case (UserRoles.DGCCRF, _) =>
-        contentAsJson(Future(someResult.get)).toString must
+      case (UserRole.DGCCRF, _) =>
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> allReports.length) and
           haveReports(allReports.map(report => aReport(report)): _*)
-      case (UserRoles.Pro, pro) if pro == proUserWithAccessToHeadOffice =>
-        contentAsJson(Future(someResult.get)).toString must
+      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToHeadOffice =>
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 2) and
           haveReports(aReport(reportToProcessOnHeadOffice), aReport(reportToProcessOnSubsidiary)) and
           not(haveReports(aReport(reportFromEmployeeOnHeadOffice), aReport(reportNAOnHeadOffice)))
-      case (UserRoles.Pro, pro) if pro == proUserWithAccessToSubsidiary =>
-        contentAsJson(Future(someResult.get)).toString must
+      case (UserRole.Professionnel, pro) if pro == proUserWithAccessToSubsidiary =>
+        contentAsJson(Future(someResult.get))(timeout).toString must
           /("totalCount" -> 1) and
           haveReports(aReport(reportToProcessOnSubsidiary)) and
           not(
@@ -272,11 +267,12 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       case _ =>
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
-  }
 
   def noReportsMustBeRendered() =
-    contentAsJson(Future(someResult.get)).toString must
+    Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
 
+  def mustBeBadRequest() =
+    someResult must beSome and someResult.get.header.status === Status.BAD_REQUEST
 }

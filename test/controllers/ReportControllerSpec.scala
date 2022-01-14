@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import config.AppConfigLoader
 import models._
 import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -29,7 +30,6 @@ import services.S3Service
 import utils.silhouette.auth.AuthEnv
 import utils.Fixtures
 import utils.FrontRoute
-import utils.silhouette.api.APIKeyEnv
 
 import scala.concurrent.Future
 
@@ -47,17 +47,16 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
         val controller = new ReportController(
-          mock[ReportOrchestrator],
-          mock[CompanyRepository],
-          mock[ReportRepository],
-          mock[EventRepository],
-          mock[CompaniesVisibilityOrchestrator],
-          mock[S3Service],
-          mock[PDFService],
-          mock[FrontRoute],
-          mock[Silhouette[AuthEnv]],
-          mock[Silhouette[APIKeyEnv]],
-          mock[Configuration]
+          reportOrchestrator = mock[ReportOrchestrator],
+          companyRepository = mock[CompanyRepository],
+          reportRepository = mock[ReportRepository],
+          eventRepository = mock[EventRepository],
+          companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator],
+          s3Service = mock[S3Service],
+          pdfService = mock[PDFService],
+          frontRoute = mock[FrontRoute],
+          silhouette = mock[Silhouette[AuthEnv]],
+          appConfigLoader = mock[AppConfigLoader]
         ) {
           override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
         }
@@ -65,63 +64,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val result = route(application, request).get
 
         Helpers.status(result) must beEqualTo(BAD_REQUEST)
-      }
-    }
-  }
-
-  "getReportCountBySiret" should {
-
-    val siretFixture = Fixtures.genSiret().sample.get
-
-    "return unauthorized when there no X-Api-Key header" should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count")
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-
-        }
-      }
-    }
-
-    "return unauthorized when X-Api-Key header is invalid" should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
-            "X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2"
-          )
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-
-        }
-      }
-    }
-
-    "return report count when X-Api-Key header is valid" should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          mockReportRepository.count(Some(siretFixture)) returns Future(5)
-
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
-            "X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq"
-          )
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(OK)
-          contentAsJson(result) must beEqualTo(Json.obj("siret" -> siretFixture, "count" -> 5))
-
-        }
       }
     }
   }
@@ -150,7 +92,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
     mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
     mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
-    mockCompanyRepository.fetchAdminsMapByCompany(List(companyId)) returns Future(Map(companyId -> List(proIdentity)))
+    mockCompanyRepository.fetchUsersByCompanyId(List(companyId)) returns Future(Map(companyId -> List(proIdentity)))
 
     mockUserRepository.create(any[User]) answers { (user: Any) => Future(user.asInstanceOf[User]) }
 

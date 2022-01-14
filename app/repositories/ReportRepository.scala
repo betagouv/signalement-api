@@ -1,18 +1,14 @@
 package repositories
 
+import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.DateUtils.withDayOfWeek
+import utils.Constants.Departments.toPostalCode
 import utils._
 
-import java.time.OffsetDateTime
 import java.time._
 import java.util.UUID
 import javax.inject.Inject
@@ -48,6 +44,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
   def tags = column[List[String]]("tags")
+  def reponseconsoCode = column[List[String]]("reponseconso_code")
+  def ccrfCode = column[List[String]]("ccrf_code")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTables.tables)(
     _.id.?,
@@ -82,6 +80,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
+      List[String],
+      List[String],
       List[String]
   )
 
@@ -113,7 +113,9 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           forwardToReponseConso,
           status,
           vendor,
-          tags
+          tags,
+          reponseconsoCode,
+          ccrfCode
         ) =>
       Report(
         id = id,
@@ -140,9 +142,11 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         contactAgreement = contactAgreement,
         employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
-        status = ReportStatus.fromDefaultValue(status),
+        status = ReportStatus.withName(status),
         vendor = vendor,
-        tags = tags
+        tags = tags,
+        reponseconsoCode = reponseconsoCode,
+        ccrfCode = ccrfCode
       )
   }
 
@@ -172,9 +176,11 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       r.contactAgreement,
       r.employeeConsumer,
       r.forwardToReponseConso,
-      r.status.defaultValue,
+      r.status.entryName,
       r.vendor,
-      r.tags
+      r.tags,
+      r.reponseconsoCode,
+      r.ccrfCode
     )
   }
 
@@ -205,7 +211,9 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
     forwardToReponseConso,
     status,
     vendor,
-    tags
+    tags,
+    reponseconsoCode,
+    ccrfCode
   ) <> (constructReport, extractReport.lift)
 }
 
@@ -218,13 +226,13 @@ class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyRepository: CompanyRepository,
     val emailValidationRepository: EmailValidationRepository,
-    configuration: Configuration
+    appConfigLoader: AppConfigLoader
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = ZoneId.of(configuration.get[String]("play.zoneId"))
+  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
 
@@ -262,23 +270,91 @@ class ReportRepository @Inject() (
 
   private val fileTableQuery = TableQuery[FileTable]
 
-  private val companyTableQuery = CompanyTables.tables
-
-  private val date = SimpleFunction.unary[OffsetDateTime, LocalDate]("date")
-
   private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
-
-  private val trunc = SimpleFunction.binary[String, OffsetDateTime, OffsetDateTime]("date_trunc")
 
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
 
-  val backofficeAdminStartDate = OffsetDateTime.of(
-    LocalDate.parse(configuration.get[String]("play.stats.backofficeAdminStartDate")),
-    LocalTime.MIDNIGHT,
-    ZoneOffset.UTC
-  )
+  private[this] def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
+    reportTableQuery
+      .filterOpt(filter.email) { case (table, email) =>
+        table.email === EmailAddress(email)
+      }
+      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
+        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      }
+      .filterOpt(filter.phone) { case (table, reportedPhone) =>
+        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      }
+      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
+        table.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
+        table.phone.isDefined === phoneRequired
+      }
+      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
+        table.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
+        table.companyCountry.isDefined === hasForeignCountry
+      }
+      .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
+      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
+        table.companySiret
+          .map(siret =>
+            (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
+              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
+                .filter(_.matches(SIREN.pattern))
+                .distinct)
+          )
+          .getOrElse(false)
+      }
+      .filterOpt(filter.companyName) { case (table, companyName) =>
+        table.companyName like s"${companyName}%"
+      }
+      .filterIf(filter.companyCountries.nonEmpty) { case table =>
+        table.companyCountry
+          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
+          .getOrElse(false)
+      }
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+      }
+      .filterOpt(filter.category) { case (table, category) =>
+        table.category === category
+      }
+      .filterIf(filter.status.nonEmpty) { case table =>
+        table.status.inSet(filter.status.map(_.entryName))
+      }
+      .filterIf(filter.tags.nonEmpty) { case table =>
+        table.tags @& filter.tags.toList.bind
+      }
+      .filterOpt(filter.details) { case (table, details) =>
+        array_to_string(table.subcategories, ",", "") ++ array_to_string(
+          table.details,
+          ",",
+          ""
+        ) regexLike s"${details}"
+      }
+      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
+        table.employeeConsumer === employeeConsumer
+      }
+      .filterIf(filter.departments.nonEmpty) { case (table) =>
+        filter.departments
+          .flatMap(toPostalCode)
+          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
+          .reduceLeft(_ || _)
+      }
+      .joinLeft(CompanyTables.tables)
+      .on(_.companyId === _.id)
+      .filterIf(filter.activityCodes.nonEmpty)(
+        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
+      )
+      .map(_._1)
 
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
@@ -300,6 +376,21 @@ class ReportRepository @Inject() (
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(reportTableQuery.filter(_.email === email).result)
 
+  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+    db.run(
+      reportTableQuery
+        .filterOpt(start) { case (table, s) =>
+          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, zoneId).toOffsetDateTime
+        }
+        .filterOpt(end) { case (table, e) =>
+          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, zoneId).toOffsetDateTime
+        }
+        .groupBy(_.companyPostalCode.map(x => substr(x, 1, 2)).getOrElse(""))
+        .map { case (department, group) => (department, group.length) }
+        .sortBy(_._2.desc)
+        .result
+    )
+
   def update(report: Report): Future[Report] = {
     val queryReport =
       for (refReport <- reportTableQuery if refReport.id === report.id)
@@ -308,63 +399,59 @@ class ReportRepository @Inject() (
       .map(_ => report)
   }
 
-  def count(siret: Option[SIRET] = None): Future[Int] = db
+  def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
+
+  def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]] =
+    db
+      .run(
+        queryFilter(filter)
+          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
+          .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
+          .map { case ((month, year), group) => (month, year, group.length) }
+          .result
+      )
+      .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
+      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
+
+  def getDailyCount(
+      filter: ReportFilter,
+      ticks: Int
+  ): Future[Seq[CountByDate]] = db
     .run(
-      reportTableQuery
-        .filterOpt(siret) { case (table, siret) =>
-          table.companySiret === siret
+      queryFilter(filter)
+        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
+        .groupBy(report =>
+          (
+            date_part("day", report.creationDate),
+            date_part("month", report.creationDate),
+            date_part("year", report.creationDate)
+          )
+        )
+        .map { case ((day, month, year), group) =>
+          (day, month, year, group.length)
         }
-        .length
         .result
     )
+    .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
+    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i)))
 
-  def monthlyCount: Future[List[MonthlyStat]] = db
-    .run(
-      reportTableQuery
-        .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1))
-        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map { case ((month, year), group) =>
-          (month, year, group.length)
-        }
-        .to[List]
-        .result
-    )
-    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
-
-  val baseStatReportTableQuery = reportTableQuery
-    .filter(_.creationDate > backofficeAdminStartDate)
-  val baseMonthlyStatReportTableQuery = baseStatReportTableQuery.filter(report =>
-    report.creationDate > OffsetDateTime.now().minusMonths(11).withDayOfMonth(1)
-  )
-
-  def countWithStatus(
-      statusList: List[ReportStatusValue],
-      cutoff: Option[Duration],
-      withWebsite: Option[Boolean] = None
-  ) = db
-    .run(
-      baseStatReportTableQuery
-        .filterIf(cutoff.isDefined)(_.creationDate < OffsetDateTime.now().minus(cutoff.get))
-        .filter(_.status inSet statusList.map(_.defaultValue))
-        .filterOpt(withWebsite) { case (table, withWebsite) =>
-          table.websiteURL.isDefined === withWebsite
-        }
-        .length
-        .result
-    )
-
-  def countMonthlyWithStatus(statusList: List[ReportStatusValue]): Future[List[MonthlyStat]] = db
-    .run(
-      baseMonthlyStatReportTableQuery
-        .filter(_.status inSet statusList.map(_.defaultValue))
-        .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
-        .map { case ((month, year), group) =>
-          (month, year, group.length)
-        }
-        .to[List]
-        .result
-    )
-    .map(_.map(result => MonthlyStat(result._3, YearMonth.of(result._2, result._1))))
+  private[this] def fillFullPeriod(
+      ticks: Int,
+      dateOperator: (LocalDate, Int) => LocalDate
+  )(
+      fetchedData: Seq[CountByDate]
+  ): Seq[CountByDate] = {
+    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
+    val res = (1 to ticks).map { i =>
+      val date = dateOperator(start, -i)
+      val count = fetchedData
+        .find(_.date.equals(date))
+        .map(_.count)
+        .getOrElse(0)
+      CountByDate(count, date)
+    }
+    res
+  }
 
   def getReport(id: UUID): Future[Option[Report]] = db.run {
     reportTableQuery
@@ -400,16 +487,16 @@ class ReportRepository @Inject() (
       .result
   }
 
-  def getReportsStatusDistribution(companyId: UUID): Future[Map[String, Int]] =
+  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]] =
     db.run(
       reportTableQuery
-        .filter(_.companyId === companyId)
+        .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.status)
         .map { case (status, report) => status -> report.size }
         .result
     ).map(_.toMap)
 
-  def getReportsTagsDistribution(companyId: UUID): Future[Map[String, Int]] = {
+  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[String, Int]] = {
     def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
       map.foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
         acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
@@ -417,7 +504,7 @@ class ReportRepository @Inject() (
 
     db.run(
       reportTableQuery
-        .filter(_.companyId === companyId)
+        .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.tags)
         .map { case (status, report) => (status, report.size) }
         .sortBy(_._2.desc)
@@ -425,83 +512,7 @@ class ReportRepository @Inject() (
     ).map(spreadListOfTags)
   }
 
-  def getReportsCountByDay(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsCount(companyId, "day", (date, i) => date.minusDays(i))
-
-  def getReportsCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsCount(companyId, "week", (date, i) => withDayOfWeek(date, DayOfWeek.MONDAY).minusWeeks(i))
-
-  def getReportsCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
-
-  def getReportsResponsesCountByDay(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsResponsesCount(companyId, "day", (date, i) => date.minusDays(i))
-
-  def getReportsResponsesCountByWeek(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsResponsesCount(companyId, "week", (date, i) => withDayOfWeek(date, DayOfWeek.MONDAY).minusWeeks(i))
-
-  def getReportsResponsesCountByMonth(companyId: UUID): Future[Seq[(LocalDate, Int)]] =
-    getReportsResponsesCount(companyId, "month", (date, i) => date.withDayOfMonth(1).minusMonths(i))
-
-  private[this] def getReportsCount(
-      companyId: UUID,
-      truncName: String,
-      dateOperator: (LocalDate, Int) => LocalDate,
-      tick: Int = 7
-  ) =
-    db.run(
-      reportTableQuery
-        .filter(_.companyId === companyId)
-        .filter(
-          _.creationDate >= ZonedDateTime
-            .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
-            .toOffsetDateTime
-        )
-        .groupBy(x => trunc(truncName, x.creationDate))
-        .map { case (creationDate, report) => creationDate -> report.size }
-        .result
-    ).map(mapPeriod(tick, dateOperator))
-
-  private[this] def getReportsResponsesCount(
-      companyId: UUID,
-      truncName: String,
-      dateOperator: (LocalDate, Int) => LocalDate,
-      tick: Int = 7
-  ) =
-    db.run(
-      reportTableQuery
-        .filter(_.companyId === companyId)
-        .join(EventTables.tables)
-        .on(_.id === _.reportId)
-        .filter(_._2.action === REPORT_PRO_RESPONSE.value)
-        .filter(
-          _._2.creationDate >= ZonedDateTime
-            .of(dateOperator(LocalDate.now(), tick), LocalTime.MIN, zoneId)
-            .toOffsetDateTime
-        )
-        .groupBy(x => trunc(truncName, x._2.creationDate))
-        .map { case (creationDate, report) => creationDate -> report.size }
-        .result
-    ).map(mapPeriod(tick, dateOperator))
-
-  private[this] def mapPeriod(
-      ticks: Int,
-      dateOperator: (LocalDate, Int) => LocalDate
-  )(
-      fetchedData: Seq[(OffsetDateTime, Int)]
-  ): Seq[(LocalDate, Int)] = {
-    val start = dateOperator(LocalDate.now(), ticks).atStartOfDay().toLocalDate
-    (1 to ticks).map { i =>
-      val date = dateOperator(start, -i)
-      val count = fetchedData
-        .find(_._1.toLocalDate.equals(date))
-        .map(_._2)
-        .getOrElse(0)
-      (date, count)
-    }
-  }
-
-  def getHosts(companyId: UUID): Future[Seq[String]] =
+  def getHostsByCompany(companyId: UUID): Future[Seq[String]] =
     db.run(
       reportTableQuery
         .filter(_.companyId === companyId)
@@ -511,86 +522,14 @@ class ReportRepository @Inject() (
         .result
     ).map(_.map(_.getOrElse("")))
 
-  def getReports(offset: Long, limit: Int, filter: ReportFilter): Future[PaginatedResult[Report]] = db.run {
-    val query = reportTableQuery
-      .filterOpt(filter.email) { case (table, email) =>
-        table.email === EmailAddress(email)
-      }
-      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
-        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
-      }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
-      }
-      .filterOpt(filter.websiteURL.flatMap(_ => None).orElse(filter.websiteExists)) { case (table, websiteRequired) =>
-        table.websiteURL.isDefined === websiteRequired
-      }
-      .filterOpt(filter.phone.flatMap(_ => None).orElse(filter.phoneExists)) { case (table, phoneRequired) =>
-        table.phone.isDefined === phoneRequired
-      }
-      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
-        table.companySiret
-          .map(siret =>
-            (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
-              (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
-                .filter(_.matches(SIREN.pattern))
-                .distinct)
-          )
-          .getOrElse(false)
-      }
-      .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
-      }
-      .filterIf(filter.companyCountries.nonEmpty) { case table =>
-        table.companyCountry
-          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
-          .getOrElse(false)
-      }
-      .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
-      }
-      .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
-      }
-      .filterOpt(filter.category) { case (table, category) =>
-        table.category === category
-      }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
-      }
-      .filterOpt(filter.statusList) { case (table, statusList) =>
-        table.status.inSet(statusList.map(_.defaultValue))
-      }
-      .filterIf(!filter.tags.isEmpty) { case table =>
-        table.tags @& filter.tags.toList.bind
-      }
-      .filterOpt(filter.details) { case (table, details) =>
-        array_to_string(table.subcategories, ",", "") ++ array_to_string(table.details, ",", "") regexLike s"${details}"
-      }
-      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
-        table.employeeConsumer === employeeConsumer
-      }
-      .joinLeft(companyTableQuery)
-      .on(_.companyId === _.id)
-      .filterIf(filter.departments.length > 0) { case (report, company) =>
-        company.map(_.department).flatten.map(a => a.inSet(filter.departments)).getOrElse(false)
-      }
-
-    for {
-      reports <- query
-        .map(_._1)
-        .sortBy(_.creationDate.desc)
-        .drop(offset)
-        .take(limit)
-        .to[List]
-        .result
-      count <- query.length.result
-    } yield PaginatedResult(
-      totalCount = count,
-      entities = reports,
-      hasNextPage = count - (offset + limit) > 0
-    )
-  }
+  def getReports(
+      filter: ReportFilter,
+      offset: Option[Long] = None,
+      limit: Option[Int] = None
+  ): Future[PaginatedResult[Report]] =
+    queryFilter(filter)
+      .sortBy(_.creationDate.desc)
+      .withPagination(db)(offset, limit)
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery
@@ -652,34 +591,13 @@ class ReportRepository @Inject() (
         .update(Some(output))
     )
 
-  def getNbReportsGroupByCompany(offset: Long, limit: Int): Future[PaginatedResult[DeprecatedCompanyWithNbReports]] = {
-    val q = db.run(
-      companyTableQuery
-        .joinLeft(reportTableQuery)
-        .on(_.id === _.companyId)
-        .groupBy(_._1)
-        .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-        .to[List]
-        .sortBy(_._2.desc)
-        .result
-    )
-
-    for {
-      res <- q.map(_.map { case (company, cnt) => DeprecatedCompanyWithNbReports(company, cnt) })
-    } yield PaginatedResult(
-      totalCount = res.length,
-      entities = res.drop(offset.toInt).take(limit).toList,
-      hasNextPage = res.length - (offset + limit) > 0
-    )
-  }
-
-  def getByStatus(status: ReportStatusValue): Future[List[Report]] =
-    db.run(reportTableQuery.filter(_.status === status.defaultValue).to[List].result)
+  def getByStatus(status: ReportStatus): Future[List[Report]] =
+    db.run(reportTableQuery.filter(_.status === status.entryName).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
       reportTableQuery
-        .filter(_.status === ReportStatus.TRAITEMENT_EN_COURS.defaultValue)
+        .filter(_.status === ReportStatus.TraitementEnCours.entryName)
         .filter(_.companyId inSet companiesIds)
         .to[List]
         .result
@@ -692,7 +610,7 @@ class ReportRepository @Inject() (
     .run(
       reportTableQuery
         .filter(_.websiteURL.isDefined)
-        .filter(_.companyId.isEmpty)
+        .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }
@@ -712,7 +630,7 @@ class ReportRepository @Inject() (
       reportTableQuery
         .filter(_.host.isDefined)
         .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
-        .filter(_.companyId.isEmpty)
+        .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
         }

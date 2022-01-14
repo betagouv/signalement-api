@@ -12,7 +12,7 @@ case class CompanyData(
     siret: SIRET,
     siren: SIREN,
     dateDernierTraitementEtablissement: Option[String] = None,
-    etablissementSiege: Option[String] = None, //TODO change after updating table column type
+    etablissementSiege: Option[String] = None, // TODO change after updating table column type
     complementAdresseEtablissement: Option[String] = None,
     numeroVoieEtablissement: Option[String] = None,
     indiceRepetitionEtablissement: Option[String] = None,

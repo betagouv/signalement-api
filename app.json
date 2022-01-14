@@ -1,7 +1,7 @@
 {
   "name": "signalement-api",
   "scripts": {
-    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_companies.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql && psql $DATABASE_URL < ./test/scripts/insert_company_accesses.sql"
+    "postdeploy": "psql $DATABASE_URL < ./test/scripts/insert_users.sql && psql $DATABASE_URL < ./test/scripts/insert_companies.sql && psql $DATABASE_URL < ./test/scripts/insert_reports.sql && psql $DATABASE_URL < ./test/scripts/insert_company_accesses.sql && psql $DATABASE_URL < ./test/scripts/insert_consumers.sql"
   },
   "env": {
     "APPLICATION_HOST": {

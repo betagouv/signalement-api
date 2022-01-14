@@ -1,7 +1,6 @@
 package repositories
 
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
-import models.AuthToken
+import models.auth.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -14,12 +13,12 @@ import scala.concurrent.Future
 
 /** A repository for authToken.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class AuthTokenRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider,
-    passwordHasherRegistry: PasswordHasherRegistry
+    dbConfigProvider: DatabaseConfigProvider
 )(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -30,7 +29,9 @@ class AuthTokenRepository @Inject() (
   private class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
 
     def id = column[UUID]("id", O.PrimaryKey)
+
     def userId = column[UUID]("user_id")
+
     def expiry = column[OffsetDateTime]("expiry")
 
     type AuthTokenData = (UUID, UUID, OffsetDateTime)
@@ -67,4 +68,15 @@ class AuthTokenRepository @Inject() (
       .filter(_.userId === userId)
       .delete
   }
+
+  def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery
+      .filter(_.userId === userId)
+      .result
+  }
+
+  def list(): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery.result
+  }
+
 }

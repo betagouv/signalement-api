@@ -9,7 +9,9 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
+import java.sql.Timestamp
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -66,7 +68,6 @@ class AccessTokenRepository @Inject() (
   ): Future[AccessToken] =
     db.run(
       AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
-        id = UUID.randomUUID(),
         creationDate = creationDate,
         kind = kind,
         token = token,
@@ -98,11 +99,29 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
+        .result
+        .headOption
+    )
+
+  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.companyId === companyId)
+        .filter(_.kind === (CompanyInit: TokenKind))
+        .filter(_.level === AccessLevel.ADMIN)
+        .result
+        .headOption
+    )
+
+  def get(tokenId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.id === tokenId)
         .result
         .headOption
     )
@@ -124,7 +143,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
+  def findValidToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.token === token)
@@ -164,30 +183,30 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] =
-    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
-      logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
-      Future(false)
-    } else
-      db.run(
-        DBIO
-          .seq(
-            companyRepository.upsertUserAccess(token.companyId.get, user.id, token.companyLevel.get),
-            AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
-            AccessTokenTableQuery
-              .filter(_.companyId === token.companyId)
-              .filter(_.emailedTo.isEmpty)
-              .map(_.valid)
-              .update(false)
-          )
-          .transactionally
-      ).map(_ => true)
+  def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean] =
+    db.run(
+      DBIO
+        .seq(
+          companyRepository.createCompanyUserAccess(
+            token.companyId.get,
+            user.id,
+            token.companyLevel.get
+          ),
+          AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
+          AccessTokenTableQuery
+            .filter(_.companyId === token.companyId)
+            .filter(_.emailedTo.isEmpty)
+            .map(_.valid)
+            .update(false)
+        )
+        .transactionally
+    ).map(_ => true)
 
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
       DBIO
         .seq(
-          companyRepository.upsertUserAccess(company.id, user.id, level),
+          companyRepository.createCompanyUserAccess(company.id, user.id, level),
           AccessTokenTableQuery
             .filter(_.companyId === company.id)
             .filter(_.emailedTo.isEmpty)
@@ -238,7 +257,7 @@ class AccessTokenRepository @Inject() (
     )
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
-    fetchActivationToken(company.id).map(_.map(_.token))
+    fetchValidActivationToken(company.id).map(_.map(_.token))
 
   def useEmailValidationToken(token: AccessToken, user: User) =
     db.run(
@@ -252,4 +271,47 @@ class AccessTokenRepository @Inject() (
         )
         .transactionally
     ).map(_ => true)
+
+  def dgccrfAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select
+      my_date_trunc('month'::text, creation_date)::timestamp,
+      sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
+      from access_tokens
+        where kind = 'DGCCRF_ACCOUNT' and valid = false
+      group by  my_date_trunc('month'::text, creation_date)
+      order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (select v.a, count(distinct s.user_id) from subscriptions s right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date <= (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval)
+
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfActiveAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select v.a, count(distinct ac.emailed_to) from access_tokens ac right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date between (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) - '4 month'::interval 
+                                                         and (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) and kind = 'VALIDATE_EMAIL' and valid = false
+
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfControlsCurve(ticks: Int) =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
+  from events
+    where action = 'Contrôle effectué'
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
+  private def computeTickValues(ticks: Int) = Seq
+    .iterate(OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .map(_.toLocalDate)
+    .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
+    .map(t => s"('$t'::timestamp)")
+    .mkString(",")
+
 }

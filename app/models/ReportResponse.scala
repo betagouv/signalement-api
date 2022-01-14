@@ -1,15 +1,14 @@
 package models
 
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
-import utils.EnumUtils
 
 import java.util.UUID
 
 case class ReportResponse(
-    responseType: ReportResponseType.Value,
+    responseType: ReportResponseType,
     consumerDetails: String,
     dgccrfDetails: Option[String],
     fileIds: List[UUID]
@@ -19,11 +18,16 @@ object ReportResponse {
   implicit val reportResponse: OFormat[ReportResponse] = Json.format[ReportResponse]
 }
 
-object ReportResponseType extends Enumeration {
-  val ACCEPTED, REJECTED, NOT_CONCERNED = Value
+sealed trait ReportResponseType extends EnumEntry
 
-  implicit val enumReads: Reads[ReportResponseType.Value] = EnumUtils.enumReads(ReportResponseType)
-  implicit def enumWrites: Writes[ReportResponseType.Value] = EnumUtils.enumWrites
+object ReportResponseType extends PlayEnum[ReportResponseType] {
+
+  final case object ACCEPTED extends ReportResponseType
+  final case object REJECTED extends ReportResponseType
+  final case object NOT_CONCERNED extends ReportResponseType
+
+  override def values: IndexedSeq[ReportResponseType] = findValues
+
 }
 
 case class ReviewOnReportResponse(

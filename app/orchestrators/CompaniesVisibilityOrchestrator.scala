@@ -4,7 +4,7 @@ import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
 import models.User
-import models.UserRoles
+import models.UserRole
 import repositories._
 import utils.SIREN
 import utils.SIRET
@@ -14,7 +14,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-case class SiretsSirens(sirens: List[SIREN], sirets: List[SIRET]) {
+case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
   def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
@@ -32,14 +32,14 @@ class CompaniesVisibilityOrchestrator @Inject() (
 
   def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
-      adminsByCompanyIdMap <- companyRepo.fetchAdminsMapByCompany(companies.map(_._2))
+      adminsByCompanyIdMap <- companyRepo.fetchUsersByCompanyId(companies.map(_._2))
       headOfficesCompany <- companyDataRepo
         .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
         .map(_.map(_._1))
         .flatMap { companyDatas =>
           companyRepo.findBySirets(companyDatas.map(_.siret))
         }
-      headOfficeAdminsMap <- companyRepo.fetchAdminsMapByCompany(headOfficesCompany.map(_.id))
+      headOfficeAdminsMap <- companyRepo.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
       headOfficeIdByCompanyIdMap = companies
         .groupBy(_._2)
         .view
@@ -94,8 +94,8 @@ class CompaniesVisibilityOrchestrator @Inject() (
         )
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
-  def filterUnauthorizedSiretSirenList(siretSirenList: List[String], user: User): Future[List[String]] =
-    if (user.userRole == UserRoles.Pro) {
+  def filterUnauthorizedSiretSirenList(siretSirenList: Seq[String], user: User): Future[Seq[String]] =
+    if (user.userRole == UserRole.Professionnel) {
       val formattedSiretsSirens = formatSiretSirenList(siretSirenList)
       fetchVisibleSiretsSirens(user).map { allowed =>
         val filteredSiretsSirens = SiretsSirens(
@@ -120,7 +120,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
       id.sirets.filter(siret => !id.sirens.contains(SIREN(siret)))
     )
 
-  private[this] def formatSiretSirenList(siretSirenList: List[String]): SiretsSirens =
+  private[this] def formatSiretSirenList(siretSirenList: Seq[String]): SiretsSirens =
     SiretsSirens(
       sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.apply),
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)

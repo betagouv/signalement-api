@@ -1,24 +1,25 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.email.ValidateEmailCode
+import models.email.ValidateEmail
 import orchestrators.EmailValidationOrchestrator
 import play.api._
-import play.api.libs.json.JsError
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import repositories._
-import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 
-import java.time.OffsetDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import error.AppErrorTransformer.handleError
+import play.api.mvc.Action
+import play.api.mvc.Result
 
 @Singleton
 class EmailValidationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
-    emailValidationRepository: EmailValidationRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator
 )(implicit
     ec: ExecutionContext
@@ -26,54 +27,24 @@ class EmailValidationController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  case class EmailBody(email: EmailAddress)
+  def checkEmail(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+    logger.debug("Calling checking email API")
+    val validationResultOrError: Future[Result] = for {
+      validateEmail <- request.parseBody[ValidateEmail]()
+      validationResult <- emailValidationOrchestrator.checkEmail(validateEmail.email)
+    } yield Ok(Json.toJson(validationResult))
 
-  def checkEmail() = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[EmailBody](Json.reads[EmailBody])
-      .fold(
-        errors => {
-          logger.error(s"$errors")
-          Future.successful(BadRequest(JsError.toJson(errors)))
-        },
-        body =>
-          emailValidationOrchestrator
-            .sendEmailConfirmationIfNeeded(body.email)
-            .map(valid => Ok(Json.obj("valid" -> valid)))
-      )
+    validationResultOrError.recover { case err => handleError(err) }
   }
 
-  case class EmailValidationBody(email: EmailAddress, confirmationCode: String)
+  def validEmail(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+    logger.debug("Calling validate email API")
 
-  def validEmail() = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[EmailValidationBody](Json.reads[EmailValidationBody])
-      .fold(
-        errors => {
-          logger.error(s"$errors")
-          Future.successful(BadRequest(JsError.toJson(errors)))
-        },
-        body =>
-          emailValidationRepository.findByEmail(body.email).flatMap { emailValidationOpt =>
-            emailValidationOpt
-              .map { emailValidation =>
-                if (emailValidation.confirmationCode == body.confirmationCode)
-                  emailValidationRepository.validate(body.email).map(emailValidation => Ok(Json.obj("valid" -> true)))
-                // TODO Could be nice to handle some day
-                // else if (emailValidation.attempts > 10)
-                //   Future(Ok(Json.obj("valid" -> false, "reason" -> "TOO_MANY_ATTEMPTS")))
-                else
-                  emailValidationRepository
-                    .update(
-                      emailValidation.copy(
-                        attempts = emailValidation.attempts + 1,
-                        lastAttempt = Some(OffsetDateTime.now)
-                      )
-                    )
-                    .map(x => Ok(Json.obj("valid" -> false, "reason" -> "INVALID_CODE")))
-              }
-              .getOrElse(Future(NotFound))
-          }
-      )
+    val validationResultOrError: Future[Result] = for {
+      validateEmailCode <- request.parseBody[ValidateEmailCode]()
+      validationResult <- emailValidationOrchestrator.validateEmailCode(validateEmailCode)
+    } yield Ok(Json.toJson(validationResult))
+
+    validationResultOrError.recover { case err => handleError(err) }
   }
 }

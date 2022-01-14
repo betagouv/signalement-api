@@ -1,19 +1,22 @@
 package repositories
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import controllers.error.AppError.EmailAlreadyExist
 import models._
+import models.auth.AuthAttempt
+import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
-import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class UserTable(tag: Tag) extends Table[User](tag, "users") {
 
@@ -28,12 +31,12 @@ class UserTable(tag: Tag) extends Table[User](tag, "users") {
   type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
 
   def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-    User(id, password, email, firstName, lastName, UserRoles.withName(role), lastEmailValidation)
+    User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation)
   }
 
   def extractUser: PartialFunction[User, UserData] = {
     case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      (id, password, email, firstName, lastName, role.name, lastEmailValidation)
+      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation)
   }
 
   def * = (
@@ -52,8 +55,10 @@ class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts")
   def id = column[UUID]("id", O.PrimaryKey)
   def login = column[String]("login")
   def timestamp = column[OffsetDateTime]("timestamp")
+  def isSuccess = column[Option[Boolean]]("is_success")
+  def failureCause = column[Option[String]]("failure_cause")
 
-  def * = (id, login, timestamp) <> (AuthAttempt.tupled, AuthAttempt.unapply)
+  def * = (id, login, timestamp, isSuccess, failureCause) <> (AuthAttempt.tupled, AuthAttempt.unapply)
 }
 
 object UserTables {
@@ -66,7 +71,8 @@ object AuthAttemptTables {
 
 /** A repository for user.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class UserRepository @Inject() (
@@ -75,6 +81,7 @@ class UserRepository @Inject() (
 )(implicit ec: ExecutionContext) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  val logger: Logger = Logger(this.getClass)
 
   import dbConfig._
 
@@ -87,13 +94,18 @@ class UserRepository @Inject() (
     db
       .run(
         userTableQuery
-          .filter(_.role === role.name)
+          .filter(_.role === role.entryName)
           .result
       )
 
   def create(user: User): Future[User] = db
     .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
+    .recoverWith {
+      case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
+        logger.warn("Cannot create user, provided email already exists")
+        Future.failed(EmailAlreadyExist)
+    }
 
   def get(userId: UUID): Future[Option[User]] = db
     .run(userTableQuery.filter(_.id === userId).to[List].result.headOption)
@@ -102,15 +114,27 @@ class UserRepository @Inject() (
     .run(
       authAttemptTableQuery
         .filter(_.login === login)
-        .filter(_.timestamp >= OffsetDateTime.now.minus(delay))
+        .filter(_.timestamp >= OffsetDateTime.now.minusMinutes(delay.toMinutes))
         .length
         .result
     )
 
-  def saveAuthAttempt(login: String) = db
+  def listAuthAttempts(login: String) = db
     .run(
-      authAttemptTableQuery += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now)
+      authAttemptTableQuery
+        .filter(_.login === login)
+        .result
     )
+
+  def saveAuthAttempt(login: String, isSuccess: Boolean, failureCause: Option[String] = None) = {
+
+    val authAttempt = AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
+    logger.debug(s"Saving auth attempt $authAttempt")
+    db
+      .run(
+        authAttemptTableQuery += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
+      )
+  }
 
   def update(user: User): Future[Int] = {
     val queryUser =
@@ -119,7 +143,7 @@ class UserRepository @Inject() (
     db.run(
       queryUser
         .map(u => (u.firstName, u.lastName, u.email))
-        .update(user.firstName, user.lastName, user.email)
+        .update((user.firstName, user.lastName, user.email))
     )
   }
 
@@ -137,11 +161,15 @@ class UserRepository @Inject() (
   def delete(userId: UUID): Future[Int] = db
     .run(userTableQuery.filter(_.id === userId).delete)
 
+  def list(email: EmailAddress): Future[Seq[User]] = db
+    .run(userTableQuery.filter(_.email === email).result)
+
   def delete(email: EmailAddress): Future[Int] = db
     .run(userTableQuery.filter(_.email === email).delete)
 
   def findById(id: UUID): Future[Option[User]] =
     db.run(userTableQuery.filter(_.id === id).result.headOption)
+
   def findByLogin(login: String): Future[Option[User]] =
     db.run(
       userTableQuery

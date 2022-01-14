@@ -1,12 +1,11 @@
 package services
 
-import akka.actor.ActorSystem
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
-import play.api.Configuration
+import config.AppConfigLoader
 import play.api.Logger
 import play.api.http.FileMimeTypes
 import play.twirl.api.HtmlFormat
@@ -14,17 +13,17 @@ import play.twirl.api.HtmlFormat
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class PDFService @Inject() (system: ActorSystem, val configuration: Configuration) {
+class PDFService @Inject() (
+    appConfigLoader: AppConfigLoader
+) {
 
   val logger: Logger = Logger(this.getClass)
-  val websiteUrl = configuration.get[URI]("play.application.url")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
+  val tmpDirectory = appConfigLoader.get.tmpDirectory
 
   def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
     val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
@@ -33,7 +32,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(websiteUrl.toString())
+    converterProperties.setBaseUri(appConfigLoader.get.apiURL.toString)
 
     HtmlConverter.convertToPdf(
       new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()),
@@ -48,7 +47,7 @@ class PDFService @Inject() (system: ActorSystem, val configuration: Configuratio
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(websiteUrl.toString())
+    converterProperties.setBaseUri(appConfigLoader.get.apiURL.toString())
 
     val pdfOutputStream = new ByteArrayOutputStream
 

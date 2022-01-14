@@ -1,4 +1,5 @@
 import models.PaginatedResult
+
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
 
@@ -13,9 +14,11 @@ package object repositories {
         db: JdbcBackend#DatabaseDef
     )(maybeOffset: Option[Long], maybeLimit: Option[Int]): Future[PaginatedResult[B]] = {
 
-      val offset: Long = maybeOffset.getOrElse(0L)
+      val offset = maybeOffset.map(Math.max(_, 0)).getOrElse(0L)
+      val limit = maybeLimit.map(Math.max(_, 0))
+
       val queryWithOffset = query.drop(offset)
-      val queryWithOffsetAndLimit: Query[A, B, Seq] = maybeLimit.map(queryWithOffset.take).getOrElse(queryWithOffset)
+      val queryWithOffsetAndLimit = limit.map(l => queryWithOffset.take(l)).getOrElse(queryWithOffset)
 
       val resultF: Future[Seq[B]] = db.run(queryWithOffsetAndLimit.result)
       val countF: Future[Int] = db.run(query.length.result)
@@ -25,7 +28,7 @@ package object repositories {
       } yield PaginatedResult(
         totalCount = count,
         entities = result.toList,
-        hasNextPage = maybeLimit.exists(limit => count - (offset + limit) > 0)
+        hasNextPage = limit.exists(l => count - (offset + l) > 0)
       )
     }
 

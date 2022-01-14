@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
+import config.AppConfigLoader
 import controllers.ReportController
 import models._
 import net.codingwell.scalaguice.ScalaModule
@@ -25,13 +26,12 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.AttachementService
 import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants.ReportStatus
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
@@ -62,7 +62,7 @@ object GetReportByAdminUser extends GetReportSpec {
     }}
          Then the report is rendered to the user as an Admin          ${reportMustBeRenderedForUserRole(
       neverRequestedReport,
-      UserRoles.Admin
+      UserRole.Admin
     )}
     """
 }
@@ -93,17 +93,17 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       ActionEvent.REPORT_READING_BY_PRO
     )}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.SIGNALEMENT_TRANSMIS
+      ReportStatus.Transmis
     )}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
       neverRequestedReport.email,
       "L'entreprise a pris connaissance de votre signalement",
       views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-      neverRequestedReport.copy(status = ReportStatus.SIGNALEMENT_TRANSMIS),
-      UserRoles.Pro
+      neverRequestedReport.copy(status = ReportStatus.Transmis),
+      UserRole.Professionnel
     )}
       """
 }
@@ -124,7 +124,7 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedFinalReport,
-      UserRoles.Pro
+      UserRole.Professionnel
     )}
     """
 }
@@ -143,7 +143,7 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       alreadyRequestedReport,
-      UserRoles.Pro
+      UserRole.Professionnel
     )}
 
     """
@@ -185,11 +185,11 @@ trait GetReportSpec extends Spec with GetReportContext {
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(application.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -208,10 +208,10 @@ trait GetReportSpec extends Spec with GetReportContext {
         any
       )
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) =
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) =
     there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"reportStatusList doesn't match ${status}")
   }
 
@@ -259,7 +259,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = TRAITEMENT_EN_COURS
+    status = ReportStatus.TraitementEnCours
   )
 
   val neverRequestedFinalReport = Report(
@@ -277,7 +277,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = SIGNALEMENT_CONSULTE_IGNORE
+    status = ReportStatus.ConsulteIgnore
   )
 
   val alreadyRequestedReport = Report(
@@ -295,7 +295,7 @@ trait GetReportContext extends Mockito {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = SIGNALEMENT_TRANSMIS
+    status = ReportStatus.Transmis
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -320,7 +320,9 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
+  lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
+  val config = application.injector.instanceOf[AppConfigLoader].get
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(

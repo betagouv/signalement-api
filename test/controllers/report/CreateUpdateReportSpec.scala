@@ -12,17 +12,15 @@ import controllers.ReportController
 import models._
 import org.specs2.Specification
 import org.specs2.matcher._
-import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import utils.Constants.ReportStatus
 import utils.Constants.Tags
 import utils.AppSpec
 import utils.EmailAddress
@@ -44,14 +42,14 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
     }}
          When create the report                                             ${step(createReport())}
-         Then create the report with reportStatusList "TRAITEMENT_EN_COURS" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with reportStatusList "ReportStatus.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachmentService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -67,13 +65,13 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.EMPLOYEE_REPORT
+      ReportStatus.LanceurAlerte
     )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachments = Nil
     )}
     """
 }
@@ -86,8 +84,8 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
     }}
          When create the report                                               ${step(createReport())}
-         Then create the report with reportStatusList "TRAITEMENT_EN_COURS"   ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with reportStatusList "ReportStatus.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.TraitementEnCours
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -96,7 +94,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachmentService.attachmentSeqForWorkflowStepN(2)
     )}
     """
 }
@@ -109,14 +107,14 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
       draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
     }}
          When create the report                                         ${step(createReport())}
-         Then create the report with status "TRAITEMENT_EN_COURS"       ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TRAITEMENT_EN_COURS
+         Then create the report with status "ReportStatus.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
+      ReportStatus.TraitementEnCours
     )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachmentService.attachmentSeqForWorkflowStepN(2)
     )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -147,7 +145,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
       draftReport.email,
       "Votre signalement",
       views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      mailerService.attachmentSeqForWorkflowStepN(2)
+      attachments = Nil
     )}
     """
 }
@@ -200,7 +198,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
         companyName = Some(reportCompanyAnotherSiret.name),
         companyAddress = reportCompanyAnotherSiret.address,
         companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = ReportStatus.TRAITEMENT_EN_COURS
+        status = ReportStatus.TraitementEnCours
       )
     )}
     """
@@ -215,12 +213,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachmentService = app.injector.instanceOf[AttachementService]
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress =
-    app.injector.instanceOf[Configuration].get[EmailAddress]("play.mail.contactAddress")
+  implicit lazy val contactAddress = config.mail.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -267,7 +265,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             )
           )
         )
-        _ <- companyRepository.setUserLevel(c, u, AccessLevel.ADMIN)
+        _ <- companyRepository.createUserAccess(c.id, u.id, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
     )
@@ -329,11 +327,11 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachmentService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        EmailAddress(app.configuration.get[String]("play.mail.from")),
+        config.mail.from,
         Seq(recipient),
         Nil,
         subject,
@@ -341,7 +339,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         attachments
       )
 
-  def reportMustHaveBeenCreatedWithStatus(status: ReportStatusValue) = {
+  def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list, Duration.Inf).filter(_.id != existingReport.id)
     val expectedReport = draftReport.generateReport.copy(
       id = reports.head.id,

@@ -61,10 +61,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the Silhouette Auth environment.
     *
-    * @param userService The user service implementation.
-    * @param authenticatorService The authentication service implementation.
-    * @param eventBus The event bus instance.
-    * @return The Silhouette environment.
+    * @param userService
+    *   The user service implementation.
+    * @param authenticatorService
+    *   The authentication service implementation.
+    * @param eventBus
+    *   The event bus instance.
+    * @return
+    *   The Silhouette environment.
     */
   @Provides
   def provideAuthEnvironment(
@@ -81,10 +85,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the Silhouette Api environment.
     *
-    * @param apiKeyService The api key service implementation.
-    * @param authenticatorService The authentication service implementation.
-    * @param eventBus The event bus instance.
-    * @return The Silhouette environment.
+    * @param apiKeyService
+    *   The api key service implementation.
+    * @param authenticatorService
+    *   The authentication service implementation.
+    * @param eventBus
+    *   The event bus instance.
+    * @return
+    *   The Silhouette environment.
     */
   @Provides
   def provideApiEnvironment(
@@ -102,8 +110,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the crypter for the authenticator.
     *
-    * @param configuration The Play configuration.
-    * @return The crypter for the authenticator.
+    * @param configuration
+    *   The Play configuration.
+    * @return
+    *   The crypter for the authenticator.
     */
   @Provides
   @Named("authenticator-crypter")
@@ -114,8 +124,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the auth info repository.
     *
-    * @param passwordInfoDAO The implementation of the delegable password auth info DAO.
-    * @return The auth info repository instance.
+    * @param passwordInfoDAO
+    *   The implementation of the delegable password auth info DAO.
+    * @return
+    *   The auth info repository instance.
     */
   @Provides
   def provideAuthInfoRepository(passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo]): AuthInfoRepository =
@@ -123,11 +135,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the authenticator service.
     *
-    * @param crypter              The crypter implementation.
-    * @param idGenerator          The ID generator implementation.
-    * @param configuration        The Play configuration.
-    * @param clock                The clock instance.
-    * @return The authenticator service.
+    * @param crypter
+    *   The crypter implementation.
+    * @param idGenerator
+    *   The ID generator implementation.
+    * @param configuration
+    *   The Play configuration.
+    * @param clock
+    *   The clock instance.
+    * @return
+    *   The authenticator service.
     */
   @Provides
   def provideAuthenticatorService(
@@ -145,8 +162,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the password hasher registry.
     *
-    * @param passwordHasher The default password hasher implementation.
-    * @return The password hasher registry.
+    * @param passwordHasher
+    *   The default password hasher implementation.
+    * @return
+    *   The password hasher registry.
     */
   @Provides
   def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry =
@@ -154,9 +173,12 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   /** Provides the credentials provider.
     *
-    * @param authInfoRepository The auth info repository implementation.
-    * @param passwordHasherRegistry The password hasher registry.
-    * @return The credentials provider.
+    * @param authInfoRepository
+    *   The auth info repository implementation.
+    * @param passwordHasherRegistry
+    *   The password hasher registry.
+    * @return
+    *   The credentials provider.
     */
   @Provides
   def provideCredentialsProvider(
@@ -166,7 +188,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
 
   /** Provides the dummy authenticator service.
-    * @return The dummy authenticator service.
+    * @return
+    *   The dummy authenticator service.
     */
   @Provides
   def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] =

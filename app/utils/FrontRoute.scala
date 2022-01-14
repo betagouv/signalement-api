@@ -1,30 +1,33 @@
 package utils
 
-import models.AuthToken
-import play.api.Configuration
+import config.AppConfigLoader
+import models.auth.AuthToken
 
 import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FrontRoute @Inject() (config: Configuration) {
+class FrontRoute @Inject() (appConfigLoader: AppConfigLoader) {
 
   object website {
-    val url = config.get[URI]("play.website.url")
+    val url = appConfigLoader.get.websiteURL
     def litige = url.resolve(s"/litige")
   }
 
   object dashboard {
-    val url = config.get[URI]("play.dashboard.url")
-    def login = new URI(url.toString + "/connexion")
-    def registerDgccrf(token: String) = new URI(url.toString + s"/dgccrf/rejoindre/?token=$token")
-    def registerPro(siret: SIRET, token: String) = new URI(
-      url.toString + s"/entreprise/rejoindre/${siret}?token=${token}"
-    )
-    def validateEmail(token: String) = new URI(url.toString + s"/connexion/validation-email?token=${token}")
-    def reportReview(id: String) = new URI(url.toString + s"/suivi-des-signalements/$id/avis")
-    def resetPassword(authToken: AuthToken) = new URI(url.toString + s"/connexion/nouveau-mot-de-passe/${authToken.id}")
-    def activation = new URI(url.toString + "/activation")
+    def url(path: String) = new URI(appConfigLoader.get.dashboardURL.toString + path)
+    def login = url("/connexion")
+    def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
+    def reportReview(id: String) = url(s"/suivi-des-signalements/$id/avis")
+    def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
+    def activation = url("/activation")
+    object Dgccrf {
+      def register(token: String) = url(s"/dgccrf/rejoindre/?token=$token")
+    }
+    object Pro {
+      def register(siret: SIRET, token: String) = url(s"/entreprise/rejoindre/${siret}?token=${token}")
+      def manageNotification() = url(s"/mes-entreprises")
+    }
   }
 }
