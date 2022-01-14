@@ -13,14 +13,17 @@ object AppErrorTransformer {
 
   val logger: Logger = Logger(this.getClass())
 
-  private def formatMessage(maybeUser: Option[UUID], appError: AppError) =
-    s"""[${maybeUser.getOrElse("not_connected")}] ${appError.details}"""
+  private def formatMessage(maybeUser: Option[UUID], appError: AppError): String =
+    formatMessage(maybeUser, appError.details)
+
+  private def formatMessage(maybeUser: Option[UUID], details: String): String =
+    s"""[${maybeUser.getOrElse("not_connected")}] ${details}"""
 
   def handleError(err: Throwable, maybeUserId: Option[UUID] = None): Result =
     err match {
       case appError: AppError => handleError(appError, maybeUserId)
       case err =>
-        logger.error("Encountered unexpected error", err)
+        logger.error(formatMessage(maybeUserId, "Unexpected error occured"), err)
         Results.InternalServerError(Json.toJson(ErrorPayload(ServerError("Encountered unexpected error", Some(err)))))
     }
 
