@@ -63,7 +63,7 @@ class AuthController @Inject() (
       _ <- authOrchestrator.changePassword(request.identity, updatePassword)
     } yield NoContent
 
-    resultOrError.recover { case err => handleError(err) }
+    resultOrError.recover { case err => handleError(err, Some(request.identity.id)) }
 
   }
 

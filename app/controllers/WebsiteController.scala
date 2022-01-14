@@ -87,11 +87,11 @@ class WebsiteController @Inject() (
       .recover { case e => handleError(e) }
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
     websitesOrchestrator
       .updateWebsiteKind(uuid, kind)
       .map(website => Ok(Json.toJson(website)))
-      .recover { case e => handleError(e) }
+      .recover(err => handleError(err, Some(request.identity.id)))
   }
 
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
@@ -103,23 +103,23 @@ class WebsiteController @Inject() (
           websitesOrchestrator
             .updateCompany(uuid, company)
             .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-            .recover { case e => handleError(e) }
+            .recover(err => handleError(err, Some(request.identity.id)))
       )
   }
 
   def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
-    _ =>
+    request =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-        .recover { case e => handleError(e) }
+        .recover { case err => handleError(err, Some(request.identity.id)) }
 
   }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
     websiteRepository
       .delete(uuid)
       .map(_ => Ok)
-      .recover { case e => handleError(e) }
+      .recover { case err => handleError(err, Some(request.identity.id)) }
   }
 }
