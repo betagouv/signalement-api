@@ -34,6 +34,10 @@ object Fixtures {
     s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
 
+  def genEmailAddress: Gen[EmailAddress] = EmailAddress(
+    s"${genFirstName.sample.get}.${genLastName.sample.get}.${Gen.choose(0, 1000000).sample.get}@example.com"
+  )
+
   val genAdminUser = genUser.map(_.copy(userRole = UserRole.Admin))
   val genProUser = genUser.map(_.copy(userRole = UserRole.Professionnel))
   val genDgccrfUser = genUser.map(_.copy(userRole = UserRole.DGCCRF))

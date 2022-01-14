@@ -84,7 +84,7 @@ class ReportNotificationTask @Inject() (
       _ <- subscriptionsEmailAndReports.map { case (subscription, emailAddress, filteredReport) =>
         mailService.send(
           DgccrfReportNotification(
-            Seq(emailAddress),
+            List(emailAddress),
             subscription,
             filteredReport,
             taskDate.minus(period)

@@ -165,4 +165,27 @@ object AppError {
       s"Compte déjà activé, merci de vous connecter avec l'adresse ${email.value} ( vous pouvez recréer un mot de passe en cliquant sur 'MOT DE PASSE OUBLIÉ' sur la page de connexion.)"
   }
 
+  final case class InvalidEmail(email: String) extends BadRequestError {
+    override val `type`: String = "SC-0020"
+    override val title: String = "Invalid email"
+    override val details: String =
+      s"Email ${email} est invalide."
+  }
+
+  final case object InvalidEmailProvider extends BadRequestError {
+    override val `type`: String = "SC-0021"
+    override val title: String = "Invalid email provider"
+    override val details: String =
+      s"Les adresses email temporaires sont interdites."
+  }
+
+  /** Error message is not precice on purpose to prevent third parties for sniffing emails
+    */
+  final case class EmailOrCodeIncorrect(email: EmailAddress) extends NotFoundError {
+    override val `type`: String = "SC-0020"
+    override val title: String = s"Email or code incorrect"
+    override val details: String =
+      s"Impossible de valider l'email ${email}, code ou email incorrect."
+  }
+
 }

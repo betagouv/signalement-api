@@ -21,6 +21,7 @@ case class AppConfigAkkaCredentials(
     keyId: String,
     secretKey: String
 )
+
 @Singleton
 class AppConfigLoader @Inject() (c: Configuration) {
 
