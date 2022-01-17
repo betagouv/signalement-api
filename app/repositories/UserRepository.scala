@@ -11,6 +11,7 @@ import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -114,7 +115,7 @@ class UserRepository @Inject() (
     .run(
       authAttemptTableQuery
         .filter(_.login === login)
-        .filter(_.timestamp >= OffsetDateTime.now.minusMinutes(delay.toMinutes))
+        .filter(_.timestamp >= OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(delay.toMinutes))
         .length
         .result
     )

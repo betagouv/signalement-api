@@ -18,6 +18,7 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -166,7 +167,7 @@ class CompanyController @Inject() (
   ) = {
     val lastContact = events
       .filter(e =>
-        e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
+        e.creationDate.exists(_.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay)))
           && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action)
       )
       .sortBy(_.creationDate)

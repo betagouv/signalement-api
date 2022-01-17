@@ -11,6 +11,7 @@ import utils.EmailAddress
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
@@ -64,7 +65,7 @@ class AccessTokenRepository @Inject() (
       companyId: Option[UUID],
       level: Option[AccessLevel],
       emailedTo: Option[EmailAddress] = None,
-      creationDate: OffsetDateTime = OffsetDateTime.now
+      creationDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
   ): Future[AccessToken] =
     db.run(
       AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
@@ -75,13 +76,13 @@ class AccessTokenRepository @Inject() (
         companyId = companyId,
         companyLevel = level,
         emailedTo = emailedTo,
-        expirationDate = validity.map(OffsetDateTime.now.plus(_))
+        expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))
       )
     )
 
   private def fetchValidTokens =
     AccessTokenTableQuery
-      .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
       .filter(_.valid)
 
   private def fetchCompanyValidTokens(companyId: UUID): Query[AccessTokenTable, AccessToken, Seq] =
@@ -166,7 +167,7 @@ class AccessTokenRepository @Inject() (
   def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
     db.run(
       AccessTokenTableQuery
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.emailedTo === emailedTo)
         .to[List]
@@ -176,7 +177,7 @@ class AccessTokenRepository @Inject() (
   def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
     db.run(
       AccessTokenTableQuery
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (DGCCRFAccount: TokenKind))
         .to[List]
@@ -229,14 +230,14 @@ class AccessTokenRepository @Inject() (
       AccessTokenTableQuery
         .filter(_.id === token.id)
         .map(a => (a.level, a.expirationDate))
-        .update((Some(level), validity.map(OffsetDateTime.now.plus(_))))
+        .update((Some(level), validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))))
     )
 
   def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] =
     db.run(
       AccessTokenTableQuery
         .filter(_.companyId inSetBind companyIds.distinct)
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (CompanyInit: TokenKind))
         .to[List]
@@ -248,8 +249,10 @@ class AccessTokenRepository @Inject() (
       AccessTokenTableQuery
         .join(companyRepository.companyTableQuery)
         .on(_.companyId === _.id)
-        .filter(_._1.creationDate < OffsetDateTime.now.withHour(0).withMinute(0).withSecond(0).withNano(0))
-        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(
+          _._1.creationDate < OffsetDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        )
+        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_._1.valid)
         .filter(_._1.kind === (CompanyInit: TokenKind))
         .to[List]
@@ -266,7 +269,7 @@ class AccessTokenRepository @Inject() (
           userRepository.userTableQuery
             .filter(_.id === user.id)
             .map(_.lastEmailValidation)
-            .update(Some(OffsetDateTime.now)),
+            .update(Some(OffsetDateTime.now(ZoneOffset.UTC))),
           AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
         )
         .transactionally
@@ -308,7 +311,7 @@ group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
     )
 
   private def computeTickValues(ticks: Int) = Seq
-    .iterate(OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .iterate(OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
     .map(_.toLocalDate)
     .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
     .map(t => s"('$t'::timestamp)")

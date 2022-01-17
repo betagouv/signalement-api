@@ -405,7 +405,9 @@ class ReportRepository @Inject() (
     db
       .run(
         queryFilter(filter)
-          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
+          .filter(report =>
+            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks).withDayOfMonth(1)
+          )
           .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
           .map { case ((month, year), group) => (month, year, group.length) }
           .result
@@ -419,7 +421,7 @@ class ReportRepository @Inject() (
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(filter)
-        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
+        .filter(report => report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusDays(11))
         .groupBy(report =>
           (
             date_part("day", report.creationDate),
