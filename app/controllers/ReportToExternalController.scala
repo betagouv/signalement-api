@@ -1,14 +1,12 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
 import utils.DateUtils
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
 import javax.inject.Inject
@@ -20,15 +18,14 @@ import scala.util.Try
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
-    val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv]
-)(implicit val executionContext: ExecutionContext)
-    extends BaseController {
+    val silhouette: Silhouette[APIKeyEnv]
+)(implicit val ec: ExecutionContext)
+    extends ApiKeyBaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async { implicit request =>
-    val reportsOrError = Try(UUID.fromString(uuid)) match {
+  def getReportToExternal(uuid: String) = SecuredAction.async { _ =>
+    Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
@@ -40,13 +37,11 @@ class ReportToExternalController @Inject() (
           .map(report => Ok(Json.toJson(report)))
           .getOrElse(NotFound)
     }
-
-    reportsOrError.recover { case err => handleError(err, Some(request.identity.id)) }
   }
 
   def searchReportsToExternal(
       siret: String
-  ) = silhouetteAPIKey.SecuredAction.async { implicit request =>
+  ) = SecuredAction.async { implicit request =>
     val start = DateUtils.parseDate(request.queryString.get("start").flatMap(_.headOption))
     val end = DateUtils.parseDate(request.queryString.get("end").flatMap(_.headOption))
     val filter = ReportFilter(
@@ -54,10 +49,8 @@ class ReportToExternalController @Inject() (
       start = start,
       end = end
     )
-    val reportsOrError = for {
+    for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
-
-    reportsOrError.recover { case err => handleError(err, Some(request.identity.id)) }
   }
 }

@@ -39,7 +39,7 @@ class CompanyController @Inject() (
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val frontRoute: FrontRoute,
     val appConfigLoader: AppConfigLoader
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass)
