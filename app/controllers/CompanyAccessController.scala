@@ -1,7 +1,6 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models._
 import models.access.ActivationLinkRequest
 import orchestrators.AccessesOrchestrator
@@ -31,7 +30,7 @@ class CompanyAccessController @Inject() (
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val companyAccessOrchestrator: CompanyAccessOrchestrator,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass())
@@ -40,18 +39,12 @@ class CompanyAccessController @Inject() (
     accessesOrchestrator
       .listAccesses(request.company, request.identity)
       .map(res => Ok(Json.toJson(res)))
-      .recover { case err =>
-        handleError(err, Some(request.identity.id))
-      }
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
     companyRepository
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
-      .recover { case err =>
-        handleError(err, Some(request.identity.id))
-      }
   }
 
   def updateAccess(siret: String, userId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async {
@@ -142,20 +135,14 @@ class CompanyAccessController @Inject() (
     accessesOrchestrator
       .fetchCompanyUserActivationToken(SIRET(siret), token)
       .map(token => Ok(Json.toJson(token)))
-      .recover { case err =>
-        handleError(err)
-      }
   }
 
   def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
-    val activatedOrError = for {
+    for {
       activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
       _ <- companyAccessOrchestrator.sendActivationLink(SIRET(siret), activationLinkRequest)
     } yield Ok
 
-    activatedOrError.recover { case err =>
-      handleError(err)
-    }
   }
 
   case class AcceptTokenRequest(token: String)
@@ -190,10 +177,8 @@ class CompanyAccessController @Inject() (
       )
   }
 
-  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
-    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err, Some(request.identity.id))
-    }
+  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
   }
 
 }

@@ -55,7 +55,7 @@ class AdminController @Inject() (
     mailService: MailService,
     appConfigLoader: AppConfigLoader,
     implicit val frontRoute: FrontRoute
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)

@@ -42,7 +42,7 @@ class ReportController @Inject() (
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
     appConfigLoader: AppConfigLoader
-)(implicit val executionContext: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
