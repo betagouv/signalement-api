@@ -5,6 +5,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -57,7 +58,7 @@ class AuthTokenRepository @Inject() (
     .run(
       authTokenTableQuery
         .filter(_.id === id)
-        .filter(_.expiry > OffsetDateTime.now)
+        .filter(_.expiry > OffsetDateTime.now(ZoneOffset.UTC))
         .to[List]
         .result
         .headOption

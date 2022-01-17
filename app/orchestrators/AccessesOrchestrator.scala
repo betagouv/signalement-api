@@ -394,7 +394,7 @@ class AccessesOrchestrator @Inject() (
       token <- accessTokenRepository.createToken(
         kind = ValidateEmail,
         token = randomToken,
-        validity = Some(Duration.ofHours(1)),
+        validity = Some(Duration.ofDays(1)),
         companyId = None,
         level = None,
         emailedTo = Some(user.email)

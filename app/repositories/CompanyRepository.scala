@@ -376,7 +376,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       ignoreBefore: LocalDate
   ) = {
     val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1)
+    val userDefinedStartingDate = OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks).withDayOfMonth(1)
 
     val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
 

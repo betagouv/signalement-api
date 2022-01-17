@@ -28,6 +28,7 @@ import utils.URL
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import javax.inject.Inject
@@ -205,7 +206,7 @@ class ReportOrchestrator @Inject() (
       }
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .filter(_.creationDate.isAfter(OffsetDateTime.now.minusDays(7)))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7)))
         .map(report =>
           reportRepository
             .update(
