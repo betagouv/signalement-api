@@ -5,7 +5,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
-import utils.DateUtils
+import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 
 import java.util.UUID
@@ -39,15 +39,12 @@ class ReportToExternalController @Inject() (
     }
   }
 
-  def searchReportsToExternal(
-      siret: String
-  ) = SecuredAction.async { implicit request =>
-    val start = DateUtils.parseDate(request.queryString.get("start").flatMap(_.headOption))
-    val end = DateUtils.parseDate(request.queryString.get("end").flatMap(_.headOption))
+  def searchReportsToExternal() = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
-      siretSirenList = List(siret),
-      start = start,
-      end = end
+      siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
+      start = qs.localDate("start"),
+      end = qs.localDate("end")
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))

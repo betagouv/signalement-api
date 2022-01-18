@@ -6,10 +6,12 @@ import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 case class ReportToExternal(
     id: UUID,
+    creationDate: OffsetDateTime,
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -31,6 +33,7 @@ object ReportToExternal {
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
+      creationDate = r.creationDate,
       category = r.category,
       subcategories = r.subcategories,
       details = r.details,
