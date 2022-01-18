@@ -8,11 +8,9 @@ import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
+import java.time.ZoneOffset
 import java.sql.Timestamp
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -309,12 +307,5 @@ group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
-
-  private def computeTickValues(ticks: Int) = Seq
-    .iterate(OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
-    .map(_.toLocalDate)
-    .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
-    .map(t => s"('$t'::timestamp)")
-    .mkString(",")
 
 }
