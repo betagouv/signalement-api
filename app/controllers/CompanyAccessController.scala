@@ -177,7 +177,7 @@ class CompanyAccessController @Inject() (
       )
   }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
     accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
   }
 
