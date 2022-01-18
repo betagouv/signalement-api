@@ -41,7 +41,7 @@ class CompanyAccessController @Inject() (
       .listAccesses(request.company, request.identity)
       .map(res => Ok(Json.toJson(res)))
       .recover { case err =>
-        handleError(err)
+        handleError(err, Some(request.identity.id))
       }
   }
 
@@ -50,7 +50,7 @@ class CompanyAccessController @Inject() (
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
       .recover { case err =>
-        handleError(err)
+        handleError(err, Some(request.identity.id))
       }
   }
 
@@ -190,9 +190,9 @@ class CompanyAccessController @Inject() (
       )
   }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    accessesOrchestrator.reportOverCompanyAccessRate(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
+  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { request =>
+    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
+      handleError(err, Some(request.identity.id))
     }
   }
 

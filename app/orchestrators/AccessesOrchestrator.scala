@@ -3,7 +3,8 @@ package orchestrators
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
@@ -12,7 +13,6 @@ import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
 import models.ActivationRequest
 import models._
-import models.access.ProInactiveAccountRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
@@ -36,7 +36,6 @@ import utils.FrontRoute
 import utils.SIRET
 
 import java.time.Duration
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -52,11 +51,12 @@ class AccessesOrchestrator @Inject() (
     eventRepository: EventRepository,
     mailService: MailService,
     frontRoute: FrontRoute,
-    appConfig: AppConfigLoader
+    emailConfiguration: EmailConfiguration,
+    tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = appConfig.get.mail.ccrfEmailSuffix
+  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -152,24 +152,10 @@ class AccessesOrchestrator @Inject() (
         List.empty[UserWithAccessLevel]
     }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) =
-    for {
-      stats <- companyRepository
-        .companyAccessesReportsRate(ticks.getOrElse(12), appConfig.get.stats.proAccessStartingPoint)
-      rateStats =
-        stats
-          .map {
-            case (timestamp, accessCount, reportCount) if reportCount > 0 && accessCount > 0 =>
-              val inactiveRate: Float = 100 - ((accessCount.toFloat / reportCount) * 100)
-              (timestamp, inactiveRate.round.toFloat)
-            case (timestamp, _, _) => (timestamp, 0.0f)
-          }
-          .map { case (timestamp, inactiveRate) =>
-            val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
-            ProInactiveAccountRateStat(inactiveRate, date)
-          }
-          .toList
-    } yield rateStats
+  def proFirstActivationCount(ticks: Option[Int]) =
+    companyRepository
+      .proFirstActivationCount(ticks.getOrElse(12))
+      .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
 
   private def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
     maybeAccessToken <- accessTokenRepository.findToken(token)
@@ -343,7 +329,7 @@ class AccessesOrchestrator @Inject() (
           accessTokenRepository.createToken(
             kind = CompanyJoin,
             token = randomToken,
-            validity = appConfig.get.token.companyJoinDuration,
+            validity = tokenConfiguration.companyJoinDuration,
             companyId = Some(company.id),
             level = Some(level),
             emailedTo = Some(emailedTo)
@@ -353,7 +339,7 @@ class AccessesOrchestrator @Inject() (
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
-      tokenCode <- genInvitationToken(company, level, appConfig.get.token.companyJoinDuration, email)
+      tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
       _ <- mailService.send(
         ProCompanyAccessInvitation(
           recipient = email,
@@ -378,7 +364,7 @@ class AccessesOrchestrator @Inject() (
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
           token = randomToken,
-          validity = appConfig.get.token.dgccrfJoinDuration,
+          validity = tokenConfiguration.dgccrfJoinDuration,
           companyId = None,
           level = None,
           emailedTo = Some(email)
