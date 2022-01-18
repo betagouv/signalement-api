@@ -13,7 +13,6 @@ import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
 import models.ActivationRequest
 import models._
-import models.access.CompanyFirstUserAccountActivationCountStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
@@ -37,7 +36,6 @@ import utils.FrontRoute
 import utils.SIRET
 
 import java.time.Duration
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -155,15 +153,9 @@ class AccessesOrchestrator @Inject() (
     }
 
   def proFirstActivationCount(ticks: Option[Int]) =
-    for {
-      stats <- companyRepository
-        .proFirstActivationCount(ticks.getOrElse(12))
-      rateStats =
-        stats.map { case (timestamp, inactiveRate) =>
-          val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
-          CompanyFirstUserAccountActivationCountStat(inactiveRate, date)
-        }.toList
-    } yield rateStats
+    companyRepository
+      .proFirstActivationCount(ticks.getOrElse(12))
+      .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
 
   private def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
     maybeAccessToken <- accessTokenRepository.findToken(token)

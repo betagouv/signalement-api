@@ -375,13 +375,15 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
       ticks: Int = 12
   ): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (
-          select my_date_trunc('month'::text, t.creation_date)::timestamp, count(distinct id)
-          from (select distinct company_id as id, min(creation_date) as creation_date
-                from company_accesses
+          select v.a, count(distinct id)
+          from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date
+                from company_accesses 
                 group by company_id
-                order by min(creation_date) desc) as t
-          group by my_date_trunc('month'::text, creation_date)
-          order by  1 DESC LIMIT #${ticks}
+                order by creation_date desc) as t
+          right join
+                (SELECT a FROM (VALUES #${computeTickValues(ticks)} ) AS X(a)) as v on t.creation_date = v.a
+          group by v.a
+          order by 1 DESC
     ) as res order by 1 ASC;    
          """.as[(Timestamp, Int)])
 
