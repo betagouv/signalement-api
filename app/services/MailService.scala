@@ -4,7 +4,7 @@ import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
 import akka.pattern.ask
 import cats.data.NonEmptyList
-import config.AppConfigLoader
+import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
 import repositories.ReportNotificationBlockedRepository
@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
-    appConfigLoader: AppConfigLoader,
+    emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
     implicit val frontRoute: FrontRoute,
     val pdfService: PDFService,
@@ -29,8 +29,8 @@ class MailService @Inject() (
 ) {
 
   private[this] val logger = Logger(this.getClass)
-  private[this] val mailFrom = appConfigLoader.get.mail.from
-  implicit private[this] val contactAddress = appConfigLoader.get.mail.contactAddress
+  private[this] val mailFrom = emailConfiguration.from
+  implicit private[this] val contactAddress = emailConfiguration.contactAddress
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(
@@ -61,18 +61,6 @@ class MailService @Inject() (
               email.getAttachements(attachementService)
             )
           )
-//          .flatMap {
-//            case None =>
-//              logger.debug("All emails filtered, ignoring email delivery")
-//              Future.successful(())
-//            case Some(filteredRecipients) =>
-//              send(
-//                filteredRecipients,
-//                email.subject,
-//                email.getBody(frontRoute, contactAddress),
-//                email.getAttachements(attachementService)
-//              )
-//          }
       case None =>
         logger.debug("No company linked to report, not sending emails")
         Future.successful(())
