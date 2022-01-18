@@ -85,7 +85,7 @@ class WebsiteController @Inject() (
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websitesOrchestrator
       .updateWebsiteKind(uuid, kind)
       .map(website => Ok(Json.toJson(website)))
@@ -104,14 +104,14 @@ class WebsiteController @Inject() (
   }
 
   def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
-    request =>
+    _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
   }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
+  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websiteRepository
       .delete(uuid)
       .map(_ => Ok)

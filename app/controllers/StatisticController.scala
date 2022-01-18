@@ -100,7 +100,7 @@ class StatisticController @Inject() (
   }
 
   def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
-    SecuredAction.async(parse.empty) { request =>
+    SecuredAction.async(parse.empty) { _ =>
       val reportResponseStatus =
         NonEmptyList
           .fromList(responseStatusQuery.getOrElse(List.empty))
