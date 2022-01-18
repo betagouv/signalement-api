@@ -1,5 +1,6 @@
 package services
 
+import cats.data.NonEmptyList
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -111,7 +112,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  protected def sendEmail(emails: List[EmailAddress], report: Report) =
+  protected def sendEmail(emails: NonEmptyList[EmailAddress], report: Report) =
     Await.result(
       mailService.send(
         ProNewReportNotification(
@@ -140,7 +141,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""Email must be sent to admin and admin of head office $e1"""
   def e1 = {
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
   }
 }
@@ -154,7 +155,7 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
         .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
       Duration.Inf
     )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email))
   }
 }
@@ -175,7 +176,7 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       Duration.Inf
     )
 
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }
 }
