@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models._
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
@@ -28,14 +28,14 @@ class AccountController @Inject() (
     userRepository: UserRepository,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
-    appConfigLoader: AppConfigLoader
+    emailConfiguration: EmailConfiguration
 )(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
-  implicit val ccrfEmailSuffix = appConfigLoader.get.mail.ccrfEmailSuffix
+  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {

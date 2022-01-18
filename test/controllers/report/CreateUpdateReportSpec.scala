@@ -218,7 +218,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress = config.mail.contactAddress
+  implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -331,7 +331,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,

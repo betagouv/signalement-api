@@ -1,12 +1,11 @@
 package orchestrators
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
 import models.website.WebsiteKind
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -16,7 +15,6 @@ import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories.ReportRepository
 import repositories.WebsiteRepository
-import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIREN
@@ -36,9 +34,7 @@ class CompanyOrchestrator @Inject() (
     val websiteRepository: WebsiteRepository,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,
-    val pdfService: PDFService,
-    val appConfigLoader: AppConfigLoader,
-    val configuration: Configuration
+    val taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -154,7 +150,7 @@ class CompanyOrchestrator @Inject() (
           _.isAfter(
             lastRequirement.getOrElse(
               OffsetDateTime.now.minus(
-                appConfigLoader.get.report.reportReminderByPostDelay
+                taskConfiguration.report.reportReminderByPostDelay
                   .multipliedBy(Math.min(noticeCount, 3))
               )
             )

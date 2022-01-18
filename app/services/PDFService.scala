@@ -5,7 +5,7 @@ import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import play.api.Logger
 import play.api.http.FileMimeTypes
 import play.twirl.api.HtmlFormat
@@ -19,11 +19,11 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class PDFService @Inject() (
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 ) {
 
   val logger: Logger = Logger(this.getClass)
-  val tmpDirectory = appConfigLoader.get.tmpDirectory
+  val tmpDirectory = signalConsoConfiguration.tmpDirectory
 
   def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
     val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
@@ -32,7 +32,7 @@ class PDFService @Inject() (
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(appConfigLoader.get.apiURL.toString)
+    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
     HtmlConverter.convertToPdf(
       new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()),
@@ -47,7 +47,7 @@ class PDFService @Inject() (
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(appConfigLoader.get.apiURL.toString())
+    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString())
 
     val pdfOutputStream = new ByteArrayOutputStream
 

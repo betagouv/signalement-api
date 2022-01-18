@@ -101,7 +101,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
 
   val runningDateTime = LocalDateTime.now
-  val noAccessReadingDelay = config.report.noAccessReadingDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
 
   val company = Fixtures.genCompany.sample.get
   val onGoingReport = Fixtures
@@ -120,7 +120,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,

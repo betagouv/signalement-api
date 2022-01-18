@@ -1,6 +1,5 @@
 package services
 
-import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.scaladsl.Sink
@@ -11,7 +10,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
-import config.AppConfigLoader
+import config.BucketConfiguration
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,12 +18,11 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class S3Service @Inject() (implicit
-    val system: ActorSystem,
     val materializer: Materializer,
     val executionContext: ExecutionContext,
-    val appConfigLoader: AppConfigLoader
+    val bucketConfiguration: BucketConfiguration
 ) {
-  private[this] val bucketName = appConfigLoader.get.amazonBucketName
+  private[this] val bucketName = bucketConfiguration.amazonBucketName
 
   private val alpakkaS3Client = S3
   private val awsS3Client = AmazonS3ClientBuilder
@@ -35,8 +33,8 @@ class S3Service @Inject() (implicit
     .withCredentials(
       new AWSStaticCredentialsProvider(
         new BasicAWSCredentials(
-          appConfigLoader.s3.keyId,
-          appConfigLoader.s3.secretKey
+          bucketConfiguration.keyId,
+          bucketConfiguration.secretKey
         )
       )
     )

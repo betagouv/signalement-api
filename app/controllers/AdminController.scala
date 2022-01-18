@@ -2,7 +2,7 @@ package controllers
 
 import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models.DetailInputValue.toDetailInputValue
 import models._
 import models.auth.AuthToken
@@ -53,13 +53,13 @@ class AdminController @Inject() (
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    appConfigLoader: AppConfigLoader,
+    emailConfiguration: EmailConfiguration,
     implicit val frontRoute: FrontRoute
 )(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
+  implicit val contactAddress = emailConfiguration.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")

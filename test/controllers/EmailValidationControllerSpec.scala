@@ -47,7 +47,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   lazy val attachementService = injector.instanceOf[AttachementService]
 
   lazy val frontRoute = injector.instanceOf[FrontRoute]
-  lazy val contactAddress = config.mail.contactAddress
+  lazy val contactAddress = emailConfiguration.contactAddress
 
   class FakeModule(skipValidation: Boolean = false, emailProviderBlocklist: List[String]) extends AppFakeModule {
     override def configure() = {
@@ -290,7 +290,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         recipients,
         Nil,
         subject,

@@ -1,6 +1,6 @@
 package tasks
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
 import models.Report
@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class UnreadReportsReminderTask @Inject() (
-    appConfigLoader: AppConfigLoader,
+    taskConfiguration: TaskConfiguration,
     eventRepository: EventRepository,
     emailService: MailService
 )(implicit
@@ -34,8 +34,8 @@ class UnreadReportsReminderTask @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
-  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
   def sendReminder(
       onGoingReportsWithAdmins: List[(Report, List[User])],

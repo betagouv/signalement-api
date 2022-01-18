@@ -1,7 +1,8 @@
 package tasks
 
 import akka.actor.ActorSystem
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
+import config.TaskConfiguration
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
@@ -29,20 +30,21 @@ class ReportTask @Inject() (
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    appConfigLoader: AppConfigLoader,
+    signalConsoConfiguration: SignalConsoConfiguration,
     unreadReportsReminderTask: UnreadReportsReminderTask,
     unreadReportsCloseTask: UnreadReportsCloseTask,
     readReportsReminderTask: ReadReportsReminderTask,
-    noActionReportsCloseTask: NoActionReportsCloseTask
+    noActionReportsCloseTask: NoActionReportsCloseTask,
+    taskConfiguration: TaskConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val websiteUrl = appConfigLoader.get.websiteURL
+  implicit val websiteUrl = signalConsoConfiguration.websiteURL
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = appConfigLoader.get.task.reminder.startTime
-  val interval = appConfigLoader.get.task.reminder.intervalInHours
+  val startTime = taskConfiguration.report.startTime
+  val interval = taskConfiguration.report.intervalInHours
 
   val startDate =
     if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)

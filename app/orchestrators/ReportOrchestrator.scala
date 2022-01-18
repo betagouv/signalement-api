@@ -2,7 +2,8 @@ package orchestrators
 
 import actors.UploadActor
 import akka.actor.ActorRef
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.TokenConfiguration
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
@@ -50,7 +51,8 @@ class ReportOrchestrator @Inject() (
     emailValidationOrchestrator: EmailValidationOrchestrator,
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
-    appConf: AppConfigLoader
+    emailConfiguration: EmailConfiguration,
+    tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -98,7 +100,7 @@ class ReportOrchestrator @Inject() (
           )
           .flatMap(_ => reportRepository.update(report.copy(status = ReportStatus.TraitementEnCours)))
       } else {
-        genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
+        genActivationToken(company.id, tokenConfiguration.companyInitDuration).map(_ => report)
       }
     }
 
@@ -122,7 +124,7 @@ class ReportOrchestrator @Inject() (
   def newReport(draftReport: DraftReport): Future[Option[Report]] =
     emailValidationOrchestrator
       .isEmailValid(draftReport.email)
-      .map(isValid => isValid || appConf.get.mail.skipReportEmailValidation)
+      .map(isValid => isValid || emailConfiguration.skipReportEmailValidation)
       .flatMap {
         case true =>
           for {

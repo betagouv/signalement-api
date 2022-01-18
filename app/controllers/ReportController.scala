@@ -1,7 +1,7 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
@@ -41,7 +41,7 @@ class ReportController @Inject() (
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val ec: ExecutionContext)
     extends BaseController {
 
@@ -148,13 +148,13 @@ class ReportController @Inject() (
     request.body
       .file("reportFile")
       .filter(f =>
-        appConfigLoader.get.upload.allowedExtensions
+        signalConsoConfiguration.upload.allowedExtensions
           .contains(f.filename.toLowerCase.toString.split("\\.").last)
       )
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
         val tmpFile =
-          new java.io.File(s"${appConfigLoader.get.tmpDirectory}/${UUID.randomUUID}_${filename}")
+          new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
