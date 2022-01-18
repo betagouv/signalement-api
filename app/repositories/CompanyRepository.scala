@@ -11,10 +11,7 @@ import utils.SIREN
 import utils.SIRET
 
 import java.sql.Timestamp
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
