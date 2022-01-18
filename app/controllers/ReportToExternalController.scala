@@ -39,7 +39,7 @@ class ReportToExternalController @Inject() (
     }
   }
 
-  def searchReportsToExternal() = silhouetteAPIKey.SecuredAction.async { implicit request =>
+  def searchReportsToExternal() = SecuredAction.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
