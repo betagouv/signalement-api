@@ -1,5 +1,6 @@
 package services
 
+import cats.data.NonEmptyList
 import models.Company
 import models.EmailValidation
 import models.Event
@@ -80,8 +81,10 @@ object Email {
           .toString
   }
 
-  final case class ProNewReportNotification(recipients: List[EmailAddress], report: Report) extends ProFilteredEmail {
+  final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
+      extends ProFilteredEmail {
     override val subject: String = EmailSubjects.NEW_REPORT
+    override val recipients: List[EmailAddress] = userList.toList
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString

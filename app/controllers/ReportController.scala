@@ -48,12 +48,10 @@ class ReportController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[DraftReport]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        report => reportOrchestrator.newReport(report).map(_.map(r => Ok(Json.toJson(r))).getOrElse(Forbidden))
-      )
+    for {
+      draftReport <- request.parseBody[DraftReport]()
+      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
+    } yield Ok(Json.toJson(createdReport))
   }
 
   def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) {
