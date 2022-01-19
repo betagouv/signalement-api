@@ -188,4 +188,11 @@ object AppError {
       s"Impossible de valider l'email ${email}, code ou email incorrect."
   }
 
+  final case class SpammerEmailBlocked(email: EmailAddress) extends NotFoundError {
+    override val `type`: String = "SC-0020"
+    override val title: String = s"Email blocked, report submission ignored"
+    override val details: String =
+      s"L'email ${email.value} est bloquée car listée comme spam"
+  }
+
 }

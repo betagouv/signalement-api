@@ -6,7 +6,9 @@ import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
+import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError.SpammerEmailBlocked
 import controllers.error.AppError.InvalidEmail
 import models.Event._
 import models._
@@ -57,7 +59,8 @@ class ReportOrchestrator @Inject() (
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
     emailConfiguration: EmailConfiguration,
-    tokenConfiguration: TokenConfiguration
+    tokenConfiguration: TokenConfiguration,
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -145,8 +148,16 @@ class ReportOrchestrator @Inject() (
           logger.warn(s"Email ${draftReport.email} is not valid, abort report creation")
           InvalidEmail(draftReport.email.value)
         }(isValid => isValid || emailConfiguration.skipReportEmailValidation)
+      _ <- validateReportSpammerBlockList(draftReport.email)
       createdReport <- createReport(draftReport)
     } yield createdReport
+
+  private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
+    if (signalConsoConfiguration.reportEmailBlacklist.contains(emailAddress.value)) {
+      Future.failed(SpammerEmailBlocked(emailAddress))
+    } else {
+      Future.unit
+    }
 
   private def createReport(draftReport: DraftReport): Future[Report] =
     for {

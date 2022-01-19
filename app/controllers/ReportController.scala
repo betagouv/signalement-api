@@ -2,6 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
+import controllers.error.AppError.SpammerEmailBlocked
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
@@ -48,10 +49,17 @@ class ReportController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
-    for {
+    val errorOrReport = for {
       draftReport <- request.parseBody[DraftReport]()
       createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
     } yield Ok(Json.toJson(createdReport))
+
+    errorOrReport.recoverWith {
+      case err: SpammerEmailBlocked =>
+        logger.warn(err.details)
+        Future.successful(Ok)
+      case err => Future.failed(err)
+    }
   }
 
   def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) {
