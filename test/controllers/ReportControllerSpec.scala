@@ -88,20 +88,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "ignore report email validation" in new Context {
-      val app = application(skipValidation = true)
-      new WithApplication(app) {
-
-        val draftReport = Fixtures.genDraftReport.sample
-        val jsonBody = Json.toJson(draftReport)
-
-        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
-
-        val result = route(app, request).get
-        Helpers.status(result) must beEqualTo(OK)
-      }
-    }
-
   }
 
   trait Context extends Scope {
