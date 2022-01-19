@@ -153,7 +153,7 @@ class ReportOrchestrator @Inject() (
     } yield createdReport
 
   private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
-    if (signalConsoConfiguration.reportEmailBlacklist.contains(emailAddress.value)) {
+    if (signalConsoConfiguration.reportEmailsBlacklist.contains(emailAddress.value)) {
       Future.failed(SpammerEmailBlocked(emailAddress))
     } else {
       Future.unit

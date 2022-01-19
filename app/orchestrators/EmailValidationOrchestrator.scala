@@ -86,7 +86,7 @@ class EmailValidationOrchestrator @Inject() (
   } yield res
 
   private[this] def validateProvider(email: EmailAddress): Future[Unit] =
-    if (emailConfiguration.emailProviderBlocklist.exists(email.value.contains(_))) {
+    if (emailConfiguration.emailProvidersBlocklist.exists(email.value.contains(_))) {
       Future.failed(AppError.InvalidEmailProvider)
     } else {
       Future.successful(())
