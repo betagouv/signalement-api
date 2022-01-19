@@ -70,20 +70,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "ignore report email validation" in new Context {
-      val app = application(skipValidation = true)
-      new WithApplication(app) {
-
-        val draftReport = Fixtures.genDraftReport.sample
-        val jsonBody = Json.toJson(draftReport)
-
-        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
-
-        val result = route(app, request).get
-        Helpers.status(result) must beEqualTo(OK)
-      }
-    }
-
     "block spammed email" in new Context {
       val blockedEmail = "spammer@gmail.com"
       val app = application(skipValidation = true, List(blockedEmail))
@@ -100,8 +86,22 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Helpers.contentAsBytes(result).isEmpty mustEqual true
 
       }
-
     }
+
+    "ignore report email validation" in new Context {
+      val app = application(skipValidation = true)
+      new WithApplication(app) {
+
+        val draftReport = Fixtures.genDraftReport.sample
+        val jsonBody = Json.toJson(draftReport)
+
+        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
+
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(OK)
+      }
+    }
+
   }
 
   trait Context extends Scope {
