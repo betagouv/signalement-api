@@ -84,7 +84,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "ignore report email validation" in new Context {
+    "block spammed email" in new Context {
       val blockedEmail = "spammer@gmail.com"
       val app = application(skipValidation = true, List(blockedEmail))
       new WithApplication(app) {
