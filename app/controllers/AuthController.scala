@@ -6,7 +6,6 @@ import play.api._
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import utils.silhouette.auth.AuthEnv
-import error.AppErrorTransformer.handleError
 import models.auth.PasswordChange
 import models.auth.UserCredentials
 import models.auth.UserLogin
@@ -23,7 +22,7 @@ import scala.concurrent.duration._
 class AuthController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     authOrchestrator: AuthOrchestrator
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
@@ -31,39 +30,32 @@ class AuthController @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def authenticate: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
-    val resultOrError = for {
+    for {
       userLogin <- request.parseBody[UserCredentials]()
       userSession <- authOrchestrator.login(userLogin, request)
     } yield Ok(Json.toJson(userSession))
 
-    resultOrError.recover { case err => handleError(err) }
   }
 
   def forgotPassword: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
-    val resultOrError = for {
+    for {
       userLogin <- request.parseBody[UserLogin]()
       _ <- authOrchestrator.forgotPassword(userLogin)
     } yield Ok
-
-    resultOrError.recover { case err => handleError(err) }
   }
 
   def resetPassword(token: UUID): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
-    val resultOrError = for {
+    for {
       userPassword <- request.parseBody[UserPassword]()
       _ <- authOrchestrator.resetPassword(token, userPassword)
     } yield NoContent
-
-    resultOrError.recover { case err => handleError(err) }
   }
 
   def changePassword = SecuredAction.async(parse.json) { implicit request =>
-    val resultOrError = for {
+    for {
       updatePassword <- request.parseBody[PasswordChange]()
       _ <- authOrchestrator.changePassword(request.identity, updatePassword)
     } yield NoContent
-
-    resultOrError.recover { case err => handleError(err, Some(request.identity.id)) }
 
   }
 

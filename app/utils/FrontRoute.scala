@@ -1,6 +1,6 @@
 package utils
 
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import models.auth.AuthToken
 
 import java.net.URI
@@ -8,15 +8,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FrontRoute @Inject() (appConfigLoader: AppConfigLoader) {
+class FrontRoute @Inject() (signalConsoConfiguration: SignalConsoConfiguration) {
 
   object website {
-    val url = appConfigLoader.get.websiteURL
+    val url = signalConsoConfiguration.websiteURL
     def litige = url.resolve(s"/litige")
   }
 
   object dashboard {
-    def url(path: String) = new URI(appConfigLoader.get.dashboardURL.toString + path)
+    def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
     def login = url("/connexion")
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
     def reportReview(id: String) = url(s"/suivi-des-signalements/$id/avis")

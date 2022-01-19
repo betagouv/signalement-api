@@ -1,7 +1,9 @@
 package utils
 
 import com.google.inject.AbstractModule
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.SignalConsoConfiguration
+import config.TaskConfiguration
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.mock.Mockito
 import org.specs2.specification._
@@ -17,7 +19,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     new AppFakeModule
 
   class AppFakeModule extends AbstractModule with ScalaModule {
-    val appConfigLoader = mock[AppConfigLoader]
+    val appConfigLoader = mock[SignalConsoConfiguration]
     val mailerServiceMock = mock[MailerService]
     mailerServiceMock.sendEmail(
       any[EmailAddress],
@@ -37,8 +39,10 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     .build()
 
   def injector = app.injector
-  lazy val configLoader = injector.instanceOf[AppConfigLoader]
-  lazy val config = configLoader.get
+  lazy val configLoader = injector.instanceOf[SignalConsoConfiguration]
+  lazy val emailConfiguration = injector.instanceOf[EmailConfiguration]
+  lazy val taskConfiguration = injector.instanceOf[TaskConfiguration]
+  lazy val config = injector.instanceOf[SignalConsoConfiguration]
 
   private lazy val database = injector.instanceOf[DBApi].database("default")
   private lazy val company_database = injector.instanceOf[DBApi].database("company_db")

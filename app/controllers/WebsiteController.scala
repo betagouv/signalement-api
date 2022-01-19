@@ -5,7 +5,6 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.website._
@@ -34,7 +33,7 @@ class WebsiteController @Inject() (
     val companyRepository: CompanyRepository,
     @Named("websites-extract-actor") websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -84,14 +83,12 @@ class WebsiteController @Inject() (
     websitesOrchestrator
       .searchByHost(url)
       .map(countries => Ok(Json.toJson(countries)))
-      .recover { case e => handleError(e) }
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websitesOrchestrator
       .updateWebsiteKind(uuid, kind)
       .map(website => Ok(Json.toJson(website)))
-      .recover(err => handleError(err, Some(request.identity.id)))
   }
 
   def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
@@ -103,23 +100,20 @@ class WebsiteController @Inject() (
           websitesOrchestrator
             .updateCompany(uuid, company)
             .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-            .recover(err => handleError(err, Some(request.identity.id)))
       )
   }
 
   def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
-    request =>
+    _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-        .recover { case err => handleError(err, Some(request.identity.id)) }
 
   }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { request =>
+  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websiteRepository
       .delete(uuid)
       .map(_ => Ok)
-      .recover { case err => handleError(err, Some(request.identity.id)) }
   }
 }

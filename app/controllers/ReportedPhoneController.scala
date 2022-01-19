@@ -25,7 +25,7 @@ class ReportedPhoneController @Inject() (
     val companyRepository: CompanyRepository,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds

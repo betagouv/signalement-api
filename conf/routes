@@ -46,9 +46,9 @@ GET           /api/reports/:uuid/events                         controllers.Repo
 GET           /api/companies/:siret/events                      controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
 
 # Report API for externals SI
-GET           /api/ext/reports/siret/:siret                     controllers.ReportToExternalController.searchReportsToExternal(siret: String)
-GET           /api/ext/reports/:uuid                            controllers.ReportToExternalController.getReportToExternal(uuid)
-GET           /api/ext/reports                                  controllers.DataEconomieController.reportDataEcomonie()
+GET           /api/ext/reports                                       controllers.ReportToExternalController.searchReportsToExternal()
+GET           /api/ext/reports/:uuid                                 controllers.ReportToExternalController.getReportToExternal(uuid)
+GET           /api/ext/reports                                       controllers.DataEconomieController.reportDataEcomonie()
 
 # Admin API
 

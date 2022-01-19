@@ -1,6 +1,5 @@
 package repositories
 
-import config.AppConfigLoader
 import models.DetailInputValue.toDetailInputValue
 import models._
 import play.api.db.slick.DatabaseConfigProvider
@@ -225,14 +224,12 @@ object ReportTables {
 class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyRepository: CompanyRepository,
-    val emailValidationRepository: EmailValidationRepository,
-    appConfigLoader: AppConfigLoader
+    val emailValidationRepository: EmailValidationRepository
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
 
@@ -319,10 +316,10 @@ class ReportRepository @Inject() (
           .getOrElse(false)
       }
       .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
       .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
       .filterOpt(filter.category) { case (table, category) =>
         table.category === category
@@ -380,10 +377,10 @@ class ReportRepository @Inject() (
     db.run(
       reportTableQuery
         .filterOpt(start) { case (table, s) =>
-          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, e) =>
-          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .groupBy(_.companyPostalCode.map(x => substr(x, 1, 2)).getOrElse(""))
         .map { case (department, group) => (department, group.length) }
@@ -614,10 +611,10 @@ class ReportRepository @Inject() (
         .filter(_.websiteURL.isDefined)
         .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .to[List]
         .result
@@ -634,10 +631,10 @@ class ReportRepository @Inject() (
         .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
         .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .groupBy(_.host)
         .map { case (host, report) => (host, report.size) }
@@ -651,10 +648,10 @@ class ReportRepository @Inject() (
       reportTableQuery
         .filter(_.phone.isDefined)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .to[List]
         .result

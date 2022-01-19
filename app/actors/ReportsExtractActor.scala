@@ -10,15 +10,15 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import controllers.routes
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
-import utils.Constants.Departments
 import utils.Constants
+import utils.Constants.Departments
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -42,7 +42,7 @@ class ReportsExtractActor @Inject() (
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
@@ -183,7 +183,7 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
+              s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
                 .downloadReportFile(file.id.toString, file.filename)
                 .url}"
             )
@@ -363,7 +363,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

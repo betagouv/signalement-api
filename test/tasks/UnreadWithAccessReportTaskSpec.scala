@@ -251,7 +251,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   implicit val ec = ee.executionContext
-  val mailReminderDelay = config.report.mailReminderDelay
+  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
   val runningDateTime = OffsetDateTime.now
 
@@ -276,7 +276,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,
@@ -328,7 +328,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress = config.mail.contactAddress
+  implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   def setupUser(user: User) =
     Await.result(

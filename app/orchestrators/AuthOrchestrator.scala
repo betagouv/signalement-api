@@ -30,7 +30,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
-import config.AppConfigLoader
+import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthToken
 import models.auth.PasswordChange
@@ -56,7 +56,7 @@ class AuthOrchestrator @Inject() (
     userRepository: UserRepository,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepository,
-    appConfigLoader: AppConfigLoader,
+    tokenConfiguration: TokenConfiguration,
     credentialsProvider: CredentialsProvider,
     mailService: MailService,
     val silhouette: Silhouette[AuthEnv]
@@ -65,7 +65,7 @@ class AuthOrchestrator @Inject() (
 ) {
 
   private val logger: Logger = Logger(this.getClass)
-  private val dgccrfDelayBeforeRevalidation: Period = appConfigLoader.get.token.dgccrfDelayBeforeRevalidation
+  private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
 

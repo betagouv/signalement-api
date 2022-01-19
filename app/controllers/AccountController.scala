@@ -1,11 +1,10 @@
 package controllers
 
-import _root_.controllers.error.AppErrorTransformer.handleError
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models._
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
@@ -29,14 +28,14 @@ class AccountController @Inject() (
     userRepository: UserRepository,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
-    appConfigLoader: AppConfigLoader
-)(implicit ec: ExecutionContext)
+    emailConfiguration: EmailConfiguration
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
-  implicit val ccrfEmailSuffix = appConfigLoader.get.mail.ccrfEmailSuffix
+  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {
@@ -49,12 +48,11 @@ class AccountController @Inject() (
   }
 
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
-    val activatedOrError = for {
+    for {
       activationRequest <- request.parseBody[ActivationRequest]()
       _ <- accessesOrchestrator.handleActivationRequest(activationRequest)
     } yield NoContent
 
-    activatedOrError.recover { case err => handleError(err) }
   }
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
@@ -62,10 +60,7 @@ class AccountController @Inject() (
         .validate[EmailAddress]((JsPath \ "email").read[EmailAddress])
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          email =>
-            accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err =>
-              handleError(err, Some(request.identity.id))
-            }
+          email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
@@ -103,9 +98,6 @@ class AccountController @Inject() (
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
-      .recover { case err =>
-        handleError(err)
-      }
   }
 
   def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>

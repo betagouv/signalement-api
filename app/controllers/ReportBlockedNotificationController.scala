@@ -21,7 +21,7 @@ class ReportBlockedNotificationController @Inject() (
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     val orchestrator: ReportBlockedNotificationOrchestrator
 )(implicit
-    ec: ExecutionContext
+    val ec: ExecutionContext
 ) extends BaseController {
 
   def getAll() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
