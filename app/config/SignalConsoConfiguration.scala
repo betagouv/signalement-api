@@ -10,7 +10,7 @@ case class SignalConsoConfiguration(
     dashboardURL: URI,
     token: TokenConfiguration,
     upload: UploadConfiguration,
-    reportEmailBlacklist: List[String]
+    reportEmailBlacklists: List[String]
 )
 
 case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean)

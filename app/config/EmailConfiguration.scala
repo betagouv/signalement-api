@@ -7,5 +7,5 @@ case class EmailConfiguration(
     contactAddress: EmailAddress,
     skipReportEmailValidation: Boolean,
     ccrfEmailSuffix: String,
-    emailProviderBlocklist: List[String]
+    emailProviderBlocklists: List[String]
 )

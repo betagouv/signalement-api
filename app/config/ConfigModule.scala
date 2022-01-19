@@ -21,6 +21,8 @@ class ConfigModule(environment: Environment, configuration: Configuration) exten
     val _ = environment
     implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
     implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
+    val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+    implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
 
     val applicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 

@@ -59,7 +59,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           contactAddress = EmptyEmailAddress,
           skipReportEmailValidation = skipValidation,
           ccrfEmailSuffix = "*",
-          emailProviderBlocklist = emailProviderBlocklist
+          emailProviderBlocklists = emailProviderBlocklist
         )
       )
     }
