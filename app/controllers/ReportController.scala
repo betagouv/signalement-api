@@ -3,7 +3,6 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
 import controllers.error.AppError.SpammerEmailBlocked
-import controllers.error.AppError.ReportCreationInvalidBody
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
