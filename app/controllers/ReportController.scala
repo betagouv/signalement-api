@@ -52,7 +52,6 @@ class ReportController @Inject() (
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     val errorOrReport = for {
       draftReport <- request.parseBody[DraftReport]()
-      validatedDraftReport <- if(DraftReport.isValid(draftReport)) Future.successful(draftReport) else Future.failed(ReportCreationInvalidBody)
       createdReport <- reportOrchestrator.validateAndCreateReport(validatedDraftReport)
     } yield Ok(Json.toJson(createdReport))
 
