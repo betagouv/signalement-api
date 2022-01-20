@@ -2,6 +2,7 @@ package actors
 
 import akka.actor._
 import akka.stream.Materializer
+import cats.data.NonEmptyList
 import com.google.inject.AbstractModule
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -20,7 +21,7 @@ object EmailActor {
 
   case class EmailRequest(
       from: EmailAddress,
-      recipients: Seq[EmailAddress],
+      recipients: NonEmptyList[EmailAddress],
       subject: String,
       bodyHtml: String,
       blindRecipients: Seq[EmailAddress] = Seq.empty,
@@ -44,7 +45,7 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
       try {
         mailerService.sendEmail(
           req.from,
-          req.recipients,
+          req.recipients.toList,
           req.blindRecipients,
           req.subject,
           req.bodyHtml,
@@ -56,14 +57,19 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
         case e: Exception =>
           logger.error(s"Unexpected error when sending email from request (number of attempt ${req.times + 1})", e)
           if (req.times < 2) {
+            logger.debug(s"Failed attempt, rescheduling email")
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
+            logger.debug(s"Rescheduling done.")
+            sender() ! Status.Success
           } else {
             sender() ! Status.Failure(e)
           }
       }
     case _ =>
-      logger.debug("Could not handle request, ignoring message")
-      sender() ! Status.Success
+      if (sender() != self) {
+        logger.debug("Could not handle request, ignoring message")
+        sender() ! Status.Success
+      }
   }
 }
 

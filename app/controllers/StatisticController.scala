@@ -2,7 +2,6 @@ package controllers
 
 import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models.ReportResponseType
 import models._
 import orchestrators.StatsOrchestrator
@@ -20,7 +19,7 @@ import scala.concurrent.Future
 class StatisticController @Inject() (
     _stats: StatsOrchestrator,
     val silhouette: Silhouette[AuthEnv]
-)(implicit val executionContext: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
@@ -97,9 +96,7 @@ class StatisticController @Inject() (
   }
 
   def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
@@ -121,32 +118,22 @@ class StatisticController @Inject() (
           reportResponseStatus
         )
         .map(x => Ok(Json.toJson(x)))
-        .recover { case err =>
-          handleError(err)
-        }
+
     }
 
   def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+    _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+    _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+    _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+    _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 }

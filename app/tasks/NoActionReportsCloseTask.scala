@@ -1,6 +1,6 @@
 package tasks
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
 import models.Report
@@ -29,18 +29,18 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class NoActionReportsCloseTask @Inject() (
-    appConfigLoader: AppConfigLoader,
     eventRepository: EventRepository,
     reportRepository: ReportRepository,
-    emailService: MailService
+    emailService: MailService,
+    taskConfiguration: TaskConfiguration
 )(implicit
     ec: ExecutionContext
 ) {
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
-  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
   /** Close reports that have no response after MaxReminderCount sent
     * @param readReportsWithAdmins

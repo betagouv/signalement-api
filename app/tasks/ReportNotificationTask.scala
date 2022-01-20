@@ -2,7 +2,7 @@ package tasks
 
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
-import config.AppConfigLoader
+import config.TaskConfiguration
 import models.ReportFilter
 import play.api.Logger
 import repositories.ReportRepository
@@ -23,13 +23,13 @@ class ReportNotificationTask @Inject() (
     reportRepository: ReportRepository,
     subscriptionRepository: SubscriptionRepository,
     mailService: MailService,
-    appConfigLoader: AppConfigLoader
+    taskConfiguration: TaskConfiguration
 )(implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = appConfigLoader.get.task.report.startTime
+  val startTime = taskConfiguration.subscription.startTime
 
   val startDate =
     if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
@@ -41,7 +41,7 @@ class ReportNotificationTask @Inject() (
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
 
-    if (LocalDate.now.getDayOfWeek == appConfigLoader.get.task.report.startDay) {
+    if (LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay) {
       runPeriodicNotificationTask(LocalDate.now, Period.ofDays(7))
     }
 
@@ -84,7 +84,7 @@ class ReportNotificationTask @Inject() (
       _ <- subscriptionsEmailAndReports.map { case (subscription, emailAddress, filteredReport) =>
         mailService.send(
           DgccrfReportNotification(
-            Seq(emailAddress),
+            List(emailAddress),
             subscription,
             filteredReport,
             taskDate.minus(period)

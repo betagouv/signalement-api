@@ -23,6 +23,7 @@ import java.sql.Timestamp
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -117,7 +118,7 @@ class StatsOrchestrator @Inject() (
 object StatsOrchestrator {
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
-    OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1)
+    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks - 1).withDayOfMonth(1)
 
   /** Fill data with default value when there missing data in database
     */

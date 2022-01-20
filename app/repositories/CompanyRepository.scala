@@ -11,10 +11,7 @@ import utils.SIREN
 import utils.SIRET
 
 import java.sql.Timestamp
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -371,29 +368,20 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
-  def companyAccessesReportsRate(
-      ticks: Int = 12,
-      ignoreBefore: LocalDate
-  ) = {
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1)
-
-    val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
-
-    val startingDate =
-      if (userDefinedStartingDate.toEpochSecond > ignoreBeforeOffsetDateTime.toEpochSecond) userDefinedStartingDate
-      else ignoreBefore
-
-    db.run(sql"""
-    select  
-       my_date_trunc('month'::text, r.creation_date)::timestamp ,
-       count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
-       count(distinct(r.company_id))
-    from reports r left join company_accesses a on r.company_id = a.company_id
-        where r.company_id is not null
-         and r.creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-    group by  my_date_trunc('month'::text, r.creation_date)
-    order by  my_date_trunc('month'::text, r.creation_date)""".as[(Timestamp, Int, Int)])
-  }
+  def proFirstActivationCount(
+      ticks: Int = 12
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (
+          select v.a, count(distinct id)
+          from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date
+                from company_accesses 
+                group by company_id
+                order by creation_date desc) as t
+          right join
+                (SELECT a FROM (VALUES #${computeTickValues(ticks)} ) AS X(a)) as v on t.creation_date = v.a
+          group by v.a
+          order by 1 DESC
+    ) as res order by 1 ASC;    
+         """.as[(Timestamp, Int)])
 
 }

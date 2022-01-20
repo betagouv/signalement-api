@@ -335,7 +335,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,

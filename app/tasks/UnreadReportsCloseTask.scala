@@ -1,6 +1,6 @@
 package tasks
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
 import models.Report
@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class UnreadReportsCloseTask @Inject() (
-    appConfigLoader: AppConfigLoader,
+    taskConfiguration: TaskConfiguration,
     eventRepository: EventRepository,
     reportRepository: ReportRepository,
     emailService: MailService
@@ -39,8 +39,8 @@ class UnreadReportsCloseTask @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
-  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
   /** Close all unread report ( especially those with no pro access) within noAccessReadingDelay var
     * @param onGoingReportsWithAdmins

@@ -1,6 +1,6 @@
 package tasks
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
 import models.Report
@@ -20,13 +20,14 @@ import utils.EmailAddress
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.Period
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReadReportsReminderTask @Inject() (
-    appConfigLoader: AppConfigLoader,
+    taskConfiguration: TaskConfiguration,
     eventRepository: EventRepository,
     emailService: MailService
 )(implicit
@@ -35,7 +36,7 @@ class ReadReportsReminderTask @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  val mailReminderDelay = appConfigLoader.get.report.mailReminderDelay
+  val mailReminderDelay: Period = taskConfiguration.report.mailReminderDelay
 
   def sendReminder(
       transmittedReportsWithAdmins: List[(Report, List[User])],

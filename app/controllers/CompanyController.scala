@@ -1,7 +1,8 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
@@ -18,6 +19,7 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,14 +39,15 @@ class CompanyController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val frontRoute: FrontRoute,
-    val appConfigLoader: AppConfigLoader
-)(implicit ec: ExecutionContext)
+    val taskConfiguration: TaskConfiguration,
+    val emailConfiguration: EmailConfiguration
+)(implicit val ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = appConfigLoader.get.report.noAccessReadingDelay
-  val contactAddress = appConfigLoader.get.mail.contactAddress
+  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val contactAddress = emailConfiguration.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
@@ -166,7 +169,7 @@ class CompanyController @Inject() (
   ) = {
     val lastContact = events
       .filter(e =>
-        e.creationDate.exists(_.isAfter(OffsetDateTime.now.minus(noAccessReadingDelay)))
+        e.creationDate.exists(_.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay)))
           && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action)
       )
       .sortBy(_.creationDate)

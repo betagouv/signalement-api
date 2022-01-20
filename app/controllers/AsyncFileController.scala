@@ -16,7 +16,7 @@ class AsyncFileController @Inject() (
     val asyncFileRepository: AsyncFileRepository,
     val silhouette: Silhouette[AuthEnv],
     val s3Service: S3Service
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>

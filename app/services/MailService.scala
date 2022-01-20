@@ -3,7 +3,8 @@ package services
 import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
 import akka.pattern.ask
-import config.AppConfigLoader
+import cats.data.NonEmptyList
+import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
 import repositories.ReportNotificationBlockedRepository
@@ -18,7 +19,7 @@ import scala.concurrent.duration._
 
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
-    appConfigLoader: AppConfigLoader,
+    emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
     implicit val frontRoute: FrontRoute,
     val pdfService: PDFService,
@@ -28,8 +29,8 @@ class MailService @Inject() (
 ) {
 
   private[this] val logger = Logger(this.getClass)
-  private[this] val mailFrom = appConfigLoader.get.mail.from
-  implicit private[this] val contactAddress = appConfigLoader.get.mail.contactAddress
+  private[this] val mailFrom = emailConfiguration.from
+  implicit private[this] val contactAddress = emailConfiguration.contactAddress
   implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(
@@ -52,18 +53,14 @@ class MailService @Inject() (
       case Some(companyId) =>
         reportNotificationBlocklistRepo
           .filterBlockedEmails(email.recipients, companyId)
-          .flatMap {
-            case Nil =>
-              logger.warn("All emails filtered, ignoring email delivery")
-              Future.successful(())
-            case filteredRecipients =>
-              send(
-                filteredRecipients,
-                email.subject,
-                email.getBody(frontRoute, contactAddress),
-                email.getAttachements(attachementService)
-              )
-          }
+          .flatMap(recipient =>
+            send(
+              recipient.toList,
+              email.subject,
+              email.getBody(frontRoute, contactAddress),
+              email.getAttachements(attachementService)
+            )
+          )
       case None =>
         logger.debug("No company linked to report, not sending emails")
         Future.successful(())
@@ -74,20 +71,24 @@ class MailService @Inject() (
       subject: String,
       bodyHtml: String,
       attachments: Seq[Attachment]
-  ): Future[Unit] =
-    if (recipients.exists(_.nonEmpty)) {
-      val emailRequest = EmailRequest(
-        from = mailFrom,
-        recipients = recipients.filter(_.nonEmpty),
-        subject = subject,
-        bodyHtml = bodyHtml,
-        attachments = attachments
-      )
+  ): Future[Unit] = {
+    val filteredEmptyEmail: Seq[EmailAddress] = recipients.filter(_.nonEmpty)
+    NonEmptyList.fromList(filteredEmptyEmail.toList) match {
+      case None => Future.successful(())
+      case Some(filteredRecipients) =>
+        val emailRequest = EmailRequest(
+          from = mailFrom,
+          recipients = filteredRecipients,
+          subject = subject,
+          bodyHtml = bodyHtml,
+          attachments = attachments
+        )
 
-      (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
-        logger.error("Unexpected error when sending email request to mail actor", err)
-        Future.failed(err)
-      }
-    } else Future.successful(())
+        (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
+          logger.error("Unexpected error when sending email request to mail actor", err)
+          Future.failed(err)
+        }
+    }
+  }
 
 }

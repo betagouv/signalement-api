@@ -1,10 +1,13 @@
 package controllers
 
+import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models.DetailInputValue.toDetailInputValue
 import models._
+import models.admin.ReportInputList
+import models.auth.AuthToken
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -52,13 +55,13 @@ class AdminController @Inject() (
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    appConfigLoader: AppConfigLoader,
+    emailConfiguration: EmailConfiguration,
     implicit val frontRoute: FrontRoute
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
+  implicit val contactAddress = emailConfiguration.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
@@ -139,7 +142,7 @@ class AdminController @Inject() (
     "pro.report_ack_pro" -> (recipient =>
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
     ),
-    "pro.report_notification" -> (recipient => ProNewReportNotification(List(recipient), genReport)),
+    "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_transmitted_reminder" -> (recipient =>
       ProReportReadReminder(List(recipient), genReport, OffsetDateTime.now.plusDays(10))
     ),
@@ -312,9 +315,8 @@ class AdminController @Inject() (
   }
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    import AdminObjects.ReportList
     request.body
-      .validate[ReportList](Json.reads[ReportList])
+      .validate[ReportInputList](Json.reads[ReportInputList])
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         results =>
@@ -335,28 +337,26 @@ class AdminController @Inject() (
   }
 
   def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    import AdminObjects.ReportList
-    request.body
-      .validate[ReportList](Json.reads[ReportList])
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        results => {
-          reportRepository
-            .getReportsByIds(results.reportIds)
-            .map(_.foreach { report =>
-              report.companyId.map { companyId =>
-                companyRepository
-                  .fetchAdmins(companyId)
-                  .map(_.map(_.email).distinct)
-                  .map(adminsEmails => mailService.send(ProNewReportNotification(adminsEmails, report)))
-              }
-            })
-          Future(Ok)
-        }
-      )
-  }
-}
+    for {
+      reportInputList <- request.parseBody[ReportInputList]()
+      reportIds <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
+      reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
+        companyRepository
+          .fetchAdmins(companyId)
+          .map(_.map(_.email).distinct)
+          .map(emails => (report, NonEmptyList.fromList(emails)))
+          .filter(_._2.isDefined)
 
-object AdminObjects {
-  case class ReportList(reportIds: List[UUID])
+      }.sequence
+      _ <- reportAndEmailList.map {
+        case (report, Some(adminsEmails)) =>
+          mailService.send(ProNewReportNotification(adminsEmails, report))
+        case (report, None) =>
+          logger.debug(s"Not sending email for report ${report.id}, no admin found")
+          Future.unit
+      }.sequence
+    } yield Ok
+
+  }
 }
