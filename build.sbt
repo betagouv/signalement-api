@@ -53,7 +53,7 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
   "io.sentry" % "sentry-logback" % "1.7.30",
   "org.typelevel" %% "cats-core" % "2.4.2",
-  "com.github.pureconfig" %% "pureconfig" % "0.17.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.17.1",
   compilerPlugin(scalafixSemanticdb)
 )
 
