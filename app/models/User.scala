@@ -39,7 +39,7 @@ object User {
       "email" -> user.email,
       "firstName" -> user.firstName,
       "lastName" -> user.lastName,
-      "role" -> user.userRole.name,
+      "role" -> user.userRole.entryName,
       "permissions" -> user.userRole.permissions,
       "lastEmailValidation" -> user.lastEmailValidation
     )
@@ -51,24 +51,9 @@ object User {
       (JsPath \ "email").read[EmailAddress] and
       (JsPath \ "firstName").read[String] and
       (JsPath \ "lastName").read[String] and
-      ((JsPath \ "role").read[String]).map(UserRoles.withName) and
+      ((JsPath \ "role").read[String]).map(UserRole.withName) and
       (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
   )(User.apply _)
-}
-
-case class UserLogin(
-    login: String,
-    password: String
-)
-
-case class AuthAttempt(
-    id: UUID,
-    login: String,
-    timestamp: OffsetDateTime
-)
-
-object UserLogin {
-  implicit val userLoginFormat = Json.format[UserLogin]
 }
 
 object UserPermission extends Enumeration {
@@ -79,67 +64,3 @@ object UserPermission extends Enumeration {
 
   implicit def enumWrites: Writes[UserPermission.Value] = EnumUtils.enumWrites
 }
-
-case class UserRole(
-    name: String,
-    permissions: Seq[UserPermission.Value]
-) {}
-
-object UserRole {
-  implicit val userRoleWrites = Json.writes[UserRole]
-
-  implicit val userRoleReads: Reads[UserRole] = ((JsPath \ "role").read[String]).map(UserRoles.withName(_))
-}
-
-object UserRoles {
-
-  object Admin
-      extends UserRole(
-        "Admin",
-        UserPermission.values.toSeq
-      )
-
-  object DGCCRF
-      extends UserRole(
-        "DGCCRF",
-        Seq(
-          UserPermission.listReports,
-          UserPermission.createReportAction,
-          UserPermission.subscribeReports
-        )
-      )
-
-  object Pro
-      extends UserRole(
-        "Professionnel",
-        Seq(
-          UserPermission.listReports,
-          UserPermission.createReportAction
-        )
-      )
-
-  val userRoles = Seq(Admin, DGCCRF, Pro)
-
-  def withName(name: String): UserRole =
-    userRoles.filter(_.name == name).head
-}
-
-case class PasswordChange(
-    newPassword: String,
-    oldPassword: String
-)
-
-object PasswordChange {
-  implicit val userReads: Reads[PasswordChange] = (
-    (JsPath \ "newPassword").read[String] and
-      (JsPath \ "oldPassword").read[String]
-  )(PasswordChange.apply _).filter(JsonValidationError("Passwords must not be equals"))(passwordChange =>
-    passwordChange.newPassword != passwordChange.oldPassword
-  )
-}
-
-case class AuthToken(
-    id: UUID,
-    userID: UUID,
-    expiry: OffsetDateTime
-)

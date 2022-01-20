@@ -2,7 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.ReportBlockedNotificationBody
-import models.UserRoles
+import models.UserRole
 import orchestrators.ReportBlockedNotificationOrchestrator
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -21,14 +21,14 @@ class ReportBlockedNotificationController @Inject() (
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     val orchestrator: ReportBlockedNotificationOrchestrator
 )(implicit
-    ec: ExecutionContext
+    val ec: ExecutionContext
 ) extends BaseController {
 
-  def getAll() = SecuredAction(WithRole(UserRoles.Pro)).async { implicit request =>
+  def getAll() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
     orchestrator.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))
   }
 
-  def create() = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
+  def create() = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
     request.body
       .validate[ReportBlockedNotificationBody]
       .fold(
@@ -38,7 +38,7 @@ class ReportBlockedNotificationController @Inject() (
       )
   }
 
-  def delete() = SecuredAction(WithRole(UserRoles.Pro)).async(parse.json) { implicit request =>
+  def delete() = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) { implicit request =>
     request.body
       .validate[ReportBlockedNotificationBody]
       .fold(

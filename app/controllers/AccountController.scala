@@ -1,14 +1,11 @@
 package controllers
 
-import _root_.controllers.error.AppErrorTransformer.handleError
 import com.mohiva.play.silhouette.api.LoginEvent
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Credentials
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models._
-import models.access.ActivationOutcome
 import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
@@ -31,16 +28,16 @@ class AccountController @Inject() (
     userRepository: UserRepository,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
-    credentialsProvider: CredentialsProvider,
-    appConfigLoader: AppConfigLoader
-)(implicit ec: ExecutionContext)
+    emailConfiguration: EmailConfiguration
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
-  implicit val ccrfEmailSuffix = appConfigLoader.get.mail.ccrfEmailSuffix
+  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
+  val t = ""
   def fetchUser = SecuredAction.async { implicit request =>
     for {
       userOpt <- userRepository.findById(request.identity.id)
@@ -51,40 +48,12 @@ class AccountController @Inject() (
       .getOrElse(NotFound)
   }
 
-  def changePassword = SecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[PasswordChange]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        passwordChange =>
-          {
-            for {
-              _ <-
-                credentialsProvider.authenticate(Credentials(request.identity.email.value, passwordChange.oldPassword))
-              _ <- userRepository.updatePassword(request.identity.id, passwordChange.newPassword)
-            } yield NoContent
-          }.recover { case e =>
-            logger.error("Unexpected error", e)
-            Unauthorized
-          }
-      )
-  }
-
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[ActivationRequest]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        { case ActivationRequest(draftUser, token, companySiret) =>
-          accessesOrchestrator
-            .handleActivationRequest(draftUser, token, companySiret)
-            .map {
-              case ActivationOutcome.NotFound      => NotFound
-              case ActivationOutcome.EmailConflict => Conflict // HTTP 409
-              case ActivationOutcome.Success       => NoContent
-            }
-        }
-      )
+    for {
+      activationRequest <- request.parseBody[ActivationRequest]()
+      _ <- accessesOrchestrator.handleActivationRequest(activationRequest)
+    } yield NoContent
+
   }
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
@@ -92,8 +61,7 @@ class AccountController @Inject() (
         .validate[EmailAddress]((JsPath \ "email").read[EmailAddress])
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          email =>
-            accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok).recover { case err => handleError(err) }
+          email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
         )
   }
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
@@ -113,7 +81,7 @@ class AccountController @Inject() (
   }
   def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
-      users <- userRepository.list(UserRoles.DGCCRF)
+      users <- userRepository.list(UserRole.DGCCRF)
     } yield Ok(
       Json.toJson(
         users.map(u =>
@@ -131,9 +99,6 @@ class AccountController @Inject() (
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
-      .recover { case err =>
-        handleError(err)
-      }
   }
 
   def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>
@@ -161,4 +126,5 @@ class AccountController @Inject() (
           } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
       )
   }
+
 }

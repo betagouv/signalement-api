@@ -1,7 +1,10 @@
 import models.PaginatedResult
+
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcBackend
 
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -32,5 +35,12 @@ package object repositories {
     }
 
   }
+
+  def computeTickValues(ticks: Int) = Seq
+    .iterate(OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .map(_.toLocalDate)
+    .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
+    .map(t => s"('$t'::timestamp)")
+    .mkString(",")
 
 }

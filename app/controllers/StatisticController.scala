@@ -1,6 +1,8 @@
 package controllers
 
+import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
+import models.ReportResponseType
 import models._
 import orchestrators.StatsOrchestrator
 import play.api.Logger
@@ -17,14 +19,14 @@ import scala.concurrent.Future
 class StatisticController @Inject() (
     _stats: StatsOrchestrator,
     val silhouette: Silhouette[AuthEnv]
-)(implicit val executionContext: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
   def getReportsCount() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(UserRoles.Admin))
+      .fromQueryString(request.queryString, UserRole.Admin)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -41,7 +43,7 @@ class StatisticController @Inject() (
     */
   def getReportsCountCurve() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, Some(UserRoles.Admin))
+      .fromQueryString(request.queryString, UserRole.Admin)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -60,7 +62,7 @@ class StatisticController @Inject() (
   }
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats
       .getReadAvgDelay(companyId)
@@ -68,7 +70,7 @@ class StatisticController @Inject() (
   }
 
   def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats
       .getResponseAvgDelay(companyId: Option[UUID])
@@ -76,20 +78,62 @@ class StatisticController @Inject() (
   }
 
   def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
   def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRoles.Admin, UserRoles.DGCCRF)
+    WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
     _stats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
+  }
+
+  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  }
+
+  def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
+    SecuredAction.async(parse.empty) { _ =>
+      val reportResponseStatus =
+        NonEmptyList
+          .fromList(responseStatusQuery.getOrElse(List.empty))
+          .getOrElse(
+            NonEmptyList.of(
+              ReportResponseType.ACCEPTED,
+              ReportResponseType.NOT_CONCERNED,
+              ReportResponseType.REJECTED
+            )
+          )
+
+      _stats
+        .getProReportResponseStat(
+          ticks.getOrElse(12),
+          reportResponseStatus
+        )
+        .map(x => Ok(Json.toJson(x)))
+
+    }
+
+  def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  }
+
+  def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  }
+
+  def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  }
+
+  def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 }

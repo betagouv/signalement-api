@@ -5,7 +5,6 @@ import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.website._
@@ -34,7 +33,7 @@ class WebsiteController @Inject() (
     val companyRepository: CompanyRepository,
     @Named("websites-extract-actor") websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -46,7 +45,7 @@ class WebsiteController @Inject() (
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
-    SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -60,7 +59,7 @@ class WebsiteController @Inject() (
     }
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       reportRepository
         .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
         .map(_.collect { case (Some(host), count) =>
@@ -71,7 +70,7 @@ class WebsiteController @Inject() (
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
-    SecuredAction(WithRole(UserRoles.Admin, UserRoles.DGCCRF)).async { implicit request =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
       websitesExtractActor ? WebsitesExtractActor.ExtractRequest(
         request.identity,
@@ -84,17 +83,15 @@ class WebsiteController @Inject() (
     websitesOrchestrator
       .searchByHost(url)
       .map(countries => Ok(Json.toJson(countries)))
-      .recover { case e => handleError(e) }
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websitesOrchestrator
       .updateWebsiteKind(uuid, kind)
       .map(website => Ok(Json.toJson(website)))
-      .recover { case e => handleError(e) }
   }
 
-  def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async(parse.json) { implicit request =>
+  def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
     request.body
       .validate[CompanyCreation]
       .fold(
@@ -103,23 +100,20 @@ class WebsiteController @Inject() (
           websitesOrchestrator
             .updateCompany(uuid, company)
             .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-            .recover { case e => handleError(e) }
       )
   }
 
-  def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRoles.Admin)).async {
+  def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
     _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-        .recover { case e => handleError(e) }
 
   }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRoles.Admin)).async { _ =>
+  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websiteRepository
       .delete(uuid)
       .map(_ => Ok)
-      .recover { case e => handleError(e) }
   }
 }

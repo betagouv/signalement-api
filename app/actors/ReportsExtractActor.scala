@@ -10,15 +10,15 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import controllers.routes
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
-import utils.Constants.Departments
 import utils.Constants
+import utils.Constants.Departments
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -42,7 +42,7 @@ class ReportsExtractActor @Inject() (
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
@@ -112,13 +112,13 @@ class ReportsExtractActor @Inject() (
         "Code postal",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Siret",
@@ -129,37 +129,37 @@ class ReportsExtractActor @Inject() (
         "Nom de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyName.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyAddress.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
         (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
-        available = requestedBy.userRole == UserRoles.Admin
+        available = requestedBy.userRole == UserRole.Admin
       ),
       ReportColumn(
         "Site web de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.phone.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
         (report, _, _, _) => report.vendor.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie",
@@ -183,18 +183,18 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
+              s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
                 .downloadReportFile(file.id.toString, file.filename)
                 .url}"
             )
             .mkString("\n"),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
         (report, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Réponse au consommateur",
@@ -238,25 +238,25 @@ class ReportsExtractActor @Inject() (
         "Identifiant",
         centerAlignmentColumn,
         (report, _, _, _) => report.id.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
         (report, _, _, _) => report.firstName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
         (report, _, _, _) => report.lastName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
         (report, _, _, _) => report.email.value,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Accord pour contact",
@@ -274,7 +274,7 @@ class ReportsExtractActor @Inject() (
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRole.DGCCRF
       ),
       ReportColumn(
         "Contrôle effectué",
@@ -285,7 +285,7 @@ class ReportsExtractActor @Inject() (
             events,
             _
         ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRole.DGCCRF
       )
     ).filter(_.available)
   }
@@ -297,7 +297,7 @@ class ReportsExtractActor @Inject() (
       paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
+      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
         paginatedReports.entities.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )
@@ -363,7 +363,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

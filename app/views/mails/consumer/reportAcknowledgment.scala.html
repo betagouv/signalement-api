@@ -3,6 +3,7 @@
 @import utils.FrontRoute
 @import utils.Country
 @import models.ReportStatus
+@import utils.Constants.Tags
 @(report: Report, files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
 
 
@@ -63,6 +64,15 @@
             }
             @views.html.fragments.chargeBack(report)
         }
+        case ReportStatus.NA if report.tags.contains(Tags.ReponseConso) => {
+            <p>
+                <b>Votre question a bien été enregistré dans SignalConso.</b>
+            </p>
+            <p>
+                Un répondant reviendra vers vous si nécessaire pour des compléments éventuels. Puis vous recevrez, dans les plus brefs délais
+                une réponse définitive ou vous serez réorientée vers le service compétent.
+            </p>
+        }
         case ReportStatus.NA => {
             <p>
                 <b>Votre signalement a bien été enregistré dans SignalConso.</b>
@@ -118,14 +128,12 @@
                 Que l'entreprise lise ou non votre signalement,
                 <b>les enquêteurs de la répression des fraudes seront également informés de votre signalement.</b>
             </p>
-        }
-        case _ if report.forwardToReponseConso => {
-            <p>
-                <b>Votre signalement a bien été enregistré dans SignalConso.</b>
-            </p>
-            <p>
-                Vous avez souhaitez contacter les enquêteurs de la répression des fraudes, il ne sera donc pas transmis à l'entreprise.
-            </p>
+            @if(report.tags.contains(Tags.CompagnieAerienne)) {
+                <p>
+                    Vous souhaitez connaitre vos droits sur l’indemnisation lié à une annulation, un retard, un refus d’embarquement ou un déclassement, consultez le site :
+                    <a href="https://droits-passagers-aeriens.aviation-civile.gouv.fr/">Direction générale de l'Aviation civile</a>
+                </p>
+            }
         }
         case _ => {
             <p>

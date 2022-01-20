@@ -20,6 +20,7 @@ import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
@@ -83,7 +84,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -120,7 +121,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedHeadOfficeProUser.email,
@@ -155,7 +156,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
       reportFixture.email,
       "L'entreprise a répondu à votre signalement",
       views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -192,7 +193,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       views.html.mails.consumer
         .reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl)
         .toString,
-      mailerService.attachmentSeqForWorkflowStepN(4)
+      attachementService.attachmentSeqForWorkflowStepN(4)
     )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
       concernedProUser.email,
@@ -211,6 +212,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
@@ -329,11 +331,11 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,
