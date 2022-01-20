@@ -1,7 +1,5 @@
-package tasks
+package tasks.report
 
-import java.time.LocalDate
-import java.time.Period
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -9,14 +7,11 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import tasks.report.ReportNotificationTask
 import utils.Constants.Tags
-import utils.AppSpec
-import utils.Country
-import utils.EmailAddress
-import utils.Fixtures
-import utils.FrontRoute
+import utils._
 
+import java.time.LocalDate
+import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 

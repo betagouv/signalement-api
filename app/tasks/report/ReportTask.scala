@@ -8,13 +8,13 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
+import tasks.computeStartingTime
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.FailedTask
 import tasks.model.TaskOutcome.SuccessfulTask
 import utils.Constants.ActionEvent._
 
 import java.time._
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -39,14 +39,10 @@ class ReportTask @Inject() (
   implicit val websiteUrl = signalConsoConfiguration.websiteURL
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = taskConfiguration.report.startTime
-  val interval = taskConfiguration.report.intervalInHours
+  val startTime: LocalTime = taskConfiguration.report.startTime
+  val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
-  val startDate =
-    if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
-    else LocalDate.now.atTime(startTime)
-
-  val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
+  val interval: FiniteDuration = taskConfiguration.report.intervalInHours
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
@@ -107,7 +103,7 @@ class ReportTask @Inject() (
 
     taskRanOrError.recoverWith { case err =>
       logger.error(
-        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay, startDate: $startDate )",
+        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay )",
         err
       )
       Future.failed(err)

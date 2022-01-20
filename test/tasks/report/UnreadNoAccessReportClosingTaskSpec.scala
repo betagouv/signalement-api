@@ -1,8 +1,5 @@
-package tasks
+package tasks.report
 
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.util.UUID
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -15,14 +12,16 @@ import services.MailerService
 import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskType.CloseUnreadReport
-import tasks.report.ReportTask
+import utils.Constants.ActionEvent
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 import utils.FrontRoute
-import utils.Constants.ActionEvent
-import utils.Constants.ActionEvent.ActionEventValue
 
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
