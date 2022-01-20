@@ -53,7 +53,8 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
   "io.sentry" % "sentry-logback" % "1.7.30",
   "org.typelevel" %% "cats-core" % "2.4.2",
-  "com.github.pureconfig" %% "pureconfig" % "0.17.0"
+  "com.github.pureconfig" %% "pureconfig" % "0.17.0",
+  compilerPlugin(scalafixSemanticdb)
 )
 
 scalafmtOnCompile := true
@@ -90,13 +91,15 @@ scalacOptions ++= Seq(
   "-Xlint:eta-zero", // Warn on eta-expansion (rather than auto-application) of zero-ary method.
   "-Xlint:eta-sam", // Warn on eta-expansion to meet a Java-defined functional interface that is not explicitly annotated with @FunctionalInterface.
   "-Xlint:deprecation", // Enable linted deprecations.
-  "-Ywarn-unused:imports",
+  "-Ywarn-unused",
   "-Ywarn-macros:after",
   "-Ywarn-unused:params",
   "-Ywarn-unused:implicits",
   "-Ywarn-unused:patvars",
   "-Wconf:cat=unused-imports&src=views/.*:s",
-  s"-Wconf:src=${target.value}/.*:s"
+  "-Wconf:cat=unused:info",
+  s"-Wconf:src=${target.value}/.*:s",
+  "-Yrangepos"
 )
 
 routesImport ++= Seq(
@@ -106,7 +109,9 @@ routesImport ++= Seq(
   "controllers.ReportResponseTypeQueryStringBindable"
 )
 
-ThisBuild / coverageEnabled := true
+scalafixOnCompile := true
+
+//ThisBuild / coverageEnabled := true
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
