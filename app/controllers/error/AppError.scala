@@ -22,6 +22,7 @@ sealed trait PreconditionError extends AppError
 
 object AppError {
 
+
   final case class ServerError(message: String, cause: Option[Throwable] = None) extends InternalAppError {
     override val `type`: String = "SC-0001"
     override val title: String = "Unexpected error"
@@ -195,4 +196,9 @@ object AppError {
       s"L'email ${email.value} est bloquée car listée comme spam"
   }
 
+  final case object ReportCreationInvalidBody extends BadRequestError {
+    override val `type`: String = "SC-0021"
+    override val title: String = s"Report's body does not match specific constraints"
+    override val details: String = s"Le signalement est invalide"
+  }
 }
