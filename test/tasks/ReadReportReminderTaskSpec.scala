@@ -15,6 +15,7 @@ import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskType.CloseReadReportWithNoAction
 import tasks.model.TaskType.RemindReadReportByMail
+import tasks.report.ReportTask
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO

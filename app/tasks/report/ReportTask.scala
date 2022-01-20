@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import akka.actor.ActorSystem
 import config.SignalConsoConfiguration
@@ -13,11 +13,7 @@ import tasks.model.TaskOutcome.FailedTask
 import tasks.model.TaskOutcome.SuccessfulTask
 import utils.Constants.ActionEvent._
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.Period
+import java.time._
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import javax.inject.Inject

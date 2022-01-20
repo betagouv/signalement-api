@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
@@ -11,10 +11,11 @@ import repositories.EventRepository
 import repositories.ReportRepository
 import services.Email.ConsumerReportClosedNoAction
 import services.MailService
-import tasks.ReportTask.MaxReminderCount
-import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
+import tasks.report.ReportTask.MaxReminderCount
+import tasks.report.ReportTask.extractEventsWithAction
+import tasks.toTaskOutCome
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION

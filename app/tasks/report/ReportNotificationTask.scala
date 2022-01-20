@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
