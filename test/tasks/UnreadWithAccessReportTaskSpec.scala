@@ -15,6 +15,7 @@ import tasks.model.TaskOutcome
 import tasks.model.TaskOutcome.SuccessfulTask
 import tasks.model.TaskType.CloseUnreadReport
 import tasks.model.TaskType.RemindUnreadReportsByEmail
+import tasks.report.ReportTask
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures

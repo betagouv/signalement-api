@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
@@ -9,9 +9,10 @@ import play.api.Logger
 import repositories.EventRepository
 import services.Email.ProReportUnreadReminder
 import services.MailService
-import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
+import tasks.report.ReportTask.extractEventsWithAction
+import tasks.toTaskOutCome
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.SYSTEM

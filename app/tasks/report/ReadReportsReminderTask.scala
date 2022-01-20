@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
@@ -9,10 +9,11 @@ import play.api.Logger
 import repositories.EventRepository
 import services.Email.ProReportReadReminder
 import services.MailService
-import tasks.ReportTask.MaxReminderCount
-import tasks.ReportTask.extractEventsWithAction
 import tasks.model.TaskOutcome
 import tasks.model.TaskType
+import tasks.report.ReportTask.MaxReminderCount
+import tasks.report.ReportTask.extractEventsWithAction
+import tasks.toTaskOutCome
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.SYSTEM

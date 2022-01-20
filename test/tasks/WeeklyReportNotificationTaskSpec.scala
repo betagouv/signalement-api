@@ -10,6 +10,7 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
+import tasks.report.ReportNotificationTask
 import utils.AppSpec
 import utils.Country
 import utils.EmailAddress
