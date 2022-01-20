@@ -52,7 +52,7 @@ class ReportController @Inject() (
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     val errorOrReport = for {
       draftReport <- request.parseBody[DraftReport]()
-      createdReport <- reportOrchestrator.validateAndCreateReport(validatedDraftReport)
+      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
     } yield Ok(Json.toJson(createdReport))
 
     errorOrReport.recoverWith {
