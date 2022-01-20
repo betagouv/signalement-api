@@ -22,7 +22,7 @@ import scala.concurrent.Future
 class SubscriptionController @Inject() (
     subscriptionRepository: SubscriptionRepository,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)

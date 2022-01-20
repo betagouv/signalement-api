@@ -16,7 +16,7 @@ import scala.concurrent.Future
 
 @Singleton
 class RatingController @Inject() (ratingRepository: RatingRepository, val silhouette: Silhouette[AuthEnv])(implicit
-    ec: ExecutionContext
+    val ec: ExecutionContext
 ) extends BaseController {
 
   val logger: Logger = Logger(this.getClass)

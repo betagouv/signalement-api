@@ -1,28 +1,33 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxMonadError
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
+import models.ActivationRequest
 import models._
-import models.access.ActivationOutcome.ActivationOutcome
-import models.access.ActivationOutcome
-import models.access.ProAccountActivationRateStat
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
+import models.token.TokenKind
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.AccessTokenRepository
 import repositories._
+import services.Email.DgccrfAccessLink
+import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompanyAccess
+import services.Email
 import services.MailService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -31,7 +36,6 @@ import utils.FrontRoute
 import utils.SIRET
 
 import java.time.Duration
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -47,11 +51,12 @@ class AccessesOrchestrator @Inject() (
     eventRepository: EventRepository,
     mailService: MailService,
     frontRoute: FrontRoute,
-    appConfig: AppConfigLoader
+    emailConfiguration: EmailConfiguration,
+    tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = appConfig.get.mail.ccrfEmailSuffix
+  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listAccesses(company: Company, user: User) =
@@ -72,7 +77,7 @@ class AccessesOrchestrator @Inject() (
           maybeHeadOfficeCompany <- maybeHeadOffice match {
             case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)
             case None             =>
-              //No head office found in company database ( Company DB is not synced )
+              // No head office found in company database ( Company DB is not synced )
               Future.successful(None)
           }
           headOfficeAccess <- maybeHeadOfficeCompany.map { headOfficeCompany =>
@@ -143,116 +148,89 @@ class AccessesOrchestrator @Inject() (
         logger.debug(s"User PRO does not have admin access to company : setting editable to false")
         companyAccess.map { case (user, level) => toApi(user, level, editable = false, isHeadOffice) }
       case _ =>
-        logger.warn(s"User is not supposed to access this feature")
+        logger.error(s"User is not supposed to access this feature")
         List.empty[UserWithAccessLevel]
     }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) =
+  def proFirstActivationCount(ticks: Option[Int]) =
+    companyRepository
+      .proFirstActivationCount(ticks.getOrElse(12))
+      .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
+
+  private def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
+    maybeAccessToken <- accessTokenRepository.findToken(token)
+    accessToken <- maybeAccessToken
+      .find(_.kind == TokenKind.DGCCRFAccount)
+      .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
+    _ = logger.debug(s"Token $token found, creating user")
+    _ <- createUser(draftUser, accessToken, UserRole.DGCCRF)
+    _ = logger.debug(s"User created successfully, invalidating token")
+    _ <- accessTokenRepository.invalidateToken(accessToken)
+    _ = logger.debug(s"Token has been revoked")
+  } yield ()
+
+  private def activateCompany(draftUser: DraftUser, token: String, siret: SIRET) = for {
+    token <- fetchCompanyToken(token, siret)
+    user <- createUser(draftUser, token, UserRole.Professionnel)
+    _ <- bindPendingTokens(user)
+    _ <- eventRepository.createEvent(
+      Event(
+        Some(UUID.randomUUID()),
+        None,
+        token.companyId,
+        Some(user.id),
+        Some(OffsetDateTime.now),
+        EventType.PRO,
+        ActionEvent.ACCOUNT_ACTIVATION,
+        stringToDetailsJsValue(s"Email du compte : ${token.emailedTo.getOrElse("")}")
+      )
+    )
+  } yield ()
+
+  private def bindPendingTokens(user: User) =
+    accessTokenRepository
+      .fetchPendingTokens(user.email)
+      .flatMap(tokens =>
+        Future.sequence(
+          tokens.filter(_.companyId.isDefined).map(accessTokenRepository.createCompanyAccessAndRevokeToken(_, user))
+        )
+      )
+
+  private def fetchCompanyToken(token: String, siret: SIRET): Future[AccessToken] = for {
+    company <- companyRepository
+      .findBySiret(siret)
+      .flatMap(maybeCompany => maybeCompany.liftTo[Future](CompanySiretNotFound(siret)))
+    accessToken <- accessTokenRepository
+      .findValidToken(company, token)
+      .flatMap(maybeToken => maybeToken.liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token)))
+  } yield accessToken
+
+  private def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
+    val email: EmailAddress = accessToken.emailedTo.getOrElse(draftUser.email)
+    val user = User(
+      id = UUID.randomUUID,
+      password = draftUser.password,
+      email = email,
+      firstName = draftUser.firstName,
+      lastName = draftUser.lastName,
+      userRole = role,
+      lastEmailValidation = Some(OffsetDateTime.now)
+    )
     for {
-      stats <- companyRepository
-        .companyAccessesReportsRate(ticks.getOrElse(12), appConfig.get.stats.proAccessStartingPoint)
-      rateStats =
-        stats.map { case (timestamp, accessCount, reportCount) =>
-          val rate: Float = if (reportCount > 0) (accessCount.toFloat / reportCount) * 100 else 0.0f
-          val date: LocalDate = timestamp.toLocalDateTime.toLocalDate
-          ProAccountActivationRateStat(rate, date)
-        }.toList
-    } yield rateStats
+      _ <- userRepository.findByLogin(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
+      _ <- userRepository.create(user)
+    } yield user
+  }
 
-  abstract class TokenWorkflow(draftUser: DraftUser, @annotation.unused token: String) {
-
-    def log(msg: String) = logger.debug(s"${this.getClass.getSimpleName} - ${msg}")
-
-    def fetchToken: Future[Option[AccessToken]]
-    def run: Future[Boolean]
-    def createUser(accessToken: AccessToken, role: UserRole): Future[User] = {
-      // If invited on emailedTo, user should register using that email
-      val email = accessToken.emailedTo.getOrElse(draftUser.email)
-      userRepository
-        .create(
-          User(
-            UUID.randomUUID,
-            draftUser.password,
-            email,
-            draftUser.firstName,
-            draftUser.lastName,
-            role,
-            Some(OffsetDateTime.now)
-          )
-        )
-        .map { u =>
-          log(s"User with id ${u.id} created through token ${accessToken.id}")
-          u
-        }
+  def handleActivationRequest(activateAccount: ActivationRequest): Future[Unit] =
+    activateAccount.companySiret match {
+      case Some(siret) =>
+        logger.info(s"Activating pro user for company $siret with token $activateAccount.token")
+        activateCompany(activateAccount.draftUser, activateAccount.token, siret)
+      case None =>
+        logger.info(s"Activating DGCCRF user with token ${activateAccount.token}")
+        activateDGCCRFUser(activateAccount.draftUser, activateAccount.token)
     }
-  }
-
-  class GenericTokenWorkflow(draftUser: DraftUser, token: String) extends TokenWorkflow(draftUser, token) {
-    def fetchToken = accessTokenRepository.findToken(token)
-    def run = for {
-      accessToken <- fetchToken
-      user <- accessToken
-        .filter(_.kind == DGCCRFAccount)
-        .map(t => createUser(t, UserRole.DGCCRF).map(Some(_)))
-        .getOrElse(Future(None))
-      _ <- user
-        .flatMap(_ => accessToken)
-        .map(accessTokenRepository.invalidateToken)
-        .getOrElse(Future(0))
-    } yield user.isDefined
-  }
-
-  class CompanyTokenWorkflow(draftUser: DraftUser, token: String, siret: SIRET)
-      extends TokenWorkflow(draftUser, token) {
-    def fetchCompany: Future[Option[Company]] = companyRepository.findBySiret(siret)
-    def fetchToken: Future[Option[AccessToken]] = for {
-      company <- fetchCompany
-      accessToken <- company.map(accessTokenRepository.findToken(_, token)).getOrElse(Future(None))
-    } yield accessToken
-
-    def bindPendingTokens(user: User) =
-      accessTokenRepository
-        .fetchPendingTokens(user.email)
-        .flatMap(tokens =>
-          Future.sequence(tokens.filter(_.companyId.isDefined).map(accessTokenRepository.applyCompanyToken(_, user)))
-        )
-
-    def run = for {
-      accessToken <- fetchToken
-      user <- accessToken.map(t => createUser(t, UserRole.Professionnel).map(Some(_))).getOrElse(Future(None))
-      applied <- (for { u <- user; t <- accessToken } yield accessTokenRepository.applyCompanyToken(t, u))
-        .getOrElse(Future(false))
-      _ <- user.map(bindPendingTokens(_)).getOrElse(Future(Nil))
-      _ <- accessToken
-        .map(t =>
-          eventRepository.createEvent(
-            Event(
-              Some(UUID.randomUUID()),
-              None,
-              t.companyId,
-              user.map(_.id),
-              Some(OffsetDateTime.now),
-              EventType.PRO,
-              ActionEvent.ACCOUNT_ACTIVATION,
-              stringToDetailsJsValue(s"Email du compte : ${t.emailedTo.getOrElse("")}")
-            )
-          )
-        )
-        .getOrElse(Future(None))
-    } yield applied
-  }
-
-  def handleActivationRequest(draftUser: DraftUser, token: String, siret: Option[SIRET]): Future[ActivationOutcome] = {
-    val workflow = siret
-      .map(s => new CompanyTokenWorkflow(draftUser, token, s))
-      .getOrElse(new GenericTokenWorkflow(draftUser, token))
-    workflow.run
-      .map(if (_) ActivationOutcome.Success else ActivationOutcome.NotFound)
-      .recover {
-        case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
-          ActivationOutcome.EmailConflict
-      }
-  }
 
   def fetchDGCCRFUserActivationToken(token: String): Future[DGCCRFUserActivationToken] = for {
     maybeAccessToken <- accessTokenRepository
@@ -275,7 +253,7 @@ class AccessesOrchestrator @Inject() (
     for {
       company <- companyRepository.findBySiret(siret)
       maybeAccessToken <- company
-        .map(accessTokenRepository.findToken(_, token))
+        .map(accessTokenRepository.findValidToken(_, token))
         .getOrElse(Future.failed[Option[AccessToken]](CompanySiretNotFound(siret)))
       accessToken <- maybeAccessToken
         .map(Future.successful)
@@ -298,8 +276,12 @@ class AccessesOrchestrator @Inject() (
       invitedBy: Option[User]
   ): Future[Unit] =
     userRepository.findByLogin(email.value).flatMap {
-      case Some(user) => addInvitedUserAndNotify(user, company, level, invitedBy)
-      case None       => sendInvitation(company, email, level, invitedBy)
+      case Some(user) =>
+        logger.debug("User with email already exist, creating access")
+        addInvitedUserAndNotify(user, company, level, invitedBy)
+      case None =>
+        logger.debug("No user found for given email, sending invitation")
+        sendInvitation(company, email, level, invitedBy)
     }
 
   def addUserOrInvite(
@@ -320,11 +302,9 @@ class AccessesOrchestrator @Inject() (
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
-    } yield {
-      mailService.Pro.sendNewCompanyAccessNotification(user, company, invitedBy)
-      logger.debug(s"User ${user.id} may now access company ${company.id}")
-      ()
-    }
+      _ <- mailService.send(ProNewCompanyAccess(user.email, company, invitedBy))
+      _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
+    } yield ()
 
   private def randomToken = UUID.randomUUID.toString
 
@@ -336,31 +316,40 @@ class AccessesOrchestrator @Inject() (
   ): Future[String] =
     for {
       existingToken <- accessTokenRepository.fetchToken(company, emailedTo)
-      _ <- existingToken.map(accessTokenRepository.updateToken(_, level, validity)).getOrElse(Future(None))
+      _ <- existingToken
+        .map { existingToken =>
+          logger.debug("Found existing token for that user and company, updating existing token")
+          accessTokenRepository.updateToken(existingToken, level, validity)
+        }
+        .getOrElse(Future(None))
       token <- existingToken
         .map(Future(_))
-        .getOrElse(
+        .getOrElse {
+          logger.debug("Creating user invitation token")
           accessTokenRepository.createToken(
             kind = CompanyJoin,
             token = randomToken,
-            validity = appConfig.get.token.companyJoinDuration,
+            validity = tokenConfiguration.companyJoinDuration,
             companyId = Some(company.id),
             level = Some(level),
             emailedTo = Some(emailedTo)
           )
-        )
+        }
     } yield token.token
 
   def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
-    genInvitationToken(company, level, appConfig.get.token.companyJoinDuration, email).map { tokenCode =>
-      mailService.Pro.sendCompanyAccessInvitation(
-        company = company,
-        email = email,
-        invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
-        invitedBy = invitedBy
+    for {
+      tokenCode <- genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email)
+      _ <- mailService.send(
+        ProCompanyAccessInvitation(
+          recipient = email,
+          company = company,
+          invitationUrl = frontRoute.dashboard.Pro.register(company.siret, tokenCode),
+          invitedBy = invitedBy
+        )
       )
-      logger.debug(s"Token sent to ${email} for company ${company.id}")
-    }
+      _ = logger.debug(s"Token sent to ${email} for company ${company.id}")
+    } yield ()
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
     for {
@@ -375,36 +364,34 @@ class AccessesOrchestrator @Inject() (
         accessTokenRepository.createToken(
           kind = DGCCRFAccount,
           token = randomToken,
-          validity = appConfig.get.token.dgccrfJoinDuration,
+          validity = tokenConfiguration.dgccrfJoinDuration,
           companyId = None,
           level = None,
           emailedTo = Some(email)
         )
-    } yield {
-      mailService.Dgccrf.sendAccessLink(
-        email = email,
-        invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token)
+      _ <- mailService.send(
+        DgccrfAccessLink(recipient = email, invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token))
       )
-      logger.debug(s"Sent DGCCRF account invitation to ${email}")
-    }
+      _ = logger.debug(s"Sent DGCCRF account invitation to ${email}")
+    } yield ()
 
   def sendEmailValidation(user: User): Future[Unit] =
     for {
       token <- accessTokenRepository.createToken(
         kind = ValidateEmail,
         token = randomToken,
-        validity = Some(Duration.ofHours(1)),
+        validity = Some(Duration.ofDays(1)),
         companyId = None,
         level = None,
         emailedTo = Some(user.email)
       )
-    } yield {
-      mailService.Common.sendValidateEmail(
-        user = user,
-        validationUrl = frontRoute.dashboard.validateEmail(token.token)
+      _ <- mailService.send(
+        Email.ValidateEmail(
+          user,
+          frontRoute.dashboard.validateEmail(token.token)
+        )
       )
-      logger.debug(s"Sent email validation to ${user.email}")
-    }
+    } yield logger.debug(s"Sent email validation to ${user.email}")
 
   def validateEmail(token: AccessToken): Future[Option[User]] =
     for {
@@ -414,25 +401,4 @@ class AccessesOrchestrator @Inject() (
       logger.debug(s"Validated email ${token.emailedTo.get}")
       u
     }
-
-  def dgccrfAccountsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfAccountsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
-
-  def dgccrfSubscription(ticks: Int) =
-    accessTokenRepository
-      .dgccrfSubscription(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
-
-  def dgccrfActiveAccountsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfActiveAccountsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
-
-  def dgccrfControlsCurve(ticks: Int) =
-    accessTokenRepository
-      .dgccrfControlsCurve(ticks)
-      .map(_.map { case (date, count) => CountByDate(count, date.toLocalDateTime.toLocalDate) }.toSeq)
-
 }

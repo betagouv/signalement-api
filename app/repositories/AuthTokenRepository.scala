@@ -1,10 +1,11 @@
 package repositories
 
-import models.AuthToken
+import models.auth.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,7 +14,8 @@ import scala.concurrent.Future
 
 /** A repository for authToken.
   *
-  * @param dbConfigProvider The Play db config provider. Play will inject this for you.
+  * @param dbConfigProvider
+  *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
 class AuthTokenRepository @Inject() (
@@ -28,7 +30,9 @@ class AuthTokenRepository @Inject() (
   private class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
 
     def id = column[UUID]("id", O.PrimaryKey)
+
     def userId = column[UUID]("user_id")
+
     def expiry = column[OffsetDateTime]("expiry")
 
     type AuthTokenData = (UUID, UUID, OffsetDateTime)
@@ -54,7 +58,7 @@ class AuthTokenRepository @Inject() (
     .run(
       authTokenTableQuery
         .filter(_.id === id)
-        .filter(_.expiry > OffsetDateTime.now)
+        .filter(_.expiry > OffsetDateTime.now(ZoneOffset.UTC))
         .to[List]
         .result
         .headOption
@@ -65,4 +69,15 @@ class AuthTokenRepository @Inject() (
       .filter(_.userId === userId)
       .delete
   }
+
+  def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery
+      .filter(_.userId === userId)
+      .result
+  }
+
+  def list(): Future[Seq[AuthToken]] = db.run {
+    authTokenTableQuery.result
+  }
+
 }

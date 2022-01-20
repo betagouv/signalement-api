@@ -9,7 +9,8 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import config.AppConfigLoader
+import config.EmailConfiguration
+import config.SignalConsoConfiguration
 import controllers.ReportController
 import models._
 import net.codingwell.scalaguice.ScalaModule
@@ -26,6 +27,7 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import services.AttachementService
 import services.MailService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -98,7 +100,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
       neverRequestedReport.email,
       "L'entreprise a pris connaissance de votre signalement",
       views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
     )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
       neverRequestedReport.copy(status = ReportStatus.Transmis),
@@ -184,11 +186,11 @@ trait GetReportSpec extends Spec with GetReportContext {
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,
@@ -319,8 +321,10 @@ trait GetReportContext extends Mockito {
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
+  lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
-  val config = application.injector.instanceOf[AppConfigLoader].get
+  val config = application.injector.instanceOf[SignalConsoConfiguration]
+  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(

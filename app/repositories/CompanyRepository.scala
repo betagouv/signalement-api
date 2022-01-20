@@ -6,14 +6,12 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments
+import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
 
 import java.sql.Timestamp
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,7 +28,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def addressSupplement = column[Option[String]]("address_supplement")
   def city = column[Option[String]]("city")
   def postalCode = column[Option[String]]("postal_code")
-  def department = column[Option[String]]("department_old_version")
+  def department = column[Option[String]]("department")
   def activityCode = column[Option[String]]("activity_code")
 
   type CompanyData = (
@@ -159,20 +157,23 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
   def searchWithReportsCount(
-      departments: Seq[String] = Nil,
-      activityCodes: Seq[String] = Nil,
-      identity: Option[SearchCompanyIdentity] = None,
-      offset: Option[Long],
-      limit: Option[Int]
+      search: CompanyRegisteredSearch,
+      paginate: PaginatedSearch
   ): Future[PaginatedResult[(Company, Int, Int)]] = {
+    def companyIdByEmailTable(emailWithAccess: EmailAddress) = UserAccessTableQuery
+      .join(UserTables.tables)
+      .on(_.userId === _.id)
+      .filter(_._2.email === emailWithAccess)
+      .map(_._1.companyId)
+
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty) { case (company, _) =>
-        company.department.map(a => a.inSet(departments)).getOrElse(false)
+      .filterIf(search.departments.nonEmpty) { case (company, _) =>
+        company.department.map(a => a.inSet(search.departments)).getOrElse(false)
       }
-      .filterIf(activityCodes.nonEmpty) { case (company, _) =>
-        company.activityCode.map(a => a.inSet(activityCodes)).getOrElse(false)
+      .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
+        company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
       }
       .groupBy(_._1)
       .map { case (grouped, all) =>
@@ -198,7 +199,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         )
       }
       .sortBy(_._2.desc)
-    val filterQuery = identity
+    val filterQuery = search.identity
       .map {
         case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
@@ -207,8 +208,11 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         case id: SearchCompanyIdentityId   => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
+      .filterOpt(search.emailsWithAccess) { case (table, email) =>
+        table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
+      }
 
-    toPaginate(filterQuery, offset, limit)
+    toPaginate(filterQuery, paginate.offset, paginate.limit)
   }
 
   def toPaginate[A, B](
@@ -321,7 +325,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
-  def fetchAdminsMapByCompany(
+  def fetchUsersByCompanyId(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =
@@ -364,29 +368,20 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
-  def companyAccessesReportsRate(
-      ticks: Int = 12,
-      ignoreBefore: LocalDate
-  ) = {
-    val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    val userDefinedStartingDate = OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1)
-
-    val ignoreBeforeOffsetDateTime: OffsetDateTime = OffsetDateTime.of(ignoreBefore.atStartOfDay(), ZoneOffset.UTC)
-
-    val startingDate =
-      if (userDefinedStartingDate.toEpochSecond > ignoreBeforeOffsetDateTime.toEpochSecond) userDefinedStartingDate
-      else ignoreBefore
-
-    db.run(sql"""
-    select  
-       my_date_trunc('month'::text, r.creation_date)::timestamp ,
-       count(distinct(a.company_id)) filter ( where my_date_trunc('month'::text, a.creation_date) <=  my_date_trunc('month'::text, r.creation_date) ),
-       count(distinct(r.company_id))
-    from reports r left join company_accesses a on r.company_id = a.company_id
-        where r.company_id is not null
-         and r.creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-    group by  my_date_trunc('month'::text, r.creation_date)
-    order by  my_date_trunc('month'::text, r.creation_date)""".as[(Timestamp, Int, Int)])
-  }
+  def proFirstActivationCount(
+      ticks: Int = 12
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (
+          select v.a, count(distinct id)
+          from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date
+                from company_accesses 
+                group by company_id
+                order by creation_date desc) as t
+          right join
+                (SELECT a FROM (VALUES #${computeTickValues(ticks)} ) AS X(a)) as v on t.creation_date = v.a
+          group by v.a
+          order by 1 DESC
+    ) as res order by 1 ASC;    
+         """.as[(Timestamp, Int)])
 
 }

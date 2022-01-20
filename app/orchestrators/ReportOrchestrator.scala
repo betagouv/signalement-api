@@ -2,7 +2,14 @@ package orchestrators
 
 import actors.UploadActor
 import akka.actor.ActorRef
-import config.AppConfigLoader
+import cats.data.NonEmptyList
+import cats.implicits.catsSyntaxMonadError
+import cats.implicits.toTraverseOps
+import config.EmailConfiguration
+import config.SignalConsoConfiguration
+import config.TokenConfiguration
+import controllers.error.AppError.SpammerEmailBlocked
+import controllers.error.AppError.InvalidEmail
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
@@ -10,6 +17,12 @@ import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
 import repositories._
+import services.Email.ConsumerProResponseNotification
+import services.Email.ConsumerReportAcknowledgment
+import services.Email.ConsumerReportReadByProNotification
+import services.Email.DgccrfDangerousProductReportNotification
+import services.Email.ProNewReportNotification
+import services.Email.ProResponseAcknowledgment
 import services.MailService
 import services.S3Service
 import utils.Constants.ActionEvent._
@@ -18,9 +31,12 @@ import utils.Constants.EventType
 import utils.Constants.ReportResponseReview
 import utils.Constants.Tags
 import utils.Constants
+import utils.EmailAddress
 import utils.URL
 
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import javax.inject.Inject
@@ -42,7 +58,9 @@ class ReportOrchestrator @Inject() (
     emailValidationOrchestrator: EmailValidationOrchestrator,
     @Named("upload-actor") uploadActor: ActorRef,
     s3Service: S3Service,
-    appConf: AppConfigLoader
+    emailConfiguration: EmailConfiguration,
+    tokenConfiguration: TokenConfiguration,
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
@@ -51,7 +69,7 @@ class ReportOrchestrator @Inject() (
 
   private def genActivationToken(companyId: UUID, validity: Option[TemporalAmount]): Future[String] =
     for {
-      existingToken <- accessTokenRepository.fetchActivationToken(companyId)
+      existingToken <- accessTokenRepository.fetchValidActivationToken(companyId)
       _ <- existingToken
         .map(accessTokenRepository.updateToken(_, AccessLevel.ADMIN, validity))
         .getOrElse(Future(None))
@@ -69,106 +87,155 @@ class ReportOrchestrator @Inject() (
     } yield token.token
 
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
-    companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(company.siret).flatMap { admins =>
-      if (admins.nonEmpty) {
-        mailService.Pro.sendReportNotification(admins.map(_.email), report)
-        val user = admins.head // We must chose one as Event links to a single User
-        eventRepository
-          .createEvent(
-            Event(
-              Some(UUID.randomUUID()),
-              Some(report.id),
-              Some(company.id),
-              Some(user.id),
-              Some(OffsetDateTime.now()),
-              Constants.EventType.PRO,
-              Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
-              stringToDetailsJsValue(
-                s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${admins.map(_.email).mkString(", ")} )"
-              )
-            )
-          )
-          .flatMap(_ => reportRepository.update(report.copy(status = ReportStatus.TraitementEnCours)))
-      } else {
-        genActivationToken(company.id, appConf.get.token.companyInitDuration).map(_ => report)
+    for {
+      maybeCompanyUsers <- companiesVisibilityOrchestrator
+        .fetchAdminsWithHeadOffice(company.siret)
+        .map(NonEmptyList.fromList)
+
+      updatedReport <- maybeCompanyUsers match {
+        case Some(companyUsers) =>
+          logger.debug("Found user, sending notification")
+          val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
+          for {
+            _ <- mailService.send(ProNewReportNotification(companyUserEmails, report))
+            reportWithUpdatedStatus <- reportRepository.update(report.copy(status = ReportStatus.TraitementEnCours))
+            _ <- createEmailProNewReportEvent(report, company, companyUsers)
+          } yield reportWithUpdatedStatus
+        case None =>
+          logger.debug("No user found, generating activation token")
+          genActivationToken(company.id, tokenConfiguration.companyInitDuration).map(_ => report)
       }
-    }
+    } yield updatedReport
+
+  private def createEmailProNewReportEvent(report: Report, company: Company, companyUsers: NonEmptyList[User]) =
+    eventRepository
+      .createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          Some(company.id),
+          Some(companyUsers.head.id),
+          Some(OffsetDateTime.now()),
+          Constants.EventType.PRO,
+          Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
+          stringToDetailsJsValue(
+            s"Notification du professionnel par mail de la réception d'un nouveau signalement ( ${companyUsers.map(_.email).toList.mkString(", ")} )"
+          )
+        )
+      )
 
   private[this] def createReportedWebsite(
       companyOpt: Option[Company],
       companyCountry: Option[String],
       websiteURLOpt: Option[URL]
   ): Future[Option[Website]] = {
-    val creationOpt = for {
+    val maybeWebsite: Option[Website] = for {
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
-    } yield websiteRepository.create(
-      Website(host = host, companyCountry = companyCountry, companyId = companyOpt.map(_.id))
-    )
-    creationOpt match {
-      case Some(f) => f.map(Some(_))
-      case None    => Future(None)
-    }
+    } yield Website(host = host, companyCountry = companyCountry, companyId = companyOpt.map(_.id))
+
+    maybeWebsite.map { website =>
+      logger.debug("Creating website entry")
+      websiteRepository.create(website)
+    }.sequence
   }
 
-  def newReport(draftReport: DraftReport): Future[Option[Report]] =
-    emailValidationOrchestrator
-      .isEmailValid(draftReport.email)
-      .map(isValid => isValid || appConf.get.mail.skipReportEmailValidation)
-      .flatMap {
-        case true =>
-          for {
-            companyOpt <- draftReport.companySiret
-              .map(siret =>
-                companyRepository
-                  .getOrCreate(
-                    siret,
-                    Company(
-                      siret = siret,
-                      name = draftReport.companyName.get,
-                      address = draftReport.companyAddress.get,
-                      activityCode = draftReport.companyActivityCode
-                    )
-                  )
-                  .map(Some(_))
-              )
-              .getOrElse(Future(None))
-            maybeCountry = draftReport.companyAddress.flatMap(_.country.map(_.name))
-            _ <- createReportedWebsite(companyOpt, maybeCountry, draftReport.websiteURL)
-            report <- reportRepository.create(draftReport.generateReport.copy(companyId = companyOpt.map(_.id)))
-            _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-            files <- reportRepository.retrieveReportFiles(report.id)
-            report <-
-              if (report.status == ReportStatus.TraitementEnCours && companyOpt.isDefined)
-                notifyProfessionalOfNewReport(report, companyOpt.get)
-              else Future(report)
-            event <- eventRepository.createEvent(
-              Event(
-                Some(UUID.randomUUID()),
-                Some(report.id),
-                companyOpt.map(_.id),
-                None,
-                Some(OffsetDateTime.now()),
-                Constants.EventType.CONSO,
-                Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-              )
-            )
-            ddEmails <-
-              if (report.tags.contains(Tags.DangerousProduct)) {
-                report.companyAddress.postalCode
-                  .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
-                  .getOrElse(Future(Seq()))
-              } else Future(Seq())
-          } yield {
-            if (ddEmails.nonEmpty) {
-              mailService.Dgccrf.sendDangerousProductEmail(ddEmails, report)
-            }
-            mailService.Consumer.sendReportAcknowledgment(report, event, files)
-            logger.debug(s"Report ${report.id} created")
-            Some(report)
-          }
-        case false => Future(None)
+  def validateAndCreateReport(draftReport: DraftReport): Future[Report] =
+    for {
+      _ <- emailValidationOrchestrator
+        .isEmailValid(draftReport.email)
+        .ensure {
+          logger.warn(s"Email ${draftReport.email} is not valid, abort report creation")
+          InvalidEmail(draftReport.email.value)
+        }(isValid => isValid || emailConfiguration.skipReportEmailValidation)
+      _ <- validateReportSpammerBlockList(draftReport.email)
+      createdReport <- createReport(draftReport)
+    } yield createdReport
+
+  private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
+    if (signalConsoConfiguration.reportEmailsBlacklist.contains(emailAddress.value)) {
+      Future.failed(SpammerEmailBlocked(emailAddress))
+    } else {
+      Future.unit
+    }
+
+  private def createReport(draftReport: DraftReport): Future[Report] =
+    for {
+      maybeCompany <- extractOptionnalCompany(draftReport)
+      maybeCountry = extractOptionnalCountry(draftReport)
+      _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
+      reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
+      report <- reportRepository.create(reportToCreate)
+      _ = logger.debug(s"Created report with id ${report.id}")
+      _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
+      files <- reportRepository.retrieveReportFiles(report.id)
+      updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
+      _ <- notifyDgccrfIfNeeded(updatedReport)
+      _ <- notifyConsumer(updatedReport, maybeCompany, files)
+      _ = logger.debug(s"Report ${updatedReport.id} created")
+    } yield updatedReport
+
+  private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
+    ddEmails <-
+      if (report.tags.contains(Tags.DangerousProduct)) {
+        report.companyAddress.postalCode
+          .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
+          .getOrElse(Future(Seq()))
+      } else Future(Seq())
+    _ <-
+      if (ddEmails.nonEmpty) {
+        mailService.send(DgccrfDangerousProductReportNotification(ddEmails, report))
+      } else {
+        Future.unit
       }
+  } yield ()
+
+  private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) =
+    for {
+      event <- eventRepository.createEvent(
+        Event(
+          Some(UUID.randomUUID()),
+          Some(report.id),
+          maybeCompany.map(_.id),
+          None,
+          Some(OffsetDateTime.now()),
+          Constants.EventType.CONSO,
+          Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+        )
+      )
+      _ <- mailService.send(ConsumerReportAcknowledgment(report, event, reportAttachements))
+    } yield ()
+
+  private def notifyProfessionalIfNeeded(maybeCompany: Option[Company], report: Report) =
+    (report.status, maybeCompany) match {
+      case (ReportStatus.TraitementEnCours, Some(company)) =>
+        notifyProfessionalOfNewReport(report, company)
+      case _ => Future.successful(report)
+    }
+
+  private def extractOptionnalCountry(draftReport: DraftReport) =
+    draftReport.companyAddress.flatMap(_.country.map { country =>
+      logger.debug(s"Found country ${country} from draft report")
+      country.name
+    })
+
+  private def extractOptionnalCompany(draftReport: DraftReport): Future[Option[Company]] =
+    draftReport.companySiret match {
+      case Some(siret) =>
+        val company = Company(
+          siret = siret,
+          name = draftReport.companyName.get,
+          address = draftReport.companyAddress.get,
+          activityCode = draftReport.companyActivityCode
+        )
+        companyRepository.getOrCreate(siret, company).map { company =>
+          logger.debug("Company extracted from report")
+          Some(company)
+        }
+      case None =>
+        logger.debug("No company attached to report")
+        Future(None)
+    }
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
@@ -198,7 +265,7 @@ class ReportOrchestrator @Inject() (
       }
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
-        .filter(_.creationDate.isAfter(OffsetDateTime.now.minusDays(7)))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7)))
         .map(report =>
           reportRepository
             .update(
@@ -363,9 +430,9 @@ class ReportOrchestrator @Inject() (
         }
     } yield updatedReport
 
-  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] = {
-    mailService.Consumer.sendReportTransmission(report)
+  private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
+      _ <- mailService.send(ConsumerReportReadByProNotification(report))
       _ <- eventRepository.createEvent(
         Event(
           id = Some(UUID.randomUUID()),
@@ -379,12 +446,11 @@ class ReportOrchestrator @Inject() (
       )
       newReport <- reportRepository.update(report.copy(status = ReportStatus.Transmis))
     } yield newReport
-  }
 
-  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = {
-    mailService.Pro.sendReportAcknowledgmentPro(user, report, reportResponse)
-    mailService.Consumer.sendReportToConsumerAcknowledgmentPro(report, reportResponse)
-  }
+  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
+    _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
+    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse))
+  } yield ()
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
@@ -451,7 +517,7 @@ class ReportOrchestrator @Inject() (
           }
         )
       )
-      _ <- Future(sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user))
+      _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       _ <- eventRepository.createEvent(
         Event(
           Some(UUID.randomUUID()),
@@ -541,4 +607,7 @@ class ReportOrchestrator @Inject() (
     } yield paginatedReports.copy(entities =
       paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
     )
+
+  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+    reportRepository.countByDepartments(start, end)
 }

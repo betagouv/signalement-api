@@ -1,17 +1,39 @@
 package controllers
 
+import cats.data.NonEmptyList
+import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.EmailConfiguration
 import models.DetailInputValue.toDetailInputValue
 import models._
+import models.admin.ReportInputList
+import models.auth.AuthToken
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories.ReportRepository
+import services.Email.ConsumerProResponseNotification
+import services.Email.ConsumerReportAcknowledgment
+import services.Email.ConsumerReportClosedNoAction
+import services.Email.ConsumerReportClosedNoReading
+import services.Email.ConsumerReportReadByProNotification
+import services.Email.DgccrfAccessLink
+import services.Email.DgccrfDangerousProductReportNotification
+import services.Email.DgccrfReportNotification
+import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompanyAccess
+import services.Email.ProNewReportNotification
+import services.Email.ProReportReadReminder
+import services.Email.ProReportUnreadReminder
+import services.Email.ProResponseAcknowledgment
+import services.Email.ResetPassword
+import services.Email
 import services.MailService
+import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.EventType
 import utils.Constants.Tags
 import utils._
 import utils.silhouette.auth.AuthEnv
@@ -33,13 +55,13 @@ class AdminController @Inject() (
     companyRepository: CompanyRepository,
     eventRepository: EventRepository,
     mailService: MailService,
-    appConfigLoader: AppConfigLoader,
+    emailConfiguration: EmailConfiguration,
     implicit val frontRoute: FrontRoute
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = appConfigLoader.get.mail.contactAddress
+  implicit val contactAddress = emailConfiguration.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
@@ -49,7 +71,7 @@ class AdminController @Inject() (
     category = "Test",
     subcategories = List("test"),
     details = List(toDetailInputValue("test")),
-    companyId = None,
+    companyId = Some(UUID.randomUUID()),
     companyName = None,
     companyAddress = Address(None, None, None, None),
     companySiret = None,
@@ -95,6 +117,8 @@ class AdminController @Inject() (
     lastEmailValidation = None
   )
 
+  private def genEvent = Event(None, None, None, None, None, EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
+
   private def genAuthToken = AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now.plusDays(10))
 
   private def genSubscription = Subscription(
@@ -111,181 +135,169 @@ class AdminController @Inject() (
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  val availableEmails = Map[String, () => EmailContent](
-    "reset_password" -> (() =>
-      EmailContent(EmailSubjects.RESET_PASSWORD, views.html.mails.resetPassword(genUser, genAuthToken))
+  val availableEmails = Map[String, EmailAddress => Email](
+    "common.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
+    "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
+    "pro.report_ack_pro" -> (recipient =>
+      ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
     ),
-    "new_company_access" -> (() => {
-      val company = genCompany
-      EmailContent(
-        EmailSubjects.NEW_COMPANY_ACCESS(company.name),
-        views.html.mails.professional.newCompanyAccessNotification(frontRoute.dashboard.login, company, None)
-      )
-    }),
-    "pro_access_invitation" -> (() => {
-      val company = genCompany
-      EmailContent(
-        EmailSubjects.COMPANY_ACCESS_INVITATION(company.name),
-        views.html.mails.professional.companyAccessInvitation(dummyURL, company, None)
-      )
-    }),
-    "dgccrf_access_link" -> (() =>
-      EmailContent(
-        EmailSubjects.DGCCRF_ACCESS_LINK,
-        views.html.mails.dgccrf.accessLink(frontRoute.dashboard.Dgccrf.register(token = "abc"))
-      )
+    "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
+    "pro.report_transmitted_reminder" -> (recipient =>
+      ProReportReadReminder(List(recipient), genReport, OffsetDateTime.now.plusDays(10))
     ),
-    "pro_report_notification" -> (() =>
-      EmailContent(EmailSubjects.NEW_REPORT, views.html.mails.professional.reportNotification(genReport))
+    "pro.report_unread_reminder" -> (recipient =>
+      ProReportUnreadReminder(List(recipient), genReport, OffsetDateTime.now.plusDays(10))
     ),
-    "consumer_report_ack" -> (() =>
-      EmailContent(EmailSubjects.REPORT_ACK, views.html.mails.consumer.reportAcknowledgment(genReport, Nil))
+    "dgccrf.access_link" ->
+      (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
+    "dgccrf.report_dangerous_product_notification" -> (recipient =>
+      DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
     ),
-    "consumer_report_ack_case_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(genReport.copy(tags = List(Tags.ContractualDispute)), Nil)
+    "dgccrf.report_notif_dgccrf" -> (recipient =>
+      DgccrfReportNotification(
+        List(recipient),
+        genSubscription,
+        List(genReport, genReport.copy(tags = List(Tags.ReponseConso))),
+        LocalDate.now.minusDays(10)
       )
     ),
-    "consumer_report_ack_case_euro" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(
-          genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Italie))),
+    "consumer.report_ack" -> (recipient =>
+      ConsumerReportAcknowledgment(genReport.copy(email = recipient), genEvent, Nil)
+    ),
+    "consumer.report_ack_case_reponseconso" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(status = ReportStatus.NA, tags = List(Tags.ReponseConso), email = recipient),
+          genEvent,
           Nil
         )
-      )
-    ),
-    "consumer_report_ack_case_euro_and_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(
+      ),
+    "consumer.report_ack_case_dispute" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(tags = List(Tags.ContractualDispute), email = recipient),
+          genEvent,
+          Nil
+        )
+      ),
+    "consumer.report_ack_case_euro" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Islande)),
-            tags = List(Tags.ContractualDispute)
+            companyAddress = Address(country = Some(Country.Italie)),
+            email = recipient
           ),
+          genEvent,
           Nil
         )
-      )
-    ),
-    "consumer_report_ack_case_andorre" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer
-          .reportAcknowledgment(
-            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Andorre)))
-          )
-      )
-    ),
-    "consumer_report_ack_case_andorre_and_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(
+      ),
+    "consumer.report_ack_case_euro_and_dispute" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(
+            status = ReportStatus.NA,
+            tags = List(Tags.ContractualDispute),
+            companyAddress = Address(country = Some(Country.Islande)),
+            email = recipient
+          ),
+          genEvent,
+          Nil
+        )
+      ),
+    "consumer.report_ack_case_andorre" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Andorre)),
-            tags = List(Tags.ContractualDispute)
-          )
+            email = recipient
+          ),
+          genEvent,
+          Nil
         )
-      )
-    ),
-    "consumer_report_ack_case_suisse" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer
-          .reportAcknowledgment(
-            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Suisse)))
-          )
-      )
-    ),
-    "consumer_report_ack_case_suisse_and_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(
+      ),
+    "consumer.report_ack_case_andorre_and_dispute" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(
+            status = ReportStatus.NA,
+            tags = List(Tags.ContractualDispute),
+            companyAddress = Address(country = Some(Country.Andorre)),
+            email = recipient
+          ),
+          genEvent,
+          Nil
+        )
+      ),
+    "consumer.report_ack_case_suisse" ->
+
+      (recipient =>
+        ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
             companyAddress = Address(country = Some(Country.Suisse)),
-            tags = List(Tags.ContractualDispute)
-          )
+            email = recipient
+          ),
+          genEvent,
+          Nil
         )
+      ),
+    "consumer.report_ack_case_suisse_and_dispute" -> (recipient =>
+      ConsumerReportAcknowledgment(
+        genReport.copy(
+          status = ReportStatus.NA,
+          tags = List(Tags.ContractualDispute),
+          companyAddress = Address(country = Some(Country.Suisse)),
+          email = recipient
+        ),
+        genEvent,
+        Nil
       )
     ),
-    "consumer_report_ack_case_abroad_default" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer
-          .reportAcknowledgment(
-            genReport.copy(status = ReportStatus.NA, companyAddress = Address(country = Some(Country.Bahamas)))
-          )
-      )
-    ),
-    "consumer_report_ack_case_abroad_default_and_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK,
-        views.html.mails.consumer.reportAcknowledgment(
+    "consumer.report_ack_case_abroad_default" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
-            companyAddress = Address(country = Some(Country.Mexique)),
-            tags = List(Tags.ContractualDispute)
-          )
+            companyAddress = Address(country = Some(Country.Bahamas)),
+            email = recipient
+          ),
+          genEvent,
+          Nil
         )
+      ),
+    "consumer.report_ack_case_abroad_default_and_dispute" -> (recipient =>
+      ConsumerReportAcknowledgment(
+        genReport.copy(
+          status = ReportStatus.NA,
+          tags = List(Tags.ContractualDispute),
+          companyAddress = Address(country = Some(Country.Bahamas)),
+          email = recipient
+        ),
+        genEvent,
+        Nil
       )
     ),
-    "report_transmitted" -> (() =>
-      EmailContent(EmailSubjects.REPORT_TRANSMITTED, views.html.mails.consumer.reportTransmission(genReport))
+    "consumer.report_transmitted" -> (recipient =>
+      ConsumerReportReadByProNotification(genReport.copy(email = recipient))
     ),
-    "report_ack_pro" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK_PRO,
-        views.html.mails.professional.reportAcknowledgmentPro(genReportResponse, genUser)
-      )
+    "consumer.report_ack_pro_consumer" -> (recipient =>
+      ConsumerProResponseNotification(genReport.copy(email = recipient), genReportResponse)
     ),
-    "report_ack_pro_consumer" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_ACK_PRO_CONSUMER,
-        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(
-          genReport,
-          genReportResponse,
-          frontRoute.dashboard.reportReview("abc")
-        )
-      )
+    "consumer.report_closed_no_reading" -> (recipient =>
+      ConsumerReportClosedNoReading(genReport.copy(email = recipient))
     ),
-    "report_unread_reminder" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_UNREAD_REMINDER,
-        views.html.mails.professional.reportUnreadReminder(genReport, OffsetDateTime.now.plusDays(10))
-      )
+    "consumer.report_closed_no_reading_case_dispute" ->
+      (recipient =>
+        ConsumerReportClosedNoReading(genReport.copy(email = recipient, tags = List(Tags.ContractualDispute)))
+      ),
+    "consumer.report_closed_no_action" -> (recipient =>
+      ConsumerReportClosedNoAction(genReport.copy(email = recipient))
     ),
-    "report_transmitted_reminder" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_TRANSMITTED_REMINDER,
-        views.html.mails.professional.reportTransmittedReminder(genReport, OffsetDateTime.now.plusDays(10))
-      )
-    ),
-    "report_closed_no_reading" -> (() =>
-      EmailContent(EmailSubjects.REPORT_CLOSED_NO_READING, views.html.mails.consumer.reportClosedByNoReading(genReport))
-    ),
-    "report_closed_no_reading_case_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_CLOSED_NO_READING,
-        views.html.mails.consumer.reportClosedByNoReading(genReport.copy(tags = List(Tags.ContractualDispute)))
-      )
-    ),
-    "report_closed_no_action" -> (() =>
-      EmailContent(EmailSubjects.REPORT_CLOSED_NO_ACTION, views.html.mails.consumer.reportClosedByNoAction(genReport))
-    ),
-    "report_closed_no_action_case_dispute" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_CLOSED_NO_ACTION,
-        views.html.mails.consumer.reportClosedByNoAction(genReport.copy(tags = List(Tags.ContractualDispute)))
-      )
-    ),
-    "report_notif_dgccrf" -> (() =>
-      EmailContent(
-        EmailSubjects.REPORT_NOTIF_DGCCRF(1, None),
-        views.html.mails.dgccrf.reportNotification(genSubscription, List(genReport), LocalDate.now.minusDays(10))
-      )
+    "consumer.report_closed_no_action_case_dispute" -> (recipient =>
+      ConsumerReportClosedNoAction(genReport.copy(email = recipient, tags = List(Tags.ContractualDispute)))
     )
   )
 
@@ -296,67 +308,55 @@ class AdminController @Inject() (
     Future(
       availableEmails
         .get(templateRef)
-        .map(_.apply())
-        .map { case EmailContent(subject, body) =>
-          mailService.send(
-            from = appConfigLoader.get.mail.from,
-            recipients = Seq(EmailAddress(to)),
-            subject = subject,
-            bodyHtml = body.toString
-          )
-        }
+        .map(e => mailService.send(e(EmailAddress(to))))
         .map(_ => Ok)
         .getOrElse(NotFound)
     )
   }
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    import AdminObjects.ReportList
     request.body
-      .validate[ReportList](Json.reads[ReportList])
+      .validate[ReportInputList](Json.reads[ReportInputList])
       .fold(
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        results => {
+        results =>
           for {
             reports <- reportRepository.getReportsByIds(results.reportIds)
             eventsMap <- eventRepository.prefetchReportsEvents(reports)
-          } yield reports.foreach { report =>
-            eventsMap
-              .get(report.id)
-              .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
-              .map { responseEvent =>
-                mailService.Consumer
-                  .sendReportToConsumerAcknowledgmentPro(report, responseEvent.details.as[ReportResponse])
-              }
-          }
-          Future(Ok)
-        }
+            filteredEvents = reports.flatMap { report =>
+              eventsMap
+                .get(report.id)
+                .flatMap(_.find(_.action == REPORT_PRO_RESPONSE))
+                .map(evt => (report, evt))
+            }
+            _ <- filteredEvents.map { case (report, responseEvent) =>
+              mailService.send(ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse]))
+            }.sequence
+          } yield Ok
       )
   }
 
   def sendNewReportToPro = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    import AdminObjects.ReportList
-    request.body
-      .validate[ReportList](Json.reads[ReportList])
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        results => {
-          reportRepository
-            .getReportsByIds(results.reportIds)
-            .map(_.foreach { report =>
-              report.companyId.map { companyId =>
-                companyRepository
-                  .fetchAdmins(companyId)
-                  .map(_.map(_.email).distinct)
-                  .map(adminsEmails => mailService.Pro.sendReportNotification(adminsEmails, report))
-              }
-            })
-          Future(Ok)
-        }
-      )
-  }
-}
+    for {
+      reportInputList <- request.parseBody[ReportInputList]()
+      reportIds <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
+      reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
+        companyRepository
+          .fetchAdmins(companyId)
+          .map(_.map(_.email).distinct)
+          .map(emails => (report, NonEmptyList.fromList(emails)))
+          .filter(_._2.isDefined)
 
-object AdminObjects {
-  case class ReportList(reportIds: List[UUID])
+      }.sequence
+      _ <- reportAndEmailList.map {
+        case (report, Some(adminsEmails)) =>
+          mailService.send(ProNewReportNotification(adminsEmails, report))
+        case (report, None) =>
+          logger.debug(s"Not sending email for report ${report.id}, no admin found")
+          Future.unit
+      }.sequence
+    } yield Ok
+
+  }
 }

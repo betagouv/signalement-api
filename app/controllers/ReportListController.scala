@@ -27,7 +27,7 @@ class ReportListController @Inject() (
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
-)(implicit val executionContext: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds

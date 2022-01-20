@@ -20,7 +20,7 @@ class DataEconomieRepository @Inject() (
 
   def reports() =
     Slick
-      .source(TableQuery[ReportTable].result)
+      .source(ReportTables.tables.joinLeft(CompanyTables.tables).on(_.companyId === _.id).result)
       .log("user")
 
 }

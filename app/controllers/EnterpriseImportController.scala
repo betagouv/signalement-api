@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 class EnterpriseImportController @Inject() (
     enterpriseSyncOrchestrator: EnterpriseImportOrchestrator,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   implicit val timeout: akka.util.Timeout = 5.seconds

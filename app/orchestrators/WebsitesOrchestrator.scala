@@ -31,7 +31,7 @@ class WebsitesOrchestrator @Inject() (
   def searchByHost(host: String): Future[Seq[Country]] =
     for {
       validHost <- URL(host).getHost.liftTo[Future](MalformedHost(host))
-      websites <- repository.searchCountriesByHost(validHost)
+      websites <- repository.searchValidWebsiteAssociationByHost(validHost)
     } yield websites
       .flatMap(_.companyCountry)
       .map(Country.fromName)

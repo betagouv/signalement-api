@@ -69,12 +69,13 @@ class WebsiteRepository @Inject() (
         .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite))
     )
 
-  def searchCountriesByHost(host: String) =
+  def searchValidWebsiteAssociationByHost(host: String) =
     db.run(
       websiteTableQuery
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
+        .filter(_.kind === WebsiteKind.DEFAULT)
         .result
     )
 
