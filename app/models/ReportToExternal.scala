@@ -26,7 +26,8 @@ case class ReportToExternal(
     description: Option[String],
     effectiveDate: Option[String],
     reponseconsoCode: List[String],
-    ccrfCode: List[String]
+    ccrfCode: List[String],
+    tags: List[String]
 ) {}
 
 object ReportToExternal {
@@ -54,7 +55,8 @@ object ReportToExternal {
         .map(_.value)
         .headOption,
       reponseconsoCode = r.reponseconsoCode,
-      ccrfCode = r.ccrfCode
+      ccrfCode = r.ccrfCode,
+      tags = r.tags
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]

@@ -52,8 +52,8 @@ class ReportToExternalController @Inject() (
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
 
-  /**
-    * @deprecated Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
+  /** @deprecated
+    *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
     */
   def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
