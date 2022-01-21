@@ -44,13 +44,17 @@ class ReportToExternalController @Inject() (
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
-      end = qs.localDate("end")
+      end = qs.localDate("end"),
+      tags = qs.seq("tags")
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
 
+  /** @deprecated
+    *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
+    */
   def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
