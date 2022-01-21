@@ -54,7 +54,7 @@ class ReportToExternalController @Inject() (
   def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
-      siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
+      siretSirenList = List(siret),
       start = qs.localDate("start"),
       end = qs.localDate("end")
     )
