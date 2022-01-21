@@ -37,6 +37,7 @@ class AccountController @Inject() (
   implicit val contactAddress = emailConfiguration.contactAddress
   implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
+  val t = ""
   def fetchUser = SecuredAction.async { implicit request =>
     for {
       userOpt <- userRepository.findById(request.identity.id)

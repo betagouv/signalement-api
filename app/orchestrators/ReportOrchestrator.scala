@@ -8,8 +8,9 @@ import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
-import controllers.error.AppError.SpammerEmailBlocked
 import controllers.error.AppError.InvalidEmail
+import controllers.error.AppError.ReportCreationInvalidBody
+import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
 import models._
 import models.token.TokenKind.CompanyInit
@@ -142,6 +143,7 @@ class ReportOrchestrator @Inject() (
 
   def validateAndCreateReport(draftReport: DraftReport): Future[Report] =
     for {
+      _ <- if (DraftReport.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
       _ <- emailValidationOrchestrator
         .isEmailValid(draftReport.email)
         .ensure {

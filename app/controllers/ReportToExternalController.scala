@@ -50,4 +50,16 @@ class ReportToExternalController @Inject() (
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
+
+  def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
+    val filter = ReportFilter(
+      siretSirenList = List(siret),
+      start = qs.localDate("start"),
+      end = qs.localDate("end")
+    )
+    for {
+      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
+    } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
+  }
 }
