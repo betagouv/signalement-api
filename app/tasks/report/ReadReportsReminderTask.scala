@@ -9,11 +9,11 @@ import play.api.Logger
 import repositories.EventRepository
 import services.Email.ProReportReadReminder
 import services.MailService
-import tasks.model.TaskOutcome
 import tasks.model.TaskType
 import tasks.report.ReportTask.MaxReminderCount
 import tasks.report.ReportTask.extractEventsWithAction
-import tasks.toTaskOutCome
+import tasks.TaskExecutionResult
+import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.SYSTEM
@@ -43,7 +43,7 @@ class ReadReportsReminderTask @Inject() (
       transmittedReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
       startingPoint: LocalDateTime
-  ): Future[List[TaskOutcome]] = Future.sequence(
+  ): Future[List[TaskExecutionResult]] = Future.sequence(
     extractTransmittedReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, startingPoint)
       .map { case (report, users) =>
         remindTransmittedReportByMail(report, users.map(_.email), reportEventsMap)
@@ -99,7 +99,7 @@ class ReadReportsReminderTask @Inject() (
       report: Report,
       adminMails: List[EmailAddress],
       reportEventsMap: Map[UUID, List[Event]]
-  ): Future[TaskOutcome] = {
+  ) = {
 
     val taskExecution = for {
       _ <- eventRepository
@@ -131,6 +131,6 @@ class ReadReportsReminderTask @Inject() (
         )
 
     } yield ()
-    toTaskOutCome(taskExecution, report.id, TaskType.RemindReadReportByMail)
+    toValidated(taskExecution, report.id, TaskType.RemindReadReportByMail)
   }
 }
