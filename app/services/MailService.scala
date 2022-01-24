@@ -85,7 +85,11 @@ class MailService @Inject() (
         )
 
         (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
-          logger.error("Unexpected error when sending email request to mail actor", err)
+          logger.error(
+            s"Unexpected error when sending email request to mail actor [from :${emailRequest.from},recipients: ${emailRequest.recipients},subject : ${emailRequest.subject}]",
+            err
+          )
+
           Future.failed(err)
         }
     }
