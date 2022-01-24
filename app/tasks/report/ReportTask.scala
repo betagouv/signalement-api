@@ -1,6 +1,7 @@
 package tasks.report
 
 import akka.actor.ActorSystem
+import cats.implicits._
 import config.SignalConsoConfiguration
 import config.TaskConfiguration
 import models._
@@ -9,9 +10,6 @@ import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
 import tasks.computeStartingTime
-import tasks.model.TaskOutcome
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
 import utils.Constants.ActionEvent._
 
 import java.time._
@@ -54,7 +52,7 @@ class ReportTask @Inject() (
     logger.info("Traitement de relance automatique")
     logger.info(s"taskDate - ${now}")
 
-    val taskRanOrError: Future[List[TaskOutcome]] = for {
+    val executedTasksOrError = for {
 
       unreadReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
       readReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
@@ -85,23 +83,23 @@ class ReportTask @Inject() (
       )
       closedByNoAction <- noActionReportsCloseTask.closeNoAction(readReportsWithAdmins, reportEventsMap, now)
 
-      reminders = (closedUnreadWithAccessReports :::
-        unreadReportsMailReminders ::: closedUnreadNoAccessReports :::
-        transmittedReportsMailReminders ::: closedByNoAction)
+      reminders = closedUnreadNoAccessReports.sequence combine
+        closedUnreadWithAccessReports.sequence combine
+        unreadReportsMailReminders.sequence combine
+        transmittedReportsMailReminders.sequence combine
+        closedByNoAction.sequence
 
       _ = logger.info("Successful reminders :")
       _ = reminders
-        .filter(_.isInstanceOf[SuccessfulTask])
-        .map(reminder => logger.debug(s"Relance pour [${reminder.reportId} - ${reminder.value}]"))
+        .map(reminder => logger.debug(s"Relance pour [${reminder.mkString(",")}]"))
 
       _ = logger.info("Failed reminders :")
       _ = reminders
-        .filter(_.isInstanceOf[FailedTask])
-        .map(reminder => logger.warn(s"Failed report tasks [${reminder.reportId} - ${reminder.value}]"))
+        .leftMap(_.map(reminder => logger.warn(s"Failed report tasks [${reminder._1} - ${reminder._2}]")))
 
     } yield reminders
 
-    taskRanOrError.recoverWith { case err =>
+    executedTasksOrError.recoverWith { case err =>
       logger.error(
         s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay )",
         err

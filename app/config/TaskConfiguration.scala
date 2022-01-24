@@ -8,12 +8,12 @@ import scala.concurrent.duration.FiniteDuration
 case class TaskConfiguration(
     subscription: SubscriptionTaskConfiguration,
     report: ReportTaskConfiguration,
-    archive: ArchiveTaskConfiguration
+    inactiveAccounts: InactiveAccountsTaskConfiguration
 )
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
 
-case class ArchiveTaskConfiguration(startTime: LocalTime)
+case class InactiveAccountsTaskConfiguration(startTime: LocalTime, inactivePeriod: Period)
 
 case class ReportTaskConfiguration(
     startTime: LocalTime,
