@@ -49,7 +49,17 @@ class ReportToExternalController @Inject() (
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
-    } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
+      reportFilesMap <- reportRepository.prefetchReportsFiles(reports.entities.map(_.id))
+    } yield Ok(
+      Json.toJson(
+        reports.entities.map(r =>
+          ReportWithFilesToExternal(
+            ReportToExternal.fromReport(r),
+            reportFilesMap.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
+          )
+        )
+      )
+    )
   }
 
   /** @deprecated
