@@ -195,4 +195,9 @@ object AppError {
       s"L'email ${email.value} est bloquée car listée comme spam"
   }
 
+  final case object ReportCreationInvalidBody extends BadRequestError {
+    override val `type`: String = "SC-0021"
+    override val title: String = s"Report's body does not match specific constraints"
+    override val details: String = s"Le signalement est invalide"
+  }
 }

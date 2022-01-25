@@ -68,15 +68,14 @@ case class DraftReport(
 }
 
 object DraftReport {
-  implicit val draftReportReads = Json
-    .reads[DraftReport]
-    .filter(draft =>
-      draft.companySiret.isDefined
-        || draft.websiteURL.isDefined
-        || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
-        || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
-        || draft.phone.isDefined
-    )
+  def isValid(draft: DraftReport): Boolean =
+    (draft.companySiret.isDefined
+      || draft.websiteURL.isDefined
+      || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
+      || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
+      || draft.phone.isDefined)
+
+  implicit val draftReportReads = Json.reads[DraftReport]
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 

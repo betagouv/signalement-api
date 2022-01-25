@@ -1,13 +1,11 @@
 package tasks.model
 
-import java.util.UUID
-
-sealed trait TaskOutcome {
-  val reportId: UUID
-  val value: TaskType
-}
-
-object TaskOutcome {
-  case class SuccessfulTask(reportId: UUID, value: TaskType) extends TaskOutcome
-  case class FailedTask(reportId: UUID, value: TaskType, err: Throwable) extends TaskOutcome
-}
+//sealed trait TaskOutcome[E] {
+//  val elementId: E
+//  val value: TaskType
+//}
+//
+//object TaskOutcome {
+//  case class SuccessfulTask[E](elementId: E, value: TaskType) extends TaskOutcome[E]
+//  case class FailedTask[E](elementId: E, value: TaskType, err: Throwable) extends TaskOutcome[E]
+//}

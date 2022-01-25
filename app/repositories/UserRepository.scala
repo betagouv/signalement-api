@@ -2,6 +2,7 @@ package repositories
 
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import controllers.error.AppError.EmailAlreadyExist
+import models.UserRole.DGCCRF
 import models._
 import models.auth.AuthAttempt
 import play.api.Logger
@@ -90,6 +91,16 @@ class UserRepository @Inject() (
   val authAttemptTableQuery = AuthAttemptTables.tables
 
   def list: Future[Seq[User]] = db.run(userTableQuery.result)
+
+  def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
+    db
+      .run(
+        userTableQuery
+          .filter(_.role === DGCCRF.entryName)
+          .filter(_.lastEmailValidation <= expirationDate)
+          .to[List]
+          .result
+      )
 
   def list(role: UserRole): Future[Seq[User]] =
     db
