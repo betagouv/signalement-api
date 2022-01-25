@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "io.scalaland" %% "chimney" % "0.6.1",
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.15.4" % Test,
   "io.sentry" % "sentry-logback" % "5.5.2",
   "org.typelevel" %% "cats-core" % "2.4.2",
   "com.github.pureconfig" %% "pureconfig" % "0.17.0",
