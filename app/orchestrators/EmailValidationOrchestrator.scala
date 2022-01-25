@@ -77,7 +77,7 @@ class EmailValidationOrchestrator @Inject() (
     emailValidation <- findOrCreate(email)
     res <-
       if (emailValidation.lastValidationDate.isEmpty) {
-        logger.debug(s"Email not validated, sending email")
+        logger.debug(s"Email ${emailValidation.email} not validated, sending email")
         mailService.send(ConsumerValidateEmail(emailValidation)).map(_ => EmailValidationResult.failure)
       } else {
         logger.debug(s"Email validated")

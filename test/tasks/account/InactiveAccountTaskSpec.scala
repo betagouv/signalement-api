@@ -6,7 +6,6 @@ import models.Subscription
 import models.User
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.SubscriptionRepository
@@ -29,27 +28,17 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
+  lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
   lazy val actorSystem = injector.instanceOf[ActorSystem]
-
-  class FakeModule(inactiveAccountsTaskConfiguration: InactiveAccountsTaskConfiguration) extends AppFakeModule {
-    override def configure() =
-      super.configure
-//      bind[InactiveAccountTask].toInstance(new InactiveAccountTask(actorSystem, userRepository, subscriptionRepository, inactiveAccountsTaskConfiguration))
-  }
-
-  def app(inactiveAccountsTaskConfiguration: InactiveAccountsTaskConfiguration) =
-    new GuiceApplicationBuilder()
-      .overrides(new FakeModule(inactiveAccountsTaskConfiguration))
-      .build()
 
   "InactiveAccountTask" should {
 
-    "remove inactive DGCCRF and subscriptions accounts" in {
+    "remove inactive DGCCRF and subscriptions accounts only" in {
 
       val conf = InactiveAccountsTaskConfiguration(startTime = LocalTime.now(), inactivePeriod = Period.ofYears(1))
       val now: LocalDateTime = LocalDateTime.now()
       val expirationDateTime: LocalDateTime = LocalDateTime.now().minusYears(conf.inactivePeriod.getYears).minusDays(1)
-      new WithApplication(app(conf)) {
+      new WithApplication(app) {
 
         // Inactive account to be removed
         val inactiveDGCCRFUser: User = Fixtures.genDgccrfUser.sample.get
@@ -70,14 +59,10 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
         val expectedUsers = Seq(inactiveProUser, inactiveAdminUser, activeDGCCRFUser, activeProUser, activeAdminUser)
 
         // Inactive subscriptions that should be deleted
-        val inactiveUserSubscriptionEmail: Subscription =
-          Subscription(email = Some(inactiveDGCCRFUser.email), userId = None, frequency = Period.ofDays(1))
         val inactiveUserSubscriptionUserId: Subscription =
           Subscription(email = None, userId = Some(inactiveDGCCRFUser.id), frequency = Period.ofDays(1))
 
         // Subscriptions that should be kept
-        val activeUserSubscriptionEmail: Subscription =
-          Subscription(email = Some(activeDGCCRFUser.email), userId = None, frequency = Period.ofDays(1))
         val activeUserSubscriptionUserId: Subscription =
           Subscription(email = None, userId = Some(activeDGCCRFUser.id), frequency = Period.ofDays(1))
 
@@ -90,10 +75,10 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
             _ <- userRepository.create(activeProUser)
             _ <- userRepository.create(activeAdminUser)
             _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
-            _ <- subscriptionRepository.create(inactiveUserSubscriptionEmail)
-            _ <- subscriptionRepository.create(activeUserSubscriptionEmail)
+
             _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
-            _ <- new InactiveAccountTask(app.actorSystem, userRepository, subscriptionRepository, conf).runTask(now)
+            _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
+              .runTask(now.atOffset(ZoneOffset.UTC))
             userList <- userRepository.list
             activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
             inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
@@ -101,14 +86,16 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
           Duration.Inf
         )
 
-        userList.containsSlice(expectedUsers) shouldEqual true
-        userList.contains(inactiveDGCCRFUser) shouldEqual false
+        userList.map(_.id).containsSlice(expectedUsers.map(_.id)) shouldEqual true
+        userList.map(_.id).contains(inactiveDGCCRFUser.id) shouldEqual false
 
-        activeSubscriptionList.containsSlice(
-          Seq(activeUserSubscriptionEmail, activeUserSubscriptionUserId)
-        ) shouldEqual true
+        activeSubscriptionList
+          .map(_.id)
+          .containsSlice(
+            Seq(activeUserSubscriptionUserId.id)
+          ) shouldEqual true
+
         inactiveSubscriptionList.isEmpty shouldEqual true
-        activeSubscriptionList.contains(activeUserSubscriptionEmail) shouldEqual true
         activeSubscriptionList.contains(activeUserSubscriptionUserId) shouldEqual true
       }
 
