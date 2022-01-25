@@ -1,7 +1,6 @@
-package tasks
+package tasks.report
 
-import java.time.OffsetDateTime
-import java.util.UUID
+import cats.data.Validated.Valid
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -9,29 +8,42 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import services.AttachementService
 import services.MailerService
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
-import utils.FrontRoute
+import tasks.Task
+import tasks.TaskExecutionResults
+import tasks.model.TaskType.CloseUnreadReport
+import tasks.model.TaskType.RemindUnreadReportsByEmail
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.PRO
+import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours" created more than 7 days    ${step(
       setupReport(report)
     )}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
       report.id,
@@ -47,20 +59,27 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
         .reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2)))
         .toString
     )}
+     And outcome is empty ${result mustEqual Valid(List((report.id, RemindUnreadReportsByEmail)))}
     """
   }
 }
 
-class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours" created less than 7 days    ${step(
       setupReport(report)
     )}
-         When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+         When remind task run                                                        ${step {
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
@@ -70,13 +89,17 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoin
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome is empty ${result mustEqual noTaskProcessed}
     """
   }
 }
 
-class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
@@ -85,7 +108,10 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
     )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
       report.id,
@@ -99,13 +125,21 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoi
       "Nouveau signalement",
       views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString
     )}
+    And outcome is successful RemindReportByMail reminder ${result mustEqual Valid(
+      List(
+        (report.id, RemindUnreadReportsByEmail)
+      )
+    )}
     """
   }
 }
 
-class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
@@ -114,7 +148,10 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
     )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
@@ -124,13 +161,16 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends O
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome is empty                                         ${result mustEqual noTaskProcessed}
     """
   }
 }
 
-class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(
       creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)),
@@ -144,7 +184,10 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWith
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
       report.id,
@@ -158,15 +201,23 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWith
       report.email,
       "L'entreprise n'a pas souhaité consulter votre signalement",
       views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      mailerService.attachmentSeqForWorkflowStepN(3)
+      attachementService.attachmentSeqForWorkflowStepN(3)
+    )}
+    And outcome is successful CloseUnreadReport                                    ${result mustEqual Valid(
+      List(
+        (report.id, CloseUnreadReport)
+      )
     )}
    """
   }
 }
 
-class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoingWithAccessReportReminderTaskSpec {
+class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
+
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
-    val report = onGoingReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
+    val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
     val event2 = reminderEvent.copy(
       creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)),
@@ -180,7 +231,10 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      Await.result(reminderTask.runTask(runningDateTime.toLocalDateTime), Duration.Inf)
+      result = Await.result(
+        reportTask.runTask(runningDateTime.toLocalDateTime),
+        Duration.Inf
+      )
     }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
       report.id,
@@ -190,25 +244,26 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends OnGoing
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
+         And outcome empty ${result mustEqual noTaskProcessed}
    """
   }
 }
 
-abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv)
+abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
     extends Specification
     with AppSpec
     with Mockito
     with FutureMatchers {
 
   implicit val ec = ee.executionContext
-  val mailReminderDelay = config.report.mailReminderDelay
+  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
   val runningDateTime = OffsetDateTime.now
 
   val proUser = Fixtures.genProUser.sample.get
 
   val company = Fixtures.genCompany.sample.get
-  val onGoingReport = Fixtures
+  val notReadReport = Fixtures
     .genReportForCompany(company)
     .sample
     .get
@@ -216,17 +271,17 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
       status = ReportStatus.TraitementEnCours
     )
 
-  val reminderEvent = Fixtures.genEventForReport(onGoingReport.id, PRO, EMAIL_PRO_REMIND_NO_READING).sample.get
+  val reminderEvent = Fixtures.genEventForReport(notReadReport.id, PRO, EMAIL_PRO_REMIND_NO_READING).sample.get
 
   def mailMustHaveBeenSent(
       recipient: EmailAddress,
       subject: String,
       bodyHtml: String,
-      attachments: Seq[Attachment] = Nil
+      attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
     there was one(mailerService)
       .sendEmail(
-        config.mail.from,
+        emailConfiguration.from,
         Seq(recipient),
         Nil,
         subject,
@@ -244,6 +299,8 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
         anyString,
         any
       )
+
+  val noTaskProcessed = Valid(List.empty[Task])
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) =
     eventRepository.getEvents(reportUUID, EventFilter(action = Some(action))).map(_.head) must eventActionMatcher(
@@ -271,13 +328,14 @@ abstract class OnGoingWithAccessReportReminderTaskSpec(implicit ee: ExecutionEnv
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
-  lazy val reminderTask = injector.instanceOf[ReminderTask]
+  lazy val reportTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
+  lazy val attachementService = app.injector.instanceOf[AttachementService]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  implicit lazy val contactAddress = config.mail.contactAddress
+  implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   def setupUser(user: User) =
     Await.result(

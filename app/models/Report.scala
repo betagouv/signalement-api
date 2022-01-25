@@ -36,7 +36,8 @@ case class DraftReport(
     fileIds: List[UUID],
     vendor: Option[String] = None,
     tags: List[String] = Nil,
-    reponseconsoCode: Option[List[String]] = None
+    reponseconsoCode: Option[List[String]] = None,
+    ccrfCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
@@ -59,22 +60,22 @@ case class DraftReport(
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
-      reponseconsoCode = reponseconsoCode.getOrElse(Nil)
+      reponseconsoCode = reponseconsoCode.getOrElse(Nil),
+      ccrfCode = ccrfCode.getOrElse(Nil)
     )
     report.copy(status = report.initialStatus())
   }
 }
 
 object DraftReport {
-  implicit val draftReportReads = Json
-    .reads[DraftReport]
-    .filter(draft =>
-      draft.companySiret.isDefined
-        || draft.websiteURL.isDefined
-        || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
-        || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
-        || draft.phone.isDefined
-    )
+  def isValid(draft: DraftReport): Boolean =
+    (draft.companySiret.isDefined
+      || draft.websiteURL.isDefined
+      || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
+      || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
+      || draft.phone.isDefined)
+
+  implicit val draftReportReads = Json.reads[DraftReport]
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
@@ -99,7 +100,8 @@ case class Report(
     status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
     tags: List[String] = Nil,
-    reponseconsoCode: List[String] = Nil
+    reponseconsoCode: List[String] = Nil,
+    ccrfCode: List[String] = Nil
 ) {
 
   def initialStatus() =
@@ -114,7 +116,9 @@ case class Report(
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute() && !tags.contains(Tags.DangerousProduct)
+  def needWorkflowAttachment() = !employeeConsumer &&
+    !isContractualDispute() &&
+    tags.intersect(Seq(Tags.DangerousProduct, Tags.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }
@@ -143,7 +147,8 @@ object Report {
         "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags,
-        "reponseconsoCode" -> report.reponseconsoCode
+        "reponseconsoCode" -> report.reponseconsoCode,
+        "ccrfCode" -> report.ccrfCode
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>

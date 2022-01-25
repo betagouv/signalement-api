@@ -1,10 +1,11 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.error.AppErrorTransformer.handleError
 import models._
+import models.access.ActivationLinkRequest
 import orchestrators.AccessesOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
+import orchestrators.CompanyAccessOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
@@ -27,8 +28,9 @@ class CompanyAccessController @Inject() (
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
+    val companyAccessOrchestrator: CompanyAccessOrchestrator,
     val silhouette: Silhouette[AuthEnv]
-)(implicit ec: ExecutionContext)
+)(implicit val ec: ExecutionContext)
     extends BaseCompanyController {
 
   val logger: Logger = Logger(this.getClass())
@@ -37,9 +39,6 @@ class CompanyAccessController @Inject() (
     accessesOrchestrator
       .listAccesses(request.company, request.identity)
       .map(res => Ok(Json.toJson(res)))
-      .recover { case err =>
-        handleError(err)
-      }
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
@@ -136,37 +135,14 @@ class CompanyAccessController @Inject() (
     accessesOrchestrator
       .fetchCompanyUserActivationToken(SIRET(siret), token)
       .map(token => Ok(Json.toJson(token)))
-      .recover { case err =>
-        handleError(err)
-      }
   }
 
-  case class ActivationLinkRequest(token: String, email: EmailAddress)
-
   def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
-    implicit val reads = Json.reads[ActivationLinkRequest]
-    request.body
-      .validate[ActivationLinkRequest]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        activationLinkRequest =>
-          for {
-            company <- companyRepository.findBySiret(SIRET(siret))
-            isValid <- company
-              .map(c =>
-                accessTokenRepository
-                  .fetchActivationCode(c)
-                  .map(_.map(_ == activationLinkRequest.token).getOrElse(false))
-              )
-              .getOrElse(Future(false))
-            sent <-
-              if (isValid)
-                accessesOrchestrator
-                  .addUserOrInvite(company.get, activationLinkRequest.email, AccessLevel.ADMIN, None)
-                  .map(_ => true)
-              else Future(false)
-          } yield if (sent) Ok else NotFound
-      )
+    for {
+      activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
+      _ <- companyAccessOrchestrator.sendActivationLink(SIRET(siret), activationLinkRequest)
+    } yield Ok
+
   }
 
   case class AcceptTokenRequest(token: String)
@@ -183,7 +159,7 @@ class CompanyAccessController @Inject() (
             token <- company
               .map(
                 accessTokenRepository
-                  .findToken(_, acceptTokenRequest.token)
+                  .findValidToken(_, acceptTokenRequest.token)
                   .map(
                     _.filter(
                       _.emailedTo.filter(email => email != request.identity.email).isEmpty
@@ -194,17 +170,15 @@ class CompanyAccessController @Inject() (
             applied <- token
               .map(t =>
                 accessTokenRepository
-                  .applyCompanyToken(t, request.identity)
+                  .createCompanyAccessAndRevokeToken(t, request.identity)
               )
               .getOrElse(Future(false))
           } yield if (applied) Ok else NotFound
       )
   }
 
-  def reportOverCompanyAccessRate(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    accessesOrchestrator.reportOverCompanyAccessRate(ticks).map(x => Ok(Json.toJson(x))).recover { case err =>
-      handleError(err)
-    }
+  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
   }
 
 }

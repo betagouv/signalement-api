@@ -6,10 +6,12 @@ import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 case class ReportToExternal(
     id: UUID,
+    creationDate: OffsetDateTime,
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -23,13 +25,16 @@ case class ReportToExternal(
     contactAgreement: Boolean,
     description: Option[String],
     effectiveDate: Option[String],
-    reponseconsoCode: List[String]
+    reponseconsoCode: List[String],
+    ccrfCode: List[String],
+    tags: List[String]
 ) {}
 
 object ReportToExternal {
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
+      creationDate = r.creationDate,
       category = r.category,
       subcategories = r.subcategories,
       details = r.details,
@@ -49,7 +54,9 @@ object ReportToExternal {
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)
         .headOption,
-      reponseconsoCode = r.reponseconsoCode
+      reponseconsoCode = r.reponseconsoCode,
+      ccrfCode = r.ccrfCode,
+      tags = r.tags
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]
