@@ -1,10 +1,5 @@
 package actors
 
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -15,45 +10,43 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import config.SignalConsoConfiguration
 import controllers.routes
-import javax.inject.Inject
-import javax.inject.Singleton
 import models._
-import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.Configuration
 import play.api.Logger
+import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
-import utils.Constants.Departments
-import utils.Constants.ReportStatus
 import utils.Constants
-import utils.DateUtils
+import utils.Constants.Departments
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object ReportsExtractActor {
-  def props = Props[ReportsExtractActor]
+  def props = Props[ReportsExtractActor]()
 
-  case class ExtractRequest(requestedBy: User, filters: ReportFilterBody)
+  case class ExtractRequest(requestedBy: User, filters: ReportFilter)
 }
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    configuration: Configuration,
     companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service
+    s3Service: S3Service,
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
   implicit val ec: ExecutionContext = context.dispatcher
-
-  val baseUrl = configuration.get[String]("play.application.url")
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =
@@ -61,13 +54,13 @@ class ReportsExtractActor @Inject() (
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(requestedBy: User, filters: ReportFilterBody) =>
+    case ExtractRequest(requestedBy: User, filters: ReportFilter) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
-          sender() ! Unit
+          sender() ! ()
           genTmpFile(requestedBy, filters)
         }
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
@@ -119,13 +112,13 @@ class ReportsExtractActor @Inject() (
         "Code postal",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
         (report, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Siret",
@@ -136,37 +129,37 @@ class ReportsExtractActor @Inject() (
         "Nom de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyName.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
         (report, _, _, _) => report.companyAddress.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
-        (report, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
-        available = requestedBy.userRole == UserRoles.Admin
+        (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
+        available = requestedBy.userRole == UserRole.Admin
       ),
       ReportColumn(
         "Site web de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
         (report, _, _, _) => report.phone.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
         (report, _, _, _) => report.vendor.getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie",
@@ -186,20 +179,22 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Pièces jointes",
         leftAlignmentColumn,
-        (report, files, _, _) =>
+        (_, files, _, _) =>
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${baseUrl}${routes.ReportController.downloadReportFile(file.id.toString, file.filename).url}"
+              s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
+                .downloadReportFile(file.id.toString, file.filename)
+                .url}"
             )
             .mkString("\n"),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _) => report.status.getValueWithUserRole(requestedBy.userRole).getOrElse(""),
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        (report, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Réponse au consommateur",
@@ -208,9 +203,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus.PROMESSE_ACTION,
-                ReportStatus.SIGNALEMENT_MAL_ATTRIBUE,
-                ReportStatus.SIGNALEMENT_INFONDE
+                ReportStatus.PromesseAction,
+                ReportStatus.MalAttribue,
+                ReportStatus.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -227,9 +222,9 @@ class ReportsExtractActor @Inject() (
           Some(report.status)
             .filter(
               List(
-                ReportStatus.PROMESSE_ACTION,
-                ReportStatus.SIGNALEMENT_MAL_ATTRIBUE,
-                ReportStatus.SIGNALEMENT_INFONDE
+                ReportStatus.PromesseAction,
+                ReportStatus.MalAttribue,
+                ReportStatus.Infonde
               ) contains _
             )
             .flatMap(_ =>
@@ -243,25 +238,25 @@ class ReportsExtractActor @Inject() (
         "Identifiant",
         centerAlignmentColumn,
         (report, _, _, _) => report.id.toString,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
         (report, _, _, _) => report.firstName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
         (report, _, _, _) => report.lastName,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
         (report, _, _, _) => report.email.value,
-        available = List(UserRoles.DGCCRF, UserRoles.Admin) contains requestedBy.userRole
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Accord pour contact",
@@ -271,7 +266,7 @@ class ReportsExtractActor @Inject() (
       ReportColumn(
         "Actions DGCCRF",
         leftAlignmentColumn,
-        (report, _, events, _) =>
+        (_, _, events, _) =>
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
@@ -279,35 +274,33 @@ class ReportsExtractActor @Inject() (
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        available = requestedBy.userRole == UserRole.DGCCRF
       ),
       ReportColumn(
         "Contrôle effectué",
         centerAlignmentColumn,
-        (report, _, events, _) =>
-          if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
-        available = requestedBy.userRole == UserRoles.DGCCRF
+        (
+            _,
+            _,
+            events,
+            _
+        ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
+        available = requestedBy.userRole == UserRole.DGCCRF
       )
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: ReportFilterBody) = {
+  def genTmpFile(requestedBy: User, filters: ReportFilter) = {
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-
     val reportColumns = buildColumns(requestedBy)
-    val statusList = ReportStatus.getStatusListForValueWithUserRole(filters.status, requestedBy.userRole)
-    val reportFilter = filters.toReportFilter(
-      employeeConsumer = requestedBy.userRole match {
-        case UserRoles.Pro => Some(false)
-        case _             => None
-      },
-      statusList = statusList
-    )
     for {
-      paginatedReports <- reportRepository.getReports(offset = 0, limit = 100000, filter = reportFilter)
+      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsByCompany(paginatedReports.entities.flatMap(_.companyId))
+      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
+        paginatedReports.entities.flatMap(_.companyId),
+        Seq(AccessLevel.ADMIN)
+      )
     } yield {
       val targetFilename = s"signalements-${Random.alphanumeric.take(12).mkString}.xlsx"
       val reportsSheet = Sheet(name = "Signalements")
@@ -340,9 +333,9 @@ class ReportsExtractActor @Inject() (
               )
             ),
             Some(filters.departments)
-              .filter(_.isDefined)
+              .filter(_.nonEmpty)
               .map(departments => Row().withCellValues("Départment(s)", departments.mkString(","))),
-            (reportFilter.start, DateUtils.parseDate(filters.end)) match {
+            (filters.start, filters.end) match {
               case (Some(startDate), Some(endDate)) =>
                 Some(
                   Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}")
@@ -355,7 +348,12 @@ class ReportsExtractActor @Inject() (
             Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
             filters.phone.map(phone => Row().withCellValues("Numéro de téléphone", phone)),
-            filters.status.map(status => Row().withCellValues("Statut", status)),
+            Some(filters.status)
+              .filter(_.nonEmpty)
+              .map(status =>
+                Row()
+                  .withCellValues("Statut", status.map(ReportStatus.translate(_, requestedBy.userRole)).mkString(","))
+              ),
             filters.category.map(category => Row().withCellValues("Catégorie", category)),
             filters.details.map(details => Row().withCellValues("Mots clés", details))
           ).filter(_.isDefined).map(_.get)
@@ -365,7 +363,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath
@@ -374,7 +372,7 @@ class ReportsExtractActor @Inject() (
 
   def saveRemotely(localPath: Path, remoteName: String) = {
     val remotePath = s"extracts/${remoteName}"
-    s3Service.upload(BucketName, remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
+    s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
 }
 

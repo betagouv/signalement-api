@@ -1,6 +1,5 @@
-@import java.net.URI
-@import utils.Constants.ReportStatus._
-@(report: Report)(implicit websiteUrl: URI)
+@import utils.FrontRoute
+@(report: Report)(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
     <p>
@@ -24,7 +23,7 @@
         L'entreprise n'a pas souhaité répondre à votre signalement.
     </p>
 
-    @if(!report.isContractualDispute) {
+    @if(!report.isContractualDispute()) {
         <p>
             <b>
                 Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement.
@@ -41,7 +40,7 @@
             Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation
         </p>
         <p style="text-align: center; padding: 20px">
-            <a href="@websiteUrl.resolve("/litige")" class="btn">
+            <a href="@frontRoute.website.litige" class="btn">
                 Continuer mes démarches
             </a>
         </p>
@@ -56,7 +55,7 @@
         <i>L'équipe SignalConso</i>
     </p>
 
-    @if(report.needWorkflowAttachment) {
+    @if(report.needWorkflowAttachment()) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;

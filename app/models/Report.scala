@@ -1,20 +1,15 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.github.tminglei.slickpg.composite.Struct
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
-import play.api.libs.json.Writes
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus._
 import utils.Constants.Tags
-import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
 
@@ -40,7 +35,9 @@ case class DraftReport(
     forwardToReponseConso: Option[Boolean] = Some(false),
     fileIds: List[UUID],
     vendor: Option[String] = None,
-    tags: List[String] = Nil
+    tags: List[String] = Nil,
+    reponseconsoCode: Option[List[String]] = None,
+    ccrfCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
@@ -59,24 +56,26 @@ case class DraftReport(
       email = email,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = NA,
+      status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer)
+      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
+      reponseconsoCode = reponseconsoCode.getOrElse(Nil),
+      ccrfCode = ccrfCode.getOrElse(Nil)
     )
     report.copy(status = report.initialStatus())
   }
 }
 
 object DraftReport {
-  implicit val draftReportReads = Json
-    .reads[DraftReport]
-    .filter(draft =>
-      draft.companySiret.isDefined
-        || draft.websiteURL.isDefined
-        || (draft.companyAddress.exists(x => x.country.isDefined || (x.street.isDefined && x.city.isDefined)))
-        || draft.phone.isDefined
-    )
+  def isValid(draft: DraftReport): Boolean =
+    (draft.companySiret.isDefined
+      || draft.websiteURL.isDefined
+      || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
+      || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
+      || draft.phone.isDefined)
+
+  implicit val draftReportReads = Json.reads[DraftReport]
   implicit val draftReportWrites = Json.writes[DraftReport]
 }
 
@@ -98,22 +97,28 @@ case class Report(
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
-    status: ReportStatusValue = NA,
+    status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
-    tags: List[String] = Nil
+    tags: List[String] = Nil,
+    reponseconsoCode: List[String] = Nil,
+    ccrfCode: List[String] = Nil
 ) {
 
   def initialStatus() =
-    if (employeeConsumer) EMPLOYEE_REPORT
-    else if (companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct)).isEmpty)
-      TRAITEMENT_EN_COURS
-    else NA
+    if (employeeConsumer) ReportStatus.LanceurAlerte
+    else if (
+      companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
+    )
+      ReportStatus.TraitementEnCours
+    else ReportStatus.NA
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(Tags.ContractualDispute)
 
-  def needWorkflowAttachment() = !employeeConsumer && !isContractualDispute && !tags.contains(Tags.DangerousProduct)
+  def needWorkflowAttachment() = !employeeConsumer &&
+    !isContractualDispute() &&
+    tags.intersect(Seq(Tags.DangerousProduct, Tags.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }
@@ -129,6 +134,7 @@ object Report {
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,
+        "companyId" -> report.companyId,
         "companyName" -> report.companyName,
         "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
@@ -140,9 +146,11 @@ object Report {
         "host" -> report.websiteURL.host,
         "phone" -> report.phone,
         "vendor" -> report.vendor,
-        "tags" -> report.tags
+        "tags" -> report.tags,
+        "reponseconsoCode" -> report.reponseconsoCode,
+        "ccrfCode" -> report.ccrfCode
       ) ++ ((userRole, report.contactAgreement) match {
-        case (Some(UserRoles.Pro), false) => Json.obj()
+        case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>
           Json.obj(
             "firstName" -> report.firstName,
@@ -170,7 +178,7 @@ case class DetailInputValue(
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
-  implicit def string2detailInputValue(input: String): DetailInputValue =
+  def toDetailInputValue(input: String): DetailInputValue =
     input match {
       case input if input.contains(':') =>
         DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
@@ -178,12 +186,14 @@ object DetailInputValue {
     }
 }
 
-case class CompanyWithNbReports(company: Company, count: Int)
+/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
+case class DeprecatedCompanyWithNbReports(company: Company, count: Int)
 
-object CompanyWithNbReports {
+/** @deprecated Keep it for compat purpose but no longer used in new dashboard */
+object DeprecatedCompanyWithNbReports {
 
-  implicit val companyWithNbReportsWrites = new Writes[CompanyWithNbReports] {
-    def writes(data: CompanyWithNbReports) = Json.obj(
+  implicit val companyWithNbReportsWrites = new Writes[DeprecatedCompanyWithNbReports] {
+    def writes(data: DeprecatedCompanyWithNbReports) = Json.obj(
       "companySiret" -> data.company.siret,
       "companyName" -> data.company.name,
       "companyAddress" -> Json.toJson(data.company.address),
@@ -191,7 +201,7 @@ object CompanyWithNbReports {
     )
   }
 
-  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[CompanyWithNbReports]]
+  implicit val paginatedCompanyWithNbReportsWriter = Json.writes[PaginatedResult[DeprecatedCompanyWithNbReports]]
 }
 
 case class ReportCompany(

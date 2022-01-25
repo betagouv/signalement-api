@@ -1,29 +1,32 @@
 package controllers
 
-import java.util.UUID
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
+import controllers.error.AppError.CompanySiretNotFound
+import controllers.error.AppError.EmailAlreadyExist
+import controllers.error.ErrorPayload
 import models._
-import repositories._
+import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
 import org.specs2.matcher.FutureMatchers
-import play.api.Configuration
+import org.specs2.mutable.Specification
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import utils.silhouette.auth.AuthEnv
+import repositories._
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
+import utils.SIRET
+import utils.silhouette.auth.AuthEnv
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class AccountControllerSpec(implicit ee: ExecutionEnv)
     extends Specification
@@ -51,42 +54,23 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(proUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-               .createToken(TokenKind.COMPANY_JOIN, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
-      } yield Unit,
+          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+      } yield (),
       Duration.Inf
     )
 
   "AccountController" should {
-    "changePassword" should {
-      "return a BadRequest with errors if passwords are equals" in {
-        val jsonBody = Json.obj("newPassword" -> "password", "oldPassword" -> "password")
-
-        val request = FakeRequest(POST, routes.AccountController.changePassword().toString)
-          .withAuthenticator[AuthEnv](identLoginInfo)
-          .withJsonBody(jsonBody)
-
-        val result = route(app, request).get
-
-        Helpers.status(result) must beEqualTo(BAD_REQUEST)
-        Helpers.contentAsJson(result) must beEqualTo(
-          Json.obj(
-            "obj" -> Seq(
-              Json.obj("msg" -> Seq("Passwords must not be equals"), "args" -> Json.toJson(Seq.empty))
-            )
-          )
-        )
-      }
-    }
 
     "activateAccount" should {
+
       "raise a 409 in case of duplicate email addresse" in {
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
@@ -103,34 +87,61 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         val result = route(app, request).get
 
         Helpers.status(result) must beEqualTo(409)
+        Helpers.contentAsJson(result) must beEqualTo(
+          Json.toJson(ErrorPayload(EmailAlreadyExist))
+        )
+      }
+
+      "fail on unknown siret" in {
+        val siret = "XXXXXXXXXXXXXX"
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
+          .withJsonBody(
+            Json.obj(
+              "draftUser" -> Json.obj(
+                "email" -> proUser.email,
+                "firstName" -> proUser.firstName,
+                "lastName" -> proUser.lastName,
+                "password" -> proUser.password
+              ),
+              "token" -> "123456",
+              "companySiret" -> "XXXXXXXXXXXXXX"
+            )
+          )
+
+        val result = route(app, request).get
+
+        Helpers.status(result) must beEqualTo(404)
+        Helpers.contentAsJson(result) must beEqualTo(
+          Json.toJson(ErrorPayload(CompanySiretNotFound(SIRET(siret))))
+        )
       }
 
       "use preexisting tokens with same email, if any" in {
         val newUser = Fixtures.genUser.sample.get
         val otherCompany = Fixtures.genCompany.sample.get
-        val otherToken = Await.result(
+        Await.result(
           for {
             _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
             _ <- accessTokenRepository.createToken(
-                   TokenKind.COMPANY_JOIN,
-                   "000000",
-                   None,
-                   Some(company.id),
-                   Some(AccessLevel.ADMIN),
-                   Some(newUser.email)
-                 )
+              CompanyJoin,
+              "000000",
+              None,
+              Some(company.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
             token <- accessTokenRepository.createToken(
-                       TokenKind.COMPANY_JOIN,
-                       "whatever",
-                       None,
-                       Some(otherCompany.id),
-                       Some(AccessLevel.ADMIN),
-                       Some(newUser.email)
-                     )
+              CompanyJoin,
+              "whatever",
+              None,
+              Some(otherCompany.id),
+              Some(AccessLevel.ADMIN),
+              Some(newUser.email)
+            )
           } yield token,
           Duration.Inf
         )
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
@@ -152,7 +163,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send an invalid DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@example.com"))
 
@@ -161,7 +172,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
 
       "send a DGCCRF invitation" in {
-        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation.toString)
+        val request = FakeRequest(POST, routes.AccountController.sendDGCCRFInvitation().toString)
           .withAuthenticator[AuthEnv](identLoginInfo)
           .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
 
@@ -173,11 +184,11 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         val ccrfUser = Fixtures.genUser.sample.get
         val ccrfToken =
           Await.result(accessTokenRepository.fetchPendingTokens(EmailAddress("user@dgccrf.gouv.fr")), Duration.Inf).head
-        val request = FakeRequest(POST, routes.AccountController.activateAccount.toString)
+        val request = FakeRequest(POST, routes.AccountController.activateAccount().toString)
           .withJsonBody(
             Json.obj(
               "draftUser" -> Json.obj(
-                "email" -> "user@dgccrf",
+                "email" -> "user@dgccrf.gouv.fr",
                 "firstName" -> ccrfUser.firstName,
                 "lastName" -> ccrfUser.lastName,
                 "password" -> ccrfUser.password
@@ -189,7 +200,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         Helpers.status(result) must beEqualTo(204)
 
         val createdUser = Await.result(userRepository.findByLogin("user@dgccrf.gouv.fr"), Duration.Inf)
-        createdUser.get.userRole must beEqualTo(UserRoles.DGCCRF)
+        createdUser.get.userRole must beEqualTo(UserRole.DGCCRF)
       }
     }
   }

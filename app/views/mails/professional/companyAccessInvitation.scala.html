@@ -1,4 +1,5 @@
 @import java.net.URI
+@import utils.FrontRoute
 @(invitationUrl: URI, company: Company, invitedBy: Option[User])
 
 @views.html.mails.layout(s"Rejoignez l'entreprise @$company.name sur SignalConso") {
@@ -12,7 +13,7 @@
     } else {
         Vous avez demandé à activer le compte de l'entreprise @company.name sur SignalConso.
     }
-        Afin de procéder, veuillez suivre le lien sécurisé ci-dessous.
+        Afin de procéder à l'activation de votre compte, veuillez suivre le lien sécurisé ci-dessous.
     </p>
 
     <p style="text-align: center;">

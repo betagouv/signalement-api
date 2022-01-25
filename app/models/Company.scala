@@ -1,11 +1,13 @@
 package models
 
+import play.api.libs.json._
+import utils.QueryStringMapper
+import utils.SIRET
+
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import play.api.libs.json._
-import utils.SIRET
+import scala.util.Try
 
 sealed case class AccessLevel(value: String)
 
@@ -28,7 +30,8 @@ case class UserAccess(
     companyId: UUID,
     userId: UUID,
     level: AccessLevel,
-    updateDate: OffsetDateTime
+    updateDate: OffsetDateTime,
+    creationDate: OffsetDateTime
 )
 
 case class Company(
@@ -40,6 +43,42 @@ case class Company(
     activityCode: Option[String]
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
+}
+
+case class CompanyRegisteredSearch(
+    departments: Seq[String],
+    activityCodes: Seq[String],
+    identity: Option[SearchCompanyIdentity],
+    emailsWithAccess: Option[String]
+)
+
+object CompanyRegisteredSearch {
+  def fromQueryString(q: Map[String, Seq[String]]): Try[CompanyRegisteredSearch] = Try {
+    val mapper = new QueryStringMapper(q)
+    CompanyRegisteredSearch(
+      departments = mapper.seq("departments"),
+      activityCodes = mapper.seq("activityCodes"),
+      emailsWithAccess = mapper.string("emailsWithAccess"),
+      identity = mapper.string("identity").map(SearchCompanyIdentity.fromString)
+    )
+  }
+}
+
+object Company {
+
+  implicit val companyFormat: OFormat[Company] = Json.format[Company]
+}
+
+case class CompanyWithAccess(
+    company: Company,
+    level: AccessLevel
+)
+
+object CompanyWithAccess {
+  implicit def writes: Writes[CompanyWithAccess] = (companyWithAccess: CompanyWithAccess) => {
+    val companyJson = Json.toJson(companyWithAccess.company).as[JsObject]
+    companyJson + ("level" -> Json.toJson(companyWithAccess.level))
+  }
 }
 
 case class CompanyCreation(
@@ -61,14 +100,19 @@ object CompanyCreation {
   implicit val format: OFormat[CompanyCreation] = Json.format[CompanyCreation]
 }
 
-object Company {
+case class CompanyWithNbReports(
+    id: UUID = UUID.randomUUID(),
+    siret: SIRET,
+    creationDate: OffsetDateTime = OffsetDateTime.now,
+    name: String,
+    address: Address,
+    activityCode: Option[String],
+    count: Int,
+    responseRate: Int
+)
 
-  implicit val companyFormat: OFormat[Company] = Json.format[Company]
-
-  implicit def writes: Writes[(Company, AccessLevel)] = (companyAccessLevel: (Company, AccessLevel)) => {
-    val companyJson = Json.toJson(companyAccessLevel._1).as[JsObject]
-    companyJson + ("level" -> Json.toJson(companyAccessLevel._2))
-  }
+object CompanyWithNbReports {
+  implicit val writes: Writes[CompanyWithNbReports] = Json.writes[CompanyWithNbReports]
 }
 
 case class CompanyAddressUpdate(

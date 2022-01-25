@@ -2,38 +2,38 @@ package actors
 
 import akka.actor._
 import akka.stream.Materializer
+import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
-import javax.inject.Inject
-import javax.inject.Singleton
-import java.time.OffsetDateTime
-import java.util.UUID
-import play.api.Configuration
+import config.UploadConfiguration
+import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import models._
 import repositories._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.sys.process._
-import akka.stream.scaladsl._
 import services.S3Service
 
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.sys.process._
+
 object UploadActor {
-  def props = Props[UploadActor]
+  def props = Props[UploadActor]()
 
   case class Request(reportFile: ReportFile, file: java.io.File)
 }
 
 @Singleton
-class UploadActor @Inject() (configuration: Configuration, reportRepository: ReportRepository, s3Service: S3Service)(
-    implicit val mat: Materializer
+class UploadActor @Inject() (
+    uploadConfiguration: UploadConfiguration,
+    reportRepository: ReportRepository,
+    s3Service: S3Service
+)(implicit
+    val mat: Materializer
 ) extends Actor {
   import UploadActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val BucketName = configuration.get[String]("play.buckets.report")
-  val tmpDirectory = configuration.get[String]("play.tmpDirectory")
-  val avScanEnabled = configuration.get[Boolean]("play.upload.avScanEnabled")
+  val avScanEnabled = uploadConfiguration.avScanEnabled
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =
@@ -47,9 +47,9 @@ class UploadActor @Inject() (configuration: Configuration, reportRepository: Rep
     if (!avScanEnabled || av_scan(reportFile, file)) {
       FileIO
         .fromPath(file.toPath)
-        .to(s3Service.upload(BucketName, reportFile.storageFilename))
+        .to(s3Service.upload(reportFile.storageFilename))
         .run()
-        .foreach { res =>
+        .foreach { _ =>
           logger.debug(s"Uploaded file ${reportFile.id}")
           file.delete()
         }

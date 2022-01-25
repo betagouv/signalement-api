@@ -1,9 +1,9 @@
 package models
 
+import enumeratum._
+
 import java.time.OffsetDateTime
 import java.util.UUID
-
-import enumeratum._
 
 case class AsyncFile(
     id: UUID,
@@ -14,15 +14,15 @@ case class AsyncFile(
     storageFilename: Option[String]
 )
 
-sealed abstract class AsyncFileKind(value: String) extends EnumEntry
+sealed trait AsyncFileKind extends EnumEntry
 
 object AsyncFileKind extends PlayEnum[AsyncFileKind] {
 
   val values = findValues
 
-  case object Reports extends AsyncFileKind("Reports")
+  case object Reports extends AsyncFileKind
 
-  case object ReportedPhones extends AsyncFileKind("ReportedPhones")
+  case object ReportedPhones extends AsyncFileKind
 
-  case object ReportedWebsites extends AsyncFileKind("ReportedWebsites")
+  case object ReportedWebsites extends AsyncFileKind
 }

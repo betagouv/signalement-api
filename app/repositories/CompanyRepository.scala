@@ -1,19 +1,22 @@
 package repositories
 
+import models.ReportStatus.ReportStatusProResponse
+import models._
+import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile.api._
+import slick.jdbc.JdbcProfile
+import utils.Constants.Departments
+import utils.EmailAddress
+import utils.SIREN
+import utils.SIRET
+
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
-
 import javax.inject.Inject
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
-import utils.SIRET
-import models._
-import PostgresProfile.api._
-import utils.Constants.Departments
 
 class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def id = column[UUID]("id", O.PrimaryKey)
@@ -25,7 +28,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
   def addressSupplement = column[Option[String]]("address_supplement")
   def city = column[Option[String]]("city")
   def postalCode = column[Option[String]]("postal_code")
-  def department = column[Option[String]]("department_old_version")
+  def department = column[Option[String]]("department")
   def activityCode = column[Option[String]]("activity_code")
 
   type CompanyData = (
@@ -53,7 +56,7 @@ class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
           addressSupplement,
           postalCode,
           city,
-          department,
+          _,
           activityCode
         ) =>
       Company(
@@ -126,15 +129,18 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   val companyTableQuery = CompanyTables.tables
 
-  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue(_))
+  private val substr = SimpleFunction.ternary[String, Int, Int, String]("substr")
+
+  implicit val AccessLevelColumnType = MappedColumnType.base[AccessLevel, String](_.value, AccessLevel.fromValue)
 
   class UserAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_accesses") {
     def companyId = column[UUID]("company_id")
     def userId = column[UUID]("user_id")
     def level = column[AccessLevel]("level")
     def updateDate = column[OffsetDateTime]("update_date")
+    def creationDate = column[OffsetDateTime]("creation_date")
     def pk = primaryKey("pk_company_user", (companyId, userId))
-    def * = (companyId, userId, level, updateDate) <> (UserAccess.tupled, UserAccess.unapply)
+    def * = (companyId, userId, level, updateDate, creationDate) <> (UserAccess.tupled, UserAccess.unapply)
 
     def company = foreignKey("COMPANY_FK", companyId, companyTableQuery)(
       _.id,
@@ -150,101 +156,63 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
 
   val UserAccessTableQuery = TableQuery[UserAccessTable]
 
-  def migration_getTodoSIRET(): Future[Option[String]] =
-    db.run(sql"select siret from companies where done is not true and siret is not null LIMIT 1".as[String])
-      .flatMap { result =>
-        result.headOption match {
-          case Some(siret) => Future(Some(siret))
-          case None =>
-            db.run(
-              sql"select siret from reports where done is not true and company_siret is not null LIMIT 1".as[String]
-            ).map(_.headOption)
-        }
-      }
-
-  def migration_update(siret: String, dataOpt: Option[CompanyData]) =
-    dataOpt match {
-      case Some(data) =>
-        val department = data.codePostalEtablissement.map(_.slice(0, 2))
-        val street_number = data.numeroVoieEtablissement
-        val street = (
-          data.typeVoieEtablissement.flatMap(TypeVoies.getByShortName).getOrElse("") + " " +
-            data.libelleVoieEtablissement.getOrElse("")
-        ).trim()
-        val address_supplement = data.complementAdresseEtablissement
-        val city = data.libelleCommuneEtablissement
-        val postal_code = data.codePostalEtablissement
-        val activity_code = data.activitePrincipaleEtablissement
-        db.run(
-          DBIO.seq(
-            sqlu"""
-            update companies set
-            department = ${department},
-            street_number = ${street_number},
-            street = ${street},
-            address_supplement = ${address_supplement},
-            city = ${city},
-            postal_code = ${postal_code},
-            activity_code = ${activity_code},
-            done = true
-            where siret = ${siret}
-          """,
-            sqlu"""
-            update reports set
-            company_postal_code = ${postal_code},
-            company_street_number = ${street_number},
-            company_street = ${street},
-            company_address_supplement = ${address_supplement},
-            company_city = ${city},
-            done = true
-            where company_siret = ${siret}
-          """
-          )
-        )
-      case None =>
-        db.run(
-          DBIO.seq(
-            sqlu"""
-            update companies set
-            done = true
-            where siret = ${siret}
-          """,
-            sqlu"""
-            update reports set
-            done = true
-            where company_siret = ${siret}
-          """
-          )
-        )
-    }
-
   def searchWithReportsCount(
-      departments: Seq[String] = List(),
-      identity: Option[String] = None,
-      offset: Option[Long],
-      limit: Option[Int]
-  ): Future[PaginatedResult[CompanyWithNbReports]] = {
+      search: CompanyRegisteredSearch,
+      paginate: PaginatedSearch
+  ): Future[PaginatedResult[(Company, Int, Int)]] = {
+    def companyIdByEmailTable(emailWithAccess: EmailAddress) = UserAccessTableQuery
+      .join(UserTables.tables)
+      .on(_.userId === _.id)
+      .filter(_._2.email === emailWithAccess)
+      .map(_._1.companyId)
+
     val query = companyTableQuery
       .joinLeft(ReportTables.tables)
       .on(_.id === _.companyId)
-      .filterIf(departments.nonEmpty) { case (company, report) =>
-        company.department.map(a => a.inSet(departments)).getOrElse(false)
+      .filterIf(search.departments.nonEmpty) { case (company, _) =>
+        company.department.map(a => a.inSet(search.departments)).getOrElse(false)
+      }
+      .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
+        company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
       }
       .groupBy(_._1)
-      .map { case (grouped, all) => (grouped, all.map(_._2).size) }
+      .map { case (grouped, all) =>
+        (
+          grouped,
+          all.map(_._2).map(_.map(_.id)).countDefined,
+          /* Response rate
+           * Equivalent to following select clause
+           * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
+           */
+          (
+            all
+              .map(_._2)
+              .map(b =>
+                b.flatMap { a =>
+                  Case If a.status.inSet(
+                    ReportStatusProResponse.map(_.entryName)
+                  ) Then a.id
+                }
+              )
+            )
+            .countDefined: Rep[Int]
+        )
+      }
       .sortBy(_._2.desc)
-    val filterQuery = identity
+    val filterQuery = search.identity
       .map {
-        case q if q.matches("[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}") =>
-          query.filter(_._1.id.asColumnOf[String] like s"${q.toLowerCase}%")
-        case q if q.matches("[0-9]{14}") => query.filter(_._1.siret === SIRET(q))
-        case q if q.matches("[0-9]{9}")  => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
-        case q                           => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
+        case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
+        case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET(q))
+        case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
+        case SearchCompanyIdentityName(q)  => query.filter(_._1.name.toLowerCase like s"%${q.toLowerCase}%")
+        case id: SearchCompanyIdentityId   => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
-    toPaginate(filterQuery, offset, limit).map(res =>
-      res.copy(entities = res.entities.map { case (company, count) => CompanyWithNbReports(company, count) })
-    )
+      .filterOpt(search.emailsWithAccess) { case (table, email) =>
+        table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
+      }
+
+    toPaginate(filterQuery, paginate.offset, paginate.limit)
   }
 
   def toPaginate[A, B](
@@ -286,17 +254,22 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.id inSetBind companyIds).to[List].result)
 
-  def findByShortId(id: String): Future[List[Company]] =
-    db.run(companyTableQuery.filter(_.id.asColumnOf[String] like s"${id.toLowerCase}%").to[List].result)
-
   def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(companyTableQuery.filter(_.siret === siret).result.headOption)
 
-  def findBySirets(sirets: Seq[SIRET]): Future[Seq[Company]] =
-    db.run(companyTableQuery.filter(_.siret inSet sirets).result)
+  def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
+    db.run(companyTableQuery.filter(_.siret inSet sirets).to[List].result)
 
   def findByName(name: String): Future[List[Company]] =
     db.run(companyTableQuery.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
+
+  def findBySiren(siren: List[SIREN]): Future[List[Company]] =
+    db.run(
+      companyTableQuery
+        .filter(x => substr(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .to[List]
+        .result
+    )
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(
@@ -308,7 +281,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
-  def fetchCompaniesWithLevel(user: User): Future[List[(Company, AccessLevel)]] =
+  def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
       UserAccessTableQuery
         .join(companyTableQuery)
@@ -319,30 +292,46 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .map(r => (r._2, r._1.level))
         .to[List]
         .result
-    )
+    ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
 
-  def fetchUsersWithLevel(company: Company): Future[List[(User, AccessLevel)]] =
+  def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
       UserAccessTableQuery
         .join(userRepository.userTableQuery)
         .on(_.userId === _.id)
-        .filter(_._1.companyId === company.id)
+        .filter(_._1.companyId inSet companyIds)
         .filter(_._1.level =!= AccessLevel.NONE)
         .sortBy(entry => (entry._1.level, entry._2.email))
         .map(r => (r._2, r._1.level))
+        .distinct
         .to[List]
         .result
     )
 
-  def fetchAdminsByCompany(companyIds: Seq[UUID]): Future[Map[UUID, List[User]]] =
+  private[this] def fetchUsersAndAccessesByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel]
+  ): Future[List[(UUID, User)]] =
     db.run(
       (for {
-        access <- UserAccessTableQuery if access.level === AccessLevel.ADMIN && (access.companyId inSetBind companyIds)
+        access <- UserAccessTableQuery if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
         user <- userRepository.userTableQuery if user.id === access.userId
-      } yield (access.companyId, user))
-        .to[List]
-        .result
-    ).map(_.groupBy(_._1).mapValues(_.map(_._2)))
+      } yield (access.companyId, user)).to[List].result
+    )
+
+  def fetchUsersByCompanies(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[List[User]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
+
+  def fetchUsersByCompanyId(
+      companyIds: List[UUID],
+      levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
+  ): Future[Map[UUID, List[User]]] =
+    fetchUsersAndAccessesByCompanies(companyIds, levels).map(users =>
+      users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
+    )
 
   def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
@@ -356,16 +345,43 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider, val
         .result
     )
 
-  def upsertUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+  def createCompanyUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
     UserAccessTableQuery.insertOrUpdate(
       UserAccess(
         companyId = companyId,
         userId = userId,
         level = level,
-        updateDate = OffsetDateTime.now
+        updateDate = OffsetDateTime.now,
+        creationDate = OffsetDateTime.now
       )
     )
 
+  def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+    db.run(createCompanyUserAccess(companyId, userId, level))
+
   def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
-    db.run(upsertUserAccess(company.id, user.id, level)).map(_ => Unit)
+    db.run(
+      UserAccessTableQuery
+        .filter(_.companyId === company.id)
+        .filter(_.userId === user.id)
+        .map(companyAccess => (companyAccess.level, companyAccess.updateDate))
+        .update((level, OffsetDateTime.now()))
+    ).map(_ => ())
+
+  def proFirstActivationCount(
+      ticks: Int = 12
+  ): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (
+          select v.a, count(distinct id)
+          from (select distinct company_id as id, min(my_date_trunc('month'::text, creation_date)::timestamp) as creation_date
+                from company_accesses 
+                group by company_id
+                order by creation_date desc) as t
+          right join
+                (SELECT a FROM (VALUES #${computeTickValues(ticks)} ) AS X(a)) as v on t.creation_date = v.a
+          group by v.a
+          order by 1 DESC
+    ) as res order by 1 ASC;    
+         """.as[(Timestamp, Int)])
+
 }

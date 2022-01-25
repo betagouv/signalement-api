@@ -1,10 +1,10 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 case class Rating(
     id: Option[UUID],

@@ -1,19 +1,18 @@
 package controllers
 
-import java.time.OffsetDateTime
 import java.util.UUID
-
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
-import models._
+import config.EmailConfiguration
+import config.SignalConsoConfiguration
+import config.TokenConfiguration
+import config.UploadConfiguration
+import controllers.error.AppError.InvalidEmail
+import controllers.error.ErrorPayload
 import net.codingwell.scalaguice.ScalaModule
-import orchestrators.CompaniesVisibilityOrchestrator
-import orchestrators.ReportOrchestrator
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -25,110 +24,70 @@ import play.api.test.Helpers._
 import play.api.test._
 import play.api.Configuration
 import play.api.Logger
-import repositories._
 import services.MailerService
-import services.S3Service
-import services.PDFService
-import utils.Constants.ActionEvent._
-import utils.Constants.EventType
-import utils.Constants.ReportStatus.TRAITEMENT_EN_COURS
-import utils.EmailAddress
-import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
+import utils.EmailAddress
 import utils.Fixtures
 
-import scala.concurrent.Future
+import java.net.URI
+import java.time.Period
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
   val logger: Logger = Logger(this.getClass)
 
-  "return a BadRequest with errors if report is invalid" should {
+  "ReportController" should {
 
-    "ReportController" in new Context {
-      new WithApplication(application) {
+    "return a BadRequest with errors if report is invalid" in new Context {
+      val app = application()
+      new WithApplication(app) {
 
         val jsonBody = Json.toJson("category" -> "")
 
         val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-        val controller = new ReportController(
-          mock[ReportOrchestrator],
-          mock[CompanyRepository],
-          mock[ReportRepository],
-          mock[EventRepository],
-          mock[CompaniesVisibilityOrchestrator],
-          mock[S3Service],
-          mock[PDFService],
-          mock[Silhouette[AuthEnv]],
-          mock[Silhouette[APIKeyEnv]],
-          mock[Configuration]
-        ) {
-          override def controllerComponents: ControllerComponents = Helpers.stubControllerComponents()
-        }
-
-        val result = route(application, request).get
+        val result = route(app, request).get
 
         Helpers.status(result) must beEqualTo(BAD_REQUEST)
       }
     }
-  }
 
-  "getReportCountBySiret" should {
+    "return a BadRequest on invalid email" in new Context {
+      val app = application()
+      new WithApplication(app) {
 
-    val siretFixture = Fixtures.genSiret().sample.get
+        val draftReport = Fixtures.genDraftReport.sample
+        val jsonBody = Json.toJson(draftReport)
 
-    "return unauthorized when there no X-Api-Key header" should {
+        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-      "ReportController" in new Context {
-        new WithApplication(application) {
+        val result = route(app, request).get
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count")
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-
-        }
+        Helpers.status(result) must beEqualTo(BAD_REQUEST)
+        Helpers.contentAsJson(result) must beEqualTo(
+          Json.toJson(ErrorPayload(InvalidEmail(draftReport.get.email.value)))
+        )
       }
     }
 
-    "return unauthorized when X-Api-Key header is invalid" should {
+    "block spammed email" in new Context {
+      val blockedEmail = "spammer@gmail.com"
+      val app = application(skipValidation = true, List(blockedEmail))
+      new WithApplication(app) {
 
-      "ReportController" in new Context {
-        new WithApplication(application) {
+        val draftReport = Fixtures.genDraftReport.sample.get.copy(email = EmailAddress(blockedEmail))
+        val jsonBody = Json.toJson(draftReport)
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
-            "X-Api-Key" -> "$2a$10$LJ2lIofW2JY.Zyj5BnU0k.BUNn9nFMWBMC45sGbPZOhNRBtkUZg.2"
-          )
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
+        val request = FakeRequest("POST", "/api/reports").withJsonBody(jsonBody)
 
-          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+        val result = route(app, request).get
+        Helpers.status(result) must beEqualTo(OK)
 
-        }
+        Helpers.contentAsBytes(result).isEmpty mustEqual true
+
       }
     }
 
-    "return report count when X-Api-Key header is valid" should {
-
-      "ReportController" in new Context {
-        new WithApplication(application) {
-
-          mockReportRepository.count(Some(siretFixture)) returns Future(5)
-
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture/count").withHeaders(
-            "X-Api-Key" -> "$2a$10$nZOeO.LzGe4qsNT9rf4wk.k88oN.P51bLoRVnWOVY0HRsb/NwkFCq"
-          )
-          val controller = application.injector.instanceOf[ReportController]
-          val result = route(application, request).get
-
-          Helpers.status(result) must beEqualTo(OK)
-          contentAsJson(result) must beEqualTo(Json.obj("siret" -> siretFixture, "count" -> 5))
-
-        }
-      }
-    }
   }
 
   trait Context extends Scope {
@@ -143,48 +102,47 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     implicit val env: Environment[AuthEnv] =
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
-    val mockReportRepository = mock[ReportRepository]
-    val mockEventRepository = mock[EventRepository]
-    val mockCompanyRepository = mock[CompanyRepository]
-    val mockAccessTokenRepository = mock[AccessTokenRepository]
-    val mockUserRepository = mock[UserRepository]
     val mockMailerService = mock[MailerService]
 
-    mockReportRepository.create(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-    mockReportRepository.update(any[Report]) answers { report => Future(report.asInstanceOf[Report]) }
-    mockReportRepository.attachFilesToReport(any, any[UUID]) returns Future(0)
-    mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(Nil)
-    mockReportRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map.empty)
-    mockCompanyRepository.fetchAdminsByCompany(Seq(companyId)) returns Future(Map(companyId -> List(proIdentity)))
-
-    mockUserRepository.create(any[User]) answers { user => Future(user.asInstanceOf[User]) }
-
-    mockEventRepository.createEvent(any[Event]) answers { event => Future(event.asInstanceOf[Event]) }
-
-    class FakeModule extends AbstractModule with ScalaModule {
+    class FakeModule(skipValidation: Boolean, spammerBlacklist: List[String]) extends AbstractModule with ScalaModule {
       override def configure() = {
         bind[Environment[AuthEnv]].toInstance(env)
-        bind[ReportRepository].toInstance(mockReportRepository)
-        bind[EventRepository].toInstance(mockEventRepository)
-        bind[CompanyRepository].toInstance(mockCompanyRepository)
-        bind[AccessTokenRepository].toInstance(mockAccessTokenRepository)
-        bind[UserRepository].toInstance(mockUserRepository)
         bind[MailerService].toInstance(mockMailerService)
+        bind[EmailConfiguration].toInstance(
+          EmailConfiguration(EmailAddress("test@sc.com"), EmailAddress("test@sc.com"), skipValidation, "", List(""))
+        )
+
+        val tokenConfiguration = TokenConfiguration(None, None, None, Period.ZERO)
+        val uploadConfiguration = UploadConfiguration(Seq.empty, false)
+
+        bind[SignalConsoConfiguration].toInstance(
+          SignalConsoConfiguration(
+            "",
+            new URI("http://test.com"),
+            new URI("http://test.com"),
+            new URI("http://test.com"),
+            tokenConfiguration,
+            uploadConfiguration,
+            spammerBlacklist
+          )
+        )
       }
     }
 
-    lazy val application = new GuiceApplicationBuilder()
-      .configure(
-        Configuration(
-          "play.evolutions.enabled" -> false,
-          "slick.dbs.default.db.connectionPool" -> "disabled",
-          "play.mailer.mock" -> true,
-          "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-          "play.tmpDirectory" -> "./target"
+    def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) =
+      new GuiceApplicationBuilder()
+        .configure(
+          Configuration(
+            "play.evolutions.enabled" -> false,
+            "slick.dbs.default.db.connectionPool" -> "disabled",
+            "play.mailer.mock" -> true,
+            "skip-report-email-validation" -> true,
+            "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
+            "play.tmpDirectory" -> "./target"
+          )
         )
-      )
-      .overrides(new FakeModule())
-      .build()
+        .overrides(new FakeModule(skipValidation, spammerBlacklist))
+        .build()
 
   }
 

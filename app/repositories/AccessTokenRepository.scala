@@ -1,17 +1,21 @@
 package repositories
 
+import models._
+import models.token.TokenKind
+import models.token.TokenKind.CompanyInit
+import models.token.TokenKind.DGCCRFAccount
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import utils.EmailAddress
+import java.time.ZoneOffset
+import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.Logger
-import slick.jdbc.JdbcProfile
-
-import models._
-import utils.EmailAddress
 
 @Singleton
 class AccessTokenRepository @Inject() (
@@ -23,9 +27,9 @@ class AccessTokenRepository @Inject() (
   val logger: Logger = Logger(this.getClass())
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
-  import dbConfig._
   import companyRepository.AccessLevelColumnType
-  implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.value, TokenKind.fromValue(_))
+  import dbConfig._
+  implicit val TokenKindColumnType = MappedColumnType.base[TokenKind, String](_.entryName, TokenKind.withName(_))
 
   class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
     def id = column[UUID]("id", O.PrimaryKey)
@@ -59,11 +63,10 @@ class AccessTokenRepository @Inject() (
       companyId: Option[UUID],
       level: Option[AccessLevel],
       emailedTo: Option[EmailAddress] = None,
-      creationDate: OffsetDateTime = OffsetDateTime.now
+      creationDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
   ): Future[AccessToken] =
     db.run(
       AccessTokenTableQuery returning AccessTokenTableQuery += AccessToken(
-        id = UUID.randomUUID(),
         creationDate = creationDate,
         kind = kind,
         token = token,
@@ -71,13 +74,13 @@ class AccessTokenRepository @Inject() (
         companyId = companyId,
         companyLevel = level,
         emailedTo = emailedTo,
-        expirationDate = validity.map(OffsetDateTime.now.plus(_))
+        expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))
       )
     )
 
   private def fetchValidTokens =
     AccessTokenTableQuery
-      .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+      .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
       .filter(_.valid)
 
   private def fetchCompanyValidTokens(companyId: UUID): Query[AccessTokenTable, AccessToken, Seq] =
@@ -95,11 +98,29 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
-        .filter(_.kind === TokenKind.COMPANY_INIT)
+        .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
+        .result
+        .headOption
+    )
+
+  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.companyId === companyId)
+        .filter(_.kind === (CompanyInit: TokenKind))
+        .filter(_.level === AccessLevel.ADMIN)
+        .result
+        .headOption
+    )
+
+  def get(tokenId: UUID): Future[Option[AccessToken]] =
+    db.run(
+      AccessTokenTableQuery
+        .filter(_.id === tokenId)
         .result
         .headOption
     )
@@ -121,7 +142,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def findToken(company: Company, token: String): Future[Option[AccessToken]] =
+  def findValidToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.token === token)
@@ -144,7 +165,7 @@ class AccessTokenRepository @Inject() (
   def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
     db.run(
       AccessTokenTableQuery
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.emailedTo === emailedTo)
         .to[List]
@@ -154,37 +175,37 @@ class AccessTokenRepository @Inject() (
   def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
     db.run(
       AccessTokenTableQuery
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
-        .filter(_.kind === TokenKind.DGCCRF_ACCOUNT)
+        .filter(_.kind === (DGCCRFAccount: TokenKind))
         .to[List]
         .result
     )
 
-  def applyCompanyToken(token: AccessToken, user: User): Future[Boolean] =
-    if (!token.valid || token.expirationDate.filter(_.isBefore(OffsetDateTime.now)).isDefined) {
-      logger.debug(s"Token ${token.id} could not be applied to user ${user.id}")
-      Future(false)
-    } else
-      db.run(
-        DBIO
-          .seq(
-            companyRepository.upsertUserAccess(token.companyId.get, user.id, token.companyLevel.get),
-            AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
-            AccessTokenTableQuery
-              .filter(_.companyId === token.companyId)
-              .filter(_.emailedTo.isEmpty)
-              .map(_.valid)
-              .update(false)
-          )
-          .transactionally
-      ).map(_ => true)
+  def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean] =
+    db.run(
+      DBIO
+        .seq(
+          companyRepository.createCompanyUserAccess(
+            token.companyId.get,
+            user.id,
+            token.companyLevel.get
+          ),
+          AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false),
+          AccessTokenTableQuery
+            .filter(_.companyId === token.companyId)
+            .filter(_.emailedTo.isEmpty)
+            .map(_.valid)
+            .update(false)
+        )
+        .transactionally
+    ).map(_ => true)
 
   def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
       DBIO
         .seq(
-          companyRepository.upsertUserAccess(company.id, user.id, level),
+          companyRepository.createCompanyUserAccess(company.id, user.id, level),
           AccessTokenTableQuery
             .filter(_.companyId === company.id)
             .filter(_.emailedTo.isEmpty)
@@ -192,7 +213,7 @@ class AccessTokenRepository @Inject() (
             .update(false)
         )
         .transactionally
-    ).map(_ => Unit)
+    ).map(_ => ())
 
   def invalidateToken(token: AccessToken): Future[Int] =
     db.run(
@@ -207,16 +228,16 @@ class AccessTokenRepository @Inject() (
       AccessTokenTableQuery
         .filter(_.id === token.id)
         .map(a => (a.level, a.expirationDate))
-        .update((Some(level), validity.map(OffsetDateTime.now.plus(_))))
+        .update((Some(level), validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))))
     )
 
   def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] =
     db.run(
       AccessTokenTableQuery
         .filter(_.companyId inSetBind companyIds.distinct)
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
-        .filter(_.kind === TokenKind.COMPANY_INIT)
+        .filter(_.kind === (CompanyInit: TokenKind))
         .to[List]
         .result
     ).map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
@@ -226,16 +247,18 @@ class AccessTokenRepository @Inject() (
       AccessTokenTableQuery
         .join(companyRepository.companyTableQuery)
         .on(_.companyId === _.id)
-        .filter(_._1.creationDate < OffsetDateTime.now.withHour(0).withMinute(0).withSecond(0).withNano(0))
-        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now).isEmpty)
+        .filter(
+          _._1.creationDate < OffsetDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0)
+        )
+        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_._1.valid)
-        .filter(_._1.kind === TokenKind.COMPANY_INIT)
+        .filter(_._1.kind === (CompanyInit: TokenKind))
         .to[List]
         .result
     )
 
   def fetchActivationCode(company: Company): Future[Option[String]] =
-    fetchActivationToken(company.id).map(_.map(_.token))
+    fetchValidActivationToken(company.id).map(_.map(_.token))
 
   def useEmailValidationToken(token: AccessToken, user: User) =
     db.run(
@@ -244,9 +267,45 @@ class AccessTokenRepository @Inject() (
           userRepository.userTableQuery
             .filter(_.id === user.id)
             .map(_.lastEmailValidation)
-            .update(Some(OffsetDateTime.now)),
+            .update(Some(OffsetDateTime.now(ZoneOffset.UTC))),
           AccessTokenTableQuery.filter(_.id === token.id).map(_.valid).update(false)
         )
         .transactionally
     ).map(_ => true)
+
+  def dgccrfAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select
+      my_date_trunc('month'::text, creation_date)::timestamp,
+      sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
+      from access_tokens
+        where kind = 'DGCCRF_ACCOUNT' and valid = false
+      group by  my_date_trunc('month'::text, creation_date)
+      order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
+    db.run(sql"""select * from (select v.a, count(distinct s.user_id) from subscriptions s right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date <= (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval)
+
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfActiveAccountsCurve(ticks: Int) =
+    db.run(sql"""select * from (select v.a, count(distinct ac.emailed_to) from access_tokens ac right join
+                                               (SELECT a
+                                                FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
+                                                   as v on creation_date between (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) - '4 month'::interval 
+                                                         and (my_date_trunc('month'::text, v.a)::timestamp + '1 month'::interval - '1 day'::interval) and kind = 'VALIDATE_EMAIL' and valid = false
+
+group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
+
+  def dgccrfControlsCurve(ticks: Int) =
+    db.run(
+      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
+  from events
+    where action = 'Contrôle effectué'
+  group by  my_date_trunc('month'::text,creation_date)
+  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    )
+
 }

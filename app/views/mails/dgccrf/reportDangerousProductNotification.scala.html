@@ -1,8 +1,8 @@
 @import java.time.LocalDate
 @import utils.EmailAddress
-@import java.net.URI
+@import utils.FrontRoute
 
-@(report: Report)(implicit websiteUrl: URI, contactAddress: EmailAddress)
+@(report: Report)(frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
 
@@ -47,7 +47,7 @@
             @if(report.websiteURL.websiteURL.isDefined) {
                 <b>Site web</b>
                 <p style="text-align: center;">
-                    Site internet : @report.shortURL.get
+                    Site internet : @report.shortURL().get
                 </p>
             }
             @if(report.vendor.isDefined) {
@@ -64,7 +64,7 @@
     </p>
     <ul>
         <li>Vous devez suivre la procédure mentionner à l'instruction IN-2D-PIL-004</li>
-        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@websiteUrl.resolve("/dgccrf")">@websiteUrl.resolve("/dgccrf")</a></li>
+        <li>si vous possédez un compte sur SignalConso, connectez-vous sur <a href="@frontRoute.dashboard.login">@frontRoute.dashboard.login</a></li>
         <li>sinon, vous pouvez demander la création d'un compte en envoyant un mail avec vos nom, prénom et service à l'adresse <a href="mailto:@contactAddress">@contactAddress</a></li>
     </ul>
 

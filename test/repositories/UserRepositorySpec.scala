@@ -1,28 +1,22 @@
 package repositories
 
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration._
-import java.util.UUID
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 
 import utils.AppSpec
-import utils.EmailAddress
 import utils.Fixtures
-
-import models._
-import repositories._
 
 class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   val userToto = Fixtures.genProUser.sample.get
 
-  override def setupData() {
+  override def setupData() = {
     Await.result(userRepository.create(userToto), Duration.Inf)
-    Unit
+    ()
   }
 
   def is = s2"""

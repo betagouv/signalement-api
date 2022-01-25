@@ -11,7 +11,6 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
-import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.CompanyRepository
@@ -40,7 +39,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
   val website2 = Fixtures.genWebsiteURL.sample.get
   val websiteWithCompany = Fixtures.genWebsiteURL.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
@@ -50,16 +49,16 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
         _ <-
           reportRepository.create(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)).generateReport)
         _ <- reportRepository.create(
-               Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(URL(s"${website2}/test?query"))).generateReport
-             )
+          Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(URL(s"${website2}/test?query"))).generateReport
+        )
         _ <- reportRepository.create(
-               Fixtures
-                 .genReportForCompany(c)
-                 .sample
-                 .get
-                 .copy(websiteURL = WebsiteURL(Some(websiteWithCompany), websiteWithCompany.getHost))
-             )
-      } yield Unit,
+          Fixtures
+            .genReportForCompany(c)
+            .sample
+            .get
+            .copy(websiteURL = WebsiteURL(Some(websiteWithCompany), websiteWithCompany.getHost))
+        )
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =

@@ -15,9 +15,6 @@ import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ReportStatus.PROMESSE_ACTION
-import utils.Constants.ReportStatus.ReportStatusValue
-import utils.Constants.ReportStatus.SIGNALEMENT_TRANSMIS
 import utils.AppSpec
 import utils.Fixtures
 
@@ -27,10 +24,10 @@ import scala.concurrent.duration.Duration
 class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report without response                              ${step(reportId = reportWithoutResponse.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report without response                              ${step { reportId = reportWithoutResponse.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is forbidden                              ${resultStatusMustBe(Status.FORBIDDEN)}
     """
 }
@@ -38,10 +35,10 @@ class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnR
 class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report with a response                               ${step(reportId = reportWithResponse.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report with a response                               ${step { reportId = reportWithResponse.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
          And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(
       ActionEvent.REPORT_REVIEW_ON_RESPONSE
@@ -52,10 +49,10 @@ class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespo
 class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
   override def is =
     s2"""
-         Given a report with a review                                ${step(reportId = reportWithReview.id)}
-         When post a review                                          ${step(someResult =
-      Some(postReview(reviewOnReportResponse))
-    )}
+         Given a report with a review                                ${step { reportId = reportWithReview.id }}
+         When post a review                                          ${step {
+      someResult = Some(postReview(reviewOnReportResponse))
+    }}
          Then result status is CONFLICT                               ${resultStatusMustBe(Status.CONFLICT)}
     """
 }
@@ -71,13 +68,13 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   val company = Fixtures.genCompany.sample.get
 
-  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = SIGNALEMENT_TRANSMIS)
+  val reportWithoutResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 
-  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
+  val reportWithResponse = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseEvent =
     Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
 
-  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = PROMESSE_ACTION)
+  val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseWithReviewEvent =
     Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
   val reviewEvent =
@@ -89,7 +86,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   var someResult: Option[Result] = None
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
@@ -99,7 +96,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- eventRepository.createEvent(responseEvent)
         _ <- eventRepository.createEvent(responseWithReviewEvent)
         _ <- eventRepository.createEvent(reviewEvent)
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
 
@@ -123,12 +120,12 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     events.length must beEqualTo(1)
   }
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatusValue) = {
+  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
     val report = Await.result(reportRepository.getReport(reportId), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
-  def reportStatusMatcher(status: ReportStatusValue): org.specs2.matcher.Matcher[Report] = { report: Report =>
+  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
     (status == report.status, s"status doesn't match ${status} - ${report}")
   }
 }

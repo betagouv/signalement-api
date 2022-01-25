@@ -1,17 +1,16 @@
 package utils
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import models.Event._
 import models._
+import models.website.Website
+import models.website.WebsiteKind
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
-import utils.Constants.ReportStatus
-import utils.Constants.ReportStatus.ReportStatusValue
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.util.Random
 
 object Fixtures {
@@ -25,7 +24,7 @@ object Fixtures {
     password <- arbString.arbitrary
     firstName <- genFirstName
     lastName <- genLastName
-    userRole <- Gen.oneOf(UserRoles.userRoles)
+    userRole <- Gen.oneOf(UserRole.values)
     email <- genEmailAddress(firstName, lastName)
   } yield User(id, password, email, firstName, lastName, userRole, None)
 
@@ -35,9 +34,13 @@ object Fixtures {
     s"${firstName}.${lastName}.${Gen.choose(0, 1000000).sample.get}@example.com"
   )
 
-  val genAdminUser = genUser.map(_.copy(userRole = UserRoles.Admin))
-  val genProUser = genUser.map(_.copy(userRole = UserRoles.Pro))
-  val genDgccrfUser = genUser.map(_.copy(userRole = UserRoles.DGCCRF))
+  def genEmailAddress: Gen[EmailAddress] = EmailAddress(
+    s"${genFirstName.sample.get}.${genLastName.sample.get}.${Gen.choose(0, 1000000).sample.get}@example.com"
+  )
+
+  val genAdminUser = genUser.map(_.copy(userRole = UserRole.Admin))
+  val genProUser = genUser.map(_.copy(userRole = UserRole.Professionnel))
+  val genDgccrfUser = genUser.map(_.copy(userRole = UserRole.DGCCRF))
 
   val genSiren = for {
     randInt <- Gen.choose(0, 999999999)
@@ -62,7 +65,7 @@ object Fixtures {
   )
 
   val genCompany = for {
-    id <- arbitrary[UUID]
+    _ <- arbitrary[UUID]
     name <- arbString.arbitrary
     siret <- genSiret()
     address <- genAddress()
@@ -144,7 +147,7 @@ object Fixtures {
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-    status <- Gen.oneOf(ReportStatus.reportStatusList)
+    status <- Gen.oneOf(ReportStatus.values)
   } yield Report(
     id = id,
     category = category,
@@ -164,7 +167,7 @@ object Fixtures {
     status = status
   )
 
-  def genReportsForCompanyWithStatus(company: Company, status: ReportStatusValue) =
+  def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
   def genReportConsumer = for {
@@ -219,6 +222,6 @@ object Fixtures {
     companyId <- arbitrary[UUID]
     websiteUrl <- genWebsiteURL
     kind <- Gen.oneOf(WebsiteKind.values)
-  } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, companyId, kind)
+  } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, None, Some(companyId), kind)
 
 }

@@ -1,6 +1,6 @@
-@(reportResponse: ReportResponse, user: User)
+@import utils.FrontRoute
 
-@import utils.Constants.ReportStatus._
+@(reportResponse: ReportResponse, user: User)(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout(s"Votre réponse au signalement") {
     <p>
@@ -70,4 +70,6 @@
     <p>
         <i>L'équipe SignalConso</i>
     </p>
+
+    @views.html.fragments.linkNotificationsManager()
 }

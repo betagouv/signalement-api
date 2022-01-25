@@ -1,8 +1,6 @@
 @import java.net.URI
 @(report: Report, reportResponse: ReportResponse, reviewUrl: URI)
 
-@import utils.Constants.ReportStatus._
-
 @views.html.mails.layout("L'entreprise a répondu à votre signalement") {
     <p>
         Bonjour @report.firstName @report.lastName,

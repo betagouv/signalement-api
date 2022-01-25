@@ -1,11 +1,11 @@
 package models
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Identity
 import play.api.libs.json._
 import utils.EmailAddress
+
+import java.time.OffsetDateTime
+import java.util.UUID
 
 final case class EmailValidation(
     id: UUID = UUID.randomUUID(),

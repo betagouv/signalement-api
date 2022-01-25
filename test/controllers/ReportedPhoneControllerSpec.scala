@@ -37,19 +37,19 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
   val company = Fixtures.genCompany.sample.get
   val reportedPhone = Fixtures.genReportedPhone.sample.get
 
-  override def setupData =
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(adminUser)
         c <- companyRepository.getOrCreate(company.siret, company)
-        report1 <-
+        _ <-
           reportRepository.create(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)).generateReport)
         report2 <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
-        report3 <-
+        _ <-
           reportRepository.create(
             Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone), category = report2.category)
           )
-      } yield Unit,
+      } yield (),
       Duration.Inf
     )
   override def configureFakeModule(): AbstractModule =
