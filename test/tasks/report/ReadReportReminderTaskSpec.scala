@@ -1,7 +1,6 @@
-package tasks
+package tasks.report
 
-import java.time.OffsetDateTime
-import java.util.UUID
+import cats.data.Validated.Valid
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -11,26 +10,28 @@ import play.api.libs.mailer.Attachment
 import repositories._
 import services.AttachementService
 import services.MailerService
-import tasks.model.TaskOutcome
-import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.Task
+import tasks.TaskExecutionResults
 import tasks.model.TaskType.CloseReadReportWithNoAction
 import tasks.model.TaskType.RemindReadReportByMail
+import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType.PRO
-import utils.Constants.ActionEvent
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 import utils.FrontRoute
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
@@ -60,14 +61,14 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRe
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(14))
         .toString
     )}
-     And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
+     And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, RemindReadReportByMail)))}
     """
   }
 }
 
 class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
@@ -91,14 +92,14 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadR
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
+         And outcome is empty ${result mustEqual noTaskProcessed}
     """
   }
 }
 
 class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
@@ -128,14 +129,14 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends R
         .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(7))
         .toString
     )}
-    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, RemindReadReportByMail))}
+    And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, RemindReadReportByMail)))}
     """
   }
 }
 
 class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
@@ -159,14 +160,14 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
+         And outcome is empty ${result mustEqual noTaskProcessed}
     """
   }
 }
 
 class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
@@ -201,14 +202,14 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
       views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
       attachementService.attachmentSeqForWorkflowStepN(4)
     )}    
-    And outcome is empty ${result mustEqual List(SuccessfulTask(transmittedReport.id, CloseReadReportWithNoAction))}
+    And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, CloseReadReportWithNoAction)))}
    """
   }
 }
 
 class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadReportReminderTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
@@ -237,7 +238,7 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadRe
       transmittedReport
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}  
+         And outcome is empty ${result mustEqual noTaskProcessed}
    """
   }
 }
@@ -263,6 +264,8 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
     .copy(
       status = ReportStatus.Transmis
     )
+
+  val noTaskProcessed = Valid(List.empty[Task])
 
   val reminderEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, EMAIL_PRO_REMIND_NO_ACTION).sample.get
   val transmittedEvent = Fixtures.genEventForReport(transmittedReport.id, PRO, REPORT_READING_BY_PRO).sample.get

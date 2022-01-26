@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import play.api.inject._
 

@@ -1,8 +1,6 @@
-package tasks
+package tasks.report
 
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.util.UUID
+import cats.data.Validated.Valid
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -12,22 +10,25 @@ import play.api.libs.mailer.Attachment
 import repositories._
 import services.AttachementService
 import services.MailerService
-import tasks.model.TaskOutcome
-import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.Task
+import tasks.TaskExecutionResults
 import tasks.model.TaskType.CloseUnreadReport
+import utils.Constants.ActionEvent
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 import utils.FrontRoute
-import utils.Constants.ActionEvent
-import utils.Constants.ActionEvent.ActionEventValue
 
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).minusDays(1))
@@ -56,14 +57,15 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
       views.html.mails.consumer.reportClosedByNoReading(report).toString,
       attachementService.attachmentSeqForWorkflowStepN(3)
     )}
-    And outcome is empty ${result mustEqual List(SuccessfulTask(report.id, CloseUnreadReport))}
+    And outcome is empty ${result mustEqual Valid(List((report.id, CloseUnreadReport)))}
     """
   }
 }
 
 class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAccessReportClosingTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
+
   override def is = {
     val report = onGoingReport.copy(creationDate = OffsetDateTime.now.minus(noAccessReadingDelay).plusDays(1))
     s2"""
@@ -85,7 +87,7 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
       report
     )}
        And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
-       And outcome is empty ${result mustEqual List.empty[TaskOutcome]}     
+       And outcome is empty ${result mustEqual noTaskProcessed}
     """
   }
 }
@@ -100,6 +102,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
+  val noTaskProcessed = Valid(List.empty[Task])
   val runningDateTime = LocalDateTime.now
   val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
 

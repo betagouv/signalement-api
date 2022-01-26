@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
@@ -9,9 +9,10 @@ import play.api.Logger
 import repositories.EventRepository
 import services.Email.ProReportUnreadReminder
 import services.MailService
-import tasks.ReportTask.extractEventsWithAction
-import tasks.model.TaskOutcome
 import tasks.model.TaskType
+import tasks.report.ReportTask.extractEventsWithAction
+import tasks.TaskExecutionResult
+import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.SYSTEM
@@ -41,7 +42,7 @@ class UnreadReportsReminderTask @Inject() (
       onGoingReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
       startingPoint: LocalDateTime
-  ): Future[List[TaskOutcome]] = Future.sequence(
+  ): Future[List[TaskExecutionResult]] = Future.sequence(
     extractUnreadReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, startingPoint)
       .map { case (report, users) =>
         remindUnreadReportByMail(report, users.map(_.email), reportEventsMap)
@@ -87,7 +88,7 @@ class UnreadReportsReminderTask @Inject() (
       report: Report,
       adminMails: List[EmailAddress],
       reportEventsMap: Map[UUID, List[Event]]
-  ): Future[TaskOutcome] = {
+  ) = {
 
     val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
@@ -112,7 +113,7 @@ class UnreadReportsReminderTask @Inject() (
       _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
     } yield ()
 
-    toTaskOutCome(taskExecution, report.id, TaskType.RemindUnreadReportsByEmail)
+    toValidated(taskExecution, report.id, TaskType.RemindUnreadReportsByEmail)
   }
 
 }
