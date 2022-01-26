@@ -37,6 +37,7 @@ package object controllers {
       .asEither
       .leftMap { errors =>
         logger.error(s"Malformed request body : ${JsError.toJson(errors)}")
+        logger.debug(s"Body ${request.body}")
         MalformedBody
       }
       .liftTo[Future]
