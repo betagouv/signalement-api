@@ -77,7 +77,6 @@ class MailService @Inject() (
       case None =>
         Future.successful(())
       case Some(filteredRecipients) =>
-        println(s"---------- OK ------------------")
         val emailRequest = EmailRequest(
           from = mailFrom,
           recipients = filteredRecipients,
