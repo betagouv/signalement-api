@@ -365,7 +365,7 @@ class ReportController @Inject() (
         }
     } yield visibleReport
 
-  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
     val mapper = new QueryStringMapper(request.queryString)
     val start = mapper.localDate("start")
     val end = mapper.localDate("end")
