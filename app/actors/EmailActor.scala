@@ -43,6 +43,8 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
   override def receive = {
     case req: EmailRequest =>
       try {
+        println(s"------------------ req.copy(bodyHtml = null) = ${req.copy(bodyHtml = "null")} ------------------")
+
         mailerService.sendEmail(
           req.from,
           req.recipients.toList,

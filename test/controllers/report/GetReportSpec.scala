@@ -201,7 +201,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   def mailMustNotHaveBeenSent() =
     there was no(application.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,

@@ -77,7 +77,8 @@ class ReportNotificationTask @Inject() (
           .filter(report => subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty)
         (subscription, emailAddress, filteredReport)
       }
-      _ <- subscriptionsEmailAndReports.map { case (subscription, emailAddress, filteredReport) =>
+      subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
+      _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),
