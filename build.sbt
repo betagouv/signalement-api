@@ -8,18 +8,19 @@ scalaVersion := "2.13.8"
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 val playSlickVersion = "5.0.0"
-val slickPgVersion = "0.19.7"
+val slickPgVersion = "0.20.2"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
-val AkkaHttpVersion = "10.1.15"
-val alpakkaVersion = "2.0.2"
+val AkkaHttpVersion = "10.2.7"
+val alpakkaVersion = "3.0.4"
+val enumeratumVersion = "1.7.0"
 
 libraryDependencies ++= Seq(
   guice,
   evolutions,
   ws,
   ehcache,
-  "org.postgresql" % "postgresql" % "42.2.19",
+  "org.postgresql" % "postgresql" % "42.3.1",
   "eu.timepit" %% "refined" % "0.9.28",
   "com.typesafe.play" %% "play-slick" % playSlickVersion,
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
@@ -39,21 +40,21 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-persistence" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-crypto-jca" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
-  "net.codingwell" %% "scala-guice" % "4.2.11",
-  "com.iheart" %% "ficus" % "1.5.0",
+  "net.codingwell" %% "scala-guice" % "5.0.2",
+  "com.iheart" %% "ficus" % "1.5.1",
   "com.norbitltd" %% "spoiwo" % "1.8.0",
-  "com.itextpdf" % "itext7-core" % "7.1.14",
-  "com.itextpdf" % "html2pdf" % "3.0.3",
-  "com.beachape" %% "enumeratum" % "1.6.1",
-  "com.beachape" %% "enumeratum-play" % "1.6.3",
-  "com.beachape" %% "enumeratum-slick" % "1.6.0",
+  "com.itextpdf" % "itext7-core" % "7.1.17",
+  "com.itextpdf" % "html2pdf" % "3.0.5",
+  "com.beachape" %% "enumeratum" % enumeratumVersion,
+  "com.beachape" %% "enumeratum-play" % enumeratumVersion,
+  "com.beachape" %% "enumeratum-slick" % enumeratumVersion,
   "io.scalaland" %% "chimney" % "0.6.1",
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
-  "io.sentry" % "sentry-logback" % "5.5.2",
-  "org.typelevel" %% "cats-core" % "2.4.2",
-  "com.github.pureconfig" %% "pureconfig" % "0.17.0",
+  "io.sentry" % "sentry-logback" % "5.6.0",
+  "org.typelevel" %% "cats-core" % "2.7.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.17.1",
   compilerPlugin(scalafixSemanticdb)
 )
 
