@@ -74,7 +74,8 @@ class MailService @Inject() (
   ): Future[Unit] = {
     val filteredEmptyEmail: Seq[EmailAddress] = recipients.filter(_.nonEmpty)
     NonEmptyList.fromList(filteredEmptyEmail.toList) match {
-      case None => Future.successful(())
+      case None =>
+        Future.successful(())
       case Some(filteredRecipients) =>
         val emailRequest = EmailRequest(
           from = mailFrom,
