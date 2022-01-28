@@ -289,7 +289,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(app.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,

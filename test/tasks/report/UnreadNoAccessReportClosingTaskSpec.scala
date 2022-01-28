@@ -134,7 +134,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(mailerService)
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,
