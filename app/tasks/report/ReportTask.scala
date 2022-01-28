@@ -1,6 +1,7 @@
-package tasks
+package tasks.report
 
 import akka.actor.ActorSystem
+import cats.implicits._
 import config.SignalConsoConfiguration
 import config.TaskConfiguration
 import models._
@@ -8,17 +9,10 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository
-import tasks.model.TaskOutcome
-import tasks.model.TaskOutcome.FailedTask
-import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.computeStartingTime
 import utils.Constants.ActionEvent._
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.temporal.ChronoUnit
+import java.time._
 import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -43,14 +37,10 @@ class ReportTask @Inject() (
   implicit val websiteUrl = signalConsoConfiguration.websiteURL
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = taskConfiguration.report.startTime
-  val interval = taskConfiguration.report.intervalInHours
+  val startTime: LocalTime = taskConfiguration.report.startTime
+  val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
-  val startDate =
-    if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
-    else LocalDate.now.atTime(startTime)
-
-  val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
+  val interval: FiniteDuration = taskConfiguration.report.intervalInHours
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
@@ -62,7 +52,7 @@ class ReportTask @Inject() (
     logger.info("Traitement de relance automatique")
     logger.info(s"taskDate - ${now}")
 
-    val taskRanOrError: Future[List[TaskOutcome]] = for {
+    val executedTasksOrError = for {
 
       unreadReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
       readReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
@@ -93,25 +83,25 @@ class ReportTask @Inject() (
       )
       closedByNoAction <- noActionReportsCloseTask.closeNoAction(readReportsWithAdmins, reportEventsMap, now)
 
-      reminders = (closedUnreadWithAccessReports :::
-        unreadReportsMailReminders ::: closedUnreadNoAccessReports :::
-        transmittedReportsMailReminders ::: closedByNoAction)
+      reminders = closedUnreadNoAccessReports.sequence combine
+        closedUnreadWithAccessReports.sequence combine
+        unreadReportsMailReminders.sequence combine
+        transmittedReportsMailReminders.sequence combine
+        closedByNoAction.sequence
 
       _ = logger.info("Successful reminders :")
       _ = reminders
-        .filter(_.isInstanceOf[SuccessfulTask])
-        .map(reminder => logger.debug(s"Relance pour [${reminder.reportId} - ${reminder.value}]"))
+        .map(reminder => logger.debug(s"Relance pour [${reminder.mkString(",")}]"))
 
       _ = logger.info("Failed reminders :")
       _ = reminders
-        .filter(_.isInstanceOf[FailedTask])
-        .map(reminder => logger.warn(s"Failed report tasks [${reminder.reportId} - ${reminder.value}]"))
+        .leftMap(_.map(reminder => logger.warn(s"Failed report tasks [${reminder._1} - ${reminder._2}]")))
 
     } yield reminders
 
-    taskRanOrError.recoverWith { case err =>
+    executedTasksOrError.recoverWith { case err =>
       logger.error(
-        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay, startDate: $startDate )",
+        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay )",
         err
       )
       Future.failed(err)

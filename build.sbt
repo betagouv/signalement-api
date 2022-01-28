@@ -3,7 +3,7 @@ organization := "fr.gouv.beta"
 
 version := "1.3.13"
 
-scalaVersion := "2.13.7"
+scalaVersion := "2.13.8"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
@@ -11,7 +11,7 @@ val playSlickVersion = "5.0.0"
 val slickPgVersion = "0.19.7"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
-val AkkaHttpVersion = "10.1.14"
+val AkkaHttpVersion = "10.1.15"
 val alpakkaVersion = "2.0.2"
 
 libraryDependencies ++= Seq(
@@ -111,7 +111,7 @@ routesImport ++= Seq(
 
 scalafixOnCompile := true
 
-//ThisBuild / coverageEnabled := true
+ThisBuild / coverageEnabled := true
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 

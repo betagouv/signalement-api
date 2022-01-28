@@ -34,6 +34,7 @@ class ConfigModule(environment: Environment, configuration: Configuration) exten
 
     bind(classOf[EmailConfiguration]).toInstance(applicationConfiguration.mail)
     bind(classOf[TaskConfiguration]).toInstance(applicationConfiguration.task)
+    bind(classOf[InactiveAccountsTaskConfiguration]).toInstance(applicationConfiguration.task.inactiveAccounts)
     bind(classOf[BucketConfiguration]).toInstance(s3)
     bind(classOf[SignalConsoConfiguration]).toInstance(applicationConfiguration.app)
     bind(classOf[TokenConfiguration]).toInstance(applicationConfiguration.app.token)

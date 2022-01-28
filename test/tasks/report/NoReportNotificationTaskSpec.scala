@@ -1,7 +1,5 @@
-package tasks
+package tasks.report
 
-import java.time.LocalDate
-import java.time.Period
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -10,42 +8,25 @@ import repositories._
 import services.AttachementService
 import services.MailerService
 import utils.Constants.Tags
-import utils.AppSpec
-import utils.Country
-import utils.EmailAddress
-import utils.Fixtures
-import utils.FrontRoute
+import utils._
+import play.api.libs.mailer.Attachment
 
+import java.time.LocalDate
+import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
+class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificationTaskSpec {
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
     }}
-         And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
-      Seq(covidEmail),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString
-    )}
-         And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
-      Seq(tagEmail),
-      s"[SignalConso] [Produits dangereux] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
-    )}
-         And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
-      Seq(countryEmail),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf
-        .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
-        .toString
-    )}
+         And no email are sent to any users                           ${mailMustNotHaveBeenSent()}
     """
 }
 
-abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
+abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     extends Specification
     with AppSpec
     with FutureMatchers {
@@ -112,9 +93,6 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- reportRepository.create(covidReport)
-        _ <- reportRepository.create(tagReport)
-        _ <- reportRepository.create(countryReport)
         _ <- subscriptionRepository.create(covidSubscription)
         _ <- subscriptionRepository.create(tagSubscription)
         _ <- subscriptionRepository.create(countrySubscription)
@@ -122,14 +100,14 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
-    there was one(mailerService)
+  def mailMustNotHaveBeenSent() =
+    there was no(mailerService)
       .sendEmail(
-        emailConfiguration.from,
-        recipients,
-        Nil,
-        subject,
-        bodyHtml,
-        attachementService.defaultAttachments
+        any[EmailAddress],
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any[Seq[Attachment]]
       )
 }

@@ -1,4 +1,4 @@
-package tasks
+package tasks.report
 
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
@@ -9,10 +9,10 @@ import repositories.ReportRepository
 import repositories.SubscriptionRepository
 import services.Email.DgccrfReportNotification
 import services.MailService
+import tasks.computeStartingTime
 import utils.Constants.Departments
 
 import java.time._
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,11 +30,7 @@ class ReportNotificationTask @Inject() (
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val startTime = taskConfiguration.subscription.startTime
-
-  val startDate =
-    if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
-    else LocalDate.now.atTime(startTime)
-  val initialDelay = (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
+  val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
   val departments = Departments.ALL
 
@@ -81,7 +77,8 @@ class ReportNotificationTask @Inject() (
           .filter(report => subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty)
         (subscription, emailAddress, filteredReport)
       }
-      _ <- subscriptionsEmailAndReports.map { case (subscription, emailAddress, filteredReport) =>
+      subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
+      _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),

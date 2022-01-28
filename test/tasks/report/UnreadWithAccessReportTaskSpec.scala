@@ -1,7 +1,6 @@
-package tasks
+package tasks.report
 
-import java.time.OffsetDateTime
-import java.util.UUID
+import cats.data.Validated.Valid
 import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -11,25 +10,27 @@ import play.api.libs.mailer.Attachment
 import repositories._
 import services.AttachementService
 import services.MailerService
-import tasks.model.TaskOutcome
-import tasks.model.TaskOutcome.SuccessfulTask
+import tasks.Task
+import tasks.TaskExecutionResults
 import tasks.model.TaskType.CloseUnreadReport
 import tasks.model.TaskType.RemindUnreadReportsByEmail
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
-import utils.FrontRoute
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.Constants.EventType.PRO
+import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.FrontRoute
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
@@ -58,14 +59,14 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unread
         .reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2)))
         .toString
     )}
-     And outcome is empty ${result mustEqual List(SuccessfulTask(report.id, RemindUnreadReportsByEmail))}
+     And outcome is empty ${result mustEqual Valid(List((report.id, RemindUnreadReportsByEmail)))}
     """
   }
 }
 
 class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
@@ -88,14 +89,14 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unread
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome is empty ${result mustEqual List.empty[TaskOutcome]}       
+         And outcome is empty ${result mustEqual noTaskProcessed}
     """
   }
 }
 
 class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
@@ -124,8 +125,10 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unrea
       "Nouveau signalement",
       views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString
     )}
-    And outcome is successful RemindReportByMail reminder ${result mustEqual List(
-      SuccessfulTask(report.id, RemindUnreadReportsByEmail)
+    And outcome is successful RemindReportByMail reminder ${result mustEqual Valid(
+      List(
+        (report.id, RemindUnreadReportsByEmail)
+      )
     )}
     """
   }
@@ -133,7 +136,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unrea
 
 class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
@@ -158,13 +161,13 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends U
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome is empty                                         ${result mustEqual (List.empty[TaskOutcome])}
+         And outcome is empty                                         ${result mustEqual noTaskProcessed}
     """
   }
 }
 
 class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
@@ -200,8 +203,10 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
       views.html.mails.consumer.reportClosedByNoReading(report).toString,
       attachementService.attachmentSeqForWorkflowStepN(3)
     )}
-    And outcome is successful CloseUnreadReport                                    ${result mustEqual List(
-      SuccessfulTask(report.id, CloseUnreadReport)
+    And outcome is successful CloseUnreadReport                                    ${result mustEqual Valid(
+      List(
+        (report.id, CloseUnreadReport)
+      )
     )}
    """
   }
@@ -209,7 +214,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
 
 class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithAccessReportTaskSpec {
 
-  var result = List.empty[TaskOutcome]
+  var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
@@ -239,7 +244,7 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadW
       report
     )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
-         And outcome empty ${result mustEqual List.empty[TaskOutcome]}     
+         And outcome empty ${result mustEqual noTaskProcessed}
    """
   }
 }
@@ -287,13 +292,15 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(app.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,
         anyString,
         any
       )
+
+  val noTaskProcessed = Valid(List.empty[Task])
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) =
     eventRepository.getEvents(reportUUID, EventFilter(action = Some(action))).map(_.head) must eventActionMatcher(
