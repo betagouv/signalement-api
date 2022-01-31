@@ -67,4 +67,12 @@ class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider) e
         .to[List]
         .result
     )
+
+  def delete(userId: UUID): Future[Int] = db
+    .run(
+      AsyncFileTableQuery
+        .filter(_.userId === userId)
+        .delete
+    )
+
 }

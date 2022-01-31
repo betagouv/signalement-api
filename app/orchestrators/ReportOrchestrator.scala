@@ -112,11 +112,11 @@ class ReportOrchestrator @Inject() (
     eventRepository
       .createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           Some(company.id),
           Some(companyUsers.head.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
           stringToDetailsJsValue(
@@ -196,11 +196,11 @@ class ReportOrchestrator @Inject() (
     for {
       event <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           maybeCompany.map(_.id),
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
         )
@@ -289,11 +289,11 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 Some(report.id),
                 Some(company.id),
                 Some(userUUID),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(
@@ -330,11 +330,11 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 Some(report.id),
                 report.companyId,
                 Some(userUUID),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
                 stringToDetailsJsValue(
@@ -415,11 +415,11 @@ class ReportOrchestrator @Inject() (
     for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(userUUID),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_READING_BY_PRO
         )
@@ -437,11 +437,11 @@ class ReportOrchestrator @Inject() (
       _ <- mailService.send(ConsumerReportReadByProNotification(report))
       _ <- eventRepository.createEvent(
         Event(
-          id = Some(UUID.randomUUID()),
+          id = UUID.randomUUID(),
           reportId = Some(report.id),
           companyId = report.companyId,
           userId = None,
-          creationDate = Some(OffsetDateTime.now()),
+          creationDate = OffsetDateTime.now(),
           eventType = Constants.EventType.CONSO,
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
@@ -462,8 +462,8 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               draftEvent.copy(
-                id = Some(UUID.randomUUID()),
-                creationDate = Some(OffsetDateTime.now()),
+                id = UUID.randomUUID(),
+                creationDate = OffsetDateTime.now(),
                 reportId = Some(r.id),
                 companyId = r.companyId,
                 userId = Some(user.id)
@@ -499,11 +499,11 @@ class ReportOrchestrator @Inject() (
     for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
@@ -522,22 +522,22 @@ class ReportOrchestrator @Inject() (
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           updatedReport.companyId,
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           updatedReport.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )
@@ -549,11 +549,11 @@ class ReportOrchestrator @Inject() (
     for {
       newEvent <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           EventType.fromUserRole(user.userRole),
           reportAction.actionType,
           reportAction.details
@@ -573,11 +573,11 @@ class ReportOrchestrator @Inject() (
     logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
-        id = Some(UUID.randomUUID()),
+        id = UUID.randomUUID(),
         reportId = Some(reportId),
         companyId = None,
         userId = None,
-        creationDate = Some(OffsetDateTime.now()),
+        creationDate = OffsetDateTime.now(),
         eventType = EventType.CONSO,
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(

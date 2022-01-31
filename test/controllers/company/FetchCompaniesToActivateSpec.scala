@@ -85,7 +85,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minusDays(1))
+            creationDate = OffsetDateTime.now.minusDays(1)
           )
       )
     } yield ()
@@ -99,7 +99,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+            creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1)
           )
       )
     } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
@@ -113,7 +113,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+            creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1)
           )
       )
       _ <- eventRepository.createEvent(
@@ -122,7 +122,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1))
+            creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1)
           )
       )
     } yield ()
@@ -136,7 +136,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2))
+            creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2)
           )
       )
       _ <- eventRepository.createEvent(
@@ -145,7 +145,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = Some(OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1))
+            creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1)
           )
       )
     } yield ()
@@ -158,14 +158,14 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
           .get
-          .copy(creationDate = Some(OffsetDateTime.now.minusDays(2)))
+          .copy(creationDate = OffsetDateTime.now.minusDays(2))
       )
       _ <- eventRepository.createEvent(
         Fixtures
           .genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED)
           .sample
           .get
-          .copy(creationDate = Some(OffsetDateTime.now.minusDays(1)))
+          .copy(creationDate = OffsetDateTime.now.minusDays(1))
       )
     } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
 

@@ -169,7 +169,7 @@ class CompanyController @Inject() (
   ) = {
     val lastContact = events
       .filter(e =>
-        e.creationDate.exists(_.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay)))
+        e.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay))
           && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action)
       )
       .sortBy(_.creationDate)
@@ -179,7 +179,7 @@ class CompanyController @Inject() (
     if (lastContact.isDefined)
       views.html.pdfs.accountActivationReminder(
         company,
-        lastContact.flatMap(_.creationDate).getOrElse(company.creationDate).toLocalDate,
+        lastContact.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
         report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
         activationKey
       )(frontRoute = frontRoute, contactAddress = contactAddress)

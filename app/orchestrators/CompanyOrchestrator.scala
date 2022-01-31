@@ -138,11 +138,11 @@ class CompanyOrchestrator @Inject() (
           eventsMap
             .get(c.id)
             .flatMap(_.find(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
-            .flatMap(_.creationDate),
+            .map(_.creationDate),
           eventsMap
             .get(c.id)
             .flatMap(_.find(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED))
-            .flatMap(_.creationDate)
+            .map(_.creationDate)
         )
       }
       .filter { case (_, _, noticeCount, lastNotice, lastRequirement) =>
@@ -170,11 +170,11 @@ class CompanyOrchestrator @Inject() (
       .sequence(companyList.companyIds.map { companyId =>
         eventRepository.createEvent(
           Event(
-            Some(UUID.randomUUID()),
+            UUID.randomUUID(),
             None,
             Some(companyId),
             Some(identity),
-            Some(OffsetDateTime.now()),
+            OffsetDateTime.now(),
             EventType.PRO,
             ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
           )
@@ -197,11 +197,11 @@ class CompanyOrchestrator @Inject() (
         .map(c =>
           eventRepository.createEvent(
             Event(
-              Some(UUID.randomUUID()),
+              UUID.randomUUID(),
               None,
               Some(c.id),
               Some(identity),
-              Some(OffsetDateTime.now()),
+              OffsetDateTime.now(),
               EventType.PRO,
               ActionEvent.COMPANY_ADDRESS_CHANGE,
               stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
@@ -214,11 +214,11 @@ class CompanyOrchestrator @Inject() (
         .map(c =>
           eventRepository.createEvent(
             Event(
-              Some(UUID.randomUUID()),
+              UUID.randomUUID(),
               None,
               Some(c.id),
               Some(identity),
-              Some(OffsetDateTime.now()),
+              OffsetDateTime.now(),
               EventType.PRO,
               ActionEvent.ACTIVATION_DOC_REQUIRED
             )
@@ -239,11 +239,11 @@ class CompanyOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 None,
                 Some(c.id),
                 Some(identity),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 EventType.ADMIN,
                 ActionEvent.ACTIVATION_DOC_RETURNED,
                 stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate

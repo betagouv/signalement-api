@@ -345,11 +345,11 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
     List(
       Event(
-        Some(UUID.randomUUID()),
+        UUID.randomUUID(),
         Some(alreadyRequestedReport.id),
         Some(company.id),
         Some(concernedProUser.id),
-        Some(OffsetDateTime.now()),
+        OffsetDateTime.now(),
         EventType.PRO,
         ActionEvent.REPORT_READING_BY_PRO
       )
