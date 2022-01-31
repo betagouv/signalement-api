@@ -117,7 +117,8 @@ class AdminController @Inject() (
     lastEmailValidation = None
   )
 
-  private def genEvent = Event(None, None, None, None, None, EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
+  private def genEvent =
+    Event(UUID.randomUUID(), None, None, None, OffsetDateTime.now(), EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
 
   private def genAuthToken = AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now.plusDays(10))
 

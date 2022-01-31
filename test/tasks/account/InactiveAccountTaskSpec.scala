@@ -2,21 +2,29 @@ package tasks.account
 
 import akka.actor.ActorSystem
 import config.InactiveAccountsTaskConfiguration
+import models.AsyncFileKind
+import models.Event
 import models.Subscription
 import models.User
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
+import repositories.AsyncFileRepository
+import repositories.EventRepository
 import repositories.SubscriptionRepository
 import repositories.UserRepository
 import utils.AppSpec
+import utils.Constants.ActionEvent.CONTROL
+import utils.Constants.EventType
 import utils.Fixtures
 
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.Period
 import java.time.ZoneOffset
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -27,6 +35,8 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
   lazy val actorSystem = injector.instanceOf[ActorSystem]
@@ -66,29 +76,44 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
         val activeUserSubscriptionUserId: Subscription =
           Subscription(email = None, userId = Some(activeDGCCRFUser.id), frequency = Period.ofDays(1))
 
-        val (userList, activeSubscriptionList, inactiveSubscriptionList) = Await.result(
-          for {
-            _ <- userRepository.create(inactiveDGCCRFUser)
-            _ <- userRepository.create(inactiveProUser)
-            _ <- userRepository.create(inactiveAdminUser)
-            _ <- userRepository.create(activeDGCCRFUser)
-            _ <- userRepository.create(activeProUser)
-            _ <- userRepository.create(activeAdminUser)
-            _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
+        val inactiveUserEvent = createEvent(inactiveDGCCRFUser)
+        val activeUserEvent = createEvent(activeDGCCRFUser)
 
-            _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
-            _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
-              .runTask(now.atOffset(ZoneOffset.UTC))
-            userList <- userRepository.list
-            activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
-            inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
-          } yield (userList, activeSubscriptionList, inactiveSubscriptionList),
-          Duration.Inf
-        )
+        val (userList, activeSubscriptionList, inactiveSubscriptionList, events, inactivefiles, activefiles) =
+          Await.result(
+            for {
+              _ <- userRepository.create(inactiveDGCCRFUser)
+              _ <- userRepository.create(inactiveProUser)
+              _ <- userRepository.create(inactiveAdminUser)
+              _ <- userRepository.create(activeDGCCRFUser)
+              _ <- userRepository.create(activeProUser)
+              _ <- userRepository.create(activeAdminUser)
 
+              _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
+              _ <- asyncFileRepository.create(inactiveDGCCRFUser, AsyncFileKind.Reports)
+              _ <- eventRepository.createEvent(inactiveUserEvent)
+
+              _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
+              _ <- asyncFileRepository.create(activeDGCCRFUser, AsyncFileKind.Reports)
+              _ <- eventRepository.createEvent(activeUserEvent)
+
+              _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
+                .runTask(now.atOffset(ZoneOffset.UTC))
+              userList <- userRepository.list
+              activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
+              inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
+              events <- eventRepository.list
+              inactivefiles <- asyncFileRepository.list(inactiveDGCCRFUser)
+              activefiles <- asyncFileRepository.list(activeDGCCRFUser)
+            } yield (userList, activeSubscriptionList, inactiveSubscriptionList, events, inactivefiles, activefiles),
+            Duration.Inf
+          )
+
+        // Validating user
         userList.map(_.id).containsSlice(expectedUsers.map(_.id)) shouldEqual true
         userList.map(_.id).contains(inactiveDGCCRFUser.id) shouldEqual false
 
+        // Validating subscriptions
         activeSubscriptionList
           .map(_.id)
           .containsSlice(
@@ -97,10 +122,30 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
         inactiveSubscriptionList.isEmpty shouldEqual true
         activeSubscriptionList.contains(activeUserSubscriptionUserId) shouldEqual true
+
+        // Validating events
+        events.filter(_.userId == inactiveUserEvent.userId) shouldEqual Seq.empty
+        events.filter(_.userId == activeUserEvent.userId) shouldEqual Seq(activeUserEvent)
+
+        // Validating async files
+        inactivefiles shouldEqual List.empty
+        activefiles.size shouldEqual 1
+
       }
 
     }
 
   }
+
+  def createEvent(user: User) =
+    Event(
+      id = UUID.randomUUID(),
+      reportId = None,
+      companyId = None,
+      userId = Some(user.id),
+      creationDate = OffsetDateTime.now(),
+      eventType = EventType.DGCCRF,
+      action = CONTROL
+    )
 
 }

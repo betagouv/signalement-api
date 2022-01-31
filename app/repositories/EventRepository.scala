@@ -42,11 +42,11 @@ class EventTables(tag: Tag) extends Table[Event](tag, "events") {
   def constructEvent: EventData => Event = {
     case (id, reportId, companyId, userId, creationDate, eventType, action, details) =>
       Event(
-        Some(id),
+        id,
         reportId,
         companyId,
         userId,
-        Some(creationDate),
+        creationDate,
         Constants.EventType.fromValue(eventType),
         Constants.ActionEvent.fromValue(action),
         details
@@ -55,7 +55,7 @@ class EventTables(tag: Tag) extends Table[Event](tag, "events") {
 
   def extractEvent: PartialFunction[Event, EventData] = {
     case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-      (id.get, reportId, companyId, userId, creationDate.get, eventType.value, action.value, details)
+      (id, reportId, companyId, userId, creationDate, eventType.value, action.value, details)
   }
 
   def * =
@@ -87,6 +87,13 @@ class EventRepository @Inject() (
   def createEvent(event: Event): Future[Event] = db
     .run(eventTableQuery += event)
     .map(_ => event)
+
+  def delete(userId: UUID): Future[Int] = db
+    .run(
+      eventTableQuery
+        .filter(_.userId === userId)
+        .delete
+    )
 
   def deleteEvents(uuidReport: UUID): Future[Int] = db
     .run(

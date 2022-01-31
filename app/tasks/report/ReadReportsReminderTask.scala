@@ -68,7 +68,7 @@ class ReadReportsReminderTask @Inject() (
       .filter { case (report, _) =>
         // Filter reports read by pro before 7 days ago
         extractEventsWithAction(report.id, reportIdEventsMap, REPORT_READING_BY_PRO).headOption
-          .flatMap(_.creationDate)
+          .map(_.creationDate)
           .getOrElse(report.creationDate)
           .toLocalDateTime
           .isBefore(startingDate.minusDays(7))
@@ -88,8 +88,7 @@ class ReadReportsReminderTask @Inject() (
           report.id,
           reportIdEventsMap,
           EMAIL_PRO_REMIND_NO_ACTION
-        ).head.creationDate
-          .exists(_.toLocalDateTime.isBefore(startingDate.minusDays(7)))
+        ).head.creationDate.toLocalDateTime.isBefore(startingDate.minusDays(7))
       }
 
     reportsWithNoRemindSent ::: reportsWithUniqueRemindSent
@@ -105,11 +104,11 @@ class ReadReportsReminderTask @Inject() (
       _ <- eventRepository
         .createEvent(
           Event(
-            Some(UUID.randomUUID()),
+            UUID.randomUUID(),
             Some(report.id),
             report.companyId,
             None,
-            Some(OffsetDateTime.now()),
+            OffsetDateTime.now(),
             SYSTEM,
             EMAIL_PRO_REMIND_NO_ACTION,
             stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")

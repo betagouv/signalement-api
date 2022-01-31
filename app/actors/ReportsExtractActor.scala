@@ -270,7 +270,7 @@ class ReportsExtractActor @Inject() (
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
-              s"Le ${event.creationDate.get
+              s"Le ${event.creationDate
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),

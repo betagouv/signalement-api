@@ -193,11 +193,11 @@ object Fixtures {
     companyId <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    Some(id),
+    id,
     Some(reportId),
     Some(companyId),
     None,
-    Some(OffsetDateTime.now()),
+    OffsetDateTime.now(),
     eventType,
     actionEvent,
     stringToDetailsJsValue(details)
@@ -207,11 +207,11 @@ object Fixtures {
     id <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    Some(id),
+    id,
     None,
     Some(companyId),
     None,
-    Some(OffsetDateTime.now()),
+    OffsetDateTime.now(),
     eventType,
     actionEvent,
     stringToDetailsJsValue(details)

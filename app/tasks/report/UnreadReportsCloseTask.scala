@@ -102,18 +102,18 @@ class UnreadReportsCloseTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING)
-          .count(_.creationDate.exists(_.toLocalDateTime.isBefore(now.minus(mailReminderDelay)))) == MaxReminderCount
+          .count(_.creationDate.toLocalDateTime.isBefore(now.minus(mailReminderDelay))) == MaxReminderCount
       )
 
   private def closeUnreadReport(report: Report) = {
     val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           SYSTEM,
           REPORT_CLOSED_BY_NO_READING,
           stringToDetailsJsValue("Clôture automatique : signalement non consulté")
@@ -121,11 +121,11 @@ class UnreadReportsCloseTask @Inject() (
       )
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           CONSO,
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
         )
