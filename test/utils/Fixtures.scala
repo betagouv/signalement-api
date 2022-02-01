@@ -2,7 +2,7 @@ package utils
 
 import models.Event._
 import models._
-import models.report.DraftReport
+import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumer
@@ -128,7 +128,7 @@ object Fixtures {
     contactAgreement <- arbitrary[Boolean]
     company <- genCompany
     websiteURL <- genWebsiteURL
-  } yield DraftReport(
+  } yield ReportDraft(
     category = category,
     subcategories = List(subcategory),
     details = List(),

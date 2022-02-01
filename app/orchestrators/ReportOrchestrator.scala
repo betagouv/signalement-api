@@ -14,7 +14,7 @@ import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
 import models.report
 import models._
-import models.report.DraftReport
+import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
@@ -155,9 +155,9 @@ class ReportOrchestrator @Inject() (
     }.sequence
   }
 
-  def validateAndCreateReport(draftReport: DraftReport): Future[Report] =
+  def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
     for {
-      _ <- if (DraftReport.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
+      _ <- if (ReportDraft.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
       _ <- emailValidationOrchestrator
         .isEmailValid(draftReport.email)
         .ensure {
@@ -175,7 +175,7 @@ class ReportOrchestrator @Inject() (
       Future.unit
     }
 
-  private def createReport(draftReport: DraftReport): Future[Report] =
+  private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
       maybeCompany <- extractOptionnalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
@@ -229,13 +229,13 @@ class ReportOrchestrator @Inject() (
       case _ => Future.successful(report)
     }
 
-  private def extractOptionnalCountry(draftReport: DraftReport) =
+  private def extractOptionnalCountry(draftReport: ReportDraft) =
     draftReport.companyAddress.flatMap(_.country.map { country =>
       logger.debug(s"Found country ${country} from draft report")
       country.name
     })
 
-  private def extractOptionnalCompany(draftReport: DraftReport): Future[Option[Company]] =
+  private def extractOptionnalCompany(draftReport: ReportDraft): Future[Option[Company]] =
     draftReport.companySiret match {
       case Some(siret) =>
         val company = Company(

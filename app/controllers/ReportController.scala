@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
-import models.report.DraftReport
+import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
@@ -59,7 +59,7 @@ class ReportController @Inject() (
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
     val errorOrReport = for {
-      draftReport <- request.parseBody[DraftReport]()
+      draftReport <- request.parseBody[ReportDraft]()
       createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
     } yield Ok(Json.toJson(createdReport))
 
