@@ -159,15 +159,15 @@ object ReportCompany {
   implicit val format = Json.format[ReportCompany]
 }
 
-case class ReportConsumer(
+case class ReportConsumerUpdate(
     firstName: String,
     lastName: String,
     email: EmailAddress,
     contactAgreement: Boolean
 )
 
-object ReportConsumer {
-  implicit val format = Json.format[ReportConsumer]
+object ReportConsumerUpdate {
+  implicit val format = Json.format[ReportConsumerUpdate]
 }
 
 case class ReportAction(

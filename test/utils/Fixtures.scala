@@ -5,7 +5,7 @@ import models._
 import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportCompany
-import models.report.ReportConsumer
+import models.report.ReportConsumerUpdate
 import models.report.ReportStatus
 import models.report.ReviewOnReportResponse
 import models.report.WebsiteURL
@@ -182,7 +182,7 @@ object Fixtures {
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-  } yield ReportConsumer(firstName, lastName, email, contactAgreement)
+  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement)
 
   def genReportCompany = for {
     name <- arbString.arbitrary
