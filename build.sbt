@@ -104,7 +104,7 @@ scalacOptions ++= Seq(
 
 routesImport ++= Seq(
   "models.website.WebsiteKind",
-  "models.ReportResponseType",
+  "models.report.ReportResponseType",
   "controllers.WebsiteKindQueryStringBindable",
   "controllers.ReportResponseTypeQueryStringBindable"
 )

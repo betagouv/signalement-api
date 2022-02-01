@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
 import config.UploadConfiguration
-import models._
+import models.report.ReportFile
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._

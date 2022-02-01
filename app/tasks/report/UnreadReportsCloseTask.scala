@@ -3,9 +3,9 @@ package tasks.report
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
-import models.Report
-import models.ReportStatus
 import models.User
+import models.report.Report
+import models.report.ReportStatus
 import play.api.Logger
 import repositories.EventRepository
 import repositories.ReportRepository

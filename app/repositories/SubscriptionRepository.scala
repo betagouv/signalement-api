@@ -1,6 +1,7 @@
 package repositories
 
 import models._
+import models.report.ReportCategory
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Country

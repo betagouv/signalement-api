@@ -1,4 +1,4 @@
-package models
+package models.report
 
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum

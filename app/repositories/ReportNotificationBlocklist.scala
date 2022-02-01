@@ -1,6 +1,6 @@
 package repositories
 
-import models._
+import models.report.ReportBlockedNotification
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile

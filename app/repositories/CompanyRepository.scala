@@ -1,6 +1,6 @@
 package repositories
 
-import models.ReportStatus.ReportStatusProResponse
+import models.report.ReportStatus.ReportStatusProResponse
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._

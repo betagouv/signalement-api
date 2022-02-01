@@ -1,5 +1,6 @@
 package models
 
+import models.report.ReportCategory
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.Country

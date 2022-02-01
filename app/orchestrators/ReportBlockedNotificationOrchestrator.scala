@@ -1,6 +1,6 @@
 package orchestrators
 
-import models.ReportBlockedNotification
+import models.report.ReportBlockedNotification
 import repositories.ReportNotificationBlockedRepository
 
 import java.util.UUID

@@ -1,6 +1,7 @@
-package models
+package models.report
 
 import enumeratum._
+import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 
