@@ -4,6 +4,15 @@ import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
+import models.report.DraftReport
+import models.report.Report
+import models.report.ReportAction
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportFileOrigin
+import models.report.ReportResponse
+import models.report.ReportWithFiles
+import models.report.ReviewOnReportResponse
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger

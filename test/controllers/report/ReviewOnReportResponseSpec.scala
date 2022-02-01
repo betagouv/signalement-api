@@ -1,9 +1,10 @@
 package controllers.report
 
 import java.util.UUID
-
 import controllers.ReportController
-import models._
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReviewOnReportResponse
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

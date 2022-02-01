@@ -3,9 +3,9 @@ package orchestrators
 import cats.data.NonEmptyList
 import models.CountByDate
 import models.CurveTickDuration
-import models.ReportFilter
-import models.ReportResponseType
 import models.ReportReviewStats
+import models.report.ReportFilter
+import models.report.ReportResponseType
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
 import play.api.libs.json.JsObject

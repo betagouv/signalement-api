@@ -3,7 +3,7 @@ package tasks.report
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
-import models.ReportFilter
+import models.report.ReportFilter
 import play.api.Logger
 import repositories.ReportRepository
 import repositories.SubscriptionRepository

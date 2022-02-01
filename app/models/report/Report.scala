@@ -1,6 +1,10 @@
-package models
+package models.report
 
 import com.github.tminglei.slickpg.composite.Struct
+import models.Address
+import models.Company
+import models.PaginatedResult
+import models.UserRole
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.Tags

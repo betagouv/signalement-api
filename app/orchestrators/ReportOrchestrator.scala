@@ -12,7 +12,21 @@ import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
+import models.report
 import models._
+import models.report.DraftReport
+import models.report.Report
+import models.report.ReportAction
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.ReportResponse
+import models.report.ReportResponseType
+import models.report.ReportWithFiles
+import models.report.ReviewOnReportResponse
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -607,7 +621,7 @@ class ReportOrchestrator @Inject() (
       )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities =
-      paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
+      paginatedReports.entities.map(r => report.ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
     )
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =

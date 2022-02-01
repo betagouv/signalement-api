@@ -13,6 +13,12 @@ import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportResponse
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._

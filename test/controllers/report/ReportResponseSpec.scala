@@ -11,6 +11,12 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportResponse
+import models.report.ReportResponseType
+import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

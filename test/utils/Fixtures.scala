@@ -2,6 +2,13 @@ package utils
 
 import models.Event._
 import models._
+import models.report.DraftReport
+import models.report.Report
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportStatus
+import models.report.ReviewOnReportResponse
+import models.report.WebsiteURL
 import models.website.Website
 import models.website.WebsiteKind
 import org.scalacheck.Arbitrary._

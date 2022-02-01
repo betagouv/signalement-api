@@ -2,8 +2,9 @@ package controllers
 
 import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
-import models.ReportResponseType
 import models._
+import models.report.ReportFilter
+import models.report.ReportResponseType
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json

@@ -1,6 +1,6 @@
 package models.dataeconomie
 
-import models.ReportStatus
+import models.report.ReportStatus
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 import utils.Country
