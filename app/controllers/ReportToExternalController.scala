@@ -1,6 +1,8 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models._
+import models.report.ReportTag
 import models.report.ReportFileOrigin
 import models.report.ReportFileToExternal
 import models.report.ReportFilter
@@ -50,7 +52,7 @@ class ReportToExternalController @Inject() (
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
       end = qs.localDate("end"),
-      tags = qs.seq("tags")
+      tags = qs.seq("tags").map(ReportTag.fromDisplayOrEntryName)
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
