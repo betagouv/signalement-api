@@ -4,10 +4,7 @@ import controllers.error.AppError.InvalidReportTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed abstract class ReportTag(override val entryName: String) extends EnumEntry {
-  override def toString: String = entryName
-  val displayName: String = entryName
-}
+sealed abstract class ReportTag(val displayName: String) extends EnumEntry
 
 object ReportTag extends PlayEnum[ReportTag] {
 
