@@ -1,7 +1,6 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models._
 import models.report.ReportTag
 import models.report.ReportFileOrigin
 import models.report.ReportFileToExternal

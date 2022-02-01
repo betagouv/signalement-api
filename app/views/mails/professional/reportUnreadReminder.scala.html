@@ -1,5 +1,5 @@
 @import utils.FrontRoute
-@import models.report._
+@import models.report.Report
 @(report: Report, expirationDate: java.time.OffsetDateTime)(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout(s"Nouveau signalement") {
