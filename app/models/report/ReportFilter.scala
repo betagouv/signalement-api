@@ -62,7 +62,7 @@ object ReportFilter {
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),
       hasCompany = mapper.boolean("hasCompany"),
-      tags = mapper.seq("tags").map(ReportTag.fromDisplayOrEntryName),
+      tags = mapper.seq("tags").map(ReportTag.withName(_)),
       activityCodes = mapper.seq("activityCodes")
     )
   }
