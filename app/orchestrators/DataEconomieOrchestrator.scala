@@ -28,6 +28,7 @@ class DataEconomieOrchestrator @Inject() (
           .withFieldComputed(_.companyCity, _.companyAddress.city)
           .withFieldComputed(_.companyCountry, _.companyAddress.country)
           .withFieldComputed(_.companyPostalCode, _.companyAddress.postalCode)
+          .withFieldComputed(_.tags, _.tags.map(_.displayName))
           .withFieldConst(_.activityCode, x._2.flatMap(_.activityCode))
           .transform
       )

@@ -56,7 +56,7 @@ object ReportToExternal {
         .headOption,
       reponseconsoCode = r.reponseconsoCode,
       ccrfCode = r.ccrfCode,
-      tags = r.tags
+      tags = r.tags.map(_.displayName)
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]

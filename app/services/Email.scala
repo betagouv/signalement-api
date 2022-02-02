@@ -10,8 +10,8 @@ import models.auth.AuthToken
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
+import models.report.ReportTag
 import play.api.libs.mailer.Attachment
-import utils.Constants.Tags
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
@@ -132,7 +132,7 @@ object Email {
   ) extends DgccrfEmail {
     override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
       reports.length,
-      subscription.tags.find(_ == Tags.DangerousProduct).map(_ => "[Produits dangereux] ")
+      subscription.tags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
     )
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
       views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString

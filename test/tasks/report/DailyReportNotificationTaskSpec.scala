@@ -8,7 +8,7 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import utils.Constants.Tags
+import models.report.ReportTag
 import utils._
 
 import java.time.LocalDate
@@ -80,7 +80,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(Tags.DangerousProduct),
+    tags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
 
@@ -101,7 +101,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(company)
     .sample
     .get
-    .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(Tags.DangerousProduct))
+    .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(ReportTag.ProduitDangereux))
   val countryReport =
     Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Suisse)))
 
