@@ -31,6 +31,5 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object ProduitIndustriel extends ReportTag("Produit industriel")
   case object ProduitAlimentaire extends ReportTag("Produit alimentaire")
   case object CompagnieAerienne extends ReportTag("Compagnie aerienne")
-  case object NA extends ReportTag("NA")
 
 }
