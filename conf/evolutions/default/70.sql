@@ -7,7 +7,9 @@ update reports set tags = array_replace(tags, 'Démarchage à domicile','Demarch
 update reports set tags = array_replace(tags, 'Démarchage téléphonique','DemarchageTelephonique');
 update reports set tags = array_replace(tags, 'Absence de médiateur','AbsenceDeMediateur');
 update reports set tags = array_replace(tags, 'Produit industriel','ProduitIndustriel');
+update reports set tags = array_replace(tags, 'Produit alimentaire','ProduitAlimentaire');
 update reports set tags = array_replace(tags, 'Produit Alimentaire','ProduitAlimentaire');
+update reports set tags = array_replace(tags, 'Produit Alimenaire','ProduitAlimentaire');
 update reports set tags = array_replace(tags, 'Compagnie aerienne','CompagnieAerienne');
 
 -- !Downs
