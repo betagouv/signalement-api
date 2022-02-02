@@ -4,33 +4,48 @@ import controllers.error.AppError.InvalidReportTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed abstract class ReportTag(val displayName: String) extends EnumEntry
+sealed abstract class ReportTag extends EnumEntry
 
 object ReportTag extends PlayEnum[ReportTag] {
 
   val values = findValues
 
-  def fromDisplayOrEntryName(name: String): ReportTag = withDisplayName(name) match {
-    case Some(value) => value
-    case None        => withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+  override def withName(name: String): ReportTag = withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+
+  case object LitigeContractuel extends ReportTag
+  case object Hygiene extends ReportTag
+  case object ProduitDangereux extends ReportTag
+  case object DemarchageADomicile extends ReportTag
+  case object Ehpad extends ReportTag
+  case object DemarchageTelephonique extends ReportTag
+  case object AbsenceDeMediateur extends ReportTag
+  case object Bloctel extends ReportTag
+  case object Influenceur extends ReportTag
+  case object ReponseConso extends ReportTag
+  case object Internet extends ReportTag
+  case object ProduitIndustriel extends ReportTag
+  case object ProduitAlimentaire extends ReportTag
+  case object CompagnieAerienne extends ReportTag
+  case object NA extends ReportTag
+
+  implicit class ReportTagTranslationOps(reportTag: ReportTag) {
+    def translate(): String = reportTag match {
+      case LitigeContractuel      => "Litige contractuel"
+      case Hygiene                => "hygiène"
+      case ProduitDangereux       => "Produit dangereux"
+      case DemarchageADomicile    => "Démarchage à domicile"
+      case Ehpad                  => "Ehpad"
+      case DemarchageTelephonique => "Démarchage téléphonique"
+      case AbsenceDeMediateur     => "Absence de médiateur"
+      case Bloctel                => "Bloctel"
+      case Influenceur            => "Influenceur"
+      case ReponseConso           => "ReponseConso"
+      case Internet               => "Internet"
+      case ProduitIndustriel      => "Produit industriel"
+      case ProduitAlimentaire     => "Produit alimentaire"
+      case CompagnieAerienne      => "Compagnie aerienne"
+      case NA                     => "NA"
+    }
   }
-
-  private def withDisplayName(displayName: String) = values.find(_.displayName == displayName)
-
-  case object LitigeContractuel extends ReportTag("Litige contractuel")
-  case object Hygiene extends ReportTag("hygiène")
-  case object ProduitDangereux extends ReportTag("Produit dangereux")
-  case object DemarchageADomicile extends ReportTag("Démarchage à domicile")
-  case object Ehpad extends ReportTag("Ehpad")
-  case object DemarchageTelephonique extends ReportTag("Démarchage téléphonique")
-  case object AbsenceDeMediateur extends ReportTag("Absence de médiateur")
-  case object Bloctel extends ReportTag("Bloctel")
-  case object Influenceur extends ReportTag("Influenceur")
-  case object ReponseConso extends ReportTag("ReponseConso")
-  case object Internet extends ReportTag("Internet")
-  case object ProduitIndustriel extends ReportTag("Produit industriel")
-  case object ProduitAlimentaire extends ReportTag("Produit alimentaire")
-  case object CompagnieAerienne extends ReportTag("Compagnie aerienne")
-  case object NA extends ReportTag("NA")
 
 }
