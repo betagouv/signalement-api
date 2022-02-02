@@ -5,6 +5,7 @@ import config.EmailConfiguration
 import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.report.Report
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger

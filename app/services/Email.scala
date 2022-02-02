@@ -4,12 +4,12 @@ import cats.data.NonEmptyList
 import models.Company
 import models.EmailValidation
 import models.Event
-import models.Report
-import models.ReportFile
-import models.ReportResponse
 import models.Subscription
 import models.User
 import models.auth.AuthToken
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportResponse
 import play.api.libs.mailer.Attachment
 import utils.Constants.Tags
 import utils.EmailAddress

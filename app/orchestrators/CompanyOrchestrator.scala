@@ -5,6 +5,8 @@ import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
+import models.report.ReportStatus
+import models.report.ReportFilter
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsObject

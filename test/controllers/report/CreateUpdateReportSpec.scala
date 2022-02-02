@@ -10,6 +10,10 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
+import models.report.Report
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json

@@ -4,10 +4,15 @@ import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
 import config.EmailConfiguration
-import models.DetailInputValue.toDetailInputValue
+import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReportResponse
+import models.report.ReportResponseType
+import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json

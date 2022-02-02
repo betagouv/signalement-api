@@ -1,7 +1,14 @@
 package repositories
 
-import models.DetailInputValue.toDetailInputValue
+import models.report.DetailInputValue.toDetailInputValue
+import models.report
 import models._
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.WebsiteURL
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
@@ -116,7 +123,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           reponseconsoCode,
           ccrfCode
         ) =>
-      Report(
+      report.Report(
         id = id,
         category = category,
         subcategories = subcategories,

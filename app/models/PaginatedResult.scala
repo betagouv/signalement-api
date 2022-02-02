@@ -1,5 +1,7 @@
 package models
 
+import models.report.Report
+import models.report.ReportWithFiles
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 

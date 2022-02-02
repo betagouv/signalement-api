@@ -1,6 +1,5 @@
 import controllers.error.AppError.MalformedBody
 
-import models.ReportResponseType
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -9,6 +8,7 @@ import play.api.libs.json.Reads
 import play.api.mvc.QueryStringBindable
 import play.api.mvc.Request
 import cats.syntax.either._
+import models.report.ReportResponseType
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

@@ -2,6 +2,8 @@ package repositories
 
 import cats.data.NonEmptyList
 import models._
+import models.report.Report
+import models.report.ReportResponseType
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import utils.Constants

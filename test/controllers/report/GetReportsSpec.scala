@@ -8,6 +8,8 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import models._
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -103,6 +105,21 @@ class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends G
     """
 }
 
+class GetReportsByProWithoutAccessNone(implicit ee: ExecutionEnv) extends GetReportsSpec {
+  override def is =
+    s2"""
+         Given an authenticated pro user who only access to the subsidiary      ${step {
+      someLoginInfo = Some(loginInfo(noAccessUser))
+    }}
+         When retrieving reports                                                ${step {
+      someResult = Some(getReports())
+    }}
+         Then no reports are rendered to the user having no access              ${
+      noReportsMustBeRendered()
+    }
+    """
+}
+
 abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     extends Specification
     with AppSpec
@@ -117,19 +134,28 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
 
+  val noAccessUser = Fixtures.genProUser.sample.get
   val adminUser = Fixtures.genAdminUser.sample.get
   val dgccrfUser = Fixtures.genDgccrfUser.sample.get
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
+  val standaloneCompany = Fixtures.genCompany.sample.get
   val headOfficeCompany = Fixtures.genCompany.sample.get
   val subsidiaryCompany =
     Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
 
+  val standaloneCompanyData =
+    Fixtures.genCompanyData(Some(standaloneCompany)).sample.get.copy(etablissementSiege = Some("true"))
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
   val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
 
+  val reportToStandaloneCompany = Fixtures
+    .genReportForCompany(standaloneCompany)
+    .sample
+    .get
+    .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
   val reportToProcessOnHeadOffice = Fixtures
     .genReportForCompany(headOfficeCompany)
     .sample
@@ -140,16 +166,23 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(employeeConsumer = false, status = ReportStatus.TraitementEnCours)
-  val reportFromEmployeeOnHeadOffice =
-    Fixtures
-      .genReportForCompany(headOfficeCompany)
-      .sample
-      .get
-      .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte)
-  val reportNAOnHeadOffice =
-    Fixtures.genReportForCompany(headOfficeCompany).sample.get.copy(employeeConsumer = false, status = ReportStatus.NA)
-  val allReports =
-    Seq(reportToProcessOnHeadOffice, reportToProcessOnSubsidiary, reportFromEmployeeOnHeadOffice, reportNAOnHeadOffice)
+  val reportFromEmployeeOnHeadOffice = Fixtures
+    .genReportForCompany(headOfficeCompany)
+    .sample
+    .get
+    .copy(employeeConsumer = true, status = ReportStatus.LanceurAlerte)
+  val reportNAOnHeadOffice = Fixtures
+    .genReportForCompany(headOfficeCompany)
+    .sample
+    .get
+    .copy(employeeConsumer = false, status = ReportStatus.NA)
+  val allReports = Seq(
+    reportToStandaloneCompany,
+    reportToProcessOnHeadOffice,
+    reportToProcessOnSubsidiary,
+    reportFromEmployeeOnHeadOffice,
+    reportNAOnHeadOffice
+  )
 
   var someResult: Option[Result] = None
   var someLoginInfo: Option[LoginInfo] = None
@@ -157,14 +190,21 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   override def setupData() =
     Await.result(
       for {
+        _ <- userRepository.create(noAccessUser)
         _ <- userRepository.create(adminUser)
         _ <- userRepository.create(dgccrfUser)
         _ <- userRepository.create(proUserWithAccessToHeadOffice)
         _ <- userRepository.create(proUserWithAccessToSubsidiary)
 
+        _ <- companyRepository.getOrCreate(standaloneCompany.siret, standaloneCompany)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
+        _ <- companyRepository.createUserAccess(
+          standaloneCompany.id,
+          noAccessUser.id,
+          AccessLevel.NONE
+        )
         _ <- companyRepository.createUserAccess(
           headOfficeCompany.id,
           proUserWithAccessToHeadOffice.id,
@@ -176,9 +216,11 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
+        _ <- companyDataRepository.create(standaloneCompanyData)
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)
 
+        _ <- reportRepository.create(reportToStandaloneCompany)
         _ <- reportRepository.create(reportToProcessOnHeadOffice)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
         _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
@@ -202,7 +244,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](
-    Seq(adminUser, dgccrfUser, proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary).map(user =>
+    Seq(adminUser, dgccrfUser, proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary, noAccessUser).map(user =>
       loginInfo(user) -> user
     )
   )
@@ -268,10 +310,11 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
 
-  def noReportsMustBeRendered() =
+  def noReportsMustBeRendered() = {
     Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
+  }
 
   def mustBeBadRequest() =
     someResult must beSome and someResult.get.header.status === Status.BAD_REQUEST

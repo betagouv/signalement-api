@@ -2,6 +2,13 @@ package utils
 
 import models.Event._
 import models._
+import models.report.ReportDraft
+import models.report.Report
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportStatus
+import models.report.ReviewOnReportResponse
+import models.report.WebsiteURL
 import models.website.Website
 import models.website.WebsiteKind
 import org.scalacheck.Arbitrary._
@@ -121,7 +128,7 @@ object Fixtures {
     contactAgreement <- arbitrary[Boolean]
     company <- genCompany
     websiteURL <- genWebsiteURL
-  } yield DraftReport(
+  } yield ReportDraft(
     category = category,
     subcategories = List(subcategory),
     details = List(),

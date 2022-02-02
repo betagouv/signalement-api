@@ -1,5 +1,6 @@
-package models
+package models.report
 
+import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import utils.QueryStringMapper

@@ -1,8 +1,10 @@
 package models
 
+import models.report.ReportStatus
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
+import models.report.ReportFilter
 import org.specs2.mutable.Specification
 import utils.Constants.Tags
 import utils.DateUtils

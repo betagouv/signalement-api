@@ -1,6 +1,7 @@
 @import utils.FrontRoute
 @import java.time.LocalDateTime
 @import java.time.format.DateTimeFormatter
+@import models.report._
 
 @(
         report: Report,
@@ -20,7 +21,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Détail du signalement @report.id</title>
 
-        <link rel="stylesheet" href="@routes.Assets.versioned("css/report.css")">
+        <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
 
     </head>
     <body>
