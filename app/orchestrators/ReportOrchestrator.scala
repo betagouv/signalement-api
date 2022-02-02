@@ -322,7 +322,11 @@ class ReportOrchestrator @Inject() (
       _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield updatedReport
 
-  def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumerUpdate, userUUID: UUID): Future[Option[Report]] =
+  def updateReportConsumer(
+      reportId: UUID,
+      reportConsumer: ReportConsumerUpdate,
+      userUUID: UUID
+  ): Future[Option[Report]] =
     for {
       existingReport <- reportRepository.getReport(reportId)
       updatedReport <- existingReport match {
