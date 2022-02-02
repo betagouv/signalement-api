@@ -1,13 +1,18 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models._
+import models.report.ReportTag
+import models.report.ReportFileOrigin
+import models.report.ReportFileToExternal
+import models.report.ReportFilter
+import models.report.ReportToExternal
+import models.report.ReportWithFiles
+import models.report.ReportWithFilesToExternal
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
-import utils.DateUtils
+import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
-import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
 import javax.inject.Inject
@@ -19,14 +24,13 @@ import scala.util.Try
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
-    val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv]
-)(implicit val executionContext: ExecutionContext)
-    extends BaseController {
+    val silhouette: Silhouette[APIKeyEnv]
+)(implicit val ec: ExecutionContext)
+    extends ApiKeyBaseController {
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportToExternal(uuid: String) = silhouetteAPIKey.SecuredAction.async {
+  def getReportToExternal(uuid: String) = SecuredAction.async { _ =>
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
@@ -41,15 +45,38 @@ class ReportToExternalController @Inject() (
     }
   }
 
-  def searchReportsToExternal(
-      siret: String
-  ) = silhouetteAPIKey.SecuredAction.async { implicit request =>
-    val start = DateUtils.parseDate(request.queryString.get("start").flatMap(_.headOption))
-    val end = DateUtils.parseDate(request.queryString.get("end").flatMap(_.headOption))
+  def searchReportsToExternal() = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
+    val filter = ReportFilter(
+      siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
+      start = qs.localDate("start"),
+      end = qs.localDate("end"),
+      tags = qs.seq("tags").map(ReportTag.fromDisplayOrEntryName)
+    )
+    for {
+      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
+      reportFilesMap <- reportRepository.prefetchReportsFiles(reports.entities.map(_.id))
+    } yield Ok(
+      Json.toJson(
+        reports.entities.map(r =>
+          ReportWithFilesToExternal(
+            ReportToExternal.fromReport(r),
+            reportFilesMap.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
+          )
+        )
+      )
+    )
+  }
+
+  /** @deprecated
+    *   Keep it for retro-compatibility purpose but searchReportsToExternal() is the good one.
+    */
+  def searchReportsToExternalBySiret(siret: String) = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = List(siret),
-      start = start,
-      end = end
+      start = qs.localDate("start"),
+      end = qs.localDate("end")
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))

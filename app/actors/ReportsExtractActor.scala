@@ -10,15 +10,22 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import controllers.routes
 import models._
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportResponse
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
 import services.S3Service
-import utils.Constants.Departments
 import utils.Constants
+import utils.Constants.Departments
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -39,10 +46,11 @@ object ReportsExtractActor {
 class ReportsExtractActor @Inject() (
     companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
+    reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportsExtractActor._
@@ -183,7 +191,7 @@ class ReportsExtractActor @Inject() (
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
-              s"${appConfigLoader.get.apiURL.toString}${routes.ReportController
+              s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
                 .downloadReportFile(file.id.toString, file.filename)
                 .url}"
             )
@@ -270,7 +278,7 @@ class ReportsExtractActor @Inject() (
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
-              s"Le ${event.creationDate.get
+              s"Le ${event.creationDate
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
@@ -294,11 +302,13 @@ class ReportsExtractActor @Inject() (
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val reportColumns = buildColumns(requestedBy)
     for {
-      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
-      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
-      companyAdminsMap <- companyRepository.fetchAdminsMapByCompany(
-        paginatedReports.entities.flatMap(_.companyId),
+      paginatedReports <- reportOrchestrator
+        .getReportsForUser(requestedBy, filter = filters, offset = Some(0), limit = Some(100000))
+        .map(_.entities.map(_.report))
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
+      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
+        paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )
     } yield {
@@ -306,7 +316,7 @@ class ReportsExtractActor @Inject() (
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
-            paginatedReports.entities.map(report =>
+            paginatedReports.map(report =>
               Row().withCells(
                 reportColumns
                   .map(
@@ -363,7 +373,7 @@ class ReportsExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(reportsSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

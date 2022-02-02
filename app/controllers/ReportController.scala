@@ -1,8 +1,18 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
+import controllers.error.AppError.SpammerEmailBlocked
 import models._
+import models.report.ReportDraft
+import models.report.Report
+import models.report.ReportAction
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportFileOrigin
+import models.report.ReportResponse
+import models.report.ReportWithFiles
+import models.report.ReviewOnReportResponse
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
@@ -41,19 +51,24 @@ class ReportController @Inject() (
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    appConfigLoader: AppConfigLoader
-)(implicit val executionContext: ExecutionContext)
+    signalConsoConfiguration: SignalConsoConfiguration
+)(implicit val ec: ExecutionContext)
     extends BaseController {
 
   val logger: Logger = Logger(this.getClass)
 
   def createReport = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[DraftReport]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        report => reportOrchestrator.newReport(report).map(_.map(r => Ok(Json.toJson(r))).getOrElse(Forbidden))
-      )
+    val errorOrReport = for {
+      draftReport <- request.parseBody[ReportDraft]()
+      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
+    } yield Ok(Json.toJson(createdReport))
+
+    errorOrReport.recoverWith {
+      case err: SpammerEmailBlocked =>
+        logger.warn(err.details)
+        Future.successful(Ok)
+      case err => Future.failed(err)
+    }
   }
 
   def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) {
@@ -148,13 +163,13 @@ class ReportController @Inject() (
     request.body
       .file("reportFile")
       .filter(f =>
-        appConfigLoader.get.upload.allowedExtensions
+        signalConsoConfiguration.upload.allowedExtensions
           .contains(f.filename.toLowerCase.toString.split("\\.").last)
       )
       .map { reportFile =>
         val filename = Paths.get(reportFile.filename).getFileName
         val tmpFile =
-          new java.io.File(s"${appConfigLoader.get.tmpDirectory}/${UUID.randomUUID}_${filename}")
+          new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
         reportFile.ref.copyTo(tmpFile)
         reportOrchestrator
           .saveReportFile(
@@ -200,7 +215,6 @@ class ReportController @Inject() (
   }
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-//    reminderTask.runTask(LocalDate.now.atStartOfDay())
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(_) =>
@@ -359,7 +373,7 @@ class ReportController @Inject() (
         }
     } yield visibleReport
 
-  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
     val mapper = new QueryStringMapper(request.queryString)
     val start = mapper.localDate("start")
     val end = mapper.localDate("end")

@@ -10,7 +10,7 @@ import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
 import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
 import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
 import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
-import config.AppConfigLoader
+import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -39,7 +39,7 @@ class WebsitesExtractActor @Inject() (
     reportRepository: ReportRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
-    appConfigLoader: AppConfigLoader
+    signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
   import WebsitesExtractActor._
@@ -139,7 +139,7 @@ class WebsitesExtractActor @Inject() (
           leftAlignmentColumn
         )
 
-      val localPath = Paths.get(appConfigLoader.get.tmpDirectory, targetFilename)
+      val localPath = Paths.get(signalConsoConfiguration.tmpDirectory, targetFilename)
       Workbook(extractSheet, filtersSheet).saveAsXlsx(localPath.toString)
       logger.debug(s"Generated extract locally: ${localPath}")
       localPath

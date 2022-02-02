@@ -1,8 +1,8 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.ReportBlockedNotificationBody
 import models.UserRole
+import models.report.ReportBlockedNotificationBody
 import orchestrators.ReportBlockedNotificationOrchestrator
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -21,7 +21,7 @@ class ReportBlockedNotificationController @Inject() (
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     val orchestrator: ReportBlockedNotificationOrchestrator
 )(implicit
-    ec: ExecutionContext
+    val ec: ExecutionContext
 ) extends BaseController {
 
   def getAll() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>

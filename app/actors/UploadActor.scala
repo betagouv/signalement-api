@@ -4,8 +4,8 @@ import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
-import config.AppConfigLoader
-import models._
+import config.UploadConfiguration
+import models.report.ReportFile
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -24,7 +24,7 @@ object UploadActor {
 
 @Singleton
 class UploadActor @Inject() (
-    appConfigLoader: AppConfigLoader,
+    uploadConfiguration: UploadConfiguration,
     reportRepository: ReportRepository,
     s3Service: S3Service
 )(implicit
@@ -33,7 +33,7 @@ class UploadActor @Inject() (
   import UploadActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
-  val avScanEnabled = appConfigLoader.get.upload.avScanEnabled
+  val avScanEnabled = uploadConfiguration.avScanEnabled
 
   val logger: Logger = Logger(this.getClass)
   override def preStart() =

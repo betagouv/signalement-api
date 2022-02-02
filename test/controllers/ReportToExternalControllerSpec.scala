@@ -55,7 +55,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       "ReportController1" in new Context {
         new WithApplication(application) {
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture")
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture")
           val result = route(application, request).get
           Helpers.status(result) must beEqualTo(UNAUTHORIZED)
         }
@@ -66,7 +66,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       "ReportController2" in new Context {
         new WithApplication(application) {
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture").withHeaders(
             "X-Api-Key" -> "invalid_key"
           )
           val result = route(application, request).get
@@ -79,7 +79,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       "ReportController3" in new Context {
         new WithApplication(application) {
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture").withHeaders(
             "X-Api-Key" -> "test"
           )
           val result = route(application, request).get
@@ -103,6 +103,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     val mockReportRepository = mock[ReportRepository]
     mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
+    mockReportRepository.prefetchReportsFiles(any) returns Future(Map())
 
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {

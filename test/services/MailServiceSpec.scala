@@ -1,11 +1,13 @@
 package services
 
+import cats.data.NonEmptyList
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
+import models.report.Report
 import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -15,6 +17,7 @@ import play.api.Logger
 import repositories.CompanyRepository
 import repositories.ReportNotificationBlockedRepository
 import repositories._
+import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -110,13 +113,16 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  protected def sendEmail(emails: List[EmailAddress], report: Report) = {
-    mailService.Pro.sendReportNotification(
-      emails,
-      report
+  protected def sendEmail(emails: NonEmptyList[EmailAddress], report: Report) =
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          emails,
+          report
+        )
+      ),
+      Duration.Inf
     )
-    Thread.sleep(100)
-  }
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
@@ -136,7 +142,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""Email must be sent to admin and admin of head office $e1"""
   def e1 = {
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
   }
 }
@@ -150,7 +156,7 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
         .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
       Duration.Inf
     )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq(proWithAccessToHeadOffice.email))
   }
 }
@@ -170,7 +176,8 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       ),
       Duration.Inf
     )
-    sendEmail(List(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+
+    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
   }
 }

@@ -23,7 +23,6 @@ class APIKeyRequestProvider @Inject() (
   def authenticate[B](request: Request[B]): Future[Option[LoginInfo]] = {
     val hasher = passwordHasherRegistry.current
     val headerValueOpt = request.headers.get("X-Api-Key")
-    println("------" + hasher.hash("$2a$10$QJsVdvDlCrqF.2V5W8sMGeM/UNLNWbtXFbyINHHjILVbv..z4hwJu"))
 
     headerValueOpt
       .map(headerValue =>
@@ -34,14 +33,21 @@ class APIKeyRequestProvider @Inject() (
           keyMatchOpt match {
             case Some(keyMatch) =>
               logger.debug(s"Access to the API with token ${keyMatch.name}.")
-              Some(LoginInfo(id, headerValue))
+              Some(LoginInfo(id, keyMatch.id.toString))
             case _ =>
-              logger.debug(s"Access denied to the API with pass ${headerValue}.")
+              logger.error(
+                s"Access denied to the external API, invalid X-Api-Key header when calling ${request.uri}."
+              )
               None
           }
         }
       )
-      .getOrElse(Future.successful(None))
+      .getOrElse {
+        logger.error(
+          s"Access denied to the external API, missing X-Api-Key header when calling ${request.uri}."
+        )
+        Future.successful(None)
+      }
   }
 
   override def id = "api-key"

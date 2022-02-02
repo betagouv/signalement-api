@@ -1,12 +1,13 @@
 package orchestrators
 
-import config.AppConfigLoader
+import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event.stringToDetailsJsValue
 import models._
+import models.report.ReportStatus
+import models.report.ReportFilter
 import models.website.WebsiteKind
-import play.api.Configuration
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -16,7 +17,6 @@ import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories.ReportRepository
 import repositories.WebsiteRepository
-import services.PDFService
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIREN
@@ -36,9 +36,7 @@ class CompanyOrchestrator @Inject() (
     val websiteRepository: WebsiteRepository,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,
-    val pdfService: PDFService,
-    val appConfigLoader: AppConfigLoader,
-    val configuration: Configuration
+    val taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -142,11 +140,11 @@ class CompanyOrchestrator @Inject() (
           eventsMap
             .get(c.id)
             .flatMap(_.find(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
-            .flatMap(_.creationDate),
+            .map(_.creationDate),
           eventsMap
             .get(c.id)
             .flatMap(_.find(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED))
-            .flatMap(_.creationDate)
+            .map(_.creationDate)
         )
       }
       .filter { case (_, _, noticeCount, lastNotice, lastRequirement) =>
@@ -154,7 +152,7 @@ class CompanyOrchestrator @Inject() (
           _.isAfter(
             lastRequirement.getOrElse(
               OffsetDateTime.now.minus(
-                appConfigLoader.get.report.reportReminderByPostDelay
+                taskConfiguration.report.reportReminderByPostDelay
                   .multipliedBy(Math.min(noticeCount, 3))
               )
             )
@@ -174,11 +172,11 @@ class CompanyOrchestrator @Inject() (
       .sequence(companyList.companyIds.map { companyId =>
         eventRepository.createEvent(
           Event(
-            Some(UUID.randomUUID()),
+            UUID.randomUUID(),
             None,
             Some(companyId),
             Some(identity),
-            Some(OffsetDateTime.now()),
+            OffsetDateTime.now(),
             EventType.PRO,
             ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
           )
@@ -201,11 +199,11 @@ class CompanyOrchestrator @Inject() (
         .map(c =>
           eventRepository.createEvent(
             Event(
-              Some(UUID.randomUUID()),
+              UUID.randomUUID(),
               None,
               Some(c.id),
               Some(identity),
-              Some(OffsetDateTime.now()),
+              OffsetDateTime.now(),
               EventType.PRO,
               ActionEvent.COMPANY_ADDRESS_CHANGE,
               stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
@@ -218,11 +216,11 @@ class CompanyOrchestrator @Inject() (
         .map(c =>
           eventRepository.createEvent(
             Event(
-              Some(UUID.randomUUID()),
+              UUID.randomUUID(),
               None,
               Some(c.id),
               Some(identity),
-              Some(OffsetDateTime.now()),
+              OffsetDateTime.now(),
               EventType.PRO,
               ActionEvent.ACTIVATION_DOC_REQUIRED
             )
@@ -243,11 +241,11 @@ class CompanyOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 None,
                 Some(c.id),
                 Some(identity),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 EventType.ADMIN,
                 ActionEvent.ACTIVATION_DOC_RETURNED,
                 stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate

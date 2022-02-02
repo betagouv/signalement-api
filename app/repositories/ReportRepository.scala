@@ -1,10 +1,18 @@
 package repositories
 
-import config.AppConfigLoader
-import models.DetailInputValue.toDetailInputValue
+import models.report.DetailInputValue.toDetailInputValue
+import models.report
 import models._
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.WebsiteURL
+import models.report.ReportTag
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
@@ -43,7 +51,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
-  def tags = column[List[String]]("tags")
+  def tags = column[List[ReportTag]]("tags")
   def reponseconsoCode = column[List[String]]("reponseconso_code")
   def ccrfCode = column[List[String]]("ccrf_code")
 
@@ -80,7 +88,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
-      List[String],
+      List[ReportTag],
       List[String],
       List[String]
   )
@@ -117,7 +125,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           reponseconsoCode,
           ccrfCode
         ) =>
-      Report(
+      report.Report(
         id = id,
         category = category,
         subcategories = subcategories,
@@ -225,19 +233,19 @@ object ReportTables {
 class ReportRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyRepository: CompanyRepository,
-    val emailValidationRepository: EmailValidationRepository,
-    appConfigLoader: AppConfigLoader
+    val emailValidationRepository: EmailValidationRepository
 )(implicit
     ec: ExecutionContext
 ) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val zoneId = appConfigLoader.get.zoneId
 
   import dbConfig._
 
   implicit val ReportFileOriginColumnType =
     MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
+
+  val reportTableQuery = ReportTables.tables
 
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
@@ -248,7 +256,7 @@ class ReportRepository @Inject() (
     def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
     def avOutput = column[Option[String]]("av_output")
-    def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
+    def report = foreignKey("report_files_fk", reportId, ReportTables.tables)(_.id.?)
 
     type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 
@@ -265,8 +273,6 @@ class ReportRepository @Inject() (
     def * =
       (id, reportId, creationDate, filename, storageFilename, origin, avOutput) <> (constructFile, extractFile.lift)
   }
-
-  val reportTableQuery = ReportTables.tables
 
   private val fileTableQuery = TableQuery[FileTable]
 
@@ -319,10 +325,10 @@ class ReportRepository @Inject() (
           .getOrElse(false)
       }
       .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
       .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
       }
       .filterOpt(filter.category) { case (table, category) =>
         table.category === category
@@ -380,10 +386,10 @@ class ReportRepository @Inject() (
     db.run(
       reportTableQuery
         .filterOpt(start) { case (table, s) =>
-          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, e) =>
-          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .groupBy(_.companyPostalCode.map(x => substr(x, 1, 2)).getOrElse(""))
         .map { case (department, group) => (department, group.length) }
@@ -405,7 +411,9 @@ class ReportRepository @Inject() (
     db
       .run(
         queryFilter(filter)
-          .filter(report => report.creationDate > OffsetDateTime.now().minusMonths(ticks).withDayOfMonth(1))
+          .filter(report =>
+            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks).withDayOfMonth(1)
+          )
           .groupBy(report => (date_part("month", report.creationDate), date_part("year", report.creationDate)))
           .map { case ((month, year), group) => (month, year, group.length) }
           .result
@@ -419,7 +427,7 @@ class ReportRepository @Inject() (
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(filter)
-        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
+        .filter(report => report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusDays(11))
         .groupBy(report =>
           (
             date_part("day", report.creationDate),
@@ -496,9 +504,9 @@ class ReportRepository @Inject() (
         .result
     ).map(_.toMap)
 
-  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[String, Int]] = {
-    def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
-      map.foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
+  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[ReportTag, Int]] = {
+    def spreadListOfTags(map: Seq[(List[ReportTag], Int)]): Map[ReportTag, Int] =
+      map.foldLeft(Map.empty[ReportTag, Int]) { case (acc, (tags, count)) =>
         acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
       }
 
@@ -612,10 +620,10 @@ class ReportRepository @Inject() (
         .filter(_.websiteURL.isDefined)
         .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .to[List]
         .result
@@ -632,10 +640,10 @@ class ReportRepository @Inject() (
         .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
         .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .groupBy(_.host)
         .map { case (host, report) => (host, report.size) }
@@ -649,10 +657,10 @@ class ReportRepository @Inject() (
       reportTableQuery
         .filter(_.phone.isDefined)
         .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, zoneId).toOffsetDateTime
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, zoneId).toOffsetDateTime
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
         .to[List]
         .result

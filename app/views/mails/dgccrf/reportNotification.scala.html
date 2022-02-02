@@ -1,6 +1,8 @@
+@import models.report.Report
 @import java.time.LocalDate
-@import utils.EmailAddress
 @import utils.FrontRoute
+@import models.report.Report
+@import utils.EmailAddress
 @(subscription: Subscription, reports: Seq[Report], startDate: LocalDate)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
