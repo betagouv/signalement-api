@@ -2,6 +2,8 @@ package tasks.report
 
 import cats.data.Validated.Valid
 import models._
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -34,7 +36,7 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRe
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
+    val event = transmittedEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
@@ -71,7 +73,7 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadR
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event = transmittedEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
+    val event = transmittedEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
@@ -102,7 +104,7 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends R
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
+    val event = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
@@ -139,7 +141,7 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
+    val event = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
@@ -170,10 +172,10 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
+    val event1 = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(8))
     val event2 = reminderEvent.copy(
-      creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)),
-      id = Some(UUID.randomUUID)
+      creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1),
+      id = UUID.randomUUID
     )
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
@@ -212,10 +214,10 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadRe
   var result: TaskExecutionResults = noTaskProcessed
 
   override def is = {
-    val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
+    val event1 = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(8))
     val event2 = reminderEvent.copy(
-      creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)),
-      id = Some(UUID.randomUUID)
+      creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1),
+      id = UUID.randomUUID
     )
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
@@ -289,7 +291,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(app.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,

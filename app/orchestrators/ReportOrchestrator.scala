@@ -12,7 +12,22 @@ import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
+import models.report
 import models._
+import models.report.ReportDraft
+import models.report.Report
+import models.report.ReportAction
+import models.report.ReportCompany
+import models.report.ReportConsumer
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.ReportResponse
+import models.report.ReportResponseType
+import models.report.ReportWithFiles
+import models.report.ReviewOnReportResponse
+import models.report.ReportTag
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -30,7 +45,6 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ReportResponseReview
-import utils.Constants.Tags
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
@@ -112,11 +126,11 @@ class ReportOrchestrator @Inject() (
     eventRepository
       .createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           Some(company.id),
           Some(companyUsers.head.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
           stringToDetailsJsValue(
@@ -141,9 +155,9 @@ class ReportOrchestrator @Inject() (
     }.sequence
   }
 
-  def validateAndCreateReport(draftReport: DraftReport): Future[Report] =
+  def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
     for {
-      _ <- if (DraftReport.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
+      _ <- if (ReportDraft.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
       _ <- emailValidationOrchestrator
         .isEmailValid(draftReport.email)
         .ensure {
@@ -161,7 +175,7 @@ class ReportOrchestrator @Inject() (
       Future.unit
     }
 
-  private def createReport(draftReport: DraftReport): Future[Report] =
+  private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
       maybeCompany <- extractOptionnalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
@@ -179,7 +193,7 @@ class ReportOrchestrator @Inject() (
 
   private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
     ddEmails <-
-      if (report.tags.contains(Tags.DangerousProduct)) {
+      if (report.tags.contains(ReportTag.ProduitDangereux)) {
         report.companyAddress.postalCode
           .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
           .getOrElse(Future(Seq()))
@@ -196,11 +210,11 @@ class ReportOrchestrator @Inject() (
     for {
       event <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           maybeCompany.map(_.id),
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
         )
@@ -215,13 +229,13 @@ class ReportOrchestrator @Inject() (
       case _ => Future.successful(report)
     }
 
-  private def extractOptionnalCountry(draftReport: DraftReport) =
+  private def extractOptionnalCountry(draftReport: ReportDraft) =
     draftReport.companyAddress.flatMap(_.country.map { country =>
       logger.debug(s"Found country ${country} from draft report")
       country.name
     })
 
-  private def extractOptionnalCompany(draftReport: DraftReport): Future[Option[Company]] =
+  private def extractOptionnalCompany(draftReport: ReportDraft): Future[Option[Company]] =
     draftReport.companySiret match {
       case Some(siret) =>
         val company = Company(
@@ -289,11 +303,11 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 Some(report.id),
                 Some(company.id),
                 Some(userUUID),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(
@@ -330,11 +344,11 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               Event(
-                Some(UUID.randomUUID()),
+                UUID.randomUUID(),
                 Some(report.id),
                 report.companyId,
                 Some(userUUID),
-                Some(OffsetDateTime.now()),
+                OffsetDateTime.now(),
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
                 stringToDetailsJsValue(
@@ -415,11 +429,11 @@ class ReportOrchestrator @Inject() (
     for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(userUUID),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_READING_BY_PRO
         )
@@ -437,11 +451,11 @@ class ReportOrchestrator @Inject() (
       _ <- mailService.send(ConsumerReportReadByProNotification(report))
       _ <- eventRepository.createEvent(
         Event(
-          id = Some(UUID.randomUUID()),
+          id = UUID.randomUUID(),
           reportId = Some(report.id),
           companyId = report.companyId,
           userId = None,
-          creationDate = Some(OffsetDateTime.now()),
+          creationDate = OffsetDateTime.now(),
           eventType = Constants.EventType.CONSO,
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
@@ -462,8 +476,8 @@ class ReportOrchestrator @Inject() (
           eventRepository
             .createEvent(
               draftEvent.copy(
-                id = Some(UUID.randomUUID()),
-                creationDate = Some(OffsetDateTime.now()),
+                id = UUID.randomUUID(),
+                creationDate = OffsetDateTime.now(),
                 reportId = Some(r.id),
                 companyId = r.companyId,
                 userId = Some(user.id)
@@ -499,11 +513,11 @@ class ReportOrchestrator @Inject() (
     for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
@@ -522,22 +536,22 @@ class ReportOrchestrator @Inject() (
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           updatedReport.companyId,
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           updatedReport.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )
@@ -549,11 +563,11 @@ class ReportOrchestrator @Inject() (
     for {
       newEvent <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           Some(user.id),
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           EventType.fromUserRole(user.userRole),
           reportAction.actionType,
           reportAction.details
@@ -573,11 +587,11 @@ class ReportOrchestrator @Inject() (
     logger.debug(s"Report ${reportId} - the consumer give a review on response")
     eventRepository.createEvent(
       Event(
-        id = Some(UUID.randomUUID()),
+        id = UUID.randomUUID(),
         reportId = Some(reportId),
         companyId = None,
         userId = None,
-        creationDate = Some(OffsetDateTime.now()),
+        creationDate = OffsetDateTime.now(),
         eventType = EventType.CONSO,
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(
@@ -600,14 +614,19 @@ class ReportOrchestrator @Inject() (
         filter.siretSirenList,
         connectedUser
       )
-      paginatedReports <- reportRepository.getReports(
-        filter.copy(siretSirenList = sanitizedSirenSirets),
-        offset,
-        limit
-      )
+      paginatedReports <-
+        if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
+          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List[Report]()))
+        } else {
+          reportRepository.getReports(
+            filter.copy(siretSirenList = sanitizedSirenSirets),
+            offset,
+            limit
+          )
+        }
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities =
-      paginatedReports.entities.map(r => ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
+      paginatedReports.entities.map(r => report.ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
     )
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =

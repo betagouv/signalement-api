@@ -12,7 +12,12 @@ import com.mohiva.play.silhouette.test._
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import controllers.ReportController
+import models.report
 import models._
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReportWithFiles
+import models.report.WebsiteURL
 import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.Spec
@@ -201,7 +206,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   def mailMustNotHaveBeenSent() =
     there was no(application.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,
@@ -245,7 +250,7 @@ trait GetReportContext extends Mockito {
 
   val address = Fixtures.genAddress()
 
-  val neverRequestedReport = Report(
+  val neverRequestedReport = report.Report(
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
@@ -263,7 +268,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.TraitementEnCours
   )
 
-  val neverRequestedFinalReport = Report(
+  val neverRequestedFinalReport = report.Report(
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
@@ -281,7 +286,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.ConsulteIgnore
   )
 
-  val alreadyRequestedReport = Report(
+  val alreadyRequestedReport = report.Report(
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
@@ -345,11 +350,11 @@ trait GetReportContext extends Mockito {
   mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
     List(
       Event(
-        Some(UUID.randomUUID()),
+        UUID.randomUUID(),
         Some(alreadyRequestedReport.id),
         Some(company.id),
         Some(concernedProUser.id),
-        Some(OffsetDateTime.now()),
+        OffsetDateTime.now(),
         EventType.PRO,
         ActionEvent.REPORT_READING_BY_PRO
       )

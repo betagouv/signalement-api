@@ -2,6 +2,8 @@ package tasks.report
 
 import cats.data.Validated.Valid
 import models._
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -134,7 +136,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(mailerService)
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,

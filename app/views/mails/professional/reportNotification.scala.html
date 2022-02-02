@@ -1,4 +1,7 @@
+@import models.report._
 @import utils.FrontRoute
+@import models.report.Report
+
 @(report: Report)(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout(s"Nouveau signalement") {

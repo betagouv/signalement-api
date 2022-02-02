@@ -1,5 +1,7 @@
-package models
+package models.report
 
+import models.Address
+import models.Company
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.SIRET

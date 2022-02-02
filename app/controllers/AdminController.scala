@@ -4,10 +4,16 @@ import cats.data.NonEmptyList
 import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
 import config.EmailConfiguration
-import models.DetailInputValue.toDetailInputValue
+import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.report.Report
+import models.report.ReportStatus
+import models.report.ReportResponse
+import models.report.ReportResponseType
+import models.report.WebsiteURL
+import models.report.ReportTag
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -34,7 +40,6 @@ import services.MailService
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.EventType
-import utils.Constants.Tags
 import utils._
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -117,7 +122,8 @@ class AdminController @Inject() (
     lastEmailValidation = None
   )
 
-  private def genEvent = Event(None, None, None, None, None, EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
+  private def genEvent =
+    Event(UUID.randomUUID(), None, None, None, OffsetDateTime.now(), EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
 
   private def genAuthToken = AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now.plusDays(10))
 
@@ -158,7 +164,7 @@ class AdminController @Inject() (
       DgccrfReportNotification(
         List(recipient),
         genSubscription,
-        List(genReport, genReport.copy(tags = List(Tags.ReponseConso))),
+        List(genReport, genReport.copy(tags = List(ReportTag.ReponseConso))),
         LocalDate.now.minusDays(10)
       )
     ),
@@ -168,7 +174,7 @@ class AdminController @Inject() (
     "consumer.report_ack_case_reponseconso" ->
       (recipient =>
         ConsumerReportAcknowledgment(
-          genReport.copy(status = ReportStatus.NA, tags = List(Tags.ReponseConso), email = recipient),
+          genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
           genEvent,
           Nil
         )
@@ -176,7 +182,7 @@ class AdminController @Inject() (
     "consumer.report_ack_case_dispute" ->
       (recipient =>
         ConsumerReportAcknowledgment(
-          genReport.copy(tags = List(Tags.ContractualDispute), email = recipient),
+          genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
           genEvent,
           Nil
         )
@@ -198,7 +204,7 @@ class AdminController @Inject() (
         ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
-            tags = List(Tags.ContractualDispute),
+            tags = List(ReportTag.LitigeContractuel),
             companyAddress = Address(country = Some(Country.Islande)),
             email = recipient
           ),
@@ -223,7 +229,7 @@ class AdminController @Inject() (
         ConsumerReportAcknowledgment(
           genReport.copy(
             status = ReportStatus.NA,
-            tags = List(Tags.ContractualDispute),
+            tags = List(ReportTag.LitigeContractuel),
             companyAddress = Address(country = Some(Country.Andorre)),
             email = recipient
           ),
@@ -248,7 +254,7 @@ class AdminController @Inject() (
       ConsumerReportAcknowledgment(
         genReport.copy(
           status = ReportStatus.NA,
-          tags = List(Tags.ContractualDispute),
+          tags = List(ReportTag.LitigeContractuel),
           companyAddress = Address(country = Some(Country.Suisse)),
           email = recipient
         ),
@@ -272,7 +278,7 @@ class AdminController @Inject() (
       ConsumerReportAcknowledgment(
         genReport.copy(
           status = ReportStatus.NA,
-          tags = List(Tags.ContractualDispute),
+          tags = List(ReportTag.LitigeContractuel),
           companyAddress = Address(country = Some(Country.Bahamas)),
           email = recipient
         ),
@@ -291,13 +297,13 @@ class AdminController @Inject() (
     ),
     "consumer.report_closed_no_reading_case_dispute" ->
       (recipient =>
-        ConsumerReportClosedNoReading(genReport.copy(email = recipient, tags = List(Tags.ContractualDispute)))
+        ConsumerReportClosedNoReading(genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)))
       ),
     "consumer.report_closed_no_action" -> (recipient =>
       ConsumerReportClosedNoAction(genReport.copy(email = recipient))
     ),
     "consumer.report_closed_no_action_case_dispute" -> (recipient =>
-      ConsumerReportClosedNoAction(genReport.copy(email = recipient, tags = List(Tags.ContractualDispute)))
+      ConsumerReportClosedNoAction(genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)))
     )
   )
 

@@ -2,6 +2,8 @@ package tasks.report
 
 import cats.data.Validated.Valid
 import models._
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -100,7 +102,7 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unrea
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
-    val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)))
+    val event = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
@@ -140,7 +142,7 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends U
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
-    val event = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)))
+    val event = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1))
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
@@ -171,10 +173,10 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
-    val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
+    val event1 = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(8))
     val event2 = reminderEvent.copy(
-      creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(1)),
-      id = Some(UUID.randomUUID)
+      creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1),
+      id = UUID.randomUUID
     )
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
@@ -218,10 +220,10 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadW
 
   override def is = {
     val report = notReadReport.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(1))
-    val event1 = reminderEvent.copy(creationDate = Some(runningDateTime.minus(mailReminderDelay).minusDays(8)))
+    val event1 = reminderEvent.copy(creationDate = runningDateTime.minus(mailReminderDelay).minusDays(8))
     val event2 = reminderEvent.copy(
-      creationDate = Some(runningDateTime.minus(mailReminderDelay).plusDays(1)),
-      id = Some(UUID.randomUUID)
+      creationDate = runningDateTime.minus(mailReminderDelay).plusDays(1),
+      id = UUID.randomUUID
     )
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
@@ -292,7 +294,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   def mailMustNotHaveBeenSent() =
     there was no(app.injector.instanceOf[MailerService])
       .sendEmail(
-        EmailAddress(anyString),
+        any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
         anyString,

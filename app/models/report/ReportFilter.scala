@@ -1,7 +1,9 @@
-package models
+package models.report
 
+import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
+import models.report.ReportTag
 import utils.QueryStringMapper
 
 import java.time.LocalDate
@@ -27,7 +29,7 @@ case class ReportFilter(
     hasWebsite: Option[Boolean] = None,
     hasPhone: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
-    tags: Seq[String] = Seq.empty,
+    tags: Seq[ReportTag] = Seq.empty,
     activityCodes: Seq[String] = Seq.empty
 )
 
@@ -60,7 +62,7 @@ object ReportFilter {
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),
       hasCompany = mapper.boolean("hasCompany"),
-      tags = mapper.seq("tags"),
+      tags = mapper.seq("tags").map(ReportTag.fromDisplayOrEntryName),
       activityCodes = mapper.seq("activityCodes")
     )
   }

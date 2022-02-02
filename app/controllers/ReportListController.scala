@@ -5,7 +5,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import orchestrators.CompaniesVisibilityOrchestrator
+import models.report.ReportFilter
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -16,14 +16,13 @@ import utils.silhouette.auth.WithPermission
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 @Singleton
 class ReportListController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
@@ -44,13 +43,9 @@ class ReportListController @Inject() (
         },
         filters =>
           for {
-            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-              filters._1.siretSirenList,
-              request.identity
-            )
             paginatedReports <- reportOrchestrator.getReportsForUser(
               connectedUser = request.identity,
-              filter = filters._1.copy(siretSirenList = sanitizedSirenSirets),
+              filter = filters._1,
               offset = filters._2.offset,
               limit = filters._2.limit
             )
@@ -66,20 +61,11 @@ class ReportListController @Inject() (
           logger.error("Cannot parse querystring", error)
           Future.successful(BadRequest)
         },
-        filters =>
-          for {
-            sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
-              filters.siretSirenList,
-              request.identity
-            )
-          } yield {
-            logger.debug(s"Requesting report for user ${request.identity.email}")
-            reportsExtractActor ? ReportsExtractActor.ExtractRequest(
-              request.identity,
-              filters.copy(siretSirenList = sanitizedSirenSirets)
-            )
-            Ok
-          }
+        filters => {
+          logger.debug(s"Requesting report for user ${request.identity.email}")
+          reportsExtractActor ? ReportsExtractActor.ExtractRequest(request.identity, filters)
+          Future(Ok)
+        }
       )
   }
 }

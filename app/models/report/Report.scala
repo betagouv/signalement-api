@@ -1,83 +1,19 @@
-package models
+package models.report
 
 import com.github.tminglei.slickpg.composite.Struct
+import models.Address
+import models.Company
+import models.PaginatedResult
+import models.UserRole
+import models.report.ReportTag
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
-
-case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
-
-object WebsiteURL {
-  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
-}
-
-case class DraftReport(
-    category: String,
-    subcategories: List[String],
-    details: List[DetailInputValue],
-    companyName: Option[String],
-    companyAddress: Option[Address],
-    companySiret: Option[SIRET],
-    companyActivityCode: Option[String],
-    websiteURL: Option[URL],
-    phone: Option[String],
-    firstName: String,
-    lastName: String,
-    email: EmailAddress,
-    contactAgreement: Boolean,
-    employeeConsumer: Boolean,
-    forwardToReponseConso: Option[Boolean] = Some(false),
-    fileIds: List[UUID],
-    vendor: Option[String] = None,
-    tags: List[String] = Nil,
-    reponseconsoCode: Option[List[String]] = None,
-    ccrfCode: Option[List[String]] = None
-) {
-
-  def generateReport: Report = {
-    val report = Report(
-      category = category,
-      subcategories = subcategories,
-      details = details,
-      companyId = None,
-      companyName = companyName,
-      companyAddress = companyAddress.getOrElse(Address()),
-      companySiret = companySiret,
-      websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
-      phone = phone,
-      firstName = firstName,
-      lastName = lastName,
-      email = email,
-      contactAgreement = contactAgreement,
-      employeeConsumer = employeeConsumer,
-      status = ReportStatus.NA,
-      forwardToReponseConso = forwardToReponseConso.getOrElse(false),
-      vendor = vendor,
-      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
-      reponseconsoCode = reponseconsoCode.getOrElse(Nil),
-      ccrfCode = ccrfCode.getOrElse(Nil)
-    )
-    report.copy(status = report.initialStatus())
-  }
-}
-
-object DraftReport {
-  def isValid(draft: DraftReport): Boolean =
-    (draft.companySiret.isDefined
-      || draft.websiteURL.isDefined
-      || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
-      || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
-      || draft.phone.isDefined)
-
-  implicit val draftReportReads = Json.reads[DraftReport]
-  implicit val draftReportWrites = Json.writes[DraftReport]
-}
 
 case class Report(
     id: UUID = UUID.randomUUID(),
@@ -99,7 +35,7 @@ case class Report(
     forwardToReponseConso: Boolean = false,
     status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
-    tags: List[String] = Nil,
+    tags: List[ReportTag] = Nil,
     reponseconsoCode: List[String] = Nil,
     ccrfCode: List[String] = Nil
 ) {
@@ -107,18 +43,20 @@ case class Report(
   def initialStatus() =
     if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (
-      companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
+      companySiret.isDefined && tags
+        .intersect(Seq(ReportTag.ReponseConso, ReportTag.ProduitDangereux, ReportTag.Bloctel))
+        .isEmpty
     )
       ReportStatus.TraitementEnCours
     else ReportStatus.NA
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
-  def isContractualDispute() = tags.contains(Tags.ContractualDispute)
+  def isContractualDispute() = tags.contains(ReportTag.LitigeContractuel)
 
   def needWorkflowAttachment() = !employeeConsumer &&
     !isContractualDispute() &&
-    tags.intersect(Seq(Tags.DangerousProduct, Tags.ReponseConso)).isEmpty
+    tags.intersect(Seq(ReportTag.ProduitDangereux, ReportTag.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }
@@ -159,6 +97,12 @@ object Report {
           )
       })
   }
+}
+
+case class WebsiteURL(websiteURL: Option[URL], host: Option[String])
+
+object WebsiteURL {
+  implicit val WebsiteURLFormat: OFormat[WebsiteURL] = Json.format[WebsiteURL]
 }
 
 case class ReportWithFiles(
@@ -234,54 +178,4 @@ case class ReportAction(
 
 object ReportAction {
   implicit val reportAction: OFormat[ReportAction] = Json.format[ReportAction]
-}
-
-sealed case class ReportCategory(value: String)
-
-object ReportCategory {
-  val Covid = ReportCategory("COVID-19 (coronavirus)")
-  val CafeRestaurant = ReportCategory("Café / Restaurant")
-  val AchatMagasin = ReportCategory("Achat / Magasin")
-  val Service = ReportCategory("Services aux particuliers")
-  val TelEauGazElec = ReportCategory("Téléphonie / Eau-Gaz-Electricité")
-  val EauGazElec = ReportCategory("Eau / Gaz / Electricité")
-  val TelFaiMedias = ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
-  val BanqueAssuranceMutuelle = ReportCategory("Banque / Assurance / Mutuelle")
-  val ProduitsObjets = ReportCategory("Produits / Objets")
-  val Internet = ReportCategory("Internet (hors achats)")
-  val TravauxRenovations = ReportCategory("Travaux / Rénovation")
-  val VoyageLoisirs = ReportCategory("Voyage / Loisirs")
-  val Immobilier = ReportCategory("Immobilier")
-  val Sante = ReportCategory("Secteur de la santé")
-  val VoitureVehicule = ReportCategory("Voiture / Véhicule")
-  val Animaux = ReportCategory("Animaux")
-  val DemarchesAdministratives = ReportCategory("Démarches administratives")
-
-  def fromValue(v: String) =
-    List(
-      Covid,
-      CafeRestaurant,
-      AchatMagasin,
-      Service,
-      TelEauGazElec,
-      EauGazElec,
-      TelFaiMedias,
-      BanqueAssuranceMutuelle,
-      ProduitsObjets,
-      Internet,
-      TravauxRenovations,
-      VoyageLoisirs,
-      Immobilier,
-      Sante,
-      VoitureVehicule,
-      Animaux,
-      DemarchesAdministratives
-    ).find(_.value == v).head
-
-  implicit val reads = new Reads[ReportCategory] {
-    def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))
-  }
-  implicit val writes = new Writes[ReportCategory] {
-    def writes(kind: ReportCategory) = Json.toJson(kind.value)
-  }
 }

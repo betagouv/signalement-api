@@ -8,19 +8,18 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class Event(
-    id: Option[UUID],
+    id: UUID,
     reportId: Option[UUID],
     companyId: Option[UUID],
     userId: Option[UUID],
-    creationDate: Option[OffsetDateTime],
+    creationDate: OffsetDateTime,
     eventType: EventTypeValue,
     action: ActionEventValue,
     details: JsValue = Json.obj()
 ) {
 
-  def formattedDate = this.creationDate
-    .map(_.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss")))
-    .getOrElse("—")
+  def formattedDate = this.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))
+//    .getOrElse("—")
   def getDescription =
     this.details.as[JsObject].value.get("description").getOrElse("").toString.replaceAll("^\"|\"$", "");
 }

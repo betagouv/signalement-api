@@ -1,9 +1,18 @@
 package repositories
 
-import models.DetailInputValue.toDetailInputValue
+import models.report.DetailInputValue.toDetailInputValue
+import models.report
 import models._
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportFileOrigin
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.WebsiteURL
+import models.report.ReportTag
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
@@ -42,7 +51,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
   def status = column[String]("status")
   def vendor = column[Option[String]]("vendor")
-  def tags = column[List[String]]("tags")
+  def tags = column[List[ReportTag]]("tags")
   def reponseconsoCode = column[List[String]]("reponseconso_code")
   def ccrfCode = column[List[String]]("ccrf_code")
 
@@ -79,7 +88,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       Boolean,
       String,
       Option[String],
-      List[String],
+      List[ReportTag],
       List[String],
       List[String]
   )
@@ -116,7 +125,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           reponseconsoCode,
           ccrfCode
         ) =>
-      Report(
+      report.Report(
         id = id,
         category = category,
         subcategories = subcategories,
@@ -236,6 +245,8 @@ class ReportRepository @Inject() (
   implicit val ReportFileOriginColumnType =
     MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
 
+  val reportTableQuery = ReportTables.tables
+
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
     def id = column[UUID]("id", O.PrimaryKey)
@@ -245,7 +256,7 @@ class ReportRepository @Inject() (
     def storageFilename = column[String]("storage_filename")
     def origin = column[ReportFileOrigin]("origin")
     def avOutput = column[Option[String]]("av_output")
-    def report = foreignKey("report_files_fk", reportId, reportTableQuery)(_.id.?)
+    def report = foreignKey("report_files_fk", reportId, ReportTables.tables)(_.id.?)
 
     type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 
@@ -262,8 +273,6 @@ class ReportRepository @Inject() (
     def * =
       (id, reportId, creationDate, filename, storageFilename, origin, avOutput) <> (constructFile, extractFile.lift)
   }
-
-  val reportTableQuery = ReportTables.tables
 
   private val fileTableQuery = TableQuery[FileTable]
 
@@ -495,9 +504,9 @@ class ReportRepository @Inject() (
         .result
     ).map(_.toMap)
 
-  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[String, Int]] = {
-    def spreadListOfTags(map: Seq[(List[String], Int)]): Map[String, Int] =
-      map.foldLeft(Map.empty[String, Int]) { case (acc, (tags, count)) =>
+  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[ReportTag, Int]] = {
+    def spreadListOfTags(map: Seq[(List[ReportTag], Int)]): Map[ReportTag, Int] =
+      map.foldLeft(Map.empty[ReportTag, Int]) { case (acc, (tags, count)) =>
         acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
       }
 

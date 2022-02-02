@@ -3,8 +3,8 @@ package tasks.report
 import config.TaskConfiguration
 import models.Event.stringToDetailsJsValue
 import models.Event
-import models.Report
 import models.User
+import models.report.Report
 import play.api.Logger
 import repositories.EventRepository
 import services.Email.ProReportUnreadReminder
@@ -62,7 +62,7 @@ class UnreadReportsReminderTask @Inject() (
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
         extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_NEW_REPORT).headOption
-          .flatMap(_.creationDate)
+          .map(_.creationDate)
           .getOrElse(reportWithAdmins._1.creationDate)
           .toLocalDateTime
           .isBefore(now.minusDays(7))
@@ -78,7 +78,7 @@ class UnreadReportsReminderTask @Inject() (
           reportWithAdmins._1.id,
           reportEventsMap,
           EMAIL_PRO_REMIND_NO_READING
-        ).head.creationDate.exists(_.toLocalDateTime.isBefore(now.minusDays(7)))
+        ).head.creationDate.toLocalDateTime.isBefore(now.minusDays(7))
       )
 
     reportWithNoRemind ::: reportWithUniqueRemind
@@ -93,11 +93,11 @@ class UnreadReportsReminderTask @Inject() (
     val taskExecution: Future[Unit] = for {
       _ <- eventRepository.createEvent(
         Event(
-          Some(UUID.randomUUID()),
+          UUID.randomUUID(),
           Some(report.id),
           report.companyId,
           None,
-          Some(OffsetDateTime.now()),
+          OffsetDateTime.now(),
           SYSTEM,
           EMAIL_PRO_REMIND_NO_READING,
           stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")

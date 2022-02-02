@@ -175,11 +175,11 @@ class AccessesOrchestrator @Inject() (
     _ <- bindPendingTokens(user)
     _ <- eventRepository.createEvent(
       Event(
-        Some(UUID.randomUUID()),
+        UUID.randomUUID(),
         None,
         token.companyId,
         Some(user.id),
-        Some(OffsetDateTime.now),
+        OffsetDateTime.now,
         EventType.PRO,
         ActionEvent.ACCOUNT_ACTIVATION,
         stringToDetailsJsValue(s"Email du compte : ${token.emailedTo.getOrElse("")}")
