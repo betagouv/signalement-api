@@ -19,6 +19,7 @@ import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportResponse
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
@@ -45,6 +46,7 @@ object ReportsExtractActor {
 class ReportsExtractActor @Inject() (
     companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
+    reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
@@ -300,11 +302,13 @@ class ReportsExtractActor @Inject() (
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     val reportColumns = buildColumns(requestedBy)
     for {
-      paginatedReports <- reportRepository.getReports(offset = Some(0), limit = Some(100000), filter = filters)
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
-      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports.entities)
+      paginatedReports <- reportOrchestrator
+        .getReportsForUser(requestedBy, filter = filters, offset = Some(0), limit = Some(100000))
+        .map(_.entities.map(_.report))
+      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
       companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
-        paginatedReports.entities.flatMap(_.companyId),
+        paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )
     } yield {
@@ -312,7 +316,7 @@ class ReportsExtractActor @Inject() (
       val reportsSheet = Sheet(name = "Signalements")
         .withRows(
           Row(style = headerStyle).withCellValues(reportColumns.map(_.name)) ::
-            paginatedReports.entities.map(report =>
+            paginatedReports.map(report =>
               Row().withCells(
                 reportColumns
                   .map(
