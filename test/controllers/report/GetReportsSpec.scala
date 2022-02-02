@@ -114,9 +114,7 @@ class GetReportsByProWithoutAccessNone(implicit ee: ExecutionEnv) extends GetRep
          When retrieving reports                                                ${step {
       someResult = Some(getReports())
     }}
-         Then no reports are rendered to the user having no access              ${
-      noReportsMustBeRendered()
-    }
+         Then no reports are rendered to the user having no access              ${noReportsMustBeRendered()}
     """
 }
 
@@ -310,11 +308,10 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
     }
 
-  def noReportsMustBeRendered() = {
+  def noReportsMustBeRendered() =
     Helpers.contentAsJson(Future(someResult.get))(timeout).toString must
       /("totalCount" -> 0) and
       not(haveReports(allReports.map(report => aReport(report)): _*))
-  }
 
   def mustBeBadRequest() =
     someResult must beSome and someResult.get.header.status === Status.BAD_REQUEST

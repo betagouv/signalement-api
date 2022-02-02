@@ -140,7 +140,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
          Given a draft report which concerns
           a dangerous product                                           ${step {
       draftReport =
-        draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(ReportTag.ProduitDangereux))
+        draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(ReportTag.ProduitDangereux.entryName))
     }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
