@@ -5,9 +5,9 @@ import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
+import models.report.ReportTag
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
@@ -35,7 +35,7 @@ case class Report(
     forwardToReponseConso: Boolean = false,
     status: ReportStatus = ReportStatus.NA,
     vendor: Option[String] = None,
-    tags: List[String] = Nil,
+    tags: List[ReportTag] = Nil,
     reponseconsoCode: List[String] = Nil,
     ccrfCode: List[String] = Nil
 ) {
@@ -43,18 +43,20 @@ case class Report(
   def initialStatus() =
     if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (
-      companySiret.isDefined && tags.intersect(Seq(Tags.ReponseConso, Tags.DangerousProduct, Tags.Bloctel)).isEmpty
+      companySiret.isDefined && tags
+        .intersect(Seq(ReportTag.ReponseConso, ReportTag.ProduitDangereux, ReportTag.Bloctel))
+        .isEmpty
     )
       ReportStatus.TraitementEnCours
     else ReportStatus.NA
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
-  def isContractualDispute() = tags.contains(Tags.ContractualDispute)
+  def isContractualDispute() = tags.contains(ReportTag.LitigeContractuel)
 
   def needWorkflowAttachment() = !employeeConsumer &&
     !isContractualDispute() &&
-    tags.intersect(Seq(Tags.DangerousProduct, Tags.ReponseConso)).isEmpty
+    tags.intersect(Seq(ReportTag.ProduitDangereux, ReportTag.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
 }

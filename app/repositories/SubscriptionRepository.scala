@@ -1,12 +1,14 @@
 package repositories
 
 import models._
+import models.report.ReportTag
 import models.report.ReportCategory
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
+import repositories.mapping.Report.ReportTagListColumnType
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -34,7 +36,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
-    def tags = column[List[String]]("tags")
+    def tags = column[List[ReportTag]]("tags")
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def frequency = column[Period]("frequency")
@@ -46,7 +48,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         Option[EmailAddress],
         List[String],
         List[String],
-        List[String],
+        List[ReportTag],
         List[Country],
         List[SIRET],
         Period

@@ -27,6 +27,7 @@ import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportWithFiles
 import models.report.ReviewOnReportResponse
+import models.report.ReportTag
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -44,7 +45,6 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ReportResponseReview
-import utils.Constants.Tags
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
@@ -193,7 +193,7 @@ class ReportOrchestrator @Inject() (
 
   private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
     ddEmails <-
-      if (report.tags.contains(Tags.DangerousProduct)) {
+      if (report.tags.contains(ReportTag.ProduitDangereux)) {
         report.companyAddress.postalCode
           .map(postalCode => subscriptionRepository.getDirectionDepartementaleEmail(postalCode.take(2)))
           .getOrElse(Future(Seq()))

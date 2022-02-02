@@ -2,7 +2,6 @@ package models.report
 
 import models.Address
 import play.api.libs.json.Json
-import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
@@ -51,7 +50,10 @@ case class ReportDraft(
       status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags.distinct.filterNot(tag => tag == Tags.ContractualDispute && employeeConsumer),
+      tags = tags
+        .map(ReportTag.fromDisplayOrEntryName(_))
+        .distinct
+        .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil)
     )
@@ -63,7 +65,8 @@ object ReportDraft {
   def isValid(draft: ReportDraft): Boolean =
     (draft.companySiret.isDefined
       || draft.websiteURL.isDefined
-      || draft.tags.contains(Tags.Influenceur) && draft.companyAddress.exists(_.postalCode.isDefined)
+      || draft.tags.map(ReportTag.fromDisplayOrEntryName(_)).contains(ReportTag.Influenceur) && draft.companyAddress
+        .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
 

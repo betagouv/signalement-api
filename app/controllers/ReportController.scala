@@ -215,7 +215,6 @@ class ReportController @Inject() (
   }
 
   def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-//    reminderTask.runTask(LocalDate.now.atStartOfDay())
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(_) =>

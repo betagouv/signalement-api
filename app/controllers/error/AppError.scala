@@ -200,4 +200,11 @@ object AppError {
     override val title: String = s"Report's body does not match specific constraints"
     override val details: String = s"Le signalement est invalide"
   }
+
+  final case class InvalidReportTagBody(name: String) extends BadRequestError {
+    override val `type`: String = "SC-0022"
+    override val title: String = s"Unknown report tag $name"
+    override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
+  }
+
 }
