@@ -141,6 +141,7 @@ object Fixtures {
     firstName = firstName,
     lastName = lastName,
     email = email,
+    consumerPhone = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     fileIds = List.empty
@@ -169,6 +170,7 @@ object Fixtures {
     firstName = firstName,
     lastName = lastName,
     email = email,
+    consumerPhone = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status
