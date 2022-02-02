@@ -614,11 +614,16 @@ class ReportOrchestrator @Inject() (
         filter.siretSirenList,
         connectedUser
       )
-      paginatedReports <- reportRepository.getReports(
-        filter.copy(siretSirenList = sanitizedSirenSirets),
-        offset,
-        limit
-      )
+      paginatedReports <-
+        if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
+          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List[Report]()))
+        } else {
+          reportRepository.getReports(
+            filter.copy(siretSirenList = sanitizedSirenSirets),
+            offset,
+            limit
+          )
+        }
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities =
       paginatedReports.entities.map(r => report.ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
