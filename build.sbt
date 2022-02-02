@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
   "net.codingwell" %% "scala-guice" % "5.0.2",
   "com.iheart" %% "ficus" % "1.5.1",
-  "com.norbitltd" %% "spoiwo" % "1.8.0",
+  "com.norbitltd" %% "spoiwo" % "2.1.0",
   "com.itextpdf" % "itext7-core" % "7.1.17",
   "com.itextpdf" % "html2pdf" % "3.0.5",
   "com.beachape" %% "enumeratum" % enumeratumVersion,
