@@ -6,7 +6,6 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import models.report.ReportFilter
-import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -24,7 +23,6 @@ import scala.concurrent.Future
 @Singleton
 class ReportListController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
