@@ -1,11 +1,11 @@
 package models
 
+import models.report.ReportFilter
 import models.report.ReportStatus
+import models.report.Tag
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
-import models.report.ReportTag
-import models.report.ReportFilter
 import org.specs2.mutable.Specification
 import utils.DateUtils
 
@@ -53,7 +53,7 @@ class ReportFilterTest extends Specification {
         details = Some("My Details"),
         employeeConsumer = Some(false),
         hasCompany = Some(true),
-        tags = ReportTag.values,
+        tags = Tag.values,
         activityCodes = Seq("00.00Z")
       )
 

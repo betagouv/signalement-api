@@ -8,8 +8,8 @@ import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportStatus
-import models.report.WebsiteURL
 import models.report.ReportTag
+import models.report.WebsiteURL
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.mapping.Report._
@@ -344,8 +344,8 @@ class ReportRepository @Inject() (
         table.status.inSet(filter.status.map(_.entryName))
       }
       .filterIf(filter.tags.nonEmpty) { table =>
-        val nonEmptyReportTag = filter.tags.filterNot(_ == ReportTag.NA)
-        val includeNotTaggedReports = filter.tags.contains(ReportTag.NA)
+        val nonEmptyReportTag = ReportTag.reportTagFrom(filter.tags)
+        val includeNotTaggedReports = filter.tags.contains(report.Tag.NA)
         filterTags(nonEmptyReportTag, includeNotTaggedReports, table)
       }
       .filterOpt(filter.details) { case (table, details) =>
@@ -383,11 +383,6 @@ class ReportRepository @Inject() (
       case _             => true.bind
     }
 
-//    filter.tags match {
-//      case list if list.filterNot(_ == ReportTag.NA).isEmpty => includeNotTaggedReportsFilter
-//      case list if list.contains(ReportTag.NA) => includeTaggedReportFilter || includeNotTaggedReportsFilter
-//      case _ => includeTaggedReportFilter
-//    }
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {
