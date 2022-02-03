@@ -14,6 +14,7 @@ import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportStatus
+import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json
@@ -25,7 +26,6 @@ import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import models.report.ReportTag
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures

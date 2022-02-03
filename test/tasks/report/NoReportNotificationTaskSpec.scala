@@ -2,13 +2,13 @@ package tasks.report
 
 import models._
 import models.report.ReportCategory
+import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import models.report.ReportTag
 import utils._
 import play.api.libs.mailer.Attachment
 

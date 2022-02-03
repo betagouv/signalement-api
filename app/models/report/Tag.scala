@@ -1,16 +1,31 @@
 package models.report
 
 import controllers.error.AppError.InvalidReportTagBody
+import controllers.error.AppError.InvalidTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed abstract class ReportTag extends EnumEntry
+sealed trait Tag extends EnumEntry
+
+sealed trait ReportTag extends Tag
+
+object Tag extends PlayEnum[Tag] {
+
+  val values = findValues
+
+  override def withName(name: String): Tag =
+    ReportTag.withNameOption(name).getOrElse(withNameOption(name).getOrElse(throw InvalidTagBody(name)))
+
+  case object NA extends Tag
+
+}
 
 object ReportTag extends PlayEnum[ReportTag] {
 
   val values = findValues
 
-  override def withName(name: String): ReportTag = withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+  override def withName(name: String): ReportTag =
+    withNameOption(name).collect { case r: ReportTag => r }.getOrElse(throw InvalidReportTagBody(name))
 
   case object LitigeContractuel extends ReportTag
   case object Hygiene extends ReportTag
@@ -26,7 +41,8 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object ProduitIndustriel extends ReportTag
   case object ProduitAlimentaire extends ReportTag
   case object CompagnieAerienne extends ReportTag
-  case object NA extends ReportTag
+
+  def reportTagFrom(tags: Seq[Tag]): Seq[ReportTag] = tags.collect { case r: ReportTag => r }
 
   implicit class ReportTagTranslationOps(reportTag: ReportTag) {
     def translate(): String = reportTag match {
@@ -44,8 +60,8 @@ object ReportTag extends PlayEnum[ReportTag] {
       case ProduitIndustriel      => "Produit industriel"
       case ProduitAlimentaire     => "Produit alimentaire"
       case CompagnieAerienne      => "Compagnie aerienne"
-      case NA                     => "NA"
     }
+
   }
 
 }

@@ -14,7 +14,6 @@ import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
 import models.report
 import models._
-import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
@@ -22,12 +21,12 @@ import models.report.ReportConsumerUpdate
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
-import models.report.ReportStatus
 import models.report.ReportResponse
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportTag
 import models.report.ReportWithFiles
 import models.report.ReviewOnReportResponse
-import models.report.ReportTag
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
