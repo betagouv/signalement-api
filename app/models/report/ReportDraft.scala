@@ -1,7 +1,6 @@
 package models.report
 
 import models.Address
-import utils.Constants.Tags
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
