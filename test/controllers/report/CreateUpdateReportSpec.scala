@@ -12,7 +12,7 @@ import controllers.ReportController
 import models._
 import models.report.Report
 import models.report.ReportCompany
-import models.report.ReportConsumer
+import models.report.ReportConsumerUpdate
 import models.report.ReportStatus
 import org.specs2.Specification
 import org.specs2.matcher._
@@ -310,7 +310,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       Duration.Inf
     )
 
-  def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumer) =
+  def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumerUpdate) =
     Await.result(
       app.injector
         .instanceOf[ReportController]
