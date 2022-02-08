@@ -30,7 +30,7 @@ case class ReportDraft(
     forwardToReponseConso: Option[Boolean] = Some(false),
     fileIds: List[UUID],
     vendor: Option[String] = None,
-    tags: List[String] = Nil,
+    tags: List[ReportTag] = Nil,
     reponseconsoCode: Option[List[String]] = None,
     ccrfCode: Option[List[String]] = None
 ) {
@@ -55,9 +55,7 @@ case class ReportDraft(
       status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags
-        .map(ReportTag.withName(_))
-        .distinct
+      tags = tags.distinct
         .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil)
@@ -70,7 +68,7 @@ object ReportDraft {
   def isValid(draft: ReportDraft): Boolean =
     (draft.companySiret.isDefined
       || draft.websiteURL.isDefined
-      || draft.tags.map(ReportTag.withName(_)).contains(ReportTag.Influenceur) && draft.companyAddress
+      || draft.tags.contains(ReportTag.Influenceur) && draft.companyAddress
         .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
