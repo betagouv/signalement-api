@@ -17,30 +17,32 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
+//  And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
+//    Seq(covidEmail),
+//    s"[SignalConso] Un nouveau signalement",
+//    views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString
+//  )}
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
       Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
     }}
-         And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
-      Seq(covidEmail),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString
-    )}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
       Seq(tagEmail),
-      s"[SignalConso] [Produits dangereux] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
-    )}
-         And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
-      Seq(countryEmail),
       s"[SignalConso] Un nouveau signalement",
       views.html.mails.dgccrf
-        .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
+        .reportNotification(tagSubscription, Seq(tagReport, tagReport2), runningDate.minusDays(1))
         .toString
     )}
     """
 }
+//And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
+//Seq(countryEmail),
+//s"[SignalConso] Un nouveau signalement",
+//views.html.mails.dgccrf
+//.reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
+//.toString
+//)}
 
 abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     extends Specification
@@ -80,7 +82,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(ReportTag.ProduitDangereux),
+    tags = List(ReportTag.ProduitDangereux, ReportTag.ReponseConso),
     frequency = Period.ofDays(1)
   )
 
@@ -97,11 +99,19 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(companyAddress = Address(postalCode = Some(covidDept + "000")), category = ReportCategory.Covid.value)
+
   val tagReport = Fixtures
     .genReportForCompany(company)
     .sample
     .get
     .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(ReportTag.ProduitDangereux))
+
+  val tagReport2 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+    .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(ReportTag.ReponseConso))
+
   val countryReport =
     Fixtures.genReportForCompany(company).sample.get.copy(companyAddress = Address(country = Some(Country.Suisse)))
 
@@ -111,6 +121,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- reportRepository.create(covidReport)
         _ <- reportRepository.create(tagReport)
+        _ <- reportRepository.create(tagReport2)
         _ <- reportRepository.create(countryReport)
         _ <- subscriptionRepository.create(covidSubscription)
         _ <- subscriptionRepository.create(tagSubscription)
