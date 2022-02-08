@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   evolutions,
   ws,
   ehcache,
-  "org.postgresql" % "postgresql" % "42.3.1",
+  "org.postgresql" % "postgresql" % "42.3.2",
   "eu.timepit" %% "refined" % "0.9.28",
   "com.typesafe.play" %% "play-slick" % playSlickVersion,
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
