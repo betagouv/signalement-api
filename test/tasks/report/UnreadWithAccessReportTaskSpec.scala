@@ -39,28 +39,28 @@ class RemindOnceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unread
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours" created more than 7 days    ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
-      report.id,
-      ActionEvent.EMAIL_PRO_REMIND_NO_READING
-    )}
+        report.id,
+        ActionEvent.EMAIL_PRO_REMIND_NO_READING
+      )}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(
-      proUser.email,
-      "Nouveau signalement",
-      views.html.mails.professional
-        .reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2)))
-        .toString
-    )}
+        proUser.email,
+        "Nouveau signalement",
+        views.html.mails.professional
+          .reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay.multipliedBy(2)))
+          .toString
+      )}
      And outcome is empty ${result mustEqual Valid(List((report.id, RemindUnreadReportsByEmail)))}
     """
   }
@@ -75,21 +75,21 @@ class DontRemindUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unread
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours" created less than 7 days    ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          When remind task run                                                        ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      report.id,
-      List.empty
-    )}
+        report.id,
+        List.empty
+      )}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome is empty ${result mustEqual noTaskProcessed}
     """
@@ -106,32 +106,32 @@ class RemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends Unrea
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "RELANCE" is created                                           ${eventMustHaveBeenCreatedWithAction(
-      report.id,
-      ActionEvent.EMAIL_PRO_REMIND_NO_READING
-    )}
+        report.id,
+        ActionEvent.EMAIL_PRO_REMIND_NO_READING
+      )}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(
-      proUser.email,
-      "Nouveau signalement",
-      views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString
-    )}
+        proUser.email,
+        "Nouveau signalement",
+        views.html.mails.professional.reportUnreadReminder(report, runningDateTime.plus(mailReminderDelay)).toString
+      )}
     And outcome is successful RemindReportByMail reminder ${result mustEqual Valid(
-      List(
-        (report.id, RemindUnreadReportsByEmail)
-      )
-    )}
+        List(
+          (report.id, RemindUnreadReportsByEmail)
+        )
+      )}
     """
   }
 }
@@ -146,22 +146,22 @@ class DontRemindTwiceUnreadWithAccessReport(implicit ee: ExecutionEnv) extends U
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      report.id,
-      List(event)
-    )}
+        report.id,
+        List(event)
+      )}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome is empty                                         ${result mustEqual noTaskProcessed}
     """
@@ -181,35 +181,35 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
-      report.id,
-      ActionEvent.REPORT_CLOSED_BY_NO_READING
-    )}
+        report.id,
+        ActionEvent.REPORT_CLOSED_BY_NO_READING
+      )}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(
-      report.id,
-      ReportStatus.NonConsulte
-    )}
+        report.id,
+        ReportStatus.NonConsulte
+      )}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
-      report.email,
-      "L'entreprise n'a pas souhaité consulter votre signalement",
-      views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      attachementService.attachmentSeqForWorkflowStepN(3)
-    )}
+        report.email,
+        "L'entreprise n'a pas souhaité consulter votre signalement",
+        views.html.mails.consumer.reportClosedByNoReading(report).toString,
+        attachementService.attachmentSeqForWorkflowStepN(3)
+      )}
     And outcome is successful CloseUnreadReport                                    ${result mustEqual Valid(
-      List(
-        (report.id, CloseUnreadReport)
-      )
-    )}
+        List(
+          (report.id, CloseUnreadReport)
+        )
+      )}
    """
   }
 }
@@ -228,23 +228,23 @@ class DontCloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadW
     s2"""
          Given a pro user with activated account                                      ${step(setupUser(proUser))}
          Given a report with status "ReportStatus.TraitementEnCours"                             ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reportTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reportTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      report.id,
-      List(event1, event2)
-    )}
+        report.id,
+        List(event1, event2)
+      )}
          And the report is not updated                                                ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome empty ${result mustEqual noTaskProcessed}
    """

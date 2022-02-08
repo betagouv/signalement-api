@@ -312,7 +312,7 @@ class ReportOrchestrator @Inject() (
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(
                   s"Entreprise précédente : Siret ${report.companySiret
-                    .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
+                      .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
                 )
               )
             )
@@ -600,7 +600,7 @@ class ReportOrchestrator @Inject() (
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(
           s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive.entryName
-          else ReportResponseReview.Negative.entryName}" +
+            else ReportResponseReview.Negative.entryName}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )

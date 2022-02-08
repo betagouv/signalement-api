@@ -42,19 +42,19 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a dom tom department                                              ${step {
-      draftReport =
-        draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
-    }}
+        draftReport =
+          draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
+      }}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "ReportStatus.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TraitementEnCours
-    )}
+        ReportStatus.TraitementEnCours
+      )}
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
-      draftReport.email,
-      "Votre signalement",
-      views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      attachmentService.attachmentSeqForWorkflowStepN(2)
-    )}
+        draftReport.email,
+        "Votre signalement",
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        attachmentService.attachmentSeqForWorkflowStepN(2)
+      )}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
@@ -62,21 +62,21 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           an experimentation department                                   ${step {
-      draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0)))))
-    }}
+        draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0)))))
+      }}
           an employee consumer                                            ${step {
-      draftReport = draftReport.copy(employeeConsumer = true)
-    }}
+        draftReport = draftReport.copy(employeeConsumer = true)
+      }}
          When create the report                                           ${step(createReport())}
          Then create the report with reportStatusList "EMPLOYEE_CONSUMER" ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.LanceurAlerte
-    )}
+        ReportStatus.LanceurAlerte
+      )}
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
-      draftReport.email,
-      "Votre signalement",
-      views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      attachments = Nil
-    )}
+        draftReport.email,
+        "Votre signalement",
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        attachments = Nil
+      )}
     """
 }
 
@@ -85,21 +85,21 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a professional who has no account                                   ${step {
-      draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
-    }}
+        draftReport = draftReport.copy(companySiret = Some(anotherCompany.siret))
+      }}
          When create the report                                               ${step(createReport())}
          Then create the report with reportStatusList "ReportStatus.TraitementEnCours"   ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TraitementEnCours
-    )}
+        ReportStatus.TraitementEnCours
+      )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"                  ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+      )}
          And send an acknowledgment mail to the consumer                      ${mailMustHaveBeenSent(
-      draftReport.email,
-      "Votre signalement",
-      views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      attachmentService.attachmentSeqForWorkflowStepN(2)
-    )}
+        draftReport.email,
+        "Votre signalement",
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        attachmentService.attachmentSeqForWorkflowStepN(2)
+      )}
     """
 }
 
@@ -108,29 +108,29 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a professional who has an activated account                   ${step {
-      draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
-    }}
+        draftReport = draftReport.copy(companySiret = Some(existingCompany.siret))
+      }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "ReportStatus.TraitementEnCours"       ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.TraitementEnCours
-    )}
+        ReportStatus.TraitementEnCours
+      )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
-      draftReport.email,
-      "Votre signalement",
-      views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      attachmentService.attachmentSeqForWorkflowStepN(2)
-    )}
+        draftReport.email,
+        "Votre signalement",
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        attachmentService.attachmentSeqForWorkflowStepN(2)
+      )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+      )}
          And create an event "EMAIL_PRO_NEW_REPORT"                     ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_PRO_NEW_REPORT
-    )}
+        ActionEvent.EMAIL_PRO_NEW_REPORT
+      )}
          And send a mail to the pro                                     ${mailMustHaveBeenSent(
-      proUser.email,
-      "Nouveau signalement",
-      views.html.mails.professional.reportNotification(report).toString
-    )}
+        proUser.email,
+        "Nouveau signalement",
+        views.html.mails.professional.reportNotification(report).toString
+      )}
     """
 }
 
@@ -139,19 +139,21 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
     s2"""
          Given a draft report which concerns
           a dangerous product                                           ${step {
-      draftReport =
-        draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(ReportTag.ProduitDangereux.entryName))
-    }}
+        draftReport = draftReport.copy(
+          companySiret = Some(existingCompany.siret),
+          tags = List(ReportTag.ProduitDangereux.entryName)
+        )
+      }}
          When create the report                                         ${step(createReport())}
          Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
-      ReportStatus.NA
-    )}
+        ReportStatus.NA
+      )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
-      draftReport.email,
-      "Votre signalement",
-      views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-      attachments = Nil
-    )}
+        draftReport.email,
+        "Votre signalement",
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        attachments = Nil
+      )}
     """
 }
 
@@ -160,16 +162,16 @@ object UpdateReportConsumer extends CreateUpdateReportSpec {
     s2"""
          Given a preexisting report                                     ${step { report = existingReport }}
          When the report consumer is updated                            ${step {
-      updateReportConsumer(report.id, reportConsumer)
-    }}
+        updateReportConsumer(report.id, reportConsumer)
+      }}
          Then the report contains updated info                          ${checkReport(
-      report.copy(
-        firstName = reportConsumer.firstName,
-        lastName = reportConsumer.lastName,
-        email = reportConsumer.email,
-        contactAgreement = reportConsumer.contactAgreement
-      )
-    )}
+        report.copy(
+          firstName = reportConsumer.firstName,
+          lastName = reportConsumer.lastName,
+          email = reportConsumer.email,
+          contactAgreement = reportConsumer.contactAgreement
+        )
+      )}
     """
 }
 
@@ -178,15 +180,15 @@ object UpdateReportCompanySameSiret extends CreateUpdateReportSpec {
     s2"""
          Given a preexisting report                                     ${step { report = existingReport }}
          When the report company is updated with same Siret             ${step {
-      updateReportCompany(report.id, reportCompanySameSiret)
-    }}
+        updateReportCompany(report.id, reportCompanySameSiret)
+      }}
          Then the report contains updated info                          ${checkReport(
-      report.copy(
-        companyName = Some(reportCompanySameSiret.name),
-        companyAddress = reportCompanySameSiret.address,
-        companySiret = Some(reportCompanySameSiret.siret)
-      )
-    )}
+        report.copy(
+          companyName = Some(reportCompanySameSiret.name),
+          companyAddress = reportCompanySameSiret.address,
+          companySiret = Some(reportCompanySameSiret.siret)
+        )
+      )}
     """
 }
 
@@ -195,17 +197,17 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
     s2"""
          Given a preexisting report                                     ${step { report = existingReport }}
          When the report company is updated with same Siret             ${step {
-      updateReportCompany(report.id, reportCompanyAnotherSiret)
-    }}
+        updateReportCompany(report.id, reportCompanyAnotherSiret)
+      }}
          Then the report contains updated info and the status is reset  ${checkReport(
-      report.copy(
-        companyId = Some(anotherCompany.id),
-        companyName = Some(reportCompanyAnotherSiret.name),
-        companyAddress = reportCompanyAnotherSiret.address,
-        companySiret = Some(reportCompanyAnotherSiret.siret),
-        status = ReportStatus.TraitementEnCours
-      )
-    )}
+        report.copy(
+          companyId = Some(anotherCompany.id),
+          companyName = Some(reportCompanyAnotherSiret.name),
+          companyAddress = reportCompanyAnotherSiret.address,
+          companySiret = Some(reportCompanyAnotherSiret.siret),
+          status = ReportStatus.TraitementEnCours
+        )
+      )}
     """
 }
 
