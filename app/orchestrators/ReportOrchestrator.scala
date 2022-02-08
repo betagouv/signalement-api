@@ -18,6 +18,7 @@ import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
+import models.report.ReportDraft
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
