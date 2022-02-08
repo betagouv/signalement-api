@@ -35,7 +35,7 @@ class MailService @Inject() (
 
   def send(
       email: Email
-  ): Unit = email match {
+  ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)
     case email =>
       send(
