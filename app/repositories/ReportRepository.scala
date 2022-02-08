@@ -345,7 +345,7 @@ class ReportRepository @Inject() (
       }
       .filterIf(filter.tags.nonEmpty) { table =>
         val nonEmptyReportTag = ReportTag.reportTagFrom(filter.tags)
-        val includeNotTaggedReports = filter.tags.contains(report.Tag.NA)
+        val includeNotTaggedReports = filter.tags.contains(report.ReportTagFilter.NA)
         filterTags(nonEmptyReportTag, includeNotTaggedReports, table)
       }
       .filterOpt(filter.details) { case (table, details) =>

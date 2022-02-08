@@ -2,7 +2,7 @@ package models
 
 import models.report.ReportFilter
 import models.report.ReportStatus
-import models.report.Tag
+import models.report.ReportTagFilter
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
@@ -53,7 +53,7 @@ class ReportFilterTest extends Specification {
         details = Some("My Details"),
         employeeConsumer = Some(false),
         hasCompany = Some(true),
-        tags = Tag.values,
+        tags = ReportTagFilter.values,
         activityCodes = Seq("00.00Z")
       )
 

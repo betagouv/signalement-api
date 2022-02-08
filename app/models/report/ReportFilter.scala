@@ -28,7 +28,7 @@ case class ReportFilter(
     hasWebsite: Option[Boolean] = None,
     hasPhone: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
-    tags: Seq[Tag] = Seq.empty,
+    tags: Seq[ReportTagFilter] = Seq.empty,
     activityCodes: Seq[String] = Seq.empty
 )
 
@@ -61,7 +61,7 @@ object ReportFilter {
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),
       hasCompany = mapper.boolean("hasCompany"),
-      tags = mapper.seq("tags").map(Tag.withName(_)),
+      tags = mapper.seq("tags").map(ReportTagFilter.withName(_)),
       activityCodes = mapper.seq("activityCodes")
     )
   }

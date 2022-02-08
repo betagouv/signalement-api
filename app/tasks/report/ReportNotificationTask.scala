@@ -74,7 +74,18 @@ class ReportNotificationTask @Inject() (
               .map(Some(_))
               .contains(report.companyAddress.country)
           )
-          .filter(report => subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty)
+          .filter { report =>
+            println(s"------------------  !!!!!!!!!!!!!!!!!!!!!!!!!!! ------------------")
+            println(s"------------------ subscription.tags = ${subscription.tags} ------------------")
+            println(s"------------------ report.tags = ${report.tags} ------------------")
+            println(s"------------------ subscription.tags.isEmpty = ${subscription.tags.isEmpty} ------------------")
+            println(
+              s"------------------ subscription.tags.intersect(report.tags).nonEmpty = ${subscription.tags.intersect(report.tags).nonEmpty} ------------------"
+            )
+            println(s"------------------  !!!!!!!!!!!!!!!!!!!!!!!!!!! ------------------")
+
+            subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty
+          }
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)

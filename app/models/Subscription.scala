@@ -1,7 +1,8 @@
 package models
 
-import models.report.ReportTag
 import models.report.ReportCategory
+import models.report.ReportTag
+import models.report.ReportTagFilter
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.Country
@@ -46,7 +47,7 @@ case class Subscription(
     email: Option[EmailAddress],
     departments: List[String] = List.empty,
     categories: List[ReportCategory] = List.empty,
-    tags: List[ReportTag] = List.empty,
+    tags: List[ReportTagFilter] = List.empty,
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
     frequency: Period

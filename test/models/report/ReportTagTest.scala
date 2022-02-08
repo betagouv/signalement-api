@@ -15,17 +15,19 @@ class ReportTagTest extends Specification {
 
     Fragments.foreach(ReportTag.values) { v =>
       s"parse from entry name ${v.entryName}" in {
-        Tag.withName(v.entryName) shouldEqual v
+        ReportTagFilter.withName(v.entryName) shouldEqual v
       }
     }
 
     s"fail to parse invalid tag " in {
       val invalidName = UUID.randomUUID().toString
-      Try(Tag.withName(invalidName)) shouldEqual Failure(InvalidTagBody(invalidName))
+      Try(ReportTagFilter.withName(invalidName)) shouldEqual Failure(InvalidTagBody(invalidName))
     }
 
     s"fail to parse invalid NA  report tag " in {
-      Try(ReportTag.withName(Tag.NA.entryName)) shouldEqual Failure(InvalidReportTagBody(Tag.NA.entryName))
+      Try(ReportTag.withName(ReportTagFilter.NA.entryName)) shouldEqual Failure(
+        InvalidReportTagBody(ReportTagFilter.NA.entryName)
+      )
     }
 
   }

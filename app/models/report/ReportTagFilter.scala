@@ -5,18 +5,18 @@ import controllers.error.AppError.InvalidTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed trait Tag extends EnumEntry
+sealed trait ReportTagFilter extends EnumEntry
 
-sealed trait ReportTag extends Tag
+sealed trait ReportTag extends ReportTagFilter
 
-object Tag extends PlayEnum[Tag] {
+object ReportTagFilter extends PlayEnum[ReportTagFilter] {
 
   val values = findValues
 
-  override def withName(name: String): Tag =
+  override def withName(name: String): ReportTagFilter =
     ReportTag.withNameOption(name).getOrElse(withNameOption(name).getOrElse(throw InvalidTagBody(name)))
 
-  case object NA extends Tag
+  case object NA extends ReportTagFilter
 
 }
 
@@ -42,7 +42,7 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object ProduitAlimentaire extends ReportTag
   case object CompagnieAerienne extends ReportTag
 
-  def reportTagFrom(tags: Seq[Tag]): Seq[ReportTag] = tags.collect { case r: ReportTag => r }
+  def reportTagFrom(tags: Seq[ReportTagFilter]): Seq[ReportTag] = tags.collect { case r: ReportTag => r }
 
   implicit class ReportTagTranslationOps(reportTag: ReportTag) {
     def translate(): String = reportTag match {
