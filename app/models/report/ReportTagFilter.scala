@@ -16,6 +16,8 @@ object ReportTagFilter extends PlayEnum[ReportTagFilter] {
   override def withName(name: String): ReportTagFilter =
     ReportTag.withNameOption(name).getOrElse(withNameOption(name).getOrElse(throw InvalidTagBody(name)))
 
+  /** No tag associated to report, used only for filtering
+    */
   case object NA extends ReportTagFilter
 
 }
