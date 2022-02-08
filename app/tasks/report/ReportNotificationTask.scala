@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.report.ReportFilter
+import models.report.ReportTagFilter
 import play.api.Logger
 import repositories.ReportRepository
 import repositories.SubscriptionRepository
@@ -75,21 +76,16 @@ class ReportNotificationTask @Inject() (
               .contains(report.companyAddress.country)
           )
           .filter { report =>
-            println(s"------------------  !!!!!!!!!!!!!!!!!!!!!!!!!!! ------------------")
-            println(s"------------------ subscription.tags = ${subscription.tags} ------------------")
-            println(s"------------------ report.tags = ${report.tags} ------------------")
-            println(s"------------------ subscription.tags.isEmpty = ${subscription.tags.isEmpty} ------------------")
-            println(
-              s"------------------ subscription.tags.intersect(report.tags).nonEmpty = ${subscription.tags.intersect(report.tags).nonEmpty} ------------------"
-            )
-            println(s"------------------  !!!!!!!!!!!!!!!!!!!!!!!!!!! ------------------")
-
-            subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty
+            val filterEmptyTagReports = subscription.tags.contains(ReportTagFilter.NA) && report.tags.isEmpty
+            subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty || filterEmptyTagReports
           }
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
       _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
+        println(
+          s"------------------ (subscription.id,emailAddress,filteredReport.map(_.id)) = ${(subscription.id, emailAddress, filteredReport.map(_.id))} ------------------"
+        )
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),
