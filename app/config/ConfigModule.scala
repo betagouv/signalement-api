@@ -19,6 +19,16 @@ class ConfigModule(environment: Environment, configuration: Configuration) exten
   override def configure() = {
 
     val _ = environment
+
+    import io.sentry.Sentry
+
+    try
+      throw new Exception("This is a test.")
+    catch {
+      case e: Exception =>
+        Sentry.captureException(e)
+    }
+
     implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
     implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
     val csvStringListReader = ConfigReader[String].map(_.split(",").toList)

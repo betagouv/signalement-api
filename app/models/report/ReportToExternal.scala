@@ -5,6 +5,7 @@ import play.api.libs.json.OFormat
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+import Tag.ReportTag._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -56,7 +57,7 @@ object ReportToExternal {
         .headOption,
       reponseconsoCode = r.reponseconsoCode,
       ccrfCode = r.ccrfCode,
-      tags = r.tags.map(_.displayName)
+      tags = r.tags.map(_.translate())
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]

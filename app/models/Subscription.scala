@@ -1,7 +1,8 @@
 package models
 
-import models.report.ReportTag
 import models.report.ReportCategory
+import models.report.Tag.jsonFormat
+import models.report.Tag
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.Country
@@ -16,7 +17,7 @@ case class SubscriptionCreation(
     departments: List[String],
     categories: List[ReportCategory],
     sirets: List[SIRET],
-    tags: List[ReportTag],
+    tags: List[Tag],
     countries: List[String],
     frequency: Period
 )
@@ -30,7 +31,7 @@ case class SubscriptionUpdate(
     departments: Option[List[String]],
     categories: Option[List[ReportCategory]],
     sirets: Option[List[SIRET]],
-    tags: Option[List[ReportTag]],
+    tags: Option[List[Tag]],
     countries: Option[List[String]],
     frequency: Option[Period]
 )
@@ -46,7 +47,7 @@ case class Subscription(
     email: Option[EmailAddress],
     departments: List[String] = List.empty,
     categories: List[ReportCategory] = List.empty,
-    tags: List[ReportTag] = List.empty,
+    tags: List[Tag] = List.empty,
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
     frequency: Period

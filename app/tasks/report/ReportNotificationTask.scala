@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.report.ReportFilter
+import models.report.Tag
 import play.api.Logger
 import repositories.ReportRepository
 import repositories.SubscriptionRepository
@@ -74,11 +75,17 @@ class ReportNotificationTask @Inject() (
               .map(Some(_))
               .contains(report.companyAddress.country)
           )
-          .filter(report => subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty)
+          .filter { report =>
+            val filterEmptyTagReports = subscription.tags.contains(Tag.NA) && report.tags.isEmpty
+            subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty || filterEmptyTagReports
+          }
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
       _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
+        println(
+          s"------------------ (subscription.id,emailAddress,filteredReport.map(_.id)) = ${(subscription.id, emailAddress, filteredReport.map(_.id))} ------------------"
+        )
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),

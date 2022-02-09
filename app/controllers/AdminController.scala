@@ -9,11 +9,11 @@ import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
 import models.report.Report
-import models.report.ReportStatus
 import models.report.ReportResponse
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.Tag.ReportTag
 import models.report.WebsiteURL
-import models.report.ReportTag
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json

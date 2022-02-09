@@ -12,7 +12,7 @@ val slickPgVersion = "0.20.2"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
 val AkkaHttpVersion = "10.2.7"
-val alpakkaVersion = "3.0.4"
+val alpakkaVersion = "2.0.2"
 val enumeratumVersion = "1.7.0"
 
 libraryDependencies ++= Seq(
@@ -40,7 +40,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-persistence" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-crypto-jca" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
-  "net.codingwell" %% "scala-guice" % "5.0.2",
+  "net.codingwell" %% "scala-guice" % "4.2.11",
   "com.iheart" %% "ficus" % "1.5.1",
   "com.norbitltd" %% "spoiwo" % "1.8.0",
   "com.itextpdf" % "itext7-core" % "7.1.17",
@@ -52,7 +52,7 @@ libraryDependencies ++= Seq(
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
-  "io.sentry" % "sentry-logback" % "5.6.0",
+  "io.sentry" % "sentry-logback" % "5.6.1",
   "org.typelevel" %% "cats-core" % "2.7.0",
   "com.github.pureconfig" %% "pureconfig" % "0.17.1",
   "ai.x" %% "play-json-extensions" % "0.42.0",

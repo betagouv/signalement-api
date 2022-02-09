@@ -8,8 +8,10 @@ import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportStatus
-import models.report.WebsiteURL
 import models.report.ReportTag
+import models.report.Tag.ReportTag
+import models.report.WebsiteURL
+import models.report.{Tag => SignalConsoTag}
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.mapping.Report._
@@ -287,6 +289,7 @@ class ReportRepository @Inject() (
   private val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
   private val array_to_string = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
+  SimpleFunction.binary[List[ReportTag], Int, Int]("array_length")
 
   private[this] def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
     reportTableQuery
@@ -342,8 +345,10 @@ class ReportRepository @Inject() (
       .filterIf(filter.status.nonEmpty) { case table =>
         table.status.inSet(filter.status.map(_.entryName))
       }
-      .filterIf(filter.tags.nonEmpty) { case table =>
-        table.tags @& filter.tags.toList.bind
+      .filterIf(filter.tags.nonEmpty) { table =>
+        val nonEmptyReportTag = ReportTag.reportTagFrom(filter.tags)
+        val includeNotTaggedReports = filter.tags.contains(SignalConsoTag.NA)
+        filterTags(nonEmptyReportTag, includeNotTaggedReports, table)
       }
       .filterOpt(filter.details) { case (table, details) =>
         array_to_string(table.subcategories, ",", "") ++ array_to_string(
@@ -367,6 +372,20 @@ class ReportRepository @Inject() (
         _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
       )
       .map(_._1)
+
+  private def filterTags(tags: Seq[ReportTag], includeUntaggedReports: Boolean, table: ReportTable) = {
+    val includeNotTaggedReportsFilter: Rep[Boolean] = table.tags === List.empty[ReportTag].bind
+    val includeTaggedReportFilter: Rep[Boolean] = table.tags @& tags.toList.bind
+
+    val includeTaggedReport = tags.nonEmpty
+    (includeTaggedReport, includeUntaggedReports) match {
+      case (true, true)  => includeTaggedReportFilter || includeNotTaggedReportsFilter
+      case (false, true) => includeNotTaggedReportsFilter
+      case (true, false) => includeTaggedReportFilter
+      case _             => true.bind
+    }
+
+  }
 
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
