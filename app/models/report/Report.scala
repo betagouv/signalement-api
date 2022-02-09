@@ -69,7 +69,7 @@ case class Report(
 object Report {
 
   private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
-  implicit val fundraiseDataReads: Reads[Report] = jsonFormatX
+  implicit val reportReads: Reads[Report] = jsonFormatX
 
   implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
     def writes(report: Report) =
