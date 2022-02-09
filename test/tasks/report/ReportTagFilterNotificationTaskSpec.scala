@@ -21,15 +21,15 @@ class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends Re
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+      }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
-      Seq(tagEmail),
-      "[SignalConso] [Produits dangereux] 2 nouveaux signalements",
-      views.html.mails.dgccrf
-        .reportNotification(tagSubscription, Seq(tagReport, tagReport2), runningDate.minusDays(1))
-        .toString
-    )}
+        Seq(tagEmail),
+        "[SignalConso] [Produits dangereux] 2 nouveaux signalements",
+        views.html.mails.dgccrf
+          .reportNotification(tagSubscription, Seq(tagReport, tagReport2), runningDate.minusDays(1))
+          .toString
+      )}
     """
 }
 

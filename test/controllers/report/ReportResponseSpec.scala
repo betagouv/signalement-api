@@ -45,8 +45,8 @@ class ReportResponseByUnauthenticatedUser(implicit ee: ExecutionEnv) extends Rep
     s2"""
          Given an unauthenticated user                                ${step { someLoginInfo = None }}
          When post a response                                         ${step {
-      someResult = Some(postReportResponse(reportResponseAccepted))
-    }}
+        someResult = Some(postReportResponse(reportResponseAccepted))
+      }}
          Then result status is not authorized                         ${resultStatusMustBe(Status.UNAUTHORIZED)}
     """
 }
@@ -55,11 +55,11 @@ class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends Rep
   override def is =
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step {
-      someLoginInfo = Some(notConcernedProLoginInfo)
-    }}
+        someLoginInfo = Some(notConcernedProLoginInfo)
+      }}
          When post a response                                                   ${step {
-      someResult = Some(postReportResponse(reportResponseAccepted))
-    }}
+        someResult = Some(postReportResponse(reportResponseAccepted))
+      }}
          Then result status is not found                                        ${resultStatusMustBe(Status.NOT_FOUND)}
     """
 }
@@ -68,35 +68,35 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-      someLoginInfo = Some(concernedProLoginInfo)
-    }}
+        someLoginInfo = Some(concernedProLoginInfo)
+      }}
         When post a response with type "ACCEPTED"                                ${step {
-      someResult = Some(postReportResponse(reportResponseAccepted))
-    }}
+        someResult = Some(postReportResponse(reportResponseAccepted))
+      }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.REPORT_PRO_RESPONSE
-    )}
+        ActionEvent.REPORT_PRO_RESPONSE
+      )}
         And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-    )}
+        ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+      )}
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+      )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PromesseAction
-    )}
+        ReportStatus.PromesseAction
+      )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
-      reportFixture.email,
-      "L'entreprise a répondu à votre signalement",
-      views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      attachementService.attachmentSeqForWorkflowStepN(4)
-    )}
+        reportFixture.email,
+        "L'entreprise a répondu à votre signalement",
+        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
+        attachementService.attachmentSeqForWorkflowStepN(4)
+      )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
-      concernedProUser.email,
-      "Votre réponse au signalement",
-      views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString
-    )}
+        concernedProUser.email,
+        "Votre réponse au signalement",
+        views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedProUser).toString
+      )}
     """
 }
 
@@ -105,35 +105,37 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
   override def is =
     s2"""
         Given an authenticated pro user which have rights on head office         ${step {
-      someLoginInfo = Some(concernedHeadOfficeProLoginInfo)
-    }}
+        someLoginInfo = Some(concernedHeadOfficeProLoginInfo)
+      }}
         When post a response with type "ACCEPTED"                                ${step {
-      someResult = Some(postReportResponse(reportResponseAccepted))
-    }}
+        someResult = Some(postReportResponse(reportResponseAccepted))
+      }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.REPORT_PRO_RESPONSE
-    )}
+        ActionEvent.REPORT_PRO_RESPONSE
+      )}
         And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-    )}
+        ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+      )}
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+      )}
         And the response files are attached to the report                        ${reportFileMustHaveBeenAttachedToReport()}
         And the report reportStatusList is updated to "ReportStatus.PromesseAction"          ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.PromesseAction
-    )}
+        ReportStatus.PromesseAction
+      )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
-      reportFixture.email,
-      "L'entreprise a répondu à votre signalement",
-      views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-      attachementService.attachmentSeqForWorkflowStepN(4)
-    )}
+        reportFixture.email,
+        "L'entreprise a répondu à votre signalement",
+        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
+        attachementService.attachmentSeqForWorkflowStepN(4)
+      )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
-      concernedHeadOfficeProUser.email,
-      "Votre réponse au signalement",
-      views.html.mails.professional.reportAcknowledgmentPro(reportResponseAccepted, concernedHeadOfficeProUser).toString
-    )}
+        concernedHeadOfficeProUser.email,
+        "Votre réponse au signalement",
+        views.html.mails.professional
+          .reportAcknowledgmentPro(reportResponseAccepted, concernedHeadOfficeProUser)
+          .toString
+      )}
     """
 }
 
@@ -141,34 +143,34 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-      someLoginInfo = Some(concernedProLoginInfo)
-    }}
+        someLoginInfo = Some(concernedProLoginInfo)
+      }}
         When post a response with type "REJECTED"                                ${step {
-      someResult = Some(postReportResponse(reportResponseRejected))
-    }}
+        someResult = Some(postReportResponse(reportResponseRejected))
+      }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.REPORT_PRO_RESPONSE
-    )}
+        ActionEvent.REPORT_PRO_RESPONSE
+      )}
         And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-    )}
+        ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+      )}
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+      )}
         And the report reportStatusList is updated to "ReportStatus.Infonde"      ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.Infonde
-    )}
+        ReportStatus.Infonde
+      )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
-      reportFixture.email,
-      "L'entreprise a répondu à votre signalement",
-      views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString,
-      attachementService.attachmentSeqForWorkflowStepN(4)
-    )}
+        reportFixture.email,
+        "L'entreprise a répondu à votre signalement",
+        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString,
+        attachementService.attachmentSeqForWorkflowStepN(4)
+      )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
-      concernedProUser.email,
-      "Votre réponse au signalement",
-      views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString
-    )}
+        concernedProUser.email,
+        "Votre réponse au signalement",
+        views.html.mails.professional.reportAcknowledgmentPro(reportResponseRejected, concernedProUser).toString
+      )}
     """
 }
 
@@ -176,36 +178,36 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
-      someLoginInfo = Some(concernedProLoginInfo)
-    }}
+        someLoginInfo = Some(concernedProLoginInfo)
+      }}
         When post a response with type "NOT_CONCERNED"                           ${step {
-      someResult = Some(postReportResponse(reportResponseNotConcerned))
-    }}
+        someResult = Some(postReportResponse(reportResponseNotConcerned))
+      }}
         Then an event "REPORT_PRO_RESPONSE" is created                           ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.REPORT_PRO_RESPONSE
-    )}
+        ActionEvent.REPORT_PRO_RESPONSE
+      )}
         And an event "EMAIL_CONSUMER_REPORT_RESPONSE" is created                 ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
-    )}
+        ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
+      )}
         And an event "EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT" is created              ${eventMustHaveBeenCreatedWithAction(
-      ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
-    )}
+        ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
+      )}
         And the report reportStatusList is updated to "MAL_ATTRIBUE"             ${reportMustHaveBeenUpdatedWithStatus(
-      ReportStatus.MalAttribue
-    )}
+        ReportStatus.MalAttribue
+      )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
-      reportFixture.email,
-      "L'entreprise a répondu à votre signalement",
-      views.html.mails.consumer
-        .reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl)
-        .toString,
-      attachementService.attachmentSeqForWorkflowStepN(4)
-    )}
+        reportFixture.email,
+        "L'entreprise a répondu à votre signalement",
+        views.html.mails.consumer
+          .reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl)
+          .toString,
+        attachementService.attachmentSeqForWorkflowStepN(4)
+      )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
-      concernedProUser.email,
-      "Votre réponse au signalement",
-      views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString
-    )}
+        concernedProUser.email,
+        "Votre réponse au signalement",
+        views.html.mails.professional.reportAcknowledgmentPro(reportResponseNotConcerned, concernedProUser).toString
+      )}
     """
 }
 
