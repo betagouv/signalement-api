@@ -44,8 +44,8 @@ class GetReportsByAdminUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
          Given an authenticated admin user                            ${step {
-        someLoginInfo = Some(loginInfo(adminUser))
-      }}
+      someLoginInfo = Some(loginInfo(adminUser))
+    }}
          When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as a DGCCRF User       ${reportsMustBeRenderedForUser(adminUser)}
     """
@@ -55,8 +55,8 @@ class GetReportsByDGCCRFUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""
          Given an authenticated dgccrf user                           ${step {
-        someLoginInfo = Some(loginInfo(dgccrfUser))
-      }}
+      someLoginInfo = Some(loginInfo(dgccrfUser))
+    }}
          When retrieving reports                                      ${step { someResult = Some(getReports()) }}
          Then reports are rendered to the user as an Admin            ${reportsMustBeRenderedForUser(dgccrfUser)}
     """
@@ -66,14 +66,14 @@ class GetReportsByProUserWithAccessToHeadOffice(implicit ee: ExecutionEnv) exten
   override def is =
     s2"""
          Given an authenticated pro user who access to the headOffice               ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
-      }}
+      someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+    }}
          When retrieving reports                                                    ${step {
-        someResult = Some(getReports())
-      }}
+      someResult = Some(getReports())
+    }}
          Then headOffice and subsidiary reports are rendered to the user as a Pro   ${reportsMustBeRenderedForUser(
-        proUserWithAccessToHeadOffice
-      )}
+      proUserWithAccessToHeadOffice
+    )}
     """
 }
 
@@ -81,11 +81,11 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
   override def is =
     s2"""
          Given an authenticated pro user                                            ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
-      }}
+      someLoginInfo = Some(loginInfo(proUserWithAccessToHeadOffice))
+    }}
          When retrieving reports                                                    ${step {
-        someResult = Some(getReports(Some("badvalue")))
-      }}
+      someResult = Some(getReports(Some("badvalue")))
+    }}
          Then headOffice and subsidiary reports are rendered to the user as a Pro   ${mustBeBadRequest()}
     """
 }
@@ -94,14 +94,14 @@ class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends G
   override def is =
     s2"""
          Given an authenticated pro user who only access to the subsidiary      ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToSubsidiary))
-      }}
+      someLoginInfo = Some(loginInfo(proUserWithAccessToSubsidiary))
+    }}
          When retrieving reports                                                ${step {
-        someResult = Some(getReports())
-      }}
+      someResult = Some(getReports())
+    }}
          Then subsidiary reports are rendered to the user as a Pro              ${reportsMustBeRenderedForUser(
-        proUserWithAccessToSubsidiary
-      )}
+      proUserWithAccessToSubsidiary
+    )}
     """
 }
 
@@ -109,11 +109,11 @@ class GetReportsByProWithoutAccessNone(implicit ee: ExecutionEnv) extends GetRep
   override def is =
     s2"""
          Given an authenticated pro user who only access to the subsidiary      ${step {
-        someLoginInfo = Some(loginInfo(noAccessUser))
-      }}
+      someLoginInfo = Some(loginInfo(noAccessUser))
+    }}
          When retrieving reports                                                ${step {
-        someResult = Some(getReports())
-      }}
+      someResult = Some(getReports())
+    }}
          Then no reports are rendered to the user having no access              ${noReportsMustBeRendered()}
     """
 }

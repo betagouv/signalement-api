@@ -53,8 +53,8 @@ object GetReportByUnauthenticatedUser extends GetReportSpec {
     s2"""
          Given an unauthenticated user                                ${step { someLoginInfo = None }}
          When retrieving the report                                   ${step {
-        someResult = Some(getReport(neverRequestedReport.id))
-      }}
+      someResult = Some(getReport(neverRequestedReport.id))
+    }}
          Then user is not authorized                                  ${userMustBeUnauthorized()}
     """
 }
@@ -64,12 +64,12 @@ object GetReportByAdminUser extends GetReportSpec {
     s2"""
          Given an authenticated admin user                            ${step { someLoginInfo = Some(adminLoginInfo) }}
          When retrieving the report                                   ${step {
-        someResult = Some(getReport(neverRequestedReport.id))
-      }}
+      someResult = Some(getReport(neverRequestedReport.id))
+    }}
          Then the report is rendered to the user as an Admin          ${reportMustBeRenderedForUserRole(
-        neverRequestedReport,
-        UserRole.Admin
-      )}
+      neverRequestedReport,
+      UserRole.Admin
+    )}
     """
 }
 
@@ -77,11 +77,11 @@ object GetReportByNotConcernedProUser extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is not concerned by the report   ${step {
-        someLoginInfo = Some(notConcernedProLoginInfo)
-      }}
+      someLoginInfo = Some(notConcernedProLoginInfo)
+    }}
          When getting the report                                                ${step {
-        someResult = Some(getReport(neverRequestedReport.id))
-      }}
+      someResult = Some(getReport(neverRequestedReport.id))
+    }}
          Then the report is not found                                           ${reportMustBeNotFound()}
     """
 }
@@ -90,27 +90,27 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
-      }}
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
          When retrieving the report for the first time                          ${step {
-        someResult = Some(getReport(neverRequestedReport.id))
-      }}
+      someResult = Some(getReport(neverRequestedReport.id))
+    }}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(
-        ActionEvent.REPORT_READING_BY_PRO
-      )}
+      ActionEvent.REPORT_READING_BY_PRO
+    )}
          And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(
-        ReportStatus.Transmis
-      )}
+      ReportStatus.Transmis
+    )}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
-        neverRequestedReport.email,
-        "L'entreprise a pris connaissance de votre signalement",
-        views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
-        attachementService.attachmentSeqForWorkflowStepN(3)
-      )}
+      neverRequestedReport.email,
+      "L'entreprise a pris connaissance de votre signalement",
+      views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
+      attachementService.attachmentSeqForWorkflowStepN(3)
+    )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-        neverRequestedReport.copy(status = ReportStatus.Transmis),
-        UserRole.Professionnel
-      )}
+      neverRequestedReport.copy(status = ReportStatus.Transmis),
+      UserRole.Professionnel
+    )}
       """
 }
 
@@ -118,20 +118,20 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
-      }}
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
          When retrieving a final report for the first time                      ${step {
-        someResult = Some(getReport(neverRequestedFinalReport.id))
-      }}
+      someResult = Some(getReport(neverRequestedFinalReport.id))
+    }}
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(
-        ActionEvent.REPORT_READING_BY_PRO
-      )}
+      ActionEvent.REPORT_READING_BY_PRO
+    )}
          And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-        neverRequestedFinalReport,
-        UserRole.Professionnel
-      )}
+      neverRequestedFinalReport,
+      UserRole.Professionnel
+    )}
     """
 }
 
@@ -139,18 +139,18 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
-        someLoginInfo = Some(concernedProLoginInfo)
-      }}
+      someLoginInfo = Some(concernedProLoginInfo)
+    }}
          When retrieving the report not for the first time                      ${step {
-        someResult = Some(getReport(alreadyRequestedReport.id))
-      }}
+      someResult = Some(getReport(alreadyRequestedReport.id))
+    }}
          Then no event is created                                               ${eventMustNotHaveBeenCreated()}
          And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
-        alreadyRequestedReport,
-        UserRole.Professionnel
-      )}
+      alreadyRequestedReport,
+      UserRole.Professionnel
+    )}
 
     """
 }

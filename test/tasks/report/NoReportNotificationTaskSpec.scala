@@ -21,8 +21,8 @@ class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificati
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-      }}
+      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+    }}
          And no email are sent to any users                           ${mailMustNotHaveBeenSent()}
     """
 }
