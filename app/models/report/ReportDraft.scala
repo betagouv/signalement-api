@@ -4,10 +4,12 @@ import models.Address
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+import models.report.Tag.ReportTag.jsonFormat
 
 import java.util.UUID
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
+import models.report.Tag.ReportTag
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 

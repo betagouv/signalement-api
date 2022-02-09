@@ -205,13 +205,4 @@ object Constants {
         case other => Seq(other)
       }
   }
-
-  object ReportTag {
-    val ReponseConso = "ReponseConso"
-    val LitigeContractuel = "Litige contractuel"
-    val ProduitDangereux = "Produit dangereux"
-    val Bloctel = "Bloctel"
-    val Influenceur = "Influenceur"
-    val CompagnieAerienne = "Compagnie aerienne"
-  }
 }

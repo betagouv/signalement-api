@@ -1,7 +1,8 @@
 package repositories.mapping
 
-import models.report
 import models.report.ReportTag
+import models.report.Tag
+import models.report.Tag.ReportTag
 import repositories.PostgresProfile.api._
 
 object Report {
@@ -18,16 +19,16 @@ object Report {
       ReportTag.namesToValuesMap
     )
 
-  implicit val ReportTagFilterListColumnType =
-    MappedColumnType.base[List[report.ReportTagFilter], List[String]](
+  implicit val TagFilterListColumnType =
+    MappedColumnType.base[List[Tag], List[String]](
       _.map(_.entryName),
-      _.map(ReportTag.namesToValuesMap ++ report.ReportTagFilter.namesToValuesMap)
+      _.map(Tag.namesToValuesMap)
     )
 
   implicit val ReportTagFilterColumnType =
-    MappedColumnType.base[report.ReportTagFilter, String](
+    MappedColumnType.base[Tag, String](
       _.entryName,
-      ReportTag.namesToValuesMap ++ report.ReportTagFilter.namesToValuesMap
+      ReportTag.namesToValuesMap
     )
 
 }

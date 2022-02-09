@@ -14,7 +14,7 @@ import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportStatus
-import models.report.ReportTag
+import models.report.Tag.ReportTag
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json

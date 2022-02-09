@@ -5,6 +5,7 @@ import play.api.libs.json.OFormat
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+import Tag.ReportTag._
 
 import java.time.OffsetDateTime
 import java.util.UUID

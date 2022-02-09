@@ -4,6 +4,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import io.scalaland.chimney.dsl.TransformerOps
 import models.dataeconomie.ReportDataEconomie
+import models.report.Tag.ReportTag.ReportTagTranslationOps
 import play.api.Logger
 import repositories._
 

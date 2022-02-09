@@ -2,14 +2,13 @@ package repositories
 
 import models._
 import models.report.ReportCategory
-import models.report.ReportTagFilter
 import play.api.db.slick.DatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
-import repositories.mapping.Report.ReportTagFilterListColumnType
-
+import repositories.mapping.Report._
+import models.report.{Tag => SignalConsoTag}
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
@@ -36,7 +35,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
-    def tags = column[List[ReportTagFilter]]("tags")
+    def tags = column[List[SignalConsoTag]]("tags")
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def frequency = column[Period]("frequency")
@@ -48,7 +47,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         Option[EmailAddress],
         List[String],
         List[String],
-        List[ReportTagFilter],
+        List[SignalConsoTag],
         List[Country],
         List[SIRET],
         Period
