@@ -9,7 +9,9 @@ import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
+import models.report.Tag.ReportTag
 import models.report.WebsiteURL
+import models.report.{Tag => SignalConsoTag}
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.mapping.Report._
@@ -345,7 +347,7 @@ class ReportRepository @Inject() (
       }
       .filterIf(filter.tags.nonEmpty) { table =>
         val nonEmptyReportTag = ReportTag.reportTagFrom(filter.tags)
-        val includeNotTaggedReports = filter.tags.contains(report.ReportTagFilter.NA)
+        val includeNotTaggedReports = filter.tags.contains(SignalConsoTag.NA)
         filterTags(nonEmptyReportTag, includeNotTaggedReports, table)
       }
       .filterOpt(filter.details) { case (table, details) =>

@@ -8,7 +8,7 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import models.report.ReportTag
+import models.report.Tag.ReportTag
 import utils._
 
 import java.time.LocalDate

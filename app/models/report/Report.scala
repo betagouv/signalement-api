@@ -5,7 +5,7 @@ import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
-import models.report.ReportTag
+import models.report.Tag.ReportTag.jsonFormat
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
@@ -16,6 +16,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
+import models.report.Tag.ReportTag
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
