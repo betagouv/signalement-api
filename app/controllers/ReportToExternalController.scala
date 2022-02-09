@@ -51,7 +51,7 @@ class ReportToExternalController @Inject() (
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
       end = qs.localDate("end"),
-      tags = qs.seq("tags").map(ReportTag.fromDisplayOrEntryName)
+      tags = qs.seq("tags").map(ReportTag.withName(_))
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
