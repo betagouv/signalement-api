@@ -12,7 +12,7 @@ import models.report.Report
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
-import models.report.ReportTag
+import models.report.Tag.ReportTag
 import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError

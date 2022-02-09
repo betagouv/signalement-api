@@ -1,8 +1,8 @@
 package tasks.report
 
 import models._
-import models.report.ReportTag
-import models.report.ReportTagFilter
+import models.report.Tag.ReportTag
+import models.report.Tag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -60,7 +60,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(ReportTag.ProduitDangereux, ReportTagFilter.NA),
+    tags = List(ReportTag.ProduitDangereux, Tag.NA),
     frequency = Period.ofDays(1)
   )
 

@@ -10,7 +10,7 @@ import models.auth.AuthToken
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
-import models.report.ReportTag
+import models.report.Tag.ReportTag
 import play.api.libs.mailer.Attachment
 import utils.EmailAddress
 import utils.EmailSubjects
