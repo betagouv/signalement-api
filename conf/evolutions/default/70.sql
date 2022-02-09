@@ -4,7 +4,6 @@ update reports set tags = array_replace(tags, 'Litige contractuel','LitigeContra
 update reports set tags = array_replace(tags, 'hygiène','Hygiene');
 update reports set tags = array_replace(tags, 'Produit dangereux','ProduitDangereux');
 update reports set tags = array_replace(tags, 'Démarchage à domicile','DemarchageADomicile');
-update reports set tags = array_replace(tags, 'Démarcharge à domicile','DemarchageADomicile');
 update reports set tags = array_replace(tags, 'Démarchage téléphonique','DemarchageTelephonique');
 update reports set tags = array_replace(tags, 'Absence de médiateur','AbsenceDeMediateur');
 update reports set tags = array_replace(tags, 'Produit industriel','ProduitIndustriel');
