@@ -8,7 +8,7 @@ import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
-import models.report.ReportConsumer
+import models.report.ReportConsumerUpdate
 import models.report.ReportFileOrigin
 import models.report.ReportResponse
 import models.report.ReportWithFiles
@@ -88,7 +88,7 @@ class ReportController @Inject() (
   def updateReportConsumer(uuid: String) =
     SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
       request.body
-        .validate[ReportConsumer]
+        .validate[ReportConsumerUpdate]
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           reportConsumer =>

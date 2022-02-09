@@ -267,6 +267,12 @@ class ReportsExtractActor @Inject() (
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Téléphone",
+        leftAlignmentColumn,
+        (report, _, _, _) => report.consumerPhone.getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Accord pour contact",
         centerAlignmentColumn,
         (report, _, _, _) => if (report.contactAgreement) "Oui" else "Non"

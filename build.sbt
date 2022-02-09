@@ -55,6 +55,7 @@ libraryDependencies ++= Seq(
   "io.sentry" % "sentry-logback" % "5.6.1",
   "org.typelevel" %% "cats-core" % "2.7.0",
   "com.github.pureconfig" %% "pureconfig" % "0.17.1",
+  "ai.x" %% "play-json-extensions" % "0.42.0",
   compilerPlugin(scalafixSemanticdb)
 )
 

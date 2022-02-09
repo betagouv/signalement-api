@@ -14,6 +14,10 @@ import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
+import ai.x.play.json.Jsonx
+import ai.x.play.json.Encoders.encoder
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 case class Report(
     id: UUID = UUID.randomUUID(),
@@ -30,6 +34,7 @@ case class Report(
     firstName: String,
     lastName: String,
     email: EmailAddress,
+    consumerPhone: Option[String] = None,
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
@@ -63,7 +68,8 @@ case class Report(
 
 object Report {
 
-  implicit val reportReader = Json.reads[Report]
+  private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
+  implicit val reportReads: Reads[Report] = jsonFormatX
 
   implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
     def writes(report: Report) =
@@ -94,6 +100,12 @@ object Report {
             "firstName" -> report.firstName,
             "lastName" -> report.lastName,
             "email" -> report.email
+          )
+      }) ++ (userRole match {
+        case Some(UserRole.Professionnel) => Json.obj()
+        case _ =>
+          Json.obj(
+            "consumerPhone" -> report.consumerPhone
           )
       })
   }
@@ -159,15 +171,15 @@ object ReportCompany {
   implicit val format = Json.format[ReportCompany]
 }
 
-case class ReportConsumer(
+case class ReportConsumerUpdate(
     firstName: String,
     lastName: String,
     email: EmailAddress,
     contactAgreement: Boolean
 )
 
-object ReportConsumer {
-  implicit val format = Json.format[ReportConsumer]
+object ReportConsumerUpdate {
+  implicit val format = Json.format[ReportConsumerUpdate]
 }
 
 case class ReportAction(

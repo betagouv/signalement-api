@@ -1,12 +1,15 @@
 package models.report
 
 import models.Address
-import play.api.libs.json.Json
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 
 import java.util.UUID
+import ai.x.play.json.Jsonx
+import ai.x.play.json.Encoders.encoder
+import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 case class ReportDraft(
     category: String,
@@ -21,6 +24,7 @@ case class ReportDraft(
     firstName: String,
     lastName: String,
     email: EmailAddress,
+    consumerPhone: Option[String],
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Option[Boolean] = Some(false),
@@ -45,6 +49,7 @@ case class ReportDraft(
       firstName = firstName,
       lastName = lastName,
       email = email,
+      consumerPhone = consumerPhone,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
       status = ReportStatus.NA,
@@ -70,6 +75,6 @@ object ReportDraft {
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
 
-  implicit val draftReportReads = Json.reads[ReportDraft]
+  implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
   implicit val draftReportWrites = Json.writes[ReportDraft]
 }

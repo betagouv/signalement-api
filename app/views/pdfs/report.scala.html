@@ -120,6 +120,11 @@
                     <div>
                         @report.email
                     </div>
+                    @report.consumerPhone.map { phone =>
+                        <div>
+                            @phone
+                        </div>
+                    }
                 </div>
                 <div>
                     <h2>Pièces jointes</h2>
