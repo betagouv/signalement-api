@@ -1,5 +1,6 @@
 package repositories
 
+import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import models.report.DetailInputValue.toDetailInputValue
 import models.report
 import models._
@@ -554,6 +555,29 @@ class ReportRepository @Inject() (
         .distinct
         .result
     ).map(_.map(_.getOrElse("")))
+
+  def getReportsWithFiles(
+      filter: ReportFilter,
+      inputOffset: Option[Long] = None,
+      inputLimit: Option[Int] = None
+  ): Future[Map[Report, List[ReportFile]]] = {
+    val maxResults = 1000
+    for {
+      _ <- inputLimit match {
+        case Some(limitValue) if limitValue > maxResults =>
+          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
+        case a => Future.successful(a)
+      }
+      validLimit = inputLimit.orElse(Some(maxResults))
+      validOffset = inputOffset.orElse(Some(0L))
+      res <- queryFilter(filter)
+        .joinLeft(fileTableQuery)
+        .on(_.id === _.reportId)
+        .sortBy(_._1.creationDate.desc)
+        .withPagination(db)(validOffset, validLimit)
+      r = res.entities.groupBy(a => a._1).view.mapValues(_.flatMap(_._2)).toMap
+    } yield r
+  }
 
   def getReports(
       filter: ReportFilter,

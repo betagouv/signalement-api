@@ -53,17 +53,23 @@ class ReportToExternalController @Inject() (
       end = qs.localDate("end"),
       tags = qs.seq("tags").map(Tag.withName)
     )
+    val offset = qs.long("offset")
+    val limit = qs.int("limit")
+
     for {
-      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
-      reportFilesMap <- reportRepository.prefetchReportsFiles(reports.entities.map(_.id))
+      reportsWithFiles <- reportRepository.getReportsWithFiles(
+        filter = filter,
+        inputOffset = offset,
+        inputLimit = limit
+      )
     } yield Ok(
       Json.toJson(
-        reports.entities.map(r =>
+        reportsWithFiles.map { case (report, fileList) =>
           ReportWithFilesToExternal(
-            ReportToExternal.fromReport(r),
-            reportFilesMap.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
+            ReportToExternal.fromReport(report),
+            fileList.map(ReportFileToExternal.fromReportFile)
           )
-        )
+        }
       )
     )
   }
