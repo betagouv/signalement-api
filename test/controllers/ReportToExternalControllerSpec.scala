@@ -103,6 +103,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     val mockReportRepository = mock[ReportRepository]
     mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
+    mockReportRepository.getReportsWithFiles(any, any, any) returns Future(Map.empty)
     mockReportRepository.prefetchReportsFiles(any) returns Future(Map())
 
     class FakeModule extends AbstractModule with ScalaModule {
