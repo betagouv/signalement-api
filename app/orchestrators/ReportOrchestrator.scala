@@ -618,20 +618,34 @@ class ReportOrchestrator @Inject() (
         filter.siretSirenList,
         connectedUser
       )
-      paginatedReports <-
+      paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
-          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List[Report]()))
+          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
         } else {
-          reportRepository.getReports(
+          getReportsWithFile[ReportWithFiles](
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
-            limit
+            limit,
+            (r: Report, m: Map[UUID, List[ReportFile]]) => ReportWithFiles(r, m.getOrElse(r.id, Nil))
           )
         }
+    } yield paginatedReportFiles
+
+  def getReportsWithFile[T](
+      filter: ReportFilter,
+      offset: Option[Long],
+      limit: Option[Int],
+      toApi: (Report, Map[UUID, List[ReportFile]]) => T
+  ): Future[PaginatedResult[T]] =
+    for {
+      paginatedReports <-
+        reportRepository.getReports(
+          filter,
+          offset,
+          limit
+        )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
-    } yield paginatedReports.copy(entities =
-      paginatedReports.entities.map(r => report.ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
-    )
+    } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     reportRepository.countByDepartments(start, end)

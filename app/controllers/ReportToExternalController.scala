@@ -1,6 +1,8 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.report.Report
+import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFileToExternal
 import models.report.ReportFilter
@@ -8,9 +10,12 @@ import models.report.ReportToExternal
 import models.report.ReportWithFiles
 import models.report.ReportWithFilesToExternal
 import models.report.Tag
+import models.report.ReportWithFilesToExternal.format
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories._
+import play.api.libs.json.Writes
+import repositories.ReportRepository
 import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 
@@ -21,9 +26,11 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import models.PaginatedResult.paginatedResultWrites
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
+    reportOrchestrator: ReportOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
     extends ApiKeyBaseController {
@@ -71,6 +78,34 @@ class ReportToExternalController @Inject() (
           )
         }
       )
+    )
+  }
+
+  def searchReportsToExternalV2() = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
+    val filter = ReportFilter(
+      siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
+      start = qs.localDate("start"),
+      end = qs.localDate("end"),
+      tags = qs.seq("tags").map(Tag.withName)
+    )
+    val offset = qs.long("offset")
+    val limit = qs.int("limit")
+
+    for {
+      reportsWithFiles <- reportOrchestrator.getReportsWithFile(
+        filter = filter,
+        offset,
+        limit,
+        (r: Report, m: Map[UUID, List[ReportFile]]) =>
+          ReportWithFilesToExternal(
+            ReportToExternal.fromReport(r),
+            m.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
+          )
+      )
+
+    } yield Ok(
+      Json.toJson(reportsWithFiles)(paginatedResultWrites[ReportWithFilesToExternal](ReportWithFilesToExternal.format))
     )
   }
 
