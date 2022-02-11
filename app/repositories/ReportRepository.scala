@@ -561,7 +561,7 @@ class ReportRepository @Inject() (
       inputOffset: Option[Long] = None,
       inputLimit: Option[Int] = None
   ): Future[Map[Report, List[ReportFile]]] = {
-    val maxResults = 20000
+    val maxResults = 50000
     for {
       _ <- inputLimit match {
         case Some(limitValue) if limitValue > maxResults =>
