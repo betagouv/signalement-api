@@ -24,6 +24,7 @@ import java.time._
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -560,7 +561,7 @@ class ReportRepository @Inject() (
       filter: ReportFilter,
       inputOffset: Option[Long] = None,
       inputLimit: Option[Int] = None
-  ): Future[Map[Report, List[ReportFile]]] = {
+  ) = {
     val maxResults = 50000
     for {
       _ <- inputLimit match {
@@ -575,18 +576,43 @@ class ReportRepository @Inject() (
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
         .withPagination(db)(validOffset, validLimit)
-      filesGroupedByReports = queryResult.entities.groupBy(a => a._1).view.mapValues(_.flatMap(_._2)).toMap
+      filesGroupedByReports =
+        SortedMap(
+          queryResult.entities
+            .groupBy(a => a._1)
+            .view
+            .mapValues(_.flatMap(_._2))
+            .toSeq: _*
+        )(ReportFileOrdering)
+
     } yield filesGroupedByReports
+  }
+
+  object ReportFileOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      b.creationDate compareTo (a.creationDate)
   }
 
   def getReports(
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] =
-    queryFilter(filter)
-      .sortBy(_.creationDate.desc)
-      .withPagination(db)(offset, limit)
+  ): Future[PaginatedResult[Report]] = {
+    val maxResults = 1000
+    for {
+      _ <- limit match {
+        case Some(limitValue) if limitValue > maxResults =>
+          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
+        case a => Future.successful(a)
+      }
+      validLimit = limit.orElse(Some(maxResults))
+      validOffset = offset.orElse(Some(0L))
+
+      res <- queryFilter(filter)
+        .sortBy(_.creationDate.desc)
+        .withPagination(db)(validOffset, validLimit)
+    } yield res
+  }
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery

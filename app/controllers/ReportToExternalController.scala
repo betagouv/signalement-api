@@ -14,7 +14,6 @@ import models.report.ReportWithFilesToExternal.format
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
 import repositories.ReportRepository
 import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
@@ -103,7 +102,6 @@ class ReportToExternalController @Inject() (
             m.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
           )
       )
-
     } yield Ok(
       Json.toJson(reportsWithFiles)(paginatedResultWrites[ReportWithFilesToExternal](ReportWithFilesToExternal.format))
     )

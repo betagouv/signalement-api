@@ -12,7 +12,6 @@ import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
-import models.report
 import models._
 import models.report.Report
 import models.report.ReportAction
