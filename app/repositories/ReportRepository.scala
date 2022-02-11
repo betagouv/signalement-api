@@ -570,13 +570,13 @@ class ReportRepository @Inject() (
       }
       validLimit = inputLimit.orElse(Some(maxResults))
       validOffset = inputOffset.orElse(Some(0L))
-      res <- queryFilter(filter)
+      queryResult <- queryFilter(filter)
         .joinLeft(fileTableQuery)
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
         .withPagination(db)(validOffset, validLimit)
-      r = res.entities.groupBy(a => a._1).view.mapValues(_.flatMap(_._2)).toMap
-    } yield r
+      filesGroupedByReports = queryResult.entities.groupBy(a => a._1).view.mapValues(_.flatMap(_._2)).toMap
+    } yield filesGroupedByReports
   }
 
   def getReports(
