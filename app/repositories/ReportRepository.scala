@@ -1,6 +1,5 @@
 package repositories
 
-import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import models.report.DetailInputValue.toDetailInputValue
 import models.report
 import models._
@@ -15,6 +14,7 @@ import models.report.WebsiteURL
 import models.report.{Tag => SignalConsoTag}
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.ReportRepository.ReportFileOrdering
 import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
@@ -558,24 +558,14 @@ class ReportRepository @Inject() (
     ).map(_.map(_.getOrElse("")))
 
   def getReportsWithFiles(
-      filter: ReportFilter,
-      inputOffset: Option[Long] = None,
-      inputLimit: Option[Int] = None
-  ) = {
-    val maxResults = 50000
+      filter: ReportFilter
+  ) =
     for {
-      _ <- inputLimit match {
-        case Some(limitValue) if limitValue > maxResults =>
-          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
-        case a => Future.successful(a)
-      }
-      validLimit = inputLimit.orElse(Some(maxResults))
-      validOffset = inputOffset.orElse(Some(0L))
       queryResult <- queryFilter(filter)
         .joinLeft(fileTableQuery)
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
-        .withPagination(db)(validOffset, validLimit)
+        .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
       filesGroupedByReports =
         SortedMap(
           queryResult.entities
@@ -586,33 +576,16 @@ class ReportRepository @Inject() (
         )(ReportFileOrdering)
 
     } yield filesGroupedByReports
-  }
-
-  object ReportFileOrdering extends Ordering[Report] {
-    def compare(a: Report, b: Report) =
-      b.creationDate compareTo (a.creationDate)
-  }
 
   def getReports(
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] = {
-    val maxResults = 1000
-    for {
-      _ <- limit match {
-        case Some(limitValue) if limitValue > maxResults =>
-          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
-        case a => Future.successful(a)
-      }
-      validLimit = limit.orElse(Some(maxResults))
-      validOffset = offset.orElse(Some(0L))
-
-      res <- queryFilter(filter)
-        .sortBy(_.creationDate.desc)
-        .withPagination(db)(validOffset, validLimit)
-    } yield res
-  }
+  ): Future[PaginatedResult[Report]] = for {
+    res <- queryFilter(filter)
+      .sortBy(_.creationDate.desc)
+      .withPagination(db)(offset, limit)
+  } yield res
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery
@@ -740,4 +713,11 @@ class ReportRepository @Inject() (
         .to[List]
         .result
     )
+}
+
+object ReportRepository {
+  object ReportFileOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      b.creationDate compareTo (a.creationDate)
+  }
 }

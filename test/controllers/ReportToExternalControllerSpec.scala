@@ -7,6 +7,8 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import models.Consumer
 import models.PaginatedResult
+import models.report.Report
+import models.report.ReportFile
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -25,6 +27,7 @@ import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
+import scala.collection.SortedMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -102,8 +105,11 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository = mock[ReportRepository]
+
+    implicit val ordering = ReportRepository.ReportFileOrdering
+
     mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
-    mockReportRepository.getReportsWithFiles(any, any, any) returns Future(Map.empty)
+    mockReportRepository.getReportsWithFiles(any) returns Future(SortedMap.empty[Report, List[ReportFile]])
     mockReportRepository.prefetchReportsFiles(any) returns Future(Map())
 
     class FakeModule extends AbstractModule with ScalaModule {

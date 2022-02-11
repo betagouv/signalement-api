@@ -8,6 +8,7 @@ import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
@@ -635,16 +636,25 @@ class ReportOrchestrator @Inject() (
       offset: Option[Long],
       limit: Option[Int],
       toApi: (Report, Map[UUID, List[ReportFile]]) => T
-  ): Future[PaginatedResult[T]] =
+  ): Future[PaginatedResult[T]] = {
+    val maxResults = 1000
     for {
+      _ <- limit match {
+        case Some(limitValue) if limitValue > maxResults =>
+          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
+        case a => Future.successful(a)
+      }
+      validLimit = limit.orElse(Some(maxResults))
+      validOffset = offset.orElse(Some(0L))
       paginatedReports <-
         reportRepository.getReports(
           filter,
-          offset,
-          limit
+          validOffset,
+          validLimit
         )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
+  }
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     reportRepository.countByDepartments(start, end)

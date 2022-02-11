@@ -59,14 +59,10 @@ class ReportToExternalController @Inject() (
       end = qs.localDate("end"),
       tags = qs.seq("tags").map(Tag.withName)
     )
-    val offset = qs.long("offset")
-    val limit = qs.int("limit")
 
     for {
       reportsWithFiles <- reportRepository.getReportsWithFiles(
-        filter = filter,
-        inputOffset = offset,
-        inputLimit = limit
+        filter = filter
       )
     } yield Ok(
       Json.toJson(
