@@ -14,6 +14,7 @@ import models.report.WebsiteURL
 import models.report.{Tag => SignalConsoTag}
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.ReportRepository.ReportFileOrdering
 import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
@@ -23,6 +24,7 @@ import java.time._
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -555,14 +557,35 @@ class ReportRepository @Inject() (
         .result
     ).map(_.map(_.getOrElse("")))
 
+  def getReportsWithFiles(
+      filter: ReportFilter
+  ) =
+    for {
+      queryResult <- queryFilter(filter)
+        .joinLeft(fileTableQuery)
+        .on(_.id === _.reportId)
+        .sortBy(_._1.creationDate.desc)
+        .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
+      filesGroupedByReports =
+        SortedMap(
+          queryResult.entities
+            .groupBy(a => a._1)
+            .view
+            .mapValues(_.flatMap(_._2))
+            .toSeq: _*
+        )(ReportFileOrdering)
+
+    } yield filesGroupedByReports
+
   def getReports(
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] =
-    queryFilter(filter)
+  ): Future[PaginatedResult[Report]] = for {
+    res <- queryFilter(filter)
       .sortBy(_.creationDate.desc)
       .withPagination(db)(offset, limit)
+  } yield res
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery
@@ -690,4 +713,11 @@ class ReportRepository @Inject() (
         .to[List]
         .result
     )
+}
+
+object ReportRepository {
+  object ReportFileOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      b.creationDate compareTo (a.creationDate)
+  }
 }
