@@ -4,6 +4,11 @@ import controllers.error.AppError.InvalidReportTagBody
 import controllers.error.AppError.InvalidTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
+import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Reads
 
 sealed trait Tag extends EnumEntry
 
@@ -22,10 +27,32 @@ object Tag extends PlayEnum[Tag] {
 
   object ReportTag extends PlayEnum[ReportTag] {
 
+    private[this] val logger = Logger(this.getClass)
+
     val values: IndexedSeq[ReportTag] = findValues
 
     override def withName(name: String): ReportTag =
-      ReportTag.withNameOption(name).collect { case r: ReportTag => r }.getOrElse(throw InvalidReportTagBody(name))
+      ReportTag.withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+
+    /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
+      * entry name Make sure no translated values is passed as ReportTag to remove this reads
+      */
+    val TranslationReportTagReads: Reads[ReportTag] = Reads[ReportTag] {
+      case JsString(s) =>
+        withNameOption(s).orElse {
+          ReportTag.values
+            .find { v =>
+              if (v.translate() == s) {
+                logger.error(s"Parsing report tag from translated value $s")
+                true
+              } else false
+            }
+        } match {
+          case Some(obj) => JsSuccess(obj)
+          case None      => JsError("error.expected.validenumvalue")
+        }
+      case _ => JsError("error.expected.enumstring")
+    }
 
     case object LitigeContractuel extends ReportTag
     case object Hygiene extends ReportTag

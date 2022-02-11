@@ -4,7 +4,7 @@ import models.Address
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-import models.report.Tag.ReportTag.jsonFormat
+import models.report.Tag.ReportTag.TranslationReportTagReads
 
 import java.util.UUID
 import ai.x.play.json.Jsonx
@@ -75,6 +75,10 @@ object ReportDraft {
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
 
+  /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
+    * entry name Make sure no translated values is passed as ReportTag to remove this reads
+    */
+  implicit val reportTagReads = TranslationReportTagReads
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
   implicit val draftReportWrites = Json.writes[ReportDraft]
 }

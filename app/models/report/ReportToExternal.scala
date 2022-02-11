@@ -20,6 +20,7 @@ case class ReportToExternal(
     siret: Option[SIRET],
     websiteURL: Option[URL],
     phone: Option[String],
+    consumerPhone: Option[String],
     firstName: String,
     lastName: String,
     email: EmailAddress,
@@ -46,6 +47,7 @@ object ReportToExternal {
       firstName = r.firstName,
       lastName = r.lastName,
       email = r.email,
+      consumerPhone = r.consumerPhone,
       contactAgreement = r.contactAgreement,
       description = r.details
         .filter(d => d.label.matches("Quel est le problème.*"))
