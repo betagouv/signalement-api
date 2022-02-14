@@ -8,6 +8,7 @@ import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
@@ -181,6 +182,7 @@ class ReportOrchestrator @Inject() (
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
+      _ <- reportRepository.findSimilarReportCount(reportToCreate).ensure(DuplicateReportCreation)(_ == 0)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)

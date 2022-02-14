@@ -135,12 +135,20 @@ case class DetailInputValue(
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
+  val DefaultKey = "Précision :"
   def toDetailInputValue(input: String): DetailInputValue =
     input match {
       case input if input.contains(':') =>
         DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
-      case input => DetailInputValue("Précision :", input)
+      case input =>
+        DetailInputValue(DefaultKey, input)
     }
+
+  def detailInputValuetoString(detailInputValue: DetailInputValue): String = detailInputValue.label match {
+    case DefaultKey => detailInputValue.value
+    case _          => s"${detailInputValue.label} ${detailInputValue.value}"
+  }
+
 }
 
 /** @deprecated Keep it for compat purpose but no longer used in new dashboard */

@@ -220,4 +220,11 @@ object AppError {
       s"Le nombre d'entrée par page demandé est trop élevé. Il doit être inférieur ou égal à $maxSize"
   }
 
+  final case object DuplicateReportCreation extends BadRequestError {
+    override val `type`: String = "SC-0025"
+    override val title: String = s"Same report has already been created"
+    override val details: String =
+      s"Un signalement similaire a été créé aujourd'hui."
+  }
+
 }
