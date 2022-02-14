@@ -13,5 +13,10 @@ class DetailInputValueTest extends Specification {
       toDetailInputValue("value") must equalTo(DetailInputValue("Précision :", "value"))
     }
 
+    "detailInputValue2String" in {
+      detailInputValuetoString(DetailInputValue("label :", "value")) must equalTo("label : value")
+      detailInputValuetoString(DetailInputValue("Précision :", "value")) must equalTo("value")
+    }
+
   }
 }

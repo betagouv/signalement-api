@@ -213,4 +213,18 @@ object AppError {
     override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
   }
 
+  final case class ExternalReportsMaxPageSizeExceeded(maxSize: Int) extends BadRequestError {
+    override val `type`: String = "SC-0024"
+    override val title: String = s"Max page size reached "
+    override val details: String =
+      s"Le nombre d'entrée par page demandé est trop élevé. Il doit être inférieur ou égal à $maxSize"
+  }
+
+  final case object DuplicateReportCreation extends BadRequestError {
+    override val `type`: String = "SC-0025"
+    override val title: String = s"Same report has already been created"
+    override val details: String =
+      s"Un signalement similaire a été créé aujourd'hui."
+  }
+
 }

@@ -43,7 +43,7 @@ object Tag extends PlayEnum[Tag] {
           ReportTag.values
             .find { v =>
               if (v.translate() == s) {
-                logger.error(s"Parsing report tag from translated value $s")
+                logger.warn(s"Parsing report tag from translated value $s")
                 true
               } else false
             }

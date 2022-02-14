@@ -1,5 +1,6 @@
 package repositories
 
+import models.report.DetailInputValue.detailInputValuetoString
 import models.report.DetailInputValue.toDetailInputValue
 import models.report
 import models._
@@ -14,6 +15,7 @@ import models.report.WebsiteURL
 import models.report.{Tag => SignalConsoTag}
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.ReportRepository.ReportFileOrdering
 import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
@@ -23,6 +25,7 @@ import java.time._
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -398,9 +401,31 @@ class ReportRepository @Inject() (
     }
   }
 
-  def create(report: Report): Future[Report] = db
-    .run(reportTableQuery += report)
-    .map(_ => report)
+  def findSimilarReportCount(report: Report): Future[Int] =
+    db.run(
+      reportTableQuery
+        .filter(_.email === report.email)
+        .filter(_.firstName === report.firstName)
+        .filter(_.details === report.details.map(detailInputValuetoString(_)))
+        .filterOpt(report.companyAddress.postalCode)(_.companyPostalCode === _)
+        .filterIf(report.companyAddress.postalCode.isEmpty)(_.companyPostalCode.isEmpty)
+        .filterOpt(report.companyAddress.number)(_.companyStreetNumber === _)
+        .filterIf(report.companyAddress.number.isEmpty)(_.companyStreetNumber.isEmpty)
+        .filterOpt(report.companyAddress.street)(_.companyStreet === _)
+        .filterIf(report.companyAddress.street.isEmpty)(_.companyStreet.isEmpty)
+        .filterOpt(report.companyAddress.addressSupplement)(_.companyAddressSupplement === _)
+        .filterIf(report.companyAddress.addressSupplement.isEmpty)(_.companyAddressSupplement.isEmpty)
+        .filterOpt(report.companyAddress.city)(_.companyCity === _)
+        .filterIf(report.companyAddress.city.isEmpty)(_.companyCity.isEmpty)
+        .filter(_.creationDate >= LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC))
+        .length
+        .result
+    )
+
+  def create(report: Report): Future[Report] =
+    db
+      .run(reportTableQuery += report)
+      .map(_ => report)
 
   def list: Future[List[Report]] = db.run(reportTableQuery.to[List].result)
 
@@ -555,14 +580,35 @@ class ReportRepository @Inject() (
         .result
     ).map(_.map(_.getOrElse("")))
 
+  def getReportsWithFiles(
+      filter: ReportFilter
+  ) =
+    for {
+      queryResult <- queryFilter(filter)
+        .joinLeft(fileTableQuery)
+        .on(_.id === _.reportId)
+        .sortBy(_._1.creationDate.desc)
+        .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
+      filesGroupedByReports =
+        SortedMap(
+          queryResult.entities
+            .groupBy(a => a._1)
+            .view
+            .mapValues(_.flatMap(_._2))
+            .toSeq: _*
+        )(ReportFileOrdering)
+
+    } yield filesGroupedByReports
+
   def getReports(
       filter: ReportFilter,
       offset: Option[Long] = None,
       limit: Option[Int] = None
-  ): Future[PaginatedResult[Report]] =
-    queryFilter(filter)
+  ): Future[PaginatedResult[Report]] = for {
+    res <- queryFilter(filter)
       .sortBy(_.creationDate.desc)
       .withPagination(db)(offset, limit)
+  } yield res
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
     reportTableQuery
@@ -690,4 +736,11 @@ class ReportRepository @Inject() (
         .to[List]
         .result
     )
+}
+
+object ReportRepository {
+  object ReportFileOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      b.creationDate compareTo (a.creationDate)
+  }
 }
