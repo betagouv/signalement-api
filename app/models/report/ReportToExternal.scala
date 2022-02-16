@@ -15,7 +15,8 @@ case class ReportToExternal(
     creationDate: OffsetDateTime,
     category: String,
     subcategories: List[String],
-    description: List[DetailInputValue],
+    details: List[DetailInputValue],
+    description: Option[String],
     question: Option[String],
     postalCode: Option[String],
     siret: Option[SIRET],
@@ -35,6 +36,7 @@ case class ReportToExternal(
 object ReportToExternal {
 
   val reponseConsoInputLabel = "Votre question"
+  val descriptionInputLabel = "Description"
 
   def fromReport(r: Report) =
     ReportToExternal(
@@ -42,7 +44,11 @@ object ReportToExternal {
       creationDate = r.creationDate,
       category = r.category,
       subcategories = r.subcategories,
-      description = r.details,
+      details = r.details,
+      description = r.details
+        .filter(d => d.label.matches(descriptionInputLabel + ".*"))
+        .map(_.value)
+        .headOption,
       question = r.details
         .filter(d => d.label.matches(reponseConsoInputLabel + ".*"))
         .map(_.value)
