@@ -16,6 +16,8 @@ case class ReportToExternal(
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
+    description: Option[String],
+    question: Option[String],
     postalCode: Option[String],
     siret: Option[SIRET],
     websiteURL: Option[URL],
@@ -25,7 +27,6 @@ case class ReportToExternal(
     lastName: String,
     email: EmailAddress,
     contactAgreement: Boolean,
-    description: Option[String],
     effectiveDate: Option[String],
     reponseconsoCode: List[String],
     ccrfCode: List[String],
@@ -33,6 +34,10 @@ case class ReportToExternal(
 ) {}
 
 object ReportToExternal {
+
+  val reponseConsoInputLabel = "Votre question"
+  val descriptionInputLabel = "Description"
+
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
@@ -40,6 +45,14 @@ object ReportToExternal {
       category = r.category,
       subcategories = r.subcategories,
       details = r.details,
+      description = r.details
+        .filter(d => d.label.matches(descriptionInputLabel + ".*"))
+        .map(_.value)
+        .headOption,
+      question = r.details
+        .filter(d => d.label.matches(reponseConsoInputLabel + ".*"))
+        .map(_.value)
+        .headOption,
       siret = r.companySiret,
       postalCode = r.companyAddress.postalCode,
       websiteURL = r.websiteURL.websiteURL,
@@ -49,10 +62,6 @@ object ReportToExternal {
       email = r.email,
       consumerPhone = r.consumerPhone,
       contactAgreement = r.contactAgreement,
-      description = r.details
-        .filter(d => d.label.matches("Quel est le problème.*"))
-        .map(_.value)
-        .headOption,
       effectiveDate = r.details
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)
