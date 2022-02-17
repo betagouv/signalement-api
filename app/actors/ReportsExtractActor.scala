@@ -309,7 +309,12 @@ class ReportsExtractActor @Inject() (
     val reportColumns = buildColumns(requestedBy)
     for {
       paginatedReports <- reportOrchestrator
-        .getReportsForUser(requestedBy, filter = filters, offset = Some(0), limit = Some(100000))
+        .getReportsForUser(
+          requestedBy,
+          filter = filters,
+          offset = Some(0),
+          limit = Some(signalConsoConfiguration.reportsExportLimitMax)
+        )
         .map(_.entities.map(_.report))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
