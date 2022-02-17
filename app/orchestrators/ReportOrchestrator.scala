@@ -639,10 +639,11 @@ class ReportOrchestrator @Inject() (
       limit: Option[Int],
       toApi: (Report, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
-    val maxResults = 1000
+    val maxResults = signalConsoConfiguration.reportsExportLimitMax
     for {
       _ <- limit match {
         case Some(limitValue) if limitValue > maxResults =>
+          logger.error(s"Max page size reached $limitValue > $maxResults")
           Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
         case a => Future.successful(a)
       }
