@@ -132,7 +132,7 @@ object Email {
   ) extends DgccrfEmail {
     override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(
       reports.length,
-      subscription.tags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
+      subscription.withTags.find(_ == ReportTag.ProduitDangereux).map(_ => "[Produits dangereux] ")
     )
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contact) =>
       views.html.mails.dgccrf.reportNotification(subscription, reports, startDate)(frontRoute, contact).toString

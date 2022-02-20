@@ -133,7 +133,8 @@ class AdminController @Inject() (
     email = None,
     departments = List("75"),
     countries = Nil,
-    tags = Nil,
+    withTags = Nil,
+    withoutTags = Nil,
     categories = Nil,
     sirets = Nil,
     frequency = java.time.Period.ofDays(1)

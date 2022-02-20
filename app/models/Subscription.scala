@@ -17,7 +17,8 @@ case class SubscriptionCreation(
     departments: List[String],
     categories: List[ReportCategory],
     sirets: List[SIRET],
-    tags: List[Tag],
+    withTags: List[Tag],
+    withoutTags: List[Tag],
     countries: List[String],
     frequency: Period
 )
@@ -31,7 +32,8 @@ case class SubscriptionUpdate(
     departments: Option[List[String]],
     categories: Option[List[ReportCategory]],
     sirets: Option[List[SIRET]],
-    tags: Option[List[Tag]],
+    withTags: Option[List[Tag]],
+    withoutTags: Option[List[Tag]],
     countries: Option[List[String]],
     frequency: Option[Period]
 )
@@ -47,7 +49,8 @@ case class Subscription(
     email: Option[EmailAddress],
     departments: List[String] = List.empty,
     categories: List[ReportCategory] = List.empty,
-    tags: List[Tag] = List.empty,
+    withTags: List[Tag] = List.empty,
+    withoutTags: List[Tag] = List.empty,
     countries: List[Country] = List.empty,
     sirets: List[SIRET] = List.empty,
     frequency: Period

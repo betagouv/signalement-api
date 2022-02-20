@@ -18,10 +18,6 @@ object Tag extends PlayEnum[Tag] {
 
   val values: IndexedSeq[Tag] = findValues
 
-  /** No tag associated to report, used only for filtering
-    */
-  case object NA extends Tag
-
   override def withName(name: String): Tag =
     Tag.withNameOption(name).collect { case r: Tag => r }.getOrElse(throw InvalidTagBody(name))
 

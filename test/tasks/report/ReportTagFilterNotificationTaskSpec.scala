@@ -60,7 +60,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(ReportTag.ProduitDangereux, Tag.NA),
+    withTags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
 

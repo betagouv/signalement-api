@@ -40,12 +40,5 @@ class ReportTagTest extends Specification {
       val invalidName = UUID.randomUUID().toString
       Try(ReportTag.withName(invalidName)) shouldEqual Failure(InvalidReportTagBody(invalidName))
     }
-
-    s"fail to parse invalid NA report tag " in {
-      Try(ReportTag.withName(Tag.NA.entryName)) shouldEqual Failure(
-        InvalidReportTagBody(Tag.NA.entryName)
-      )
-    }
-
   }
 }
