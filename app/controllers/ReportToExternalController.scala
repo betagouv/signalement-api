@@ -9,7 +9,6 @@ import models.report.ReportFilter
 import models.report.ReportToExternal
 import models.report.ReportWithFiles
 import models.report.ReportWithFilesToExternal
-import models.report.Tag
 import models.report.ReportWithFilesToExternal.format
 import orchestrators.ReportOrchestrator
 import play.api.Logger
@@ -26,6 +25,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
+import models.report.Tag.ReportTag
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
@@ -57,7 +57,7 @@ class ReportToExternalController @Inject() (
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
       end = qs.localDate("end"),
-      tags = qs.seq("tags").map(Tag.withName)
+      withTags = qs.seq("tags").map(ReportTag.withName)
     )
 
     for {
@@ -82,7 +82,7 @@ class ReportToExternalController @Inject() (
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
       end = qs.localDate("end"),
-      tags = qs.seq("tags").map(Tag.withName)
+      withTags = qs.seq("tags").map(ReportTag.withName)
     )
     val offset = qs.long("offset")
     val limit = qs.int("limit")
