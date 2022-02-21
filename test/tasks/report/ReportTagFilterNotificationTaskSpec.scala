@@ -24,9 +24,9 @@ class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends Re
     }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
       Seq(tagEmail),
-      "[SignalConso] [Produits dangereux] 2 nouveaux signalements",
+      "[SignalConso] [Produits dangereux] Un nouveau signalement",
       views.html.mails.dgccrf
-        .reportNotification(tagSubscription, Seq(tagReport, tagReport2), runningDate.minusDays(1))
+        .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
         .toString
     )}
     """
@@ -65,13 +65,13 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   val company = Fixtures.genCompany.sample.get
 
-  val tagReport = Fixtures
+  val reportProduitDangereux = Fixtures
     .genReportForCompany(company)
     .sample
     .get
     .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(ReportTag.ProduitDangereux))
 
-  val tagReport2 = Fixtures
+  val reportNoTag = Fixtures
     .genReportForCompany(company)
     .sample
     .get
@@ -81,8 +81,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- reportRepository.create(tagReport)
-        _ <- reportRepository.create(tagReport2)
+        _ <- reportRepository.create(reportProduitDangereux)
+        _ <- reportRepository.create(reportNoTag)
         _ <- subscriptionRepository.create(tagSubscription)
 
       } yield (),
