@@ -1,8 +1,7 @@
 package tasks.report
 
 import models._
-import models.report.Tag.ReportTag
-import models.report.Tag
+import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

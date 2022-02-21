@@ -3,7 +3,7 @@ package models.report
 import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 import utils.QueryStringMapper
 
 import java.time.LocalDate

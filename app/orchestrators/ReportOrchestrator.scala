@@ -28,7 +28,7 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportWithFiles
 import models.report.ReviewOnReportResponse
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json

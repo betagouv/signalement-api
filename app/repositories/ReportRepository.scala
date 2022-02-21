@@ -1,20 +1,12 @@
 package repositories
 
+import models._
 import models.report.DetailInputValue.detailInputValuetoString
 import models.report.DetailInputValue.toDetailInputValue
-import models.report
-import models._
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportFileOrigin
-import models.report.ReportFilter
-import models.report.ReportStatus
-import models.report.ReportTag
-import models.report.WebsiteURL
+import models.report._
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.ReportRepository.ReportFileOrdering
-import repositories.mapping.Report._
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
@@ -26,9 +18,9 @@ import javax.inject.Singleton
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import repositories.mapping.Report._
 
 class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
-
   def id = column[UUID]("id", O.PrimaryKey)
   def category = column[String]("category")
   def subcategories = column[List[String]]("subcategories")

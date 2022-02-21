@@ -8,7 +8,7 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 import utils._
 
 import java.time.LocalDate
@@ -80,7 +80,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(ReportTag.ProduitDangereux),
+    withTags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
 

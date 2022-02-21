@@ -25,7 +25,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,

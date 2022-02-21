@@ -7,8 +7,8 @@ import slick.jdbc.JdbcProfile
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
-import repositories.mapping.Report._
-import models.report.{Tag => SignalConsoTag}
+import models.report.ReportTag
+
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
@@ -16,6 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import repositories.mapping.Report._
 
 @Singleton
 class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
@@ -27,6 +28,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
   import PostgresProfile.api._
   import dbConfig._
 
+//  implicit lazy val reportTagMapper = mappedColumnTypeForEnum(ReportTag)
+
   private class SubscriptionTable(tag: Tag) extends Table[Subscription](tag, "subscriptions") {
 
     def id = column[UUID]("id", O.PrimaryKey)
@@ -35,8 +38,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
-    def withTags = column[List[SignalConsoTag]]("with_tags")
-    def withoutTags = column[List[SignalConsoTag]]("without_tags")
+    def withTags = column[List[ReportTag]]("with_tags")
+    def withoutTags = column[List[ReportTag]]("without_tags")
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def frequency = column[Period]("frequency")
@@ -48,8 +51,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         Option[EmailAddress],
         List[String],
         List[String],
-        List[SignalConsoTag],
-        List[SignalConsoTag],
+        List[ReportTag],
+        List[ReportTag],
         List[Country],
         List[SIRET],
         Period
