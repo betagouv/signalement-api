@@ -105,9 +105,9 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
           VALUES (#$insertValues)
           ON CONFLICT(siret) DO UPDATE SET #$insertValuesOnSiretConflict,
           denominationusuelleetablissement=COALESCE(NULLIF(#${companyKeyValues.getOrElse(
-        DENOMINATION_USUELLE_ETABLISSEMENT,
-        "NULL"
-      )}, ''), etablissements.denominationusuelleetablissement)
+      DENOMINATION_USUELLE_ETABLISSEMENT,
+      "NULL"
+    )}, ''), etablissements.denominationusuelleetablissement)
         """
   }
 
