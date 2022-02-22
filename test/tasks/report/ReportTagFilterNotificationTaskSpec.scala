@@ -15,7 +15,7 @@ import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
+class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
 
   override def is =
     s2"""
@@ -24,9 +24,26 @@ class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends Re
     }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
       Seq(tagEmail),
-      "[SignalConso] [Produits dangereux] 2 nouveaux signalements",
+      "[SignalConso] [Produits dangereux] Un nouveau signalement",
       views.html.mails.dgccrf
-        .reportNotification(tagSubscription, Seq(tagReport, tagReport2), runningDate.minusDays(1))
+        .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
+        .toString
+    )}
+    """
+}
+
+class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
+
+  override def is =
+    s2"""
+         When daily reportNotificationTask task run                                      ${step {
+      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+    }}
+         And a mail is sent to the user subscribed without tag                                ${mailMustHaveBeenSent(
+      Seq(noTagEmail),
+      "[SignalConso] Un nouveau signalement",
+      views.html.mails.dgccrf
+        .reportNotification(noTagSubscription, Seq(reportNoTag), runningDate.minusDays(1))
         .toString
     )}
     """
@@ -54,6 +71,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
   val tagDept = "02"
 
   val tagEmail = Fixtures.genEmailAddress("tag", "abo").sample.get
+  val noTagEmail = Fixtures.genEmailAddress("notag", "abo").sample.get
 
   val tagSubscription = Subscription(
     userId = None,
@@ -62,16 +80,23 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     withTags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
+  val noTagSubscription = Subscription(
+    userId = None,
+    email = Some(noTagEmail),
+    departments = List(tagDept),
+    withoutTags = List(ReportTag.ProduitDangereux),
+    frequency = Period.ofDays(1)
+  )
 
   val company = Fixtures.genCompany.sample.get
 
-  val tagReport = Fixtures
+  val reportProduitDangereux = Fixtures
     .genReportForCompany(company)
     .sample
     .get
     .copy(companyAddress = Address(postalCode = Some(tagDept + "000")), tags = List(ReportTag.ProduitDangereux))
 
-  val tagReport2 = Fixtures
+  val reportNoTag = Fixtures
     .genReportForCompany(company)
     .sample
     .get
@@ -81,9 +106,10 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     Await.result(
       for {
         _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- reportRepository.create(tagReport)
-        _ <- reportRepository.create(tagReport2)
+        _ <- reportRepository.create(reportProduitDangereux)
+        _ <- reportRepository.create(reportNoTag)
         _ <- subscriptionRepository.create(tagSubscription)
+        _ <- subscriptionRepository.create(noTagSubscription)
 
       } yield (),
       Duration.Inf

@@ -78,7 +78,7 @@ class ReportFilterTest extends Specification {
         "employeeConsumer" -> expectedReportFilter.employeeConsumer.toSeq.map(_.toString),
         "hasCompany" -> expectedReportFilter.hasCompany.toSeq.map(_.toString),
         "withTags" -> expectedReportFilter.withTags.toSeq.map(_.entryName),
-        "withTags" -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
+        "withoutTags" -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
         "activityCodes" -> expectedReportFilter.activityCodes.toSeq
       )
       ReportFilter.fromQueryString(input, Professionnel) shouldEqual Success(expectedReportFilter)

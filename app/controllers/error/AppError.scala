@@ -207,12 +207,6 @@ object AppError {
     override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
   }
 
-  final case class InvalidTagBody(name: String) extends BadRequestError {
-    override val `type`: String = "SC-0023"
-    override val title: String = s"Unknown report tag $name"
-    override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
-  }
-
   final case class ExternalReportsMaxPageSizeExceeded(maxSize: Int) extends BadRequestError {
     override val `type`: String = "SC-0024"
     override val title: String = s"Max page size reached "
