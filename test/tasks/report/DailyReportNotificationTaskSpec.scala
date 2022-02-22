@@ -20,25 +20,27 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNoti
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+      }}
          And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
-      Seq(covidEmail),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1)).toString
-    )}
+        Seq(covidEmail),
+        s"[SignalConso] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1))
+          .toString
+      )}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
-      Seq(tagEmail),
-      s"[SignalConso] [Produits dangereux] Un nouveau signalement",
-      views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
-    )}
+        Seq(tagEmail),
+        s"[SignalConso] [Produits dangereux] Un nouveau signalement",
+        views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
+      )}
          And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
-      Seq(countryEmail),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf
-        .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
-        .toString
-    )}
+        Seq(countryEmail),
+        s"[SignalConso] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
+          .toString
+      )}
     """
 }
 

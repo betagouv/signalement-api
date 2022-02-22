@@ -40,29 +40,29 @@ class RemindTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRe
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given an event "REPORT_READING_BY_PRO" created more than 7 days              ${step(setupEvent(event))}
          When remind task run                 ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
-      transmittedReport.id,
-      ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
-    )}
+        transmittedReport.id,
+        ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
+      )}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
-      transmittedReport
-    )}
+        transmittedReport
+      )}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(
-      proUser.email,
-      "Signalement en attente de réponse",
-      views.html.mails.professional
-        .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(14))
-        .toString
-    )}
+        proUser.email,
+        "Signalement en attente de réponse",
+        views.html.mails.professional
+          .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(14))
+          .toString
+      )}
      And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, RemindReadReportByMail)))}
     """
   }
@@ -77,22 +77,22 @@ class DontRemindTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadR
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given an event "REPORT_READING_BY_PRO" created less than 7 days              ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      transmittedReport.id,
-      List(event)
-    )}
+        transmittedReport.id,
+        List(event)
+      )}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
-      transmittedReport
-    )}
+        transmittedReport
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome is empty ${result mustEqual noTaskProcessed}
     """
@@ -108,29 +108,29 @@ class RemindTwiceTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends R
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "EMAIL_PRO_REMIND_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
-      transmittedReport.id,
-      ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
-    )}
+        transmittedReport.id,
+        ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
+      )}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
-      transmittedReport
-    )}
+        transmittedReport
+      )}
          And a mail is sent to the professional                                       ${mailMustHaveBeenSent(
-      proUser.email,
-      "Signalement en attente de réponse",
-      views.html.mails.professional
-        .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(7))
-        .toString
-    )}
+        proUser.email,
+        "Signalement en attente de réponse",
+        views.html.mails.professional
+          .reportTransmittedReminder(transmittedReport, OffsetDateTime.now.plusDays(7))
+          .toString
+      )}
     And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, RemindReadReportByMail)))}
     """
   }
@@ -145,22 +145,22 @@ class DontRemindTwiceTransmittedReportOnTime(implicit ee: ExecutionEnv) extends 
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given a previous remind made more than 7 days                                ${step(setupEvent(event))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      transmittedReport.id,
-      List(reminderEvent)
-    )}
+        transmittedReport.id,
+        List(reminderEvent)
+      )}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
-      transmittedReport
-    )}
+        transmittedReport
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome is empty ${result mustEqual noTaskProcessed}
     """
@@ -180,30 +180,30 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given twice previous remind made more than 7 days                            ${step(setupEvent(event1))}
                                                                                       ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then an event "REPORT_CLOSED_BY_NO_ACTION" is created                        ${eventMustHaveBeenCreatedWithAction(
-      transmittedReport.id,
-      ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-    )}
+        transmittedReport.id,
+        ActionEvent.REPORT_CLOSED_BY_NO_ACTION
+      )}
          And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(
-      transmittedReport.id,
-      ReportStatus.ConsulteIgnore
-    )}
+        transmittedReport.id,
+        ReportStatus.ConsulteIgnore
+      )}
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
-      transmittedReport.email,
-      "L'entreprise n'a pas répondu au signalement",
-      views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
-      attachementService.attachmentSeqForWorkflowStepN(4)
-    )}    
+        transmittedReport.email,
+        "L'entreprise n'a pas répondu au signalement",
+        views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
+        attachementService.attachmentSeqForWorkflowStepN(4)
+      )}    
     And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, CloseReadReportWithNoAction)))}
    """
   }
@@ -222,23 +222,23 @@ class DontCloseTransmittedReportOnTime(implicit ee: ExecutionEnv) extends ReadRe
     s2"""
          Given a pro with email                                                       ${step(setupUser(proUser))}
          Given a report with status "SIGNALEMENT_TRANSMIS"                            ${step {
-      setupReport(transmittedReport)
-    }}
+        setupReport(transmittedReport)
+      }}
          Given a first remind made more than 7 days                                   ${step(setupEvent(event1))}
          Given a second remind made less than 7 days                                  ${step(setupEvent(event2))}
          When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime.toLocalDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime.toLocalDateTime),
+          Duration.Inf
+        )
+      }}
          Then no event is created                                                     ${eventMustNotHaveBeenCreated(
-      transmittedReport.id,
-      List(event1, event2)
-    )}
+        transmittedReport.id,
+        List(event1, event2)
+      )}
          And the report is not updated                                                ${reportStatusMustNotHaveBeenUpdated(
-      transmittedReport
-    )}
+        transmittedReport
+      )}
          And no mail is sent                                                          ${mailMustNotHaveBeenSent()}
          And outcome is empty ${result mustEqual noTaskProcessed}
    """

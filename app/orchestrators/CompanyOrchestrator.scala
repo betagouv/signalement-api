@@ -249,7 +249,7 @@ class CompanyOrchestrator @Inject() (
                 EventType.ADMIN,
                 ActionEvent.ACTIVATION_DOC_RETURNED,
                 stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate
-                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
               )
             )
             .map(Some(_))
