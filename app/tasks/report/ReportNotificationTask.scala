@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.report.ReportFilter
-import models.report.Tag
 import play.api.Logger
 import repositories.ReportRepository
 import repositories.SubscriptionRepository
@@ -75,10 +74,8 @@ class ReportNotificationTask @Inject() (
               .map(Some(_))
               .contains(report.companyAddress.country)
           )
-          .filter { report =>
-            val filterEmptyTagReports = subscription.tags.contains(Tag.NA) && report.tags.isEmpty
-            subscription.tags.isEmpty || subscription.tags.intersect(report.tags).nonEmpty || filterEmptyTagReports
-          }
+          .filter(report => subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty)
+          .filter(report => subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty)
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)

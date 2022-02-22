@@ -7,8 +7,8 @@ import slick.jdbc.JdbcProfile
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
-import repositories.mapping.Report._
-import models.report.{Tag => SignalConsoTag}
+import models.report.ReportTag
+
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
@@ -16,6 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import repositories.mapping.Report._
 
 @Singleton
 class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
@@ -27,6 +28,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
   import PostgresProfile.api._
   import dbConfig._
 
+//  implicit lazy val reportTagMapper = mappedColumnTypeForEnum(ReportTag)
+
   private class SubscriptionTable(tag: Tag) extends Table[Subscription](tag, "subscriptions") {
 
     def id = column[UUID]("id", O.PrimaryKey)
@@ -35,7 +38,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     def email = column[Option[EmailAddress]]("email")
     def departments = column[List[String]]("departments")
     def categories = column[List[String]]("categories")
-    def tags = column[List[SignalConsoTag]]("tags")
+    def withTags = column[List[ReportTag]]("with_tags")
+    def withoutTags = column[List[ReportTag]]("without_tags")
     def countries = column[List[Country]]("countries")
     def sirets = column[List[SIRET]]("sirets")
     def frequency = column[Period]("frequency")
@@ -47,14 +51,27 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         Option[EmailAddress],
         List[String],
         List[String],
-        List[SignalConsoTag],
+        List[ReportTag],
+        List[ReportTag],
         List[Country],
         List[SIRET],
         Period
     )
 
     def constructSubscription: SubscriptionData => Subscription = {
-      case (id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) =>
+      case (
+            id,
+            creationDate,
+            userId,
+            email,
+            departments,
+            categories,
+            withTags,
+            withoutTags,
+            countries,
+            sirets,
+            frequency
+          ) =>
         Subscription(
           id = id,
           creationDate = creationDate,
@@ -62,7 +79,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
           email = email,
           departments = departments,
           categories = categories.map(ReportCategory.fromValue),
-          tags = tags,
+          withTags = withTags,
+          withoutTags = withoutTags,
           countries = countries,
           sirets = sirets,
           frequency = frequency
@@ -70,8 +88,32 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     }
 
     def extractSubscription: PartialFunction[Subscription, SubscriptionData] = {
-      case Subscription(id, creationDate, userId, email, departments, categories, tags, countries, sirets, frequency) =>
-        (id, creationDate, userId, email, departments, categories.map(_.value), tags, countries, sirets, frequency)
+      case Subscription(
+            id,
+            creationDate,
+            userId,
+            email,
+            departments,
+            categories,
+            withTags,
+            withoutTags,
+            countries,
+            sirets,
+            frequency
+          ) =>
+        (
+          id,
+          creationDate,
+          userId,
+          email,
+          departments,
+          categories.map(_.value),
+          withTags,
+          withoutTags,
+          countries,
+          sirets,
+          frequency
+        )
     }
 
     def * =
@@ -82,7 +124,8 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         email,
         departments,
         categories,
-        tags,
+        withTags,
+        withoutTags,
         countries,
         sirets,
         frequency
@@ -131,7 +174,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         .filter(_.frequency === frequency)
         .joinLeft(userTableQuery)
         .on(_.userId === _.id)
-        .map(subscription => (subscription._1, subscription._1.email.ifNull(subscription._2.map(_.email)).get))
+        .map(s => (s._1, s._1.email.ifNull(s._2.map(_.email)).get))
         .to[List]
         .result
     )

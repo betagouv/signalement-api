@@ -51,11 +51,23 @@
                     </ul>
                 </li>
             }
-            @if(subscription.tags.length > 0) {
+            @if(subscription.withTags.length > 0) {
                 <li>
-                    Tags :
+                    Avec les tags :
                     <ul>
-                        @subscription.tags.map { tag =>
+                        @subscription.withTags.map { tag =>
+                            <li>
+                                @tag
+                            </li>
+                        }
+                    </ul>
+                </li>
+            }
+            @if(subscription.withoutTags.length > 0) {
+                <li>
+                    Sans les tags :
+                    <ul>
+                        @subscription.withoutTags.map { tag =>
                             <li>
                                 @tag
                             </li>
