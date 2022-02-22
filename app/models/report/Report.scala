@@ -1,11 +1,13 @@
 package models.report
 
+import ai.x.play.json.Encoders.encoder
+import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
 import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
-import models.report.Tag.ReportTag.jsonFormat
+import models.report.ReportTag.jsonFormat
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
@@ -14,11 +16,6 @@ import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import ai.x.play.json.Jsonx
-import ai.x.play.json.Encoders.encoder
-import models.report.Tag.ReportTag
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 
 case class Report(
     id: UUID = UUID.randomUUID(),

@@ -5,7 +5,7 @@ import play.api.libs.json.OFormat
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-import Tag.ReportTag._
+import ReportTag._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -25,7 +25,6 @@ case class ReportToExternal(
     lastName: String,
     email: EmailAddress,
     contactAgreement: Boolean,
-    description: Option[String],
     effectiveDate: Option[String],
     reponseconsoCode: List[String],
     ccrfCode: List[String],
@@ -33,6 +32,7 @@ case class ReportToExternal(
 ) {}
 
 object ReportToExternal {
+
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
@@ -49,10 +49,6 @@ object ReportToExternal {
       email = r.email,
       consumerPhone = r.consumerPhone,
       contactAgreement = r.contactAgreement,
-      description = r.details
-        .filter(d => d.label.matches("Quel est le problème.*"))
-        .map(_.value)
-        .headOption,
       effectiveDate = r.details
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)

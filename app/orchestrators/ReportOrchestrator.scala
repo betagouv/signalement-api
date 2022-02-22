@@ -28,7 +28,7 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportWithFiles
 import models.report.ReviewOnReportResponse
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -639,10 +639,11 @@ class ReportOrchestrator @Inject() (
       limit: Option[Int],
       toApi: (Report, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
-    val maxResults = 1000
+    val maxResults = signalConsoConfiguration.reportsExportLimitMax
     for {
       _ <- limit match {
         case Some(limitValue) if limitValue > maxResults =>
+          logger.error(s"Max page size reached $limitValue > $maxResults")
           Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
         case a => Future.successful(a)
       }

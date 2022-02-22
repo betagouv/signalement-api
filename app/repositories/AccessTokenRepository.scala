@@ -274,13 +274,23 @@ class AccessTokenRepository @Inject() (
     ).map(_ => true)
 
   def dgccrfAccountsCurve(ticks: Int) =
-    db.run(sql"""select * from (select
-      my_date_trunc('month'::text, creation_date)::timestamp,
-      sum(count(*)) over ( order by my_date_trunc('month'::text,creation_date)::timestamp rows between unbounded preceding and current row)
-      from access_tokens
-        where kind = 'DGCCRF_ACCOUNT' and valid = false
-      group by  my_date_trunc('month'::text, creation_date)
-      order by  1 DESC LIMIT #${ticks} )  as res order by 1 ASC""".as[(Timestamp, Int)])
+    db.run(sql"""
+      select *
+      from (
+        select my_date_trunc('month'::text, creation_date)::timestamp,
+           sum(count(*)) over ( order by my_date_trunc('month'::text, creation_date)::timestamp rows between unbounded preceding and current row)
+        from (
+          select MAX(creation_date) as creation_date from access_tokens
+          where kind = 'DGCCRF_ACCOUNT'
+           and valid = false
+           and emailed_to in (select email from users where role = 'DGCCRF')
+            group by emailed_to
+        ) as a
+        group by my_date_trunc('month'::text, creation_date)
+        order by 1 DESC LIMIT #${ticks}
+      ) as res
+      order by 1 ASC;
+    """.as[(Timestamp, Int)])
 
   def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (select v.a, count(distinct s.user_id) from subscriptions s right join

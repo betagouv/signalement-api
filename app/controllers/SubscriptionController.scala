@@ -41,7 +41,8 @@ class SubscriptionController @Inject() (
                   email = None,
                   departments = draftSubscription.departments,
                   categories = draftSubscription.categories,
-                  tags = draftSubscription.tags,
+                  withTags = draftSubscription.withTags,
+                  withoutTags = draftSubscription.withoutTags,
                   countries = draftSubscription.countries.map(Country.fromCode),
                   sirets = draftSubscription.sirets,
                   frequency = draftSubscription.frequency
@@ -68,7 +69,8 @@ class SubscriptionController @Inject() (
                       s.copy(
                         departments = draftSubscription.departments.getOrElse(s.departments),
                         categories = draftSubscription.categories.getOrElse(s.categories),
-                        tags = draftSubscription.tags.getOrElse(s.tags),
+                        withTags = draftSubscription.withTags.getOrElse(s.withTags),
+                        withoutTags = draftSubscription.withoutTags.getOrElse(s.withoutTags),
                         countries = draftSubscription.countries
                           .map(_.map(Country.fromCode))
                           .getOrElse(s.countries),
