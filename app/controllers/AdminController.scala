@@ -12,7 +12,7 @@ import models.report.Report
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
-import models.report.Tag.ReportTag
+import models.report.ReportTag
 import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -133,7 +133,8 @@ class AdminController @Inject() (
     email = None,
     departments = List("75"),
     countries = Nil,
-    tags = Nil,
+    withTags = Nil,
+    withoutTags = Nil,
     categories = Nil,
     sirets = Nil,
     frequency = java.time.Period.ofDays(1)

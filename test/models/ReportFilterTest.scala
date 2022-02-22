@@ -2,10 +2,10 @@ package models
 
 import models.report.ReportFilter
 import models.report.ReportStatus
+import models.report.ReportTag
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
-import models.report.Tag
 import org.specs2.mutable.Specification
 import utils.DateUtils
 
@@ -53,7 +53,8 @@ class ReportFilterTest extends Specification {
         details = Some("My Details"),
         employeeConsumer = Some(false),
         hasCompany = Some(true),
-        tags = Tag.values,
+        withTags = ReportTag.values,
+        withoutTags = ReportTag.values,
         activityCodes = Seq("00.00Z")
       )
 
@@ -76,7 +77,8 @@ class ReportFilterTest extends Specification {
         "details" -> expectedReportFilter.details.toSeq,
         "employeeConsumer" -> expectedReportFilter.employeeConsumer.toSeq.map(_.toString),
         "hasCompany" -> expectedReportFilter.hasCompany.toSeq.map(_.toString),
-        "tags" -> expectedReportFilter.tags.toSeq.map(_.entryName),
+        "withTags" -> expectedReportFilter.withTags.toSeq.map(_.entryName),
+        "withoutTags" -> expectedReportFilter.withoutTags.toSeq.map(_.entryName),
         "activityCodes" -> expectedReportFilter.activityCodes.toSeq
       )
       ReportFilter.fromQueryString(input, Professionnel) shouldEqual Success(expectedReportFilter)

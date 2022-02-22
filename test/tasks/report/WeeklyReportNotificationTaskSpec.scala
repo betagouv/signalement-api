@@ -80,7 +80,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(officeEmail),
     departments = List(department1, department2, martinique),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -91,7 +92,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List(department1, guadeloupe),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -102,7 +104,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List.empty,
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List(Country.Tunisie, Country.Argentine),
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -113,7 +116,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List(department3),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)
