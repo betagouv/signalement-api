@@ -15,7 +15,7 @@ import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
+class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
 
   override def is =
     s2"""
@@ -27,6 +27,23 @@ class DailyReportWithFilterTagNotification(implicit ee: ExecutionEnv) extends Re
       "[SignalConso] [Produits dangereux] Un nouveau signalement",
       views.html.mails.dgccrf
         .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
+        .toString
+    )}
+    """
+}
+
+class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
+
+  override def is =
+    s2"""
+         When daily reportNotificationTask task run                                      ${step {
+      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+    }}
+         And a mail is sent to the user subscribed without tag                                ${mailMustHaveBeenSent(
+      Seq(noTagEmail),
+      "[SignalConso] Un nouveau signalement",
+      views.html.mails.dgccrf
+        .reportNotification(noTagSubscription, Seq(reportNoTag), runningDate.minusDays(1))
         .toString
     )}
     """
@@ -54,12 +71,20 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
   val tagDept = "02"
 
   val tagEmail = Fixtures.genEmailAddress("tag", "abo").sample.get
+  val noTagEmail = Fixtures.genEmailAddress("notag", "abo").sample.get
 
   val tagSubscription = Subscription(
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
     withTags = List(ReportTag.ProduitDangereux),
+    frequency = Period.ofDays(1)
+  )
+  val noTagSubscription = Subscription(
+    userId = None,
+    email = Some(noTagEmail),
+    departments = List(tagDept),
+    withoutTags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
 
@@ -84,6 +109,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportProduitDangereux)
         _ <- reportRepository.create(reportNoTag)
         _ <- subscriptionRepository.create(tagSubscription)
+        _ <- subscriptionRepository.create(noTagSubscription)
 
       } yield (),
       Duration.Inf
