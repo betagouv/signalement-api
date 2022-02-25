@@ -263,6 +263,18 @@ class AdminController @Inject() (
         Nil
       )
     ),
+    "consumer.report_ack_case_compagnie_aerienne" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(
+            status = ReportStatus.NA,
+            email = recipient,
+            tags = List(ReportTag.CompagnieAerienne),
+          ),
+          genEvent,
+          Nil
+        )
+      ),
     "consumer.report_ack_case_abroad_default" ->
       (recipient =>
         ConsumerReportAcknowledgment(
