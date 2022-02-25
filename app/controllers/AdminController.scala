@@ -269,7 +269,7 @@ class AdminController @Inject() (
           genReport.copy(
             status = ReportStatus.NA,
             email = recipient,
-            tags = List(ReportTag.CompagnieAerienne),
+            tags = List(ReportTag.CompagnieAerienne)
           ),
           genEvent,
           Nil
