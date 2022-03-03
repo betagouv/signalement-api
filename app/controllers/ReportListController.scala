@@ -4,6 +4,7 @@ import actors.ReportsExtractActor
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter
 import orchestrators.ReportOrchestrator
@@ -39,7 +40,7 @@ class ReportListController @Inject() (
       .fold(
         error => {
           logger.error("Cannot parse querystring" + request.queryString, error)
-          Future.successful(BadRequest)
+          Future.failed(MalformedQueryParams)
         },
         filters =>
           for {

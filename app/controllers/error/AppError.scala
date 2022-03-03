@@ -221,4 +221,10 @@ object AppError {
       s"Un signalement similaire a été créé aujourd'hui."
   }
 
+  final case object MalformedQueryParams extends BadRequestError {
+    override val `type`: String = "SC-0026"
+    override val title: String = "Malformed request query params"
+    override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
+  }
+
 }
