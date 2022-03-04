@@ -143,6 +143,7 @@ class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceS
   override def is = s2"""Email must be sent to admin and admin of head office $e1"""
   def e1 = {
     sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    Thread.sleep(100)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
   }
 }

@@ -52,24 +52,24 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
           req.attachments
         )
         logger.debug(s"Sent email to ${req.recipients}")
-        sender() ! Status.Success
       } catch {
         case e: Exception =>
-          logger.error(s"Unexpected error when sending email from request (number of attempt ${req.times + 1})", e)
+          logger.error(
+            s"Unexpected error when sending email [ number of attempt :${req.times + 1}, from :${req.from}, recipients: ${req.recipients}, subject : ${req.subject}]",
+            e
+          )
           if (req.times < 2) {
-            logger.debug(s"Failed attempt, rescheduling email")
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
-            logger.debug(s"Rescheduling done.")
-            sender() ! Status.Success
           } else {
-            sender() ! Status.Failure(e)
+            logger.warn(
+              s"Email has exceeding max delivery attempts. Abording delivery or email [recipients : ${req.recipients}, subject : ${req.subject} ]"
+            )
           }
       }
+
     case _ =>
-      if (sender() != self) {
-        logger.debug("Could not handle request, ignoring message")
-        sender() ! Status.Success
-      }
+      logger.debug("Could not handle request, ignoring message")
+
   }
 }
 
