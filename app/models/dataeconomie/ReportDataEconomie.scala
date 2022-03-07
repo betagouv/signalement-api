@@ -3,6 +3,8 @@ package models.dataeconomie
 import models.report.ReportStatus
 import play.api.libs.json.Format
 import play.api.libs.json.Json
+import play.api.libs.json.JsonConfiguration
+import play.api.libs.json.OptionHandlers
 import utils.Country
 
 import java.time.OffsetDateTime
@@ -29,5 +31,6 @@ case class ReportDataEconomie(
 )
 
 object ReportDataEconomie {
+  implicit val config = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
   implicit val ReportDataFormat: Format[ReportDataEconomie] = Json.format[ReportDataEconomie]
 }

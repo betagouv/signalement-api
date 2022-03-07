@@ -2,7 +2,6 @@ package services
 
 import actors.EmailActor.EmailRequest
 import akka.actor.ActorRef
-import akka.pattern.ask
 import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
@@ -15,7 +14,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
@@ -31,7 +29,6 @@ class MailService @Inject() (
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = emailConfiguration.from
   implicit private[this] val contactAddress = emailConfiguration.contactAddress
-  implicit private[this] val timeout: akka.util.Timeout = 5.seconds
 
   def send(
       email: Email
@@ -84,15 +81,7 @@ class MailService @Inject() (
           bodyHtml = bodyHtml,
           attachments = attachments
         )
-
-        (actor ? emailRequest).map(_ => ()).recoverWith { case err =>
-          logger.error(
-            s"Unexpected error when sending email request to mail actor [from :${emailRequest.from},recipients: ${emailRequest.recipients},subject : ${emailRequest.subject}]",
-            err
-          )
-
-          Future.failed(err)
-        }
+        Future.successful(actor ! emailRequest)
     }
   }
 

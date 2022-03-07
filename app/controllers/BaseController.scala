@@ -28,7 +28,7 @@ trait ApiKeyBaseController extends InjectedController {
       def invokeBlock[A](
           request: SecuredApiRequestWrapper[A],
           block: SecuredApiRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(err, Some(request.identity.id)) }
+      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
 
       override protected def executionContext: ExecutionContext = ec
     }
@@ -50,7 +50,7 @@ trait BaseController extends InjectedController {
       def invokeBlock[A](
           request: SecuredRequestWrapper[A],
           block: SecuredRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(err, Some(request.identity.id)) }
+      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
 
       override protected def executionContext: ExecutionContext = ec
     }
@@ -63,7 +63,7 @@ trait BaseController extends InjectedController {
       def invokeBlock[A](
           request: SecuredRequestWrapper[A],
           block: SecuredRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(err, Some(request.identity.id)) }
+      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
 
       override protected def executionContext: ExecutionContext = ec
     }
@@ -74,7 +74,7 @@ trait BaseController extends InjectedController {
       def invokeBlock[A](
           request: Request[A],
           block: Request[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(err, None) }
+      ): Future[Result] = block(request).recover { case err => handleError(request, err) }
 
       override protected def executionContext: ExecutionContext = ec
     }
@@ -85,7 +85,7 @@ trait BaseController extends InjectedController {
       def invokeBlock[A](
           request: UserAwareRequestWrapper[A],
           block: UserAwareRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(err, request.identity.map(_.id)) }
+      ): Future[Result] = block(request).recover { case err => handleError(request, err, request.identity.map(_.id)) }
 
       override protected def executionContext: ExecutionContext = ec
     }
