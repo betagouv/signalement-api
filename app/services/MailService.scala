@@ -14,7 +14,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
@@ -30,7 +29,6 @@ class MailService @Inject() (
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = emailConfiguration.from
   implicit private[this] val contactAddress = emailConfiguration.contactAddress
-  5.seconds
 
   def send(
       email: Email
