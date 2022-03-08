@@ -14,7 +14,6 @@ import services.S3Service
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.sys.process._
 
 object UploadActor {
@@ -32,7 +31,8 @@ class UploadActor @Inject() (
     val mat: Materializer
 ) extends Actor {
   import UploadActor._
-  implicit val ec: ExecutionContext = context.dispatcher
+
+  implicit val ec: ExecutionContext = context.system.dispatchers.lookup("cpu-intensive-context")
 
   val avScanEnabled = uploadConfiguration.avScanEnabled
 
@@ -41,30 +41,25 @@ class UploadActor @Inject() (
     logger.debug("Starting")
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
-
   override def receive = { case Request(reportFile: ReportFile, file: java.io.File) =>
-//    if (!avScanEnabled) {
-//      reportRepository.setAvOutput(reportFile.id, "Scan is disabled")
-//    }
-
-    av_scan(reportFile, file).map { doUpload =>
-      if (doUpload) {
-        FileIO
-          .fromPath(file.toPath)
-          .to(s3Service.upload(reportFile.storageFilename))
-          .run()
-          .foreach { _ =>
-            logger.debug(s"Uploaded file ${reportFile.id}")
-            file.delete()
-          }
-      } else {
-        logger.debug(s"File was deleted (AV scan) ${reportFile.id}")
-      }
+    if (!avScanEnabled) {
+      reportRepository.setAvOutput(reportFile.id, "Scan is disabled")
     }
-
+    if (!avScanEnabled || av_scan(reportFile, file)) {
+      FileIO
+        .fromPath(file.toPath)
+        .to(s3Service.upload(reportFile.storageFilename))
+        .run()
+        .foreach { _ =>
+          logger.debug(s"Uploaded file ${reportFile.id}")
+          file.delete()
+        }
+    } else {
+      logger.debug(s"File was deleted (AV scan) ${reportFile.id}")
+    }
   }
 
-  def av_scan(reportFile: ReportFile, file: java.io.File) = Future {
+  def av_scan(reportFile: ReportFile, file: java.io.File) = {
     val stdout = new StringBuilder
     Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
