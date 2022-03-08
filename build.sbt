@@ -11,7 +11,7 @@ val playSlickVersion = "5.0.0"
 val slickPgVersion = "0.20.2"
 val playMailerVersion = "8.0.1"
 val playSilhouetteVersion = "7.0.0"
-val AkkaHttpVersion = "10.2.7"
+val AkkaHttpVersion = "10.2.9"
 val alpakkaVersion = "2.0.2"
 val enumeratumVersion = "1.7.0"
 
