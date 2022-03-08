@@ -35,8 +35,7 @@ class UploadActor @Inject() (
 ) extends Actor {
   import UploadActor._
 
-  val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("cpu-intensive-context")
-  implicit val ec: ExecutionContext = context.dispatcher
+  implicit val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("cpu-intensive-context")
 
   val avScanEnabled = uploadConfiguration.avScanEnabled
 
