@@ -35,7 +35,8 @@ class UploadActor @Inject() (
 ) extends Actor {
   import UploadActor._
 
-  implicit val ec: ExecutionContext = context.system.dispatchers.lookup("cpu-intensive-context")
+  val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("cpu-intensive-context")
+  implicit val ec: ExecutionContext = context.dispatcher
 
   val avScanEnabled = uploadConfiguration.avScanEnabled
 
@@ -85,7 +86,7 @@ class UploadActor @Inject() (
     Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
     stdout.toString()
-  }
+  }(cpuIntensiveEc)
 }
 
 class UploadActorModule extends AbstractModule with AkkaGuiceSupport {
