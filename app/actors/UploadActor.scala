@@ -1,6 +1,8 @@
 package actors
 
+import akka.Done
 import akka.actor._
+import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
@@ -14,6 +16,7 @@ import services.S3Service
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.sys.process._
 
 object UploadActor {
@@ -41,30 +44,47 @@ class UploadActor @Inject() (
     logger.debug("Starting")
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
+
   override def receive = { case Request(reportFile: ReportFile, file: java.io.File) =>
-    if (!avScanEnabled) {
-      reportRepository.setAvOutput(reportFile.id, "Scan is disabled")
-    }
-    if (!avScanEnabled || av_scan(reportFile, file)) {
-      FileIO
+    for {
+      _ <- FileIO
         .fromPath(file.toPath)
         .to(s3Service.upload(reportFile.storageFilename))
         .run()
-        .foreach { _ =>
-          logger.debug(s"Uploaded file ${reportFile.id}")
-          file.delete()
-        }
-    } else {
-      logger.debug(s"File was deleted (AV scan) ${reportFile.id}")
-    }
+      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
+      _ <- eventuallyAntivirusScanFile(reportFile, file)
+    } yield ()
+
   }
 
-  def av_scan(reportFile: ReportFile, file: java.io.File) = {
+  private def eventuallyAntivirusScanFile(reportFile: ReportFile, file: java.io.File): Future[Done] =
+    for {
+      scanOutput <-
+        if (avScanEnabled) {
+          logger.debug("Begin Antivirus scan.")
+          performAntivirusScan(file)
+        } else {
+          logger.debug("Antivirus scan is not active, skipping scan.")
+          Future.successful("Scan is disabled")
+        }
+      _ <- reportRepository.setAvOutput(reportFile.id, scanOutput)
+      noVirusDetected = file.exists()
+      _ <-
+        if (noVirusDetected) {
+          logger.debug("Antivirus scan went fine.")
+          Future.successful(file.delete())
+        } else {
+          logger.warn(s"Antivirus scan found virus, scan output : $scanOutput")
+          logger.debug(s"File has been deleted by Antivirus, removing file from S3")
+          s3Service.delete(reportFile.storageFilename)
+        }
+    } yield Done
+
+  private def performAntivirusScan(file: java.io.File): Future[String] = Future {
     val stdout = new StringBuilder
     Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
-    reportRepository.setAvOutput(reportFile.id, stdout.toString)
-    file.exists
+    stdout.toString()
   }
 }
 
