@@ -41,7 +41,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette-crypto-jca" % playSilhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
   "net.codingwell" %% "scala-guice" % "4.2.11",
-  "com.iheart" %% "ficus" % "1.5.1",
+  "com.iheart" %% "ficus" % "1.5.2",
   "com.norbitltd" %% "spoiwo" % "1.8.0",
   "com.itextpdf" % "itext7-core" % "7.1.17",
   "com.itextpdf" % "html2pdf" % "3.0.5",
