@@ -69,7 +69,7 @@ class AntivirusScanActor @Inject() (
 
   private def performAntivirusScan(file: java.io.File): Future[String] = Future {
     val stdout = new StringBuilder
-    Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
+    Seq("clamdscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
     stdout.toString()
   }
