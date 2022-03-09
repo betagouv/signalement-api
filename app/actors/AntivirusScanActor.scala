@@ -58,7 +58,7 @@ class AntivirusScanActor @Inject() (
       _ <-
         if (noVirusDetected) {
           logger.debug("Antivirus scan went fine.")
-//          Future.successful(file.delete())
+          Future.successful(file.delete())
           Future.successful(())
         } else {
           logger.warn(s"Antivirus scan found virus, scan output : $scanOutput")
@@ -70,7 +70,7 @@ class AntivirusScanActor @Inject() (
 
   private def performAntivirusScan(file: java.io.File): Future[String] = Future {
     val stdout = new StringBuilder
-    Seq("clamdscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
+    Seq("clamdscan", "--remove --fdpass", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
     stdout.toString()
   }
