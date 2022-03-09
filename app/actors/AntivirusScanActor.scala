@@ -59,6 +59,7 @@ class AntivirusScanActor @Inject() (
         if (noVirusDetected) {
           logger.debug("Antivirus scan went fine.")
 //          Future.successful(file.delete())
+          Future.successful(())
         } else {
           logger.warn(s"Antivirus scan found virus, scan output : $scanOutput")
           logger.debug(s"File has been deleted by Antivirus, removing file from S3")
