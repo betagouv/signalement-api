@@ -3,7 +3,6 @@ package actors
 import akka.Done
 import akka.actor._
 import akka.stream.Materializer
-import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
 import config.UploadConfiguration
 import models.report.ReportFile
@@ -47,11 +46,11 @@ class UploadActor @Inject() (
 
   override def receive = { case Request(reportFile: ReportFile, file: java.io.File) =>
     for {
-      _ <- FileIO
-        .fromPath(file.toPath)
-        .to(s3Service.upload(reportFile.storageFilename))
-        .run()
-      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
+//      _ <- FileIO
+//        .fromPath(file.toPath)
+//        .to(s3Service.upload(reportFile.storageFilename))
+//        .run()
+//      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
       _ <- eventuallyAntivirusScanFile(reportFile, file)
     } yield ()
 
