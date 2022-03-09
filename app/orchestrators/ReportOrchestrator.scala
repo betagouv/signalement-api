@@ -1,7 +1,9 @@
 package orchestrators
 
-import actors.UploadActor
+import actors.AntivirusScanActor
 import akka.actor.ActorRef
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
@@ -72,13 +74,12 @@ class ReportOrchestrator @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
-    @Named("upload-actor") uploadActor: ActorRef,
+    @Named("antivirus-scan-actor") antivirusScanActor: ActorRef,
     s3Service: S3Service,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val executionContext: ExecutionContext) {
-
+)(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -396,8 +397,13 @@ class ReportOrchestrator @Inject() (
           None
         )
       )
+      _ <- FileIO
+        .fromPath(file.toPath)
+        .to(s3Service.upload(reportFile.storageFilename))
+        .run()
+      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
     } yield {
-      uploadActor ! UploadActor.Request(reportFile, file)
+      antivirusScanActor ! AntivirusScanActor.Request(reportFile, file)
       reportFile
     }
 

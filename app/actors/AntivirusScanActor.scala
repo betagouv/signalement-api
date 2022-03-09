@@ -17,23 +17,22 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.sys.process._
 
-object UploadActor {
-  def props = Props[UploadActor]()
+object AntivirusScanActor {
+  def props = Props[AntivirusScanActor]()
 
   case class Request(reportFile: ReportFile, file: java.io.File)
 }
 
 @Singleton
-class UploadActor @Inject() (
+class AntivirusScanActor @Inject() (
     uploadConfiguration: UploadConfiguration,
     reportRepository: ReportRepository,
     s3Service: S3Service
 )(implicit
     val mat: Materializer
 ) extends Actor {
-  import UploadActor._
+  import AntivirusScanActor._
 
-//  val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("my-blocking-dispatcher")
   implicit val ec: ExecutionContext = context.dispatcher
 
   val avScanEnabled = uploadConfiguration.avScanEnabled
@@ -45,18 +44,6 @@ class UploadActor @Inject() (
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
 
   override def receive = { case Request(reportFile: ReportFile, file: java.io.File) =>
-    for {
-//      _ <- FileIO
-//        .fromPath(file.toPath)
-//        .to(s3Service.upload(reportFile.storageFilename))
-//        .run()
-//      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
-      _ <- eventuallyAntivirusScanFile(reportFile, file)
-    } yield ()
-
-  }
-
-  private def eventuallyAntivirusScanFile(reportFile: ReportFile, file: java.io.File): Future[Done] =
     for {
       scanOutput <-
         if (avScanEnabled) {
@@ -78,6 +65,7 @@ class UploadActor @Inject() (
           s3Service.delete(reportFile.storageFilename)
         }
     } yield Done
+  }
 
   private def performAntivirusScan(file: java.io.File): Future[String] = Future {
     val stdout = new StringBuilder
@@ -85,13 +73,12 @@ class UploadActor @Inject() (
     logger.debug(stdout.toString)
     stdout.toString()
   }
-//  (cpuIntensiveEc)
 }
 
 class UploadActorModule extends AbstractModule with AkkaGuiceSupport {
   override def configure =
-    bindActor[UploadActor](
-      "upload-actor",
+    bindActor[AntivirusScanActor](
+      "antivirus-scan-actor",
       _.withDispatcher("my-blocking-dispatcher")
     )
 }
