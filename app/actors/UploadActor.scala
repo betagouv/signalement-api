@@ -2,7 +2,6 @@ package actors
 
 import akka.Done
 import akka.actor._
-import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.google.inject.AbstractModule
@@ -35,7 +34,8 @@ class UploadActor @Inject() (
 ) extends Actor {
   import UploadActor._
 
-  implicit val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("my-blocking-dispatcher")
+//  val cpuIntensiveEc: ExecutionContext = context.system.dispatchers.lookup("my-blocking-dispatcher")
+  implicit val ec: ExecutionContext = context.dispatcher
 
   val avScanEnabled = uploadConfiguration.avScanEnabled
 
@@ -85,10 +85,14 @@ class UploadActor @Inject() (
     Seq("clamscan", "--remove", file.toString) ! ProcessLogger(stdout append _)
     logger.debug(stdout.toString)
     stdout.toString()
-  }(cpuIntensiveEc)
+  }
+//  (cpuIntensiveEc)
 }
 
 class UploadActorModule extends AbstractModule with AkkaGuiceSupport {
   override def configure =
-    bindActor[UploadActor]("upload-actor")
+    bindActor[UploadActor](
+      "upload-actor",
+      _.withDispatcher("my-blocking-dispatcher")
+    )
 }
