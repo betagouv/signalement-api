@@ -1,5 +1,8 @@
 package actors
 
+import actors.antivirus.AntivirusScanExitCode._
+import actors.antivirus.AntivirusScanExecution
+import actors.antivirus.AntivirusScanExitCode
 import akka.Done
 import akka.actor._
 import akka.stream.Materializer
@@ -45,34 +48,35 @@ class AntivirusScanActor @Inject() (
 
   override def receive = { case Request(reportFile: ReportFile, file: java.io.File) =>
     for {
-      scanOutput <-
+      antivirusScanResult <-
         if (avScanEnabled) {
           logger.debug("Begin Antivirus scan.")
           performAntivirusScan(file)
         } else {
           logger.debug("Antivirus scan is not active, skipping scan.")
-          Future.successful("Scan is disabled")
+          Future.successful(AntivirusScanExecution.Ignore)
         }
-      _ <- reportRepository.setAvOutput(reportFile.id, scanOutput)
-      noVirusDetected = file.exists()
-      _ <-
-        if (noVirusDetected) {
-          logger.debug("Antivirus scan went fine.")
+      _ = logger.debug("Saving output.")
+      _ <- reportRepository.setAvOutput(reportFile.id, antivirusScanResult.output)
+      _ <- antivirusScanResult.exitCode match {
+        case Some(NoVirusFound) | None =>
+          logger.debug("Deleting file.")
           Future.successful(file.delete())
-          Future.successful(())
-        } else {
-          logger.warn(s"Antivirus scan found virus, scan output : $scanOutput")
+        case Some(VirusFound) =>
+          logger.warn(s"Antivirus scan found virus, scan output : ${antivirusScanResult.output}")
           logger.debug(s"File has been deleted by Antivirus, removing file from S3")
           s3Service.delete(reportFile.storageFilename)
-        }
+        case Some(ErrorOccured) =>
+          logger.error(s"Unexpected error occured when running scan : ${antivirusScanResult.output}")
+          Future.successful(Done)
+      }
     } yield Done
   }
 
-  private def performAntivirusScan(file: java.io.File): Future[String] = Future {
+  private def performAntivirusScan(file: java.io.File): Future[AntivirusScanExecution] = Future {
     val stdout = new StringBuilder
-    Seq("clamdscan", "--remove", "--fdpass", file.toString) ! ProcessLogger(stdout append _)
-    logger.debug(stdout.toString)
-    stdout.toString()
+    val exitCode = Seq("clamdscan", "--remove", "--fdpass", file.toString) ! ProcessLogger(stdout append _)
+    AntivirusScanExecution(AntivirusScanExitCode.withValue(exitCode), stdout.toString())
   }
 }
 
