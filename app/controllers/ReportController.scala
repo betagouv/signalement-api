@@ -20,7 +20,6 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories._
 import services.PDFService
-import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -47,7 +46,6 @@ class ReportController @Inject() (
     reportRepository: ReportRepository,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    s3Service: S3Service,
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
@@ -186,15 +184,10 @@ class ReportController @Inject() (
   }
 
   def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { _ =>
-    reportRepository
-      .getFile(UUID.fromString(uuid))
-      .map {
-        case Some(file) if file.avOutput.isEmpty =>
-          Conflict("Analyse antivirus en cours, veuillez réessayer d'ici 30 secondes") // HTTP 409
-        case Some(file) if file.filename == filename && file.avOutput.isDefined =>
-          Redirect(s3Service.getSignedUrl(file.storageFilename))
-        case _ => NotFound
-      }
+    reportOrchestrator
+      .downloadReportAttachment(uuid, filename)
+      .map(signedUrl => Redirect(signedUrl))
+
   }
 
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>

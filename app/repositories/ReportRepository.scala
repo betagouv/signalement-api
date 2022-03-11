@@ -647,6 +647,14 @@ class ReportRepository @Inject() (
         .update(Some(output))
     )
 
+  def removeStorageFileName(fileId: UUID) = db
+    .run(
+      fileTableQuery
+        .filter(_.id === fileId)
+        .map(_.storageFilename)
+        .update("")
+    )
+
   def getByStatus(status: ReportStatus): Future[List[Report]] =
     db.run(reportTableQuery.filter(_.status === status.entryName).to[List].result)
 
