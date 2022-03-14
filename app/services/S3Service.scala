@@ -1,9 +1,14 @@
 package services
 
+import akka.stream.IOResult
 import akka.stream.Materializer
+import akka.stream.alpakka.s3.MultipartUploadResult
 import akka.stream.alpakka.s3.scaladsl.S3
+import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+
+import java.nio.file.Path
 import com.amazonaws.HttpMethod
 import com.amazonaws.auth.AWSStaticCredentialsProvider
 import com.amazonaws.auth.BasicAWSCredentials
@@ -11,10 +16,12 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import config.BucketConfiguration
+import controllers.error.AppError.BucketFileNotFound
 
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class S3Service @Inject() (implicit
@@ -40,15 +47,24 @@ class S3Service @Inject() (implicit
     )
     .build()
 
-  def upload(bucketKey: String) =
+  def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
     alpakkaS3Client.multipartUpload(bucketName, bucketKey)
 
-  def download(bucketKey: String) =
+  def download(bucketKey: String): Future[ByteString] =
+    downloadFromBucket(bucketKey)
+      .flatMap(a => a.runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b)))
+
+  def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult] =
+    downloadFromBucket(bucketKey).flatMap(a => a.runWith(FileIO.toPath(Path.of(s"./${filename}"))))
+
+  private def downloadFromBucket(bucketKey: String) =
     alpakkaS3Client
       .download(bucketName, bucketKey)
       .runWith(Sink.head)
-      .map(_.map(_._1))
-      .flatMap(a => a.get.runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b)))
+      .map {
+        case Some((byteStringSource, _)) => byteStringSource
+        case None                        => throw BucketFileNotFound(bucketName, bucketKey)
+      }
 
   def delete(bucketKey: String) =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)

@@ -1,13 +1,17 @@
 package orchestrators
 
-import actors.UploadActor
-import akka.actor.ActorRef
+import actors.AntivirusScanActor
+import akka.actor.typed.ActorRef
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError.AttachmentNotFound
+import controllers.error.AppError.AttachmentNotReady
 import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
@@ -56,7 +60,6 @@ import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -72,13 +75,12 @@ class ReportOrchestrator @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
-    @Named("upload-actor") uploadActor: ActorRef,
+    antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3Service,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val executionContext: ExecutionContext) {
-
+)(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -388,16 +390,21 @@ class ReportOrchestrator @Inject() (
       reportFile <- reportRepository.createFile(
         ReportFile(
           UUID.randomUUID,
-          None,
-          OffsetDateTime.now(),
-          filename,
-          file.getName(),
-          origin,
-          None
+          reportId = None,
+          creationDate = OffsetDateTime.now(),
+          filename = filename,
+          storageFilename = file.getName(),
+          origin = origin,
+          avOutput = None
         )
       )
+      _ <- FileIO
+        .fromPath(file.toPath)
+        .to(s3Service.upload(reportFile.storageFilename))
+        .run()
+      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
     } yield {
-      uploadActor ! UploadActor.Request(reportFile, file)
+      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
       reportFile
     }
 
@@ -661,4 +668,19 @@ class ReportOrchestrator @Inject() (
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     reportRepository.countByDepartments(start, end)
+
+  def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
+    logger.info(s"Downloading file with id $uuid")
+    reportRepository
+      .getFile(UUID.fromString(uuid))
+      .flatMap {
+        case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
+          logger.info("Attachment has not been scan by antivirus, rescheduling scan")
+          antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
+          Future.failed(AttachmentNotReady(uuid))
+        case Some(file) if file.filename == filename && file.avOutput.isDefined =>
+          Future.successful(s3Service.getSignedUrl(file.storageFilename))
+        case _ => Future.failed(AttachmentNotFound(uuid, filename))
+      }
+  }
 }

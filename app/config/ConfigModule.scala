@@ -20,14 +20,7 @@ class ConfigModule(environment: Environment, configuration: Configuration) exten
 
     val _ = environment
 
-    import io.sentry.Sentry
-
-    try
-      throw new Exception("This is a test.")
-    catch {
-      case e: Exception =>
-        Sentry.captureException(e)
-    }
+    io.sentry.Sentry.captureException(new Exception("This is a test Alert."))
 
     implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
     implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]

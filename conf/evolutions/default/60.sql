@@ -6,4 +6,3 @@ ALTER TABLE websites ALTER COLUMN company_id DROP NOT NULL;
 -- !Downs
 
 ALTER TABLE websites DROP COLUMN company_country;
-ALTER TABLE websites ALTER COLUMN company_id SET NOT NULL;

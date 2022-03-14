@@ -227,4 +227,25 @@ object AppError {
     override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
   }
 
+  final case class AttachmentNotReady(reportFileId: String) extends ConflictError {
+    override val `type`: String = "SC-0027"
+    override val title: String = "Attachement not available"
+    override val details: String =
+      s"Le fichier [id = $reportFileId] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
+  }
+
+  final case class AttachmentNotFound(reportFileId: String, reportFileName: String) extends NotFoundError {
+    override val `type`: String = "SC-0028"
+    override val title: String = "Cannot download attachment"
+    override val details: String =
+      s"Impossible de récupérer le fichier [id = $reportFileId, nom = $reportFileName]"
+  }
+
+  final case class BucketFileNotFound(bucketName: String, fileName: String) extends NotFoundError {
+    override val `type`: String = "SC-0028"
+    override val title: String = "Cannot download file from S3"
+    override val details: String =
+      s"Impossible de récupérer le fichier $fileName sur le bucket $bucketName"
+  }
+
 }
