@@ -2,7 +2,6 @@ package controllers
 
 import actors.ReportsExtractActor
 import akka.actor.ActorRef
-import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.error.AppError.MalformedQueryParams
 import models._
@@ -64,7 +63,7 @@ class ReportListController @Inject() (
         },
         filters => {
           logger.debug(s"Requesting report for user ${request.identity.email}")
-          reportsExtractActor ? ReportsExtractActor.ExtractRequest(request.identity, filters)
+          reportsExtractActor ! ReportsExtractActor.ExtractRequest(request.identity, filters)
           Future(Ok)
         }
       )
