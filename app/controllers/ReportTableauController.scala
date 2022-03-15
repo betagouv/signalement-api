@@ -18,6 +18,7 @@ class ReportTableauController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def getReport() = SecuredAction.async { _ =>
+    logger.info("Getting reports for tableau")
     reportRepository.reports().map(report => Ok(Json.toJson(report)))
   }
 

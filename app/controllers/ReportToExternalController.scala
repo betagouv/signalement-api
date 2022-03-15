@@ -37,6 +37,7 @@ class ReportToExternalController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def getReportToExternal(uuid: String) = SecuredAction.async { _ =>
+    logger.debug("Calling report to external")
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
