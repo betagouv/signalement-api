@@ -46,6 +46,8 @@ GET           /api/reports/:uuid/events                         controllers.Repo
 GET           /api/companies/:siret/events                      controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
 
 # Report API for externals SI
+# Temporary to explore some data with external tableau team, will be removed as soon as finished
+GET           /api/ext/reports/tableau-integration              controllers.ReportTableauController.getReport()
 GET           /api/ext/reports/siret/:siret                     controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)
 GET           /api/ext/reports/extract                          controllers.DataEconomieController.reportDataEcomonie()
 GET           /api/ext/reports                                  controllers.ReportToExternalController.searchReportsToExternal()
