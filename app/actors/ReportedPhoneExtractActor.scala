@@ -22,6 +22,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -31,7 +32,7 @@ object ReportedPhonesExtractActor {
   def props = Props[ReportedPhonesExtractActor]()
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
-  case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)
+  case class ExtractRequest(fileId: UUID, requestedBy: User, rawFilters: RawFilters)
 }
 
 @Singleton
@@ -50,18 +51,14 @@ class ReportedPhonesExtractActor @Inject() (
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(requestedBy, rawFilters) =>
+    case ExtractRequest(fileId, requestedBy, rawFilters) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.ReportedPhones)
-        tmpPath <- {
-          sender() ! ()
-          genTmpFile(rawFilters)
-        }
+        tmpPath <- genTmpFile(rawFilters)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${asyncFile.id}")
+        _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+      } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
     case _ => logger.debug("Could not handle request")
   }
 
