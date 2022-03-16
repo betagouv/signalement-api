@@ -12,7 +12,8 @@ import play.api.libs.json.Json
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-import akka.pattern.ask
+import repositories.AsyncFileRepository
+
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -23,6 +24,7 @@ import scala.concurrent.Future
 @Singleton
 class ReportListController @Inject() (
     reportOrchestrator: ReportOrchestrator,
+    asyncFileRepository: AsyncFileRepository,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
@@ -63,9 +65,12 @@ class ReportListController @Inject() (
         },
         filters => {
           logger.debug(s"Requesting report for user ${request.identity.email}")
-          // TODO Remove ask pattern see ReportsExtractActor receive method
-          reportsExtractActor ? ReportsExtractActor.ExtractRequest(request.identity, filters)
-          Future(Ok)
+          asyncFileRepository
+            .create(request.identity, kind = AsyncFileKind.Reports)
+            .map { file =>
+              reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, filters)
+            }
+            .map(_ => Ok)
         }
       )
   }
