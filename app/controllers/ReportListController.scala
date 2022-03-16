@@ -12,7 +12,7 @@ import play.api.libs.json.Json
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
+import akka.pattern.ask
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -63,7 +63,8 @@ class ReportListController @Inject() (
         },
         filters => {
           logger.debug(s"Requesting report for user ${request.identity.email}")
-          reportsExtractActor ! ReportsExtractActor.ExtractRequest(request.identity, filters)
+          // TODO Remove ask pattern see ReportsExtractActor receive method
+          reportsExtractActor ? ReportsExtractActor.ExtractRequest(request.identity, filters)
           Future(Ok)
         }
       )

@@ -66,6 +66,7 @@ class ReportsExtractActor @Inject() (
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
+        // To remove ask patern move asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports) before calling actor then use tell pattern and get rid of sender() ! ()
         asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
         tmpPath <- {
           sender() ! ()

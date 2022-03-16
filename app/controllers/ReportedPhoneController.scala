@@ -62,7 +62,7 @@ class ReportedPhoneController @Inject() (
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
-      reportedPhonesExtractActor ? ReportedPhonesExtractActor.ExtractRequest(
+      reportedPhonesExtractActor ! ReportedPhonesExtractActor.ExtractRequest(
         request.identity,
         RawFilters(q, start, end)
       )
