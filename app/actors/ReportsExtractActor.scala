@@ -31,6 +31,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -39,7 +40,7 @@ import scala.util.Random
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
 
-  case class ExtractRequest(requestedBy: User, filters: ReportFilter)
+  case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter)
 }
 
 @Singleton
@@ -62,19 +63,14 @@ class ReportsExtractActor @Inject() (
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(requestedBy: User, filters: ReportFilter) =>
+    case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        // To remove ask patern move asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports) before calling actor then use tell pattern and get rid of sender() ! ()
-        asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
-        tmpPath <- {
-          sender() ! ()
-          genTmpFile(requestedBy, filters)
-        }
+        tmpPath <- genTmpFile(requestedBy, filters)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
+        _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
     case _ => logger.debug("Could not handle request")
   }
 
