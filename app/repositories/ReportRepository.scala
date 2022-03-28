@@ -22,6 +22,7 @@ import repositories.mapping.Report._
 
 class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def id = column[UUID]("id", O.PrimaryKey)
+  def gender = column[Option[Gender]]("gender")
   def category = column[String]("category")
   def subcategories = column[List[String]]("subcategories")
   def details = column[List[String]]("details")
@@ -59,6 +60,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
   type ReportData = (
       UUID,
+      Option[Gender],
       String,
       List[String],
       List[String],
@@ -93,6 +95,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def constructReport: ReportData => Report = {
     case (
           id,
+          gender,
           category,
           subcategories,
           details,
@@ -125,6 +128,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         ) =>
       report.Report(
         id = id,
+        gender = gender,
         category = category,
         subcategories = subcategories,
         details = details.filter(_ != null).map(toDetailInputValue),
@@ -160,6 +164,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def extractReport: PartialFunction[Report, ReportData] = { case r =>
     (
       r.id,
+      r.gender,
       r.category,
       r.subcategories,
       r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"),
@@ -194,6 +199,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
   def * = (
     id,
+    gender,
     category,
     subcategories,
     details,
