@@ -14,6 +14,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 case class ReportDraft(
+    gender: Option[Gender],
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -39,6 +40,7 @@ case class ReportDraft(
 
   def generateReport: Report = {
     val report = Report(
+      gender = gender,
       category = category,
       subcategories = subcategories,
       details = details,

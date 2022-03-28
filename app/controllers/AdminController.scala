@@ -8,6 +8,7 @@ import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.report.Gender
 import models.report.Report
 import models.report.ReportResponse
 import models.report.ReportResponseType
@@ -73,6 +74,7 @@ class AdminController @Inject() (
 
   private def genReport = Report(
     id = UUID.randomUUID,
+    gender = Some(Gender.Female),
     category = "Test",
     subcategories = List("test"),
     details = List(toDetailInputValue("test")),

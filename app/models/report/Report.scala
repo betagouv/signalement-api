@@ -19,6 +19,7 @@ import java.util.UUID
 
 case class Report(
     id: UUID = UUID.randomUUID(),
+    gender: Option[Gender],
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -73,6 +74,7 @@ object Report {
     def writes(report: Report) =
       Json.obj(
         "id" -> report.id,
+        "gender" -> report.gender,
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,

@@ -12,6 +12,7 @@ import java.util.UUID
 
 case class ReportToExternal(
     id: UUID,
+    gender: Option[Gender],
     creationDate: OffsetDateTime,
     category: String,
     subcategories: List[String],
@@ -41,6 +42,7 @@ object ReportToExternal {
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
+      gender = r.gender,
       creationDate = r.creationDate,
       category = r.category,
       subcategories = r.subcategories,

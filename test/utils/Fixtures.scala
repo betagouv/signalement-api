@@ -2,10 +2,11 @@ package utils
 
 import models.Event._
 import models._
-import models.report.ReportDraft
+import models.report.Gender
 import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
+import models.report.ReportDraft
 import models.report.ReportStatus
 import models.report.ReviewOnReportResponse
 import models.report.WebsiteURL
@@ -25,6 +26,8 @@ object Fixtures {
   // see http://stackoverflow.com/questions/1347646/postgres-error-on-insert-error-invalid-byte-sequence-for-encoding-utf8-0x0
   implicit val arbString: Arbitrary[String] =
     Arbitrary(Gen.identifier.map(_.replaceAll("\u0000", "")))
+
+  val genGender = Gen.oneOf(Some(Gender.Female), Some(Gender.Male), None)
 
   val genUser = for {
     id <- arbitrary[UUID]
@@ -120,6 +123,7 @@ object Fixtures {
   } yield randInt.toString
 
   def genDraftReport = for {
+    gender <- genGender
     category <- arbString.arbitrary
     subcategory <- arbString.arbitrary
     firstName <- genFirstName
@@ -129,6 +133,7 @@ object Fixtures {
     company <- genCompany
     websiteURL <- genWebsiteURL
   } yield ReportDraft(
+    gender = gender,
     category = category,
     subcategories = List(subcategory),
     details = List(),
@@ -149,6 +154,7 @@ object Fixtures {
 
   def genReportForCompany(company: Company) = for {
     id <- arbitrary[UUID]
+    gender <- genGender
     category <- arbString.arbitrary
     subcategory <- arbString.arbitrary
     firstName <- genFirstName
@@ -158,6 +164,7 @@ object Fixtures {
     status <- Gen.oneOf(ReportStatus.values)
   } yield Report(
     id = id,
+    gender = gender,
     category = category,
     subcategories = List(subcategory),
     details = List(),

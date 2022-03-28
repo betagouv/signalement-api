@@ -14,6 +14,7 @@ import config.SignalConsoConfiguration
 import controllers.ReportController
 import models.report
 import models._
+import models.report.Gender
 import models.report.Report
 import models.report.ReportStatus
 import models.report.ReportWithFiles
@@ -250,7 +251,9 @@ trait GetReportContext extends Mockito {
 
   val address = Fixtures.genAddress()
 
+  private val valueGender: Option[Gender] = Fixtures.genGender.sample.get
   val neverRequestedReport = report.Report(
+    gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
@@ -269,6 +272,7 @@ trait GetReportContext extends Mockito {
   )
 
   val neverRequestedFinalReport = report.Report(
+    gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
@@ -287,6 +291,7 @@ trait GetReportContext extends Mockito {
   )
 
   val alreadyRequestedReport = report.Report(
+    gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
     details = List(),
