@@ -18,5 +18,5 @@ object EmailSubjects {
   val REPORT_CLOSED_NO_ACTION = "L'entreprise n'a pas répondu au signalement"
   val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: Option[String]) =>
     s"[SignalConso] ${additional.getOrElse("")}${if (cnt > 1) s"${cnt} nouveaux signalements"
-    else "Un nouveau signalement"}"
+      else "Un nouveau signalement"}"
 }

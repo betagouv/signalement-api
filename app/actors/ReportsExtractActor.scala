@@ -4,12 +4,12 @@ import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.google.inject.AbstractModule
-import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.CellFill
-import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
-import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
-import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
-import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import spoiwo.model._
+import spoiwo.model.enums.CellFill
+import spoiwo.model.enums.CellHorizontalAlignment
+import spoiwo.model.enums.CellStyleInheritance
+import spoiwo.model.enums.CellVerticalAlignment
+import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
@@ -189,8 +189,8 @@ class ReportsExtractActor @Inject() (
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
-                .downloadReportFile(file.id.toString, file.filename)
-                .url}"
+                  .downloadReportFile(file.id.toString, file.filename)
+                  .url}"
             )
             .mkString("\n"),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
@@ -282,7 +282,7 @@ class ReportsExtractActor @Inject() (
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
               s"Le ${event.creationDate
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
+                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
         available = requestedBy.userRole == UserRole.DGCCRF
