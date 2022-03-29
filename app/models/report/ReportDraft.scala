@@ -4,14 +4,17 @@ import models.Address
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+import models.report.ReportTag.TranslationReportTagReads
 
 import java.util.UUID
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
+import models.report.ReportTag
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 case class ReportDraft(
+    gender: Option[Gender],
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -30,13 +33,14 @@ case class ReportDraft(
     forwardToReponseConso: Option[Boolean] = Some(false),
     fileIds: List[UUID],
     vendor: Option[String] = None,
-    tags: List[String] = Nil,
+    tags: List[ReportTag] = Nil,
     reponseconsoCode: Option[List[String]] = None,
     ccrfCode: Option[List[String]] = None
 ) {
 
   def generateReport: Report = {
     val report = Report(
+      gender = gender,
       category = category,
       subcategories = subcategories,
       details = details,
@@ -55,9 +59,7 @@ case class ReportDraft(
       status = ReportStatus.NA,
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
-      tags = tags
-        .map(ReportTag.fromDisplayOrEntryName(_))
-        .distinct
+      tags = tags.distinct
         .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil)
@@ -70,11 +72,15 @@ object ReportDraft {
   def isValid(draft: ReportDraft): Boolean =
     (draft.companySiret.isDefined
       || draft.websiteURL.isDefined
-      || draft.tags.map(ReportTag.fromDisplayOrEntryName(_)).contains(ReportTag.Influenceur) && draft.companyAddress
+      || draft.tags.contains(ReportTag.Influenceur) && draft.companyAddress
         .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
 
+  /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
+    * entry name Make sure no translated values is passed as ReportTag to remove this reads
+    */
+  implicit val reportTagReads = TranslationReportTagReads
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
   implicit val draftReportWrites = Json.writes[ReportDraft]
 }

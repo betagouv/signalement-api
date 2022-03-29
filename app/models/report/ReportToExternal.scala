@@ -5,25 +5,29 @@ import play.api.libs.json.OFormat
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+import ReportTag._
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
 case class ReportToExternal(
     id: UUID,
+    gender: Option[Gender],
     creationDate: OffsetDateTime,
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
+    description: Option[String],
+    question: Option[String],
     postalCode: Option[String],
     siret: Option[SIRET],
     websiteURL: Option[URL],
     phone: Option[String],
+    consumerPhone: Option[String],
     firstName: String,
     lastName: String,
     email: EmailAddress,
     contactAgreement: Boolean,
-    description: Option[String],
     effectiveDate: Option[String],
     reponseconsoCode: List[String],
     ccrfCode: List[String],
@@ -31,13 +35,26 @@ case class ReportToExternal(
 ) {}
 
 object ReportToExternal {
+
+  val reponseConsoInputLabel = "Votre question"
+  val descriptionInputLabel = "Description"
+
   def fromReport(r: Report) =
     ReportToExternal(
       id = r.id,
+      gender = r.gender,
       creationDate = r.creationDate,
       category = r.category,
       subcategories = r.subcategories,
       details = r.details,
+      description = r.details
+        .filter(d => d.label.matches(descriptionInputLabel + ".*"))
+        .map(_.value)
+        .headOption,
+      question = r.details
+        .filter(d => d.label.matches(reponseConsoInputLabel + ".*"))
+        .map(_.value)
+        .headOption,
       siret = r.companySiret,
       postalCode = r.companyAddress.postalCode,
       websiteURL = r.websiteURL.websiteURL,
@@ -45,18 +62,15 @@ object ReportToExternal {
       firstName = r.firstName,
       lastName = r.lastName,
       email = r.email,
+      consumerPhone = r.consumerPhone,
       contactAgreement = r.contactAgreement,
-      description = r.details
-        .filter(d => d.label.matches("Quel est le problème.*"))
-        .map(_.value)
-        .headOption,
       effectiveDate = r.details
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))
         .map(_.value)
         .headOption,
       reponseconsoCode = r.reponseconsoCode,
       ccrfCode = r.ccrfCode,
-      tags = r.tags.map(_.displayName)
+      tags = r.tags.map(_.translate())
     )
 
   implicit val format: OFormat[ReportToExternal] = Json.format[ReportToExternal]

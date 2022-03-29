@@ -207,4 +207,45 @@ object AppError {
     override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
   }
 
+  final case class ExternalReportsMaxPageSizeExceeded(maxSize: Int) extends BadRequestError {
+    override val `type`: String = "SC-0024"
+    override val title: String = s"Max page size reached "
+    override val details: String =
+      s"Le nombre d'entrée par page demandé est trop élevé. Il doit être inférieur ou égal à $maxSize"
+  }
+
+  final case object DuplicateReportCreation extends BadRequestError {
+    override val `type`: String = "SC-0025"
+    override val title: String = s"Same report has already been created"
+    override val details: String =
+      s"Un signalement similaire a été créé aujourd'hui."
+  }
+
+  final case object MalformedQueryParams extends BadRequestError {
+    override val `type`: String = "SC-0026"
+    override val title: String = "Malformed request query params"
+    override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
+  }
+
+  final case class AttachmentNotReady(reportFileId: String) extends ConflictError {
+    override val `type`: String = "SC-0027"
+    override val title: String = "Attachement not available"
+    override val details: String =
+      s"Le fichier [id = $reportFileId] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
+  }
+
+  final case class AttachmentNotFound(reportFileId: String, reportFileName: String) extends NotFoundError {
+    override val `type`: String = "SC-0028"
+    override val title: String = "Cannot download attachment"
+    override val details: String =
+      s"Impossible de récupérer le fichier [id = $reportFileId, nom = $reportFileName]"
+  }
+
+  final case class BucketFileNotFound(bucketName: String, fileName: String) extends NotFoundError {
+    override val `type`: String = "SC-0028"
+    override val title: String = "Cannot download file from S3"
+    override val details: String =
+      s"Impossible de récupérer le fichier $fileName sur le bucket $bucketName"
+  }
+
 }

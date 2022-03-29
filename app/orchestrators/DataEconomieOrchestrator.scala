@@ -4,6 +4,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import io.scalaland.chimney.dsl.TransformerOps
 import models.dataeconomie.ReportDataEconomie
+import models.report.ReportTag.ReportTagTranslationOps
 import play.api.Logger
 import repositories._
 
@@ -28,7 +29,7 @@ class DataEconomieOrchestrator @Inject() (
           .withFieldComputed(_.companyCity, _.companyAddress.city)
           .withFieldComputed(_.companyCountry, _.companyAddress.country)
           .withFieldComputed(_.companyPostalCode, _.companyAddress.postalCode)
-          .withFieldComputed(_.tags, _.tags.map(_.displayName))
+          .withFieldComputed(_.tags, _.tags.map(_.translate()))
           .withFieldConst(_.activityCode, x._2.flatMap(_.activityCode))
           .transform
       )

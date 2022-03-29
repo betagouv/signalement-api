@@ -1,5 +1,6 @@
 package repositories.mapping
 
+import models.report.Gender
 import models.report.ReportTag
 import repositories.PostgresProfile.api._
 
@@ -15,6 +16,12 @@ object Report {
     MappedColumnType.base[ReportTag, String](
       _.entryName,
       ReportTag.namesToValuesMap
+    )
+
+  implicit val GenderColumnType =
+    MappedColumnType.base[Gender, String](
+      _.entryName,
+      Gender.namesToValuesMap
     )
 
 }

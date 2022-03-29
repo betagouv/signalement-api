@@ -8,12 +8,13 @@ import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.report.Gender
 import models.report.Report
-import models.report.ReportStatus
 import models.report.ReportResponse
 import models.report.ReportResponseType
-import models.report.WebsiteURL
+import models.report.ReportStatus
 import models.report.ReportTag
+import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
@@ -73,6 +74,7 @@ class AdminController @Inject() (
 
   private def genReport = Report(
     id = UUID.randomUUID,
+    gender = Some(Gender.Female),
     category = "Test",
     subcategories = List("test"),
     details = List(toDetailInputValue("test")),
@@ -133,7 +135,8 @@ class AdminController @Inject() (
     email = None,
     departments = List("75"),
     countries = Nil,
-    tags = Nil,
+    withTags = Nil,
+    withoutTags = Nil,
     categories = Nil,
     sirets = Nil,
     frequency = java.time.Period.ofDays(1)
@@ -262,6 +265,18 @@ class AdminController @Inject() (
         Nil
       )
     ),
+    "consumer.report_ack_case_compagnie_aerienne" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(
+            status = ReportStatus.NA,
+            email = recipient,
+            tags = List(ReportTag.CompagnieAerienne)
+          ),
+          genEvent,
+          Nil
+        )
+      ),
     "consumer.report_ack_case_abroad_default" ->
       (recipient =>
         ConsumerReportAcknowledgment(

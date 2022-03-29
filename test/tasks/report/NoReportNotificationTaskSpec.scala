@@ -2,13 +2,13 @@ package tasks.report
 
 import models._
 import models.report.ReportCategory
+import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import repositories._
 import services.AttachementService
 import services.MailerService
-import models.report.ReportTag
 import utils._
 import play.api.libs.mailer.Attachment
 
@@ -21,8 +21,8 @@ class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificati
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+      }}
          And no email are sent to any users                           ${mailMustNotHaveBeenSent()}
     """
 }
@@ -65,7 +65,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(tagEmail),
     departments = List(tagDept),
-    tags = List(ReportTag.ProduitDangereux),
+    withTags = List(ReportTag.ProduitDangereux),
     frequency = Period.ofDays(1)
   )
 

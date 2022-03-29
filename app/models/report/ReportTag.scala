@@ -3,33 +3,76 @@ package models.report
 import controllers.error.AppError.InvalidReportTagBody
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
+import play.api.Logger
+import play.api.libs.json.JsError
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Reads
 
-sealed abstract class ReportTag(val displayName: String) extends EnumEntry
+sealed trait ReportTag extends EnumEntry
 
 object ReportTag extends PlayEnum[ReportTag] {
 
-  val values = findValues
+  private[this] val logger = Logger(this.getClass)
 
-  def fromDisplayOrEntryName(name: String): ReportTag = withDisplayName(name) match {
-    case Some(value) => value
-    case None        => withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+  val values: IndexedSeq[ReportTag] = findValues
+
+  override def withName(name: String): ReportTag =
+    ReportTag.withNameOption(name).getOrElse(throw InvalidReportTagBody(name))
+
+  /** Used as workaround to parse values from their translation as signalement-app is pushing translation instead of
+    * entry name Make sure no translated values is passed as ReportTag to remove this reads
+    */
+  val TranslationReportTagReads: Reads[ReportTag] = Reads[ReportTag] {
+    case JsString(s) =>
+      withNameOption(s).orElse {
+        ReportTag.values
+          .find { v =>
+            if (v.translate() == s) {
+              logger.warn(s"Parsing report tag from translated value $s")
+              true
+            } else false
+          }
+      } match {
+        case Some(obj) => JsSuccess(obj)
+        case None      => JsError("error.expected.validenumvalue")
+      }
+    case _ => JsError("error.expected.enumstring")
   }
 
-  private def withDisplayName(displayName: String) = values.find(_.displayName == displayName)
+  case object LitigeContractuel extends ReportTag
+  case object Hygiene extends ReportTag
+  case object ProduitDangereux extends ReportTag
+  case object DemarchageADomicile extends ReportTag
+  case object Ehpad extends ReportTag
+  case object DemarchageTelephonique extends ReportTag
+  case object AbsenceDeMediateur extends ReportTag
+  case object Bloctel extends ReportTag
+  case object Influenceur extends ReportTag
+  case object ReponseConso extends ReportTag
+  case object Internet extends ReportTag
+  case object ProduitIndustriel extends ReportTag
+  case object ProduitAlimentaire extends ReportTag
+  case object CompagnieAerienne extends ReportTag
 
-  case object LitigeContractuel extends ReportTag("Litige contractuel")
-  case object Hygiene extends ReportTag("hygiène")
-  case object ProduitDangereux extends ReportTag("Produit dangereux")
-  case object DemarchageADomicile extends ReportTag("Démarchage à domicile")
-  case object Ehpad extends ReportTag("Ehpad")
-  case object DemarchageTelephonique extends ReportTag("Démarchage téléphonique")
-  case object AbsenceDeMediateur extends ReportTag("Absence de médiateur")
-  case object Bloctel extends ReportTag("Bloctel")
-  case object Influenceur extends ReportTag("Influenceur")
-  case object ReponseConso extends ReportTag("ReponseConso")
-  case object Internet extends ReportTag("Internet")
-  case object ProduitIndustriel extends ReportTag("Produit industriel")
-  case object ProduitAlimentaire extends ReportTag("Produit alimentaire")
-  case object CompagnieAerienne extends ReportTag("Compagnie aerienne")
+  implicit class ReportTagTranslationOps(reportTag: ReportTag) {
+
+    def translate(): String = reportTag match {
+      case LitigeContractuel      => "Litige contractuel"
+      case Hygiene                => "hygiène"
+      case ProduitDangereux       => "Produit dangereux"
+      case DemarchageADomicile    => "Démarchage à domicile"
+      case Ehpad                  => "Ehpad"
+      case DemarchageTelephonique => "Démarchage téléphonique"
+      case AbsenceDeMediateur     => "Absence de médiateur"
+      case Bloctel                => "Bloctel"
+      case Influenceur            => "Influenceur"
+      case ReponseConso           => "ReponseConso"
+      case Internet               => "Internet"
+      case ProduitIndustriel      => "Produit industriel"
+      case ProduitAlimentaire     => "Produit alimentaire"
+      case CompagnieAerienne      => "Compagnie aerienne"
+    }
+  }
 
 }

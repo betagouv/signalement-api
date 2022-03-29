@@ -3,11 +3,11 @@ package controllers
 import actors.ReportedPhonesExtractActor
 import actors.ReportedPhonesExtractActor.RawFilters
 import akka.actor.ActorRef
-import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
+import repositories.AsyncFileRepository
 import repositories.CompanyRepository
 import repositories.ReportRepository
 import utils.DateUtils
@@ -16,13 +16,13 @@ import utils.silhouette.auth.WithRole
 
 import javax.inject._
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
 class ReportedPhoneController @Inject() (
     val reportRepository: ReportRepository,
     val companyRepository: CompanyRepository,
+    asyncFileRepository: AsyncFileRepository,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)
@@ -62,10 +62,12 @@ class ReportedPhoneController @Inject() (
   def extractPhonesGroupBySIRET(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
-      reportedPhonesExtractActor ? ReportedPhonesExtractActor.ExtractRequest(
-        request.identity,
-        RawFilters(q, start, end)
-      )
-      Future(Ok)
+      asyncFileRepository
+        .create(request.identity, kind = AsyncFileKind.ReportedPhones)
+        .map { file =>
+          reportedPhonesExtractActor ! ReportedPhonesExtractActor
+            .ExtractRequest(file.id, request.identity, RawFilters(q, start, end))
+        }
+        .map(_ => Ok)
     }
 }

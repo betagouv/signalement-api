@@ -1,30 +1,35 @@
 package orchestrators
 
-import actors.UploadActor
-import akka.actor.ActorRef
+import actors.AntivirusScanActor
+import akka.actor.typed.ActorRef
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError.AttachmentNotFound
+import controllers.error.AppError.AttachmentNotReady
+import controllers.error.AppError.DuplicateReportCreation
+import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
 import models.Event._
-import models.report
 import models._
-import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
+import models.report.ReportDraft
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
-import models.report.ReportStatus
 import models.report.ReportResponse
 import models.report.ReportResponseType
+import models.report.ReportStatus
 import models.report.ReportWithFiles
 import models.report.ReviewOnReportResponse
 import models.report.ReportTag
@@ -55,7 +60,6 @@ import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -71,13 +75,12 @@ class ReportOrchestrator @Inject() (
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
     emailValidationOrchestrator: EmailValidationOrchestrator,
-    @Named("upload-actor") uploadActor: ActorRef,
+    antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3Service,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val executionContext: ExecutionContext) {
-
+)(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -181,6 +184,7 @@ class ReportOrchestrator @Inject() (
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
+      _ <- reportRepository.findSimilarReportCount(reportToCreate).ensure(DuplicateReportCreation)(_ == 0)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
@@ -312,7 +316,7 @@ class ReportOrchestrator @Inject() (
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(
                   s"Entreprise précédente : Siret ${report.companySiret
-                    .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
+                      .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}"
                 )
               )
             )
@@ -386,16 +390,21 @@ class ReportOrchestrator @Inject() (
       reportFile <- reportRepository.createFile(
         ReportFile(
           UUID.randomUUID,
-          None,
-          OffsetDateTime.now(),
-          filename,
-          file.getName(),
-          origin,
-          None
+          reportId = None,
+          creationDate = OffsetDateTime.now(),
+          filename = filename,
+          storageFilename = file.getName(),
+          origin = origin,
+          avOutput = None
         )
       )
+      _ <- FileIO
+        .fromPath(file.toPath)
+        .to(s3Service.upload(reportFile.storageFilename))
+        .run()
+      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
     } yield {
-      uploadActor ! UploadActor.Request(reportFile, file)
+      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
       reportFile
     }
 
@@ -600,7 +609,7 @@ class ReportOrchestrator @Inject() (
         action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
         details = stringToDetailsJsValue(
           s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive.entryName
-          else ReportResponseReview.Negative.entryName}" +
+            else ReportResponseReview.Negative.entryName}" +
             s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
         )
       )
@@ -618,21 +627,60 @@ class ReportOrchestrator @Inject() (
         filter.siretSirenList,
         connectedUser
       )
-      paginatedReports <-
+      paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
-          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List[Report]()))
+          Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
         } else {
-          reportRepository.getReports(
+          getReportsWithFile[ReportWithFiles](
             filter.copy(siretSirenList = sanitizedSirenSirets),
             offset,
-            limit
+            limit,
+            (r: Report, m: Map[UUID, List[ReportFile]]) => ReportWithFiles(r, m.getOrElse(r.id, Nil))
           )
         }
+    } yield paginatedReportFiles
+
+  def getReportsWithFile[T](
+      filter: ReportFilter,
+      offset: Option[Long],
+      limit: Option[Int],
+      toApi: (Report, Map[UUID, List[ReportFile]]) => T
+  ): Future[PaginatedResult[T]] = {
+    val maxResults = signalConsoConfiguration.reportsExportLimitMax
+    for {
+      _ <- limit match {
+        case Some(limitValue) if limitValue > maxResults =>
+          logger.error(s"Max page size reached $limitValue > $maxResults")
+          Future.failed(ExternalReportsMaxPageSizeExceeded(maxResults))
+        case a => Future.successful(a)
+      }
+      validLimit = limit.orElse(Some(maxResults))
+      validOffset = offset.orElse(Some(0L))
+      paginatedReports <-
+        reportRepository.getReports(
+          filter,
+          validOffset,
+          validLimit
+        )
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
-    } yield paginatedReports.copy(entities =
-      paginatedReports.entities.map(r => report.ReportWithFiles(r, reportFilesMap.getOrElse(r.id, Nil)))
-    )
+    } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
+  }
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     reportRepository.countByDepartments(start, end)
+
+  def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
+    logger.info(s"Downloading file with id $uuid")
+    reportRepository
+      .getFile(UUID.fromString(uuid))
+      .flatMap {
+        case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
+          logger.info("Attachment has not been scan by antivirus, rescheduling scan")
+          antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
+          Future.failed(AttachmentNotReady(uuid))
+        case Some(file) if file.filename == filename && file.avOutput.isDefined =>
+          Future.successful(s3Service.getSignedUrl(file.storageFilename))
+        case _ => Future.failed(AttachmentNotFound(uuid, filename))
+      }
+  }
 }

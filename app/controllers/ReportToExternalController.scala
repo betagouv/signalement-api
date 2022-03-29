@@ -1,16 +1,19 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.report.ReportTag
+import models.report.Report
+import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFileToExternal
 import models.report.ReportFilter
 import models.report.ReportToExternal
 import models.report.ReportWithFiles
 import models.report.ReportWithFilesToExternal
+import models.report.ReportWithFilesToExternal.format
+import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories._
+import repositories.ReportRepository
 import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 
@@ -21,9 +24,12 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import models.PaginatedResult.paginatedResultWrites
+import models.report.ReportTag
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
+    reportOrchestrator: ReportOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
     extends ApiKeyBaseController {
@@ -31,6 +37,7 @@ class ReportToExternalController @Inject() (
   val logger: Logger = Logger(this.getClass)
 
   def getReportToExternal(uuid: String) = SecuredAction.async { _ =>
+    logger.debug("Calling report to external")
     Try(UUID.fromString(uuid)) match {
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
@@ -51,20 +58,49 @@ class ReportToExternalController @Inject() (
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
       start = qs.localDate("start"),
       end = qs.localDate("end"),
-      tags = qs.seq("tags").map(ReportTag.fromDisplayOrEntryName)
+      withTags = qs.seq("tags").map(ReportTag.withName)
     )
+
     for {
-      reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
-      reportFilesMap <- reportRepository.prefetchReportsFiles(reports.entities.map(_.id))
+      reportsWithFiles <- reportRepository.getReportsWithFiles(
+        filter = filter
+      )
     } yield Ok(
       Json.toJson(
-        reports.entities.map(r =>
+        reportsWithFiles.map { case (report, fileList) =>
+          ReportWithFilesToExternal(
+            ReportToExternal.fromReport(report),
+            fileList.map(ReportFileToExternal.fromReportFile)
+          )
+        }
+      )
+    )
+  }
+
+  def searchReportsToExternalV2() = SecuredAction.async { implicit request =>
+    val qs = new QueryStringMapper(request.queryString)
+    val filter = ReportFilter(
+      siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
+      start = qs.localDate("start"),
+      end = qs.localDate("end"),
+      withTags = qs.seq("tags").map(ReportTag.withName)
+    )
+    val offset = qs.long("offset")
+    val limit = qs.int("limit")
+
+    for {
+      reportsWithFiles <- reportOrchestrator.getReportsWithFile(
+        filter = filter,
+        offset,
+        limit,
+        (r: Report, m: Map[UUID, List[ReportFile]]) =>
           ReportWithFilesToExternal(
             ReportToExternal.fromReport(r),
-            reportFilesMap.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
+            m.getOrElse(r.id, Nil).map(ReportFileToExternal.fromReportFile)
           )
-        )
       )
+    } yield Ok(
+      Json.toJson(reportsWithFiles)(paginatedResultWrites[ReportWithFilesToExternal](ReportWithFilesToExternal.format))
     )
   }
 

@@ -19,30 +19,30 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
   override def is =
     s2"""
       When weekly reportNotificationTask task run               ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf)
+      }}
 
     A mail is sent to the subscribed user                     ${mailMustHaveBeenSent(
-      Seq(user.email),
-      s"[SignalConso] 3 nouveaux signalements",
-      views.html.mails.dgccrf
-        .reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7))
-        .toString
-    )}
+        Seq(user.email),
+        s"[SignalConso] 3 nouveaux signalements",
+        views.html.mails.dgccrf
+          .reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7))
+          .toString
+      )}
     A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
-      Seq(user.email),
-      s"[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf
-        .reportNotification(userSubscriptionCountries, Seq(reportArgentine), runningDate.minusDays(7))
-        .toString
-    )}
+        Seq(user.email),
+        s"[SignalConso] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(userSubscriptionCountries, Seq(reportArgentine), runningDate.minusDays(7))
+          .toString
+      )}
         And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
-      Seq(officeEmail),
-      s"[SignalConso] 3 nouveaux signalements",
-      views.html.mails.dgccrf
-        .reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7))
-        .toString
-    )}
+        Seq(officeEmail),
+        s"[SignalConso] 3 nouveaux signalements",
+        views.html.mails.dgccrf
+          .reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7))
+          .toString
+      )}
       """
 
 }
@@ -80,7 +80,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = Some(officeEmail),
     departments = List(department1, department2, martinique),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -91,7 +92,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List(department1, guadeloupe),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -102,7 +104,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List.empty,
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List(Country.Tunisie, Country.Argentine),
     sirets = List.empty,
     frequency = Period.ofDays(7)
@@ -113,7 +116,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     email = None,
     departments = List(department3),
     categories = List.empty,
-    tags = List.empty,
+    withTags = List.empty,
+    withoutTags = List.empty,
     countries = List.empty,
     sirets = List.empty,
     frequency = Period.ofDays(7)

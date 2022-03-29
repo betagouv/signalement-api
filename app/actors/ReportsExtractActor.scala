@@ -4,12 +4,12 @@ import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.google.inject.AbstractModule
-import com.norbitltd.spoiwo.model._
-import com.norbitltd.spoiwo.model.enums.CellFill
-import com.norbitltd.spoiwo.model.enums.CellHorizontalAlignment
-import com.norbitltd.spoiwo.model.enums.CellStyleInheritance
-import com.norbitltd.spoiwo.model.enums.CellVerticalAlignment
-import com.norbitltd.spoiwo.natures.xlsx.Model2XlsxConversions._
+import spoiwo.model._
+import spoiwo.model.enums.CellFill
+import spoiwo.model.enums.CellHorizontalAlignment
+import spoiwo.model.enums.CellStyleInheritance
+import spoiwo.model.enums.CellVerticalAlignment
+import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
@@ -31,6 +31,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
@@ -39,7 +40,7 @@ import scala.util.Random
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
 
-  case class ExtractRequest(requestedBy: User, filters: ReportFilter)
+  case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter)
 }
 
 @Singleton
@@ -62,18 +63,14 @@ class ReportsExtractActor @Inject() (
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(requestedBy: User, filters: ReportFilter) =>
+    case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.Reports)
-        tmpPath <- {
-          sender() ! ()
-          genTmpFile(requestedBy, filters)
-        }
+        tmpPath <- genTmpFile(requestedBy, filters)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${asyncFile.id}")
+        _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
+      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
     case _ => logger.debug("Could not handle request")
   }
 
@@ -192,8 +189,8 @@ class ReportsExtractActor @Inject() (
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
-                .downloadReportFile(file.id.toString, file.filename)
-                .url}"
+                  .downloadReportFile(file.id.toString, file.filename)
+                  .url}"
             )
             .mkString("\n"),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
@@ -285,7 +282,7 @@ class ReportsExtractActor @Inject() (
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
               s"Le ${event.creationDate
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
+                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
         available = requestedBy.userRole == UserRole.DGCCRF
@@ -309,7 +306,12 @@ class ReportsExtractActor @Inject() (
     val reportColumns = buildColumns(requestedBy)
     for {
       paginatedReports <- reportOrchestrator
-        .getReportsForUser(requestedBy, filter = filters, offset = Some(0), limit = Some(100000))
+        .getReportsForUser(
+          requestedBy,
+          filter = filters,
+          offset = Some(0),
+          limit = Some(signalConsoConfiguration.reportsExportLimitMax)
+        )
         .map(_.entities.map(_.report))
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)

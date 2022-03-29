@@ -1,11 +1,13 @@
 package models.report
 
+import ai.x.play.json.Encoders.encoder
+import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
 import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
-import models.report.ReportTag
+import models.report.ReportTag.jsonFormat
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
@@ -14,13 +16,10 @@ import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import ai.x.play.json.Jsonx
-import ai.x.play.json.Encoders.encoder
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 
 case class Report(
     id: UUID = UUID.randomUUID(),
+    gender: Option[Gender],
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
@@ -69,12 +68,13 @@ case class Report(
 object Report {
 
   private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
-  implicit val fundraiseDataReads: Reads[Report] = jsonFormatX
+  implicit val reportReads: Reads[Report] = jsonFormatX
 
   implicit def writer(implicit userRole: Option[UserRole] = None) = new Writes[Report] {
     def writes(report: Report) =
       Json.obj(
         "id" -> report.id,
+        "gender" -> report.gender,
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,
@@ -134,12 +134,20 @@ case class DetailInputValue(
 object DetailInputValue {
   implicit val detailInputValueFormat: OFormat[DetailInputValue] = Json.format[DetailInputValue]
 
+  val DefaultKey = "Précision :"
   def toDetailInputValue(input: String): DetailInputValue =
     input match {
       case input if input.contains(':') =>
         DetailInputValue(input.substring(0, input.indexOf(':') + 1), input.substring(input.indexOf(':') + 1).trim)
-      case input => DetailInputValue("Précision :", input)
+      case input =>
+        DetailInputValue(DefaultKey, input)
     }
+
+  def detailInputValuetoString(detailInputValue: DetailInputValue): String = detailInputValue.label match {
+    case DefaultKey => detailInputValue.value
+    case _          => s"${detailInputValue.label} ${detailInputValue.value}"
+  }
+
 }
 
 /** @deprecated Keep it for compat purpose but no longer used in new dashboard */
