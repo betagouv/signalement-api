@@ -20,15 +20,15 @@ class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends Rep
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+      }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
-      Seq(tagEmail),
-      "[SignalConso] [Produits dangereux] Un nouveau signalement",
-      views.html.mails.dgccrf
-        .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
-        .toString
-    )}
+        Seq(tagEmail),
+        "[SignalConso] [Produits dangereux] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
+          .toString
+      )}
     """
 }
 
@@ -37,15 +37,15 @@ class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-      Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
-    }}
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+      }}
          And a mail is sent to the user subscribed without tag                                ${mailMustHaveBeenSent(
-      Seq(noTagEmail),
-      "[SignalConso] Un nouveau signalement",
-      views.html.mails.dgccrf
-        .reportNotification(noTagSubscription, Seq(reportNoTag), runningDate.minusDays(1))
-        .toString
-    )}
+        Seq(noTagEmail),
+        "[SignalConso] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(noTagSubscription, Seq(reportNoTag), runningDate.minusDays(1))
+          .toString
+      )}
     """
 }
 

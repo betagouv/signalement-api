@@ -37,28 +37,28 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
     s2"""
        Given a company with no activated accout
        Given a report with status "ReportStatus.TraitementEnCours" and expired reading delay   ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
        When remind task run                                                         ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime),
+          Duration.Inf
+        )
+      }}
        Then an event "NON_CONSULTE" is created                                      ${eventMustHaveBeenCreatedWithAction(
-      report.id,
-      ActionEvent.REPORT_CLOSED_BY_NO_READING
-    )}
+        report.id,
+        ActionEvent.REPORT_CLOSED_BY_NO_READING
+      )}
        And the report status is updated to "SIGNALEMENT_NON_CONSULTE"               ${reportMustHaveBeenUpdatedWithStatus(
-      report.id,
-      ReportStatus.NonConsulte
-    )}
+        report.id,
+        ReportStatus.NonConsulte
+      )}
        And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
-      report.email,
-      "L'entreprise n'a pas souhaité consulter votre signalement",
-      views.html.mails.consumer.reportClosedByNoReading(report).toString,
-      attachementService.attachmentSeqForWorkflowStepN(3)
-    )}
+        report.email,
+        "L'entreprise n'a pas souhaité consulter votre signalement",
+        views.html.mails.consumer.reportClosedByNoReading(report).toString,
+        attachementService.attachmentSeqForWorkflowStepN(3)
+      )}
     And outcome is empty ${result mustEqual Valid(List((report.id, CloseUnreadReport)))}
     """
   }
@@ -73,21 +73,21 @@ class DontCloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoA
     s2"""
        Given a company with no activated accout
        Given a report with status "ReportStatus.TraitementEnCours" and no expired reading delay    ${step(
-      setupReport(report)
-    )}
+        setupReport(report)
+      )}
        When remind task run                                                             ${step {
-      result = Await.result(
-        reminderTask.runTask(runningDateTime),
-        Duration.Inf
-      )
-    }}
+        result = Await.result(
+          reminderTask.runTask(runningDateTime),
+          Duration.Inf
+        )
+      }}
        Then no event is created                                                         ${eventMustNotHaveBeenCreated(
-      report.id,
-      List.empty
-    )}
+        report.id,
+        List.empty
+      )}
        And the report is not updated                                                    ${reporStatustMustNotHaveBeenUpdated(
-      report
-    )}
+        report
+      )}
        And no mail is sent                                                              ${mailMustNotHaveBeenSent()}
        And outcome is empty ${result mustEqual noTaskProcessed}
     """
