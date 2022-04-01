@@ -21,6 +21,7 @@ object CountByDate {
 
 case class ReportReviewStats(
     positive: Int = 0,
+    intermediate: Int = 0,
     negative: Int = 0
 )
 

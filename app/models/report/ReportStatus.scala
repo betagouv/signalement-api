@@ -49,6 +49,8 @@ object ReportStatus extends PlayEnum[ReportStatus] {
     }
   }
 
+  def hasResponse(report: Report): Boolean = ReportStatusProResponse.contains(report.status)
+
   def isFinal(status: ReportStatus): Boolean =
     Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)
 

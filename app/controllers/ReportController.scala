@@ -1,27 +1,25 @@
 package controllers
 
+import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
-import models.report.ReportDraft
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
+import models.report.ReportDraft
 import models.report.ReportFileOrigin
 import models.report.ReportResponse
 import models.report.ReportWithFiles
-import models.report.ReviewOnReportResponse
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
-import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories._
 import services.PDFService
 import utils.Constants.ActionEvent._
-import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants
 import utils.FrontRoute
@@ -30,6 +28,7 @@ import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
+import models.report.review.ResponseConsumerReviewApi
 
 import java.nio.file.Paths
 import java.util.UUID
@@ -71,90 +70,67 @@ class ReportController @Inject() (
 
   def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) {
     implicit request =>
-      request.body
-        .validate[ReportCompany]
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          reportCompany =>
-            reportOrchestrator.updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id).map {
-              case Some(report) => Ok(Json.toJson(report))
-              case None         => NotFound
-            }
-        )
+      for {
+        reportCompany <- request.parseBody[ReportCompany]()
+        result <- reportOrchestrator
+          .updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id)
+          .map {
+            case Some(report) => Ok(Json.toJson(report))
+            case None         => NotFound
+          }
+      } yield result
   }
 
   def updateReportConsumer(uuid: String) =
     SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
-      request.body
-        .validate[ReportConsumerUpdate]
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          reportConsumer =>
-            reportOrchestrator.updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id).map {
-              case Some(report) => Ok(Json.toJson(report))
-              case None         => NotFound
-            }
-        )
+      for {
+        reportConsumer <- request.parseBody[ReportConsumerUpdate]()
+        result <- reportOrchestrator
+          .updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id)
+          .map {
+            case Some(report) => Ok(Json.toJson(report))
+            case None         => NotFound
+          }
+      } yield result
     }
 
   def reportResponse(uuid: String) = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) {
     implicit request =>
       logger.debug(s"reportResponse ${uuid}")
-      request.body
-        .validate[ReportResponse]
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          reportResponse =>
-            for {
-              visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
-              updatedReport <-
-                visibleReport
-                  .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity).map(Some(_)))
-                  .getOrElse(Future(None))
-            } yield updatedReport
-              .map(r => Ok(Json.toJson(r)))
-              .getOrElse(NotFound)
-        )
+      for {
+        reportResponse <- request.parseBody[ReportResponse]()
+        visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
+        updatedReport <- visibleReport
+          .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
+          .sequence
+      } yield updatedReport
+        .map(r => Ok(Json.toJson(r)))
+        .getOrElse(NotFound)
+
   }
 
   def createReportAction(uuid: String) =
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
-      request.body
-        .validate[ReportAction]
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          reportAction =>
-            for {
-              report <- reportRepository.getReport(UUID.fromString(uuid))
-              newEvent <-
-                report
-                  .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
-                  .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity).map(Some(_)))
-                  .getOrElse(Future(None))
-            } yield newEvent
-              .map(e => Ok(Json.toJson(e)))
-              .getOrElse(NotFound)
-        )
+      for {
+        reportAction <- request.parseBody[ReportAction]()
+        report <- reportRepository.getReport(UUID.fromString(uuid))
+        newEvent <-
+          report
+            .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
+            .map(reportOrchestrator.handleReportAction(_, reportAction, request.identity))
+            .sequence
+      } yield newEvent
+        .map(e => Ok(Json.toJson(e)))
+        .getOrElse(NotFound)
+
     }
 
-  def reviewOnReportResponse(uuid: String) = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[ReviewOnReportResponse]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        review =>
-          for {
-            events <- eventRepository.getEvents(UUID.fromString(uuid), EventFilter())
-            result <-
-              if (!events.exists(_.action == ActionEvent.REPORT_PRO_RESPONSE)) {
-                Future(Forbidden)
-              } else if (events.exists(_.action == ActionEvent.REPORT_REVIEW_ON_RESPONSE)) {
-                Future(Conflict)
-              } else {
-                reportOrchestrator.handleReviewOnReportResponse(UUID.fromString(uuid), review).map(_ => Ok)
-              }
-          } yield result
-      )
+  def reviewOnReportResponse(reportId: String) = UnsecuredAction.async(parse.json) { implicit request =>
+    for {
+      review <- request.parseBody[ResponseConsumerReviewApi]()
+      reportUUID = extractUUID(reportId)
+      _ <- reportOrchestrator.handleReviewOnReportResponse(reportUUID, review)
+    } yield Ok
   }
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
