@@ -262,4 +262,11 @@ object AppError {
       s"Malformed id : $id"
   }
 
+  final case object ReviewAlreadyExists extends ForbiddenError {
+    override val `type`: String = "SC-0032"
+    override val title: String = "Review already exists for the report response."
+    override val details: String =
+      s"Un avis existe déjà pour la réponse de l'entreprise."
+  }
+
 }

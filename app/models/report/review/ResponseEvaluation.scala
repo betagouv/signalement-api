@@ -9,5 +9,5 @@ object ResponseEvaluation extends PlayEnum[ResponseEvaluation] {
 
   case object Positive extends ResponseEvaluation
   case object Negative extends ResponseEvaluation
-  case object Intermediate extends ResponseEvaluation
+  case object Neutral extends ResponseEvaluation
 }

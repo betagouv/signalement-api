@@ -2,6 +2,7 @@ package utils
 
 import config.SignalConsoConfiguration
 import models.auth.AuthToken
+import models.report.review.ResponseEvaluation
 
 import java.net.URI
 import javax.inject.Inject
@@ -19,7 +20,9 @@ class FrontRoute @Inject() (signalConsoConfiguration: SignalConsoConfiguration) 
     def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
     def login = url("/connexion")
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
-    def reportReview(id: String) = url(s"/suivi-des-signalements/$id/avis")
+    def reportReview(id: String)(evaluation: ResponseEvaluation) = url(
+      s"/suivi-des-signalements/$id/avis?evaluation=${evaluation.entryName}"
+    )
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
     def activation = url("/activation")
     object Dgccrf {

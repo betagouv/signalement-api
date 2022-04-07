@@ -55,9 +55,9 @@ class StatsOrchestrator @Inject() (
     reportConsumerReviewRepository.findByCompany(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
         ReportReviewStats(
-          acc.positive + (if (event.evaluation == ResponseEvaluation.Positive) 1 else 0),
-          acc.negative + (if (event.evaluation == ResponseEvaluation.Negative) 1 else 0),
-          acc.intermediate + (if (event.evaluation == ResponseEvaluation.Intermediate) 1 else 0)
+          positive = acc.positive + (if (event.evaluation == ResponseEvaluation.Positive) 1 else 0),
+          neutral = acc.neutral + (if (event.evaluation == ResponseEvaluation.Neutral) 1 else 0),
+          negative = acc.negative + (if (event.evaluation == ResponseEvaluation.Negative) 1 else 0)
         )
       }
     }

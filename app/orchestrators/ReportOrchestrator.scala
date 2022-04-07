@@ -17,6 +17,7 @@ import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
+import controllers.error.AppError.ReviewAlreadyExists
 import controllers.error.AppError.SpammerEmailBlocked
 import io.scalaland.chimney.dsl.TransformerOps
 import models.Event._
@@ -629,7 +630,7 @@ class ReportOrchestrator @Inject() (
         .withFieldConst(_.id, ResponseConsumerReviewId.generateId())
         .transform
       _ = logger.debug(s"Checking if review already exists")
-      _ <- responseConsumerReviewRepository.find(reportId).ensure(CannotReviewReportResponse(reportId)) {
+      _ <- responseConsumerReviewRepository.find(reportId).ensure(ReviewAlreadyExists) {
         case Nil => true
         case _ =>
           logger.warn(s"Review already exist for report with id $reportId")
