@@ -648,11 +648,6 @@ class ReportOrchestrator @Inject() (
           creationDate = OffsetDateTime.now(),
           eventType = EventType.CONSO,
           action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
-//          details = stringToDetailsJsValue(
-//            s"${if (reviewOnReportResponse.evaluation) ReportResponseReview.Positive.entryName
-//              else ReportResponseReview.Negative.entryName}" +
-//              s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
-//          )
         )
       )
     } yield event
