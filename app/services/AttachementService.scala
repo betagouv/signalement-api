@@ -33,6 +33,25 @@ class AttachementService @Inject() (environment: Environment, pdfService: PDFSer
     )
   )
 
+  val ConsumerProResponseNotificationAttachement: Seq[Attachment] =
+    defaultAttachments ++ attachmentSeqForWorkflowStepN(4) ++ Seq(
+      AttachmentFile(
+        s"happy.png",
+        environment.getFile(s"/appfiles/happy.png"),
+        contentId = Some(s"happy")
+      ),
+      AttachmentFile(
+        s"neutral.png",
+        environment.getFile(s"/appfiles/neutral.png"),
+        contentId = Some(s"neutral")
+      ),
+      AttachmentFile(
+        s"sad.png",
+        environment.getFile(s"/appfiles/sad.png"),
+        contentId = Some(s"sad")
+      )
+    )
+
   def needWorkflowSeqForWorkflowStepN(n: Int, report: Report): Seq[Attachment] =
     attachmentSeqForWorkflowStepN(n).filter(_ => report.needWorkflowAttachment())
 

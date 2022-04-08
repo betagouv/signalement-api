@@ -6,10 +6,9 @@ import models.CurveTickDuration
 import models.ReportReviewStats
 import models.report.ReportFilter
 import models.report.ReportResponseType
+import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -17,7 +16,6 @@ import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
-import utils.Constants.ReportResponseReview
 
 import java.sql.Timestamp
 import java.time.LocalDate
@@ -32,6 +30,7 @@ import scala.concurrent.Future
 class StatsOrchestrator @Inject() (
     _report: ReportRepository,
     _event: EventRepository,
+    reportConsumerReviewRepository: ResponseConsumerReviewRepository,
     accessTokenRepository: AccessTokenRepository
 )(implicit val executionContext: ExecutionContext) {
 
@@ -53,12 +52,12 @@ class StatsOrchestrator @Inject() (
   def getReportsStatusDistribution(companyId: Option[UUID]) = _report.getReportsStatusDistribution(companyId)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
-    _event.getReportResponseReviews(id).map { events =>
+    reportConsumerReviewRepository.findByCompany(id).map { events =>
       events.foldLeft(ReportReviewStats()) { case (acc, event) =>
-        val review = event.details.as[JsObject].value.getOrElse("description", JsString("")).toString
         ReportReviewStats(
-          acc.positive + (if (review.contains(ReportResponseReview.Positive.entryName)) 1 else 0),
-          acc.negative + (if (review.contains(ReportResponseReview.Negative.entryName)) 1 else 0)
+          positive = acc.positive + (if (event.evaluation == ResponseEvaluation.Positive) 1 else 0),
+          neutral = acc.neutral + (if (event.evaluation == ResponseEvaluation.Neutral) 1 else 0),
+          negative = acc.negative + (if (event.evaluation == ResponseEvaluation.Negative) 1 else 0)
         )
       }
     }

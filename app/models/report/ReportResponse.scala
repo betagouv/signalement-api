@@ -29,12 +29,3 @@ object ReportResponseType extends PlayEnum[ReportResponseType] {
   override def values: IndexedSeq[ReportResponseType] = findValues
 
 }
-
-case class ReviewOnReportResponse(
-    positive: Boolean,
-    details: Option[String]
-)
-
-object ReviewOnReportResponse {
-  implicit val reviewOnReportResponse: OFormat[ReviewOnReportResponse] = Json.format[ReviewOnReportResponse]
-}

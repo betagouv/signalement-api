@@ -4,7 +4,10 @@ import java.util.UUID
 import controllers.ReportController
 import models.report.Report
 import models.report.ReportStatus
-import models.report.ReviewOnReportResponse
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -19,6 +22,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.Fixtures
 
+import java.time.OffsetDateTime
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -27,7 +31,7 @@ class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnR
     s2"""
          Given a report without response                              ${step { reportId = reportWithoutResponse.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
          Then result status is forbidden                              ${resultStatusMustBe(Status.FORBIDDEN)}
     """
@@ -38,7 +42,7 @@ class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespo
     s2"""
          Given a report with a response                               ${step { reportId = reportWithResponse.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
          And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(
@@ -52,9 +56,9 @@ class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResp
     s2"""
          Given a report with a review                                ${step { reportId = reportWithReview.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
-         Then result status is CONFLICT                               ${resultStatusMustBe(Status.CONFLICT)}
+         Then result status is CONFLICT                               ${resultStatusMustBe(Status.FORBIDDEN)}
     """
 }
 
@@ -65,7 +69,10 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+
+  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
 
   val company = Fixtures.genCompany.sample.get
 
@@ -78,10 +85,15 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseWithReviewEvent =
     Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
-  val reviewEvent =
-    Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_REVIEW_ON_RESPONSE).sample.get
 
-  val reviewOnReportResponse = Fixtures.genReviewOnReportResponse.sample.get
+  val reviewEvent =
+    ResponseConsumerReview(
+      ResponseConsumerReviewId.generateId(),
+      reportWithReview.id,
+      ResponseEvaluation.Positive,
+      OffsetDateTime.now(),
+      None
+    )
 
   var reportId = UUID.randomUUID()
 
@@ -96,12 +108,12 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportWithReview)
         _ <- eventRepository.createEvent(responseEvent)
         _ <- eventRepository.createEvent(responseWithReviewEvent)
-        _ <- eventRepository.createEvent(reviewEvent)
+        _ <- responseConsumerReviewRepository.create(reviewEvent)
       } yield (),
       Duration.Inf
     )
 
-  def postReview(reviewOnReportResponse: ReviewOnReportResponse) =
+  def postReview(reviewOnReportResponse: ResponseConsumerReviewApi) =
     Await.result(
       app.injector
         .instanceOf[ReportController]
