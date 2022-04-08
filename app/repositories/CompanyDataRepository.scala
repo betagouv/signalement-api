@@ -138,7 +138,7 @@ class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProv
           least(
             result.denominationUsuelleEtablissement <-> q,
             result.enseigne1Etablissement <-> q
-          ).map(dist => dist < 0.75).getOrElse(false)
+          ).map(dist => dist < 0.68).getOrElse(false)
         )
         .sortBy(result => least(result.denominationUsuelleEtablissement <-> q, result.enseigne1Etablissement <-> q))
         .take(10)
