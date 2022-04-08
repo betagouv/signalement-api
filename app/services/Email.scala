@@ -184,7 +184,7 @@ object Email {
         .toString
 
     override def getAttachements: AttachementService => Seq[Attachment] =
-      _.attachmentSeqForWorkflowStepN(4)
+      _.ConsumerProResponseNotificationAttachement
   }
 
   final case class ConsumerReportClosedNoAction(report: Report) extends ConsumerEmail {

@@ -3,7 +3,8 @@
 @import java.net.URI
 @import models.report.Report
 @import models.report.ReportResponse
-@(report: Report, reportResponse: ReportResponse, reviewUrl: URI)
+@import models.report.review.ResponseEvaluation
+@(report: Report, reportResponse: ReportResponse, reviewUrl: (ResponseEvaluation) => URI)
 
 @views.html.mails.layout("L'entreprise a répondu à votre signalement") {
     <p>
@@ -19,7 +20,7 @@
         </p>
     }
     <p style="text-align: center;">
-        @views.html.fragments.address(report.companyName, report.companyAddress)
+    @views.html.fragments.address(report.companyName, report.companyAddress)
     </p>
 
     <p>
@@ -33,13 +34,16 @@
     </p>
 
     <p>
-        <b>Vous êtes satisfait par la réponse de l'entreprise ? Au contraire, vous n'êtes pas d'accord avec la réponse ?</b>
-        <br/>
-        Vous avez la possibilité de <a href="@reviewUrl" target="_blank">faire un retour à la répression des fraudes</a> en donnant votre avis sur cette réponse.
+        <b>Êtes vous satisfait de cette réponse ?</b>
+        <div style="display: flex; margin: 50px ">
+            <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px"><img src='cid:happy' width="75" height="75"></a>
+            <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px"><img src='cid:neutral' width="75" height="75"/></a>
+            <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px"><img src='cid:sad' width="75" height="75" /></a>
+        </div>
     </p>
 
     <p>
-        <b>Sachez que, malgré la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider faire un contrôle,
+        <b>Sachez que, quelle que soit la réponse de l'entreprise, les enquêteurs de la répression des fraudes peuvent décider faire un contrôle,
             en fonction des informations que vous avez transmises.</b>
     </p>
 
@@ -50,7 +54,13 @@
         La répression des fraudes sera ainsi mieux au courant de la situation.
     </p>
 
-    <p>À bientôt sur SignalConso !</p>
+    <p>
+        Si SignalConso vous donne satisfaction, n'hésitez pas à nous encourager par un post sur <a href="https://twitter.com/signalconso" target="_blank">
+        Twitter</a>, <a href="https://www.facebook.com/SignalConso/" target="_blank">Facebook</a>
+        et <a href="https://www.plus.transformation.gouv.fr/" target="_blank">Services Publics +</a>.
+    </p>
+    <p>Votre contribution aide d'autres consommateurs et nous est vraiment indispensable pour nous développer encore et encore !</p>
+    <p>N'hésitez également pas à parler de SignalConso autour de vous et à encourager vos connaissances à en parler à leur tour autour d'elles ! Merci !</p>
 
     <p>
         <i>L'équipe SignalConso</i>

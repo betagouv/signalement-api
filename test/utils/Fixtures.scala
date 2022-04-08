@@ -8,7 +8,6 @@ import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
 import models.report.ReportStatus
-import models.report.ReviewOnReportResponse
 import models.report.WebsiteURL
 import models.website.Website
 import models.website.WebsiteKind
@@ -198,11 +197,6 @@ object Fixtures {
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
     siret <- genSiret()
   } yield ReportCompany(name, address, siret, None)
-
-  def genReviewOnReportResponse = for {
-    positive <- arbitrary[Boolean]
-    details <- arbString.arbitrary
-  } yield ReviewOnReportResponse(positive, Some(details))
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]
