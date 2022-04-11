@@ -11,6 +11,7 @@ import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
 import repositories._
 import utils.Constants.ActionEvent
+import utils.Constants.Departments
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
@@ -28,14 +29,35 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class StatsOrchestrator @Inject() (
-    _report: ReportRepository,
-    _event: EventRepository,
+    reportRepository: ReportRepositoryInterface,
+    eventRepository: EventRepository,
     reportConsumerReviewRepository: ResponseConsumerReviewRepository,
     accessTokenRepository: AccessTokenRepository
 )(implicit val executionContext: ExecutionContext) {
 
+  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
+    for {
+      postalCodeReportCountTuple <- reportRepository.countByDepartments(start, end)
+      departmentsReportCountMap = formatCountByDepartments(postalCodeReportCountTuple)
+    } yield departmentsReportCountMap
+
+  private[orchestrators] def formatCountByDepartments(
+      postalCodeReportCountTuple: Seq[(String, Int)]
+  ): Seq[(String, Int)] = {
+    val departmentsReportCountTuple: Seq[(String, Int)] =
+      postalCodeReportCountTuple.map { case (partialPostalCode, count) =>
+        (Departments.fromPostalCode(partialPostalCode).getOrElse(""), count)
+      }
+    departmentsReportCountTuple
+      .groupBy(_._1)
+      .view
+      .mapValues(_.map(_._2).sum)
+      .toSeq
+      .sortWith(_._2 > _._2)
+  }
+
   def getReportCount(reportFilter: ReportFilter): Future[Int] =
-    _report.count(reportFilter)
+    reportRepository.count(reportFilter)
 
   def getReportsCountCurve(
       reportFilter: ReportFilter,
@@ -43,13 +65,13 @@ class StatsOrchestrator @Inject() (
       tickDuration: CurveTickDuration
   ): Future[Seq[CountByDate]] =
     tickDuration match {
-      case CurveTickDuration.Month => _report.getMonthlyCount(reportFilter, ticks)
-      case CurveTickDuration.Day   => _report.getDailyCount(reportFilter, ticks)
+      case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
+      case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
     }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = _report.getReportsTagsDistribution(companyId)
+  def getReportsTagsDistribution(companyId: Option[UUID]) = reportRepository.getReportsTagsDistribution(companyId)
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = _report.getReportsStatusDistribution(companyId)
+  def getReportsStatusDistribution(companyId: Option[UUID]) = reportRepository.getReportsStatusDistribution(companyId)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>
@@ -63,13 +85,13 @@ class StatsOrchestrator @Inject() (
     }
 
   def getReadAvgDelay(companyId: Option[UUID] = None) =
-    _event.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
+    eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
 
   def getResponseAvgDelay(companyId: Option[UUID] = None) =
-    _event.getAvgTimeUntilEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
+    eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
 
   def getProReportTransmittedStat(ticks: Int) =
-    _event
+    eventRepository
       .getProReportStat(
         ticks,
         computeStartingDate(ticks),
@@ -84,7 +106,7 @@ class StatsOrchestrator @Inject() (
       .map(formatStatData(_, ticks))
 
   def getProReportResponseStat(ticks: Int, responseTypes: NonEmptyList[ReportResponseType]) =
-    _event
+    eventRepository
       .getProReportResponseStat(
         ticks,
         computeStartingDate(ticks),
