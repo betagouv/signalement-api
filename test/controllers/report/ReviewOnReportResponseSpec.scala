@@ -183,12 +183,6 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-//  def getReview(reportId: UUID) =
-//    Await.result(
-//      route(app, FakeRequest("GET", s"/api/reports/${reportId}/response/review")).get,
-//      Duration.Inf
-//    )
-
   def resultStatusMustBe(status: Int) =
     someResult must beSome and someResult.get.header.status === status
 
