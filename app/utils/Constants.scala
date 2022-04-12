@@ -179,6 +179,8 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
+        case code if code.startsWith("204") => Some("2B")
+        case code if code.startsWith("206") => Some("2B")
         case _                              => Departments.ALL.find(postalCode.startsWith)
       }
 
@@ -187,7 +189,7 @@ object Constants {
         case "978" => Seq("978", "97150")
         case "977" => Seq("977", "97133")
         case "2A"  => Seq("200", "201", "2A")
-        case "2B"  => Seq("202", "2B")
+        case "2B"  => Seq("202", "204", "206", "2B")
         case other => Seq(other)
       }
   }

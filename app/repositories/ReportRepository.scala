@@ -243,7 +243,7 @@ class ReportRepository @Inject() (
     val emailValidationRepository: EmailValidationRepository
 )(implicit
     ec: ExecutionContext
-) {
+) extends ReportRepositoryInterface {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -424,9 +424,8 @@ class ReportRepository @Inject() (
         .filterOpt(end) { case (table, e) =>
           table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
-        .groupBy(_.companyPostalCode.map(x => substr(x, 1, 2)).getOrElse(""))
+        .groupBy(_.companyPostalCode.getOrElse(""))
         .map { case (department, group) => (department, group.length) }
-        .sortBy(_._2.desc)
         .result
     )
 
@@ -507,7 +506,7 @@ class ReportRepository @Inject() (
       .delete
   }
 
-  def getReports(companyId: UUID) = db.run {
+  def getReports(companyId: UUID): Future[List[Report]] = db.run {
     reportTableQuery
       .filter(_.companyId === companyId)
       .to[List]
@@ -565,7 +564,7 @@ class ReportRepository @Inject() (
 
   def getReportsWithFiles(
       filter: ReportFilter
-  ) =
+  ): Future[SortedMap[Report, List[ReportFile]]] =
     for {
       queryResult <- queryFilter(filter)
         .joinLeft(fileTableQuery)

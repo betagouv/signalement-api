@@ -137,4 +137,12 @@ class StatisticController @Inject() (
   def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
     _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
+
+  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
+    val mapper = new QueryStringMapper(request.queryString)
+    val start = mapper.localDate("start")
+    val end = mapper.localDate("end")
+    _stats.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
+  }
+
 }

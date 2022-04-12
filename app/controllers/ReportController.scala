@@ -23,7 +23,6 @@ import utils.Constants.ActionEvent._
 import utils.Constants.EventType
 import utils.Constants
 import utils.FrontRoute
-import utils.QueryStringMapper
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -342,10 +341,4 @@ class ReportController @Inject() (
         }
     } yield visibleReport
 
-  def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
-    val mapper = new QueryStringMapper(request.queryString)
-    val start = mapper.localDate("start")
-    val end = mapper.localDate("end")
-    reportOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
-  }
 }

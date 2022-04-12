@@ -59,7 +59,6 @@ import utils.Constants
 import utils.EmailAddress
 import utils.URL
 
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
@@ -702,9 +701,6 @@ class ReportOrchestrator @Inject() (
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
-
-  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
-    reportRepository.countByDepartments(start, end)
 
   def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")
