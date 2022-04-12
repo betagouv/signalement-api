@@ -12,14 +12,11 @@ import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError.AttachmentNotFound
 import controllers.error.AppError.AttachmentNotReady
-import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
-import controllers.error.AppError.ReviewAlreadyExists
 import controllers.error.AppError.SpammerEmailBlocked
-import io.scalaland.chimney.dsl.TransformerOps
 import models.Event._
 import models._
 import models.report.Report
@@ -33,12 +30,8 @@ import models.report.ReportFilter
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
-import models.report.ReportStatus.hasResponse
 import models.report.ReportTag
 import models.report.ReportWithFiles
-import models.report.review.ResponseConsumerReview
-import models.report.review.ResponseConsumerReviewApi
-import models.report.review.ResponseConsumerReviewId
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -72,7 +65,6 @@ import scala.util.Random
 class ReportOrchestrator @Inject() (
     mailService: MailService,
     reportRepository: ReportRepository,
-    responseConsumerReviewRepository: ResponseConsumerReviewRepository,
     companyRepository: CompanyRepository,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepository,
@@ -600,57 +592,6 @@ class ReportOrchestrator @Inject() (
       )
       newEvent
     }
-
-  def handleReviewOnReportResponse(
-      reportId: UUID,
-      responseConsumerReviewApi: ResponseConsumerReviewApi
-  ): Future[Event] = {
-
-    logger.info(s"Report ${reportId} - the consumer give a review on response")
-
-    for {
-      report <- reportRepository.getReport(reportId)
-      _ = logger.debug(s"Validating report")
-      _ <- report match {
-        case Some(report) if hasResponse(report) =>
-          Future.successful(report)
-        case Some(_) =>
-          logger.warn(s"Report with id $reportId has no response yet, cannot review this report response")
-          Future.failed(CannotReviewReportResponse(reportId))
-        case None =>
-          logger.warn(s"Report with id $reportId does not exist, cannot review this report response")
-          Future.failed(CannotReviewReportResponse(reportId))
-      }
-      _ = logger.debug(s"Report validated")
-      responseConsumerReview = responseConsumerReviewApi
-        .into[ResponseConsumerReview]
-        .withFieldConst(_.reportId, reportId)
-        .withFieldConst(_.creationDate, OffsetDateTime.now())
-        .withFieldConst(_.id, ResponseConsumerReviewId.generateId())
-        .transform
-      _ = logger.debug(s"Checking if review already exists")
-      _ <- responseConsumerReviewRepository.find(reportId).ensure(ReviewAlreadyExists) {
-        case Nil => true
-        case _ =>
-          logger.warn(s"Review already exist for report with id $reportId")
-          false
-      }
-      _ = logger.debug(s"Saving review")
-      _ <- responseConsumerReviewRepository.create(responseConsumerReview)
-      _ = logger.debug(s"Creating event")
-      event <- eventRepository.createEvent(
-        Event(
-          id = UUID.randomUUID(),
-          reportId = Some(reportId),
-          companyId = None,
-          userId = None,
-          creationDate = OffsetDateTime.now(),
-          eventType = EventType.CONSO,
-          action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
-        )
-      )
-    } yield event
-  }
 
   def getReportsForUser(
       connectedUser: User,

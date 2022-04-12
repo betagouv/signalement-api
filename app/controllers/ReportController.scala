@@ -27,7 +27,6 @@ import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
-import models.report.review.ResponseConsumerReviewApi
 
 import java.nio.file.Paths
 import java.util.UUID
@@ -123,14 +122,6 @@ class ReportController @Inject() (
         .getOrElse(NotFound)
 
     }
-
-  def reviewOnReportResponse(reportId: String) = UnsecuredAction.async(parse.json) { implicit request =>
-    for {
-      review <- request.parseBody[ResponseConsumerReviewApi]()
-      reportUUID = extractUUID(reportId)
-      _ <- reportOrchestrator.handleReviewOnReportResponse(reportUUID, review)
-    } yield Ok
-  }
 
   def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
     request.body
