@@ -45,7 +45,7 @@ libraryDependencies ++= Seq(
   "com.iheart" %% "ficus" % "1.5.2",
   "com.norbitltd" %% "spoiwo" % "2.2.1",
   "com.itextpdf" % "itext7-core" % "7.2.1",
-  "com.itextpdf" % "html2pdf" % "4.0.1",
+  "com.itextpdf" % "html2pdf" % "4.0.2",
   "com.beachape" %% "enumeratum" % enumeratumVersion,
   "com.beachape" %% "enumeratum-play" % enumeratumVersion,
   "com.beachape" %% "enumeratum-slick" % enumeratumVersion,
