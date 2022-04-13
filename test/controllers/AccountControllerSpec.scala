@@ -112,7 +112,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result) must beEqualTo(404)
         Helpers.contentAsJson(result) must beEqualTo(
-          Json.toJson(ErrorPayload(CompanySiretNotFound(SIRET(siret))))
+          Json.toJson(ErrorPayload(CompanySiretNotFound(SIRET.fromUnsafe(siret))))
         )
       }
 

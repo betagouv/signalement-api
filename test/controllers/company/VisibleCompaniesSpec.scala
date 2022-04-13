@@ -59,7 +59,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
-      siret = SIRET(SIREN(headOfficeCompany.siret).value + "00020"),
+      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
       siren = SIREN(headOfficeCompany.siret),
       etatAdministratifEtablissement = Some("F")
     )

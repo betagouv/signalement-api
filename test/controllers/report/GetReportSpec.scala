@@ -14,6 +14,7 @@ import config.SignalConsoConfiguration
 import controllers.ReportController
 import models.report
 import models._
+import models.event.Event
 import models.report.Gender
 import models.report.Report
 import models.report.ReportStatus

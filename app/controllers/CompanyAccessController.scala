@@ -133,14 +133,14 @@ class CompanyAccessController @Inject() (
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
-      .fetchCompanyUserActivationToken(SIRET(siret), token)
+      .fetchCompanyUserActivationToken(SIRET.fromUnsafe(siret), token)
       .map(token => Ok(Json.toJson(token)))
   }
 
   def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
-      _ <- companyAccessOrchestrator.sendActivationLink(SIRET(siret), activationLinkRequest)
+      _ <- companyAccessOrchestrator.sendActivationLink(SIRET.fromUnsafe(siret), activationLinkRequest)
     } yield Ok
 
   }
@@ -155,7 +155,7 @@ class CompanyAccessController @Inject() (
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         acceptTokenRequest =>
           for {
-            company <- companyRepository.findBySiret(SIRET(siret))
+            company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
             token <- company
               .map(
                 accessTokenRepository

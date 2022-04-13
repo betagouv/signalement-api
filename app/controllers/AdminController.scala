@@ -8,6 +8,7 @@ import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.event.Event
 import models.report.Gender
 import models.report.Report
 import models.report.ReportResponse
@@ -102,7 +103,7 @@ class AdminController @Inject() (
 
   private def genCompany = Company(
     id = UUID.randomUUID,
-    siret = SIRET("123456789"),
+    siret = SIRET.fromUnsafe("123456789"),
     creationDate = OffsetDateTime.now,
     name = "Test Entreprise",
     address = Address(

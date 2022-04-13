@@ -43,8 +43,8 @@ GET           /api/reports/:uuid/response/review                controllers.Repo
 POST          /api/reports/:uuid/company                        controllers.ReportController.updateReportCompany(uuid)
 POST          /api/reports/:uuid/consumer                       controllers.ReportController.updateReportConsumer(uuid)
 POST          /api/reports/:uuid/action                         controllers.ReportController.createReportAction(uuid)
-GET           /api/reports/:uuid/events                         controllers.ReportController.getEvents(uuid, eventType: Option[String])
-GET           /api/companies/:siret/events                      controllers.ReportController.getCompanyEvents(siret, eventType: Option[String])
+GET           /api/reports/:uuid/events                         controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
+GET           /api/companies/:siret/events                      controllers.EventsController.getCompanyEventsWithUser(siret: SIRET, eventType: Option[String])
 
 # Report API for externals SI
 GET           /api/ext/reports/siret/:siret                     controllers.ReportToExternalController.searchReportsToExternalBySiret(siret: String)

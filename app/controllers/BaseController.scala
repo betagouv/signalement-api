@@ -113,7 +113,7 @@ trait BaseCompanyController extends BaseController {
       def executionContext = ec
       def refine[A](request: SecuredRequestWrapper[A]) =
         for {
-          company <- companyRepository.findBySiret(SIRET(siret))
+          company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
           accessLevel <-
             if (Seq(UserRole.Admin, UserRole.DGCCRF).contains(request.identity.userRole))
               Future(Some(AccessLevel.ADMIN))

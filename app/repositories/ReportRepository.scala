@@ -317,7 +317,10 @@ class ReportRepository @Inject() (
       .filterIf(filter.siretSirenList.nonEmpty) { case table =>
         table.companySiret
           .map(siret =>
-            (siret inSetBind filter.siretSirenList.filter(_.matches(SIRET.pattern)).map(SIRET(_)).distinct) ||
+            (siret inSetBind filter.siretSirenList
+              .filter(_.matches(SIRET.pattern))
+              .map(SIRET.fromUnsafe(_))
+              .distinct) ||
               (substr(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
                 .filter(_.matches(SIREN.pattern))
                 .distinct)

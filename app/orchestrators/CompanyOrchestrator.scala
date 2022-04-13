@@ -3,8 +3,9 @@ package orchestrators
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import io.scalaland.chimney.dsl.TransformerOps
-import models.Event.stringToDetailsJsValue
+import models.event.Event.stringToDetailsJsValue
 import models._
+import models.event.Event
 import models.report.ReportStatus
 import models.report.ReportFilter
 import models.website.WebsiteKind
@@ -87,7 +88,8 @@ class CompanyOrchestrator @Inject() (
     logger.debug(s"searchCompanyByIdentity $identity")
 
     (identity.replaceAll("\\s", "") match {
-      case q if q.matches(SIRET.pattern) => companyDataRepository.searchBySiretIncludingHeadOfficeWithActivity(SIRET(q))
+      case q if q.matches(SIRET.pattern) =>
+        companyDataRepository.searchBySiretIncludingHeadOfficeWithActivity(SIRET.fromUnsafe(q))
       case q =>
         SIREN.pattern.r
           .findFirstIn(q)

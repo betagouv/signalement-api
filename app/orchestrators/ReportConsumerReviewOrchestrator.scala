@@ -4,7 +4,6 @@ import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ReviewAlreadyExists
 import controllers.error.AppError.ServerError
-import models.Event
 import models.report.ReportStatus.hasResponse
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewApi
@@ -16,6 +15,7 @@ import repositories.ResponseConsumerReviewRepository
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import io.scalaland.chimney.dsl.TransformerOps
+import models.event.Event
 
 import java.time.OffsetDateTime
 import java.util.UUID

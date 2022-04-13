@@ -17,8 +17,9 @@ import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
-import models.Event._
+import models.event.Event._
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany

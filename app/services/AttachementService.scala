@@ -1,7 +1,7 @@
 package services
 
 import com.google.inject.Inject
-import models.Event
+import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import play.api.Environment

@@ -1,7 +1,7 @@
 package tasks.report
 
 import cats.data.Validated.Valid
-import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import org.specs2.Specification

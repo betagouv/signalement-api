@@ -13,6 +13,7 @@ import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFileOrigin

@@ -1,4 +1,4 @@
-package models
+package models.event
 
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue

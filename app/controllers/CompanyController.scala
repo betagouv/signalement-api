@@ -5,6 +5,7 @@ import config.EmailConfiguration
 import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.event.Event
 import models.report.Report
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
@@ -110,7 +111,7 @@ class CompanyController @Inject() (
 
   def companyDetails(siret: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     for {
-      company <- companyOrchestrator.companyDetails(SIRET(siret))
+      company <- companyOrchestrator.companyDetails(SIRET.fromUnsafe(siret))
     } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
@@ -231,7 +232,7 @@ class CompanyController @Inject() (
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           undeliveredDocument =>
             companyOrchestrator
-              .handleUndeliveredDocument(SIRET(siret), request.identity.id, undeliveredDocument)
+              .handleUndeliveredDocument(SIRET.fromUnsafe(siret), request.identity.id, undeliveredDocument)
               .map(
                 _.map(e => Ok(Json.toJson(e)))
                   .getOrElse(NotFound)

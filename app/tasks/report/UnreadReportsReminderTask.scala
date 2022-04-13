@@ -1,9 +1,9 @@
 package tasks.report
 
 import config.TaskConfiguration
-import models.Event.stringToDetailsJsValue
-import models.Event
+import models.event.Event.stringToDetailsJsValue
 import models.User
+import models.event.Event
 import models.report.Report
 import play.api.Logger
 import repositories.EventRepository

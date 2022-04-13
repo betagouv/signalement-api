@@ -6,7 +6,7 @@ sealed trait UserRole extends EnumEntry {
   val permissions: Seq[UserPermission.Value]
 }
 
-object UserRole extends Enum[UserRole] {
+object UserRole extends PlayEnum[UserRole] {
 
   final case object Admin extends UserRole {
     override val permissions = UserPermission.values.toSeq

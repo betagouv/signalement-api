@@ -10,6 +10,7 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate

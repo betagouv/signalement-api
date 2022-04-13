@@ -7,7 +7,7 @@ import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
-import models.Event.stringToDetailsJsValue
+import models.event.Event.stringToDetailsJsValue
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
@@ -15,6 +15,7 @@ import models.ActivationRequest
 import models._
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
+import models.event.Event
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind

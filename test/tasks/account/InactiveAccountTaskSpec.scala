@@ -3,9 +3,9 @@ package tasks.account
 import akka.actor.ActorSystem
 import config.InactiveAccountsTaskConfiguration
 import models.AsyncFileKind
-import models.Event
 import models.Subscription
 import models.User
+import models.event.Event
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
