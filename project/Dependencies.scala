@@ -14,7 +14,7 @@ object Dependencies {
     lazy val sentryVersion = "5.7.1"
     lazy val playSilhouetteVersion = "7.0.0"
     lazy val specs2MatcherExtraVersion = "4.10.5"
-    lazy val scalaCheckVersion = "1.15.3"
+    lazy val scalaCheckVersion = "1.15.4"
     lazy val catsCoreVersion = "2.7.0"
     lazy val pureConfigVersion = "0.17.1"
     lazy val playJsonExtensionsVersion = "0.42.0"
