@@ -53,7 +53,7 @@ libraryDependencies ++= Seq(
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
-  "io.sentry" % "sentry-logback" % "5.7.0",
+  "io.sentry" % "sentry-logback" % "5.7.2",
   "org.typelevel" %% "cats-core" % "2.7.0",
   "com.github.pureconfig" %% "pureconfig" % "0.17.1",
   "ai.x" %% "play-json-extensions" % "0.42.0",
