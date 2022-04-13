@@ -4,8 +4,11 @@ import cats.data.NonEmptyList
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
+import models.UserRole
 import models.report.ReportFilter
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportTag
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
@@ -19,6 +22,7 @@ import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
@@ -87,8 +91,18 @@ class StatsOrchestrator @Inject() (
   def getReadAvgDelay(companyId: Option[UUID] = None) =
     eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
 
-  def getResponseAvgDelay(companyId: Option[UUID] = None) =
-    eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
+  def getResponseAvgDelay(companyId: Option[UUID] = None, userRole: UserRole): Future[Option[Duration]] = {
+    val (statusFilter, tagFilterNot) = userRole match {
+      case UserRole.Admin | UserRole.DGCCRF => (Seq.empty[ReportStatus], Seq.empty[ReportTag])
+      case UserRole.Professionnel => (ReportStatus.statusVisibleByPro, ReportTag.ReportTagHiddenToProfessionnel)
+    }
+    eventRepository.getAvgTimeUntilEvent(
+      action = ActionEvent.REPORT_PRO_RESPONSE,
+      companyId = companyId,
+      status = statusFilter,
+      withoutTags = tagFilterNot
+    )
+  }
 
   def getProReportTransmittedStat(ticks: Int) =
     eventRepository

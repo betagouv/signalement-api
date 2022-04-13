@@ -5,6 +5,8 @@ import models._
 import models.event.Event
 import models.report.Report
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportTag
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import utils.Constants
@@ -14,6 +16,7 @@ import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
 import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
+import repositories.mapping.Report._
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -179,11 +182,22 @@ class EventRepository @Inject() (
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
-  def getAvgTimeUntilEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Option[Duration]] =
+  def getAvgTimeUntilEvent(
+      action: ActionEventValue,
+      companyId: Option[UUID] = None,
+      status: Seq[ReportStatus] = Seq.empty,
+      withoutTags: Seq[ReportTag] = Seq.empty
+  ): Future[Option[Duration]] =
     db.run(
       ReportTables.tables
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
+        }
+        .filterIf(status.nonEmpty) { case table =>
+          table.status.inSet(status.map(_.entryName))
+        }
+        .filterNot { table =>
+          table.tags @& withoutTags.toList.bind
         }
         .join(eventTableQuery)
         .on(_.id === _.reportId)
