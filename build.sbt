@@ -7,58 +7,13 @@ scalaVersion := "2.13.8"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
-val playSlickVersion = "5.0.0"
-val slickPgVersion = "0.20.2"
-val playMailerVersion = "8.0.1"
-val playSilhouetteVersion = "7.0.0"
-val AkkaHttpVersion = "10.2.9"
-val alpakkaVersion = "2.0.2"
-val enumeratumVersion = "1.7.0"
-
 libraryDependencies ++= Seq(
   guice,
   evolutions,
   ws,
   ehcache,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.2",
-  "org.postgresql" % "postgresql" % "42.3.3",
-  "eu.timepit" %% "refined" % "0.9.28",
-  "com.typesafe.play" %% "play-slick" % playSlickVersion,
-  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
-  "com.github.tminglei" %% "slick-pg" % slickPgVersion,
-  "com.github.tminglei" %% "slick-pg_play-json" % slickPgVersion,
-  "com.lightbend.akka" %% "akka-stream-alpakka-slick" % alpakkaVersion,
-  "com.typesafe.play" %% "play-mailer" % playMailerVersion,
-  "com.typesafe.play" %% "play-mailer-guice" % playMailerVersion,
-  "com.lightbend.akka" %% "akka-stream-alpakka-s3" % alpakkaVersion,
-  "com.lightbend.akka" %% "akka-stream-alpakka-csv" % alpakkaVersion,
-  "com.lightbend.akka" %% "akka-stream-alpakka-file" % alpakkaVersion,
-  "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-xml" % AkkaHttpVersion,
-  "com.amazonaws" % "aws-java-sdk-s3" % "1.12.188",
-  "com.mohiva" %% "play-silhouette" % playSilhouetteVersion,
-  "com.mohiva" %% "play-silhouette-password-bcrypt" % playSilhouetteVersion,
-  "com.mohiva" %% "play-silhouette-persistence" % playSilhouetteVersion,
-  "com.mohiva" %% "play-silhouette-crypto-jca" % playSilhouetteVersion,
-  "com.mohiva" %% "play-silhouette-testkit" % playSilhouetteVersion % "test",
-  "net.codingwell" %% "scala-guice" % "4.2.11",
-  "com.iheart" %% "ficus" % "1.5.2",
-  "com.norbitltd" %% "spoiwo" % "2.2.1",
-  "com.itextpdf" % "itext7-core" % "7.2.1",
-  "com.itextpdf" % "html2pdf" % "4.0.1",
-  "com.beachape" %% "enumeratum" % enumeratumVersion,
-  "com.beachape" %% "enumeratum-play" % enumeratumVersion,
-  "com.beachape" %% "enumeratum-slick" % enumeratumVersion,
-  "io.scalaland" %% "chimney" % "0.6.1",
-  specs2 % Test,
-  "org.specs2" %% "specs2-matcher-extra" % "4.10.5" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
-  "io.sentry" % "sentry-logback" % "5.7.0",
-  "org.typelevel" %% "cats-core" % "2.7.0",
-  "com.github.pureconfig" %% "pureconfig" % "0.17.1",
-  "ai.x" %% "play-json-extensions" % "0.42.0",
   compilerPlugin(scalafixSemanticdb)
-)
+) ++ Dependencies.AppDependencies
 
 scalafmtOnCompile := true
 scalacOptions ++= Seq(

@@ -30,9 +30,8 @@ import models.report.ReportFilter
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
-import models.report.ReportWithFiles
-import models.report.ReviewOnReportResponse
 import models.report.ReportTag
+import models.report.ReportWithFiles
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -49,12 +48,10 @@ import services.S3Service
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants.ReportResponseReview
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
 
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
@@ -596,26 +593,6 @@ class ReportOrchestrator @Inject() (
       newEvent
     }
 
-  def handleReviewOnReportResponse(reportId: UUID, reviewOnReportResponse: ReviewOnReportResponse): Future[Event] = {
-    logger.debug(s"Report ${reportId} - the consumer give a review on response")
-    eventRepository.createEvent(
-      Event(
-        id = UUID.randomUUID(),
-        reportId = Some(reportId),
-        companyId = None,
-        userId = None,
-        creationDate = OffsetDateTime.now(),
-        eventType = EventType.CONSO,
-        action = ActionEvent.REPORT_REVIEW_ON_RESPONSE,
-        details = stringToDetailsJsValue(
-          s"${if (reviewOnReportResponse.positive) ReportResponseReview.Positive.entryName
-            else ReportResponseReview.Negative.entryName}" +
-            s"${reviewOnReportResponse.details.map(d => s" - $d").getOrElse("")}"
-        )
-      )
-    )
-  }
-
   def getReportsForUser(
       connectedUser: User,
       filter: ReportFilter,
@@ -665,9 +642,6 @@ class ReportOrchestrator @Inject() (
       reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
-
-  def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
-    reportRepository.countByDepartments(start, end)
 
   def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")

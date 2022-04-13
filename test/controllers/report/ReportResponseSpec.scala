@@ -89,8 +89,14 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
         "L'entreprise a répondu à votre signalement",
-        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-        attachementService.attachmentSeqForWorkflowStepN(4)
+        views.html.mails.consumer
+          .reportToConsumerAcknowledgmentPro(
+            report,
+            reportResponseAccepted,
+            frontRoute.dashboard.reportReview(report.id.toString)
+          )
+          .toString,
+        attachementService.ConsumerProResponseNotificationAttachement
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
@@ -126,8 +132,14 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
         "L'entreprise a répondu à votre signalement",
-        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseAccepted, reviewUrl).toString,
-        attachementService.attachmentSeqForWorkflowStepN(4)
+        views.html.mails.consumer
+          .reportToConsumerAcknowledgmentPro(
+            report,
+            reportResponseAccepted,
+            frontRoute.dashboard.reportReview(report.id.toString)
+          )
+          .toString,
+        attachementService.ConsumerProResponseNotificationAttachement
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedHeadOfficeProUser.email,
@@ -163,8 +175,14 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
         "L'entreprise a répondu à votre signalement",
-        views.html.mails.consumer.reportToConsumerAcknowledgmentPro(report, reportResponseRejected, reviewUrl).toString,
-        attachementService.attachmentSeqForWorkflowStepN(4)
+        views.html.mails.consumer
+          .reportToConsumerAcknowledgmentPro(
+            report,
+            reportResponseRejected,
+            frontRoute.dashboard.reportReview(report.id.toString)
+          )
+          .toString,
+        attachementService.ConsumerProResponseNotificationAttachement
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
@@ -199,9 +217,13 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         reportFixture.email,
         "L'entreprise a répondu à votre signalement",
         views.html.mails.consumer
-          .reportToConsumerAcknowledgmentPro(report, reportResponseNotConcerned, reviewUrl)
+          .reportToConsumerAcknowledgmentPro(
+            report,
+            reportResponseNotConcerned,
+            frontRoute.dashboard.reportReview(report.id.toString)
+          )
           .toString,
-        attachementService.attachmentSeqForWorkflowStepN(4)
+        attachementService.ConsumerProResponseNotificationAttachement
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,

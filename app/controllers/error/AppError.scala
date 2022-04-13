@@ -24,7 +24,7 @@ object AppError {
 
   final case class ServerError(message: String, cause: Option[Throwable] = None) extends InternalAppError {
     override val `type`: String = "SC-0001"
-    override val title: String = "Unexpected error"
+    override val title: String = message
     override val details: String = "Une erreur inattendue s'est produite."
   }
 
@@ -242,10 +242,31 @@ object AppError {
   }
 
   final case class BucketFileNotFound(bucketName: String, fileName: String) extends NotFoundError {
-    override val `type`: String = "SC-0028"
+    override val `type`: String = "SC-0029"
     override val title: String = "Cannot download file from S3"
     override val details: String =
       s"Impossible de récupérer le fichier $fileName sur le bucket $bucketName"
+  }
+
+  final case class CannotReviewReportResponse(reportId: UUID) extends ForbiddenError {
+    override val `type`: String = "SC-0030"
+    override val title: String = "Cannot review response for report"
+    override val details: String =
+      s"Impossible de donner un avis sur la réponse donnée au signalement ${reportId.toString}"
+  }
+
+  final case class MalformedId(id: String) extends BadRequestError {
+    override val `type`: String = "SC-0031"
+    override val title: String = "Malformed id"
+    override val details: String =
+      s"Malformed id : $id"
+  }
+
+  final case object ReviewAlreadyExists extends ForbiddenError {
+    override val `type`: String = "SC-0032"
+    override val title: String = "Review already exists for the report response."
+    override val details: String =
+      s"Un avis existe déjà pour la réponse de l'entreprise."
   }
 
 }

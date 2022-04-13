@@ -190,6 +190,18 @@ class AdminController @Inject() (
           Nil
         )
       ),
+    "consumer.report_ack_case_dangerous_product" ->
+      (recipient =>
+        ConsumerReportAcknowledgment(
+          genReport.copy(
+            status = ReportStatus.NA,
+            tags = List(ReportTag.ProduitDangereux),
+            email = recipient
+          ),
+          genEvent,
+          Nil
+        )
+      ),
     "consumer.report_ack_case_euro" ->
       (recipient =>
         ConsumerReportAcknowledgment(

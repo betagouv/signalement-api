@@ -1,16 +1,27 @@
 package controllers.report
 
+import com.google.inject.AbstractModule
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.mohiva.play.silhouette.test.FakeEnvironment
+import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
+
 import java.util.UUID
-import controllers.ReportController
+import controllers.ReportConsumerReviewController
+import controllers.routes
+import models.User
 import models.report.Report
 import models.report.ReportStatus
-import models.report.ReviewOnReportResponse
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseConsumerReviewApi
+import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test._
 import play.mvc.Http.Status
 import repositories._
 import utils.Constants.ActionEvent
@@ -18,7 +29,11 @@ import utils.Constants.EventType
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.Fixtures
+import play.api.test.Helpers._
+import play.api.test._
+import utils.silhouette.auth.AuthEnv
 
+import java.time.OffsetDateTime
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -27,7 +42,7 @@ class ReviewOnReportWithoutResponse(implicit ee: ExecutionEnv) extends ReviewOnR
     s2"""
          Given a report without response                              ${step { reportId = reportWithoutResponse.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
          Then result status is forbidden                              ${resultStatusMustBe(Status.FORBIDDEN)}
     """
@@ -38,7 +53,7 @@ class FirstReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespo
     s2"""
          Given a report with a response                               ${step { reportId = reportWithResponse.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
          Then result status is OK                                     ${resultStatusMustBe(Status.OK)}
          And an event "REVIEW_ON_REPORT_RESPONSE" is created          ${eventMustHaveBeenCreatedWithAction(
@@ -52,10 +67,29 @@ class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResp
     s2"""
          Given a report with a review                                ${step { reportId = reportWithReview.id }}
          When post a review                                          ${step {
-        someResult = Some(postReview(reviewOnReportResponse))
+        someResult = Some(postReview(review))
       }}
-         Then result status is CONFLICT                               ${resultStatusMustBe(Status.CONFLICT)}
+         Then result status is CONFLICT                               ${resultStatusMustBe(Status.FORBIDDEN)}
     """
+}
+
+class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResponseSpec {
+  override def is =
+    s2"""
+         Given a report with a review   When post a review then the response is found $e1"""
+
+  def e1 = {
+    val result = route(
+      app,
+      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id.toString).toString)
+        .withAuthenticator[AuthEnv](loginInfo(adminUser))
+    ).get
+
+    status(result) must beEqualTo(OK)
+    val responseConsumerReviewApi = Helpers.contentAsJson(result).as[ResponseConsumerReviewApi]
+    responseConsumerReviewApi.evaluation mustEqual consumerReview.evaluation
+    responseConsumerReviewApi.details mustEqual consumerReview.details
+  }
 }
 
 abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
@@ -63,9 +97,28 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
+  override def configureFakeModule(): AbstractModule =
+    new FakeModule
+
+  val adminUser = Fixtures.genAdminUser.sample.get
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
+
+  implicit val env: FakeEnvironment[AuthEnv] =
+    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
+
+  class FakeModule extends AppFakeModule {
+    override def configure() = {
+      super.configure
+      bind[Environment[AuthEnv]].toInstance(env)
+    }
+  }
+
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+
+  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
 
   val company = Fixtures.genCompany.sample.get
 
@@ -76,12 +129,28 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     Fixtures.genEventForReport(reportWithResponse.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
 
   val reportWithReview = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
+  val reportWithExistingReview =
+    Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.PromesseAction)
   val responseWithReviewEvent =
     Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_PRO_RESPONSE).sample.get
-  val reviewEvent =
-    Fixtures.genEventForReport(reportWithReview.id, EventType.PRO, ActionEvent.REPORT_REVIEW_ON_RESPONSE).sample.get
 
-  val reviewOnReportResponse = Fixtures.genReviewOnReportResponse.sample.get
+  val consumerReview =
+    ResponseConsumerReview(
+      ResponseConsumerReviewId.generateId(),
+      reportWithExistingReview.id,
+      ResponseEvaluation.Positive,
+      OffsetDateTime.now(),
+      Some("Response Details...")
+    )
+
+  val consumerConflictReview =
+    ResponseConsumerReview(
+      ResponseConsumerReviewId.generateId(),
+      reportWithReview.id,
+      ResponseEvaluation.Positive,
+      OffsetDateTime.now(),
+      Some("Response Details...")
+    )
 
   var reportId = UUID.randomUUID()
 
@@ -94,17 +163,19 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- reportRepository.create(reportWithoutResponse)
         _ <- reportRepository.create(reportWithResponse)
         _ <- reportRepository.create(reportWithReview)
+        _ <- responseConsumerReviewRepository.create(consumerConflictReview)
+        _ <- reportRepository.create(reportWithExistingReview)
+        _ <- responseConsumerReviewRepository.create(consumerReview)
         _ <- eventRepository.createEvent(responseEvent)
         _ <- eventRepository.createEvent(responseWithReviewEvent)
-        _ <- eventRepository.createEvent(reviewEvent)
       } yield (),
       Duration.Inf
     )
 
-  def postReview(reviewOnReportResponse: ReviewOnReportResponse) =
+  def postReview(reviewOnReportResponse: ResponseConsumerReviewApi) =
     Await.result(
       app.injector
-        .instanceOf[ReportController]
+        .instanceOf[ReportConsumerReviewController]
         .reviewOnReportResponse(reportId.toString)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))

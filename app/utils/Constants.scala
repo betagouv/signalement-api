@@ -1,7 +1,5 @@
 package utils
 
-import enumeratum.EnumEntry
-import enumeratum.PlayEnum
 import models.UserRole
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -146,18 +144,6 @@ object Constants {
 
     def fromValue(value: String) = actionEvents.find(_.value == value).getOrElse(ActionEventValue(""))
   }
-
-  sealed abstract class ReportResponseReview(override val entryName: String) extends EnumEntry
-
-  object ReportResponseReview extends PlayEnum[ReportResponseReview] {
-
-    val values = findValues
-
-    case object Positive extends ReportResponseReview("Avis positif")
-
-    case object Negative extends ReportResponseReview("Avis négatif")
-  }
-
   object Departments {
 
     val AURA = List("01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74")
@@ -193,6 +179,8 @@ object Constants {
         case code if code.startsWith("200") => Some("2A")
         case code if code.startsWith("201") => Some("2A")
         case code if code.startsWith("202") => Some("2B")
+        case code if code.startsWith("204") => Some("2B")
+        case code if code.startsWith("206") => Some("2B")
         case _                              => Departments.ALL.find(postalCode.startsWith)
       }
 
@@ -201,7 +189,7 @@ object Constants {
         case "978" => Seq("978", "97150")
         case "977" => Seq("977", "97133")
         case "2A"  => Seq("200", "201", "2A")
-        case "2B"  => Seq("202", "2B")
+        case "2B"  => Seq("202", "204", "206", "2B")
         case other => Seq(other)
       }
   }

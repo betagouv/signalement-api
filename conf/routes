@@ -20,6 +20,7 @@ GET           /api/stats/dgccrf-account                         controllers.Stat
 GET           /api/stats/dgccrf-active-account                  controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-subscriptions                   controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
 GET           /api/stats/dgccrf-controls                        controllers.StatisticController.dgccrfControlsCurve(ticks: Option[Int])
+GET           /api/reports/count-by-departments                 controllers.StatisticController.countByDepartments()
 
 
 # Reports list API
@@ -31,14 +32,14 @@ GET           /api/reports/files/:uuid/:filename                controllers.Repo
 DELETE        /api/reports/files/:uuid/:filename                controllers.ReportController.deleteReportFile(uuid, filename)
 POST          /api/reports/files                                controllers.ReportController.uploadReportFile()
 
-GET           /api/reports/count-by-departments                 controllers.ReportController.countByDepartments()
 GET           /api/reports/:uuid                                controllers.ReportController.getReport(uuid)
 GET           /api/reports/:uuid/download                       controllers.ReportController.reportAsPDF(uuid)
 DELETE        /api/reports/:uuid                                controllers.ReportController.deleteReport(uuid)
 
 POST          /api/reports                                      controllers.ReportController.createReport()
 POST          /api/reports/:uuid/response                       controllers.ReportController.reportResponse(uuid)
-POST          /api/reports/:uuid/response/review                controllers.ReportController.reviewOnReportResponse(uuid)
+POST          /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid)
+GET           /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.getReview(uuid)
 POST          /api/reports/:uuid/company                        controllers.ReportController.updateReportCompany(uuid)
 POST          /api/reports/:uuid/consumer                       controllers.ReportController.updateReportConsumer(uuid)
 POST          /api/reports/:uuid/action                         controllers.ReportController.createReportAction(uuid)
