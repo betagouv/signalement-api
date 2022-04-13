@@ -44,7 +44,7 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.2.11",
   "com.iheart" %% "ficus" % "1.5.2",
   "com.norbitltd" %% "spoiwo" % "2.2.1",
-  "com.itextpdf" % "itext7-core" % "7.2.1",
+  "com.itextpdf" % "itext7-core" % "7.2.2",
   "com.itextpdf" % "html2pdf" % "4.0.1",
   "com.beachape" %% "enumeratum" % enumeratumVersion,
   "com.beachape" %% "enumeratum-play" % enumeratumVersion,
