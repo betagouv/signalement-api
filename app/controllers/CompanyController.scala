@@ -103,9 +103,9 @@ class CompanyController @Inject() (
       .map(results => Ok(Json.toJson(results)))
   }
 
-  def getResponseRate(companyId: UUID) = SecuredAction(WithRole(UserRole.DGCCRF, UserRole.Admin)).async {
+  def getResponseRate(companyId: UUID) = SecuredAction.async { request =>
     companyOrchestrator
-      .getResponseRate(companyId)
+      .getCompanyResponseRate(companyId, request.identity.userRole)
       .map(results => Ok(Json.toJson(results)))
   }
 

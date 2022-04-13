@@ -6,8 +6,9 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event.stringToDetailsJsValue
 import models._
 import models.event.Event
-import models.report.ReportStatus
 import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.ReportTag
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsObject
@@ -66,14 +67,28 @@ class CompanyOrchestrator @Inject() (
         })
       )
 
-  def getResponseRate(companyId: UUID): Future[Int] = {
-    val totalF = reportRepository.count(ReportFilter(companyIds = Seq(companyId)))
-    val responsesF = reportRepository.count(
-      ReportFilter(companyIds = Seq(companyId), status = ReportStatus.ReportStatusProResponse)
-    )
+  def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
+
+    val (tagFilter, statusFilter) = userRole match {
+      case UserRole.Professionnel =>
+        logger.debug("User is pro, filtering tag and status not visible by pro user")
+        (ReportTag.ReportTagHiddenToProfessionnel, ReportStatus.statusVisibleByPro)
+      case UserRole.Admin | UserRole.DGCCRF => (Seq.empty[ReportTag], Seq.empty[ReportStatus])
+    }
+    val responseReportsFilter =
+      ReportFilter(
+        companyIds = Seq(companyId),
+        status = ReportStatus.ReportStatusProResponse,
+        withoutTags = tagFilter
+      )
+    val totalReportsFilter =
+      ReportFilter(companyIds = Seq(companyId), status = statusFilter, withoutTags = tagFilter)
+
+    val totalReportsCount = reportRepository.count(totalReportsFilter)
+    val responseReportsCount = reportRepository.count(responseReportsFilter)
     for {
-      total <- totalF
-      responses <- responsesF
+      total <- totalReportsCount
+      responses <- responseReportsCount
     } yield (responses.toFloat / total * 100).round
   }
 

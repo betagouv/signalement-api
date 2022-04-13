@@ -21,7 +21,7 @@ class EventsController @Inject() (
     val ec: ExecutionContext
 ) extends BaseController {
 
-  def getCompanyEventsWithUser(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
+  def getCompanyEvents(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
     SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
       logger.info(s"Fetching events for company $siret with eventType $eventType")
       eventsOrchestrator

@@ -35,7 +35,11 @@ trait EventsOrchestratorInterface {
       userRole: UserRole
   ): Future[List[EventWithUser]]
 
-  def getCompanyEvents(siret: SIRET, eventType: Option[String], userRole: UserRole): Future[List[EventWithUser]]
+  def getCompanyEvents(
+      siret: SIRET,
+      eventType: Option[String],
+      userRole: UserRole
+  ): Future[List[EventWithUser]]
 }
 
 @Singleton
@@ -85,11 +89,14 @@ class EventsOrchestrator @Inject() (
 
   private def filterAndTransformEvents(userRole: UserRole, events: List[(Event, Option[User])]): List[EventWithUser] =
     filterOnUserRole(userRole, events).map { case (event, maybeUser) =>
-      val maybeEventUser = maybeUser.map(
-        _.into[EventUser]
-          .withFieldComputed(_.role, _.userRole)
-          .transform
-      )
+      val maybeEventUser = maybeUser
+        // Do not return event user if requesting user is a PRO user
+        .filterNot(_.userRole == UserRole.Professionnel)
+        .map(
+          _.into[EventUser]
+            .withFieldComputed(_.role, _.userRole)
+            .transform
+        )
       EventWithUser(event, maybeEventUser)
     }
 
