@@ -38,7 +38,8 @@ DELETE        /api/reports/:uuid                                controllers.Repo
 
 POST          /api/reports                                      controllers.ReportController.createReport()
 POST          /api/reports/:uuid/response                       controllers.ReportController.reportResponse(uuid)
-POST          /api/reports/:uuid/response/review                controllers.ReportController.reviewOnReportResponse(uuid)
+POST          /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid)
+GET           /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.getReview(uuid)
 POST          /api/reports/:uuid/company                        controllers.ReportController.updateReportCompany(uuid)
 POST          /api/reports/:uuid/consumer                       controllers.ReportController.updateReportConsumer(uuid)
 POST          /api/reports/:uuid/action                         controllers.ReportController.createReportAction(uuid)

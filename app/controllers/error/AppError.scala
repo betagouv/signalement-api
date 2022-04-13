@@ -24,7 +24,7 @@ object AppError {
 
   final case class ServerError(message: String, cause: Option[Throwable] = None) extends InternalAppError {
     override val `type`: String = "SC-0001"
-    override val title: String = "Unexpected error"
+    override val title: String = message
     override val details: String = "Une erreur inattendue s'est produite."
   }
 
