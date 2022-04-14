@@ -53,7 +53,9 @@ class AttachementService @Inject() (environment: Environment, pdfService: PDFSer
     )
 
   def needWorkflowSeqForWorkflowStepN(n: Int, report: Report): Seq[Attachment] =
-    attachmentSeqForWorkflowStepN(n).filter(_ => report.needWorkflowAttachment())
+    if (report.needWorkflowAttachment()) {
+      attachmentSeqForWorkflowStepN(n)
+    } else defaultAttachments
 
   def reportAcknowledgmentAttachement(
       report: Report,
