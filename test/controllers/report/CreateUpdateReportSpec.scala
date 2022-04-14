@@ -74,8 +74,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-        attachments = Nil
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString
       )}
     """
 }
@@ -149,8 +148,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
-        attachments = Nil
+        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString
       )}
     """
 }
