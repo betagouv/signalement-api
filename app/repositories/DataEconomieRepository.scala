@@ -3,6 +3,7 @@ package repositories
 import akka.actor.ActorSystem
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
+import repositories.report.ReportTable
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +21,7 @@ class DataEconomieRepository @Inject() (
 
   def reports() =
     Slick
-      .source(ReportTables.tables.joinLeft(CompanyTables.tables).on(_.companyId === _.id).result)
+      .source(ReportTable.table.result)
       .log("user")
 
 }

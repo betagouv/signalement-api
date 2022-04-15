@@ -21,7 +21,8 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.ConsumerRepository
-import repositories.ReportRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
@@ -105,12 +106,13 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository = mock[ReportRepository]
+    val mockReportFileRepository = mock[ReportFileRepository]
 
     implicit val ordering = ReportRepository.ReportFileOrdering
 
     mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
     mockReportRepository.getReportsWithFiles(any) returns Future(SortedMap.empty[Report, List[ReportFile]])
-    mockReportRepository.prefetchReportsFiles(any) returns Future(Map())
+    mockReportFileRepository.prefetchReportsFiles(any) returns Future(Map())
 
     class FakeModule extends AbstractModule with ScalaModule {
       override def configure() = {

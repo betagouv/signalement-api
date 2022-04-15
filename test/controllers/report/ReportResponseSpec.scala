@@ -27,6 +27,11 @@ import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -237,9 +242,11 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
+  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
@@ -310,14 +317,18 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
 
-        _ <- companyRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
-        _ <- companyRepository.createUserAccess(headOfficeCompany.id, concernedHeadOfficeProUser.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(
+          headOfficeCompany.id,
+          concernedHeadOfficeProUser.id,
+          AccessLevel.ADMIN
+        )
 
         _ <- companyDataRepository.create(companyData)
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        _ <- reportRepository.createFile(reportResponseFile)
+        _ <- reportFileRepository.createFile(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -393,7 +404,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportFileMustHaveBeenAttachedToReport() = {
-    val reportFile = Await.result(reportRepository.getFile(reportResponseFile.id), Duration.Inf).get
+    val reportFile = Await.result(reportFileRepository.getFile(reportResponseFile.id), Duration.Inf).get
     reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportFixture.id)))
   }
 

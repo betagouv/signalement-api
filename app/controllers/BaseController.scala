@@ -8,7 +8,7 @@ import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
-import repositories._
+import repositories.company.CompanyRepository
 import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv

@@ -6,6 +6,8 @@ import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import repositories._
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
 import services.AttachementService
 import services.MailerService
 import utils._

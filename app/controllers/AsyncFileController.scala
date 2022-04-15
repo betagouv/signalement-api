@@ -3,7 +3,7 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.libs.json._
-import repositories._
+import repositories.asyncfiles.AsyncFileRepository
 import services.S3Service
 import utils.silhouette.auth.AuthEnv
 

@@ -27,6 +27,8 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
 import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv

@@ -1,4 +1,4 @@
-package repositories.mapping
+package repositories.reportconsumerreview
 
 import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
@@ -7,7 +7,7 @@ import repositories.PostgresProfile.api._
 
 import java.util.UUID
 
-object ResponseConsumerReview {
+object ResponseConsumerReviewColumnType {
 
   val logger: Logger = Logger(this.getClass)
 

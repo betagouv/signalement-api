@@ -10,12 +10,12 @@ import models.report.review.ResponseConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
 import play.api.Logger
 import repositories.EventRepository
-import repositories.ReportRepository
-import repositories.ResponseConsumerReviewRepository
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event
+import repositories.report.ReportRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 
 import java.time.OffsetDateTime
 import java.util.UUID

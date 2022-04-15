@@ -10,6 +10,9 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
 import utils.EmailAddress
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -25,6 +28,7 @@ import scala.concurrent.Future
 class CompanyAccessController @Inject() (
     val userRepository: UserRepository,
     val companyRepository: CompanyRepository,
+    val companyAccessRepository: CompanyAccessRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
@@ -42,7 +46,7 @@ class CompanyAccessController @Inject() (
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
-    companyRepository
+    companyAccessRepository
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
   }
@@ -55,7 +59,7 @@ class CompanyAccessController @Inject() (
           for {
             user <- userRepository.get(userId)
             _ <- user
-              .map(u => companyRepository.createUserAccess(request.company.id, u.id, level))
+              .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, level))
               .getOrElse(Future(()))
           } yield if (user.isDefined) Ok else NotFound
         )
@@ -67,7 +71,7 @@ class CompanyAccessController @Inject() (
       for {
         user <- userRepository.get(userId)
         _ <- user
-          .map(u => companyRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
+          .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
           .getOrElse(Future(()))
       } yield if (user.isDefined) Ok else NotFound
   }

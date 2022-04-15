@@ -5,6 +5,7 @@ import models.website.WebsiteKind
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
+import repositories.company.CompanyRepository
 import utils.AppSpec
 import utils.Fixtures
 

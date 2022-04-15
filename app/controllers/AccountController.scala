@@ -13,6 +13,7 @@ import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission

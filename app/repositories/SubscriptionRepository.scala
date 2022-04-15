@@ -16,7 +16,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.mapping.Report._
+import repositories.report.ReportColumnType._
+import repositories.user.UserTable
 
 @Singleton
 class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
@@ -134,8 +135,6 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
 
   private val subscriptionTableQuery = TableQuery[SubscriptionTable]
 
-  private val userTableQuery = UserTables.tables
-
   def create(subscription: Subscription): Future[Subscription] = db
     .run(subscriptionTableQuery += subscription)
     .map(_ => subscription)
@@ -172,7 +171,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
     .run(
       subscriptionTableQuery
         .filter(_.frequency === frequency)
-        .joinLeft(userTableQuery)
+        .joinLeft(UserTable.table)
         .on(_.userId === _.id)
         .map(s => (s._1, s._1.email.ifNull(s._2.map(_.email)).get))
         .to[List]

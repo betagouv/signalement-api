@@ -21,6 +21,10 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers
 import play.mvc.Http.Status
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.report.ReportRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
@@ -128,6 +132,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
@@ -198,17 +203,17 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
           standaloneCompany.id,
           noAccessUser.id,
           AccessLevel.NONE
         )
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
           headOfficeCompany.id,
           proUserWithAccessToHeadOffice.id,
           AccessLevel.MEMBER
         )
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
           subsidiaryCompany.id,
           proUserWithAccessToSubsidiary.id,
           AccessLevel.MEMBER

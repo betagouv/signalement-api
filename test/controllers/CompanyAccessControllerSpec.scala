@@ -21,6 +21,9 @@ import models._
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
 
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
@@ -29,6 +32,7 @@ import java.util.UUID
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
@@ -44,8 +48,8 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         member <- userRepository.create(proMemberUser)
         c <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyDataRepository.create(companyData)
-        _ <- companyRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
-        _ <- companyRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
+        _ <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
       } yield (),
       Duration.Inf
     )
@@ -248,7 +252,7 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   }
 
   def e6 = {
-    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List.empty)
   }
 
@@ -323,7 +327,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   }
 
   def e6 = {
-    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List.empty)
   }
 
@@ -389,7 +393,7 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   }
 
   def e6 = {
-    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(existingProUser.id))
   }
 
@@ -430,7 +434,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   }
 
   def e4 = {
-    val admins = Await.result(companyRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(proMemberUser.id))
   }
 

@@ -12,9 +12,9 @@ import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.CompanyRepository
-import repositories.ReportRepository
 import repositories.WebsiteRepository
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole

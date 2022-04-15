@@ -23,8 +23,10 @@ import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
-import repositories.AccessTokenRepository
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
@@ -46,6 +48,7 @@ import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
+    companyAccessRepository: CompanyAccessRepository,
     companyDataRepository: CompanyDataRepository,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
@@ -66,14 +69,14 @@ class AccessesOrchestrator @Inject() (
       case Some(headOffice) if headOffice.siret == company.siret =>
         logger.debug(s"$company is a head office, returning access for head office")
         for {
-          userLevel <- companyRepository.getUserLevel(company.id, user)
+          userLevel <- companyAccessRepository.getUserLevel(company.id, user)
           access <- getHeadOfficeAccess(user, userLevel, company, editable = true)
         } yield access
 
       case maybeHeadOffice =>
         logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
         for {
-          userAccessLevel <- companyRepository.getUserLevel(company.id, user)
+          userAccessLevel <- companyAccessRepository.getUserLevel(company.id, user)
           subsidiaryUserAccess <- getSubsidiaryAccess(user, userAccessLevel, List(company), editable = true)
           maybeHeadOfficeCompany <- maybeHeadOffice match {
             case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)
@@ -129,7 +132,7 @@ class AccessesOrchestrator @Inject() (
       isHeadOffice: Boolean
   ): Future[List[UserWithAccessLevel]] =
     for {
-      companyAccess <- companyRepository
+      companyAccess <- companyAccessRepository
         .fetchUsersWithLevel(companies.map(_.id))
     } yield (userLevel, user.userRole) match {
       case (_, Admin) =>
@@ -154,7 +157,7 @@ class AccessesOrchestrator @Inject() (
     }
 
   def proFirstActivationCount(ticks: Option[Int]) =
-    companyRepository
+    companyAccessRepository
       .proFirstActivationCount(ticks.getOrElse(12))
       .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
 

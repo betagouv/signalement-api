@@ -19,6 +19,9 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -40,6 +43,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   override def configureFakeModule(): AbstractModule =
@@ -158,8 +162,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        companyRepository.fetchAdmins(company.id).map(_.length) must beEqualTo(1).await
-        companyRepository.fetchAdmins(otherCompany.id).map(_.length) must beEqualTo(1).await
+        companyAccessRepository.fetchAdmins(company.id).map(_.length) must beEqualTo(1).await
+        companyAccessRepository.fetchAdmins(otherCompany.id).map(_.length) must beEqualTo(1).await
       }
 
       "send an invalid DGCCRF invitation" in {

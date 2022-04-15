@@ -19,9 +19,9 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.CompanyRepository
 import repositories.EventRepository
-import repositories.ReportRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.report.ReportRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -59,7 +59,7 @@ import scala.concurrent.duration._
 class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepository,
-    companyRepository: CompanyRepository,
+    companyAccessRepository: CompanyAccessRepository,
     eventRepository: EventRepository,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
@@ -377,7 +377,7 @@ class AdminController @Inject() (
       reportIds <- reportRepository.getReportsByIds(reportInputList.reportIds)
       reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
       reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
-        companyRepository
+        companyAccessRepository
           .fetchAdmins(companyId)
           .map(_.map(_.email).distinct)
           .map(emails => (report, NonEmptyList.fromList(emails)))

@@ -9,8 +9,8 @@ import models.PaginatedResult
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
-import repositories.CompanyRepository
 import repositories.WebsiteRepository
+import repositories.company.CompanyRepository
 import utils.Country
 import utils.URL
 

@@ -3,6 +3,8 @@ package repositories
 import models.report.ReportBlockedNotification
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.company.CompanyTable
+import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -19,11 +21,11 @@ class ReportBlockedNotificationTable(tag: Tag)
   def companyId = column[UUID]("company_id")
   def dateCreation = column[OffsetDateTime]("date_creation")
 
-  def company = foreignKey("fk_report_notification_blocklist_user", companyId, CompanyTables.tables)(
+  def company = foreignKey("fk_report_notification_blocklist_user", companyId, CompanyTable.table)(
     _.id,
     onDelete = ForeignKeyAction.Cascade
   )
-  def user = foreignKey("fk_report_notification_blocklist_user", userId, UserTables.tables)(
+  def user = foreignKey("fk_report_notification_blocklist_user", userId, UserTable.table)(
     _.id,
     onDelete = ForeignKeyAction.Cascade
   )
@@ -35,8 +37,8 @@ class ReportBlockedNotificationTable(tag: Tag)
   ) <> ((ReportBlockedNotification.apply _).tupled, ReportBlockedNotification.unapply)
 }
 
-object ReportNotificationBlocklistTables {
-  val tables = TableQuery[ReportBlockedNotificationTable]
+object ReportNotificationBlocklistTable {
+  val table = TableQuery[ReportBlockedNotificationTable]
 }
 
 @Singleton
@@ -49,8 +51,8 @@ class ReportNotificationBlockedRepository @Inject() (
 
   import dbConfig._
 
-  val query = ReportNotificationBlocklistTables.tables
-  val queryUser = UserTables.tables
+  val query = ReportNotificationBlocklistTable.table
+  val queryUser = UserTable.table
 
   def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] =
     db.run(query.filter(_.userId === userId).result)

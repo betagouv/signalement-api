@@ -14,7 +14,7 @@ import models.report.ReportFile
 import play.api.Logger
 import play.api.libs.concurrent.ActorModule
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories._
+import repositories.reportfile.ReportFileRepository
 import services.S3Service
 
 import java.io.File
@@ -41,7 +41,7 @@ object AntivirusScanActor extends ActorModule {
   @Provides
   def create(
       uploadConfiguration: UploadConfiguration,
-      reportRepository: ReportRepository,
+      reportFileRepository: ReportFileRepository,
       s3Service: S3Service
   ): Behavior[ScanCommand] =
     Behaviors.setup { context =>
@@ -70,7 +70,7 @@ object AntivirusScanActor extends ActorModule {
             _ = logger.debug(
               s"Saving output to database : ${antivirusScanResult.output}"
             )
-            _ <- reportRepository.setAvOutput(reportFile.id, antivirusScanResult.output)
+            _ <- reportFileRepository.setAvOutput(reportFile.id, antivirusScanResult.output)
             _ <- antivirusScanResult.exitCode match {
               case Some(NoVirusFound) | None =>
                 logger.debug("Deleting file.")
@@ -80,7 +80,7 @@ object AntivirusScanActor extends ActorModule {
                 logger.debug(s"File has been deleted by Antivirus, removing file from S3")
                 s3Service
                   .delete(reportFile.storageFilename)
-                  .map(_ => reportRepository.removeStorageFileName(reportFile.id))
+                  .map(_ => reportFileRepository.removeStorageFileName(reportFile.id))
               case Some(ErrorOccured) =>
                 logger.error(s"Unexpected error occured when running scan : ${antivirusScanResult.output}")
                 Future.successful(Done)

@@ -11,6 +11,8 @@ import services.AttachementService
 import services.MailerService
 import utils._
 import play.api.libs.mailer.Attachment
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
 
 import java.time.LocalDate
 import java.time.Period

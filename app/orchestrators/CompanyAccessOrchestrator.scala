@@ -8,8 +8,8 @@ import models.AccessLevel
 import models.AccessToken
 import models.access.ActivationLinkRequest
 import play.api.Logger
-import repositories.AccessTokenRepository
-import repositories.CompanyRepository
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
 import utils.SIRET
 
 import java.time.OffsetDateTime.now

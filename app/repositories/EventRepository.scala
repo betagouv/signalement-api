@@ -16,7 +16,9 @@ import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.EventTypeValue
 import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
-import repositories.mapping.Report._
+import repositories.report.ReportColumnType._
+import repositories.report.ReportTable
+import repositories.user.UserTable
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -84,8 +86,6 @@ class EventRepository @Inject() (
 
   import dbConfig._
 
-  val userTableQuery = UserTables.tables
-
   val eventTableQuery = EventTables.tables
 
   def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
@@ -128,7 +128,7 @@ class EventRepository @Inject() (
   def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
     getRawEvents(filter)
       .filter(_.reportId === reportId)
-      .joinLeft(userTableQuery)
+      .joinLeft(UserTable.table)
       .on(_.userId === _.id)
       .sortBy(_._1.creationDate.desc)
       .to[List]
@@ -139,7 +139,7 @@ class EventRepository @Inject() (
     getRawEvents(filter)
       .filter(_.companyId === companyId)
       .filter(!_.reportId.isDefined)
-      .joinLeft(userTableQuery)
+      .joinLeft(UserTable.table)
       .on(_.userId === _.id)
       .sortBy(_._1.creationDate.desc)
       .to[List]
@@ -150,7 +150,7 @@ class EventRepository @Inject() (
     db.run(
       eventTableQuery
         .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
-        .joinLeft(ReportTables.tables)
+        .joinLeft(ReportTable.table)
         .on(_.reportId === _.id)
         .filterOpt(companyId) { case (table, id) =>
           val res1 = table._1.companyId === id
@@ -189,7 +189,7 @@ class EventRepository @Inject() (
       withoutTags: Seq[ReportTag] = Seq.empty
   ): Future[Option[Duration]] =
     db.run(
-      ReportTables.tables
+      ReportTable.table
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
         }
@@ -209,7 +209,7 @@ class EventRepository @Inject() (
 
   def getReportCountHavingEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Int] =
     db.run(
-      ReportTables.tables
+      ReportTable.table
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
         }

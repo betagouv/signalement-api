@@ -1,13 +1,9 @@
-package repositories
+package repositories.report
 
 import com.google.inject.ImplementedBy
+import models.report._
 import models.CountByDate
 import models.PaginatedResult
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportFilter
-import models.report.ReportStatus
-import models.report.ReportTag
 import utils.EmailAddress
 
 import java.time.LocalDate
@@ -65,12 +61,6 @@ trait ReportRepositoryInterface {
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
-  def deleteFile(uuid: UUID): Future[Int]
-
-  def setAvOutput(fileId: UUID, output: String): Future[Int]
-
-  def removeStorageFileName(fileId: UUID): Future[Int]
-
   def getByStatus(status: ReportStatus): Future[List[Report]]
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]]
@@ -87,16 +77,5 @@ trait ReportRepositoryInterface {
   ): Future[List[(Option[String], Int)]]
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]
-
-  // TODO Move to another repository
-  def createFile(file: ReportFile): Future[ReportFile]
-
-  def attachFilesToReport(fileIds: List[UUID], reportId: UUID): Future[Int]
-
-  def getFile(uuid: UUID): Future[Option[ReportFile]]
-
-  def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]]
-
-  def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]]
 
 }

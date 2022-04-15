@@ -12,7 +12,6 @@ import com.mohiva.play.silhouette.test._
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import controllers.ReportController
-import models.report
 import models._
 import models.event.Event
 import models.report.Gender
@@ -34,6 +33,8 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories._
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import services.AttachementService
 import services.MailService
 import services.MailerService
@@ -253,7 +254,7 @@ trait GetReportContext extends Mockito {
   val address = Fixtures.genAddress()
 
   private val valueGender: Option[Gender] = Fixtures.genGender.sample.get
-  val neverRequestedReport = report.Report(
+  val neverRequestedReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -273,7 +274,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.TraitementEnCours
   )
 
-  val neverRequestedFinalReport = report.Report(
+  val neverRequestedFinalReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -293,7 +294,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.ConsulteIgnore
   )
 
-  val alreadyRequestedReport = report.Report(
+  val alreadyRequestedReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -331,6 +332,7 @@ trait GetReportContext extends Mockito {
   )
 
   val mockReportRepository = mock[ReportRepository]
+  val mockReportFileRepository = mock[ReportFileRepository]
   val mockEventRepository = mock[EventRepository]
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
@@ -351,7 +353,7 @@ trait GetReportContext extends Mockito {
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReport.id) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
-  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
+  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
   mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)

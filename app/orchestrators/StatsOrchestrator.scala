@@ -13,6 +13,9 @@ import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.report.ReportRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT

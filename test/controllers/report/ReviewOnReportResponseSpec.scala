@@ -31,6 +31,9 @@ import utils.AppSpec
 import utils.Fixtures
 import play.api.test.Helpers._
 import play.api.test._
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime

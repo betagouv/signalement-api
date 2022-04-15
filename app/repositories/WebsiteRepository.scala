@@ -5,6 +5,8 @@ import models.website.Website
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.company.CompanyTable
+import repositories.report.ReportTable
 import slick.jdbc.JdbcProfile
 import utils.URL
 
@@ -17,9 +19,7 @@ import scala.concurrent.Future
 
 @Singleton
 class WebsiteRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider,
-    val companyRepository: CompanyRepository,
-    val reportRepository: ReportRepository
+    dbConfigProvider: DatabaseConfigProvider
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
@@ -84,7 +84,7 @@ class WebsiteRepository @Inject() (
       websiteTableQuery
         .filter(_.host === host)
         .filter(w => kinds.fold(true.bind)(w.kind.inSet(_)))
-        .join(companyRepository.companyTableQuery)
+        .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .result
     )
@@ -107,9 +107,9 @@ class WebsiteRepository @Inject() (
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
     val baseQuery = websiteTableQuery
-      .joinLeft(companyRepository.companyTableQuery)
+      .joinLeft(CompanyTable.table)
       .on(_.companyId === _.id)
-      .joinLeft(reportRepository.reportTableQuery)
+      .joinLeft(ReportTable.table)
       .on((c, r) =>
         c._1.host === r.host &&
           (c._1.companyId === r.companyId || c._1.companyCountry === r.companyCountry.map(_.asColumnOf[String]))

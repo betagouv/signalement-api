@@ -11,6 +11,10 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.report.ReportRepository
 import services.AttachementService
 import services.MailerService
 import tasks.Task
@@ -328,6 +332,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]
@@ -340,7 +345,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
       for {
         company <- companyRepository.getOrCreate(company.siret, company)
         admin <- userRepository.create(user)
-        _ <- companyRepository.createUserAccess(company.id, admin.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(company.id, admin.id, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
     )

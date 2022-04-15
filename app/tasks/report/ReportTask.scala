@@ -11,7 +11,7 @@ import models.report.ReportStatus
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.EventRepository
-import repositories.ReportRepository
+import repositories.report.ReportRepository
 import tasks.computeStartingTime
 import utils.Constants.ActionEvent._
 

@@ -18,6 +18,8 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories._
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.Constants
@@ -37,8 +39,8 @@ import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
@@ -156,7 +158,7 @@ class ReportController @Inject() (
 
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
     val uuid = UUID.fromString(id)
-    reportRepository
+    reportFileRepository
       .getFile(uuid)
       .flatMap {
         case Some(file) if file.filename == filename =>
@@ -180,7 +182,9 @@ class ReportController @Inject() (
           viewedReport <- visibleReport
             .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
             .getOrElse(Future(None))
-          reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+          reportFiles <- viewedReport
+            .map(r => reportFileRepository.retrieveReportFiles(r.id))
+            .getOrElse(Future(List.empty))
         } yield viewedReport
           .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
           .getOrElse(NotFound)
@@ -198,7 +202,7 @@ class ReportController @Inject() (
             .flatMap(_.companyId)
             .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
             .getOrElse(Future(List.empty))
-          reportFiles <- reportRepository.retrieveReportFiles(id)
+          reportFiles <- reportFileRepository.retrieveReportFiles(id)
         } yield {
           val responseOption = events
             .map(_._1)

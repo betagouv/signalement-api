@@ -19,10 +19,10 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.AccessTokenRepository
-import repositories.CompanyRepository
 import repositories.EventRepository
 import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv

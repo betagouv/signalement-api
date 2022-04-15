@@ -24,6 +24,9 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories._
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.reportfile.ReportFileRepository
 import services.S3Service
 import utils.Constants
 import utils.Constants.Departments
@@ -46,8 +49,8 @@ object ReportsExtractActor {
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    companyRepository: CompanyRepository,
-    reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
+    companyAccessRepository: CompanyAccessRepository,
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
@@ -314,9 +317,9 @@ class ReportsExtractActor @Inject() (
           limit = Some(signalConsoConfiguration.reportsExportLimitMax)
         )
         .map(_.entities.map(_.report))
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
-      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
+      companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )

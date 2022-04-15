@@ -5,7 +5,6 @@ import models.event.Event.stringToDetailsJsValue
 import models.User
 import play.api.Logger
 import repositories.EventRepository
-import repositories.ReportRepository
 import services.Email.ConsumerReportClosedNoAction
 import services.MailService
 import tasks.model.TaskType
@@ -22,6 +21,7 @@ import cats.implicits._
 import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
+import repositories.report.ReportRepository
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime

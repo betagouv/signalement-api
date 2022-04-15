@@ -8,6 +8,7 @@ import models.auth.AuthAttempt
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
+import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -20,38 +21,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class UserTable(tag: Tag) extends Table[User](tag, "users") {
-
-  def id = column[UUID]("id", O.PrimaryKey)
-  def password = column[String]("password")
-  def email = column[EmailAddress]("email")
-  def firstName = column[String]("firstname")
-  def lastName = column[String]("lastname")
-  def role = column[String]("role")
-  def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
-
-  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
-
-  def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-    User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation)
-  }
-
-  def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation)
-  }
-
-  def * = (
-    id,
-    password,
-    email,
-    firstName,
-    lastName,
-    role,
-    lastEmailValidation
-  ) <> (constructUser, extractUser.lift)
-}
-
 class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts") {
 
   def id = column[UUID]("id", O.PrimaryKey)
@@ -61,10 +30,6 @@ class AuthAttempTable(tag: Tag) extends Table[AuthAttempt](tag, "auth_attempts")
   def failureCause = column[Option[String]]("failure_cause")
 
   def * = (id, login, timestamp, isSuccess, failureCause) <> (AuthAttempt.tupled, AuthAttempt.unapply)
-}
-
-object UserTables {
-  val tables = TableQuery[UserTable]
 }
 
 object AuthAttemptTables {
@@ -87,15 +52,14 @@ class UserRepository @Inject() (
 
   import dbConfig._
 
-  val userTableQuery = UserTables.tables
   val authAttemptTableQuery = AuthAttemptTables.tables
 
-  def list: Future[Seq[User]] = db.run(userTableQuery.result)
+  def list: Future[Seq[User]] = db.run(UserTable.table.result)
 
   def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
     db
       .run(
-        userTableQuery
+        UserTable.table
           .filter(_.role === DGCCRF.entryName)
           .filter(_.lastEmailValidation <= expirationDate)
           .to[List]
@@ -105,13 +69,13 @@ class UserRepository @Inject() (
   def list(role: UserRole): Future[Seq[User]] =
     db
       .run(
-        userTableQuery
+        UserTable.table
           .filter(_.role === role.entryName)
           .result
       )
 
   def create(user: User): Future[User] = db
-    .run(userTableQuery += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
+    .run(UserTable.table += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
     .map(_ => user)
     .recoverWith {
       case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
@@ -120,7 +84,7 @@ class UserRepository @Inject() (
     }
 
   def get(userId: UUID): Future[Option[User]] = db
-    .run(userTableQuery.filter(_.id === userId).to[List].result.headOption)
+    .run(UserTable.table.filter(_.id === userId).to[List].result.headOption)
 
   def countAuthAttempts(login: String, delay: Duration) = db
     .run(
@@ -150,7 +114,7 @@ class UserRepository @Inject() (
 
   def update(user: User): Future[Int] = {
     val queryUser =
-      for (refUser <- userTableQuery if refUser.id === user.id)
+      for (refUser <- UserTable.table if refUser.id === user.id)
         yield refUser
     db.run(
       queryUser
@@ -161,7 +125,7 @@ class UserRepository @Inject() (
 
   def updatePassword(userId: UUID, password: String): Future[Int] = {
     val queryUser =
-      for (refUser <- userTableQuery if refUser.id === userId)
+      for (refUser <- UserTable.table if refUser.id === userId)
         yield refUser
     db.run(
       queryUser
@@ -171,20 +135,20 @@ class UserRepository @Inject() (
   }
 
   def delete(userId: UUID): Future[Int] = db
-    .run(userTableQuery.filter(_.id === userId).delete)
+    .run(UserTable.table.filter(_.id === userId).delete)
 
   def list(email: EmailAddress): Future[Seq[User]] = db
-    .run(userTableQuery.filter(_.email === email).result)
+    .run(UserTable.table.filter(_.email === email).result)
 
   def delete(email: EmailAddress): Future[Int] = db
-    .run(userTableQuery.filter(_.email === email).delete)
+    .run(UserTable.table.filter(_.email === email).delete)
 
   def findById(id: UUID): Future[Option[User]] =
-    db.run(userTableQuery.filter(_.id === id).result.headOption)
+    db.run(UserTable.table.filter(_.id === id).result.headOption)
 
   def findByLogin(login: String): Future[Option[User]] =
     db.run(
-      userTableQuery
+      UserTable.table
         .filter(_.email === EmailAddress(login))
         .result
         .headOption
