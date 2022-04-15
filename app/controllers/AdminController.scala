@@ -83,6 +83,7 @@ class AdminController @Inject() (
     companyName = None,
     companyAddress = Address(None, None, None, None),
     companySiret = None,
+    companyActivityCode = None,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     creationDate = OffsetDateTime.now,

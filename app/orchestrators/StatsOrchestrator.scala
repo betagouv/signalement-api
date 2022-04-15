@@ -75,7 +75,8 @@ class StatsOrchestrator @Inject() (
 
   def getReportsTagsDistribution(companyId: Option[UUID]) = reportRepository.getReportsTagsDistribution(companyId)
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = reportRepository.getReportsStatusDistribution(companyId)
+  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]] =
+    reportRepository.getReportsStatusDistribution(companyId)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>

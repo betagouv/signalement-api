@@ -27,6 +27,7 @@ case class Report(
     companyName: Option[String],
     companyAddress: Address,
     companySiret: Option[SIRET],
+    companyActivityCode: Option[String],
     websiteURL: WebsiteURL,
     phone: Option[String],
     creationDate: OffsetDateTime = OffsetDateTime.now(),
@@ -92,6 +93,7 @@ object Report {
         "vendor" -> report.vendor,
         "tags" -> report.tags,
         "reponseconsoCode" -> report.reponseconsoCode,
+        "activityCode" -> report.companyActivityCode,
         "ccrfCode" -> report.ccrfCode
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRole.Professionnel), false) => Json.obj()

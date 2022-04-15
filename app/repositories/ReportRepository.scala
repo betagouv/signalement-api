@@ -35,6 +35,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def companyPostalCode = column[Option[String]]("company_postal_code")
   def companyCity = column[Option[String]]("company_city")
   def companyCountry = column[Option[Country]]("company_country")
+  def companyActivityCode = column[Option[String]]("company_activity_code")
   def websiteURL = column[Option[URL]]("website_url")
   def host = column[Option[String]]("host")
   def phone = column[Option[String]]("phone")
@@ -73,7 +74,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           Option[String],
           Option[String],
           Option[String],
-          Option[Country]
+          Option[Country],
+          Option[String]
       ),
       (Option[URL], Option[String]),
       Option[String],
@@ -108,7 +110,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
             companyAddressSupplement,
             companyPostalCode,
             companyCity,
-            companyCountry
+            companyCountry,
+            companyActivityCode
           ),
           (websiteURL, host),
           phone,
@@ -143,6 +146,7 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
           country = companyCountry
         ),
         companySiret = companySiret,
+        companyActivityCode = companyActivityCode,
         websiteURL = WebsiteURL(websiteURL, host),
         phone = phone,
         creationDate = creationDate,
@@ -177,7 +181,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
         r.companyAddress.addressSupplement,
         r.companyAddress.postalCode,
         r.companyAddress.city,
-        r.companyAddress.country
+        r.companyAddress.country,
+        r.companyActivityCode
       ),
       (r.websiteURL.websiteURL, r.websiteURL.host),
       r.phone,
@@ -212,7 +217,8 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
       companyAddressSupplement,
       companyPostalCode,
       companyCity,
-      companyCountry
+      companyCountry,
+      companyActivityCode
     ),
     (websiteURL, host),
     phone,
@@ -234,6 +240,12 @@ class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
 
 object ReportTables {
   val tables = TableQuery[ReportTable]
+
+//  def reportTable(userRole: UserRole) = userRole match {
+//    case UserRole.Admin | UserRole.DGCCRF => tables
+//    case UserRole.Professionnel =>
+//      queryFilter(ReportFilter(status = ReportStatus.statusVisibleByPro, employeeConsumer = Some(false)))
+//  }
 }
 
 @Singleton
@@ -252,7 +264,7 @@ class ReportRepository @Inject() (
   implicit val ReportFileOriginColumnType =
     MappedColumnType.base[ReportFileOrigin, String](_.value, ReportFileOrigin(_))
 
-  val reportTableQuery = ReportTables.tables
+  val reportTableQuery: TableQuery[ReportTable] = ReportTables.tables
 
   private class FileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
 
@@ -369,12 +381,9 @@ class ReportRepository @Inject() (
           .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
           .reduceLeft(_ || _)
       }
-      .joinLeft(CompanyTables.tables)
-      .on(_.companyId === _.id)
-      .filterIf(filter.activityCodes.nonEmpty)(
-        _._2.map(_.activityCode).flatten.inSetBind(filter.activityCodes).getOrElse(false)
-      )
-      .map(_._1)
+      .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
+        table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
+      }
 
   implicit class RegexLikeOps(s: Rep[String]) {
     def regexLike(p: Rep[String]): Rep[Boolean] = {

@@ -172,6 +172,7 @@ object Fixtures {
     companyName = Some(company.name),
     companyAddress = company.address,
     companySiret = Some(company.siret),
+    companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = firstName,

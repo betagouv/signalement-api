@@ -44,7 +44,7 @@ class StatisticController @Inject() (
     */
   def getReportsCountCurve() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, UserRole.Admin)
+      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -88,9 +88,7 @@ class StatisticController @Inject() (
     statsOrchestrator.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
+  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { _ =>
     statsOrchestrator.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 
