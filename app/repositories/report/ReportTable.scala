@@ -10,6 +10,7 @@ import java.time._
 import java.util.UUID
 import ReportColumnType._
 import repositories.company.CompanyTable
+import repositories.report.ReportRepository.queryFilter
 
 class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
   def id = column[UUID]("id", O.PrimaryKey)
@@ -233,9 +234,9 @@ object ReportTable {
 
   val table = TableQuery[ReportTable]
 
-  //  def reportTable(userRole: UserRole) = userRole match {
-  //    case UserRole.Admin | UserRole.DGCCRF => tables
-  //    case UserRole.Professionnel =>
-  //      queryFilter(ReportFilter(status = ReportStatus.statusVisibleByPro, employeeConsumer = Some(false)))
-  //  }
+  def table(userRole: UserRole): Query[ReportTable, Report, Seq] = userRole match {
+    case UserRole.Admin | UserRole.DGCCRF => table
+    case UserRole.Professionnel =>
+      queryFilter(ReportFilter(status = ReportStatus.statusVisibleByPro, employeeConsumer = Some(false)))
+  }
 }

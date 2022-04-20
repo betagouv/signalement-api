@@ -19,6 +19,7 @@ import javax.inject.Singleton
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import ReportRepository.queryFilter
 
 @Singleton
 class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
@@ -27,100 +28,6 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
-
-  private[this] def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
-    ReportTable.table
-      .filterOpt(filter.email) { case (table, email) =>
-        table.email === EmailAddress(email)
-      }
-      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
-        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
-      }
-      .filterOpt(filter.phone) { case (table, reportedPhone) =>
-        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
-      }
-      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
-        table.websiteURL.isDefined === websiteRequired
-      }
-      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
-        table.phone.isDefined === phoneRequired
-      }
-      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
-        table.companyId.isDefined === hasCompany
-      }
-      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
-        table.companyCountry.isDefined === hasForeignCountry
-      }
-      .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
-      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
-        table.companySiret
-          .map(siret =>
-            (siret inSetBind filter.siretSirenList
-              .filter(_.matches(SIRET.pattern))
-              .map(SIRET.fromUnsafe(_))
-              .distinct) ||
-              (SubstrSQLFunction(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
-                .filter(_.matches(SIREN.pattern))
-                .distinct)
-          )
-          .getOrElse(false)
-      }
-      .filterOpt(filter.companyName) { case (table, companyName) =>
-        table.companyName like s"${companyName}%"
-      }
-      .filterIf(filter.companyCountries.nonEmpty) { case table =>
-        table.companyCountry
-          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
-          .getOrElse(false)
-      }
-      .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
-      }
-      .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-      }
-      .filterOpt(filter.category) { case (table, category) =>
-        table.category === category
-      }
-      .filterIf(filter.status.nonEmpty) { case table =>
-        table.status.inSet(filter.status.map(_.entryName))
-      }
-      .filterIf(filter.withTags.nonEmpty) { table =>
-        table.tags @& filter.withTags.toList.bind
-      }
-      .filterNot { table =>
-        table.tags @& filter.withoutTags.toList.bind
-      }
-      .filterOpt(filter.details) { case (table, details) =>
-        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ ArrayToStringSQLFunction(
-          table.details,
-          ",",
-          ""
-        ) regexLike s"${details}"
-      }
-      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
-        table.employeeConsumer === employeeConsumer
-      }
-      .filterIf(filter.departments.nonEmpty) { case (table) =>
-        filter.departments
-          .flatMap(toPostalCode)
-          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
-          .reduceLeft(_ || _)
-      }
-      .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
-        table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
-      }
-
-  implicit class RegexLikeOps(s: Rep[String]) {
-    def regexLike(p: Rep[String]): Rep[Boolean] = {
-      val expr = SimpleExpression.binary[String, String, Boolean] { (s, p, qb) =>
-        qb.expr(s)
-        qb.sqlBuilder += " ~* "
-        qb.expr(p)
-      }
-      expr.apply(s, p)
-    }
-  }
 
   def findSimilarReportCount(report: Report): Future[Int] =
     db.run(
@@ -267,23 +174,25 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
       .result
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]] =
+  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
     db.run(
-      ReportTable.table
+      ReportTable
+        .table(userRole)
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.status)
         .map { case (status, report) => status -> report.size }
         .result
     ).map(_.toMap)
 
-  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[ReportTag, Int]] = {
+  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] = {
     def spreadListOfTags(map: Seq[(List[ReportTag], Int)]): Map[ReportTag, Int] =
       map.foldLeft(Map.empty[ReportTag, Int]) { case (acc, (tags, count)) =>
         acc ++ Map(tags.map(tag => tag -> (count + acc.getOrElse(tag, 0))): _*)
       }
 
     db.run(
-      ReportTable.table
+      ReportTable
+        .table(userRole)
         .filterOpt(companyId)(_.companyId === _)
         .groupBy(_.tags)
         .map { case (status, report) => (status, report.size) }
@@ -412,4 +321,99 @@ object ReportRepository {
     def compare(a: Report, b: Report) =
       b.creationDate compareTo (a.creationDate)
   }
+
+  implicit class RegexLikeOps(s: Rep[String]) {
+    def regexLike(p: Rep[String]): Rep[Boolean] = {
+      val expr = SimpleExpression.binary[String, String, Boolean] { (s, p, qb) =>
+        qb.expr(s)
+        qb.sqlBuilder += " ~* "
+        qb.expr(p)
+      }
+      expr.apply(s, p)
+    }
+  }
+
+  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
+    ReportTable.table
+      .filterOpt(filter.email) { case (table, email) =>
+        table.email === EmailAddress(email)
+      }
+      .filterOpt(filter.websiteURL) { case (table, websiteURL) =>
+        table.websiteURL.map(_.asColumnOf[String]) like s"%$websiteURL%"
+      }
+      .filterOpt(filter.phone) { case (table, reportedPhone) =>
+        table.phone.map(_.asColumnOf[String]) like s"%$reportedPhone%"
+      }
+      .filterOpt(filter.hasWebsite) { case (table, websiteRequired) =>
+        table.websiteURL.isDefined === websiteRequired
+      }
+      .filterOpt(filter.hasPhone) { case (table, phoneRequired) =>
+        table.phone.isDefined === phoneRequired
+      }
+      .filterOpt(filter.hasCompany) { case (table, hasCompany) =>
+        table.companyId.isDefined === hasCompany
+      }
+      .filterOpt(filter.hasForeignCountry) { case (table, hasForeignCountry) =>
+        table.companyCountry.isDefined === hasForeignCountry
+      }
+      .filterIf(filter.companyIds.nonEmpty)(_.companyId.map(_.inSetBind(filter.companyIds)).getOrElse(false))
+      .filterIf(filter.siretSirenList.nonEmpty) { case table =>
+        table.companySiret
+          .map(siret =>
+            (siret inSetBind filter.siretSirenList
+              .filter(_.matches(SIRET.pattern))
+              .map(SIRET.fromUnsafe(_))
+              .distinct) ||
+              (SubstrSQLFunction(siret.asColumnOf[String], 0.bind, 10.bind) inSetBind filter.siretSirenList
+                .filter(_.matches(SIREN.pattern))
+                .distinct)
+          )
+          .getOrElse(false)
+      }
+      .filterOpt(filter.companyName) { case (table, companyName) =>
+        table.companyName like s"${companyName}%"
+      }
+      .filterIf(filter.companyCountries.nonEmpty) { case table =>
+        table.companyCountry
+          .map(country => country.inSet(filter.companyCountries.map(Country.fromCode)))
+          .getOrElse(false)
+      }
+      .filterOpt(filter.start) { case (table, start) =>
+        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .filterOpt(filter.end) { case (table, end) =>
+        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .filterOpt(filter.category) { case (table, category) =>
+        table.category === category
+      }
+      .filterIf(filter.status.nonEmpty) { case table =>
+        table.status.inSet(filter.status.map(_.entryName))
+      }
+      .filterIf(filter.withTags.nonEmpty) { table =>
+        table.tags @& filter.withTags.toList.bind
+      }
+      .filterNot { table =>
+        table.tags @& filter.withoutTags.toList.bind
+      }
+      .filterOpt(filter.details) { case (table, details) =>
+        ArrayToStringSQLFunction(table.subcategories, ",", "") ++ ArrayToStringSQLFunction(
+          table.details,
+          ",",
+          ""
+        ) regexLike s"${details}"
+      }
+      .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
+        table.employeeConsumer === employeeConsumer
+      }
+      .filterIf(filter.departments.nonEmpty) { case (table) =>
+        filter.departments
+          .flatMap(toPostalCode)
+          .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
+          .reduceLeft(_ || _)
+      }
+      .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
+        table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
+      }
+
 }

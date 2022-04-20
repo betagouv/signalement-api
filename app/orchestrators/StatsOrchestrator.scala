@@ -76,10 +76,11 @@ class StatsOrchestrator @Inject() (
       case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
     }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = reportRepository.getReportsTagsDistribution(companyId)
+  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
+    reportRepository.getReportsTagsDistribution(companyId, userRole)
 
-  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]] =
-    reportRepository.getReportsStatusDistribution(companyId)
+  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
+    reportRepository.getReportsStatusDistribution(companyId, userRole)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>

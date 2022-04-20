@@ -82,12 +82,12 @@ class StatisticController @Inject() (
     statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async {
-    statsOrchestrator.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+    statsOrchestrator.getReportsTagsDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { _ =>
-    statsOrchestrator.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+    statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
   def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>

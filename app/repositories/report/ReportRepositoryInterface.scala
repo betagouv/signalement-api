@@ -4,6 +4,7 @@ import com.google.inject.ImplementedBy
 import models.report._
 import models.CountByDate
 import models.PaginatedResult
+import models.UserRole
 import utils.EmailAddress
 
 import java.time.LocalDate
@@ -45,9 +46,9 @@ trait ReportRepositoryInterface {
 
   def getWithPhones(): Future[List[Report]]
 
-  def getReportsStatusDistribution(companyId: Option[UUID]): Future[Map[String, Int]]
+  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]]
 
-  def getReportsTagsDistribution(companyId: Option[UUID]): Future[Map[ReportTag, Int]]
+  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]]
 
   def getHostsByCompany(companyId: UUID): Future[Seq[String]]
 
