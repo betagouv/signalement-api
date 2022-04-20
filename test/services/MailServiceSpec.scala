@@ -14,10 +14,10 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import repositories.ReportNotificationBlockedRepository
-import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
 import repositories.user.UserRepository
 import services.Email.ProNewReportNotification
 import utils.AppSpec

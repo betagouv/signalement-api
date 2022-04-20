@@ -11,9 +11,9 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import services.PDFService

@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
-import repositories.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
 import utils.EmailAddress
 import utils.FrontRoute
 

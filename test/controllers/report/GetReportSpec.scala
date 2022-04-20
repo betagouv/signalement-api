@@ -32,7 +32,8 @@ import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
-import repositories._
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
 import services.AttachementService

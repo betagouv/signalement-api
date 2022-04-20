@@ -1,4 +1,4 @@
-package repositories
+package repositories.event
 
 import cats.data.NonEmptyList
 import models._
@@ -8,71 +8,25 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json._
-import utils.Constants
-import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
-import utils.Constants.EventType.EventTypeValue
-import utils.Constants.EventType.PRO
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.report.ReportTable
 import repositories.user.UserTable
+import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
+import utils.Constants.EventType.PRO
 
+import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
+import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import java.time.Duration
-import slick.jdbc.JdbcProfile
-
-import java.sql.Timestamp
-import java.time.format.DateTimeFormatter
-
-case class EventFilter(eventType: Option[EventTypeValue] = None, action: Option[ActionEventValue] = None)
-
-class EventTables(tag: Tag) extends Table[Event](tag, "events") {
-
-  def id = column[UUID]("id", O.PrimaryKey)
-  def reportId = column[Option[UUID]]("report_id")
-  def companyId = column[Option[UUID]]("company_id")
-  def userId = column[Option[UUID]]("user_id")
-  def creationDate = column[OffsetDateTime]("creation_date")
-  def eventType = column[String]("event_type")
-  def action = column[String]("action")
-  def details = column[JsValue]("details")
-
-  type EventData = (UUID, Option[UUID], Option[UUID], Option[UUID], OffsetDateTime, String, String, JsValue)
-
-  def constructEvent: EventData => Event = {
-    case (id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-      Event(
-        id,
-        reportId,
-        companyId,
-        userId,
-        creationDate,
-        Constants.EventType.fromValue(eventType),
-        Constants.ActionEvent.fromValue(action),
-        details
-      )
-  }
-
-  def extractEvent: PartialFunction[Event, EventData] = {
-    case Event(id, reportId, companyId, userId, creationDate, eventType, action, details) =>
-      (id, reportId, companyId, userId, creationDate, eventType.value, action.value, details)
-  }
-
-  def * =
-    (id, reportId, companyId, userId, creationDate, eventType, action, details) <> (constructEvent, extractEvent.lift)
-}
-
-object EventTables {
-  val tables = TableQuery[EventTables]
-}
 
 @Singleton
 class EventRepository @Inject() (
@@ -86,30 +40,28 @@ class EventRepository @Inject() (
 
   import dbConfig._
 
-  val eventTableQuery = EventTables.tables
-
-  def list: Future[Seq[Event]] = db.run(eventTableQuery.result)
+  def list: Future[Seq[Event]] = db.run(EventTable.table.result)
 
   def createEvent(event: Event): Future[Event] = db
-    .run(eventTableQuery += event)
+    .run(EventTable.table += event)
     .map(_ => event)
 
   def delete(userId: UUID): Future[Int] = db
     .run(
-      eventTableQuery
+      EventTable.table
         .filter(_.userId === userId)
         .delete
     )
 
   def deleteEvents(uuidReport: UUID): Future[Int] = db
     .run(
-      eventTableQuery
+      EventTable.table
         .filter(_.reportId === uuidReport)
         .delete
     )
 
   private def getRawEvents(filter: EventFilter) =
-    eventTableQuery
+    EventTable.table
       .filterOpt(filter.eventType) { case (table, eventType) =>
         table.eventType === eventType.value
       }
@@ -148,7 +100,7 @@ class EventRepository @Inject() (
 
   def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
     db.run(
-      eventTableQuery
+      EventTable.table
         .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
         .joinLeft(ReportTable.table)
         .on(_.reportId === _.id)
@@ -164,7 +116,7 @@ class EventRepository @Inject() (
   def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(
-      eventTableQuery
+      EventTable.table
         .filter(
           _.reportId inSetBind reportsIds
         )
@@ -175,7 +127,7 @@ class EventRepository @Inject() (
 
   def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] =
     db.run(
-      eventTableQuery
+      EventTable.table
         .filter(_.companyId inSetBind companyIds.distinct)
         .sortBy(_.creationDate.desc.nullsLast)
         .to[List]
@@ -199,7 +151,7 @@ class EventRepository @Inject() (
         .filterNot { table =>
           table.tags @& withoutTags.toList.bind
         }
-        .join(eventTableQuery)
+        .join(EventTable.table)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
         .map(x => x._2.creationDate - x._1.creationDate)
@@ -213,7 +165,7 @@ class EventRepository @Inject() (
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
         }
-        .join(eventTableQuery)
+        .join(EventTable.table)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
         .length

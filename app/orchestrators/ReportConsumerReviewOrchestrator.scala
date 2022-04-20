@@ -9,11 +9,11 @@ import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
 import play.api.Logger
-import repositories.EventRepository
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 

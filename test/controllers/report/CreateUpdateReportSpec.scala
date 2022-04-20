@@ -21,9 +21,12 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
-import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.emailvalidation.EmailValidationRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import services.AttachementService

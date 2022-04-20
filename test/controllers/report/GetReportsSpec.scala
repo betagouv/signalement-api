@@ -20,10 +20,10 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers
 import play.mvc.Http.Status
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv

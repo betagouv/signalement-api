@@ -12,8 +12,8 @@ import models.report.ReportTag
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import utils.Constants.ActionEvent

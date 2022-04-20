@@ -1,7 +1,7 @@
 package orchestrators
 
 import models.report.ReportBlockedNotification
-import repositories.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
 
 import java.util.UUID
 import javax.inject.Inject

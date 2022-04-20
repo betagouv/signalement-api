@@ -10,10 +10,11 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import services.AttachementService

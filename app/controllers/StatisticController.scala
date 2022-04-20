@@ -82,9 +82,7 @@ class StatisticController @Inject() (
     statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
+  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async {
     statsOrchestrator.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
   }
 

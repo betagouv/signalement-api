@@ -6,7 +6,7 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.dataeconomie.ReportDataEconomie
 import models.report.ReportTag.ReportTagTranslationOps
 import play.api.Logger
-import repositories._
+import repositories.dataeconomie.DataEconomieRepository
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

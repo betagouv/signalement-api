@@ -19,8 +19,8 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.EventRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment

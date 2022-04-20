@@ -37,11 +37,14 @@ import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
+import repositories.subscription.SubscriptionRepository
+import repositories.website.WebsiteRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportReadByProNotification

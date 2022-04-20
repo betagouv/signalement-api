@@ -1,16 +1,17 @@
-package repositories
+package repositories.website
 
 import models._
 import models.website.Website
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
+import repositories.website.WebsiteColumnType.WebsiteKindColumnType
 import slick.jdbc.JdbcProfile
 import utils.URL
 
-import java.time.OffsetDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,25 +29,12 @@ class WebsiteRepository @Inject() (
   import PostgresProfile.api._
   import dbConfig._
 
-  implicit val WebsiteKindColumnType = MappedColumnType.base[WebsiteKind, String](_.value, WebsiteKind.fromValue(_))
-
-  class WebsiteTable(tag: Tag) extends Table[Website](tag, "websites") {
-    def id = column[UUID]("id", O.PrimaryKey)
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def host = column[String]("host")
-    def companyCountry = column[Option[String]]("company_country")
-    def companyId = column[Option[UUID]]("company_id")
-    def kind = column[WebsiteKind]("kind")
-    def * = (id, creationDate, host, companyCountry, companyId, kind) <> ((Website.apply _).tupled, Website.unapply)
-  }
-  val websiteTableQuery = TableQuery[WebsiteTable]
-
   def find(id: UUID): Future[Option[Website]] = db
-    .run(websiteTableQuery.filter(_.id === id).result.headOption)
+    .run(WebsiteTable.table.filter(_.id === id).result.headOption)
 
   def update(website: Website): Future[Website] = {
     val query =
-      for (refWebsite <- websiteTableQuery if refWebsite.id === website.id)
+      for (refWebsite <- WebsiteTable.table if refWebsite.id === website.id)
         yield refWebsite
     db.run(query.update(website))
       .map(_ => website)
@@ -54,7 +42,7 @@ class WebsiteRepository @Inject() (
 
   def create(newWebsite: Website) =
     db.run(
-      websiteTableQuery
+      WebsiteTable.table
         .filter(_.host === newWebsite.host)
         .filter(website =>
           (website.kind === WebsiteKind.values
@@ -66,12 +54,12 @@ class WebsiteRepository @Inject() (
         .headOption
     ).flatMap(
       _.map(Future(_))
-        .getOrElse(db.run(websiteTableQuery returning websiteTableQuery += newWebsite))
+        .getOrElse(db.run(WebsiteTable.table returning WebsiteTable.table += newWebsite))
     )
 
   def searchValidWebsiteAssociationByHost(host: String) =
     db.run(
-      websiteTableQuery
+      WebsiteTable.table
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
@@ -81,7 +69,7 @@ class WebsiteRepository @Inject() (
 
   def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) =
     db.run(
-      websiteTableQuery
+      WebsiteTable.table
         .filter(_.host === host)
         .filter(w => kinds.fold(true.bind)(w.kind.inSet(_)))
         .join(CompanyTable.table)
@@ -91,7 +79,7 @@ class WebsiteRepository @Inject() (
 
   def removeOtherWebsitesWithSameHost(website: Website) =
     db.run(
-      websiteTableQuery
+      WebsiteTable.table
         .filter(_.host === website.host)
         .filterNot(_.id === website.id)
         .delete
@@ -106,7 +94,7 @@ class WebsiteRepository @Inject() (
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
-    val baseQuery = websiteTableQuery
+    val baseQuery = WebsiteTable.table
       .joinLeft(CompanyTable.table)
       .on(_.companyId === _.id)
       .joinLeft(ReportTable.table)
@@ -132,5 +120,5 @@ class WebsiteRepository @Inject() (
     query.withPagination(db)(maybeOffset, maybeLimit)
   }
 
-  def delete(id: UUID): Future[Int] = db.run(websiteTableQuery.filter(_.id === id).delete)
+  def delete(id: UUID): Future[Int] = db.run(WebsiteTable.table.filter(_.id === id).delete)
 }

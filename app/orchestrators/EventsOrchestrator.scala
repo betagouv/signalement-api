@@ -13,9 +13,9 @@ import models.event.Event
 import models.event.EventUser
 import models.event.EventWithUser
 import play.api.Logger
-import repositories.EventFilter
-import repositories.EventRepository
 import repositories.company.CompanyRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO

@@ -1,7 +1,8 @@
-package repositories
+package repositories.rating
 
 import models.Rating
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime

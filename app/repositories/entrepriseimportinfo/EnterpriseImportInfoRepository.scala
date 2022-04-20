@@ -1,8 +1,9 @@
-package repositories
+package repositories.entrepriseimportinfo
 
 import models._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
+import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime

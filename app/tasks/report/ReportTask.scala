@@ -10,7 +10,7 @@ import models.report.Report
 import models.report.ReportStatus
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
-import repositories.EventRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import tasks.computeStartingTime
 import utils.Constants.ActionEvent._

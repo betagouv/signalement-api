@@ -26,7 +26,8 @@ import models.EtablissementFile
 import models.UniteLegaleFile
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories._
+import repositories.companydata.CompanyDataRepository
+import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 import utils.SIREN
 
 import java.io.BufferedInputStream

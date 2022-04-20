@@ -13,12 +13,12 @@ import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import repositories.CompanyDataRepository
-import repositories.EventRepository
-import repositories.WebsiteRepository
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
+import repositories.website.WebsiteRepository
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIREN

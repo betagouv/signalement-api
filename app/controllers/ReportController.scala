@@ -17,7 +17,8 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories._
+import repositories.event.EventFilter
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
 import services.PDFService

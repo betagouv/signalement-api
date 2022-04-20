@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.RequestProvider
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import play.api.Logger
 import play.api.mvc.Request
-import repositories.ConsumerRepository
+import repositories.consumer.ConsumerRepository
 import utils.silhouette.Credentials._
 
 import javax.inject.Inject

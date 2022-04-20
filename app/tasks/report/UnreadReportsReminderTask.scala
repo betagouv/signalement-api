@@ -6,7 +6,7 @@ import models.User
 import models.event.Event
 import models.report.Report
 import play.api.Logger
-import repositories.EventRepository
+import repositories.event.EventRepository
 import services.Email.ProReportUnreadReminder
 import services.MailService
 import tasks.model.TaskType

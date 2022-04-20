@@ -23,9 +23,9 @@ import models.report.ReportStatus
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories._
 import repositories.asyncfiles.AsyncFileRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventRepository
 import repositories.reportfile.ReportFileRepository
 import services.S3Service
 import utils.Constants

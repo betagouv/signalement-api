@@ -1,4 +1,4 @@
-package repositories
+package repositories.dataeconomie
 
 import akka.actor.ActorSystem
 import akka.stream.alpakka.slick.scaladsl.Slick

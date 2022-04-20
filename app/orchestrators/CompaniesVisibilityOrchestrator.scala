@@ -5,9 +5,9 @@ import models.Company
 import models.CompanyWithAccess
 import models.User
 import models.UserRole
-import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
 import utils.SIREN
 import utils.SIRET
 

@@ -20,7 +20,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.ConsumerRepository
+import repositories.consumer.ConsumerRepository
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
 import utils.AppSpec

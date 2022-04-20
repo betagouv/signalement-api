@@ -7,7 +7,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
-import repositories.EventRepository
+import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import services.Email.ConsumerReportClosedNoReading
 import services.MailService

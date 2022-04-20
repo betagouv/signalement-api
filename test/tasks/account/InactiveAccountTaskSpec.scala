@@ -10,9 +10,9 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import repositories.EventRepository
-import repositories.SubscriptionRepository
 import repositories.asyncfiles.AsyncFileRepository
+import repositories.event.EventRepository
+import repositories.subscription.SubscriptionRepository
 import repositories.user.UserRepository
 import utils.AppSpec
 import utils.Constants.ActionEvent.CONTROL

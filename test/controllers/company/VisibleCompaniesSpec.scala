@@ -17,9 +17,9 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
 import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec

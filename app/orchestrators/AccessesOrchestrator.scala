@@ -23,10 +23,11 @@ import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.event.EventRepository
 import repositories.user.UserRepository
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation

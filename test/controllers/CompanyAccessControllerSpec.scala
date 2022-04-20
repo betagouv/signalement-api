@@ -20,10 +20,10 @@ import utils.Fixtures
 import models._
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
 import repositories.user.UserRepository
 
 import java.time.OffsetDateTime
