@@ -18,10 +18,10 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures

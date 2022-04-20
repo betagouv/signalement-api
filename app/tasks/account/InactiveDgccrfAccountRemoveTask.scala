@@ -5,8 +5,8 @@ import models.User
 import play.api.Logger
 import repositories.EventRepository
 import repositories.SubscriptionRepository
-import repositories.UserRepository
 import repositories.asyncfiles.AsyncFileRepository
+import repositories.user.UserRepository
 import tasks.model.TaskType
 import tasks.TaskExecutionResult
 import tasks.TaskExecutionResults

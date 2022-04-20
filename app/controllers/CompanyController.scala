@@ -15,6 +15,7 @@ import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.FrontRoute

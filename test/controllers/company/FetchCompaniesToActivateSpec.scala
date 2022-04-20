@@ -20,9 +20,9 @@ import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.EventRepository
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
+import repositories.user.UserRepository
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv

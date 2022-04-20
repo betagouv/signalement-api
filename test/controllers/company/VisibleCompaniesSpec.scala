@@ -20,6 +20,7 @@ import play.api.test._
 import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures

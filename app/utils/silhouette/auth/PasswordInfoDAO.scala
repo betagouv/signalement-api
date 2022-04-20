@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import play.api.Logger
-import repositories.UserRepository
+import repositories.user.UserRepository
 import utils.EmailAddress
 import utils.silhouette.Credentials._
 

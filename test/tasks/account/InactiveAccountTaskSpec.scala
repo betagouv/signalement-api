@@ -12,8 +12,8 @@ import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.EventRepository
 import repositories.SubscriptionRepository
-import repositories.UserRepository
 import repositories.asyncfiles.AsyncFileRepository
+import repositories.user.UserRepository
 import utils.AppSpec
 import utils.Constants.ActionEvent.CONTROL
 import utils.Constants.EventType

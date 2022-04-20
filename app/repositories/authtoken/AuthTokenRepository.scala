@@ -1,7 +1,8 @@
-package repositories
+package repositories.authtoken
 
 import models.auth.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
@@ -27,36 +28,13 @@ class AuthTokenRepository @Inject() (
   import PostgresProfile.api._
   import dbConfig._
 
-  private class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-
-    def userId = column[UUID]("user_id")
-
-    def expiry = column[OffsetDateTime]("expiry")
-
-    type AuthTokenData = (UUID, UUID, OffsetDateTime)
-
-    def constructAuthToken: AuthTokenData => AuthToken = { case (id, userId, expiry) =>
-      AuthToken(id, userId, expiry)
-    }
-
-    def extractAuthToken: PartialFunction[AuthToken, AuthTokenData] = { case AuthToken(id, userId, expiry) =>
-      (id, userId, expiry)
-    }
-
-    def * = (id, userId, expiry) <> (constructAuthToken, extractAuthToken.lift)
-  }
-
-  private val authTokenTableQuery = TableQuery[AuthTokenTable]
-
   def create(authToken: AuthToken): Future[AuthToken] = db
-    .run(authTokenTableQuery += authToken)
+    .run(AuthTokenTable.table += authToken)
     .map(_ => authToken)
 
   def findValid(id: UUID): Future[Option[AuthToken]] = db
     .run(
-      authTokenTableQuery
+      AuthTokenTable.table
         .filter(_.id === id)
         .filter(_.expiry > OffsetDateTime.now(ZoneOffset.UTC))
         .to[List]
@@ -65,19 +43,19 @@ class AuthTokenRepository @Inject() (
     )
 
   def deleteForUserId(userId: UUID): Future[Int] = db.run {
-    authTokenTableQuery
+    AuthTokenTable.table
       .filter(_.userId === userId)
       .delete
   }
 
   def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
-    authTokenTableQuery
+    AuthTokenTable.table
       .filter(_.userId === userId)
       .result
   }
 
   def list(): Future[Seq[AuthToken]] = db.run {
-    authTokenTableQuery.result
+    AuthTokenTable.table.result
   }
 
 }

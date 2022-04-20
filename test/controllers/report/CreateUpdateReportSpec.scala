@@ -25,6 +25,7 @@ import repositories._
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue

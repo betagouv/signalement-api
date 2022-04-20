@@ -9,9 +9,9 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
+import repositories.user.UserRepository
 import repositories.user.UserTable
 import repositories.PostgresProfile
-import repositories.UserRepository
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.computeTickValues
 import slick.jdbc.JdbcProfile

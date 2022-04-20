@@ -24,6 +24,7 @@ import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}

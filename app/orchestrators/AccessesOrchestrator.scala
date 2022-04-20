@@ -27,6 +27,7 @@ import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess

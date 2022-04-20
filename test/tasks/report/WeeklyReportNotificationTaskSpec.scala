@@ -7,6 +7,7 @@ import org.specs2.matcher.FutureMatchers
 import repositories._
 import repositories.company.CompanyRepository
 import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
 import utils._

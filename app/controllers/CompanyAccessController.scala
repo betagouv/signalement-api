@@ -9,10 +9,10 @@ import orchestrators.CompanyAccessOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
-import repositories._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 import utils.EmailAddress
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
