@@ -11,7 +11,7 @@ object EmailSubjects {
   val REPORT_ACK = "Votre signalement"
   val REPORT_TRANSMITTED = "L'entreprise a pris connaissance de votre signalement"
   val REPORT_ACK_PRO = "Votre réponse au signalement"
-  val REPORT_ACK_PRO_CONSUMER = "L'entreprise a répondu à votre signalement"
+  val REPORT_ACK_PRO_CONSUMER = "Donnez nous votre avis sur la réponse de l'entreprise"
   val REPORT_UNREAD_REMINDER = "Nouveau signalement"
   val REPORT_TRANSMITTED_REMINDER = "Signalement en attente de réponse"
   val REPORT_CLOSED_NO_READING = "L'entreprise n'a pas souhaité consulter votre signalement"
