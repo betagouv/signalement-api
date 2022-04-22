@@ -277,7 +277,7 @@ object AppError {
   }
 
   final case class MalformedSIRET(InvalidSIRET: String) extends BadRequestError {
-    override val `type`: String = "SC-0031"
+    override val `type`: String = "SC-0034"
     override val title: String = "Malformed SIRET"
     override val details: String =
       s"Malformed SIRET : $InvalidSIRET"

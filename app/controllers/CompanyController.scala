@@ -19,6 +19,7 @@ import repositories.user.UserRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.FrontRoute
+import utils.QueryStringMapper
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -71,18 +72,18 @@ class CompanyController @Inject() (
       )
   }
 
-  def searchRegistered() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
-    CompanyRegisteredSearch
+  def searchRegistered() = SecuredAction.async { request =>
+    val maybeCompanyId: Option[UUID] = new QueryStringMapper(request.queryString).UUID("identity")
+    PaginatedSearch
       .fromQueryString(request.queryString)
-      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
           logger.error("Cannot parse querystring" + request.queryString, error)
           Future.successful(BadRequest)
         },
-        filters =>
+        paginationFilters =>
           companyOrchestrator
-            .searchRegistered(filters._1, filters._2)
+            .searchRegistered(maybeCompanyId, paginationFilters, request.identity)
             .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
       )
   }
@@ -111,12 +112,6 @@ class CompanyController @Inject() (
     companyOrchestrator
       .getCompanyResponseRate(companyId, request.identity.userRole)
       .map(results => Ok(Json.toJson(results)))
-  }
-
-  def companyDetails(siret: String) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    for {
-      company <- companyOrchestrator.companyDetails(SIRET.fromUnsafe(siret))
-    } yield company.map(c => Ok(Json.toJson(c))).getOrElse(NotFound)
   }
 
   def companiesToActivate() = SecuredAction(WithRole(UserRole.Admin)).async { _ =>

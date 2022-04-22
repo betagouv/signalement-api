@@ -1,6 +1,9 @@
 package utils
 
+import models.extractUUID
+
 import java.time.LocalDate
+import java.util.UUID
 
 class QueryStringMapper(q: Map[String, Seq[String]]) {
 
@@ -9,6 +12,8 @@ class QueryStringMapper(q: Map[String, Seq[String]]) {
   def int(k: String): Option[Int] = string(k).map(_.toInt)
 
   def string(k: String): Option[String] = q.get(k).flatMap(_.headOption)
+
+  def UUID(k: String): Option[UUID] = q.get(k).flatMap(_.headOption).map(extractUUID)
 
   def seq(k: String): Seq[String] = q.getOrElse(k, Nil)
 

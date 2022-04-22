@@ -33,6 +33,7 @@ import scala.concurrent.Future
 
 class CompanyOrchestrator @Inject() (
     val companyRepository: CompanyRepository,
+    val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepository,
     val companyDataRepository: CompanyDataRepository,
     val websiteRepository: WebsiteRepository,
@@ -51,21 +52,39 @@ class CompanyOrchestrator @Inject() (
     reportRepository.getHostsByCompany(companyId)
 
   def searchRegistered(
-      search: CompanyRegisteredSearch,
-      paginate: PaginatedSearch
+      maybeCompanyIdFilter: Option[UUID],
+      paginate: PaginatedSearch,
+      user: User
   ): Future[PaginatedResult[CompanyWithNbReports]] =
-    companyRepository
-      .searchWithReportsCount(search, paginate)
-      .map(x =>
-        x.copy(entities = x.entities.map { case (company, count, responseCount) =>
-          val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
-          company
-            .into[CompanyWithNbReports]
-            .withFieldConst(_.count, count)
-            .withFieldConst(_.responseRate, responseRate.round)
-            .transform
-        })
-      )
+    for {
+      visibleByUserCompanyIdFilter <- user.userRole match {
+        case UserRole.Professionnel =>
+          restrictCompanyIdFilterOnProVisibility(user, maybeCompanyIdFilter)
+        case _ => Future.successful(maybeCompanyIdFilter.toSeq)
+      }
+      companyIdFilter = CompanyRegisteredSearch(companyIds = visibleByUserCompanyIdFilter)
+      paginatedResults <- companyRepository
+        .searchWithReportsCount(companyIdFilter, paginate, user.userRole)
+
+      companiesWithNbReports = paginatedResults.entities.map { case (company, count, responseCount) =>
+        val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
+        company
+          .into[CompanyWithNbReports]
+          .withFieldConst(_.count, count)
+          .withFieldConst(_.responseRate, responseRate.round)
+          .transform
+      }
+    } yield paginatedResults.copy(entities = companiesWithNbReports)
+
+  private def restrictCompanyIdFilterOnProVisibility(user: User, maybeCompanyIdFilter: Option[UUID]) = for {
+    proVisibleCompanyIds <- companiesVisibilityOrchestrator.fetchVisibleCompanies(user).map(_.map(_.company.id))
+    res = maybeCompanyIdFilter match {
+      case Some(companyIdFilter) if proVisibleCompanyIds.contains(companyIdFilter) =>
+        logger.debug(s"$companyIdFilter is visible by pro, allowing the filter ")
+        List(companyIdFilter)
+      case _ => proVisibleCompanyIds
+    }
+  } yield res
 
   def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
 
@@ -139,7 +158,7 @@ class CompanyOrchestrator @Inject() (
     } yield results.flatten
   }
 
-  def companyDetails(siret: SIRET): Future[Option[Company]] = companyRepository.findBySiret(siret)
+  def companyDetails(id: UUID): Future[Option[Company]] = companyRepository.fetchCompany(id)
 
   def companiesToActivate(): Future[List[JsObject]] =
     for {

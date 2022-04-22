@@ -27,7 +27,7 @@ class StatisticController @Inject() (
 
   def getReportsCount() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, UserRole.Admin)
+      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -76,9 +76,7 @@ class StatisticController @Inject() (
       .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
+  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction.async {
     statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 

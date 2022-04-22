@@ -46,10 +46,11 @@ case class Company(
 }
 
 case class CompanyRegisteredSearch(
-    departments: Seq[String],
-    activityCodes: Seq[String],
-    identity: Option[SearchCompanyIdentity],
-    emailsWithAccess: Option[String]
+    departments: Seq[String] = Seq.empty[String],
+    activityCodes: Seq[String] = Seq.empty[String],
+    identity: Option[SearchCompanyIdentity] = None,
+    companyIds: Seq[UUID] = Seq.empty[UUID],
+    emailsWithAccess: Option[String] = None
 )
 
 object CompanyRegisteredSearch {

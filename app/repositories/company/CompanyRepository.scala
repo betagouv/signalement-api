@@ -29,7 +29,8 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
 
   def searchWithReportsCount(
       search: CompanyRegisteredSearch,
-      paginate: PaginatedSearch
+      paginate: PaginatedSearch,
+      userRole: UserRole
   ): Future[PaginatedResult[(Company, Int, Int)]] = {
     def companyIdByEmailTable(emailWithAccess: EmailAddress) = CompanyAccessTable.table
       .join(UserTable.table)
@@ -38,13 +39,16 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .map(_._1.companyId)
 
     val query = CompanyTable.table
-      .joinLeft(ReportTable.table)
+      .joinLeft(ReportTable.table(userRole))
       .on(_.id === _.companyId)
       .filterIf(search.departments.nonEmpty) { case (company, _) =>
         company.department.map(a => a.inSet(search.departments)).getOrElse(false)
       }
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
+      }
+      .filterIf(search.companyIds.nonEmpty) { case (company, _) =>
+        company.id.inSet(search.companyIds)
       }
       .groupBy(_._1)
       .map { case (grouped, all) =>
