@@ -37,7 +37,7 @@ class TokenInfoTest extends Specification {
       val companyUserActivationToken = CompanyUserActivationToken(
         token = UUID.randomUUID().toString,
         emailedTo = EmailAddress("test@dgccrf.gouv.fr"),
-        companySiret = SIRET("XXXXXXXXXXXXXX"),
+        companySiret = SIRET.fromUnsafe("XXXXXXXXXXXXXX"),
         kind = DGCCRFAccount
       )
 

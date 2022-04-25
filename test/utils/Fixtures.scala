@@ -1,7 +1,8 @@
 package utils
 
-import models.Event._
+import models.event.Event._
 import models._
+import models.event.Event
 import models.report.Gender
 import models.report.Report
 import models.report.ReportCompany
@@ -58,7 +59,7 @@ object Fixtures {
   def genSiret(siren: Option[SIREN] = None) = for {
     randInt <- Gen.choose(0, 99999)
     sirenGen <- genSiren
-  } yield SIRET(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
+  } yield SIRET.fromUnsafe(siren.getOrElse(sirenGen).value + ("" + randInt takeRight 5))
 
   def genAddress(postalCode: Option[String] = Some("37500")) = for {
     number <- arbString.arbitrary
@@ -171,6 +172,7 @@ object Fixtures {
     companyName = Some(company.name),
     companyAddress = company.address,
     companySiret = Some(company.siret),
+    companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = firstName,

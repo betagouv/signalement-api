@@ -12,8 +12,6 @@ import controllers.error.AppError.TooMuchAuthAttempts
 import controllers.error.AppError.UserNotFound
 import models.User
 import models.UserRole
-import repositories.AuthTokenRepository
-import repositories.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
 
@@ -44,6 +42,9 @@ import orchestrators.AuthOrchestrator.authTokenExpiration
 import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
+import repositories.authattempt.AuthAttemptRepository
+import repositories.authtoken.AuthTokenRepository
+import repositories.user.UserRepository
 import services.Email.ResetPassword
 import services.MailService
 
@@ -53,6 +54,7 @@ import java.util.UUID
 
 class AuthOrchestrator @Inject() (
     userService: UserService,
+    authAttemptRepository: AuthAttemptRepository,
     userRepository: UserRepository,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepository,
@@ -85,17 +87,17 @@ class AuthOrchestrator @Inject() (
     eventualUserSession
       .flatMap { session =>
         logger.debug(s"Saving auth attempts for user")
-        userRepository.saveAuthAttempt(userLogin.login, isSuccess = true).map(_ => session)
+        authAttemptRepository.saveAuthAttempt(userLogin.login, isSuccess = true).map(_ => session)
       }
       .recoverWith {
         case error: AppError =>
           logger.debug(s"Saving failed auth attempt for user")
-          userRepository
+          authAttemptRepository
             .saveAuthAttempt(userLogin.login, isSuccess = false, failureCause = Some(error.details))
             .flatMap(_ => Future.failed(error))
         case error =>
           logger.debug(s"Saving failed auth attempt for user")
-          userRepository
+          authAttemptRepository
             .saveAuthAttempt(
               userLogin.login,
               isSuccess = false,
@@ -185,7 +187,7 @@ class AuthOrchestrator @Inject() (
       )
 
   private def validateAuthenticationAttempts(user: User): Future[User] = for {
-    _ <- userRepository
+    _ <- authAttemptRepository
       .countAuthAttempts(user.email.value, AuthAttemptPeriod)
       .ensure(TooMuchAuthAttempts(user.id))(attempts => attempts < MaxAllowedAuthAttempts)
     _ = logger.debug(s"Auth attempts count check successful")

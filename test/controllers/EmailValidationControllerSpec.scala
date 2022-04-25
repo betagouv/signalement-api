@@ -17,7 +17,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepository
 import services.Email.ConsumerValidateEmail
 
 import java.time.OffsetDateTime

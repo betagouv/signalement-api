@@ -17,8 +17,10 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.CompanyRepository
-import repositories._
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
@@ -39,6 +41,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
 
@@ -59,7 +62,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
     .sample
     .get
     .copy(
-      siret = SIRET(SIREN(headOfficeCompany.siret).value + "00020"),
+      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
       siren = SIREN(headOfficeCompany.siret),
       etatAdministratifEtablissement = Some("F")
     )
@@ -78,18 +81,22 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
 
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
           headOfficeCompany.id,
           proUserWithAccessToHeadOffice.id,
           AccessLevel.MEMBER
         )
-        _ <- companyRepository.createUserAccess(headOfficeCompany.id, adminWithAccessToHeadOffice.id, AccessLevel.ADMIN)
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
+          headOfficeCompany.id,
+          adminWithAccessToHeadOffice.id,
+          AccessLevel.ADMIN
+        )
+        _ <- companyAccessRepository.createUserAccess(
           subsidiaryCompany.id,
           proUserWithAccessToSubsidiary.id,
           AccessLevel.MEMBER
         )
-        _ <- companyRepository.createUserAccess(
+        _ <- companyAccessRepository.createUserAccess(
           subsidiaryCompany.id,
           adminWithAccessToSubsidiary.id,
           AccessLevel.MEMBER

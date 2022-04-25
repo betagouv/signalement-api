@@ -17,8 +17,9 @@ import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.ReportCreationInvalidBody
 import controllers.error.AppError.SpammerEmailBlocked
-import models.Event._
+import models.event.Event._
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
@@ -36,7 +37,14 @@ import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
+import repositories.subscription.SubscriptionRepository
+import repositories.website.WebsiteRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportReadByProNotification
@@ -65,6 +73,7 @@ import scala.util.Random
 class ReportOrchestrator @Inject() (
     mailService: MailService,
     reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
     companyRepository: CompanyRepository,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepository,
@@ -184,8 +193,8 @@ class ReportOrchestrator @Inject() (
       _ <- reportRepository.findSimilarReportCount(reportToCreate).ensure(DuplicateReportCreation)(_ == 0)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
-      _ <- reportRepository.attachFilesToReport(draftReport.fileIds, report.id)
-      files <- reportRepository.retrieveReportFiles(report.id)
+      _ <- reportFileRepository.attachFilesToReport(draftReport.fileIds, report.id)
+      files <- reportFileRepository.retrieveReportFiles(report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
       _ <- notifyDgccrfIfNeeded(updatedReport)
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
@@ -384,7 +393,7 @@ class ReportOrchestrator @Inject() (
 
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
     for {
-      reportFile <- reportRepository.createFile(
+      reportFile <- reportFileRepository.createFile(
         ReportFile(
           UUID.randomUUID,
           reportId = None,
@@ -407,8 +416,8 @@ class ReportOrchestrator @Inject() (
 
   def removeReportFile(id: UUID) =
     for {
-      reportFile <- reportRepository.getFile(id)
-      _ <- reportFile.map(f => reportRepository.deleteFile(f.id)).getOrElse(Future(None))
+      reportFile <- reportFileRepository.getFile(id)
+      _ <- reportFile.map(f => reportFileRepository.deleteFile(f.id)).getOrElse(Future(None))
       _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
@@ -428,7 +437,7 @@ class ReportOrchestrator @Inject() (
     for {
       report <- reportRepository.getReport(id)
       _ <- eventRepository.deleteEvents(id)
-      _ <- reportRepository
+      _ <- reportFileRepository
         .retrieveReportFiles(id)
         .map(files => files.map(file => removeReportFile(file.id)))
       _ <- reportRepository.delete(id)
@@ -533,7 +542,7 @@ class ReportOrchestrator @Inject() (
           Json.toJson(reportResponse)
         )
       )
-      _ <- reportRepository.attachFilesToReport(reportResponse.fileIds, report.id)
+      _ <- reportFileRepository.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
         report.copy(
           status = reportResponse.responseType match {
@@ -585,7 +594,7 @@ class ReportOrchestrator @Inject() (
             .getOrElse(Json.toJson(reportAction))
         )
       )
-      _ <- reportRepository.attachFilesToReport(reportAction.fileIds, report.id)
+      _ <- reportFileRepository.attachFilesToReport(reportAction.fileIds, report.id)
     } yield {
       logger.debug(
         s"Create event ${newEvent.id} on report ${report.id} for reportActionType ${reportAction.actionType}"
@@ -639,13 +648,13 @@ class ReportOrchestrator @Inject() (
           validOffset,
           validLimit
         )
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
 
   def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")
-    reportRepository
+    reportFileRepository
       .getFile(UUID.fromString(uuid))
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>

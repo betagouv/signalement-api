@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class StatisticController @Inject() (
-    _stats: StatsOrchestrator,
+    statsOrchestrator: StatsOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)
     extends BaseController {
@@ -27,14 +27,14 @@ class StatisticController @Inject() (
 
   def getReportsCount() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, UserRole.Admin)
+      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
           Future.successful(BadRequest)
         },
         filters =>
-          _stats
+          statsOrchestrator
             .getReportCount(filters)
             .map(count => Ok(Json.obj("value" -> count)))
       )
@@ -44,7 +44,7 @@ class StatisticController @Inject() (
     */
   def getReportsCountCurve() = UserAwareAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, UserRole.Admin)
+      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -57,7 +57,7 @@ class StatisticController @Inject() (
             .string("tickDuration")
             .flatMap(CurveTickDuration.namesToValuesMap.get)
             .getOrElse(CurveTickDuration.Month)
-          _stats.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
+          statsOrchestrator.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
         }
       )
   }
@@ -65,39 +65,31 @@ class StatisticController @Inject() (
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRole.Admin, UserRole.DGCCRF)
   ).async {
-    _stats
+    statsOrchestrator
       .getReadAvgDelay(companyId)
       .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
-    _stats
-      .getResponseAvgDelay(companyId: Option[UUID])
+  def getDelayReportResponseInHours(companyId: Option[UUID]) = SecuredAction.async { request =>
+    statsOrchestrator
+      .getResponseAvgDelay(companyId: Option[UUID], request.identity.userRole)
       .map(count => Ok(Json.toJson(StatsValue(count.map(_.toHours.toInt)))))
   }
 
-  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
-    _stats.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportResponseReviews(companyId: Option[UUID]) = SecuredAction.async {
+    statsOrchestrator.getReportResponseReview(companyId).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
-    _stats.getReportsTagsDistribution(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportsTagsDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+    statsOrchestrator.getReportsTagsDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction(
-    WithRole(UserRole.Admin, UserRole.DGCCRF)
-  ).async {
-    _stats.getReportsStatusDistribution(companyId).map(x => Ok(Json.toJson(x)))
+  def getReportsStatusDistribution(companyId: Option[UUID]) = SecuredAction.async { request =>
+    statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
   def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
@@ -113,7 +105,7 @@ class StatisticController @Inject() (
             )
           )
 
-      _stats
+      statsOrchestrator
         .getProReportResponseStat(
           ticks.getOrElse(12),
           reportResponseStatus
@@ -123,26 +115,26 @@ class StatisticController @Inject() (
     }
 
   def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.dgccrfAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfActiveAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.dgccrfActiveAccountsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfSubscription(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.dgccrfSubscription(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def dgccrfControlsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    _stats.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+    statsOrchestrator.dgccrfControlsCurve(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
   }
 
   def countByDepartments() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
     val mapper = new QueryStringMapper(request.queryString)
     val start = mapper.localDate("start")
     val end = mapper.localDate("end")
-    _stats.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
+    statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
   }
 
 }

@@ -10,6 +10,7 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
@@ -20,7 +21,14 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
-import repositories._
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.emailvalidation.EmailValidationRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -215,6 +223,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachmentService = app.injector.instanceOf[AttachementService]
   lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
@@ -268,7 +277,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             )
           )
         )
-        _ <- companyRepository.createUserAccess(c.id, u.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(c.id, u.id, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
     )

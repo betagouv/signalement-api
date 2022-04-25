@@ -8,7 +8,7 @@ import models.UserPermission
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.SubscriptionRepository
+import repositories.subscription.SubscriptionRepository
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission

@@ -2,6 +2,7 @@ package tasks.report
 
 import cats.data.Validated.Valid
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import org.specs2.Specification
@@ -9,7 +10,13 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
 import tasks.Task
@@ -332,6 +339,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reportTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]
@@ -344,7 +352,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
       for {
         company <- companyRepository.getOrCreate(company.siret, company)
         admin <- userRepository.create(user)
-        _ <- companyRepository.createUserAccess(company.id, admin.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(company.id, admin.id, AccessLevel.ADMIN)
       } yield (),
       Duration.Inf
     )

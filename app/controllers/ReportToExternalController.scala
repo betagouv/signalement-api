@@ -13,7 +13,6 @@ import models.report.ReportWithFilesToExternal.format
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories.ReportRepository
 import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 
@@ -26,9 +25,12 @@ import scala.util.Success
 import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
 import models.report.ReportTag
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
     reportOrchestrator: ReportOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
@@ -43,7 +45,7 @@ class ReportToExternalController @Inject() (
       case Success(id) =>
         for {
           report <- reportRepository.getReport(id)
-          reportFiles <- report.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+          reportFiles <- report.map(r => reportFileRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield report
           .map(report => ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))
           .map(ReportWithFilesToExternal.fromReportWithFiles)

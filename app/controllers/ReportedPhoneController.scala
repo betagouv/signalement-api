@@ -7,9 +7,9 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories.AsyncFileRepository
-import repositories.CompanyRepository
-import repositories.ReportRepository
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole

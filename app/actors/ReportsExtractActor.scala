@@ -13,6 +13,7 @@ import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFileOrigin
@@ -22,7 +23,10 @@ import models.report.ReportStatus
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories._
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventRepository
+import repositories.reportfile.ReportFileRepository
 import services.S3Service
 import utils.Constants
 import utils.Constants.Departments
@@ -45,8 +49,8 @@ object ReportsExtractActor {
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    companyRepository: CompanyRepository,
-    reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
+    companyAccessRepository: CompanyAccessRepository,
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepository,
     asyncFileRepository: AsyncFileRepository,
@@ -313,9 +317,9 @@ class ReportsExtractActor @Inject() (
           limit = Some(signalConsoConfiguration.reportsExportLimitMax)
         )
         .map(_.entities.map(_.report))
-      reportFilesMap <- reportRepository.prefetchReportsFiles(paginatedReports.map(_.id))
+      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
       reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
-      companyAdminsMap <- companyRepository.fetchUsersByCompanyId(
+      companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
       )

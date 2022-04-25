@@ -3,6 +3,7 @@ package repositories
 import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
+import models.report.ReportTag
 import models.website.WebsiteKind
 
 import java.time.OffsetDateTime
@@ -27,7 +28,14 @@ trait PostgresProfile
       .mapTo[WebsiteKind](WebsiteKind.fromValue(_), _.value)
       .to(_.toList)
 
-    val date_part = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
+    val SubstrSQLFunction = SimpleFunction.ternary[String, Int, Int, String]("substr")
+
+    val DatePartSQLFunction = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
+
+    val ArrayToStringSQLFunction = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
+    SimpleFunction.binary[List[ReportTag], Int, Int]("array_length")
+
+    SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
   }
   override protected def computeCapabilities: Set[slick.basic.Capability] =

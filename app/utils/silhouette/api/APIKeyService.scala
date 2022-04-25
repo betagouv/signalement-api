@@ -2,7 +2,7 @@ package utils.silhouette.api
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import repositories.ConsumerRepository
+import repositories.consumer.ConsumerRepository
 
 import java.util.UUID
 import javax.inject.Inject

@@ -3,10 +3,10 @@ package tasks.account
 import cats.implicits.toTraverseOps
 import models.User
 import play.api.Logger
-import repositories.AsyncFileRepository
-import repositories.EventRepository
-import repositories.SubscriptionRepository
-import repositories.UserRepository
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.event.EventRepository
+import repositories.subscription.SubscriptionRepository
+import repositories.user.UserRepository
 import tasks.model.TaskType
 import tasks.TaskExecutionResult
 import tasks.TaskExecutionResults

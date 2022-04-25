@@ -7,13 +7,13 @@ import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
 import models.EmailValidation
 import models.EmailValidationCreate
-import repositories._
 import services.Email.ConsumerValidateEmail
 import services.MailService
 import utils.EmailAddress
 import models.email.ValidateEmailCode
 import models.email.EmailValidationResult
 import play.api.Logger
+import repositories.emailvalidation.EmailValidationRepository
 
 import java.time.OffsetDateTime
 import javax.inject.Inject

@@ -4,12 +4,18 @@ import cats.data.NonEmptyList
 import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
+import models.UserRole
 import models.report.ReportFilter
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportTag
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.event.EventRepository
+import repositories.report.ReportRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -19,6 +25,7 @@ import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 
 import java.sql.Timestamp
+import java.time.Duration
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
@@ -69,9 +76,11 @@ class StatsOrchestrator @Inject() (
       case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
     }
 
-  def getReportsTagsDistribution(companyId: Option[UUID]) = reportRepository.getReportsTagsDistribution(companyId)
+  def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
+    reportRepository.getReportsTagsDistribution(companyId, userRole)
 
-  def getReportsStatusDistribution(companyId: Option[UUID]) = reportRepository.getReportsStatusDistribution(companyId)
+  def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]] =
+    reportRepository.getReportsStatusDistribution(companyId, userRole)
 
   def getReportResponseReview(id: Option[UUID]): Future[ReportReviewStats] =
     reportConsumerReviewRepository.findByCompany(id).map { events =>
@@ -87,8 +96,18 @@ class StatsOrchestrator @Inject() (
   def getReadAvgDelay(companyId: Option[UUID] = None) =
     eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
 
-  def getResponseAvgDelay(companyId: Option[UUID] = None) =
-    eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_PRO_RESPONSE, companyId)
+  def getResponseAvgDelay(companyId: Option[UUID] = None, userRole: UserRole): Future[Option[Duration]] = {
+    val (statusFilter, tagFilterNot) = userRole match {
+      case UserRole.Admin | UserRole.DGCCRF => (Seq.empty[ReportStatus], Seq.empty[ReportTag])
+      case UserRole.Professionnel => (ReportStatus.statusVisibleByPro, ReportTag.ReportTagHiddenToProfessionnel)
+    }
+    eventRepository.getAvgTimeUntilEvent(
+      action = ActionEvent.REPORT_PRO_RESPONSE,
+      companyId = companyId,
+      status = statusFilter,
+      withoutTags = tagFilterNot
+    )
+  }
 
   def getProReportTransmittedStat(ticks: Int) =
     eventRepository

@@ -1,12 +1,9 @@
 package tasks.report
 
 import config.TaskConfiguration
-import models.Event.stringToDetailsJsValue
-import models.Event
+import models.event.Event.stringToDetailsJsValue
 import models.User
 import play.api.Logger
-import repositories.EventRepository
-import repositories.ReportRepository
 import services.Email.ConsumerReportClosedNoAction
 import services.MailService
 import tasks.model.TaskType
@@ -20,8 +17,11 @@ import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
 import cats.implicits._
+import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
