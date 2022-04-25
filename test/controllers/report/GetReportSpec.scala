@@ -9,8 +9,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import config.EmailConfiguration
-import config.SignalConsoConfiguration
 import controllers.ReportController
 import models._
 import models.event.Event
@@ -23,7 +21,6 @@ import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.Spec
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -43,6 +40,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.silhouette.auth.AuthEnv
+import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 
@@ -240,7 +238,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
 }
 
-trait GetReportContext extends Mockito {
+trait GetReportContext extends AppSpec {
 
   implicit val ec = ExecutionContext.global
 
@@ -340,8 +338,8 @@ trait GetReportContext extends Mockito {
   lazy val mailerService = application.injector.instanceOf[MailerService]
   lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
-  val config = application.injector.instanceOf[SignalConsoConfiguration]
-  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
+//  val config = application.injector.instanceOf[SignalConsoConfiguration]
+//  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(
