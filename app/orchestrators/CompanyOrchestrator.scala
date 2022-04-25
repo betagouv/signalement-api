@@ -158,8 +158,6 @@ class CompanyOrchestrator @Inject() (
     } yield results.flatten
   }
 
-  def companyDetails(id: UUID): Future[Option[Company]] = companyRepository.fetchCompany(id)
-
   def companiesToActivate(): Future[List[JsObject]] =
     for {
       accesses <- accessTokenRepository.companiesToActivate()
