@@ -96,7 +96,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "Donnez nous votre avis sur la réponse de l'entreprise",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -139,7 +139,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "Donnez nous votre avis sur la réponse de l'entreprise",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -182,7 +182,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "Donnez nous votre avis sur la réponse de l'entreprise",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -223,7 +223,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "Donnez nous votre avis sur la réponse de l'entreprise",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,

@@ -6,7 +6,7 @@
 @import models.report.review.ResponseEvaluation
 @(report: Report, reportResponse: ReportResponse, reviewUrl: (ResponseEvaluation) => URI)
 
-@views.html.mails.layout("Donnez nous votre avis sur la réponse de l'entreprise") {
+@views.html.mails.layout("L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse") {
     <p>
         Bonjour @report.firstName @report.lastName,
     </p>
