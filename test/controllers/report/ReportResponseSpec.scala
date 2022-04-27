@@ -11,6 +11,7 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import controllers.ReportController
 import models._
+import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportFileOrigin
@@ -25,7 +26,14 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
+import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -88,7 +96,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "L'entreprise a répondu à votre signalement",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -131,7 +139,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "L'entreprise a répondu à votre signalement",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -174,7 +182,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "L'entreprise a répondu à votre signalement",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -215,7 +223,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
       )}
         And an acknowledgment email is sent to the consumer                      ${mailMustHaveBeenSent(
         reportFixture.email,
-        "L'entreprise a répondu à votre signalement",
+        "L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse",
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
@@ -236,9 +244,11 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
+  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
@@ -309,14 +319,18 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- companyRepository.getOrCreate(headOfficeCompany.siret, headOfficeCompany)
 
-        _ <- companyRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
-        _ <- companyRepository.createUserAccess(headOfficeCompany.id, concernedHeadOfficeProUser.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(company.id, concernedProUser.id, AccessLevel.ADMIN)
+        _ <- companyAccessRepository.createUserAccess(
+          headOfficeCompany.id,
+          concernedHeadOfficeProUser.id,
+          AccessLevel.ADMIN
+        )
 
         _ <- companyDataRepository.create(companyData)
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        _ <- reportRepository.createFile(reportResponseFile)
+        _ <- reportFileRepository.createFile(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -392,7 +406,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportFileMustHaveBeenAttachedToReport() = {
-    val reportFile = Await.result(reportRepository.getFile(reportResponseFile.id), Duration.Inf).get
+    val reportFile = Await.result(reportFileRepository.getFile(reportResponseFile.id), Duration.Inf).get
     reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportFixture.id)))
   }
 

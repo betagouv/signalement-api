@@ -23,7 +23,6 @@ import org.specs2.matcher.FutureMatchers
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.mvc.Http.Status
-import repositories._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants.ActionEvent.ActionEventValue
@@ -31,6 +30,11 @@ import utils.AppSpec
 import utils.Fixtures
 import play.api.test.Helpers._
 import play.api.test._
+import repositories.company.CompanyRepository
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime

@@ -8,7 +8,7 @@ import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
-import repositories._
+import repositories.company.CompanyRepository
 import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -113,7 +113,7 @@ trait BaseCompanyController extends BaseController {
       def executionContext = ec
       def refine[A](request: SecuredRequestWrapper[A]) =
         for {
-          company <- companyRepository.findBySiret(SIRET(siret))
+          company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
           accessLevel <-
             if (Seq(UserRole.Admin, UserRole.DGCCRF).contains(request.identity.userRole))
               Future(Some(AccessLevel.ADMIN))

@@ -5,8 +5,8 @@ import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.report.ReportFilter
 import play.api.Logger
-import repositories.ReportRepository
-import repositories.SubscriptionRepository
+import repositories.report.ReportRepository
+import repositories.subscription.SubscriptionRepository
 import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.computeStartingTime

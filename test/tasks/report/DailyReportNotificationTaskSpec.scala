@@ -5,10 +5,12 @@ import models.report.ReportCategory
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories._
 import services.AttachementService
 import services.MailerService
 import models.report.ReportTag
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
+import repositories.subscription.SubscriptionRepository
 import utils._
 
 import java.time.LocalDate

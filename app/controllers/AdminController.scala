@@ -8,6 +8,7 @@ import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.event.Event
 import models.report.Gender
 import models.report.Report
 import models.report.ReportResponse
@@ -18,9 +19,9 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.CompanyRepository
-import repositories.EventRepository
-import repositories.ReportRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -58,7 +59,7 @@ import scala.concurrent.duration._
 class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepository,
-    companyRepository: CompanyRepository,
+    companyAccessRepository: CompanyAccessRepository,
     eventRepository: EventRepository,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
@@ -82,6 +83,7 @@ class AdminController @Inject() (
     companyName = None,
     companyAddress = Address(None, None, None, None),
     companySiret = None,
+    companyActivityCode = None,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     creationDate = OffsetDateTime.now,
@@ -102,7 +104,7 @@ class AdminController @Inject() (
 
   private def genCompany = Company(
     id = UUID.randomUUID,
-    siret = SIRET("123456789"),
+    siret = SIRET.fromUnsafe("123456789"),
     creationDate = OffsetDateTime.now,
     name = "Test Entreprise",
     address = Address(
@@ -375,7 +377,7 @@ class AdminController @Inject() (
       reportIds <- reportRepository.getReportsByIds(reportInputList.reportIds)
       reportAndCompanyIdList = reportIds.flatMap(report => report.companyId.map(c => (report, c)))
       reportAndEmailList <- reportAndCompanyIdList.map { case (report, companyId) =>
-        companyRepository
+        companyAccessRepository
           .fetchAdmins(companyId)
           .map(_.map(_.email).distinct)
           .map(emails => (report, NonEmptyList.fromList(emails)))

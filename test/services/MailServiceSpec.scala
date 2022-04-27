@@ -14,9 +14,11 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import repositories.CompanyRepository
-import repositories.ReportNotificationBlockedRepository
-import repositories._
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepository
+import repositories.user.UserRepository
 import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
@@ -40,6 +42,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
   lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
@@ -78,9 +81,21 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
         _ <- companyRepository.getOrCreate(subsidiaryCompany.siret, subsidiaryCompany)
         _ <- companyRepository.getOrCreate(unrelatedCompany.siret, unrelatedCompany)
 
-        _ <- companyRepository.createUserAccess(headOfficeCompany.id, proWithAccessToHeadOffice.id, AccessLevel.MEMBER)
-        _ <- companyRepository.createUserAccess(subsidiaryCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
-        _ <- companyRepository.createUserAccess(unrelatedCompany.id, proWithAccessToSubsidiary.id, AccessLevel.MEMBER)
+        _ <- companyAccessRepository.createUserAccess(
+          headOfficeCompany.id,
+          proWithAccessToHeadOffice.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyAccessRepository.createUserAccess(
+          subsidiaryCompany.id,
+          proWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
+        _ <- companyAccessRepository.createUserAccess(
+          unrelatedCompany.id,
+          proWithAccessToSubsidiary.id,
+          AccessLevel.MEMBER
+        )
 
         _ <- companyDataRepository.create(headOfficeCompanyData)
         _ <- companyDataRepository.create(subsidiaryCompanyData)

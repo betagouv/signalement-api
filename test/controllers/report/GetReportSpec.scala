@@ -9,11 +9,9 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import config.EmailConfiguration
-import config.SignalConsoConfiguration
 import controllers.ReportController
-import models.report
 import models._
+import models.event.Event
 import models.report.Gender
 import models.report.Report
 import models.report.ReportStatus
@@ -23,7 +21,6 @@ import net.codingwell.scalaguice.ScalaModule
 import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.Spec
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
 import play.api.Configuration
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -32,7 +29,10 @@ import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
-import repositories._
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import services.AttachementService
 import services.MailService
 import services.MailerService
@@ -40,6 +40,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.silhouette.auth.AuthEnv
+import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
 
@@ -237,7 +238,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
 }
 
-trait GetReportContext extends Mockito {
+trait GetReportContext extends AppSpec {
 
   implicit val ec = ExecutionContext.global
 
@@ -252,7 +253,7 @@ trait GetReportContext extends Mockito {
   val address = Fixtures.genAddress()
 
   private val valueGender: Option[Gender] = Fixtures.genGender.sample.get
-  val neverRequestedReport = report.Report(
+  val neverRequestedReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -261,6 +262,7 @@ trait GetReportContext extends Mockito {
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
     companySiret = Some(company.siret),
+    companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -271,7 +273,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.TraitementEnCours
   )
 
-  val neverRequestedFinalReport = report.Report(
+  val neverRequestedFinalReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -280,6 +282,7 @@ trait GetReportContext extends Mockito {
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
     companySiret = Some(company.siret),
+    companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -290,7 +293,7 @@ trait GetReportContext extends Mockito {
     status = ReportStatus.ConsulteIgnore
   )
 
-  val alreadyRequestedReport = report.Report(
+  val alreadyRequestedReport = Report(
     gender = valueGender,
     category = "category",
     subcategories = List("subcategory"),
@@ -299,6 +302,7 @@ trait GetReportContext extends Mockito {
     companyName = Some("companyName"),
     companyAddress = address.sample.get,
     companySiret = Some(company.siret),
+    companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
     phone = None,
     firstName = "firstName",
@@ -327,14 +331,15 @@ trait GetReportContext extends Mockito {
   )
 
   val mockReportRepository = mock[ReportRepository]
+  val mockReportFileRepository = mock[ReportFileRepository]
   val mockEventRepository = mock[EventRepository]
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
   lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
-  val config = application.injector.instanceOf[SignalConsoConfiguration]
-  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
+//  val config = application.injector.instanceOf[SignalConsoConfiguration]
+//  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(
@@ -347,7 +352,7 @@ trait GetReportContext extends Mockito {
   mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
   mockReportRepository.getReport(alreadyRequestedReport.id) returns Future(Some(alreadyRequestedReport))
   mockReportRepository.update(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
-  mockReportRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
+  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
   mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)

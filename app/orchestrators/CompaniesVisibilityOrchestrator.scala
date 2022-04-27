@@ -5,7 +5,9 @@ import models.Company
 import models.CompanyWithAccess
 import models.User
 import models.UserRole
-import repositories._
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
 import utils.SIREN
 import utils.SIRET
 
@@ -20,26 +22,27 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 
 class CompaniesVisibilityOrchestrator @Inject() (
     companyDataRepo: CompanyDataRepository,
-    companyRepo: CompanyRepository
+    companyRepo: CompanyRepository,
+    companyAccessRepository: CompanyAccessRepository
 )(implicit val executionContext: ExecutionContext) {
 
   def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =
     for {
       companiesDataIncludingHeadOffice <- companyDataRepo.searchBySiretIncludingHeadOffice(siret)
       companies <- companyRepo.findBySirets(companiesDataIncludingHeadOffice.map(_.siret))
-      admins <- companyRepo.fetchUsersByCompanies(companies.map(_.id))
+      admins <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
     } yield admins
 
   def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
-      adminsByCompanyIdMap <- companyRepo.fetchUsersByCompanyId(companies.map(_._2))
+      adminsByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyId(companies.map(_._2))
       headOfficesCompany <- companyDataRepo
         .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
         .map(_.map(_._1))
         .flatMap { companyDatas =>
           companyRepo.findBySirets(companyDatas.map(_.siret))
         }
-      headOfficeAdminsMap <- companyRepo.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
+      headOfficeAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
       headOfficeIdByCompanyIdMap = companies
         .groupBy(_._2)
         .view
@@ -56,7 +59,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
 
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
-      authorizedCompanies <- companyRepo.fetchCompaniesWithLevel(pro)
+      authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
       headOfficeSirets <- companyDataRepo
         .filterHeadOffices(authorizedCompanies.map(_.company.siret))
         .map(_.map(_.siret))
@@ -83,7 +86,7 @@ class CompaniesVisibilityOrchestrator @Inject() (
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
     for {
-      authorizedSirets <- companyRepo.fetchCompaniesWithLevel(user).map(_.map(_.company.siret))
+      authorizedSirets <- companyAccessRepository.fetchCompaniesWithLevel(user).map(_.map(_.company.siret))
       authorizedHeadofficeSirens <- companyDataRepo
         .searchBySirets(authorizedSirets, includeClosed = true)
         .map(companies =>

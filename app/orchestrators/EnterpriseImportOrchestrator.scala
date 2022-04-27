@@ -6,7 +6,7 @@ import akka.pattern.ask
 import models.EnterpriseImportInfo
 import models.EtablissementFile
 import models.UniteLegaleFile
-import repositories.EnterpriseImportInfoRepository
+import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 
 import javax.inject.Inject
 import javax.inject.Named

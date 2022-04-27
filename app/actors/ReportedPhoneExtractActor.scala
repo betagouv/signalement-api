@@ -14,7 +14,8 @@ import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories._
+import repositories.asyncfiles.AsyncFileRepository
+import repositories.report.ReportRepository
 import services.S3Service
 import utils.DateUtils
 

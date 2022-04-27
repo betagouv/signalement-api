@@ -7,7 +7,7 @@ import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
-import models.Event.stringToDetailsJsValue
+import models.event.Event.stringToDetailsJsValue
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
@@ -15,6 +15,7 @@ import models.ActivationRequest
 import models._
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
+import models.event.Event
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
@@ -22,8 +23,12 @@ import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
-import repositories.AccessTokenRepository
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.companydata.CompanyDataRepository
+import repositories.event.EventRepository
+import repositories.user.UserRepository
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
@@ -45,6 +50,7 @@ import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepository,
+    companyAccessRepository: CompanyAccessRepository,
     companyDataRepository: CompanyDataRepository,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
@@ -59,20 +65,20 @@ class AccessesOrchestrator @Inject() (
   implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listAccesses(company: Company, user: User) =
+  def listAccesses(company: Company, user: User): Future[List[UserWithAccessLevel]] =
     getHeadOffice(company).flatMap {
 
       case Some(headOffice) if headOffice.siret == company.siret =>
         logger.debug(s"$company is a head office, returning access for head office")
         for {
-          userLevel <- companyRepository.getUserLevel(company.id, user)
+          userLevel <- companyAccessRepository.getUserLevel(company.id, user)
           access <- getHeadOfficeAccess(user, userLevel, company, editable = true)
         } yield access
 
       case maybeHeadOffice =>
         logger.debug(s"$company is not a head office, returning access for head office and subsidiaries")
         for {
-          userAccessLevel <- companyRepository.getUserLevel(company.id, user)
+          userAccessLevel <- companyAccessRepository.getUserLevel(company.id, user)
           subsidiaryUserAccess <- getSubsidiaryAccess(user, userAccessLevel, List(company), editable = true)
           maybeHeadOfficeCompany <- maybeHeadOffice match {
             case Some(headOffice) => companyRepository.findBySiret(headOffice.siret)
@@ -128,7 +134,7 @@ class AccessesOrchestrator @Inject() (
       isHeadOffice: Boolean
   ): Future[List[UserWithAccessLevel]] =
     for {
-      companyAccess <- companyRepository
+      companyAccess <- companyAccessRepository
         .fetchUsersWithLevel(companies.map(_.id))
     } yield (userLevel, user.userRole) match {
       case (_, Admin) =>
@@ -153,7 +159,7 @@ class AccessesOrchestrator @Inject() (
     }
 
   def proFirstActivationCount(ticks: Option[Int]) =
-    companyRepository
+    companyAccessRepository
       .proFirstActivationCount(ticks.getOrElse(12))
       .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
 

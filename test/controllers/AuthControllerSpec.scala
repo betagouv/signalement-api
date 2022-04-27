@@ -26,7 +26,11 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.authattempt.AuthAttemptRepository
+import repositories.authtoken.AuthTokenRepository
+import repositories.company.CompanyRepository
+import repositories.user.UserRepository
 import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
@@ -51,6 +55,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val authAttemptRepository = app.injector.instanceOf[AuthAttemptRepository]
   lazy val passwordHasherRegistry = app.injector.instanceOf[PasswordHasherRegistry]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
@@ -108,7 +113,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res <- route(app, request).get
-          authAttempts <- userRepository.listAuthAttempts(login)
+          authAttempts <- authAttemptRepository.listAuthAttempts(login)
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
@@ -134,7 +139,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           res <- route(app, request).get
-          authAttempts <- userRepository.listAuthAttempts(login)
+          authAttempts <- authAttemptRepository.listAuthAttempts(login)
         } yield (res, authAttempts)
 
         Helpers.status(result.map(_._1)) must beEqualTo(UNAUTHORIZED)
@@ -162,7 +167,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       val result = for {
         res <- route(app, request).get
-        authAttempts <- userRepository.listAuthAttempts(login)
+        authAttempts <- authAttemptRepository.listAuthAttempts(login)
       } yield (res, authAttempts)
 
       Helpers.status(result.map(_._1)) must beEqualTo(OK)

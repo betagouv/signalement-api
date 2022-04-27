@@ -6,11 +6,13 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories._
 import services.AttachementService
 import services.MailerService
 import utils._
 import play.api.libs.mailer.Attachment
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
+import repositories.subscription.SubscriptionRepository
 
 import java.time.LocalDate
 import java.time.Period

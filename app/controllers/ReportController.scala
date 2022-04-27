@@ -17,13 +17,14 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories._
+import repositories.event.EventFilter
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
+import repositories.reportfile.ReportFileRepository
 import services.PDFService
 import utils.Constants.ActionEvent._
-import utils.Constants.EventType
 import utils.Constants
 import utils.FrontRoute
-import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
@@ -39,8 +40,8 @@ import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    companyRepository: CompanyRepository,
     reportRepository: ReportRepository,
+    reportFileRepository: ReportFileRepository,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
@@ -158,7 +159,7 @@ class ReportController @Inject() (
 
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
     val uuid = UUID.fromString(id)
-    reportRepository
+    reportFileRepository
       .getFile(uuid)
       .flatMap {
         case Some(file) if file.filename == filename =>
@@ -182,7 +183,9 @@ class ReportController @Inject() (
           viewedReport <- visibleReport
             .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
             .getOrElse(Future(None))
-          reportFiles <- viewedReport.map(r => reportRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
+          reportFiles <- viewedReport
+            .map(r => reportFileRepository.retrieveReportFiles(r.id))
+            .getOrElse(Future(List.empty))
         } yield viewedReport
           .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
           .getOrElse(NotFound)
@@ -200,7 +203,7 @@ class ReportController @Inject() (
             .flatMap(_.companyId)
             .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
             .getOrElse(Future(List.empty))
-          reportFiles <- reportRepository.retrieveReportFiles(id)
+          reportFiles <- reportFileRepository.retrieveReportFiles(id)
         } yield {
           val responseOption = events
             .map(_._1)
@@ -229,92 +232,6 @@ class ReportController @Inject() (
       case Success(id) => reportOrchestrator.deleteReport(id).map(if (_) NoContent else NotFound)
     }
   }
-
-  def getEvents(reportId: String, eventType: Option[String]) =
-    SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-      val filter = eventType match {
-        case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
-        case None    => EventFilter()
-      }
-
-      Try(UUID.fromString(reportId)) match {
-        case Failure(_) => Future.successful(PreconditionFailed)
-        case Success(id) =>
-          for {
-            report <- reportRepository.getReport(id)
-            events <- eventRepository.getEventsWithUsers(id, filter)
-          } yield report match {
-            case Some(_) =>
-              Ok(
-                Json.toJson(
-                  events
-                    .filter(event =>
-                      request.identity.userRole match {
-                        case UserRole.Professionnel =>
-                          List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
-                        case _ => true
-                      }
-                    )
-                    .map { case (event, user) =>
-                      Json.obj(
-                        "data" -> event,
-                        "user" -> user.map(u =>
-                          Json.obj(
-                            "firstName" -> u.firstName,
-                            "lastName" -> u.lastName,
-                            "role" -> u.userRole.entryName
-                          )
-                        )
-                      )
-                    }
-                )
-              )
-            case None => NotFound
-          }
-      }
-    }
-
-  def getCompanyEvents(siret: String, eventType: Option[String]) =
-    SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-      val filter = eventType match {
-        case Some(_) => EventFilter(eventType = Some(EventType.fromValue(eventType.get)))
-        case None    => EventFilter()
-      }
-      for {
-        company <- companyRepository.findBySiret(SIRET(siret))
-        events <- company
-          .map(_.id)
-          .map(id => eventRepository.getCompanyEventsWithUsers(id, filter).map(Some(_)))
-          .getOrElse(Future(None))
-      } yield company match {
-        case Some(_) =>
-          Ok(
-            Json.toJson(
-              events.get
-                .filter(event =>
-                  request.identity.userRole match {
-                    case UserRole.Professionnel =>
-                      List(REPORT_PRO_RESPONSE, REPORT_READING_BY_PRO) contains event._1.action
-                    case _ => true
-                  }
-                )
-                .map { case (event, user) =>
-                  Json.obj(
-                    "data" -> event,
-                    "user" -> user.map(u =>
-                      Json.obj(
-                        "firstName" -> u.firstName,
-                        "lastName" -> u.lastName,
-                        "role" -> u.userRole.entryName
-                      )
-                    )
-                  )
-                }
-            )
-          )
-        case None => NotFound
-      }
-    }
 
   private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {

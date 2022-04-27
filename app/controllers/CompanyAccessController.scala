@@ -9,7 +9,10 @@ import orchestrators.CompanyAccessOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
-import repositories._
+import repositories.accesstoken.AccessTokenRepository
+import repositories.company.CompanyRepository
+import repositories.companyaccess.CompanyAccessRepository
+import repositories.user.UserRepository
 import utils.EmailAddress
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -25,6 +28,7 @@ import scala.concurrent.Future
 class CompanyAccessController @Inject() (
     val userRepository: UserRepository,
     val companyRepository: CompanyRepository,
+    val companyAccessRepository: CompanyAccessRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
@@ -38,11 +42,19 @@ class CompanyAccessController @Inject() (
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     accessesOrchestrator
       .listAccesses(request.company, request.identity)
-      .map(res => Ok(Json.toJson(res)))
+      .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
+  }
+
+  def countAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN, AccessLevel.MEMBER)).async {
+    implicit request =>
+      accessesOrchestrator
+        .listAccesses(request.company, request.identity)
+        .map(_.length)
+        .map(count => Ok(Json.toJson(count)))
   }
 
   def myCompanies = SecuredAction.async { implicit request =>
-    companyRepository
+    companyAccessRepository
       .fetchCompaniesWithLevel(request.identity)
       .map(companies => Ok(Json.toJson(companies)))
   }
@@ -55,7 +67,7 @@ class CompanyAccessController @Inject() (
           for {
             user <- userRepository.get(userId)
             _ <- user
-              .map(u => companyRepository.createUserAccess(request.company.id, u.id, level))
+              .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, level))
               .getOrElse(Future(()))
           } yield if (user.isDefined) Ok else NotFound
         )
@@ -67,7 +79,7 @@ class CompanyAccessController @Inject() (
       for {
         user <- userRepository.get(userId)
         _ <- user
-          .map(u => companyRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
+          .map(u => companyAccessRepository.createUserAccess(request.company.id, u.id, AccessLevel.NONE))
           .getOrElse(Future(()))
       } yield if (user.isDefined) Ok else NotFound
   }
@@ -133,14 +145,14 @@ class CompanyAccessController @Inject() (
 
   def fetchTokenInfo(siret: String, token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
-      .fetchCompanyUserActivationToken(SIRET(siret), token)
+      .fetchCompanyUserActivationToken(SIRET.fromUnsafe(siret), token)
       .map(token => Ok(Json.toJson(token)))
   }
 
   def sendActivationLink(siret: String) = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       activationLinkRequest <- request.parseBody[ActivationLinkRequest]()
-      _ <- companyAccessOrchestrator.sendActivationLink(SIRET(siret), activationLinkRequest)
+      _ <- companyAccessOrchestrator.sendActivationLink(SIRET.fromUnsafe(siret), activationLinkRequest)
     } yield Ok
 
   }
@@ -155,7 +167,7 @@ class CompanyAccessController @Inject() (
         errors => Future.successful(BadRequest(JsError.toJson(errors))),
         acceptTokenRequest =>
           for {
-            company <- companyRepository.findBySiret(SIRET(siret))
+            company <- companyRepository.findBySiret(SIRET.fromUnsafe(siret))
             token <- company
               .map(
                 accessTokenRepository

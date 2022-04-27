@@ -1,14 +1,14 @@
 package tasks.report
 
 import config.TaskConfiguration
-import models.Event.stringToDetailsJsValue
-import models.Event
+import models.event.Event.stringToDetailsJsValue
 import models.User
+import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
-import repositories.EventRepository
-import repositories.ReportRepository
+import repositories.event.EventRepository
+import repositories.report.ReportRepository
 import services.Email.ConsumerReportClosedNoReading
 import services.MailService
 import tasks.model.TaskType

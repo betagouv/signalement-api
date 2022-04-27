@@ -5,7 +5,7 @@ import models.Rating
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.RatingRepository
+import repositories.rating.RatingRepository
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime

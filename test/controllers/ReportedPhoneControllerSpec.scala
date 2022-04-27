@@ -13,8 +13,9 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.CompanyRepository
-import repositories._
+import repositories.company.CompanyRepository
+import repositories.report.ReportRepository
+import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures

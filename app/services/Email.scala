@@ -3,10 +3,10 @@ package services
 import cats.data.NonEmptyList
 import models.Company
 import models.EmailValidation
-import models.Event
 import models.Subscription
 import models.User
 import models.auth.AuthToken
+import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse

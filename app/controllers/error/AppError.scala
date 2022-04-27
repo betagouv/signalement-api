@@ -269,4 +269,18 @@ object AppError {
       s"Un avis existe déjà pour la réponse de l'entreprise."
   }
 
+  final case class ReportNotFound(reportId: UUID) extends NotFoundError {
+    override val `type`: String = "SC-0033"
+    override val title: String = s"Report with id ${reportId.toString} not found"
+    override val details: String =
+      s"Signalement avec id ${reportId.toString} introuvable"
+  }
+
+  final case class MalformedSIRET(InvalidSIRET: String) extends BadRequestError {
+    override val `type`: String = "SC-0034"
+    override val title: String = "Malformed SIRET"
+    override val details: String =
+      s"Malformed SIRET : $InvalidSIRET"
+  }
+
 }

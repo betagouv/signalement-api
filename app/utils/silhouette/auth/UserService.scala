@@ -3,7 +3,7 @@ package utils.silhouette.auth
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.User
-import repositories.UserRepository
+import repositories.user.UserRepository
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

@@ -5,11 +5,15 @@ import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.JsValue
 import play.api.libs.json.Reads
+import play.api.mvc.PathBindable
 import play.api.mvc.QueryStringBindable
 import play.api.mvc.Request
 import cats.syntax.either._
+import models.extractUUID
 import models.report.ReportResponseType
+import utils.SIRET
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -22,6 +26,20 @@ package object controllers {
       .transform[WebsiteKind](
         kinds => WebsiteKind.fromValue(kinds),
         websiteKinds => websiteKinds.value
+      )
+
+  implicit val UUIDPathBindable =
+    PathBindable.bindableString
+      .transform[UUID](
+        id => extractUUID(id),
+        uuid => uuid.toString
+      )
+
+  implicit val SIRETPathBindable =
+    PathBindable.bindableString
+      .transform[SIRET](
+        siret => SIRET(siret),
+        siret => siret.value
       )
 
   implicit val ReportResponseTypeQueryStringBindable: QueryStringBindable[ReportResponseType] =

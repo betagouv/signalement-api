@@ -22,14 +22,15 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import models.User
-import repositories.UserRepository
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import utils.ErrorHandler
 import net.ceedubs.ficus.readers.EnumerationReader._
+import repositories.user.UserRepository
 import utils.silhouette.api.APIKey
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.api.APIKeyRequestProvider
