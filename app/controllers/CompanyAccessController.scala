@@ -42,7 +42,15 @@ class CompanyAccessController @Inject() (
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     accessesOrchestrator
       .listAccesses(request.company, request.identity)
-      .map(res => Ok(Json.toJson(res)))
+      .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
+  }
+
+  def countAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN, AccessLevel.MEMBER)).async {
+    implicit request =>
+      accessesOrchestrator
+        .listAccesses(request.company, request.identity)
+        .map(_.length)
+        .map(count => Ok(Json.toJson(count)))
   }
 
   def myCompanies = SecuredAction.async { implicit request =>

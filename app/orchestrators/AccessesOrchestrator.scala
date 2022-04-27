@@ -65,7 +65,7 @@ class AccessesOrchestrator @Inject() (
   implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listAccesses(company: Company, user: User) =
+  def listAccesses(company: Company, user: User): Future[List[UserWithAccessLevel]] =
     getHeadOffice(company).flatMap {
 
       case Some(headOffice) if headOffice.siret == company.siret =>

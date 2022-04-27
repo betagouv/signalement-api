@@ -75,7 +75,6 @@ object Report {
     def writes(report: Report) =
       Json.obj(
         "id" -> report.id,
-        "gender" -> report.gender,
         "category" -> report.category,
         "subcategories" -> report.subcategories,
         "details" -> report.details,
@@ -85,16 +84,12 @@ object Report {
         "companySiret" -> report.companySiret,
         "creationDate" -> report.creationDate,
         "contactAgreement" -> report.contactAgreement,
-        "employeeConsumer" -> report.employeeConsumer,
         "status" -> report.status,
         "websiteURL" -> report.websiteURL.websiteURL,
         "host" -> report.websiteURL.host,
-        "phone" -> report.phone,
         "vendor" -> report.vendor,
         "tags" -> report.tags,
-        "reponseconsoCode" -> report.reponseconsoCode,
-        "activityCode" -> report.companyActivityCode,
-        "ccrfCode" -> report.ccrfCode
+        "activityCode" -> report.companyActivityCode
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>
@@ -107,9 +102,15 @@ object Report {
         case Some(UserRole.Professionnel) => Json.obj()
         case _ =>
           Json.obj(
-            "consumerPhone" -> report.consumerPhone
+            "ccrfCode" -> report.ccrfCode,
+            "phone" -> report.phone,
+            "consumerPhone" -> report.consumerPhone,
+            "employeeConsumer" -> report.employeeConsumer,
+            "reponseconsoCode" -> report.reponseconsoCode,
+            "gender" -> report.gender
           )
       })
+
   }
 }
 
