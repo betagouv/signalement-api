@@ -283,4 +283,11 @@ object AppError {
       s"Malformed SIRET : $InvalidSIRET"
   }
 
+  final case class CompanyNotFound(companyId: UUID) extends NotFoundError {
+    override val `type`: String = "SC-0033"
+    override val title: String = s"Company with id ${companyId.toString} not found"
+    override val details: String =
+      s"Entreprise avec id ${companyId.toString} introuvable"
+  }
+
 }

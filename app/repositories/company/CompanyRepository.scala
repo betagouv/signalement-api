@@ -47,9 +47,6 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .filterIf(search.activityCodes.nonEmpty) { case (company, _) =>
         company.activityCode.map(a => a.inSet(search.activityCodes)).getOrElse(false)
       }
-      .filterIf(search.companyIds.nonEmpty) { case (company, _) =>
-        company.id.inSet(search.companyIds)
-      }
       .groupBy(_._1)
       .map { case (grouped, all) =>
         (

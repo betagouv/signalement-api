@@ -19,7 +19,6 @@ import repositories.user.UserRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.FrontRoute
-import utils.QueryStringMapper
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -72,20 +71,28 @@ class CompanyController @Inject() (
       )
   }
 
-  def searchRegistered() = SecuredAction.async { request =>
-    val maybeCompanyId: Option[UUID] = new QueryStringMapper(request.queryString).UUID("identity")
-    PaginatedSearch
+  def searchRegistered() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
+    CompanyRegisteredSearch
       .fromQueryString(request.queryString)
+      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
       .fold(
         error => {
           logger.error("Cannot parse querystring" + request.queryString, error)
           Future.successful(BadRequest)
         },
-        paginationFilters =>
+        filters =>
           companyOrchestrator
-            .searchRegistered(maybeCompanyId, paginationFilters, request.identity)
+            .searchRegistered(filters._1, filters._2, request.identity)
             .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
       )
+  }
+
+  def searchById(companyId: UUID) = SecuredAction.async { request =>
+    logger.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    companyOrchestrator
+      .searchRegisteredById(companyId, request.identity)
+      .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
+
   }
 
   def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { _ =>
