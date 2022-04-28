@@ -88,7 +88,6 @@ class CompanyController @Inject() (
   }
 
   def searchById(companyId: UUID) = SecuredAction.async { request =>
-    logger.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     companyOrchestrator
       .searchRegisteredById(companyId, request.identity)
       .map(res => Ok(Json.toJson(res)(paginatedResultWrites[CompanyWithNbReports])))
