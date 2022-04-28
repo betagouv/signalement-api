@@ -49,7 +49,6 @@ case class CompanyRegisteredSearch(
     departments: Seq[String] = Seq.empty[String],
     activityCodes: Seq[String] = Seq.empty[String],
     identity: Option[SearchCompanyIdentity] = None,
-    companyIds: Seq[UUID] = Seq.empty[UUID],
     emailsWithAccess: Option[String] = None
 )
 
