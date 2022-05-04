@@ -16,7 +16,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepository
@@ -36,7 +36,7 @@ class CompanyOrchestrator @Inject() (
     val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
-    val companyDataRepository: CompanyDataRepository,
+    val companyDataRepository: CompanyDataRepositoryInterface,
     val websiteRepository: WebsiteRepository,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,

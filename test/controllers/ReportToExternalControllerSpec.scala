@@ -20,7 +20,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.consumer.ConsumerRepository
+import repositories.consumer.ConsumerRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
 import utils.AppSpec
@@ -40,7 +40,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
     with Mockito {
 
   val logger: Logger = Logger(this.getClass)
-  lazy val consumerRepo = injector.instanceOf[ConsumerRepository]
+  lazy val consumerRepo = injector.instanceOf[ConsumerRepositoryInterface]
 
   override def setupData() =
     Await.result(

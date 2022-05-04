@@ -23,7 +23,7 @@ import models.token.TokenKind.CompanyJoin
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.user.UserRepository
 
 import java.time.OffsetDateTime
@@ -34,7 +34,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get

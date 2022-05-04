@@ -29,7 +29,7 @@ import play.mvc.Http.Status
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepository
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
@@ -249,7 +249,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]

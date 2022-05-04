@@ -19,7 +19,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
@@ -42,7 +42,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
 
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get

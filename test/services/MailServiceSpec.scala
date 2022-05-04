@@ -16,7 +16,7 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.reportblockednotification.ReportNotificationBlockedRepository
 import repositories.user.UserRepository
 import services.Email.ProNewReportNotification
@@ -43,7 +43,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
   lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]

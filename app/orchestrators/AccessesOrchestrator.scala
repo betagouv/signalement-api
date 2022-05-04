@@ -26,7 +26,7 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepository
 import repositories.user.UserRepository
 import services.Email.DgccrfAccessLink
@@ -51,7 +51,7 @@ import scala.concurrent.duration._
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
-    companyDataRepository: CompanyDataRepository,
+    companyDataRepository: CompanyDataRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
     eventRepository: EventRepository,
