@@ -2,6 +2,7 @@ package tasks.account
 
 import akka.actor.ActorSystem
 import config.InactiveAccountsTaskConfiguration
+import models.AsyncFile
 import models.AsyncFileKind
 import models.Subscription
 import models.User
@@ -10,7 +11,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import repositories.asyncfiles.AsyncFileRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.event.EventRepository
 import repositories.subscription.SubscriptionRepository
 import repositories.user.UserRepository
@@ -35,7 +36,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepository]
+  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
@@ -90,11 +91,11 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
               _ <- userRepository.create(activeAdminUser)
 
               _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
-              _ <- asyncFileRepository.create(inactiveDGCCRFUser, AsyncFileKind.Reports)
+              _ <- asyncFileRepository.create(AsyncFile.build(inactiveDGCCRFUser, AsyncFileKind.Reports))
               _ <- eventRepository.createEvent(inactiveUserEvent)
 
               _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
-              _ <- asyncFileRepository.create(activeDGCCRFUser, AsyncFileKind.Reports)
+              _ <- asyncFileRepository.create(AsyncFile.build(activeDGCCRFUser, AsyncFileKind.Reports))
               _ <- eventRepository.createEvent(activeUserEvent)
 
               _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)

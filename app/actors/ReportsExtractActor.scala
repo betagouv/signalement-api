@@ -23,7 +23,7 @@ import models.report.ReportStatus
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.asyncfiles.AsyncFileRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.event.EventRepository
 import repositories.reportfile.ReportFileRepository
@@ -53,7 +53,7 @@ class ReportsExtractActor @Inject() (
     companyAccessRepository: CompanyAccessRepository,
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepository,
-    asyncFileRepository: AsyncFileRepository,
+    asyncFileRepository: AsyncFileRepositoryInterface,
     s3Service: S3Service,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
