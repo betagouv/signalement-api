@@ -30,6 +30,7 @@ import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import config.TokenConfiguration
 import controllers.error.AppError
+import models.auth.AuthAttempt
 import models.auth.AuthToken
 import models.auth.PasswordChange
 import models.auth.UserCredentials
@@ -87,21 +88,23 @@ class AuthOrchestrator @Inject() (
     eventualUserSession
       .flatMap { session =>
         logger.debug(s"Saving auth attempts for user")
-        authAttemptRepository.saveAuthAttempt(userLogin.login, isSuccess = true).map(_ => session)
+        authAttemptRepository.create(AuthAttempt.build(userLogin.login, isSuccess = true)).map(_ => session)
       }
       .recoverWith {
         case error: AppError =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
-            .saveAuthAttempt(userLogin.login, isSuccess = false, failureCause = Some(error.details))
+            .create(AuthAttempt.build(userLogin.login, isSuccess = false, failureCause = Some(error.details)))
             .flatMap(_ => Future.failed(error))
         case error =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
-            .saveAuthAttempt(
-              userLogin.login,
-              isSuccess = false,
-              failureCause = Some(s"Unexpected error : ${error.getMessage}")
+            .create(
+              AuthAttempt.build(
+                userLogin.login,
+                isSuccess = false,
+                failureCause = Some(s"Unexpected error : ${error.getMessage}")
+              )
             )
             .flatMap(_ => Future.failed(error))
 
