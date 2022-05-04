@@ -1,20 +1,19 @@
 package repositories.accesstoken
 
 import models._
+import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.DGCCRFAccount
-import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
 import repositories.user.UserRepository
 import repositories.user.UserTable
-import repositories.PostgresProfile
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.CRUDRepository
 import repositories.computeTickValues
-import slick.basic.DatabaseConfig
+import repositories.companyaccess.CompanyAccessRepository
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -32,37 +31,16 @@ class AccessTokenRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     val companyAccessRepository: CompanyAccessRepository,
     val userRepository: UserRepository
-)(implicit ec: ExecutionContext) {
+)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[AccessTokenTable, AccessToken]
+    with AccessTokenRepositoryInterface {
 
-  val logger: Logger = Logger(this.getClass())
-  private val dbConfig: DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
-  import PostgresProfile.api._
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[AccessTokenTable] = AccessTokenTable.table
   import dbConfig._
 
-  def createToken(
-      kind: TokenKind,
-      token: String,
-      validity: Option[java.time.temporal.TemporalAmount],
-      companyId: Option[UUID],
-      level: Option[AccessLevel],
-      emailedTo: Option[EmailAddress] = None,
-      creationDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
-  ): Future[AccessToken] =
-    db.run(
-      AccessTokenTable.table returning AccessTokenTable.table += AccessToken(
-        creationDate = creationDate,
-        kind = kind,
-        token = token,
-        valid = true,
-        companyId = companyId,
-        companyLevel = level,
-        emailedTo = emailedTo,
-        expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))
-      )
-    )
-
   private def fetchValidTokens =
-    AccessTokenTable.table
+    table
       .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
       .filter(_.valid)
 
@@ -72,7 +50,7 @@ class AccessTokenRepository @Inject() (
   private def fetchCompanyValidTokens(company: Company): Query[AccessTokenTable, AccessToken, Seq] =
     fetchCompanyValidTokens(company.id)
 
-  def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
+  override def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.emailedTo === emailedTo)
@@ -81,7 +59,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  override def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
@@ -90,9 +68,9 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
+  override def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.companyId === companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
@@ -100,15 +78,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def get(tokenId: UUID): Future[Option[AccessToken]] =
-    db.run(
-      AccessTokenTable.table
-        .filter(_.id === tokenId)
-        .result
-        .headOption
-    )
-
-  def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
+  override def getToken(company: Company, id: UUID): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.id === id)
@@ -116,7 +86,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def findToken(token: String): Future[Option[AccessToken]] =
+  override def findToken(token: String): Future[Option[AccessToken]] =
     db.run(
       fetchValidTokens
         .filter(_.token === token)
@@ -125,7 +95,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def findValidToken(company: Company, token: String): Future[Option[AccessToken]] =
+  override def findValidToken(company: Company, token: String): Future[Option[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .filter(_.token === token)
@@ -133,7 +103,7 @@ class AccessTokenRepository @Inject() (
         .headOption
     )
 
-  def fetchPendingTokens(company: Company): Future[List[AccessToken]] =
+  override def fetchPendingTokens(company: Company): Future[List[AccessToken]] =
     db.run(
       fetchCompanyValidTokens(company)
         .sortBy(_.expirationDate.desc)
@@ -141,13 +111,13 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def removePendingTokens(company: Company): Future[Int] = db.run(
+  override def removePendingTokens(company: Company): Future[Int] = db.run(
     fetchCompanyValidTokens(company).delete
   )
 
-  def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
+  override def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.emailedTo === emailedTo)
@@ -155,9 +125,9 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
+  override def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (DGCCRFAccount: TokenKind))
@@ -166,7 +136,7 @@ class AccessTokenRepository @Inject() (
     )
 
   // TODO move to orchestrator...
-  def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean] =
+  override def createCompanyAccessAndRevokeToken(token: AccessToken, user: User): Future[Boolean] =
     db.run(
       DBIO
         .seq(
@@ -175,8 +145,8 @@ class AccessTokenRepository @Inject() (
             user.id,
             token.companyLevel.get
           ),
-          AccessTokenTable.table.filter(_.id === token.id).map(_.valid).update(false),
-          AccessTokenTable.table
+          table.filter(_.id === token.id).map(_.valid).update(false),
+          table
             .filter(_.companyId === token.companyId)
             .filter(_.emailedTo.isEmpty)
             .map(_.valid)
@@ -186,12 +156,12 @@ class AccessTokenRepository @Inject() (
     ).map(_ => true)
 
   // TODO move to orchestrator...
-  def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] =
+  override def giveCompanyAccess(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
       DBIO
         .seq(
           companyAccessRepository.createCompanyUserAccess(company.id, user.id, level),
-          AccessTokenTable.table
+          table
             .filter(_.companyId === company.id)
             .filter(_.emailedTo.isEmpty)
             .map(_.valid)
@@ -200,25 +170,29 @@ class AccessTokenRepository @Inject() (
         .transactionally
     ).map(_ => ())
 
-  def invalidateToken(token: AccessToken): Future[Int] =
+  override def invalidateToken(token: AccessToken): Future[Int] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.id === token.id)
         .map(_.valid)
         .update(false)
     )
 
-  def updateToken(token: AccessToken, level: AccessLevel, validity: Option[java.time.temporal.TemporalAmount]) =
+  def updateToken(
+      token: AccessToken,
+      level: AccessLevel,
+      validity: Option[java.time.temporal.TemporalAmount]
+  ): Future[Int] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.id === token.id)
         .map(a => (a.level, a.expirationDate))
         .update((Some(level), validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))))
     )
 
-  def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] =
+  override def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] =
     db.run(
-      AccessTokenTable.table
+      table
         .filter(_.companyId inSetBind companyIds.distinct)
         .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_.valid)
@@ -227,9 +201,9 @@ class AccessTokenRepository @Inject() (
         .result
     ).map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
 
-  def companiesToActivate(): Future[List[(AccessToken, Company)]] =
+  override def companiesToActivate(): Future[List[(AccessToken, Company)]] =
     db.run(
-      AccessTokenTable.table
+      table
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .filter(
@@ -242,10 +216,10 @@ class AccessTokenRepository @Inject() (
         .result
     )
 
-  def fetchActivationCode(company: Company): Future[Option[String]] =
+  override def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchValidActivationToken(company.id).map(_.map(_.token))
 
-  def useEmailValidationToken(token: AccessToken, user: User) =
+  override def useEmailValidationToken(token: AccessToken, user: User): Future[Boolean] =
     db.run(
       DBIO
         .seq(
@@ -253,12 +227,12 @@ class AccessTokenRepository @Inject() (
             .filter(_.id === user.id)
             .map(_.lastEmailValidation)
             .update(Some(OffsetDateTime.now(ZoneOffset.UTC))),
-          AccessTokenTable.table.filter(_.id === token.id).map(_.valid).update(false)
+          table.filter(_.id === token.id).map(_.valid).update(false)
         )
         .transactionally
     ).map(_ => true)
 
-  def dgccrfAccountsCurve(ticks: Int) =
+  override def dgccrfAccountsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""
       select *
       from (
@@ -277,7 +251,7 @@ class AccessTokenRepository @Inject() (
       order by 1 ASC;
     """.as[(Timestamp, Int)])
 
-  def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
+  override def dgccrfSubscription(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (select v.a, count(distinct s.user_id) from subscriptions s right join
                                                (SELECT a
                                                 FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
@@ -285,7 +259,7 @@ class AccessTokenRepository @Inject() (
 
 group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
-  def dgccrfActiveAccountsCurve(ticks: Int) =
+  override def dgccrfActiveAccountsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (select v.a, count(distinct ac.emailed_to) from access_tokens ac right join
                                                (SELECT a
                                                 FROM (VALUES #${computeTickValues(ticks)} ) AS X(a))
@@ -294,7 +268,7 @@ group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
 group by v.a ) as res order by 1 ASC""".as[(Timestamp, Int)])
 
-  def dgccrfControlsCurve(ticks: Int) =
+  override def dgccrfControlsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(
       sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct company_id)
   from events

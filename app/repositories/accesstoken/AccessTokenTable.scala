@@ -1,8 +1,8 @@
 package repositories.accesstoken
 
 import models._
-
 import models.token.TokenKind
+import repositories.DatabaseTable
 import repositories.companyaccess.CompanyAccessColumnType._
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.PostgresProfile.api._
@@ -11,8 +11,7 @@ import utils._
 import java.time._
 import java.util.UUID
 
-class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
-  def id: Rep[UUID] = column[UUID]("id", O.PrimaryKey)
+class AccessTokenTable(tag: Tag) extends DatabaseTable[AccessToken](tag, "access_tokens") {
   def creationDate = column[OffsetDateTime]("creation_date")
   def kind = column[TokenKind]("kind")
   def token = column[String]("token")
@@ -31,7 +30,7 @@ class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens"
     level,
     emailedTo,
     expirationDate
-  ) <> (AccessToken.tupled, AccessToken.unapply)
+  ) <> ((AccessToken.apply _).tupled, AccessToken.unapply)
 }
 
 object AccessTokenTable {

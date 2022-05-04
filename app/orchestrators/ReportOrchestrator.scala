@@ -100,12 +100,14 @@ class ReportOrchestrator @Inject() (
       token <- existingToken
         .map(Future(_))
         .getOrElse(
-          accessTokenRepository.createToken(
-            kind = CompanyInit,
-            token = f"${Random.nextInt(1000000)}%06d",
-            validity = validity,
-            companyId = Some(companyId),
-            level = Some(AccessLevel.ADMIN)
+          accessTokenRepository.create(
+            AccessToken.build(
+              kind = CompanyInit,
+              token = f"${Random.nextInt(1000000)}%06d",
+              validity = validity,
+              companyId = Some(companyId),
+              level = Some(AccessLevel.ADMIN)
+            )
           )
         )
     } yield token.token

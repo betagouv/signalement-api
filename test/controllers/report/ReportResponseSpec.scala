@@ -26,7 +26,7 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
@@ -250,7 +250,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
-  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]

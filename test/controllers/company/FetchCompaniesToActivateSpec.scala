@@ -59,14 +59,16 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     val company = Fixtures.genCompany.sample.get
     for {
       c <- companyRepository.getOrCreate(company.siret, company)
-      a <- accessTokenRepository.createToken(
-        CompanyInit,
-        f"${Random.nextInt(1000000)}%06d",
-        Some(tokenDuration),
-        Some(company.id),
-        Some(AccessLevel.ADMIN),
-        None,
-        defaultTokenCreationDate
+      a <- accessTokenRepository.create(
+        AccessToken.build(
+          CompanyInit,
+          f"${Random.nextInt(1000000)}%06d",
+          Some(tokenDuration),
+          Some(company.id),
+          Some(AccessLevel.ADMIN),
+          None,
+          defaultTokenCreationDate
+        )
       )
     } yield (c, a)
   }

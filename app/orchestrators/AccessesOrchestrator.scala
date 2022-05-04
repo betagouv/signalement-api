@@ -332,13 +332,15 @@ class AccessesOrchestrator @Inject() (
         .map(Future(_))
         .getOrElse {
           logger.debug("Creating user invitation token")
-          accessTokenRepository.createToken(
-            kind = CompanyJoin,
-            token = randomToken,
-            validity = tokenConfiguration.companyJoinDuration,
-            companyId = Some(company.id),
-            level = Some(level),
-            emailedTo = Some(emailedTo)
+          accessTokenRepository.create(
+            AccessToken.build(
+              kind = CompanyJoin,
+              token = randomToken,
+              validity = tokenConfiguration.companyJoinDuration,
+              companyId = Some(company.id),
+              level = Some(level),
+              emailedTo = Some(emailedTo)
+            )
           )
         }
     } yield token.token
@@ -367,13 +369,15 @@ class AccessesOrchestrator @Inject() (
         }
       _ <- userRepository.list(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       token <-
-        accessTokenRepository.createToken(
-          kind = DGCCRFAccount,
-          token = randomToken,
-          validity = tokenConfiguration.dgccrfJoinDuration,
-          companyId = None,
-          level = None,
-          emailedTo = Some(email)
+        accessTokenRepository.create(
+          AccessToken.build(
+            kind = DGCCRFAccount,
+            token = randomToken,
+            validity = tokenConfiguration.dgccrfJoinDuration,
+            companyId = None,
+            level = None,
+            emailedTo = Some(email)
+          )
         )
       _ <- mailService.send(
         DgccrfAccessLink(recipient = email, invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token))
@@ -383,13 +387,15 @@ class AccessesOrchestrator @Inject() (
 
   def sendEmailValidation(user: User): Future[Unit] =
     for {
-      token <- accessTokenRepository.createToken(
-        kind = ValidateEmail,
-        token = randomToken,
-        validity = Some(Duration.ofDays(1)),
-        companyId = None,
-        level = None,
-        emailedTo = Some(user.email)
+      token <- accessTokenRepository.create(
+        AccessToken.build(
+          kind = ValidateEmail,
+          token = randomToken,
+          validity = Some(Duration.ofDays(1)),
+          companyId = None,
+          level = None,
+          emailedTo = Some(user.email)
+        )
       )
       _ <- mailService.send(
         Email.ValidateEmail(

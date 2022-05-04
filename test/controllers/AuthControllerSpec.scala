@@ -80,7 +80,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(identity)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+          .create(AccessToken.build(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None))
       } yield (),
       Duration.Inf
     )
