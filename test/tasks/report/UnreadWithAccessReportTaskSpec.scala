@@ -12,7 +12,7 @@ import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepository
 import repositories.report.ReportRepository
@@ -339,7 +339,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reportTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]

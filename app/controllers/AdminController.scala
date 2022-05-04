@@ -19,7 +19,7 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerProResponseNotification
@@ -59,7 +59,7 @@ import scala.concurrent.duration._
 class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
-    companyAccessRepository: CompanyAccessRepository,
+    companyAccessRepository: CompanyAccessRepositoryInterface,
     eventRepository: EventRepository,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,

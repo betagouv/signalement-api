@@ -15,7 +15,7 @@ import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepository
 import repositories.reportblockednotification.ReportNotificationBlockedRepository
 import repositories.user.UserRepository
@@ -42,7 +42,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
   lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]

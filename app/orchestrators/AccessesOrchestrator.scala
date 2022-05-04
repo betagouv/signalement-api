@@ -25,7 +25,7 @@ import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepository
 import repositories.event.EventRepository
 import repositories.user.UserRepository
@@ -50,7 +50,7 @@ import scala.concurrent.duration._
 
 class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepositoryInterface,
-    companyAccessRepository: CompanyAccessRepository,
+    companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepository,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,

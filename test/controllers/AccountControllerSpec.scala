@@ -20,7 +20,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.user.UserRepository
 import utils.AppSpec
 import utils.EmailAddress
@@ -43,7 +43,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   override def configureFakeModule(): AbstractModule =

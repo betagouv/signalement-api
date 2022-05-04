@@ -13,7 +13,7 @@ import repositories.user.UserRepository
 import repositories.user.UserTable
 import repositories.CRUDRepository
 import repositories.computeTickValues
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -29,7 +29,7 @@ import scala.concurrent.Future
 @Singleton
 class AccessTokenRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
-    val companyAccessRepository: CompanyAccessRepository,
+    val companyAccessRepository: CompanyAccessRepositoryInterface,
     val userRepository: UserRepository
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AccessTokenTable, AccessToken]
