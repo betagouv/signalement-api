@@ -18,18 +18,11 @@ class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(
 
   import dbConfig._
 
-  def createFile(file: ReportFile): Future[ReportFile] = db
+  def create(file: ReportFile): Future[ReportFile] = db
     .run(ReportFileTable.table += file)
     .map(_ => file)
 
-  def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
-    val queryFile =
-      for (refFile <- ReportFileTable.table.filter(_.id.inSet(fileIds)))
-        yield refFile.reportId
-    db.run(queryFile.update(Some(reportId)))
-  }
-
-  def getFile(uuid: UUID): Future[Option[ReportFile]] = db
+  def get(uuid: UUID): Future[Option[ReportFile]] = db
     .run(
       ReportFileTable.table
         .filter(_.id === uuid)
@@ -37,6 +30,20 @@ class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(
         .result
         .headOption
     )
+
+  def delete(uuid: UUID): Future[Int] = db
+    .run(
+      ReportFileTable.table
+        .filter(_.id === uuid)
+        .delete
+    )
+
+  def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
+    val queryFile =
+      for (refFile <- ReportFileTable.table.filter(_.id.inSet(fileIds)))
+        yield refFile.reportId
+    db.run(queryFile.update(Some(reportId)))
+  }
 
   def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] = db
     .run(
@@ -55,13 +62,6 @@ class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(
         .to[List]
         .result
     ).map(events => events.groupBy(_.reportId.get))
-
-  def deleteFile(uuid: UUID): Future[Int] = db
-    .run(
-      ReportFileTable.table
-        .filter(_.id === uuid)
-        .delete
-    )
 
   def setAvOutput(fileId: UUID, output: String) = db
     .run(

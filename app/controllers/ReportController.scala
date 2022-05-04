@@ -160,7 +160,7 @@ class ReportController @Inject() (
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
     val uuid = UUID.fromString(id)
     reportFileRepository
-      .getFile(uuid)
+      .get(uuid)
       .flatMap {
         case Some(file) if file.filename == filename =>
           (file.reportId, request.identity) match {

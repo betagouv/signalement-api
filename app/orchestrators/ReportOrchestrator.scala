@@ -401,7 +401,7 @@ class ReportOrchestrator @Inject() (
 
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
     for {
-      reportFile <- reportFileRepository.createFile(
+      reportFile <- reportFileRepository.create(
         ReportFile(
           UUID.randomUUID,
           reportId = None,
@@ -424,8 +424,8 @@ class ReportOrchestrator @Inject() (
 
   def removeReportFile(id: UUID) =
     for {
-      reportFile <- reportFileRepository.getFile(id)
-      _ <- reportFile.map(f => reportFileRepository.deleteFile(f.id)).getOrElse(Future(None))
+      reportFile <- reportFileRepository.get(id)
+      _ <- reportFile.map(f => reportFileRepository.delete(f.id)).getOrElse(Future(None))
       _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
@@ -665,7 +665,7 @@ class ReportOrchestrator @Inject() (
   def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")
     reportFileRepository
-      .getFile(UUID.fromString(uuid))
+      .get(UUID.fromString(uuid))
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
           logger.info("Attachment has not been scan by antivirus, rescheduling scan")

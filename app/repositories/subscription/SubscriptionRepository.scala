@@ -37,15 +37,6 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         .headOption
     )
 
-  def list(userId: UUID): Future[List[Subscription]] = db
-    .run(
-      SubscriptionTable.table
-        .filter(_.userId === userId)
-        .sortBy(_.creationDate.desc)
-        .to[List]
-        .result
-    )
-
   def update(subscription: Subscription): Future[Subscription] = {
     val querySubscription =
       for (refSubscription <- SubscriptionTable.table if refSubscription.id === subscription.id)
@@ -56,6 +47,15 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
 
   def delete(subscriptionId: UUID): Future[Int] = db
     .run(SubscriptionTable.table.filter(_.id === subscriptionId).delete)
+
+  def list(userId: UUID): Future[List[Subscription]] = db
+    .run(
+      SubscriptionTable.table
+        .filter(_.userId === userId)
+        .sortBy(_.creationDate.desc)
+        .to[List]
+        .result
+    )
 
   def listForFrequency(frequency: Period): Future[List[(Subscription, EmailAddress)]] = db
     .run(

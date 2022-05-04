@@ -330,7 +330,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        _ <- reportFileRepository.createFile(reportResponseFile)
+        _ <- reportFileRepository.create(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -406,7 +406,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportFileMustHaveBeenAttachedToReport() = {
-    val reportFile = Await.result(reportFileRepository.getFile(reportResponseFile.id), Duration.Inf).get
+    val reportFile = Await.result(reportFileRepository.get(reportResponseFile.id), Duration.Inf).get
     reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportFixture.id)))
   }
 
