@@ -397,7 +397,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
-    report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
+    report = Await.result(reportRepository.get(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 

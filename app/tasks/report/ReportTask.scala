@@ -11,7 +11,7 @@ import models.report.ReportStatus
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import tasks.computeStartingTime
 import utils.Constants.ActionEvent._
 
@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 
 class ReportTask @Inject() (
     actorSystem: ActorSystem,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     signalConsoConfiguration: SignalConsoConfiguration,

@@ -331,7 +331,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     )
 
   def checkReport(reportData: Report) = {
-    val dbReport = Await.result(reportRepository.getReport(reportData.id), Duration.Inf)
+    val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf)
     dbReport.get must beEqualTo(reportData)
   }
 
@@ -352,7 +352,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       )
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
-    val reports = Await.result(reportRepository.list, Duration.Inf).filter(_.id != existingReport.id)
+    val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
     val expectedReport = draftReport.generateReport.copy(
       id = reports.head.id,
       creationDate = reports.head.creationDate,

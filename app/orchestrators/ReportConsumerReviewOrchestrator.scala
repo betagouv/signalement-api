@@ -14,7 +14,7 @@ import utils.Constants.EventType
 import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 
 import java.time.OffsetDateTime
@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportConsumerReviewOrchestrator @Inject() (
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepository,
     responseConsumerReviewRepository: ResponseConsumerReviewRepository
 )(implicit
@@ -49,7 +49,7 @@ class ReportConsumerReviewOrchestrator @Inject() (
     logger.info(s"Report ${reportId} - the consumer give a review on response")
 
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       _ = logger.debug(s"Validating report")
       _ <- report match {
         case Some(report) if hasResponse(report) =>

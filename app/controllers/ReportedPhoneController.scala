@@ -9,7 +9,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import repositories.asyncfiles.AsyncFileRepository
 import repositories.company.CompanyRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 
 @Singleton
 class ReportedPhoneController @Inject() (
-    val reportRepository: ReportRepository,
+    val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepository,
     asyncFileRepository: AsyncFileRepository,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,

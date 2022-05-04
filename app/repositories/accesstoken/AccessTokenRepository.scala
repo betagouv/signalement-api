@@ -14,6 +14,7 @@ import repositories.user.UserTable
 import repositories.PostgresProfile
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.computeTickValues
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -34,7 +35,7 @@ class AccessTokenRepository @Inject() (
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass())
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  private val dbConfig: DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
   import PostgresProfile.api._
   import dbConfig._
 

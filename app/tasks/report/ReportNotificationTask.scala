@@ -5,7 +5,7 @@ import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.report.ReportFilter
 import play.api.Logger
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import services.Email.DgccrfReportNotification
 import services.MailService
@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 
 class ReportNotificationTask @Inject() (
     actorSystem: ActorSystem,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     subscriptionRepository: SubscriptionRepository,
     mailService: MailService,
     taskConfiguration: TaskConfiguration

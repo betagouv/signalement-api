@@ -8,7 +8,7 @@ import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerReportClosedNoReading
 import services.MailService
 import tasks.model.TaskType
@@ -32,7 +32,7 @@ import scala.concurrent.Future
 class UnreadReportsCloseTask @Inject() (
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepository,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     emailService: MailService
 )(implicit
     ec: ExecutionContext
@@ -130,7 +130,7 @@ class UnreadReportsCloseTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
         )
       )
-      _ <- reportRepository.update(report.copy(status = ReportStatus.NonConsulte))
+      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.NonConsulte))
       _ <- emailService.send(ConsumerReportClosedNoReading(report))
     } yield ()
 

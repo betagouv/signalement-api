@@ -15,7 +15,7 @@ import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import services.S3Service
 import utils.DateUtils
 
@@ -37,7 +37,7 @@ object WebsitesExtractActor {
 
 @Singleton
 class WebsitesExtractActor @Inject() (
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service,
     signalConsoConfiguration: SignalConsoConfiguration

@@ -15,7 +15,7 @@ import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import services.S3Service
 import utils.DateUtils
 
@@ -39,7 +39,7 @@ object ReportedPhonesExtractActor {
 @Singleton
 class ReportedPhonesExtractActor @Inject() (
     config: SignalConsoConfiguration,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepository,
     s3Service: S3Service
 )(implicit val mat: Materializer)

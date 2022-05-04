@@ -31,7 +31,7 @@ import play.api.test._
 import play.mvc.Http.Status
 import repositories.event.EventFilter
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import services.AttachementService
 import services.MailService
@@ -100,7 +100,8 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(
         ActionEvent.REPORT_READING_BY_PRO
       )}
-         And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportMustHaveBeenUpdatedWithStatus(
+         And the report reportStatusList is updated to "SIGNALEMENT_TRANSMIS"   ${reportStatusMustMatch(
+        neverRequestedReport.id,
         ReportStatus.Transmis
       )}
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
@@ -128,7 +129,10 @@ object GetFinalReportByConcernedProUserFirstTime extends GetReportSpec {
          Then an event "ENVOI_SIGNALEMENT is created                            ${eventMustHaveBeenCreatedWithAction(
         ActionEvent.REPORT_READING_BY_PRO
       )}
-         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
+         And the report reportStatusList is not updated                         ${reportStatusMustMatch(
+        neverRequestedFinalReport.id,
+        neverRequestedFinalReport.status
+      )}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
         neverRequestedFinalReport,
@@ -147,7 +151,10 @@ object GetReportByConcernedProUserNotFirstTime extends GetReportSpec {
         someResult = Some(getReport(alreadyRequestedReport.id))
       }}
          Then no event is created                                               ${eventMustNotHaveBeenCreated()}
-         And the report reportStatusList is not updated                         ${reportMustNotHaveBeenUpdated()}
+         And the report reportStatusList is not updated                         ${reportStatusMustMatch(
+        alreadyRequestedReport.id,
+        alreadyRequestedReport.status
+      )}
          And no mail is sent                                                    ${mailMustNotHaveBeenSent()}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
         alreadyRequestedReport,
@@ -162,6 +169,7 @@ trait GetReportSpec extends Spec with GetReportContext {
   import org.specs2.matcher.MatchersImplicits._
 
   implicit val ee = ExecutionEnv.fromGlobalExecutionContext
+
   implicit val timeout: Timeout = 30.seconds
 
   var someLoginInfo: Option[LoginInfo] = None
@@ -216,15 +224,17 @@ trait GetReportSpec extends Spec with GetReportContext {
         any
       )
 
-  def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) =
-    there was one(mockReportRepository).update(argThat(reportStatusMatcher(status)))
+  def reportStatusMustMatch(id: UUID, status: ReportStatus) = {
 
-  def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Report] = { report: Report =>
-    (status == report.status, s"reportStatusList doesn't match ${status}")
+    val maybeReport = Await.result(
+      mockReportRepository.get(id),
+      Duration.Inf
+    )
+    maybeReport.map(_ => status) mustEqual (Some(status))
   }
 
   def reportMustNotHaveBeenUpdated() =
-    there was no(mockReportRepository).update(any[Report])
+    there was no(mockReportRepository).update(any[UUID], any[Report])
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) =
     there was one(mockEventRepository).createEvent(argThat(eventActionMatcher(action)))
@@ -330,7 +340,11 @@ trait GetReportContext extends AppSpec {
     )
   )
 
-  val mockReportRepository = mock[ReportRepository]
+  val mockReportRepository = new ReportRepositoryMock()
+  mockReportRepository.create(neverRequestedReport)
+  mockReportRepository.create(neverRequestedFinalReport)
+  mockReportRepository.create(alreadyRequestedReport)
+
   val mockReportFileRepository = mock[ReportFileRepository]
   val mockEventRepository = mock[EventRepository]
   val mockMailerService = mock[MailerService]
@@ -338,8 +352,6 @@ trait GetReportContext extends AppSpec {
   lazy val mailerService = application.injector.instanceOf[MailerService]
   lazy val attachementService = application.injector.instanceOf[AttachementService]
   lazy val mailService = application.injector.instanceOf[MailService]
-//  val config = application.injector.instanceOf[SignalConsoConfiguration]
-//  val emailConfiguration = application.injector.instanceOf[EmailConfiguration]
 
   companiesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
     Future(
@@ -348,10 +360,6 @@ trait GetReportContext extends AppSpec {
     )
   }
 
-  mockReportRepository.getReport(neverRequestedReport.id) returns Future(Some(neverRequestedReport))
-  mockReportRepository.getReport(neverRequestedFinalReport.id) returns Future(Some(neverRequestedFinalReport))
-  mockReportRepository.getReport(alreadyRequestedReport.id) returns Future(Some(alreadyRequestedReport))
-  mockReportRepository.update(any[Report]) answers { (report: Any) => Future(report.asInstanceOf[Report]) }
   mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
   mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
@@ -374,7 +382,7 @@ trait GetReportContext extends AppSpec {
   class FakeModule extends AbstractModule with ScalaModule {
     override def configure() = {
       bind[Environment[AuthEnv]].toInstance(env)
-      bind[ReportRepository].toInstance(mockReportRepository)
+      bind[ReportRepositoryInterface].toInstance(mockReportRepository)
       bind[EventRepository].toInstance(mockEventRepository)
       bind[MailerService].toInstance(mockMailerService)
       bind[CompaniesVisibilityOrchestrator].toInstance(companiesVisibilityOrchestrator)

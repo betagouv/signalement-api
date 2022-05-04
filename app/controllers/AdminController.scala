@@ -21,7 +21,7 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -58,7 +58,7 @@ import scala.concurrent.duration._
 @Singleton
 class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepository,
     eventRepository: EventRepository,
     mailService: MailService,

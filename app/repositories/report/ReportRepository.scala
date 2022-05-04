@@ -20,18 +20,20 @@ import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import ReportRepository.queryFilter
+import repositories.CRUDRepository
 
 @Singleton
-class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends ReportRepositoryInterface {
+class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[ReportTable, Report]
+    with ReportRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[ReportTable] = ReportTable.table
   import dbConfig._
 
   def findSimilarReportCount(report: Report): Future[Int] =
     db.run(
-      ReportTable.table
+      table
         .filter(_.email === report.email)
         .filter(_.firstName === report.firstName)
         .filter(_.details === report.details.map(detailInputValuetoString(_)))
@@ -50,19 +52,12 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
         .result
     )
 
-  def create(report: Report): Future[Report] =
-    db
-      .run(ReportTable.table += report)
-      .map(_ => report)
-
-  def list: Future[List[Report]] = db.run(ReportTable.table.to[List].result)
-
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
-    db.run(ReportTable.table.filter(_.email === email).result)
+    db.run(table.filter(_.email === email).result)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     db.run(
-      ReportTable.table
+      table
         .filterOpt(start) { case (table, s) =>
           table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
         }
@@ -73,14 +68,6 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
         .map { case (department, group) => (department, group.length) }
         .result
     )
-
-  def update(report: Report): Future[Report] = {
-    val queryReport =
-      for (refReport <- ReportTable.table if refReport.id === report.id)
-        yield refReport
-    db.run(queryReport.update(report))
-      .map(_ => report)
-  }
 
   def count(filter: ReportFilter): Future[Int] = db.run(queryFilter(filter).length.result)
 
@@ -140,35 +127,35 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
     res
   }
 
-  def getReport(id: UUID): Future[Option[Report]] = db.run {
-    ReportTable.table
-      .filter(_.id === id)
-      .result
-      .headOption
-  }
+//  def getReport(id: UUID): Future[Option[Report]] = db.run {
+//    table
+//      .filter(_.id === id)
+//      .result
+//      .headOption
+//  }
 
-  def delete(id: UUID): Future[Int] = db.run {
-    ReportTable.table
-      .filter(_.id === id)
-      .delete
-  }
+//  def delete(id: UUID): Future[Int] = db.run {
+//    table
+//      .filter(_.id === id)
+//      .delete
+//  }
 
   def getReports(companyId: UUID): Future[List[Report]] = db.run {
-    ReportTable.table
+    table
       .filter(_.companyId === companyId)
       .to[List]
       .result
   }
 
   def getWithWebsites(): Future[List[Report]] = db.run {
-    ReportTable.table
+    table
       .filter(_.websiteURL.isDefined)
       .to[List]
       .result
   }
 
   def getWithPhones(): Future[List[Report]] = db.run {
-    ReportTable.table
+    table
       .filter(_.phone.isDefined)
       .to[List]
       .result
@@ -203,7 +190,7 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
 
   def getHostsByCompany(companyId: UUID): Future[Seq[String]] =
     db.run(
-      ReportTable.table
+      table
         .filter(_.companyId === companyId)
         .filter(_.host.isDefined)
         .map(_.host)
@@ -242,18 +229,18 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
   } yield res
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]] = db.run(
-    ReportTable.table
+    table
       .filter(_.id inSet ids)
       .to[List]
       .result
   )
 
   def getByStatus(status: ReportStatus): Future[List[Report]] =
-    db.run(ReportTable.table.filter(_.status === status.entryName).to[List].result)
+    db.run(table.filter(_.status === status.entryName).to[List].result)
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(
-      ReportTable.table
+      table
         .filter(_.status === ReportStatus.TraitementEnCours.entryName)
         .filter(_.companyId inSet companiesIds)
         .to[List]
@@ -265,7 +252,7 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
       end: Option[LocalDate] = None
   ): Future[List[Report]] = db
     .run(
-      ReportTable.table
+      table
         .filter(_.websiteURL.isDefined)
         .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
         .filterOpt(start) { case (table, start) =>
@@ -284,7 +271,7 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
       end: Option[LocalDate] = None
   ): Future[List[(Option[String], Int)]] = db
     .run(
-      ReportTable.table
+      table
         .filter(_.host.isDefined)
         .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
         .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
@@ -303,7 +290,7 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
 
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
     .run(
-      ReportTable.table
+      table
         .filter(_.phone.isDefined)
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
@@ -314,6 +301,7 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
         .to[List]
         .result
     )
+
 }
 
 object ReportRepository {

@@ -19,7 +19,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventFilter
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import services.PDFService
 import utils.Constants.ActionEvent._
@@ -40,7 +40,7 @@ import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepository,
     eventRepository: EventRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
@@ -112,7 +112,7 @@ class ReportController @Inject() (
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
         reportAction <- request.parseBody[ReportAction]()
-        report <- reportRepository.getReport(UUID.fromString(uuid))
+        report <- reportRepository.get(UUID.fromString(uuid))
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -235,7 +235,7 @@ class ReportController @Inject() (
 
   private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)

@@ -319,7 +319,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatus) =
-    reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
+    reportRepository.get(reportUUID) must reportStatusMatcher(status).await
 
   def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
@@ -327,7 +327,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   }
 
   def reportStatusMustNotHaveBeenUpdated(report: Report) =
-    reportRepository.getReport(report.id).map(_.get.status) must beEqualTo(report.status).await
+    reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]

@@ -21,7 +21,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -32,7 +32,7 @@ import scala.concurrent.Future
 
 class NoActionReportsCloseTask @Inject() (
     eventRepository: EventRepository,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     emailService: MailService,
     taskConfiguration: TaskConfiguration
 )(implicit
@@ -99,7 +99,7 @@ class NoActionReportsCloseTask @Inject() (
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
         )
       )
-      _ <- reportRepository.update(report.copy(status = ReportStatus.ConsulteIgnore))
+      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.ConsulteIgnore))
       _ <- emailService.send(ConsumerReportClosedNoAction(report))
     } yield ()
     toValidated(taskExecution, report.id, TaskType.CloseReadReportWithNoAction)

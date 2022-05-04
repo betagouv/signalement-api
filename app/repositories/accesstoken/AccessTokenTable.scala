@@ -12,7 +12,7 @@ import java.time._
 import java.util.UUID
 
 class AccessTokenTable(tag: Tag) extends Table[AccessToken](tag, "access_tokens") {
-  def id = column[UUID]("id", O.PrimaryKey)
+  def id: Rep[UUID] = column[UUID]("id", O.PrimaryKey)
   def creationDate = column[OffsetDateTime]("creation_date")
   def kind = column[TokenKind]("kind")
   def token = column[String]("token")

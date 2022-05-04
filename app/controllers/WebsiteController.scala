@@ -13,7 +13,7 @@ import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.company.CompanyRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepository
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 class WebsiteController @Inject() (
     val websitesOrchestrator: WebsitesOrchestrator,
     val websiteRepository: WebsiteRepository,
-    val reportRepository: ReportRepository,
+    val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepository,
     @Named("websites-extract-actor") websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]

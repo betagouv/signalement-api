@@ -41,7 +41,7 @@ import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.event.EventFilter
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import repositories.subscription.SubscriptionRepository
 import repositories.website.WebsiteRepository
@@ -72,7 +72,7 @@ import scala.util.Random
 
 class ReportOrchestrator @Inject() (
     mailService: MailService,
-    reportRepository: ReportRepository,
+    reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepository,
     companyRepository: CompanyRepository,
     accessTokenRepository: AccessTokenRepository,
@@ -122,7 +122,10 @@ class ReportOrchestrator @Inject() (
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
             _ <- mailService.send(ProNewReportNotification(companyUserEmails, report))
-            reportWithUpdatedStatus <- reportRepository.update(report.copy(status = ReportStatus.TraitementEnCours))
+            reportWithUpdatedStatus <- reportRepository.update(
+              report.id,
+              report.copy(status = ReportStatus.TraitementEnCours)
+            )
             _ <- createEmailProNewReportEvent(report, company, companyUsers)
           } yield reportWithUpdatedStatus
         case None =>
@@ -265,7 +268,7 @@ class ReportOrchestrator @Inject() (
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
-      existingReport <- reportRepository.getReport(reportId)
+      existingReport <- reportRepository.get(reportId)
       company <- companyRepository.getOrCreate(
         reportCompany.siret,
         Company(
@@ -279,6 +282,7 @@ class ReportOrchestrator @Inject() (
         case Some(report) =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 companyId = Some(company.id),
                 companyName = Some(reportCompany.name),
@@ -295,6 +299,7 @@ class ReportOrchestrator @Inject() (
         .map(report =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 status = report.initialStatus()
               )
@@ -338,11 +343,12 @@ class ReportOrchestrator @Inject() (
       userUUID: UUID
   ): Future[Option[Report]] =
     for {
-      existingReport <- reportRepository.getReport(reportId)
+      existingReport <- reportRepository.get(reportId)
       updatedReport <- existingReport match {
         case Some(report) =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 firstName = reportConsumer.firstName,
                 lastName = reportConsumer.lastName,
@@ -435,7 +441,7 @@ class ReportOrchestrator @Inject() (
 
   def deleteReport(id: UUID) =
     for {
-      report <- reportRepository.getReport(id)
+      report <- reportRepository.get(id)
       _ <- eventRepository.deleteEvents(id)
       _ <- reportFileRepository
         .retrieveReportFiles(id)
@@ -479,7 +485,7 @@ class ReportOrchestrator @Inject() (
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
-      newReport <- reportRepository.update(report.copy(status = ReportStatus.Transmis))
+      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
     } yield newReport
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
@@ -489,7 +495,7 @@ class ReportOrchestrator @Inject() (
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       newEvent <- report match {
         case Some(r) =>
           eventRepository
@@ -509,6 +515,7 @@ class ReportOrchestrator @Inject() (
         case (Some(r), Some(event)) =>
           reportRepository
             .update(
+              r.id,
               r.copy(status = event.action match {
                 case POST_ACCOUNT_ACTIVATION_DOC => ReportStatus.TraitementEnCours
                 case _                           => r.status
@@ -544,6 +551,7 @@ class ReportOrchestrator @Inject() (
       )
       _ <- reportFileRepository.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
+        report.id,
         report.copy(
           status = reportResponse.responseType match {
             case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction

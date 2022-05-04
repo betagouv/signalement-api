@@ -197,7 +197,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
-    val report = Await.result(reportRepository.getReport(reportId), Duration.Inf).get
+    val report = Await.result(reportRepository.get(reportId), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 

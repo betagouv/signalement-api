@@ -18,7 +18,7 @@ import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepository
 import repositories.companydata.CompanyDataRepository
 import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepository
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -35,7 +35,7 @@ import scala.concurrent.Future
 class CompanyOrchestrator @Inject() (
     val companyRepository: CompanyRepository,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    val reportRepository: ReportRepository,
+    val reportRepository: ReportRepositoryInterface,
     val companyDataRepository: CompanyDataRepository,
     val websiteRepository: WebsiteRepository,
     val accessTokenRepository: AccessTokenRepository,
