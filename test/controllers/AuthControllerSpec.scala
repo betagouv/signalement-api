@@ -28,7 +28,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.authattempt.AuthAttemptRepository
-import repositories.authtoken.AuthTokenRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.user.UserRepository
 import utils.AppSpec
@@ -59,7 +59,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   lazy val passwordHasherRegistry = app.injector.instanceOf[PasswordHasherRegistry]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
-  lazy val authTokenRepository = app.injector.instanceOf[AuthTokenRepository]
+  lazy val authTokenRepository = app.injector.instanceOf[AuthTokenRepositoryInterface]
 
   override def configureFakeModule(): AbstractModule =
     new FakeModule

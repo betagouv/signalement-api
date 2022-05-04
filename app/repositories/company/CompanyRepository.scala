@@ -71,7 +71,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
         )
       }
       .sortBy(_._2.desc)
-    val filterQuery = search.identity
+    search.identity
       .map {
         case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET.fromUnsafe(q))
@@ -83,27 +83,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .filterOpt(search.emailsWithAccess) { case (table, email) =>
         table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
       }
-
-    toPaginate(filterQuery, paginate.offset, paginate.limit)
-  }
-
-  def toPaginate[A, B](
-      query: slick.lifted.Query[A, B, Seq],
-      offsetOpt: Option[Long],
-      limitOpt: Option[Int]
-  ): Future[PaginatedResult[B]] = {
-    val offset = offsetOpt.getOrElse(0L)
-    val limit = limitOpt.getOrElse(10)
-    val resultF = db.run(query.drop(offset).take(limit).result)
-    val countF = db.run(query.length.result)
-    for {
-      result <- resultF
-      count <- countF
-    } yield PaginatedResult(
-      totalCount = count,
-      entities = result.toList,
-      hasNextPage = count - (offset + limit) > 0
-    )
+      .withPagination(db)(maybeOffset = paginate.offset, maybeLimit = paginate.limit)
   }
 
   def getOrCreate(siret: SIRET, data: Company): Future[Company] =
@@ -120,7 +100,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .map(_ => company)
   }
 
-  def fetchCompany(id: UUID) =
+  def get(id: UUID): Future[Option[Company]] =
     db.run(CompanyTable.table.filter(_.id === id).result.headOption)
 
   def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =

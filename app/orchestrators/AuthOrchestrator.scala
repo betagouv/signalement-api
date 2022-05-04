@@ -44,7 +44,7 @@ import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepository
-import repositories.authtoken.AuthTokenRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepository
 import services.Email.ResetPassword
 import services.MailService
@@ -58,7 +58,7 @@ class AuthOrchestrator @Inject() (
     authAttemptRepository: AuthAttemptRepository,
     userRepository: UserRepository,
     accessesOrchestrator: AccessesOrchestrator,
-    authTokenRepository: AuthTokenRepository,
+    authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
     credentialsProvider: CredentialsProvider,
     mailService: MailService,

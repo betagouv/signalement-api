@@ -431,7 +431,7 @@ class ReportOrchestrator @Inject() (
 
   private def removeAccessToken(companyId: UUID) =
     for {
-      company <- companyRepository.fetchCompany(companyId)
+      company <- companyRepository.get(companyId)
       reports <- company
         .map(c => reportRepository.getReports(ReportFilter(companyIds = Seq(c.id))).map(_.entities))
         .getOrElse(Future(Nil))

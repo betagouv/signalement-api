@@ -2,8 +2,10 @@ package repositories.authtoken
 
 import models.auth.AuthToken
 import play.api.db.slick.DatabaseConfigProvider
-import repositories.PostgresProfile
+import repositories.CRUDRepository
+import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
+import slick.lifted.TableQuery
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -21,20 +23,17 @@ import scala.concurrent.Future
 @Singleton
 class AuthTokenRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
-)(implicit ec: ExecutionContext) {
+)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[AuthTokenTable, AuthToken]
+    with AuthTokenRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
-  import PostgresProfile.api._
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[AuthTokenTable] = AuthTokenTable.table
   import dbConfig._
 
-  def create(authToken: AuthToken): Future[AuthToken] = db
-    .run(AuthTokenTable.table += authToken)
-    .map(_ => authToken)
-
-  def findValid(id: UUID): Future[Option[AuthToken]] = db
+  override def findValid(id: UUID): Future[Option[AuthToken]] = db
     .run(
-      AuthTokenTable.table
+      table
         .filter(_.id === id)
         .filter(_.expiry > OffsetDateTime.now(ZoneOffset.UTC))
         .to[List]
@@ -42,20 +41,16 @@ class AuthTokenRepository @Inject() (
         .headOption
     )
 
-  def deleteForUserId(userId: UUID): Future[Int] = db.run {
-    AuthTokenTable.table
+  override def deleteForUserId(userId: UUID): Future[Int] = db.run {
+    table
       .filter(_.userId === userId)
       .delete
   }
 
-  def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
-    AuthTokenTable.table
+  override def findForUserId(userId: UUID): Future[Seq[AuthToken]] = db.run {
+    table
       .filter(_.userId === userId)
       .result
-  }
-
-  def list(): Future[Seq[AuthToken]] = db.run {
-    AuthTokenTable.table.result
   }
 
 }

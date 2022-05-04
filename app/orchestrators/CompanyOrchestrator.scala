@@ -241,7 +241,7 @@ class CompanyOrchestrator @Inject() (
       companyAddressUpdate: CompanyAddressUpdate
   ): Future[Option[Company]] =
     for {
-      company <- companyRepository.fetchCompany(id)
+      company <- companyRepository.get(id)
       updatedCompany <-
         company
           .map(c => companyRepository.update(c.copy(address = companyAddressUpdate.address)).map(Some(_)))

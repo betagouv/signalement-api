@@ -127,19 +127,6 @@ class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(impl
     res
   }
 
-//  def getReport(id: UUID): Future[Option[Report]] = db.run {
-//    table
-//      .filter(_.id === id)
-//      .result
-//      .headOption
-//  }
-
-//  def delete(id: UUID): Future[Int] = db.run {
-//    table
-//      .filter(_.id === id)
-//      .delete
-//  }
-
   def getReports(companyId: UUID): Future[List[Report]] = db.run {
     table
       .filter(_.companyId === companyId)
