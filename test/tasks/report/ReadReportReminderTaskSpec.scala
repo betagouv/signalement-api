@@ -11,7 +11,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.event.EventFilter
 import repositories.event.EventRepository
@@ -333,7 +333,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReportTask]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]

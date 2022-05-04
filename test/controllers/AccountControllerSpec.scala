@@ -19,7 +19,7 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.user.UserRepository
 import utils.AppSpec
@@ -42,7 +42,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
   lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 

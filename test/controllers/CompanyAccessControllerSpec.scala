@@ -21,7 +21,7 @@ import models._
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
 import repositories.user.UserRepository
@@ -32,7 +32,7 @@ import java.util.UUID
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
   lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]

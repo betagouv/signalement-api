@@ -21,7 +21,7 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
 import repositories.emailvalidation.EmailValidationRepository
@@ -222,7 +222,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachmentService = app.injector.instanceOf[AttachementService]

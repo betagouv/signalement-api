@@ -8,7 +8,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 @Singleton
 class ReportedPhoneController @Inject() (
     val reportRepository: ReportRepositoryInterface,
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]

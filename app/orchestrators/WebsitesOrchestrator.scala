@@ -9,7 +9,7 @@ import models.PaginatedResult
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepository
 import utils.Country
 import utils.URL
@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 class WebsitesOrchestrator @Inject() (
     val repository: WebsiteRepository,
-    val companyRepository: CompanyRepository
+    val companyRepository: CompanyRepositoryInterface
 )(implicit
     ec: ExecutionContext
 ) {

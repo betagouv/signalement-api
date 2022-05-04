@@ -9,7 +9,7 @@ import models.AccessToken
 import models.access.ActivationLinkRequest
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 
 import java.time.OffsetDateTime.now
@@ -21,7 +21,7 @@ import scala.concurrent.Future
 @Singleton
 class CompanyAccessOrchestrator @Inject(
 ) (
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator
 )(implicit val ec: ExecutionContext) {

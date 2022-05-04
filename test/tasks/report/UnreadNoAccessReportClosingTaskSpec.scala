@@ -9,7 +9,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepository
 import repositories.report.ReportRepository
@@ -170,7 +170,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
     reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepository]
   lazy val reminderTask = injector.instanceOf[ReportTask]

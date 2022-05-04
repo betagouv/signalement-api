@@ -17,7 +17,7 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
 import repositories.user.UserRepository
@@ -40,7 +40,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   val logger: Logger = Logger(this.getClass)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]

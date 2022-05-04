@@ -29,7 +29,7 @@ import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.authattempt.AuthAttemptRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.user.UserRepository
 import utils.AppSpec
 import utils.Fixtures
@@ -57,7 +57,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val authAttemptRepository = app.injector.instanceOf[AuthAttemptRepository]
   lazy val passwordHasherRegistry = app.injector.instanceOf[PasswordHasherRegistry]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
   lazy val authTokenRepository = app.injector.instanceOf[AuthTokenRepositoryInterface]
 

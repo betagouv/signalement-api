@@ -10,7 +10,6 @@ import java.util.UUID
 class AuthTokenTable(tag: Tag) extends DatabaseTable[AuthToken](tag, "auth_tokens") {
 
   def userId = column[UUID]("user_id")
-
   def expiry = column[OffsetDateTime]("expiry")
 
   type AuthTokenData = (UUID, UUID, OffsetDateTime)

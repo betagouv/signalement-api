@@ -8,7 +8,7 @@ import controllers.error.AppErrorTransformer.handleError
 import models._
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -100,7 +100,7 @@ trait BaseController extends InjectedController {
 }
 
 trait BaseCompanyController extends BaseController {
-  def companyRepository: CompanyRepository
+  def companyRepository: CompanyRepositoryInterface
   def companyVisibilityOrch: CompaniesVisibilityOrchestrator
 
   class CompanyRequest[A](val company: Company, val accessLevel: AccessLevel, request: SecuredRequestWrapper[A])

@@ -5,7 +5,7 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.subscription.SubscriptionRepository
 import services.AttachementService
@@ -58,7 +58,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val attachementService = injector.instanceOf[AttachementService]

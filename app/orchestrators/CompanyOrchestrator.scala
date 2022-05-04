@@ -15,7 +15,7 @@ import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companydata.CompanyDataRepository
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
@@ -33,7 +33,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyOrchestrator @Inject() (
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
     val companyDataRepository: CompanyDataRepository,
@@ -244,7 +244,7 @@ class CompanyOrchestrator @Inject() (
       company <- companyRepository.get(id)
       updatedCompany <-
         company
-          .map(c => companyRepository.update(c.copy(address = companyAddressUpdate.address)).map(Some(_)))
+          .map(c => companyRepository.update(c.id, c.copy(address = companyAddressUpdate.address)).map(Some(_)))
           .getOrElse(Future(None))
       _ <- updatedCompany
         .filter(c => !company.map(_.address).contains(c.address))

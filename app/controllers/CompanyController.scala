@@ -12,7 +12,7 @@ import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepository
@@ -37,7 +37,7 @@ class CompanyController @Inject() (
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val userRepository: UserRepository,
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepository,
     val reportRepository: ReportRepositoryInterface,

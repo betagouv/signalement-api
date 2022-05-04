@@ -5,7 +5,7 @@ import models.Company
 import models.CompanyWithAccess
 import models.User
 import models.UserRole
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
 import utils.SIREN
@@ -22,7 +22,7 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 
 class CompaniesVisibilityOrchestrator @Inject() (
     companyDataRepo: CompanyDataRepository,
-    companyRepo: CompanyRepository,
+    companyRepo: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepository
 )(implicit val executionContext: ExecutionContext) {
 

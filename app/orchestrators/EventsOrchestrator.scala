@@ -13,7 +13,7 @@ import models.event.Event
 import models.event.EventUser
 import models.event.EventWithUser
 import play.api.Logger
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
@@ -46,7 +46,7 @@ trait EventsOrchestratorInterface {
 class EventsOrchestrator @Inject() (
     eventRepository: EventRepository,
     reportRepository: ReportRepositoryInterface,
-    companyRepository: CompanyRepository
+    companyRepository: CompanyRepositoryInterface
 )(implicit
     val ec: ExecutionContext
 ) extends EventsOrchestratorInterface {

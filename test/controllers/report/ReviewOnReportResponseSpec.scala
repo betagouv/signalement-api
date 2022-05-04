@@ -30,7 +30,7 @@ import utils.AppSpec
 import utils.Fixtures
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepository
 import repositories.report.ReportRepository
@@ -120,7 +120,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepository]
   lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
 
   val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
 

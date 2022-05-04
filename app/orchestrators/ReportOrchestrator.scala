@@ -38,7 +38,7 @@ import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepository
 import repositories.report.ReportRepositoryInterface
@@ -74,7 +74,7 @@ class ReportOrchestrator @Inject() (
     mailService: MailService,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepository,
-    companyRepository: CompanyRepository,
+    companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepository,
     websiteRepository: WebsiteRepository,

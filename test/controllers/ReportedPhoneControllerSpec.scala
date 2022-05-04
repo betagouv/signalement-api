@@ -13,7 +13,7 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import utils.silhouette.auth.AuthEnv
@@ -32,7 +32,7 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val company = Fixtures.genCompany.sample.get

@@ -10,7 +10,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.user.UserRepository
 import utils.EmailAddress
@@ -27,7 +27,7 @@ import scala.concurrent.Future
 @Singleton
 class CompanyAccessController @Inject() (
     val userRepository: UserRepository,
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val companyAccessRepository: CompanyAccessRepository,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator,

@@ -10,7 +10,7 @@ import services.AttachementService
 import services.MailerService
 import utils._
 import play.api.libs.mailer.Attachment
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.subscription.SubscriptionRepository
 
@@ -36,7 +36,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val attachementService = injector.instanceOf[AttachementService]

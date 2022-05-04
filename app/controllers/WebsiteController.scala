@@ -12,7 +12,7 @@ import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepository
 import utils.DateUtils
@@ -30,7 +30,7 @@ class WebsiteController @Inject() (
     val websitesOrchestrator: WebsitesOrchestrator,
     val websiteRepository: WebsiteRepository,
     val reportRepository: ReportRepositoryInterface,
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     @Named("websites-extract-actor") websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)

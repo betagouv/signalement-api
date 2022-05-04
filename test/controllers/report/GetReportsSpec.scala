@@ -21,7 +21,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers
 import play.mvc.Http.Status
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companydata.CompanyDataRepository
 import repositories.report.ReportRepository
@@ -132,7 +132,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   implicit val timeout: Timeout = 30.seconds
 
   lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
