@@ -2,53 +2,20 @@ package repositories.rating
 
 import models.Rating
 import play.api.db.slick.DatabaseConfigProvider
-import repositories.PostgresProfile
+import repositories.CRUDRepository
 import slick.jdbc.JdbcProfile
 
-import java.time.OffsetDateTime
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 @Singleton
-class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
-    ec: ExecutionContext
-) {
+class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[RatingTable, Rating]
+    with RatingRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  import PostgresProfile.api._
-  import dbConfig._
-
-  private class RatingTable(tag: Tag) extends Table[Rating](tag, "ratings") {
-
-    def id = column[UUID]("id", O.PrimaryKey)
-    def creationDate = column[OffsetDateTime]("creation_date")
-    def category = column[String]("category")
-    def subcategories = column[List[String]]("subcategories")
-    def positive = column[Boolean]("positive")
-
-    type RatingData = (UUID, OffsetDateTime, String, List[String], Boolean)
-
-    def constructRating: RatingData => Rating = { case (id, creationDate, category, subcategories, positive) =>
-      Rating(Some(id), Some(creationDate), category, subcategories, positive)
-    }
-
-    def extractRating: PartialFunction[Rating, RatingData] = {
-      case Rating(id, creationDate, category, subcategories, positive) =>
-        (id.get, creationDate.get, category, subcategories, positive)
-    }
-
-    def * =
-      (id, creationDate, category, subcategories, positive) <> (constructRating, extractRating.lift)
-  }
-
-  private val ratingTableQuery = TableQuery[RatingTable]
-
-  def createRating(rating: Rating): Future[Rating] = db
-    .run(ratingTableQuery += rating)
-    .map(_ => rating)
+  override val table = RatingTable.table
 
 }

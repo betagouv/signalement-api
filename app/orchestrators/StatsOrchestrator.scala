@@ -13,9 +13,9 @@ import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
 import repositories.accesstoken.AccessTokenRepository
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.reportconsumerreview.ResponseConsumerReviewRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -37,8 +37,8 @@ import scala.concurrent.Future
 
 class StatsOrchestrator @Inject() (
     reportRepository: ReportRepositoryInterface,
-    eventRepository: EventRepository,
-    reportConsumerReviewRepository: ResponseConsumerReviewRepository,
+    eventRepository: EventRepositoryInterface,
+    reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
     accessTokenRepository: AccessTokenRepository
 )(implicit val executionContext: ExecutionContext) {
 

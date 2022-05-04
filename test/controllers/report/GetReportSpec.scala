@@ -30,7 +30,7 @@ import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import services.AttachementService
@@ -237,14 +237,14 @@ trait GetReportSpec extends Spec with GetReportContext {
     there was no(mockReportRepository).update(any[UUID], any[Report])
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) =
-    there was one(mockEventRepository).createEvent(argThat(eventActionMatcher(action)))
+    there was one(mockEventRepository).create(argThat(eventActionMatcher(action)))
 
   def eventActionMatcher(action: ActionEventValue): org.specs2.matcher.Matcher[Event] = { event: Event =>
     (action == event.action, s"action doesn't match ${action}")
   }
 
   def eventMustNotHaveBeenCreated() =
-    there was no(mockEventRepository).createEvent(any[Event])
+    there was no(mockEventRepository).create(any[Event])
 
 }
 
@@ -346,7 +346,7 @@ trait GetReportContext extends AppSpec {
   mockReportRepository.create(alreadyRequestedReport)
 
   val mockReportFileRepository = mock[ReportFileRepository]
-  val mockEventRepository = mock[EventRepository]
+  val mockEventRepository = mock[EventRepositoryInterface]
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = application.injector.instanceOf[MailerService]
@@ -362,7 +362,7 @@ trait GetReportContext extends AppSpec {
 
   mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
 
-  mockEventRepository.createEvent(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
+  mockEventRepository.create(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
   mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
   mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
@@ -383,7 +383,7 @@ trait GetReportContext extends AppSpec {
     override def configure() = {
       bind[Environment[AuthEnv]].toInstance(env)
       bind[ReportRepositoryInterface].toInstance(mockReportRepository)
-      bind[EventRepository].toInstance(mockEventRepository)
+      bind[EventRepositoryInterface].toInstance(mockEventRepository)
       bind[MailerService].toInstance(mockMailerService)
       bind[CompaniesVisibilityOrchestrator].toInstance(companiesVisibilityOrchestrator)
     }

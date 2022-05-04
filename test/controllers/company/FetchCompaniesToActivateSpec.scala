@@ -21,7 +21,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepository
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType._
@@ -45,7 +45,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
@@ -81,7 +81,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedOnce =
     for {
       (c, a) <- initCase
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -95,7 +95,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
       (c, a) <- initCase
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -109,7 +109,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwice =
     for {
       (c, a) <- initCase
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -118,7 +118,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
             creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(1)
           )
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -132,7 +132,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
       (c, a) <- initCase
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -141,7 +141,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
             creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay.multipliedBy(2)).minusDays(2)
           )
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
@@ -155,14 +155,14 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNoticeRequired =
     for {
       (c, a) <- initCase
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
           .get
           .copy(creationDate = OffsetDateTime.now.minusDays(2))
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED)
           .sample

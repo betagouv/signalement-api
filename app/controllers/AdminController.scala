@@ -20,7 +20,7 @@ import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
@@ -60,7 +60,7 @@ class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
     implicit val frontRoute: FrontRoute

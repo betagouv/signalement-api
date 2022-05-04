@@ -14,7 +14,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import services.AttachementService
@@ -336,7 +336,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val reportTask = injector.instanceOf[ReportTask]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
@@ -359,5 +359,5 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)
   def setupEvent(event: Event) =
-    Await.result(eventRepository.createEvent(event), Duration.Inf)
+    Await.result(eventRepository.create(event), Duration.Inf)
 }

@@ -27,7 +27,7 @@ import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepository
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
@@ -54,7 +54,7 @@ class AccessesOrchestrator @Inject() (
     companyDataRepository: CompanyDataRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     userRepository: UserRepository,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     mailService: MailService,
     frontRoute: FrontRoute,
     emailConfiguration: EmailConfiguration,
@@ -179,7 +179,7 @@ class AccessesOrchestrator @Inject() (
     token <- fetchCompanyToken(token, siret)
     user <- createUser(draftUser, token, UserRole.Professionnel)
     _ <- bindPendingTokens(user)
-    _ <- eventRepository.createEvent(
+    _ <- eventRepository.create(
       Event(
         UUID.randomUUID(),
         None,

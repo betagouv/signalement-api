@@ -15,7 +15,7 @@ import models.event.EventWithUser
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
@@ -44,7 +44,7 @@ trait EventsOrchestratorInterface {
 
 @Singleton
 class EventsOrchestrator @Inject() (
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
     companyRepository: CompanyRepositoryInterface
 )(implicit

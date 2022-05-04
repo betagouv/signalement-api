@@ -6,7 +6,7 @@ import models.User
 import models.event.Event
 import models.report.Report
 import play.api.Logger
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import services.Email.ProReportReadReminder
 import services.MailService
 import tasks.model.TaskType
@@ -29,7 +29,7 @@ import scala.concurrent.Future
 
 class ReadReportsReminderTask @Inject() (
     taskConfiguration: TaskConfiguration,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     emailService: MailService
 )(implicit
     ec: ExecutionContext
@@ -102,7 +102,7 @@ class ReadReportsReminderTask @Inject() (
 
     val taskExecution = for {
       _ <- eventRepository
-        .createEvent(
+        .create(
           Event(
             UUID.randomUUID(),
             Some(report.id),

@@ -40,7 +40,7 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import repositories.subscription.SubscriptionRepository
@@ -76,7 +76,7 @@ class ReportOrchestrator @Inject() (
     reportFileRepository: ReportFileRepository,
     companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     websiteRepository: WebsiteRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepository,
@@ -138,7 +138,7 @@ class ReportOrchestrator @Inject() (
 
   private def createEmailProNewReportEvent(report: Report, company: Company, companyUsers: NonEmptyList[User]) =
     eventRepository
-      .createEvent(
+      .create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -223,7 +223,7 @@ class ReportOrchestrator @Inject() (
 
   private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) =
     for {
-      event <- eventRepository.createEvent(
+      event <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -318,7 +318,7 @@ class ReportOrchestrator @Inject() (
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 Some(report.id),
@@ -364,7 +364,7 @@ class ReportOrchestrator @Inject() (
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 Some(report.id),
@@ -444,7 +444,7 @@ class ReportOrchestrator @Inject() (
   def deleteReport(id: UUID) =
     for {
       report <- reportRepository.get(id)
-      _ <- eventRepository.deleteEvents(id)
+      _ <- eventRepository.deleteByReportId(id)
       _ <- reportFileRepository
         .retrieveReportFiles(id)
         .map(files => files.map(file => removeReportFile(file.id)))
@@ -454,7 +454,7 @@ class ReportOrchestrator @Inject() (
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -476,7 +476,7 @@ class ReportOrchestrator @Inject() (
   private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
       _ <- mailService.send(ConsumerReportReadByProNotification(report))
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
           reportId = Some(report.id),
@@ -501,7 +501,7 @@ class ReportOrchestrator @Inject() (
       newEvent <- report match {
         case Some(r) =>
           eventRepository
-            .createEvent(
+            .create(
               draftEvent.copy(
                 id = UUID.randomUUID(),
                 creationDate = OffsetDateTime.now(),
@@ -539,7 +539,7 @@ class ReportOrchestrator @Inject() (
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -563,7 +563,7 @@ class ReportOrchestrator @Inject() (
         )
       )
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -574,7 +574,7 @@ class ReportOrchestrator @Inject() (
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -590,7 +590,7 @@ class ReportOrchestrator @Inject() (
 
   def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] =
     for {
-      newEvent <- eventRepository.createEvent(
+      newEvent <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),

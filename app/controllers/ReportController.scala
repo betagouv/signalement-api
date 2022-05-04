@@ -18,7 +18,7 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import services.PDFService
@@ -42,7 +42,7 @@ class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepository,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
     frontRoute: FrontRoute,

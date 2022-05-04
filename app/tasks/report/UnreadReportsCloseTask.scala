@@ -7,7 +7,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerReportClosedNoReading
 import services.MailService
@@ -31,7 +31,7 @@ import scala.concurrent.Future
 
 class UnreadReportsCloseTask @Inject() (
     taskConfiguration: TaskConfiguration,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
     emailService: MailService
 )(implicit
@@ -107,7 +107,7 @@ class UnreadReportsCloseTask @Inject() (
 
   private def closeUnreadReport(report: Report) = {
     val taskExecution: Future[Unit] = for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -119,7 +119,7 @@ class UnreadReportsCloseTask @Inject() (
           stringToDetailsJsValue("Clôture automatique : signalement non consulté")
         )
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),

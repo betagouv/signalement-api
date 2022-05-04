@@ -11,7 +11,7 @@ import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
 import services.AttachementService
 import services.MailerService
@@ -172,7 +172,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val reminderTask = injector.instanceOf[ReportTask]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]

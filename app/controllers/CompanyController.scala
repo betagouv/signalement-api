@@ -13,7 +13,7 @@ import play.api.Logger
 import play.api.libs.json._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.user.UserRepository
 import services.PDFService
@@ -39,7 +39,7 @@ class CompanyController @Inject() (
     val userRepository: UserRepository,
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
-    val eventRepository: EventRepository,
+    val eventRepository: EventRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],

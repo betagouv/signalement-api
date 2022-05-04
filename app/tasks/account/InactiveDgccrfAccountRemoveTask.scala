@@ -4,7 +4,7 @@ import cats.implicits.toTraverseOps
 import models.User
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.user.UserRepository
 import tasks.model.TaskType
@@ -20,7 +20,7 @@ import scala.concurrent.Future
 class InactiveDgccrfAccountRemoveTask @Inject() (
     userRepository: UserRepository,
     subscriptionRepository: SubscriptionRepository,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface
 )(implicit executionContext: ExecutionContext) {
 
@@ -42,7 +42,7 @@ class InactiveDgccrfAccountRemoveTask @Inject() (
       _ = logger.debug(s"Removing subscription with ids ${subscriptionToDelete.map(_.id)}")
       _ <- subscriptionToDelete.map(subscription => subscriptionRepository.delete(subscription.id)).sequence
       _ = logger.debug(s"Removing events")
-      _ <- eventRepository.delete(user.id)
+      _ <- eventRepository.deleteByUserId(user.id)
       _ = logger.debug(s"Removing files")
       _ <- asyncFileRepository.deleteByUserId(user.id)
       _ = logger.debug(s"Removing user")

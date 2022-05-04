@@ -12,7 +12,7 @@ import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.subscription.SubscriptionRepository
 import repositories.user.UserRepository
 import utils.AppSpec
@@ -37,7 +37,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
   lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
   lazy val actorSystem = injector.instanceOf[ActorSystem]
@@ -92,18 +92,18 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
               _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
               _ <- asyncFileRepository.create(AsyncFile.build(inactiveDGCCRFUser, AsyncFileKind.Reports))
-              _ <- eventRepository.createEvent(inactiveUserEvent)
+              _ <- eventRepository.create(inactiveUserEvent)
 
               _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
               _ <- asyncFileRepository.create(AsyncFile.build(activeDGCCRFUser, AsyncFileKind.Reports))
-              _ <- eventRepository.createEvent(activeUserEvent)
+              _ <- eventRepository.create(activeUserEvent)
 
               _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
                 .runTask(now.atOffset(ZoneOffset.UTC))
               userList <- userRepository.list
               activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
               inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
-              events <- eventRepository.list
+              events <- eventRepository.list()
               inactivefiles <- asyncFileRepository.list(inactiveDGCCRFUser)
               activefiles <- asyncFileRepository.list(activeDGCCRFUser)
             } yield (userList, activeSubscriptionList, inactiveSubscriptionList, events, inactivefiles, activefiles),

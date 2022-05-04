@@ -24,9 +24,9 @@ import play.api.test._
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.emailvalidation.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.user.UserRepository
 import services.AttachementService
@@ -220,13 +220,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   implicit val ec = ExecutionContext.global
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachmentService = app.injector.instanceOf[AttachementService]
-  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
+  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepositoryInterface]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
@@ -273,7 +273,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             report.email
           ).distinct.map(email =>
             emailValidationRepository.create(
-              EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
+              EmailValidation(email = email, lastValidationDate = Some(OffsetDateTime.now()))
             )
           )
         )
@@ -366,7 +366,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    val events = Await.result(eventRepository.list, Duration.Inf).toList
+    val events = Await.result(eventRepository.list(), Duration.Inf).toList
     events.map(_.action) must contain(action)
   }
 

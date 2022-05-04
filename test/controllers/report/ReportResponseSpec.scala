@@ -30,7 +30,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
 import repositories.reportfile.ReportFileRepository
 import repositories.user.UserRepository
@@ -246,7 +246,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepository]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
@@ -388,7 +388,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       )
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    val events = Await.result(eventRepository.list, Duration.Inf).toList
+    val events = Await.result(eventRepository.list(), Duration.Inf).toList
     events.map(_.action) must contain(action)
   }
 

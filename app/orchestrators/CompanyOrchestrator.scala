@@ -17,7 +17,7 @@ import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepository
 import utils.Constants.ActionEvent
@@ -39,7 +39,7 @@ class CompanyOrchestrator @Inject() (
     val companyDataRepository: CompanyDataRepositoryInterface,
     val websiteRepository: WebsiteRepository,
     val accessTokenRepository: AccessTokenRepository,
-    val eventRepository: EventRepository,
+    val eventRepository: EventRepositoryInterface,
     val taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
 
@@ -222,7 +222,7 @@ class CompanyOrchestrator @Inject() (
   def confirmContactByPostOnCompanyList(companyList: CompanyList, identity: UUID): Future[List[Event]] =
     Future
       .sequence(companyList.companyIds.map { companyId =>
-        eventRepository.createEvent(
+        eventRepository.create(
           Event(
             UUID.randomUUID(),
             None,
@@ -249,7 +249,7 @@ class CompanyOrchestrator @Inject() (
       _ <- updatedCompany
         .filter(c => !company.map(_.address).contains(c.address))
         .map(c =>
-          eventRepository.createEvent(
+          eventRepository.create(
             Event(
               UUID.randomUUID(),
               None,
@@ -266,7 +266,7 @@ class CompanyOrchestrator @Inject() (
       _ <- updatedCompany
         .filter(_ => companyAddressUpdate.activationDocumentRequired)
         .map(c =>
-          eventRepository.createEvent(
+          eventRepository.create(
             Event(
               UUID.randomUUID(),
               None,
@@ -291,7 +291,7 @@ class CompanyOrchestrator @Inject() (
       event <- company
         .map(c =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 None,
