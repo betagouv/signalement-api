@@ -14,9 +14,9 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.URL
@@ -31,9 +31,9 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val company = Fixtures.genCompany.sample.get

@@ -5,7 +5,7 @@ import com.mohiva.play.silhouette.api.RequestProvider
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import play.api.Logger
 import play.api.mvc.Request
-import repositories.consumer.ConsumerRepository
+import repositories.consumer.ConsumerRepositoryInterface
 import utils.silhouette.Credentials._
 
 import javax.inject.Inject
@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 class APIKeyRequestProvider @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,
-    _consumer: ConsumerRepository
+    _consumer: ConsumerRepositoryInterface
 )(implicit ec: ExecutionContext)
     extends RequestProvider {
 

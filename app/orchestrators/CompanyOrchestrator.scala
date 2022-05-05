@@ -15,11 +15,11 @@ import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.companydata.CompanyDataRepository
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.website.WebsiteRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.website.WebsiteRepositoryInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIREN
@@ -33,13 +33,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyOrchestrator @Inject() (
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    val reportRepository: ReportRepository,
-    val companyDataRepository: CompanyDataRepository,
-    val websiteRepository: WebsiteRepository,
+    val reportRepository: ReportRepositoryInterface,
+    val companyDataRepository: CompanyDataRepositoryInterface,
+    val websiteRepository: WebsiteRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
-    val eventRepository: EventRepository,
+    val eventRepository: EventRepositoryInterface,
     val taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {
 
@@ -222,7 +222,7 @@ class CompanyOrchestrator @Inject() (
   def confirmContactByPostOnCompanyList(companyList: CompanyList, identity: UUID): Future[List[Event]] =
     Future
       .sequence(companyList.companyIds.map { companyId =>
-        eventRepository.createEvent(
+        eventRepository.create(
           Event(
             UUID.randomUUID(),
             None,
@@ -241,15 +241,15 @@ class CompanyOrchestrator @Inject() (
       companyAddressUpdate: CompanyAddressUpdate
   ): Future[Option[Company]] =
     for {
-      company <- companyRepository.fetchCompany(id)
+      company <- companyRepository.get(id)
       updatedCompany <-
         company
-          .map(c => companyRepository.update(c.copy(address = companyAddressUpdate.address)).map(Some(_)))
+          .map(c => companyRepository.update(c.id, c.copy(address = companyAddressUpdate.address)).map(Some(_)))
           .getOrElse(Future(None))
       _ <- updatedCompany
         .filter(c => !company.map(_.address).contains(c.address))
         .map(c =>
-          eventRepository.createEvent(
+          eventRepository.create(
             Event(
               UUID.randomUUID(),
               None,
@@ -266,7 +266,7 @@ class CompanyOrchestrator @Inject() (
       _ <- updatedCompany
         .filter(_ => companyAddressUpdate.activationDocumentRequired)
         .map(c =>
-          eventRepository.createEvent(
+          eventRepository.create(
             Event(
               UUID.randomUUID(),
               None,
@@ -291,7 +291,7 @@ class CompanyOrchestrator @Inject() (
       event <- company
         .map(c =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 None,

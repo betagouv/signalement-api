@@ -7,7 +7,7 @@ import controllers.error.AppError.EmailOrCodeIncorrect
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.InvalidEmailProvider
 import controllers.error.ErrorPayload
-import models.EmailValidationCreate
+import models.EmailValidation
 import models.email.EmailValidationResult
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -17,7 +17,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.emailvalidation.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.Email.ConsumerValidateEmail
 
 import java.time.OffsetDateTime
@@ -40,8 +40,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq.empty)
-  lazy val emailValidationRepository: EmailValidationRepository =
-    injector.instanceOf[EmailValidationRepository]
+  lazy val emailValidationRepository: EmailValidationRepositoryInterface =
+    injector.instanceOf[EmailValidationRepositoryInterface]
 
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val attachementService = injector.instanceOf[AttachementService]
@@ -165,7 +165,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
       "not validate email when email exist but not validated" in {
         val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
-        val emailValidation = EmailValidationCreate(email = existingEmail)
+        val emailValidation = EmailValidation(email = existingEmail)
 
         val request = FakeRequest(POST, routes.EmailValidationController.checkEmail().toString)
           .withJsonBody(Json.obj("email" -> existingEmail.value))
@@ -196,7 +196,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           _ <- emailValidationRepository.create(
-            EmailValidationCreate(email = existingEmail).copy(lastValidationDate = Some(OffsetDateTime.now))
+            EmailValidation(email = existingEmail).copy(lastValidationDate = Some(OffsetDateTime.now))
           )
           res <- route(app, request).get
         } yield res
@@ -215,7 +215,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           emailValidation <- emailValidationRepository.create(
-            EmailValidationCreate(email = email)
+            EmailValidation(email = email)
           )
           request = FakeRequest(POST, routes.EmailValidationController.validEmail().toString)
             .withJsonBody(
@@ -264,7 +264,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         val result = for {
           emailValidation <- emailValidationRepository.create(
-            EmailValidationCreate(email = email)
+            EmailValidation(email = email)
           )
           request = FakeRequest(POST, routes.EmailValidationController.validEmail().toString)
             .withJsonBody(

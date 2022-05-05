@@ -2,6 +2,7 @@ package repositories.company
 
 import models.Address
 import models.Company
+import repositories.DatabaseTable
 import slick.lifted.TableQuery
 import utils.Constants.Departments
 import utils.SIRET
@@ -10,8 +11,7 @@ import repositories.PostgresProfile.api._
 import java.util.UUID
 import java.time.OffsetDateTime
 
-class CompanyTable(tag: Tag) extends Table[Company](tag, "companies") {
-  def id = column[UUID]("id", O.PrimaryKey)
+class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def siret = column[SIRET]("siret", O.Unique)
   def creationDate = column[OffsetDateTime]("creation_date")
   def name = column[String]("name")

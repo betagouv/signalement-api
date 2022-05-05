@@ -5,13 +5,13 @@ import models.report.ReportFileOrigin
 import repositories.PostgresProfile.api._
 import repositories.report.ReportTable
 import ReportFileColumnType._
+import repositories.DatabaseTable
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ReportFileTable(tag: Tag) extends Table[ReportFile](tag, "report_files") {
+class ReportFileTable(tag: Tag) extends DatabaseTable[ReportFile](tag, "report_files") {
 
-  def id = column[UUID]("id", O.PrimaryKey)
   def reportId = column[Option[UUID]]("report_id")
   def creationDate = column[OffsetDateTime]("creation_date")
   def filename = column[String]("filename")

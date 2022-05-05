@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
-import repositories.reportblockednotification.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 import utils.EmailAddress
 import utils.FrontRoute
 
@@ -18,7 +18,7 @@ import scala.concurrent.Future
 class MailService @Inject() (
     @Named("email-actor") actor: ActorRef,
     emailConfiguration: EmailConfiguration,
-    reportNotificationBlocklistRepo: ReportNotificationBlockedRepository,
+    reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,
     implicit val frontRoute: FrontRoute,
     val pdfService: PDFService,
     attachementService: AttachementService

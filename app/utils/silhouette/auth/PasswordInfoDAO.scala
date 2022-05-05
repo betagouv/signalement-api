@@ -3,8 +3,9 @@ package utils.silhouette.auth
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import controllers.error.AppError.UserNotFound
 import play.api.Logger
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.Credentials._
 
@@ -13,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val classTag: ClassTag[PasswordInfo])
+class PasswordInfoDAO @Inject() (userRepository: UserRepositoryInterface)(implicit val classTag: ClassTag[PasswordInfo])
     extends DelegableAuthInfoDAO[PasswordInfo] {
 
   val logger: Logger = Logger(this.getClass())
@@ -23,8 +24,9 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val cl
 
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     userRepository.findByLogin(loginInfo.providerKey).map {
-      case Some(user) => Some(toPasswordInfo(user.password))
-      case _          => None
+      case Some(user) =>
+        Some(toPasswordInfo(user.password))
+      case _ => None
     }
 
   def remove(loginInfo: LoginInfo): Future[Unit] =
@@ -37,11 +39,12 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepository)(implicit val cl
     }
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    userRepository.findByLogin(loginInfo.providerKey).map {
+    userRepository.findByLogin(loginInfo.providerKey).flatMap {
       case Some(user) =>
-        userRepository.update(user.copy(password = authInfo.password))
-        authInfo
-      case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
+        userRepository.updatePassword(user.id, authInfo.password).map(_ => authInfo)
+      case _ =>
+        logger.error(s"User not found for login ${loginInfo.providerKey}")
+        Future.failed(UserNotFound(loginInfo.providerKey))
     }
 
 }

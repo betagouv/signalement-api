@@ -2,6 +2,7 @@ package tasks.account
 
 import akka.actor.ActorSystem
 import config.InactiveAccountsTaskConfiguration
+import models.AsyncFile
 import models.AsyncFileKind
 import models.Subscription
 import models.User
@@ -10,10 +11,10 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.event.EventRepository
-import repositories.subscription.SubscriptionRepository
-import repositories.user.UserRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.Constants.ActionEvent.CONTROL
 import utils.Constants.EventType
@@ -34,10 +35,10 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
+  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
+  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
   lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
   lazy val actorSystem = injector.instanceOf[ActorSystem]
 
@@ -90,19 +91,19 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
               _ <- userRepository.create(activeAdminUser)
 
               _ <- subscriptionRepository.create(inactiveUserSubscriptionUserId)
-              _ <- asyncFileRepository.create(inactiveDGCCRFUser, AsyncFileKind.Reports)
-              _ <- eventRepository.createEvent(inactiveUserEvent)
+              _ <- asyncFileRepository.create(AsyncFile.build(inactiveDGCCRFUser, AsyncFileKind.Reports))
+              _ <- eventRepository.create(inactiveUserEvent)
 
               _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
-              _ <- asyncFileRepository.create(activeDGCCRFUser, AsyncFileKind.Reports)
-              _ <- eventRepository.createEvent(activeUserEvent)
+              _ <- asyncFileRepository.create(AsyncFile.build(activeDGCCRFUser, AsyncFileKind.Reports))
+              _ <- eventRepository.create(activeUserEvent)
 
               _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
                 .runTask(now.atOffset(ZoneOffset.UTC))
-              userList <- userRepository.list
+              userList <- userRepository.list()
               activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
               inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
-              events <- eventRepository.list
+              events <- eventRepository.list()
               inactivefiles <- asyncFileRepository.list(inactiveDGCCRFUser)
               activefiles <- asyncFileRepository.list(activeDGCCRFUser)
             } yield (userList, activeSubscriptionList, inactiveSubscriptionList, events, inactivefiles, activefiles),

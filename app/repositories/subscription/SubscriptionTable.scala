@@ -3,18 +3,19 @@ package repositories.subscription
 import models.Subscription
 import models.report.ReportCategory
 import models.report.ReportTag
+import repositories.DatabaseTable
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 import repositories.PostgresProfile.api._
+
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
 import repositories.report.ReportColumnType.ReportTagListColumnType
 
-class SubscriptionTable(tag: Tag) extends Table[Subscription](tag, "subscriptions") {
+class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subscriptions") {
 
-  def id = column[UUID]("id", O.PrimaryKey)
   def creationDate = column[OffsetDateTime]("creation_date")
   def userId = column[Option[UUID]]("user_id")
   def email = column[Option[EmailAddress]]("email")

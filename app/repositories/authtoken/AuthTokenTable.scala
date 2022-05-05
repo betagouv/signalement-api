@@ -1,17 +1,15 @@
 package repositories.authtoken
 
 import models.auth.AuthToken
+import repositories.DatabaseTable
 import repositories.PostgresProfile.api._
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class AuthTokenTable(tag: Tag) extends Table[AuthToken](tag, "auth_tokens") {
-
-  def id = column[UUID]("id", O.PrimaryKey)
+class AuthTokenTable(tag: Tag) extends DatabaseTable[AuthToken](tag, "auth_tokens") {
 
   def userId = column[UUID]("user_id")
-
   def expiry = column[OffsetDateTime]("expiry")
 
   type AuthTokenData = (UUID, UUID, OffsetDateTime)

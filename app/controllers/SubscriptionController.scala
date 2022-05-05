@@ -8,7 +8,7 @@ import models.UserPermission
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -20,7 +20,7 @@ import scala.concurrent.Future
 
 @Singleton
 class SubscriptionController @Inject() (
-    subscriptionRepository: SubscriptionRepository,
+    subscriptionRepository: SubscriptionRepositoryInterface,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)
     extends BaseController {
@@ -66,6 +66,7 @@ class SubscriptionController @Inject() (
                 .map(s =>
                   subscriptionRepository
                     .update(
+                      s.id,
                       s.copy(
                         departments = draftSubscription.departments.getOrElse(s.departments),
                         categories = draftSubscription.categories.getOrElse(s.categories),

@@ -5,6 +5,7 @@ import models.report._
 import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
+import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
 
 import java.time.LocalDate
@@ -13,19 +14,13 @@ import scala.collection.SortedMap
 import scala.concurrent.Future
 
 @ImplementedBy(classOf[ReportRepository])
-trait ReportRepositoryInterface {
+trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def findSimilarReportCount(report: Report): Future[Int]
-
-  def create(report: Report): Future[Report]
-
-  def list: Future[List[Report]]
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]]
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]]
-
-  def update(report: Report): Future[Report]
 
   def count(filter: ReportFilter): Future[Int]
 
@@ -35,10 +30,6 @@ trait ReportRepositoryInterface {
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]]
-
-  def getReport(id: UUID): Future[Option[Report]]
-
-  def delete(id: UUID): Future[Int]
 
   def getReports(companyId: UUID): Future[List[Report]]
 

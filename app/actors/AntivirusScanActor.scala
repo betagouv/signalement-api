@@ -14,7 +14,7 @@ import models.report.ReportFile
 import play.api.Logger
 import play.api.libs.concurrent.ActorModule
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3Service
 
 import java.io.File
@@ -41,7 +41,7 @@ object AntivirusScanActor extends ActorModule {
   @Provides
   def create(
       uploadConfiguration: UploadConfiguration,
-      reportFileRepository: ReportFileRepository,
+      reportFileRepository: ReportFileRepositoryInterface,
       s3Service: S3Service
   ): Behavior[ScanCommand] =
     Behaviors.setup { context =>

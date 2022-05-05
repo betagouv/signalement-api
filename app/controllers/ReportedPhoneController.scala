@@ -7,9 +7,9 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.company.CompanyRepository
-import repositories.report.ReportRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.company.CompanyRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -20,9 +20,9 @@ import scala.concurrent.duration._
 
 @Singleton
 class ReportedPhoneController @Inject() (
-    val reportRepository: ReportRepository,
-    val companyRepository: CompanyRepository,
-    asyncFileRepository: AsyncFileRepository,
+    val reportRepository: ReportRepositoryInterface,
+    val companyRepository: CompanyRepositoryInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)
@@ -63,7 +63,7 @@ class ReportedPhoneController @Inject() (
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting reportedPhones for user ${request.identity.email}")
       asyncFileRepository
-        .create(request.identity, kind = AsyncFileKind.ReportedPhones)
+        .create(AsyncFile.build(request.identity, kind = AsyncFileKind.ReportedPhones))
         .map { file =>
           reportedPhonesExtractActor ! ReportedPhonesExtractActor
             .ExtractRequest(file.id, request.identity, RawFilters(q, start, end))

@@ -2,15 +2,15 @@ package repositories.event
 
 import models.event.Event
 import play.api.libs.json.JsValue
+import repositories.DatabaseTable
 import utils.Constants
 
 import java.time.OffsetDateTime
 import java.util.UUID
 import repositories.PostgresProfile.api._
 
-class EventTable(tag: Tag) extends Table[Event](tag, "events") {
+class EventTable(tag: Tag) extends DatabaseTable[Event](tag, "events") {
 
-  def id = column[UUID]("id", O.PrimaryKey)
   def reportId = column[Option[UUID]]("report_id")
   def companyId = column[Option[UUID]]("company_id")
   def userId = column[Option[UUID]]("user_id")

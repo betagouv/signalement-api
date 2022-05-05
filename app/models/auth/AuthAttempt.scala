@@ -10,3 +10,7 @@ case class AuthAttempt(
     isSuccess: Option[Boolean],
     failureCause: Option[String] = None
 )
+object AuthAttempt {
+  def build(login: String, isSuccess: Boolean, failureCause: Option[String] = None) =
+    AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
+}

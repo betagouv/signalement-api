@@ -26,14 +26,14 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companydata.CompanyDataRepository
-import repositories.event.EventRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
-import repositories.user.UserRepository
+import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -244,13 +244,13 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepository]
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
-  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepositoryInterface]
+  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
+  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
+  lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
@@ -330,7 +330,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
         _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
-        _ <- reportFileRepository.createFile(reportResponseFile)
+        _ <- reportFileRepository.create(reportResponseFile)
       } yield (),
       Duration.Inf
     )
@@ -388,7 +388,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       )
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    val events = Await.result(eventRepository.list, Duration.Inf).toList
+    val events = Await.result(eventRepository.list(), Duration.Inf).toList
     events.map(_.action) must contain(action)
   }
 
@@ -397,7 +397,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
-    report = Await.result(reportRepository.getReport(reportFixture.id), Duration.Inf).get
+    report = Await.result(reportRepository.get(reportFixture.id), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 
@@ -406,7 +406,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   }
 
   def reportFileMustHaveBeenAttachedToReport() = {
-    val reportFile = Await.result(reportFileRepository.getFile(reportResponseFile.id), Duration.Inf).get
+    val reportFile = Await.result(reportFileRepository.get(reportResponseFile.id), Duration.Inf).get
     reportFile must beEqualTo(reportResponseFile.copy(reportId = Some(reportFixture.id)))
   }
 

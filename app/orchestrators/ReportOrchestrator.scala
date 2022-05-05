@@ -38,13 +38,13 @@ import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
-import repositories.subscription.SubscriptionRepository
-import repositories.website.WebsiteRepository
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.website.WebsiteRepositoryInterface
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportReadByProNotification
@@ -72,14 +72,14 @@ import scala.util.Random
 
 class ReportOrchestrator @Inject() (
     mailService: MailService,
-    reportRepository: ReportRepository,
-    reportFileRepository: ReportFileRepository,
-    companyRepository: CompanyRepository,
+    reportRepository: ReportRepositoryInterface,
+    reportFileRepository: ReportFileRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
-    eventRepository: EventRepository,
-    websiteRepository: WebsiteRepository,
+    eventRepository: EventRepositoryInterface,
+    websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    subscriptionRepository: SubscriptionRepository,
+    subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3Service,
@@ -100,12 +100,14 @@ class ReportOrchestrator @Inject() (
       token <- existingToken
         .map(Future(_))
         .getOrElse(
-          accessTokenRepository.createToken(
-            kind = CompanyInit,
-            token = f"${Random.nextInt(1000000)}%06d",
-            validity = validity,
-            companyId = Some(companyId),
-            level = Some(AccessLevel.ADMIN)
+          accessTokenRepository.create(
+            AccessToken.build(
+              kind = CompanyInit,
+              token = f"${Random.nextInt(1000000)}%06d",
+              validity = validity,
+              companyId = Some(companyId),
+              level = Some(AccessLevel.ADMIN)
+            )
           )
         )
     } yield token.token
@@ -122,7 +124,10 @@ class ReportOrchestrator @Inject() (
           val companyUserEmails: NonEmptyList[EmailAddress] = companyUsers.map(_.email)
           for {
             _ <- mailService.send(ProNewReportNotification(companyUserEmails, report))
-            reportWithUpdatedStatus <- reportRepository.update(report.copy(status = ReportStatus.TraitementEnCours))
+            reportWithUpdatedStatus <- reportRepository.update(
+              report.id,
+              report.copy(status = ReportStatus.TraitementEnCours)
+            )
             _ <- createEmailProNewReportEvent(report, company, companyUsers)
           } yield reportWithUpdatedStatus
         case None =>
@@ -133,7 +138,7 @@ class ReportOrchestrator @Inject() (
 
   private def createEmailProNewReportEvent(report: Report, company: Company, companyUsers: NonEmptyList[User]) =
     eventRepository
-      .createEvent(
+      .create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -160,7 +165,7 @@ class ReportOrchestrator @Inject() (
 
     maybeWebsite.map { website =>
       logger.debug("Creating website entry")
-      websiteRepository.create(website)
+      websiteRepository.validateAndCreate(website)
     }.sequence
   }
 
@@ -218,7 +223,7 @@ class ReportOrchestrator @Inject() (
 
   private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) =
     for {
-      event <- eventRepository.createEvent(
+      event <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -265,7 +270,7 @@ class ReportOrchestrator @Inject() (
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
-      existingReport <- reportRepository.getReport(reportId)
+      existingReport <- reportRepository.get(reportId)
       company <- companyRepository.getOrCreate(
         reportCompany.siret,
         Company(
@@ -279,6 +284,7 @@ class ReportOrchestrator @Inject() (
         case Some(report) =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 companyId = Some(company.id),
                 companyName = Some(reportCompany.name),
@@ -295,6 +301,7 @@ class ReportOrchestrator @Inject() (
         .map(report =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 status = report.initialStatus()
               )
@@ -311,7 +318,7 @@ class ReportOrchestrator @Inject() (
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 Some(report.id),
@@ -338,11 +345,12 @@ class ReportOrchestrator @Inject() (
       userUUID: UUID
   ): Future[Option[Report]] =
     for {
-      existingReport <- reportRepository.getReport(reportId)
+      existingReport <- reportRepository.get(reportId)
       updatedReport <- existingReport match {
         case Some(report) =>
           reportRepository
             .update(
+              report.id,
               report.copy(
                 firstName = reportConsumer.firstName,
                 lastName = reportConsumer.lastName,
@@ -356,7 +364,7 @@ class ReportOrchestrator @Inject() (
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
-            .createEvent(
+            .create(
               Event(
                 UUID.randomUUID(),
                 Some(report.id),
@@ -393,7 +401,7 @@ class ReportOrchestrator @Inject() (
 
   def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
     for {
-      reportFile <- reportFileRepository.createFile(
+      reportFile <- reportFileRepository.create(
         ReportFile(
           UUID.randomUUID,
           reportId = None,
@@ -416,14 +424,14 @@ class ReportOrchestrator @Inject() (
 
   def removeReportFile(id: UUID) =
     for {
-      reportFile <- reportFileRepository.getFile(id)
-      _ <- reportFile.map(f => reportFileRepository.deleteFile(f.id)).getOrElse(Future(None))
+      reportFile <- reportFileRepository.get(id)
+      _ <- reportFile.map(f => reportFileRepository.delete(f.id)).getOrElse(Future(None))
       _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
     } yield ()
 
   private def removeAccessToken(companyId: UUID) =
     for {
-      company <- companyRepository.fetchCompany(companyId)
+      company <- companyRepository.get(companyId)
       reports <- company
         .map(c => reportRepository.getReports(ReportFilter(companyIds = Seq(c.id))).map(_.entities))
         .getOrElse(Future(Nil))
@@ -435,8 +443,8 @@ class ReportOrchestrator @Inject() (
 
   def deleteReport(id: UUID) =
     for {
-      report <- reportRepository.getReport(id)
-      _ <- eventRepository.deleteEvents(id)
+      report <- reportRepository.get(id)
+      _ <- eventRepository.deleteByReportId(id)
       _ <- reportFileRepository
         .retrieveReportFiles(id)
         .map(files => files.map(file => removeReportFile(file.id)))
@@ -446,7 +454,7 @@ class ReportOrchestrator @Inject() (
 
   private def manageFirstViewOfReportByPro(report: Report, userUUID: UUID) =
     for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -468,7 +476,7 @@ class ReportOrchestrator @Inject() (
   private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
       _ <- mailService.send(ConsumerReportReadByProNotification(report))
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
           reportId = Some(report.id),
@@ -479,7 +487,7 @@ class ReportOrchestrator @Inject() (
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
-      newReport <- reportRepository.update(report.copy(status = ReportStatus.Transmis))
+      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
     } yield newReport
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
@@ -489,11 +497,11 @@ class ReportOrchestrator @Inject() (
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       newEvent <- report match {
         case Some(r) =>
           eventRepository
-            .createEvent(
+            .create(
               draftEvent.copy(
                 id = UUID.randomUUID(),
                 creationDate = OffsetDateTime.now(),
@@ -509,6 +517,7 @@ class ReportOrchestrator @Inject() (
         case (Some(r), Some(event)) =>
           reportRepository
             .update(
+              r.id,
               r.copy(status = event.action match {
                 case POST_ACCOUNT_ACTIVATION_DOC => ReportStatus.TraitementEnCours
                 case _                           => r.status
@@ -530,7 +539,7 @@ class ReportOrchestrator @Inject() (
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -544,6 +553,7 @@ class ReportOrchestrator @Inject() (
       )
       _ <- reportFileRepository.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
+        report.id,
         report.copy(
           status = reportResponse.responseType match {
             case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
@@ -553,7 +563,7 @@ class ReportOrchestrator @Inject() (
         )
       )
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -564,7 +574,7 @@ class ReportOrchestrator @Inject() (
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
       )
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -580,7 +590,7 @@ class ReportOrchestrator @Inject() (
 
   def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] =
     for {
-      newEvent <- eventRepository.createEvent(
+      newEvent <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -655,7 +665,7 @@ class ReportOrchestrator @Inject() (
   def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")
     reportFileRepository
-      .getFile(UUID.fromString(uuid))
+      .get(UUID.fromString(uuid))
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
           logger.info("Attachment has not been scan by antivirus, rescheduling scan")

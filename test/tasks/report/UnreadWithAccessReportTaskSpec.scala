@@ -10,13 +10,13 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import tasks.Task
@@ -324,7 +324,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
     eventRepository.getEvents(reportUUID, EventFilter()).map(_.length) must beEqualTo(existingEvents.length).await
 
   def reportMustHaveBeenUpdatedWithStatus(reportUUID: UUID, status: ReportStatus) =
-    reportRepository.getReport(reportUUID) must reportStatusMatcher(status).await
+    reportRepository.get(reportUUID) must reportStatusMatcher(status).await
 
   def reportStatusMatcher(status: ReportStatus): org.specs2.matcher.Matcher[Option[Report]] = {
     report: Option[Report] =>
@@ -332,15 +332,15 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   }
 
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
-    reportRepository.getReport(report.id).map(_.get.status) must beEqualTo(report.status).await
+    reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepository]
+  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val reportTask = injector.instanceOf[ReportTask]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
-  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
+  lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachementService = app.injector.instanceOf[AttachementService]
 
@@ -359,5 +359,5 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)
   def setupEvent(event: Event) =
-    Await.result(eventRepository.createEvent(event), Duration.Inf)
+    Await.result(eventRepository.create(event), Duration.Inf)
 }

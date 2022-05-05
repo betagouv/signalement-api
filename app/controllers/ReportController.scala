@@ -18,9 +18,9 @@ import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.event.EventFilter
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.Constants
@@ -40,9 +40,9 @@ import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    reportRepository: ReportRepository,
-    reportFileRepository: ReportFileRepository,
-    eventRepository: EventRepository,
+    reportRepository: ReportRepositoryInterface,
+    reportFileRepository: ReportFileRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
     frontRoute: FrontRoute,
@@ -112,7 +112,7 @@ class ReportController @Inject() (
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
         reportAction <- request.parseBody[ReportAction]()
-        report <- reportRepository.getReport(UUID.fromString(uuid))
+        report <- reportRepository.get(UUID.fromString(uuid))
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -160,7 +160,7 @@ class ReportController @Inject() (
   def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
     val uuid = UUID.fromString(id)
     reportFileRepository
-      .getFile(uuid)
+      .get(uuid)
       .flatMap {
         case Some(file) if file.filename == filename =>
           (file.reportId, request.identity) match {
@@ -235,7 +235,7 @@ class ReportController @Inject() (
 
   private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)

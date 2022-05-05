@@ -8,6 +8,7 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.report.ReportTable
@@ -31,37 +32,33 @@ import scala.concurrent.Future
 @Singleton
 class EventRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
-)(implicit
-    ec: ExecutionContext
-) {
+)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[EventTable, Event]
+    with EventRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[EventTable] = EventTable.table
+
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
 
-  def list: Future[Seq[Event]] = db.run(EventTable.table.result)
-
-  def createEvent(event: Event): Future[Event] = db
-    .run(EventTable.table += event)
-    .map(_ => event)
-
-  def delete(userId: UUID): Future[Int] = db
+  override def deleteByUserId(userId: UUID): Future[Int] = db
     .run(
-      EventTable.table
+      table
         .filter(_.userId === userId)
         .delete
     )
 
-  def deleteEvents(uuidReport: UUID): Future[Int] = db
+  override def deleteByReportId(uuidReport: UUID): Future[Int] = db
     .run(
-      EventTable.table
+      table
         .filter(_.reportId === uuidReport)
         .delete
     )
 
   private def getRawEvents(filter: EventFilter) =
-    EventTable.table
+    table
       .filterOpt(filter.eventType) { case (table, eventType) =>
         table.eventType === eventType.value
       }
@@ -69,7 +66,7 @@ class EventRepository @Inject() (
         table.action === action.value
       }
 
-  def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]] = db.run {
+  override def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]] = db.run {
     getRawEvents(filter)
       .filter(_.reportId === reportId)
       .sortBy(_.creationDate.desc)
@@ -77,7 +74,7 @@ class EventRepository @Inject() (
       .result
   }
 
-  def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
+  override def getEventsWithUsers(reportId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
     getRawEvents(filter)
       .filter(_.reportId === reportId)
       .joinLeft(UserTable.table)
@@ -87,20 +84,21 @@ class EventRepository @Inject() (
       .result
   }
 
-  def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] = db.run {
-    getRawEvents(filter)
-      .filter(_.companyId === companyId)
-      .filter(!_.reportId.isDefined)
-      .joinLeft(UserTable.table)
-      .on(_.userId === _.id)
-      .sortBy(_._1.creationDate.desc)
-      .to[List]
-      .result
-  }
+  override def getCompanyEventsWithUsers(companyId: UUID, filter: EventFilter): Future[List[(Event, Option[User])]] =
+    db.run {
+      getRawEvents(filter)
+        .filter(_.companyId === companyId)
+        .filter(!_.reportId.isDefined)
+        .joinLeft(UserTable.table)
+        .on(_.userId === _.id)
+        .sortBy(_._1.creationDate.desc)
+        .to[List]
+        .result
+    }
 
-  def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
+  override def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]] =
     db.run(
-      EventTable.table
+      table
         .filter(_.action === REPORT_REVIEW_ON_RESPONSE.value)
         .joinLeft(ReportTable.table)
         .on(_.reportId === _.id)
@@ -113,10 +111,10 @@ class EventRepository @Inject() (
         .result
     )
 
-  def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
+  override def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(
-      EventTable.table
+      table
         .filter(
           _.reportId inSetBind reportsIds
         )
@@ -125,16 +123,16 @@ class EventRepository @Inject() (
     ).map(events => events.groupBy(_.reportId.get))
   }
 
-  def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] =
+  override def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] =
     db.run(
-      EventTable.table
+      table
         .filter(_.companyId inSetBind companyIds.distinct)
         .sortBy(_.creationDate.desc.nullsLast)
         .to[List]
         .result
     ).map(f => f.groupBy(_.companyId.get).toMap)
 
-  def getAvgTimeUntilEvent(
+  override def getAvgTimeUntilEvent(
       action: ActionEventValue,
       companyId: Option[UUID] = None,
       status: Seq[ReportStatus] = Seq.empty,
@@ -151,7 +149,7 @@ class EventRepository @Inject() (
         .filterNot { table =>
           table.tags @& withoutTags.toList.bind
         }
-        .join(EventTable.table)
+        .join(table)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
         .map(x => x._2.creationDate - x._1.creationDate)
@@ -159,20 +157,20 @@ class EventRepository @Inject() (
         .result
     )
 
-  def getReportCountHavingEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Int] =
+  override def getReportCountHavingEvent(action: ActionEventValue, companyId: Option[UUID] = None): Future[Int] =
     db.run(
       ReportTable.table
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
         }
-        .join(EventTable.table)
+        .join(table)
         .on(_.id === _.reportId)
         .filter(_._2.action === action.value)
         .length
         .result
     )
 
-  def getProReportStat(
+  override def getProReportStat(
       ticks: Int,
       startingDate: OffsetDateTime,
       actions: NonEmptyList[ActionEventValue]
@@ -188,7 +186,7 @@ and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
 
-  def getProReportResponseStat(
+  override def getProReportResponseStat(
       ticks: Int,
       startingDate: OffsetDateTime,
       responseTypes: NonEmptyList[ReportResponseType]

@@ -14,11 +14,11 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companydata.CompanyDataRepository
-import repositories.reportblockednotification.ReportNotificationBlockedRepository
-import repositories.user.UserRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
@@ -40,12 +40,12 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
-  lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepository]
+  lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepositoryInterface]
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val mailService = injector.instanceOf[MailService]

@@ -6,8 +6,10 @@ import models.UserRole.DGCCRF
 import models._
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
+import slick.lifted.TableQuery
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
@@ -26,59 +28,47 @@ import scala.concurrent.Future
 class UserRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
     passwordHasherRegistry: PasswordHasherRegistry
-)(implicit ec: ExecutionContext) {
+)(implicit
+    override val ec: ExecutionContext
+) extends CRUDRepository[UserTable, User]
+    with UserRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[UserTable] = UserTable.table
   val logger: Logger = Logger(this.getClass)
 
   import dbConfig._
 
-  def list: Future[Seq[User]] = db.run(UserTable.table.result)
-
-  def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
+  override def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
     db
       .run(
-        UserTable.table
+        table
           .filter(_.role === DGCCRF.entryName)
           .filter(_.lastEmailValidation <= expirationDate)
           .to[List]
           .result
       )
 
-  def list(role: UserRole): Future[Seq[User]] =
+  override def list(role: UserRole): Future[Seq[User]] =
     db
       .run(
-        UserTable.table
+        table
           .filter(_.role === role.entryName)
           .result
       )
 
-  def create(user: User): Future[User] = db
-    .run(UserTable.table += user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
-    .map(_ => user)
-    .recoverWith {
-      case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
-        logger.warn("Cannot create user, provided email already exists")
-        Future.failed(EmailAlreadyExist)
-    }
+  override def create(user: User): Future[User] =
+    super
+      .create(user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
+      .recoverWith {
+        case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
+          logger.warn("Cannot create user, provided email already exists")
+          Future.failed(EmailAlreadyExist)
+      }
 
-  def get(userId: UUID): Future[Option[User]] = db
-    .run(UserTable.table.filter(_.id === userId).to[List].result.headOption)
-
-  def update(user: User): Future[Int] = {
+  override def updatePassword(userId: UUID, password: String): Future[Int] = {
     val queryUser =
-      for (refUser <- UserTable.table if refUser.id === user.id)
-        yield refUser
-    db.run(
-      queryUser
-        .map(u => (u.firstName, u.lastName, u.email))
-        .update((user.firstName, user.lastName, user.email))
-    )
-  }
-
-  def updatePassword(userId: UUID, password: String): Future[Int] = {
-    val queryUser =
-      for (refUser <- UserTable.table if refUser.id === userId)
+      for (refUser <- table if refUser.id === userId)
         yield refUser
     db.run(
       queryUser
@@ -87,21 +77,15 @@ class UserRepository @Inject() (
     )
   }
 
-  def delete(userId: UUID): Future[Int] = db
-    .run(UserTable.table.filter(_.id === userId).delete)
+  override def list(email: EmailAddress): Future[Seq[User]] = db
+    .run(table.filter(_.email === email).result)
 
-  def list(email: EmailAddress): Future[Seq[User]] = db
-    .run(UserTable.table.filter(_.email === email).result)
+  override def delete(email: EmailAddress): Future[Int] = db
+    .run(table.filter(_.email === email).delete)
 
-  def delete(email: EmailAddress): Future[Int] = db
-    .run(UserTable.table.filter(_.email === email).delete)
-
-  def findById(id: UUID): Future[Option[User]] =
-    db.run(UserTable.table.filter(_.id === id).result.headOption)
-
-  def findByLogin(login: String): Future[Option[User]] =
+  override def findByLogin(login: String): Future[Option[User]] =
     db.run(
-      UserTable.table
+      table
         .filter(_.email === EmailAddress(login))
         .result
         .headOption

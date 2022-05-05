@@ -2,15 +2,15 @@ package repositories.user
 
 import models.User
 import models.UserRole
+import repositories.DatabaseTable
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.UUID
 import repositories.PostgresProfile.api._
 
-class UserTable(tag: Tag) extends Table[User](tag, "users") {
+class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
 
-  def id = column[UUID]("id", O.PrimaryKey)
   def password = column[String]("password")
   def email = column[EmailAddress]("email")
   def firstName = column[String]("firstname")

@@ -6,7 +6,7 @@ import models.User
 import models.event.Event
 import models.report.Report
 import play.api.Logger
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import services.Email.ProReportUnreadReminder
 import services.MailService
 import tasks.model.TaskType
@@ -27,7 +27,7 @@ import scala.concurrent.Future
 
 class UnreadReportsReminderTask @Inject() (
     taskConfiguration: TaskConfiguration,
-    eventRepository: EventRepository,
+    eventRepository: EventRepositoryInterface,
     emailService: MailService
 )(implicit
     ec: ExecutionContext
@@ -91,7 +91,7 @@ class UnreadReportsReminderTask @Inject() (
   ) = {
 
     val taskExecution: Future[Unit] = for {
-      _ <- eventRepository.createEvent(
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),

@@ -9,11 +9,11 @@ import utils._
 import java.time._
 import java.util.UUID
 import ReportColumnType._
+import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter
 
-class ReportTable(tag: Tag) extends Table[Report](tag, "reports") {
-  def id = column[UUID]("id", O.PrimaryKey)
+class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def gender = column[Option[Gender]]("gender")
   def category = column[String]("category")
   def subcategories = column[List[String]]("subcategories")

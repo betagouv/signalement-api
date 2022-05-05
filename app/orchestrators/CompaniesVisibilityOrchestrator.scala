@@ -5,9 +5,9 @@ import models.Company
 import models.CompanyWithAccess
 import models.User
 import models.UserRole
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companydata.CompanyDataRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
 import utils.SIREN
 import utils.SIRET
 
@@ -21,9 +21,9 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 }
 
 class CompaniesVisibilityOrchestrator @Inject() (
-    companyDataRepo: CompanyDataRepository,
-    companyRepo: CompanyRepository,
-    companyAccessRepository: CompanyAccessRepository
+    companyDataRepo: CompanyDataRepositoryInterface,
+    companyRepo: CompanyRepositoryInterface,
+    companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =

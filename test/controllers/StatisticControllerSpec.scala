@@ -16,7 +16,7 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
@@ -86,7 +86,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
 
   val company = Fixtures.genCompany.sample.get

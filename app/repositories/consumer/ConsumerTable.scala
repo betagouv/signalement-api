@@ -1,14 +1,12 @@
 package repositories.consumer
 
 import models.Consumer
+import repositories.DatabaseTable
 import repositories.PostgresProfile.api._
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
-class ConsumerTable(tag: Tag) extends Table[Consumer](tag, "consumer") {
-
-  def id = column[UUID]("id", O.PrimaryKey)
+class ConsumerTable(tag: Tag) extends DatabaseTable[Consumer](tag, "consumer") {
   def name = column[String]("name")
   def creationDate = column[OffsetDateTime]("creation_date")
   def apiKey = column[String]("api_key")

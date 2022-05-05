@@ -21,20 +21,20 @@ import models._
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companydata.CompanyDataRepository
-import repositories.user.UserRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
+import repositories.user.UserRepositoryInterface
 
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
-  lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepository]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
@@ -234,7 +234,7 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .create(AccessToken.build(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
       Duration.Inf
     )
     token must haveClass[AccessToken]
@@ -293,7 +293,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   def e2 = {
     companyActivationToken = Await.result(
       accessTokenRepository
-        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .create(AccessToken.build(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
       Duration.Inf
     )
     companyActivationToken must haveClass[AccessToken]
@@ -302,13 +302,15 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   def e8 = {
     initialUserCreationToken = Await.result(
       accessTokenRepository
-        .createToken(
-          kind = CompanyJoin,
-          token = UUID.randomUUID().toString,
-          validity = Some(initialUserTokenValidity),
-          companyId = Some(newCompany.id),
-          level = Some(AccessLevel.ADMIN),
-          emailedTo = Some(existingProUser.email)
+        .create(
+          AccessToken.build(
+            kind = CompanyJoin,
+            token = UUID.randomUUID().toString,
+            validity = Some(initialUserTokenValidity),
+            companyId = Some(newCompany.id),
+            level = Some(AccessLevel.ADMIN),
+            emailedTo = Some(existingProUser.email)
+          )
         ),
       Duration.Inf
     )
@@ -370,7 +372,7 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .create(AccessToken.build(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
       Duration.Inf
     )
     token must haveClass[AccessToken]
@@ -420,7 +422,7 @@ class UserAcceptTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControlle
   def e2 = {
     token = Await.result(
       accessTokenRepository
-        .createToken(CompanyJoin, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None),
+        .create(AccessToken.build(CompanyJoin, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
       Duration.Inf
     )
     token must haveClass[AccessToken]

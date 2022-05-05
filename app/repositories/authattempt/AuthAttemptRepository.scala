@@ -3,50 +3,44 @@ package repositories.authattempt
 import models.auth.AuthAttempt
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 @Singleton
 class AuthAttemptRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
-)(implicit ec: ExecutionContext) {
+)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[AuthAttemptTable, AuthAttempt]
+    with AuthAttemptRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[AuthAttemptTable] = AuthAttemptTable.table
+  import dbConfig._
   val logger: Logger = Logger(this.getClass)
 
-  import dbConfig._
-
-  def countAuthAttempts(login: String, delay: Duration) = db
+  override def countAuthAttempts(login: String, delay: Duration): Future[Int] = db
     .run(
-      AuthAttemptTable.table
+      table
         .filter(_.login === login)
         .filter(_.timestamp >= OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(delay.toMinutes))
         .length
         .result
     )
 
-  def listAuthAttempts(login: String) = db
+  override def listAuthAttempts(login: String): Future[Seq[AuthAttempt]] = db
     .run(
-      AuthAttemptTable.table
+      table
         .filter(_.login === login)
         .result
     )
 
-  def saveAuthAttempt(login: String, isSuccess: Boolean, failureCause: Option[String] = None) = {
-
-    val authAttempt = AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
-    logger.debug(s"Saving auth attempt $authAttempt")
-    db
-      .run(
-        AuthAttemptTable.table += AuthAttempt(UUID.randomUUID, login, OffsetDateTime.now, Some(isSuccess), failureCause)
-      )
-  }
 }
