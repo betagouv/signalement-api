@@ -16,7 +16,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import tasks.Task
@@ -329,7 +329,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   def reportStatusMustNotHaveBeenUpdated(report: Report) =
     reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val reminderTask = injector.instanceOf[ReportTask]

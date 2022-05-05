@@ -5,44 +5,38 @@ import models.website.Website
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
 import repositories.website.WebsiteColumnType.WebsiteKindColumnType
 import slick.jdbc.JdbcProfile
+import slick.lifted.TableQuery
 import utils.URL
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import PostgresProfile.api._
 @Singleton
 class WebsiteRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
-)(implicit ec: ExecutionContext) {
+)(implicit
+    override val ec: ExecutionContext
+) extends CRUDRepository[WebsiteTable, Website]
+    with WebsiteRepositoryInterface {
 
   val logger: Logger = Logger(this.getClass())
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[WebsiteTable] = WebsiteTable.table
 
-  import PostgresProfile.api._
   import dbConfig._
 
-  def find(id: UUID): Future[Option[Website]] = db
-    .run(WebsiteTable.table.filter(_.id === id).result.headOption)
-
-  def update(website: Website): Future[Website] = {
-    val query =
-      for (refWebsite <- WebsiteTable.table if refWebsite.id === website.id)
-        yield refWebsite
-    db.run(query.update(website))
-      .map(_ => website)
-  }
-
-  def create(newWebsite: Website) =
+  override def validateAndCreate(newWebsite: Website): Future[Website] =
     db.run(
-      WebsiteTable.table
+      table
         .filter(_.host === newWebsite.host)
         .filter(website =>
           (website.kind === WebsiteKind.values
@@ -54,12 +48,12 @@ class WebsiteRepository @Inject() (
         .headOption
     ).flatMap(
       _.map(Future(_))
-        .getOrElse(db.run(WebsiteTable.table returning WebsiteTable.table += newWebsite))
+        .getOrElse(super.create(newWebsite))
     )
 
-  def searchValidWebsiteAssociationByHost(host: String) =
+  override def searchValidWebsiteAssociationByHost(host: String): Future[Seq[Website]] =
     db.run(
-      WebsiteTable.table
+      table
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
@@ -67,9 +61,12 @@ class WebsiteRepository @Inject() (
         .result
     )
 
-  def searchCompaniesByHost(host: String, kinds: Option[Seq[WebsiteKind]] = None) =
+  override def searchCompaniesByHost(
+      host: String,
+      kinds: Option[Seq[WebsiteKind]] = None
+  ): Future[Seq[(Website, Company)]] =
     db.run(
-      WebsiteTable.table
+      table
         .filter(_.host === host)
         .filter(w => kinds.fold(true.bind)(w.kind.inSet(_)))
         .join(CompanyTable.table)
@@ -77,24 +74,27 @@ class WebsiteRepository @Inject() (
         .result
     )
 
-  def removeOtherWebsitesWithSameHost(website: Website) =
+  override def removeOtherWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
-      WebsiteTable.table
+      table
         .filter(_.host === website.host)
         .filterNot(_.id === website.id)
         .delete
     )
 
-  def searchCompaniesByUrl(url: String, kinds: Option[Seq[WebsiteKind]] = None): Future[Seq[(Website, Company)]] =
+  override def searchCompaniesByUrl(
+      url: String,
+      kinds: Option[Seq[WebsiteKind]] = None
+  ): Future[Seq[(Website, Company)]] =
     URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
 
-  def listWebsitesCompaniesByReportCount(
+  override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
       kinds: Option[Seq[WebsiteKind]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
-    val baseQuery = WebsiteTable.table
+    val baseQuery = table
       .joinLeft(CompanyTable.table)
       .on(_.companyId === _.id)
       .joinLeft(ReportTable.table)
@@ -120,5 +120,4 @@ class WebsiteRepository @Inject() (
     query.withPagination(db)(maybeOffset, maybeLimit)
   }
 
-  def delete(id: UUID): Future[Int] = db.run(WebsiteTable.table.filter(_.id === id).delete)
 }

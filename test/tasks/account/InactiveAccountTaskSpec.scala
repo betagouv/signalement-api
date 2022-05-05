@@ -14,7 +14,7 @@ import play.api.test.WithApplication
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.Constants.ActionEvent.CONTROL
 import utils.Constants.EventType
@@ -35,7 +35,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
   lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
   lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
@@ -100,7 +100,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
               _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
                 .runTask(now.atOffset(ZoneOffset.UTC))
-              userList <- userRepository.list
+              userList <- userRepository.list()
               activeSubscriptionList <- subscriptionRepository.list(activeDGCCRFUser.id)
               inactiveSubscriptionList <- subscriptionRepository.list(inactiveDGCCRFUser.id)
               events <- eventRepository.list()

@@ -28,7 +28,7 @@ import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -221,7 +221,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]

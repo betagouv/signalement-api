@@ -15,7 +15,6 @@ import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.user.UserRepository
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.FrontRoute
@@ -36,7 +35,6 @@ import scala.concurrent.Future
 class CompanyController @Inject() (
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    val userRepository: UserRepository,
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepositoryInterface,

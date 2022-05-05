@@ -18,7 +18,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
@@ -40,7 +40,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]

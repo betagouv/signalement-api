@@ -45,7 +45,7 @@ import play.api.Logger
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
 import services.MailService
 
@@ -56,7 +56,7 @@ import java.util.UUID
 class AuthOrchestrator @Inject() (
     userService: UserService,
     authAttemptRepository: AuthAttemptRepository,
-    userRepository: UserRepository,
+    userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
@@ -71,7 +71,6 @@ class AuthOrchestrator @Inject() (
   private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
-
     val eventualUserSession: Future[UserSession] = for {
       maybeUser <- userService.retrieve(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
@@ -156,11 +155,12 @@ class AuthOrchestrator @Inject() (
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
 
-  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] = for {
-    loginInfo <- authenticate(userLogin.login, userLogin.password)
-    authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-    token <- silhouette.env.authenticatorService.init(authenticator)
-  } yield token
+  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] =
+    for {
+      loginInfo <- authenticate(userLogin.login, userLogin.password)
+      authenticator <- silhouette.env.authenticatorService.create(loginInfo)
+      token <- silhouette.env.authenticatorService.init(authenticator)
+    } yield token
 
   private def authenticate(login: String, password: String) = credentialsProvider
     .authenticate(Credentials(login, password))

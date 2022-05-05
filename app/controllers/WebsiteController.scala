@@ -14,7 +14,7 @@ import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 @Singleton
 class WebsiteController @Inject() (
     val websitesOrchestrator: WebsitesOrchestrator,
-    val websiteRepository: WebsiteRepository,
+    val websiteRepository: WebsiteRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     @Named("websites-extract-actor") websitesExtractActor: ActorRef,

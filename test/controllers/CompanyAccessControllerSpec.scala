@@ -24,14 +24,14 @@ import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]

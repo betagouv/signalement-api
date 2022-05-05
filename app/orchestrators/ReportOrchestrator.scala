@@ -44,7 +44,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportReadByProNotification
@@ -77,7 +77,7 @@ class ReportOrchestrator @Inject() (
     companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepositoryInterface,
-    websiteRepository: WebsiteRepository,
+    websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
@@ -165,7 +165,7 @@ class ReportOrchestrator @Inject() (
 
     maybeWebsite.map { website =>
       logger.debug("Creating website entry")
-      websiteRepository.create(website)
+      websiteRepository.validateAndCreate(website)
     }.sequence
   }
 

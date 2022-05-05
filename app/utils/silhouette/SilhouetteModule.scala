@@ -30,7 +30,7 @@ import play.api.Configuration
 import scala.concurrent.ExecutionContext.Implicits.global
 import utils.ErrorHandler
 import net.ceedubs.ficus.readers.EnumerationReader._
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.silhouette.api.APIKey
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.api.APIKeyRequestProvider
@@ -199,7 +199,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /** See https://www.silhouette.rocks/docs/migration-guide
     */
   @Provides
-  def providePasswordDAO(userRepository: UserRepository): DelegableAuthInfoDAO[PasswordInfo] = new PasswordInfoDAO(
-    userRepository
-  )
+  def providePasswordDAO(userRepository: UserRepositoryInterface): DelegableAuthInfoDAO[PasswordInfo] =
+    new PasswordInfoDAO(
+      userRepository
+    )
 }

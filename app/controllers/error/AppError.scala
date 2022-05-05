@@ -96,9 +96,9 @@ object AppError {
 
   final case class UserNotFound(login: String) extends UnauthorizedError {
     override val `type`: String = "SC-0012"
-    override val title: String = "User not found"
+    override val title: String = "Cannot perform action on user"
     override val details: String =
-      s"Aucun utilisateur trouvé pour $login"
+      s"Action non autorisée pour $login"
   }
 
   final case class DGCCRFUserEmailValidationExpired(login: String) extends ForbiddenError {

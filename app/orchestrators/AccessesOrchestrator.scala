@@ -28,7 +28,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.Email.DgccrfAccessLink
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
@@ -53,7 +53,7 @@ class AccessesOrchestrator @Inject() (
     companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
-    userRepository: UserRepository,
+    userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
     frontRoute: FrontRoute,

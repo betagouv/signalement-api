@@ -10,7 +10,7 @@ import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
-import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import utils.Country
 import utils.URL
 
@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class WebsitesOrchestrator @Inject() (
-    val repository: WebsiteRepository,
+    val repository: WebsiteRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface
 )(implicit
     ec: ExecutionContext
@@ -52,7 +52,7 @@ class WebsitesOrchestrator @Inject() (
     website <- findWebsite(websiteId)
     _ = logger.debug(s"Updating website kind to ${kind}")
     updatedWebsite = website.copy(kind = kind)
-    _ <- repository.update(updatedWebsite)
+    _ <- repository.update(updatedWebsite.id, updatedWebsite)
     _ <-
       if (kind == WebsiteKind.DEFAULT) {
         logger.debug(s"Removing other websites with the same host : ${website.host}")
@@ -69,7 +69,7 @@ class WebsitesOrchestrator @Inject() (
     website <- findWebsite(websiteId)
     websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.DEFAULT)
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-    updatedWebsite <- repository.update(websiteToUpdate)
+    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
     _ <- repository
       .removeOtherWebsitesWithSameHost(website)
@@ -87,7 +87,7 @@ class WebsitesOrchestrator @Inject() (
       kind = WebsiteKind.DEFAULT
     )
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-    updatedWebsite <- repository.update(websiteToUpdate)
+    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
     _ <- repository
       .removeOtherWebsitesWithSameHost(website)
@@ -108,7 +108,7 @@ class WebsitesOrchestrator @Inject() (
   private[this] def findWebsite(websiteId: UUID): Future[Website] = for {
     maybeWebsite <- {
       logger.debug(s"Searching for website with id : $websiteId")
-      repository.find(websiteId)
+      repository.get(websiteId)
     }
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
     _ = logger.debug(s"Found website")

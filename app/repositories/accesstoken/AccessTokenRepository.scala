@@ -9,7 +9,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
-import repositories.user.UserRepository
 import repositories.user.UserTable
 import repositories.CRUDRepository
 import repositories.computeTickValues
@@ -29,8 +28,7 @@ import scala.concurrent.Future
 @Singleton
 class AccessTokenRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider,
-    val companyAccessRepository: CompanyAccessRepositoryInterface,
-    val userRepository: UserRepository
+    val companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AccessTokenTable, AccessToken]
     with AccessTokenRepositoryInterface {

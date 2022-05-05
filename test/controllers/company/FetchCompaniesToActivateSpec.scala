@@ -22,7 +22,7 @@ import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv
@@ -42,7 +42,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
   lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]

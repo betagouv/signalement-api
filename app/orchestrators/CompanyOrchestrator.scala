@@ -19,7 +19,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.website.WebsiteRepository
+import repositories.website.WebsiteRepositoryInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIREN
@@ -37,7 +37,7 @@ class CompanyOrchestrator @Inject() (
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
     val companyDataRepository: CompanyDataRepositoryInterface,
-    val websiteRepository: WebsiteRepository,
+    val websiteRepository: WebsiteRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
     val eventRepository: EventRepositoryInterface,
     val taskConfiguration: TaskConfiguration

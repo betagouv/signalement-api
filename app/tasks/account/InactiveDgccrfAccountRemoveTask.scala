@@ -6,7 +6,7 @@ import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import tasks.model.TaskType
 import tasks.TaskExecutionResult
 import tasks.TaskExecutionResults
@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class InactiveDgccrfAccountRemoveTask @Inject() (
-    userRepository: UserRepository,
+    userRepository: UserRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface
