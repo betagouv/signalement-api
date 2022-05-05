@@ -32,7 +32,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.user.UserRepository
 import services.AttachementService
 import services.MailerService
@@ -244,7 +244,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepository]
+  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepositoryInterface]
   lazy val userRepository = app.injector.instanceOf[UserRepository]
   lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
   lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]

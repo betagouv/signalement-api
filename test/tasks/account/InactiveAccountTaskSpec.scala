@@ -13,7 +13,7 @@ import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.event.EventRepositoryInterface
-import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepository
 import utils.AppSpec
 import utils.Constants.ActionEvent.CONTROL
@@ -38,7 +38,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = injector.instanceOf[UserRepository]
   lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
   lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
+  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
   lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
   lazy val actorSystem = injector.instanceOf[ActorSystem]
 

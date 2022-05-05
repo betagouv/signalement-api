@@ -10,7 +10,7 @@ import services.MailerService
 import models.report.ReportTag
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import utils._
 
 import java.time.LocalDate
@@ -51,7 +51,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
+  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
   lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]

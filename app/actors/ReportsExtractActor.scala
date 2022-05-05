@@ -26,7 +26,7 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3Service
 import utils.Constants
 import utils.Constants.Departments
@@ -49,7 +49,7 @@ object ReportsExtractActor {
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    reportFileRepository: ReportFileRepository,
+    reportFileRepository: ReportFileRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepositoryInterface,

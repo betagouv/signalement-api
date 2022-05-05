@@ -6,7 +6,7 @@ import config.TaskConfiguration
 import models.report.ReportFilter
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
-import repositories.subscription.SubscriptionRepository
+import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.computeStartingTime
@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 class ReportNotificationTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
-    subscriptionRepository: SubscriptionRepository,
+    subscriptionRepository: SubscriptionRepositoryInterface,
     mailService: MailService,
     taskConfiguration: TaskConfiguration
 )(implicit executionContext: ExecutionContext) {

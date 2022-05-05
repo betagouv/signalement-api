@@ -2,9 +2,11 @@ package repositories.subscription
 
 import models.Subscription
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile
 import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
+import slick.lifted.TableQuery
 import utils.EmailAddress
 import utils.EmailAddress.EmailColumnType
 
@@ -14,41 +16,19 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import PostgresProfile.api._
 
 @Singleton
 class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
-    ec: ExecutionContext
-) {
+    override val ec: ExecutionContext
+) extends CRUDRepository[SubscriptionTable, Subscription]
+    with SubscriptionRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
-  import PostgresProfile.api._
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[SubscriptionTable] = SubscriptionTable.table
   import dbConfig._
 
-  def create(subscription: Subscription): Future[Subscription] = db
-    .run(SubscriptionTable.table += subscription)
-    .map(_ => subscription)
-
-  def get(id: UUID): Future[Option[Subscription]] = db
-    .run(
-      SubscriptionTable.table
-        .filter(_.id === id)
-        .result
-        .headOption
-    )
-
-  def update(subscription: Subscription): Future[Subscription] = {
-    val querySubscription =
-      for (refSubscription <- SubscriptionTable.table if refSubscription.id === subscription.id)
-        yield refSubscription
-    db.run(querySubscription.update(subscription))
-      .map(_ => subscription)
-  }
-
-  def delete(subscriptionId: UUID): Future[Int] = db
-    .run(SubscriptionTable.table.filter(_.id === subscriptionId).delete)
-
-  def list(userId: UUID): Future[List[Subscription]] = db
+  override def list(userId: UUID): Future[List[Subscription]] = db
     .run(
       SubscriptionTable.table
         .filter(_.userId === userId)
@@ -57,7 +37,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         .result
     )
 
-  def listForFrequency(frequency: Period): Future[List[(Subscription, EmailAddress)]] = db
+  override def listForFrequency(frequency: Period): Future[List[(Subscription, EmailAddress)]] = db
     .run(
       SubscriptionTable.table
         .filter(_.frequency === frequency)
@@ -68,7 +48,7 @@ class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider
         .result
     )
 
-  def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]] =
+  override def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]] =
     db.run(
       SubscriptionTable.table
         .filter(_.email.isDefined)

@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.Constants
@@ -41,7 +41,7 @@ import scala.util.Try
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
-    reportFileRepository: ReportFileRepository,
+    reportFileRepository: ReportFileRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,

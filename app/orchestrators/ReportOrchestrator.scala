@@ -42,8 +42,8 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepository
-import repositories.subscription.SubscriptionRepository
+import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepository
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
@@ -73,13 +73,13 @@ import scala.util.Random
 class ReportOrchestrator @Inject() (
     mailService: MailService,
     reportRepository: ReportRepositoryInterface,
-    reportFileRepository: ReportFileRepository,
+    reportFileRepository: ReportFileRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     eventRepository: EventRepositoryInterface,
     websiteRepository: WebsiteRepository,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    subscriptionRepository: SubscriptionRepository,
+    subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
     s3Service: S3Service,

@@ -32,7 +32,7 @@ import play.mvc.Http.Status
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.AttachementService
 import services.MailService
 import services.MailerService
@@ -345,7 +345,7 @@ trait GetReportContext extends AppSpec {
   mockReportRepository.create(neverRequestedFinalReport)
   mockReportRepository.create(alreadyRequestedReport)
 
-  val mockReportFileRepository = mock[ReportFileRepository]
+  val mockReportFileRepository = mock[ReportFileRepositoryInterface]
   val mockEventRepository = mock[EventRepositoryInterface]
   val mockMailerService = mock[MailerService]
   val companiesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]

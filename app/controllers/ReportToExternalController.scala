@@ -26,11 +26,11 @@ import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
 import models.report.ReportTag
 import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 
 class ReportToExternalController @Inject() (
     reportRepository: ReportRepositoryInterface,
-    reportFileRepository: ReportFileRepository,
+    reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
