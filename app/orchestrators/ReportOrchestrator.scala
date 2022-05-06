@@ -52,7 +52,7 @@ import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.ProNewReportNotification
 import services.Email.ProResponseAcknowledgment
 import services.MailService
-import services.S3Service
+import services.S3ServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -83,7 +83,7 @@ class ReportOrchestrator @Inject() (
     subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
-    s3Service: S3Service,
+    s3Service: S3ServiceInterface,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration

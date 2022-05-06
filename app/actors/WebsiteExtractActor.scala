@@ -16,7 +16,7 @@ import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.S3Service
+import services.S3ServiceInterface
 import utils.DateUtils
 
 import java.nio.file.Path
@@ -39,7 +39,7 @@ object WebsitesExtractActor {
 class WebsitesExtractActor @Inject() (
     reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    s3Service: S3Service,
+    s3Service: S3ServiceInterface,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {

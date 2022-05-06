@@ -27,7 +27,7 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
-import services.S3Service
+import services.S3ServiceInterface
 import utils.Constants
 import utils.Constants.Departments
 
@@ -54,7 +54,7 @@ class ReportsExtractActor @Inject() (
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    s3Service: S3Service,
+    s3Service: S3ServiceInterface,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {

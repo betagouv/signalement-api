@@ -1,11 +1,14 @@
 package services
 
+import akka.Done
+import akka.NotUsed
 import akka.stream.IOResult
 import akka.stream.Materializer
 import akka.stream.alpakka.s3.MultipartUploadResult
 import akka.stream.alpakka.s3.scaladsl.S3
 import akka.stream.scaladsl.FileIO
 import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 
 import java.nio.file.Path
@@ -28,7 +31,7 @@ class S3Service @Inject() (implicit
     val materializer: Materializer,
     val executionContext: ExecutionContext,
     val bucketConfiguration: BucketConfiguration
-) {
+) extends S3ServiceInterface {
   private[this] val bucketName = bucketConfiguration.amazonBucketName
 
   private val alpakkaS3Client = S3
@@ -47,17 +50,17 @@ class S3Service @Inject() (implicit
     )
     .build()
 
-  def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
+  override def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]] =
     alpakkaS3Client.multipartUpload(bucketName, bucketKey)
 
-  def download(bucketKey: String): Future[ByteString] =
+  override def download(bucketKey: String): Future[ByteString] =
     downloadFromBucket(bucketKey)
       .flatMap(a => a.runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b)))
 
-  def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult] =
+  override def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult] =
     downloadFromBucket(bucketKey).flatMap(a => a.runWith(FileIO.toPath(Path.of(s"./${filename}"))))
 
-  private def downloadFromBucket(bucketKey: String) =
+  private def downloadFromBucket(bucketKey: String): Future[Source[ByteString, NotUsed]] =
     alpakkaS3Client
       .download(bucketName, bucketKey)
       .runWith(Sink.head)
@@ -66,10 +69,10 @@ class S3Service @Inject() (implicit
         case None                        => throw BucketFileNotFound(bucketName, bucketKey)
       }
 
-  def delete(bucketKey: String) =
+  override def delete(bucketKey: String): Future[Done] =
     alpakkaS3Client.deleteObject(bucketName, bucketKey).runWith(Sink.head)
 
-  def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
+  override def getSignedUrl(bucketKey: String, method: HttpMethod = HttpMethod.GET): String = {
     // See https://docs.aws.amazon.com/AmazonS3/latest/dev/ShareObjectPreSignedURLJavaSDK.html
     val expiration = new java.util.Date
     expiration.setTime(expiration.getTime + 1000 * 60 * 60)

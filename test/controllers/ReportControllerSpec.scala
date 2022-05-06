@@ -36,11 +36,13 @@ import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.MailerService
+import services.S3ServiceInterface
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.EventType
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
+import utils.S3ServiceMock
 
 import java.net.URI
 import java.time.OffsetDateTime
@@ -182,11 +184,13 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockMailerService = mock[MailerService]
+    val mockS3Service = new S3ServiceMock()
 
     class FakeModule(skipValidation: Boolean, spammerBlacklist: List[String]) extends AbstractModule with ScalaModule {
       override def configure() = {
         bind[Environment[AuthEnv]].toInstance(env)
         bind[MailerService].toInstance(mockMailerService)
+        bind[S3ServiceInterface].toInstance(mockS3Service)
         bind[EmailConfiguration].toInstance(
           EmailConfiguration(EmailAddress("test@sc.com"), EmailAddress("test@sc.com"), skipValidation, "", List(""))
         )
