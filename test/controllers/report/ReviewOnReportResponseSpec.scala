@@ -85,7 +85,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
   def e1 = {
     val result = route(
       app,
-      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id.toString).toString)
+      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id).toString)
         .withAuthenticator[AuthEnv](loginInfo(adminUser))
     ).get
 
@@ -180,7 +180,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     Await.result(
       app.injector
         .instanceOf[ReportConsumerReviewController]
-        .reviewOnReportResponse(reportId.toString)
+        .reviewOnReportResponse(reportId)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
         ),

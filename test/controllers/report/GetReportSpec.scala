@@ -179,7 +179,7 @@ trait GetReportSpec extends Spec with GetReportContext {
     Await.result(
       application.injector
         .instanceOf[ReportController]
-        .getReport(reportUUID.toString)
+        .getReport(reportUUID)
         .apply(someLoginInfo.map(FakeRequest().withAuthenticator[AuthEnv](_)).getOrElse(FakeRequest())),
       Duration.Inf
     )

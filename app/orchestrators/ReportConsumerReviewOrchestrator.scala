@@ -1,5 +1,6 @@
 package orchestrators
 
+import akka.Done
 import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ReviewAlreadyExists
@@ -31,6 +32,13 @@ class ReportConsumerReviewOrchestrator @Inject() (
     val executionContext: ExecutionContext
 ) {
   val logger = Logger(this.getClass)
+
+  def remove(reportId: UUID): Future[Done] =
+    find(reportId).flatMap {
+      case Some(responseConsumerReview) =>
+        responseConsumerReviewRepository.delete(responseConsumerReview.id).map(_ => Done)
+      case None => Future.successful(Done)
+    }
 
   def find(reportId: UUID): Future[Option[ResponseConsumerReview]] =
     responseConsumerReviewRepository.findByReportId(reportId) map {

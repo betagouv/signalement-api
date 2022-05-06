@@ -358,7 +358,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     Await.result(
       app.injector
         .instanceOf[ReportController]
-        .reportResponse(reportFixture.id.toString)
+        .reportResponse(reportFixture.id)
         .apply(
           someLoginInfo
             .map(FakeRequest().withAuthenticator[AuthEnv](_))

@@ -52,7 +52,7 @@ import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.ProNewReportNotification
 import services.Email.ProResponseAcknowledgment
 import services.MailService
-import services.S3Service
+import services.S3ServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -72,6 +72,7 @@ import scala.util.Random
 
 class ReportOrchestrator @Inject() (
     mailService: MailService,
+    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
@@ -82,7 +83,7 @@ class ReportOrchestrator @Inject() (
     subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
-    s3Service: S3Service,
+    s3Service: S3ServiceInterface,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
@@ -425,9 +426,11 @@ class ReportOrchestrator @Inject() (
   def removeReportFile(id: UUID) =
     for {
       reportFile <- reportFileRepository.get(id)
-      _ <- reportFile.map(f => reportFileRepository.delete(f.id)).getOrElse(Future(None))
+      res <- reportFile
+        .map(f => reportFileRepository.delete(f.id).map(x => println(s" x ${x}")))
+        .getOrElse(Future(None))
       _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
-    } yield ()
+    } yield res
 
   private def removeAccessToken(companyId: UUID) =
     for {
@@ -445,9 +448,9 @@ class ReportOrchestrator @Inject() (
     for {
       report <- reportRepository.get(id)
       _ <- eventRepository.deleteByReportId(id)
-      _ <- reportFileRepository
-        .retrieveReportFiles(id)
-        .map(files => files.map(file => removeReportFile(file.id)))
+      reportFilesToDelete <- reportFileRepository.retrieveReportFiles(id)
+      _ <- reportFilesToDelete.map(file => removeReportFile(file.id)).sequence
+      _ <- reportConsumerReviewOrchestrator.remove(id)
       _ <- reportRepository.delete(id)
       _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
     } yield report.isDefined
@@ -662,10 +665,10 @@ class ReportOrchestrator @Inject() (
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
 
-  def downloadReportAttachment(uuid: String, filename: String): Future[String] = {
+  def downloadReportAttachment(uuid: UUID, filename: String): Future[String] = {
     logger.info(s"Downloading file with id $uuid")
     reportFileRepository
-      .get(UUID.fromString(uuid))
+      .get(uuid)
       .flatMap {
         case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
           logger.info("Attachment has not been scan by antivirus, rescheduling scan")

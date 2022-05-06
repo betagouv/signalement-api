@@ -308,7 +308,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Await.result(
       app.injector
         .instanceOf[ReportController]
-        .updateReportCompany(reportId.toString)
+        .updateReportCompany(reportId)
         .apply(
           FakeRequest()
             .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
@@ -321,7 +321,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Await.result(
       app.injector
         .instanceOf[ReportController]
-        .updateReportConsumer(reportId.toString)
+        .updateReportConsumer(reportId)
         .apply(
           FakeRequest()
             .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
