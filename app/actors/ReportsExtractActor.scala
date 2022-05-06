@@ -193,7 +193,7 @@ class ReportsExtractActor @Inject() (
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
-                  .downloadReportFile(file.id.toString, file.filename)
+                  .downloadReportFile(file.id, file.filename)
                   .url}"
             )
             .mkString("\n"),

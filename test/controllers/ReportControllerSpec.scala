@@ -12,6 +12,12 @@ import config.TokenConfiguration
 import config.UploadConfiguration
 import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
+import models.report.review.ResponseEvaluation.Positive
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseConsumerReviewId
+import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
+import models.report.ReportFile
+import models.report.ReportFileOrigin
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -24,13 +30,23 @@ import play.api.test.Helpers._
 import play.api.test._
 import play.api.Configuration
 import play.api.Logger
+import repositories.company.CompanyRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.MailerService
+import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
+import utils.Constants.EventType
 import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
 
 import java.net.URI
+import java.time.OffsetDateTime
 import java.time.Period
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -39,7 +55,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
   "ReportController" should {
 
     "return a BadRequest with errors if report is invalid" in new Context {
-      val app = application()
+      val testEnv = application()
+      import testEnv._
+
       new WithApplication(app) {
 
         val jsonBody = Json.toJson("category" -> "")
@@ -53,7 +71,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     }
 
     "return a BadRequest on invalid email" in new Context {
-      val app = application()
+      val testEnv = application()
+      import testEnv._
+
       new WithApplication(app) {
 
         val draftReport = Fixtures.genDraftReport.sample
@@ -72,7 +92,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     "block spammed email" in new Context {
       val blockedEmail = "spammer@gmail.com"
-      val app = application(skipValidation = true, List(blockedEmail))
+      val testEnv = application(skipValidation = true, List(blockedEmail))
+      import testEnv._
+
       new WithApplication(app) {
 
         val draftReport = Fixtures.genDraftReport.sample.get.copy(email = EmailAddress(blockedEmail))
@@ -84,6 +106,63 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         Helpers.status(result) must beEqualTo(OK)
 
         Helpers.contentAsBytes(result).isEmpty mustEqual true
+
+      }
+    }
+
+    "delete report" in new Context {
+
+      val testEnv = application()
+      import testEnv._
+
+      new WithApplication(app) {
+
+        val company = Fixtures.genCompany.sample.get
+        val report = Fixtures.genReportForCompany(company).sample.get
+        val event = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
+        val reportFile = ReportFile(
+          UUID.randomUUID(),
+          Some(report.id),
+          OffsetDateTime.now(),
+          "fileName",
+          "storageName",
+          ReportFileOrigin(""),
+          None
+        )
+        val review =
+          ResponseConsumerReview(ResponseConsumerReviewId.generateId(), report.id, Positive, OffsetDateTime.now(), None)
+
+        Await.result(
+          for {
+            _ <- companyRepository.create(company)
+            _ <- reportRepository.create(report)
+            _ <- reportFileRepository.create(reportFile)
+            _ <- eventRepository.create(event)
+            _ <- responseConsumerReviewRepository.create(review)
+          } yield (),
+          Duration.Inf
+        )
+
+        val request =
+          FakeRequest("DELETE", s"/api/reports/${report.id.toString}").withAuthenticator[AuthEnv](adminLoginInfo)
+        val result = route(app, request).get
+
+        Helpers.status(result) must beEqualTo(NO_CONTENT)
+        Helpers.contentAsBytes(result).isEmpty mustEqual true
+
+        val (maybeReport, maybeReportFile, maybeEvent, maybeReview) = Await.result(
+          for {
+            maybeReport <- reportRepository.get(report.id)
+            maybeReportFile <- reportFileRepository.get(reportFile.id)
+            maybeEvent <- eventRepository.get(event.id)
+            maybeReview <- responseConsumerReviewRepository.get(review.id)
+          } yield (maybeReport, maybeReportFile, maybeEvent, maybeReview),
+          Duration.Inf
+        )
+        maybeReport must beNone
+        maybeReportFile must beNone
+        maybeEvent must beNone
+        maybeReview must beNone
 
       }
     }
@@ -129,8 +208,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) =
-      new GuiceApplicationBuilder()
+    def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
+
+      val app = new GuiceApplicationBuilder()
         .configure(
           Configuration(
             "play.evolutions.enabled" -> false,
@@ -143,6 +223,14 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         )
         .overrides(new FakeModule(skipValidation, spammerBlacklist))
         .build()
+
+      val reportRepository = app.injector.instanceOf[ReportRepositoryInterface]
+      val reportFileRepository = app.injector.instanceOf[ReportFileRepositoryInterface]
+      val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
+      val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepositoryInterface]
+      val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+
+    }
 
   }
 

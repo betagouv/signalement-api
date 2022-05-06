@@ -28,21 +28,21 @@ GET           /api/reports                                      controllers.Repo
 POST          /api/reports/extract                              controllers.ReportListController.extractReports()
 
 # Report API
-GET           /api/reports/files/:uuid/:filename                controllers.ReportController.downloadReportFile(uuid, filename)
-DELETE        /api/reports/files/:uuid/:filename                controllers.ReportController.deleteReportFile(uuid, filename)
+GET           /api/reports/files/:uuid/:filename                controllers.ReportController.downloadReportFile(uuid: java.util.UUID, filename)
+DELETE        /api/reports/files/:uuid/:filename                controllers.ReportController.deleteReportFile(uuid: java.util.UUID, filename)
 POST          /api/reports/files                                controllers.ReportController.uploadReportFile()
 
-GET           /api/reports/:uuid                                controllers.ReportController.getReport(uuid)
-GET           /api/reports/:uuid/download                       controllers.ReportController.reportAsPDF(uuid)
-DELETE        /api/reports/:uuid                                controllers.ReportController.deleteReport(uuid)
+GET           /api/reports/:uuid                                controllers.ReportController.getReport(uuid: java.util.UUID)
+GET           /api/reports/:uuid/download                       controllers.ReportController.reportAsPDF(uuid: java.util.UUID)
+DELETE        /api/reports/:uuid                                controllers.ReportController.deleteReport(uuid: java.util.UUID)
 
 POST          /api/reports                                      controllers.ReportController.createReport()
-POST          /api/reports/:uuid/response                       controllers.ReportController.reportResponse(uuid)
-POST          /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid)
-GET           /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.getReview(uuid)
-POST          /api/reports/:uuid/company                        controllers.ReportController.updateReportCompany(uuid)
-POST          /api/reports/:uuid/consumer                       controllers.ReportController.updateReportConsumer(uuid)
-POST          /api/reports/:uuid/action                         controllers.ReportController.createReportAction(uuid)
+POST          /api/reports/:uuid/response                       controllers.ReportController.reportResponse(uuid: java.util.UUID)
+POST          /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid: java.util.UUID)
+GET           /api/reports/:uuid/response/review                controllers.ReportConsumerReviewController.getReview(uuid: java.util.UUID)
+POST          /api/reports/:uuid/company                        controllers.ReportController.updateReportCompany(uuid: java.util.UUID)
+POST          /api/reports/:uuid/consumer                       controllers.ReportController.updateReportConsumer(uuid: java.util.UUID)
+POST          /api/reports/:uuid/action                         controllers.ReportController.createReportAction(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                         controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
 GET           /api/companies/:siret/events                      controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 
