@@ -166,12 +166,16 @@ class CompanyOrchestrator @Inject() (
     for {
       companiesByUrl <-
         websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
+      _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository
           .searchBySiret(company.siret)
-          .map(_.map { case (company, activity) =>
-            company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
-          })
+          .map { companies =>
+            logger.debug(s"Found ${companies.length} entries in company database")
+            companies.map { case (company, activity) =>
+              company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
+            }
+          }
       })
     } yield results.flatten
   }
