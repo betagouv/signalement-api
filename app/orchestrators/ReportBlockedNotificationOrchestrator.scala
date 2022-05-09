@@ -1,7 +1,7 @@
 package orchestrators
 
 import models.report.ReportBlockedNotification
-import repositories.reportblockednotification.ReportNotificationBlockedRepository
+import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 
 import java.util.UUID
 import javax.inject.Inject
@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportBlockedNotificationOrchestrator @Inject() (
-    repository: ReportNotificationBlockedRepository
+    repository: ReportNotificationBlockedRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] = repository.findByUserId(userId)

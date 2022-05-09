@@ -20,9 +20,9 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.consumer.ConsumerRepository
+import repositories.consumer.ConsumerRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
+import repositories.reportfile.ReportFileRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
@@ -40,7 +40,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
     with Mockito {
 
   val logger: Logger = Logger(this.getClass)
-  lazy val consumerRepo = injector.instanceOf[ConsumerRepository]
+  lazy val consumerRepo = injector.instanceOf[ConsumerRepositoryInterface]
 
   override def setupData() =
     Await.result(
@@ -106,7 +106,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository = mock[ReportRepository]
-    val mockReportFileRepository = mock[ReportFileRepository]
+    val mockReportFileRepository = mock[ReportFileRepositoryInterface]
 
     implicit val ordering = ReportRepository.ReportFileOrdering
 

@@ -11,7 +11,7 @@ import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
-
+import repositories.CRUDRepository
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,15 +19,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
-    ec: ExecutionContext
-) {
+class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+    extends CRUDRepository[CompanyTable, Company]
+    with CompanyRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[CompanyTable] = CompanyTable.table
   import dbConfig._
 
-  def searchWithReportsCount(
+  override def searchWithReportsCount(
       search: CompanyRegisteredSearch,
       paginate: PaginatedSearch,
       userRole: UserRole
@@ -38,7 +38,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .filter(_._2.email === emailWithAccess)
       .map(_._1.companyId)
 
-    val query = CompanyTable.table
+    val query = table
       .joinLeft(ReportTable.table(userRole))
       .on(_.id === _.companyId)
       .filterIf(search.departments.nonEmpty) { case (company, _) =>
@@ -71,7 +71,7 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
         )
       }
       .sortBy(_._2.desc)
-    val filterQuery = search.identity
+    search.identity
       .map {
         case SearchCompanyIdentityRCS(q)   => query.filter(_._1.id.asColumnOf[String] like s"%${q}%")
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET.fromUnsafe(q))
@@ -83,61 +83,30 @@ class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(imp
       .filterOpt(search.emailsWithAccess) { case (table, email) =>
         table._1.id.in(companyIdByEmailTable(EmailAddress(email)))
       }
-
-    toPaginate(filterQuery, paginate.offset, paginate.limit)
+      .withPagination(db)(maybeOffset = paginate.offset, maybeLimit = paginate.limit)
   }
 
-  def toPaginate[A, B](
-      query: slick.lifted.Query[A, B, Seq],
-      offsetOpt: Option[Long],
-      limitOpt: Option[Int]
-  ): Future[PaginatedResult[B]] = {
-    val offset = offsetOpt.getOrElse(0L)
-    val limit = limitOpt.getOrElse(10)
-    val resultF = db.run(query.drop(offset).take(limit).result)
-    val countF = db.run(query.length.result)
-    for {
-      result <- resultF
-      count <- countF
-    } yield PaginatedResult(
-      totalCount = count,
-      entities = result.toList,
-      hasNextPage = count - (offset + limit) > 0
-    )
-  }
-
-  def getOrCreate(siret: SIRET, data: Company): Future[Company] =
-    db.run(CompanyTable.table.filter(_.siret === siret).result.headOption)
+  override def getOrCreate(siret: SIRET, data: Company): Future[Company] =
+    db.run(table.filter(_.siret === siret).result.headOption)
       .flatMap(
-        _.map(Future(_)).getOrElse(db.run(CompanyTable.table returning CompanyTable.table += data))
+        _.map(Future(_)).getOrElse(db.run(table returning table += data))
       )
 
-  def update(company: Company): Future[Company] = {
-    val queryCompany =
-      for (refCompany <- CompanyTable.table if refCompany.id === company.id)
-        yield refCompany
-    db.run(queryCompany.update(company))
-      .map(_ => company)
-  }
+  override def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
+    db.run(table.filter(_.id inSetBind companyIds).to[List].result)
 
-  def fetchCompany(id: UUID) =
-    db.run(CompanyTable.table.filter(_.id === id).result.headOption)
+  override def findBySiret(siret: SIRET): Future[Option[Company]] =
+    db.run(table.filter(_.siret === siret).result.headOption)
 
-  def fetchCompanies(companyIds: List[UUID]): Future[List[Company]] =
-    db.run(CompanyTable.table.filter(_.id inSetBind companyIds).to[List].result)
+  override def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
+    db.run(table.filter(_.siret inSet sirets).to[List].result)
 
-  def findBySiret(siret: SIRET): Future[Option[Company]] =
-    db.run(CompanyTable.table.filter(_.siret === siret).result.headOption)
+  override def findByName(name: String): Future[List[Company]] =
+    db.run(table.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
 
-  def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
-    db.run(CompanyTable.table.filter(_.siret inSet sirets).to[List].result)
-
-  def findByName(name: String): Future[List[Company]] =
-    db.run(CompanyTable.table.filter(_.name.toLowerCase like s"%${name.toLowerCase}%").to[List].result)
-
-  def findBySiren(siren: List[SIREN]): Future[List[Company]] =
+  override def findBySiren(siren: List[SIREN]): Future[List[Company]] =
     db.run(
-      CompanyTable.table
+      table
         .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
         .to[List]
         .result

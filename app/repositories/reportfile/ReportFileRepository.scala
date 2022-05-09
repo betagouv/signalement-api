@@ -2,6 +2,7 @@ package repositories.reportfile
 
 import models.report._
 import play.api.db.slick.DatabaseConfigProvider
+import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.jdbc.JdbcProfile
 
@@ -12,43 +13,33 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+    override val ec: ExecutionContext
+) extends CRUDRepository[ReportFileTable, ReportFile]
+    with ReportFileRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
+  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val table: TableQuery[ReportFileTable] = ReportFileTable.table
   import dbConfig._
 
-  def createFile(file: ReportFile): Future[ReportFile] = db
-    .run(ReportFileTable.table += file)
-    .map(_ => file)
-
-  def attachFilesToReport(fileIds: List[UUID], reportId: UUID) = {
+  override def attachFilesToReport(fileIds: List[UUID], reportId: UUID): Future[Int] = {
     val queryFile =
-      for (refFile <- ReportFileTable.table.filter(_.id.inSet(fileIds)))
+      for (refFile <- table.filter(_.id.inSet(fileIds)))
         yield refFile.reportId
     db.run(queryFile.update(Some(reportId)))
   }
 
-  def getFile(uuid: UUID): Future[Option[ReportFile]] = db
+  override def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] = db
     .run(
-      ReportFileTable.table
-        .filter(_.id === uuid)
-        .to[List]
-        .result
-        .headOption
-    )
-
-  def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] = db
-    .run(
-      ReportFileTable.table
+      table
         .filter(_.reportId === reportId)
         .to[List]
         .result
     )
 
-  def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
+  override def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
     db.run(
-      ReportFileTable.table
+      table
         .filter(
           _.reportId inSetBind reportsIds
         )
@@ -56,24 +47,17 @@ class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(
         .result
     ).map(events => events.groupBy(_.reportId.get))
 
-  def deleteFile(uuid: UUID): Future[Int] = db
+  override def setAvOutput(fileId: UUID, output: String): Future[Int] = db
     .run(
-      ReportFileTable.table
-        .filter(_.id === uuid)
-        .delete
-    )
-
-  def setAvOutput(fileId: UUID, output: String) = db
-    .run(
-      ReportFileTable.table
+      table
         .filter(_.id === fileId)
         .map(_.avOutput)
         .update(Some(output))
     )
 
-  def removeStorageFileName(fileId: UUID) = db
+  override def removeStorageFileName(fileId: UUID): Future[Int] = db
     .run(
-      ReportFileTable.table
+      table
         .filter(_.id === fileId)
         .map(_.storageFilename)
         .update("")

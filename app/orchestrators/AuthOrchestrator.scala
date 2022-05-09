@@ -30,6 +30,7 @@ import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import config.TokenConfiguration
 import controllers.error.AppError
+import models.auth.AuthAttempt
 import models.auth.AuthToken
 import models.auth.PasswordChange
 import models.auth.UserCredentials
@@ -43,8 +44,8 @@ import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepository
-import repositories.authtoken.AuthTokenRepository
-import repositories.user.UserRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
 import services.MailService
 
@@ -55,9 +56,9 @@ import java.util.UUID
 class AuthOrchestrator @Inject() (
     userService: UserService,
     authAttemptRepository: AuthAttemptRepository,
-    userRepository: UserRepository,
+    userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
-    authTokenRepository: AuthTokenRepository,
+    authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
     credentialsProvider: CredentialsProvider,
     mailService: MailService,
@@ -70,7 +71,6 @@ class AuthOrchestrator @Inject() (
   private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
-
     val eventualUserSession: Future[UserSession] = for {
       maybeUser <- userService.retrieve(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
@@ -87,21 +87,23 @@ class AuthOrchestrator @Inject() (
     eventualUserSession
       .flatMap { session =>
         logger.debug(s"Saving auth attempts for user")
-        authAttemptRepository.saveAuthAttempt(userLogin.login, isSuccess = true).map(_ => session)
+        authAttemptRepository.create(AuthAttempt.build(userLogin.login, isSuccess = true)).map(_ => session)
       }
       .recoverWith {
         case error: AppError =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
-            .saveAuthAttempt(userLogin.login, isSuccess = false, failureCause = Some(error.details))
+            .create(AuthAttempt.build(userLogin.login, isSuccess = false, failureCause = Some(error.details)))
             .flatMap(_ => Future.failed(error))
         case error =>
           logger.debug(s"Saving failed auth attempt for user")
           authAttemptRepository
-            .saveAuthAttempt(
-              userLogin.login,
-              isSuccess = false,
-              failureCause = Some(s"Unexpected error : ${error.getMessage}")
+            .create(
+              AuthAttempt.build(
+                userLogin.login,
+                isSuccess = false,
+                failureCause = Some(s"Unexpected error : ${error.getMessage}")
+              )
             )
             .flatMap(_ => Future.failed(error))
 
@@ -153,11 +155,12 @@ class AuthOrchestrator @Inject() (
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
 
-  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] = for {
-    loginInfo <- authenticate(userLogin.login, userLogin.password)
-    authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-    token <- silhouette.env.authenticatorService.init(authenticator)
-  } yield token
+  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] =
+    for {
+      loginInfo <- authenticate(userLogin.login, userLogin.password)
+      authenticator <- silhouette.env.authenticatorService.create(loginInfo)
+      token <- silhouette.env.authenticatorService.init(authenticator)
+    } yield token
 
   private def authenticate(login: String, password: String) = credentialsProvider
     .authenticate(Credentials(login, password))

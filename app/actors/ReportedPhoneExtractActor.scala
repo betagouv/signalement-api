@@ -14,9 +14,9 @@ import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.report.ReportRepository
-import services.S3Service
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import services.S3ServiceInterface
 import utils.DateUtils
 
 import java.nio.file.Path
@@ -39,9 +39,9 @@ object ReportedPhonesExtractActor {
 @Singleton
 class ReportedPhonesExtractActor @Inject() (
     config: SignalConsoConfiguration,
-    reportRepository: ReportRepository,
-    asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service
+    reportRepository: ReportRepositoryInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface,
+    s3Service: S3ServiceInterface
 )(implicit val mat: Materializer)
     extends Actor {
   import ReportedPhonesExtractActor._

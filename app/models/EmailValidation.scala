@@ -20,14 +20,3 @@ final case class EmailValidation(
 object EmailValidation {
   implicit val emailValidationformat: OFormat[EmailValidation] = Json.format[EmailValidation]
 }
-
-final case class EmailValidationCreate(
-    email: EmailAddress,
-    lastValidationDate: Option[OffsetDateTime] = None
-) {
-  def toEntity: EmailValidation =
-    EmailValidation(
-      email = email,
-      lastValidationDate = lastValidationDate
-    )
-}

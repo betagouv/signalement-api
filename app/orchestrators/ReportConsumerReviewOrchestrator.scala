@@ -1,5 +1,6 @@
 package orchestrators
 
+import akka.Done
 import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.CannotReviewReportResponse
 import controllers.error.AppError.ReviewAlreadyExists
@@ -13,9 +14,9 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewRepository
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -24,16 +25,23 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class ReportConsumerReviewOrchestrator @Inject() (
-    reportRepository: ReportRepository,
-    eventRepository: EventRepository,
-    responseConsumerReviewRepository: ResponseConsumerReviewRepository
+    reportRepository: ReportRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
+    responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface
 )(implicit
     val executionContext: ExecutionContext
 ) {
   val logger = Logger(this.getClass)
 
+  def remove(reportId: UUID): Future[Done] =
+    find(reportId).flatMap {
+      case Some(responseConsumerReview) =>
+        responseConsumerReviewRepository.delete(responseConsumerReview.id).map(_ => Done)
+      case None => Future.successful(Done)
+    }
+
   def find(reportId: UUID): Future[Option[ResponseConsumerReview]] =
-    responseConsumerReviewRepository.find(reportId) map {
+    responseConsumerReviewRepository.findByReportId(reportId) map {
       case Nil =>
         logger.info(s"No review found for report $reportId")
         None
@@ -49,7 +57,7 @@ class ReportConsumerReviewOrchestrator @Inject() (
     logger.info(s"Report ${reportId} - the consumer give a review on response")
 
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       _ = logger.debug(s"Validating report")
       _ <- report match {
         case Some(report) if hasResponse(report) =>
@@ -69,7 +77,7 @@ class ReportConsumerReviewOrchestrator @Inject() (
         .withFieldConst(_.id, ResponseConsumerReviewId.generateId())
         .transform
       _ = logger.debug(s"Checking if review already exists")
-      _ <- responseConsumerReviewRepository.find(reportId).ensure(ReviewAlreadyExists) {
+      _ <- responseConsumerReviewRepository.findByReportId(reportId).ensure(ReviewAlreadyExists) {
         case Nil => true
         case _ =>
           logger.warn(s"Review already exist for report with id $reportId")
@@ -78,7 +86,7 @@ class ReportConsumerReviewOrchestrator @Inject() (
       _ = logger.debug(s"Saving review")
       _ <- responseConsumerReviewRepository.create(responseConsumerReview)
       _ = logger.debug(s"Creating event")
-      event <- eventRepository.createEvent(
+      event <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
           reportId = Some(reportId),

@@ -4,10 +4,10 @@ import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.subscription.SubscriptionRepository
-import repositories.user.UserRepository
+import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import utils._
@@ -55,10 +55,10 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepository]
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepository]
+  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
+  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
   lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
   lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
   lazy val mailerService = injector.instanceOf[MailerService]
   lazy val attachementService = injector.instanceOf[AttachementService]

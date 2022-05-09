@@ -28,9 +28,9 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
 import repositories.authattempt.AuthAttemptRepository
-import repositories.authtoken.AuthTokenRepository
-import repositories.company.CompanyRepository
-import repositories.user.UserRepository
+import repositories.authtoken.AuthTokenRepositoryInterface
+import repositories.company.CompanyRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
 import utils.silhouette.auth.AuthEnv
@@ -54,12 +54,12 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
+  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
   lazy val authAttemptRepository = app.injector.instanceOf[AuthAttemptRepository]
   lazy val passwordHasherRegistry = app.injector.instanceOf[PasswordHasherRegistry]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
-  lazy val authTokenRepository = app.injector.instanceOf[AuthTokenRepository]
+  lazy val authTokenRepository = app.injector.instanceOf[AuthTokenRepositoryInterface]
 
   override def configureFakeModule(): AbstractModule =
     new FakeModule
@@ -80,7 +80,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(identity)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+          .create(AccessToken.build(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None))
       } yield (),
       Duration.Inf
     )

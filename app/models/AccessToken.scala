@@ -6,6 +6,7 @@ import utils.EmailAddress
 import utils.SIRET
 
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 case class AccessToken(
@@ -19,6 +20,29 @@ case class AccessToken(
     emailedTo: Option[EmailAddress],
     expirationDate: Option[OffsetDateTime]
 )
+
+object AccessToken {
+
+  def build(
+      kind: TokenKind,
+      token: String,
+      validity: Option[java.time.temporal.TemporalAmount],
+      companyId: Option[UUID],
+      level: Option[AccessLevel],
+      emailedTo: Option[EmailAddress] = None,
+      creationDate: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+  ): AccessToken = AccessToken(
+    creationDate = creationDate,
+    kind = kind,
+    token = token,
+    valid = true,
+    companyId = companyId,
+    companyLevel = level,
+    emailedTo = emailedTo,
+    expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))
+  )
+
+}
 
 case class ActivationRequest(
     draftUser: DraftUser,

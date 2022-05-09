@@ -13,7 +13,7 @@ import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -26,7 +26,7 @@ import scala.concurrent.Future
 @Singleton
 class AccountController @Inject() (
     val silhouette: Silhouette[AuthEnv],
-    userRepository: UserRepository,
+    userRepository: UserRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,
     accessesOrchestrator: AccessesOrchestrator,
     emailConfiguration: EmailConfiguration
@@ -40,7 +40,7 @@ class AccountController @Inject() (
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {
-      userOpt <- userRepository.findById(request.identity.id)
+      userOpt <- userRepository.get(request.identity.id)
     } yield userOpt
       .map { user =>
         Ok(Json.toJson(user))

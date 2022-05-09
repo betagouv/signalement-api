@@ -9,7 +9,7 @@ import models.report.ReportFilter
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
-import repositories.asyncfiles.AsyncFileRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -24,7 +24,7 @@ import scala.concurrent.Future
 @Singleton
 class ReportListController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    asyncFileRepository: AsyncFileRepository,
+    asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv]
@@ -66,7 +66,7 @@ class ReportListController @Inject() (
         filters => {
           logger.debug(s"Requesting report for user ${request.identity.email}")
           asyncFileRepository
-            .create(request.identity, kind = AsyncFileKind.Reports)
+            .create(AsyncFile.build(request.identity, kind = AsyncFileKind.Reports))
             .map { file =>
               reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, filters)
             }

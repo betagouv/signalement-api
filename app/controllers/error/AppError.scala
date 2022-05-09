@@ -96,9 +96,9 @@ object AppError {
 
   final case class UserNotFound(login: String) extends UnauthorizedError {
     override val `type`: String = "SC-0012"
-    override val title: String = "User not found"
+    override val title: String = "Cannot perform action on user"
     override val details: String =
-      s"Aucun utilisateur trouvé pour $login"
+      s"Action non autorisée pour $login"
   }
 
   final case class DGCCRFUserEmailValidationExpired(login: String) extends ForbiddenError {
@@ -227,18 +227,18 @@ object AppError {
     override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
   }
 
-  final case class AttachmentNotReady(reportFileId: String) extends ConflictError {
+  final case class AttachmentNotReady(reportFileId: UUID) extends ConflictError {
     override val `type`: String = "SC-0027"
     override val title: String = "Attachement not available"
     override val details: String =
-      s"Le fichier [id = $reportFileId] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
+      s"Le fichier [id = ${reportFileId.toString}] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
   }
 
-  final case class AttachmentNotFound(reportFileId: String, reportFileName: String) extends NotFoundError {
+  final case class AttachmentNotFound(reportFileId: UUID, reportFileName: String) extends NotFoundError {
     override val `type`: String = "SC-0028"
     override val title: String = "Cannot download attachment"
     override val details: String =
-      s"Impossible de récupérer le fichier [id = $reportFileId, nom = $reportFileName]"
+      s"Impossible de récupérer le fichier [id = ${reportFileId.toString}, nom = $reportFileName]"
   }
 
   final case class BucketFileNotFound(bucketName: String, fileName: String) extends NotFoundError {

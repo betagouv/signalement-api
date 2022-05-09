@@ -30,11 +30,11 @@ import utils.AppSpec
 import utils.Fixtures
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
@@ -85,7 +85,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
   def e1 = {
     val result = route(
       app,
-      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id.toString).toString)
+      FakeRequest(GET, routes.ReportConsumerReviewController.getReview(reportWithExistingReview.id).toString)
         .withAuthenticator[AuthEnv](loginInfo(adminUser))
     ).get
 
@@ -118,9 +118,9 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   }
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
-  lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
+  lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepositoryInterface]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
 
   val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
 
@@ -170,8 +170,8 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
         _ <- responseConsumerReviewRepository.create(consumerConflictReview)
         _ <- reportRepository.create(reportWithExistingReview)
         _ <- responseConsumerReviewRepository.create(consumerReview)
-        _ <- eventRepository.createEvent(responseEvent)
-        _ <- eventRepository.createEvent(responseWithReviewEvent)
+        _ <- eventRepository.create(responseEvent)
+        _ <- eventRepository.create(responseWithReviewEvent)
       } yield (),
       Duration.Inf
     )
@@ -180,7 +180,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     Await.result(
       app.injector
         .instanceOf[ReportConsumerReviewController]
-        .reviewOnReportResponse(reportId.toString)
+        .reviewOnReportResponse(reportId)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
         ),
@@ -197,7 +197,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   }
 
   def reportMustHaveBeenUpdatedWithStatus(status: ReportStatus) = {
-    val report = Await.result(reportRepository.getReport(reportId), Duration.Inf).get
+    val report = Await.result(reportRepository.get(reportId), Duration.Inf).get
     report must reportStatusMatcher(status)
   }
 

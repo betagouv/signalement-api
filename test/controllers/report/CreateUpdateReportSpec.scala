@@ -21,14 +21,14 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.companydata.CompanyDataRepository
-import repositories.emailvalidation.EmailValidationRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companydata.CompanyDataRepositoryInterface
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
+import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.user.UserRepositoryInterface
 import services.AttachementService
 import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
@@ -220,14 +220,14 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   implicit val ec = ExecutionContext.global
 
   lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepository]
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
+  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val mailerService = app.injector.instanceOf[MailerService]
   lazy val attachmentService = app.injector.instanceOf[AttachementService]
-  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepository]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepository]
+  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepositoryInterface]
+  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
 
   implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
   implicit lazy val contactAddress = emailConfiguration.contactAddress
@@ -273,7 +273,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             report.email
           ).distinct.map(email =>
             emailValidationRepository.create(
-              EmailValidationCreate(email = email, lastValidationDate = Some(OffsetDateTime.now()))
+              EmailValidation(email = email, lastValidationDate = Some(OffsetDateTime.now()))
             )
           )
         )
@@ -308,7 +308,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Await.result(
       app.injector
         .instanceOf[ReportController]
-        .updateReportCompany(reportId.toString)
+        .updateReportCompany(reportId)
         .apply(
           FakeRequest()
             .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
@@ -321,7 +321,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     Await.result(
       app.injector
         .instanceOf[ReportController]
-        .updateReportConsumer(reportId.toString)
+        .updateReportConsumer(reportId)
         .apply(
           FakeRequest()
             .withAuthenticator[AuthEnv](concernedAdminLoginInfo)
@@ -331,7 +331,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     )
 
   def checkReport(reportData: Report) = {
-    val dbReport = Await.result(reportRepository.getReport(reportData.id), Duration.Inf)
+    val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf)
     dbReport.get must beEqualTo(reportData)
   }
 
@@ -352,7 +352,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       )
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
-    val reports = Await.result(reportRepository.list, Duration.Inf).filter(_.id != existingReport.id)
+    val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
     val expectedReport = draftReport.generateReport.copy(
       id = reports.head.id,
       creationDate = reports.head.creationDate,
@@ -366,7 +366,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   }
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
-    val events = Await.result(eventRepository.list, Duration.Inf).toList
+    val events = Await.result(eventRepository.list(), Duration.Inf).toList
     events.map(_.action) must contain(action)
   }
 

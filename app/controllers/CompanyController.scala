@@ -12,10 +12,9 @@ import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.user.UserRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent
 import utils.FrontRoute
@@ -36,11 +35,10 @@ import scala.concurrent.Future
 class CompanyController @Inject() (
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
-    val userRepository: UserRepository,
-    val companyRepository: CompanyRepository,
+    val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
-    val eventRepository: EventRepository,
-    val reportRepository: ReportRepository,
+    val eventRepository: EventRepositoryInterface,
+    val reportRepository: ReportRepositoryInterface,
     val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,

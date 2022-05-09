@@ -19,9 +19,9 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerProResponseNotification
 import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
@@ -58,9 +58,9 @@ import scala.concurrent.duration._
 @Singleton
 class AdminController @Inject() (
     val silhouette: Silhouette[AuthEnv],
-    reportRepository: ReportRepository,
-    companyAccessRepository: CompanyAccessRepository,
-    eventRepository: EventRepository,
+    reportRepository: ReportRepositoryInterface,
+    companyAccessRepository: CompanyAccessRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
     implicit val frontRoute: FrontRoute

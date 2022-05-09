@@ -6,14 +6,13 @@ import controllers.error.AppError
 import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
 import models.EmailValidation
-import models.EmailValidationCreate
 import services.Email.ConsumerValidateEmail
 import services.MailService
 import utils.EmailAddress
 import models.email.ValidateEmailCode
 import models.email.EmailValidationResult
 import play.api.Logger
-import repositories.emailvalidation.EmailValidationRepository
+import repositories.emailvalidation.EmailValidationRepositoryInterface
 
 import java.time.OffsetDateTime
 import javax.inject.Inject
@@ -22,7 +21,7 @@ import scala.concurrent.Future
 
 class EmailValidationOrchestrator @Inject() (
     mailService: MailService,
-    emailValidationRepository: EmailValidationRepository,
+    emailValidationRepository: EmailValidationRepositoryInterface,
     emailConfiguration: EmailConfiguration
 )(implicit
     executionContext: ExecutionContext
@@ -106,7 +105,7 @@ class EmailValidationOrchestrator @Inject() (
     emailValidationRepository.findByEmail(email).flatMap {
       case None =>
         logger.debug(s"Unknown email , creating validation entry")
-        emailValidationRepository.create(EmailValidationCreate(email = email))
+        emailValidationRepository.create(EmailValidation(email = email))
       case Some(foundEmail) =>
         logger.debug(s"Found email in validation email table ")
         Future(foundEmail)

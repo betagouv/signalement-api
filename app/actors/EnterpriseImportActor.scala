@@ -26,7 +26,7 @@ import models.EtablissementFile
 import models.UniteLegaleFile
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.companydata.CompanyDataRepository
+import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 import utils.SIREN
 
@@ -67,7 +67,7 @@ final case class ProcessedFile(
 @Singleton
 class EnterpriseSyncActor @Inject() (
     enterpriseSyncInfoRepo: EnterpriseImportInfoRepository,
-    companyDataRepository: CompanyDataRepository
+    companyDataRepository: CompanyDataRepositoryInterface
 )(implicit
     val executionContext: ExecutionContext
 ) extends Actor {

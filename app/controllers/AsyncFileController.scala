@@ -3,8 +3,8 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.libs.json._
-import repositories.asyncfiles.AsyncFileRepository
-import services.S3Service
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import services.S3ServiceInterface
 import utils.silhouette.auth.AuthEnv
 
 import javax.inject.Inject
@@ -13,9 +13,9 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class AsyncFileController @Inject() (
-    val asyncFileRepository: AsyncFileRepository,
+    val asyncFileRepository: AsyncFileRepositoryInterface,
     val silhouette: Silhouette[AuthEnv],
-    val s3Service: S3Service
+    val s3Service: S3ServiceInterface
 )(implicit val ec: ExecutionContext)
     extends BaseController {
 

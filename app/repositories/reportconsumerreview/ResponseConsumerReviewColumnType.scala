@@ -4,6 +4,8 @@ import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import play.api.Logger
 import repositories.PostgresProfile.api._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 
 import java.util.UUID
 
@@ -17,7 +19,8 @@ object ResponseConsumerReviewColumnType {
       ResponseEvaluation.namesToValuesMap
     )
 
-  implicit val ResponseConsumerReviewIdColumnType =
+  implicit val ResponseConsumerReviewIdColumnType
+      : JdbcType[ResponseConsumerReviewId] with BaseTypedType[ResponseConsumerReviewId] =
     MappedColumnType.base[ResponseConsumerReviewId, UUID](
       _.value,
       ResponseConsumerReviewId(_)

@@ -14,6 +14,17 @@ case class AsyncFile(
     storageFilename: Option[String]
 )
 
+object AsyncFile {
+  def build(owner: User, kind: AsyncFileKind): AsyncFile = AsyncFile(
+    id = UUID.randomUUID(),
+    userId = owner.id,
+    creationDate = OffsetDateTime.now,
+    kind = kind,
+    filename = None,
+    storageFilename = None
+  )
+}
+
 sealed trait AsyncFileKind extends EnumEntry
 
 object AsyncFileKind extends PlayEnum[AsyncFileKind] {

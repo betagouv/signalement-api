@@ -14,9 +14,9 @@ import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.report.ReportRepository
-import services.S3Service
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import services.S3ServiceInterface
 import utils.DateUtils
 
 import java.nio.file.Path
@@ -37,9 +37,9 @@ object WebsitesExtractActor {
 
 @Singleton
 class WebsitesExtractActor @Inject() (
-    reportRepository: ReportRepository,
-    asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service,
+    reportRepository: ReportRepositoryInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface,
+    s3Service: S3ServiceInterface,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
@@ -56,7 +56,7 @@ class WebsitesExtractActor @Inject() (
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        asyncFile <- asyncFileRepository.create(requestedBy, kind = AsyncFileKind.ReportedWebsites)
+        asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
         tmpPath <- {
           sender() ! ()
           genTmpFile(rawFilters)

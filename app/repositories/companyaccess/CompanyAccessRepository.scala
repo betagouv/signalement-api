@@ -7,7 +7,9 @@ import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
 import repositories.computeTickValues
 import repositories.user.UserTable
+import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
+import slick.sql.FixedSqlAction
 
 import java.sql.Timestamp
 import java.time.OffsetDateTime
@@ -18,15 +20,16 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
+class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+    extends CompanyAccessRepositoryInterface {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
-
+  val table: TableQuery[CompanyAccessTable] = CompanyAccessTable.table
   import dbConfig._
 
-  def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
+  override def getUserLevel(companyId: UUID, user: User): Future[AccessLevel] =
     db.run(
-      CompanyAccessTable.table
+      table
         .filter(_.companyId === companyId)
         .filter(_.userId === user.id)
         .map(_.level)
@@ -34,9 +37,9 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
         .headOption
     ).map(_.getOrElse(AccessLevel.NONE))
 
-  def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
+  override def fetchCompaniesWithLevel(user: User): Future[List[CompanyWithAccess]] =
     db.run(
-      CompanyAccessTable.table
+      table
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .filter(_._1.userId === user.id)
@@ -47,9 +50,9 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
         .result
     ).map(_.map(x => CompanyWithAccess(x._1, x._2)))
 
-  def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
+  override def fetchUsersWithLevel(companyIds: Seq[UUID]): Future[List[(User, AccessLevel)]] =
     db.run(
-      CompanyAccessTable.table
+      table
         .join(UserTable.table)
         .on(_.userId === _.id)
         .filter(_._1.companyId inSet companyIds)
@@ -67,18 +70,18 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
   ): Future[List[(UUID, User)]] =
     db.run(
       (for {
-        access <- CompanyAccessTable.table if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
+        access <- table if access.level.inSet(levels) && (access.companyId inSetBind companyIds)
         user <- UserTable.table if user.id === access.userId
       } yield (access.companyId, user)).to[List].result
     )
 
-  def fetchUsersByCompanies(
+  override def fetchUsersByCompanies(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
-  def fetchUsersByCompanyId(
+  override def fetchUsersByCompanyId(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =
@@ -86,9 +89,9 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
       users.groupBy(_._1).view.mapValues(_.map(_._2)).toMap
     )
 
-  def fetchAdmins(companyId: UUID): Future[List[User]] =
+  override def fetchAdmins(companyId: UUID): Future[List[User]] =
     db.run(
-      CompanyAccessTable.table
+      table
         .join(UserTable.table)
         .on(_.userId === _.id)
         .filter(_._1.companyId === companyId)
@@ -98,7 +101,11 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
         .result
     )
 
-  def createCompanyUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+  override def createCompanyUserAccess(
+      companyId: UUID,
+      userId: UUID,
+      level: AccessLevel
+  ): FixedSqlAction[Int, NoStream, Effect.Write] =
     CompanyAccessTable.table.insertOrUpdate(
       UserAccess(
         companyId = companyId,
@@ -109,19 +116,19 @@ class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvide
       )
     )
 
-  def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel) =
+  override def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
     db.run(createCompanyUserAccess(companyId, userId, level))
 
-  def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
+  override def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(
-      CompanyAccessTable.table
+      table
         .filter(_.companyId === company.id)
         .filter(_.userId === user.id)
         .map(companyAccess => (companyAccess.level, companyAccess.updateDate))
         .update((level, OffsetDateTime.now()))
     ).map(_ => ())
 
-  def proFirstActivationCount(
+  override def proFirstActivationCount(
       ticks: Int = 12
   ): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""select * from (

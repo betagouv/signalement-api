@@ -3,13 +3,11 @@ package repositories.companydata
 import repositories.PostgresProfile.api._
 import models.CompanyData
 import CompanyDataTable.DENOMINATION_USUELLE_ETABLISSEMENT
+import repositories.DatabaseTable
 import utils.SIREN
 import utils.SIRET
 
-import java.util.UUID
-
-class CompanyDataTable(tag: Tag) extends Table[CompanyData](tag, "etablissements") {
-  def id = column[UUID]("id")
+class CompanyDataTable(tag: Tag) extends DatabaseTable[CompanyData](tag, "etablissements") {
   def siret = column[SIRET]("siret", O.PrimaryKey) // Primary key MUST be there so insertOrUpdateAll will do his job
   def siren = column[SIREN]("siren")
   def dateDernierTraitementEtablissement = column[Option[String]]("datederniertraitementetablissement")

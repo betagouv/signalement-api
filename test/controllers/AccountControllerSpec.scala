@@ -19,9 +19,9 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.user.UserRepository
+import repositories.company.CompanyRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
@@ -41,9 +41,9 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
-  lazy val userRepository = app.injector.instanceOf[UserRepository]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepository]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepository]
+  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
+  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
   lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
 
   override def configureFakeModule(): AbstractModule =
@@ -64,7 +64,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(proUser)
         _ <- companyRepository.getOrCreate(company.siret, company)
         _ <- accessTokenRepository
-          .createToken(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None)
+          .create(AccessToken.build(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None))
       } yield (),
       Duration.Inf
     )
@@ -126,21 +126,25 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         Await.result(
           for {
             _ <- companyRepository.getOrCreate(otherCompany.siret, otherCompany)
-            _ <- accessTokenRepository.createToken(
-              CompanyJoin,
-              "000000",
-              None,
-              Some(company.id),
-              Some(AccessLevel.ADMIN),
-              Some(newUser.email)
+            _ <- accessTokenRepository.create(
+              AccessToken.build(
+                CompanyJoin,
+                "000000",
+                None,
+                Some(company.id),
+                Some(AccessLevel.ADMIN),
+                Some(newUser.email)
+              )
             )
-            token <- accessTokenRepository.createToken(
-              CompanyJoin,
-              "whatever",
-              None,
-              Some(otherCompany.id),
-              Some(AccessLevel.ADMIN),
-              Some(newUser.email)
+            token <- accessTokenRepository.create(
+              AccessToken.build(
+                CompanyJoin,
+                "whatever",
+                None,
+                Some(otherCompany.id),
+                Some(AccessLevel.ADMIN),
+                Some(newUser.email)
+              )
             )
           } yield token,
           Duration.Inf

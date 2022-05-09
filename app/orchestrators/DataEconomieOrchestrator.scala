@@ -6,13 +6,13 @@ import io.scalaland.chimney.dsl.TransformerOps
 import models.dataeconomie.ReportDataEconomie
 import models.report.ReportTag.ReportTagTranslationOps
 import play.api.Logger
-import repositories.dataeconomie.DataEconomieRepository
+import repositories.dataeconomie.DataEconomieRepositoryInterface
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class DataEconomieOrchestrator @Inject() (
-    reportRepository: DataEconomieRepository
+    reportRepository: DataEconomieRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)

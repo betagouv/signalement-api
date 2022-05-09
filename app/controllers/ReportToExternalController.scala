@@ -25,12 +25,12 @@ import scala.util.Success
 import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
 import models.report.ReportTag
-import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
+import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
 
 class ReportToExternalController @Inject() (
-    reportRepository: ReportRepository,
-    reportFileRepository: ReportFileRepository,
+    reportRepository: ReportRepositoryInterface,
+    reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
@@ -44,7 +44,7 @@ class ReportToExternalController @Inject() (
       case Failure(_) => Future.successful(PreconditionFailed)
       case Success(id) =>
         for {
-          report <- reportRepository.getReport(id)
+          report <- reportRepository.get(id)
           reportFiles <- report.map(r => reportFileRepository.retrieveReportFiles(r.id)).getOrElse(Future(List.empty))
         } yield report
           .map(report => ReportWithFiles(report, reportFiles.filter(_.origin == ReportFileOrigin.CONSUMER)))

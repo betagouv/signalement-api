@@ -3,10 +3,10 @@ package tasks.account
 import cats.implicits.toTraverseOps
 import models.User
 import play.api.Logger
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.event.EventRepository
-import repositories.subscription.SubscriptionRepository
-import repositories.user.UserRepository
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.subscription.SubscriptionRepositoryInterface
+import repositories.user.UserRepositoryInterface
 import tasks.model.TaskType
 import tasks.TaskExecutionResult
 import tasks.TaskExecutionResults
@@ -18,10 +18,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class InactiveDgccrfAccountRemoveTask @Inject() (
-    userRepository: UserRepository,
-    subscriptionRepository: SubscriptionRepository,
-    eventRepository: EventRepository,
-    asyncFileRepository: AsyncFileRepository
+    userRepository: UserRepositoryInterface,
+    subscriptionRepository: SubscriptionRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface
 )(implicit executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -42,9 +42,9 @@ class InactiveDgccrfAccountRemoveTask @Inject() (
       _ = logger.debug(s"Removing subscription with ids ${subscriptionToDelete.map(_.id)}")
       _ <- subscriptionToDelete.map(subscription => subscriptionRepository.delete(subscription.id)).sequence
       _ = logger.debug(s"Removing events")
-      _ <- eventRepository.delete(user.id)
+      _ <- eventRepository.deleteByUserId(user.id)
       _ = logger.debug(s"Removing files")
-      _ <- asyncFileRepository.delete(user.id)
+      _ <- asyncFileRepository.deleteByUserId(user.id)
       _ = logger.debug(s"Removing user")
       _ <- userRepository.delete(user.id)
       _ = logger.debug(s"Inactive DGCCRF account user ${user.id} successfully removed")

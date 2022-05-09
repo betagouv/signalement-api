@@ -23,11 +23,11 @@ import models.report.ReportStatus
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.concurrent.AkkaGuiceSupport
-import repositories.asyncfiles.AsyncFileRepository
-import repositories.companyaccess.CompanyAccessRepository
-import repositories.event.EventRepository
-import repositories.reportfile.ReportFileRepository
-import services.S3Service
+import repositories.asyncfiles.AsyncFileRepositoryInterface
+import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.event.EventRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
+import services.S3ServiceInterface
 import utils.Constants
 import utils.Constants.Departments
 
@@ -49,12 +49,12 @@ object ReportsExtractActor {
 
 @Singleton
 class ReportsExtractActor @Inject() (
-    reportFileRepository: ReportFileRepository,
-    companyAccessRepository: CompanyAccessRepository,
+    reportFileRepository: ReportFileRepositoryInterface,
+    companyAccessRepository: CompanyAccessRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
-    eventRepository: EventRepository,
-    asyncFileRepository: AsyncFileRepository,
-    s3Service: S3Service,
+    eventRepository: EventRepositoryInterface,
+    asyncFileRepository: AsyncFileRepositoryInterface,
+    s3Service: S3ServiceInterface,
     signalConsoConfiguration: SignalConsoConfiguration
 )(implicit val mat: Materializer)
     extends Actor {
@@ -193,7 +193,7 @@ class ReportsExtractActor @Inject() (
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
               s"${signalConsoConfiguration.apiURL.toString}${routes.ReportController
-                  .downloadReportFile(file.id.toString, file.filename)
+                  .downloadReportFile(file.id, file.filename)
                   .url}"
             )
             .mkString("\n"),

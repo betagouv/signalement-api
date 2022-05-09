@@ -18,15 +18,15 @@ class ReportNotificationBlockedRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
 )(implicit
     ec: ExecutionContext
-) {
+) extends ReportNotificationBlockedRepositoryInterface {
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
 
-  def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] =
+  override def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]] =
     db.run(ReportNotificationBlocklistTable.table.filter(_.userId === userId).result)
 
-  def filterBlockedEmails(email: Seq[EmailAddress], companyId: UUID): Future[Seq[EmailAddress]] =
+  override def filterBlockedEmails(email: Seq[EmailAddress], companyId: UUID): Future[Seq[EmailAddress]] =
     db.run(
       UserTable.table
         .filter(_.id in (ReportNotificationBlocklistTable.table.filter(_.companyId === companyId).map(_.userId)))
@@ -37,12 +37,12 @@ class ReportNotificationBlockedRepository @Inject() (
       email.diff(blockedEmails)
     }
 
-  def create(userId: UUID, companyIds: Seq[UUID]): Future[Seq[ReportBlockedNotification]] = {
+  override def create(userId: UUID, companyIds: Seq[UUID]): Future[Seq[ReportBlockedNotification]] = {
     val entities = companyIds.map(companyId => ReportBlockedNotification(userId = userId, companyId = companyId))
     db.run(ReportNotificationBlocklistTable.table ++= entities).map(_ => entities)
   }
 
-  def delete(userId: UUID, companyIds: Seq[UUID]): Future[Int] =
+  override def delete(userId: UUID, companyIds: Seq[UUID]): Future[Int] =
     db.run(
       ReportNotificationBlocklistTable.table.filter(_.userId === userId).filter(_.companyId inSet companyIds).delete
     )

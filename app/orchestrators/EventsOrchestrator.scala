@@ -13,10 +13,10 @@ import models.event.Event
 import models.event.EventUser
 import models.event.EventWithUser
 import play.api.Logger
-import repositories.company.CompanyRepository
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 import utils.Constants.EventType
@@ -44,9 +44,9 @@ trait EventsOrchestratorInterface {
 
 @Singleton
 class EventsOrchestrator @Inject() (
-    eventRepository: EventRepository,
-    reportRepository: ReportRepository,
-    companyRepository: CompanyRepository
+    eventRepository: EventRepositoryInterface,
+    reportRepository: ReportRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface
 )(implicit
     val ec: ExecutionContext
 ) extends EventsOrchestratorInterface {
@@ -59,7 +59,7 @@ class EventsOrchestrator @Inject() (
       userRole: UserRole
   ): Future[List[EventWithUser]] =
     for {
-      maybeReport <- reportRepository.getReport(reportId)
+      maybeReport <- reportRepository.get(reportId)
       _ = logger.debug("Checking if report exists")
       _ <- maybeReport.liftTo[Future](ReportNotFound(reportId))
       _ = logger.debug("Found report")

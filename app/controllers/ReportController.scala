@@ -16,11 +16,16 @@ import models.report.ReportWithFiles
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
+import play.api.libs.Files
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.MultipartFormData
 import repositories.event.EventFilter
-import repositories.event.EventRepository
-import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepository
+import repositories.event.EventRepositoryInterface
+import repositories.report.ReportRepositoryInterface
+import repositories.reportfile.ReportFileRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
 import utils.Constants
@@ -34,15 +39,12 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
 class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
-    reportRepository: ReportRepository,
-    reportFileRepository: ReportFileRepository,
-    eventRepository: EventRepository,
+    reportRepository: ReportRepositoryInterface,
+    reportFileRepository: ReportFileRepositoryInterface,
+    eventRepository: EventRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
     frontRoute: FrontRoute,
@@ -53,7 +55,7 @@ class ReportController @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
-  def createReport = UnsecuredAction.async(parse.json) { implicit request =>
+  def createReport: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     val errorOrReport = for {
       draftReport <- request.parseBody[ReportDraft]()
       createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
@@ -67,25 +69,12 @@ class ReportController @Inject() (
     }
   }
 
-  def updateReportCompany(uuid: String) = SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) {
-    implicit request =>
+  def updateReportCompany(uuid: UUID): Action[JsValue] =
+    SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
       for {
         reportCompany <- request.parseBody[ReportCompany]()
         result <- reportOrchestrator
-          .updateReportCompany(UUID.fromString(uuid), reportCompany, request.identity.id)
-          .map {
-            case Some(report) => Ok(Json.toJson(report))
-            case None         => NotFound
-          }
-      } yield result
-  }
-
-  def updateReportConsumer(uuid: String) =
-    SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
-      for {
-        reportConsumer <- request.parseBody[ReportConsumerUpdate]()
-        result <- reportOrchestrator
-          .updateReportConsumer(UUID.fromString(uuid), reportConsumer, request.identity.id)
+          .updateReportCompany(uuid, reportCompany, request.identity.id)
           .map {
             case Some(report) => Ok(Json.toJson(report))
             case None         => NotFound
@@ -93,12 +82,25 @@ class ReportController @Inject() (
       } yield result
     }
 
-  def reportResponse(uuid: String) = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) {
+  def updateReportConsumer(uuid: UUID): Action[JsValue] =
+    SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
+      for {
+        reportConsumer <- request.parseBody[ReportConsumerUpdate]()
+        result <- reportOrchestrator
+          .updateReportConsumer(uuid, reportConsumer, request.identity.id)
+          .map {
+            case Some(report) => Ok(Json.toJson(report))
+            case None         => NotFound
+          }
+      } yield result
+    }
+
+  def reportResponse(uuid: UUID): Action[JsValue] = SecuredAction(WithRole(UserRole.Professionnel)).async(parse.json) {
     implicit request =>
       logger.debug(s"reportResponse ${uuid}")
       for {
         reportResponse <- request.parseBody[ReportResponse]()
-        visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
+        visibleReport <- getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -108,11 +110,11 @@ class ReportController @Inject() (
 
   }
 
-  def createReportAction(uuid: String) =
+  def createReportAction(uuid: UUID): Action[JsValue] =
     SecuredAction(WithPermission(UserPermission.createReportAction)).async(parse.json) { implicit request =>
       for {
         reportAction <- request.parseBody[ReportAction]()
-        report <- reportRepository.getReport(UUID.fromString(uuid))
+        report <- reportRepository.get(uuid)
         newEvent <-
           report
             .filter(_ => actionsForUserRole(request.identity.userRole).contains(reportAction.actionType))
@@ -124,43 +126,43 @@ class ReportController @Inject() (
 
     }
 
-  def uploadReportFile = UnsecuredAction.async(parse.multipartFormData) { request =>
-    request.body
-      .file("reportFile")
-      .filter(f =>
-        signalConsoConfiguration.upload.allowedExtensions
-          .contains(f.filename.toLowerCase.toString.split("\\.").last)
-      )
-      .map { reportFile =>
-        val filename = Paths.get(reportFile.filename).getFileName
-        val tmpFile =
-          new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
-        reportFile.ref.copyTo(tmpFile)
-        reportOrchestrator
-          .saveReportFile(
-            filename.toString,
-            tmpFile,
-            request.body.dataParts
-              .get("reportFileOrigin")
-              .map(o => ReportFileOrigin(o.head))
-              .getOrElse(ReportFileOrigin.CONSUMER)
-          )
-          .map(file => Ok(Json.toJson(file)))
-      }
-      .getOrElse(Future(InternalServerError("Echec de l'upload")))
-  }
+  def uploadReportFile: Action[MultipartFormData[Files.TemporaryFile]] =
+    UnsecuredAction.async(parse.multipartFormData) { request =>
+      request.body
+        .file("reportFile")
+        .filter(f =>
+          signalConsoConfiguration.upload.allowedExtensions
+            .contains(f.filename.toLowerCase.toString.split("\\.").last)
+        )
+        .map { reportFile =>
+          val filename = Paths.get(reportFile.filename).getFileName
+          val tmpFile =
+            new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
+          reportFile.ref.copyTo(tmpFile)
+          reportOrchestrator
+            .saveReportFile(
+              filename.toString,
+              tmpFile,
+              request.body.dataParts
+                .get("reportFileOrigin")
+                .map(o => ReportFileOrigin(o.head))
+                .getOrElse(ReportFileOrigin.CONSUMER)
+            )
+            .map(file => Ok(Json.toJson(file)))
+        }
+        .getOrElse(Future(InternalServerError("Echec de l'upload")))
+    }
 
-  def downloadReportFile(uuid: String, filename: String) = UnsecuredAction.async { _ =>
+  def downloadReportFile(uuid: UUID, filename: String) = UnsecuredAction.async { _ =>
     reportOrchestrator
       .downloadReportAttachment(uuid, filename)
       .map(signedUrl => Redirect(signedUrl))
 
   }
 
-  def deleteReportFile(id: String, filename: String) = UserAwareAction.async { implicit request =>
-    val uuid = UUID.fromString(id)
+  def deleteReportFile(uuid: UUID, filename: String) = UserAwareAction.async { implicit request =>
     reportFileRepository
-      .getFile(uuid)
+      .get(uuid)
       .flatMap {
         case Some(file) if file.filename == filename =>
           (file.reportId, request.identity) match {
@@ -174,68 +176,58 @@ class ReportController @Inject() (
       }
   }
 
-  def getReport(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-    Try(UUID.fromString(uuid)) match {
-      case Failure(_) => Future.successful(PreconditionFailed)
-      case Success(_) =>
-        for {
-          visibleReport <- getVisibleReportForUser(UUID.fromString(uuid), request.identity)
-          viewedReport <- visibleReport
-            .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
-            .getOrElse(Future(None))
-          reportFiles <- viewedReport
-            .map(r => reportFileRepository.retrieveReportFiles(r.id))
-            .getOrElse(Future(List.empty))
-        } yield viewedReport
-          .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
-          .getOrElse(NotFound)
-    }
+  def getReport(uuid: UUID) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    for {
+      visibleReport <- getVisibleReportForUser(uuid, request.identity)
+      viewedReport <- visibleReport
+        .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
+        .getOrElse(Future(None))
+      reportFiles <- viewedReport
+        .map(r => reportFileRepository.retrieveReportFiles(r.id))
+        .getOrElse(Future(List.empty))
+    } yield viewedReport
+      .map(report => Ok(Json.toJson(ReportWithFiles(report, reportFiles))))
+      .getOrElse(NotFound)
   }
 
-  def reportAsPDF(uuid: String) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-    Try(UUID.fromString(uuid)) match {
-      case Failure(_) => Future.successful(PreconditionFailed)
-      case Success(id) =>
-        for {
-          visibleReport <- getVisibleReportForUser(id, request.identity)
-          events <- eventRepository.getEventsWithUsers(id, EventFilter())
-          companyEvents <- visibleReport
-            .flatMap(_.companyId)
-            .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-            .getOrElse(Future(List.empty))
-          reportFiles <- reportFileRepository.retrieveReportFiles(id)
-        } yield {
-          val responseOption = events
-            .map(_._1)
-            .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-            .map(_.details)
-            .map(_.as[ReportResponse])
+  def reportAsPDF(uuid: UUID) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    for {
+      visibleReport <- getVisibleReportForUser(uuid, request.identity)
+      events <- eventRepository.getEventsWithUsers(uuid, EventFilter())
+      companyEvents <- visibleReport
+        .flatMap(_.companyId)
+        .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
+        .getOrElse(Future(List.empty))
+      reportFiles <- reportFileRepository.retrieveReportFiles(uuid)
+    } yield {
+      val responseOption = events
+        .map(_._1)
+        .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+        .map(_.details)
+        .map(_.as[ReportResponse])
 
-          visibleReport
-            .map(report =>
-              pdfService.Ok(
-                List(
-                  views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
-                    frontRoute
-                  )
-                )
+      visibleReport
+        .map(report =>
+          pdfService.Ok(
+            List(
+              views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
+                frontRoute
               )
             )
-            .getOrElse(NotFound)
-        }
+          )
+        )
+        .getOrElse(NotFound)
     }
+
   }
 
-  def deleteReport(uuid: String) = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
-    Try(UUID.fromString(uuid)) match {
-      case Failure(_)  => Future.successful(PreconditionFailed)
-      case Success(id) => reportOrchestrator.deleteReport(id).map(if (_) NoContent else NotFound)
-    }
+  def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
+    reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
   }
 
   private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
-      report <- reportRepository.getReport(reportId)
+      report <- reportRepository.get(reportId)
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)
