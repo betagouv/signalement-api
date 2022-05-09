@@ -1,5 +1,6 @@
 package models.report
 
+import controllers.error.AppError.MalformedBody
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
@@ -26,12 +27,17 @@ object ReportCategory {
   val VoitureVehicule = ReportCategory("Voiture / Véhicule")
   val Animaux = ReportCategory("Animaux")
   val DemarchesAdministratives = ReportCategory("Démarches administratives")
+  val AchatMagasinInternet = ReportCategory("Achat (Magasin ou Internet)")
+  val IntoxicationAlimentaire = ReportCategory("Intoxication alimentaire")
+  val VoitureVehiculeVelo = ReportCategory("Voiture / Véhicule / Vélo")
+  val DemarchageAbusif = ReportCategory("Démarchage abusif")
+  val RetraitRappelSpecifique = ReportCategory("Retrait-Rappel pécifique")
 
   def fromValue(v: String) =
     List(
-      Covid,
       CafeRestaurant,
       AchatMagasin,
+      Covid,
       Service,
       TelEauGazElec,
       EauGazElec,
@@ -45,8 +51,13 @@ object ReportCategory {
       Sante,
       VoitureVehicule,
       Animaux,
-      DemarchesAdministratives
-    ).find(_.value == v).head
+      DemarchesAdministratives,
+      AchatMagasinInternet,
+      IntoxicationAlimentaire,
+      VoitureVehiculeVelo,
+      DemarchageAbusif,
+      RetraitRappelSpecifique
+    ).find(_.value == v).fold(throw MalformedBody)(identity)
 
   implicit val reads = new Reads[ReportCategory] {
     def reads(json: JsValue): JsResult[ReportCategory] = json.validate[String].map(fromValue(_))
