@@ -6,6 +6,7 @@ import orchestrators.EventsOrchestratorInterface
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -16,10 +17,11 @@ import scala.concurrent.ExecutionContext
 
 class EventsController @Inject() (
     eventsOrchestrator: EventsOrchestratorInterface,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit
     val ec: ExecutionContext
-) extends BaseController {
+) extends BaseController(controllerComponents) {
 
   def getCompanyEvents(siret: SIRET, eventType: Option[String]): Action[AnyContent] =
     SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>

@@ -2,11 +2,11 @@ package repositories.reportconsumerreview
 
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewId
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.TypedCRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.report.ReportTable
 import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.time.format.DateTimeFormatter
@@ -18,12 +18,11 @@ import scala.concurrent.Future
 
 @Singleton
 class ResponseConsumerReviewRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends TypedCRUDRepository[ResponseConsumerReviewTable, ResponseConsumerReview, ResponseConsumerReviewId]
     with ResponseConsumerReviewRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[ResponseConsumerReviewTable] = ResponseConsumerReviewTable.table
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 

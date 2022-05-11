@@ -19,6 +19,7 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -63,9 +64,10 @@ class AdminController @Inject() (
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
-    implicit val frontRoute: FrontRoute
+    implicit val frontRoute: FrontRoute,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
   implicit val contactAddress = emailConfiguration.contactAddress

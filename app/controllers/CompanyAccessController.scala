@@ -9,7 +9,8 @@ import orchestrators.CompanyAccessOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
-import repositories.accesstoken.AccessTokenRepository
+import play.api.mvc.ControllerComponents
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.user.UserRepositoryInterface
@@ -29,13 +30,14 @@ class CompanyAccessController @Inject() (
     val userRepository: UserRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     val companyAccessRepository: CompanyAccessRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepository,
+    val accessTokenRepository: AccessTokenRepositoryInterface,
     val accessesOrchestrator: AccessesOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val companyAccessOrchestrator: CompanyAccessOrchestrator,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseCompanyController {
+    extends BaseCompanyController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass())
 

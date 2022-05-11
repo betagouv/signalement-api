@@ -5,7 +5,6 @@ import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.DGCCRFAccount
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.accesstoken.AccessTokenColumnType._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
@@ -13,6 +12,7 @@ import repositories.user.UserTable
 import repositories.CRUDRepository
 import repositories.computeTickValues
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
@@ -27,13 +27,12 @@ import scala.concurrent.Future
 
 @Singleton
 class AccessTokenRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider,
+    override val dbConfig: DatabaseConfig[JdbcProfile],
     val companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AccessTokenTable, AccessToken]
     with AccessTokenRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[AccessTokenTable] = AccessTokenTable.table
   import dbConfig._
 

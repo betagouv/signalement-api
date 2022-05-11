@@ -23,7 +23,7 @@ import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
@@ -52,7 +52,7 @@ class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository,
+    accessTokenRepository: AccessTokenRepositoryInterface,
     userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,

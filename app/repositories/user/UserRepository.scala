@@ -5,9 +5,9 @@ import controllers.error.AppError.EmailAlreadyExist
 import models.UserRole.DGCCRF
 import models._
 import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.EmailAddress
@@ -26,14 +26,14 @@ import scala.concurrent.Future
   */
 @Singleton
 class UserRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider,
+    override val dbConfig: DatabaseConfig[JdbcProfile],
     passwordHasherRegistry: PasswordHasherRegistry
 )(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[UserTable, User]
     with UserRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+//  override val dbConfig: DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[UserTable] = UserTable.table
   val logger: Logger = Logger(this.getClass)
 

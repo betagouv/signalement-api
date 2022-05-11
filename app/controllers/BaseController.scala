@@ -16,7 +16,8 @@ import utils.silhouette.auth.AuthEnv
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-trait ApiKeyBaseController extends InjectedController {
+abstract class ApiKeyBaseController(override val controllerComponents: ControllerComponents)
+    extends AbstractController(controllerComponents) {
 
   def silhouette: Silhouette[APIKeyEnv]
   type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
@@ -35,7 +36,8 @@ trait ApiKeyBaseController extends InjectedController {
 
 }
 
-trait BaseController extends InjectedController {
+abstract class BaseController(override val controllerComponents: ControllerComponents)
+    extends AbstractController(controllerComponents) {
 
   type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
   type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
@@ -99,7 +101,8 @@ trait BaseController extends InjectedController {
   implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]) = req.identity
 }
 
-trait BaseCompanyController extends BaseController {
+abstract class BaseCompanyController(override val controllerComponents: ControllerComponents)
+    extends BaseController(controllerComponents) {
   def companyRepository: CompanyRepositoryInterface
   def companyVisibilityOrch: CompaniesVisibilityOrchestrator
 

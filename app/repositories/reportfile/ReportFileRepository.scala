@@ -1,9 +1,9 @@
 package repositories.reportfile
 
 import models.report._
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.util.UUID
@@ -13,12 +13,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+class ReportFileRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportFileTable, ReportFile]
     with ReportFileRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[ReportFileTable] = ReportFileTable.table
   import dbConfig._
 

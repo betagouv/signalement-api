@@ -25,6 +25,7 @@ import scala.util.Success
 import scala.util.Try
 import models.PaginatedResult.paginatedResultWrites
 import models.report.ReportTag
+import play.api.mvc.ControllerComponents
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 
@@ -32,9 +33,10 @@ class ReportToExternalController @Inject() (
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
-    val silhouette: Silhouette[APIKeyEnv]
+    val silhouette: Silhouette[APIKeyEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends ApiKeyBaseController {
+    extends ApiKeyBaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

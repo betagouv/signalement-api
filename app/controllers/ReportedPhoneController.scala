@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -24,9 +25,10 @@ class ReportedPhoneController @Inject() (
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)

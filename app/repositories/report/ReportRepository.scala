@@ -3,7 +3,6 @@ package repositories.report
 import models._
 import models.report.DetailInputValue.detailInputValuetoString
 import models.report._
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.reportfile.ReportFileTable
@@ -21,13 +20,14 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import ReportRepository.queryFilter
 import repositories.CRUDRepository
+import slick.basic.DatabaseConfig
 
 @Singleton
-class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
-    extends CRUDRepository[ReportTable, Report]
+class ReportRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+    override val ec: ExecutionContext
+) extends CRUDRepository[ReportTable, Report]
     with ReportRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[ReportTable] = ReportTable.table
   import dbConfig._
 

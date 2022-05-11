@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.UserRole
 import orchestrators.EnterpriseImportOrchestrator
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
@@ -15,9 +16,10 @@ import scala.concurrent.duration._
 @Singleton
 class EnterpriseImportController @Inject() (
     enterpriseSyncOrchestrator: EnterpriseImportOrchestrator,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 

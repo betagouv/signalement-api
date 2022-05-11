@@ -8,7 +8,7 @@ import models.AccessLevel
 import models.AccessToken
 import models.access.ActivationLinkRequest
 import play.api.Logger
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 
@@ -22,7 +22,7 @@ import scala.concurrent.Future
 class CompanyAccessOrchestrator @Inject(
 ) (
     val companyRepository: CompanyRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepository,
+    val accessTokenRepository: AccessTokenRepositoryInterface,
     val accessesOrchestrator: AccessesOrchestrator
 )(implicit val ec: ExecutionContext) {
 

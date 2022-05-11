@@ -13,13 +13,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
 
 @Singleton
 class EmailValidationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
-    emailValidationOrchestrator: EmailValidationOrchestrator
+    emailValidationOrchestrator: EmailValidationOrchestrator,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

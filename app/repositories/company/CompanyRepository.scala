@@ -2,7 +2,6 @@ package repositories.company
 
 import models._
 import models.report.ReportStatus.ReportStatusProResponse
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
 import repositories.report.ReportTable
@@ -12,6 +11,8 @@ import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
 import repositories.CRUDRepository
+import slick.basic.DatabaseConfig
+
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,11 +20,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
-    extends CRUDRepository[CompanyTable, Company]
+class CompanyRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+    override val ec: ExecutionContext
+) extends CRUDRepository[CompanyTable, Company]
     with CompanyRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[CompanyTable] = CompanyTable.table
   import dbConfig._
 

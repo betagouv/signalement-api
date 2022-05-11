@@ -11,19 +11,21 @@ import models.auth.UserCredentials
 import models.auth.UserLogin
 import models.auth.UserPassword
 import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-@Singleton
-class AuthController @Inject() (
+//@Singleton
+class AuthController
+//@Inject()
+(
     val silhouette: Silhouette[AuthEnv],
-    authOrchestrator: AuthOrchestrator
+    authOrchestrator: AuthOrchestrator,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

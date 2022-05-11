@@ -37,7 +37,7 @@ import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
 import play.api.Logger
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
@@ -76,7 +76,7 @@ class ReportOrchestrator @Inject() (
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository,
+    accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,

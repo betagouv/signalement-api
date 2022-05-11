@@ -1,7 +1,6 @@
 package repositories.subscription
 
 import models.Subscription
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile
 import repositories.user.UserTable
@@ -17,14 +16,14 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import slick.basic.DatabaseConfig
 
 @Singleton
-class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+class SubscriptionRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[SubscriptionTable, Subscription]
     with SubscriptionRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[SubscriptionTable] = SubscriptionTable.table
   import dbConfig._
 

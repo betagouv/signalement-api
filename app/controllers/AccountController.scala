@@ -12,7 +12,8 @@ import play.api._
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
-import repositories.accesstoken.AccessTokenRepository
+import play.api.mvc.ControllerComponents
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
@@ -27,11 +28,12 @@ import scala.concurrent.Future
 class AccountController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository,
+    accessTokenRepository: AccessTokenRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
-    emailConfiguration: EmailConfiguration
+    emailConfiguration: EmailConfiguration,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

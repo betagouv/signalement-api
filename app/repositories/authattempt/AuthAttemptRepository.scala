@@ -2,9 +2,9 @@ package repositories.authattempt
 
 import models.auth.AuthAttempt
 import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
@@ -17,12 +17,11 @@ import scala.concurrent.duration.Duration
 
 @Singleton
 class AuthAttemptRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthAttemptTable, AuthAttempt]
     with AuthAttemptRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[AuthAttemptTable] = AuthAttemptTable.table
   import dbConfig._
   val logger: Logger = Logger(this.getClass)

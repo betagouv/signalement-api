@@ -1,9 +1,9 @@
 package repositories.authtoken
 
 import models.auth.AuthToken
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 
@@ -22,12 +22,11 @@ import scala.concurrent.Future
   */
 @Singleton
 class AuthTokenRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthTokenTable, AuthToken]
     with AuthTokenRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[AuthTokenTable] = AuthTokenTable.table
   import dbConfig._
 

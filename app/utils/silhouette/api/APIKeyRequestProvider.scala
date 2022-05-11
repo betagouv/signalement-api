@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 class APIKeyRequestProvider @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,
-    _consumer: ConsumerRepositoryInterface
+    consumerRepository: ConsumerRepositoryInterface
 )(implicit ec: ExecutionContext)
     extends RequestProvider {
 
@@ -26,7 +26,7 @@ class APIKeyRequestProvider @Inject() (
 
     headerValueOpt
       .map(headerValue =>
-        _consumer.getAll().map { consumers =>
+        consumerRepository.getAll().map { consumers =>
           val keyMatchOpt = consumers.find { c =>
             hasher.matches(toPasswordInfo(c.apiKey), headerValue)
           }

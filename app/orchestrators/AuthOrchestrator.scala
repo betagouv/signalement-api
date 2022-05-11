@@ -43,7 +43,7 @@ import orchestrators.AuthOrchestrator.authTokenExpiration
 import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
-import repositories.authattempt.AuthAttemptRepository
+import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
@@ -55,7 +55,7 @@ import java.util.UUID
 
 class AuthOrchestrator @Inject() (
     userService: UserService,
-    authAttemptRepository: AuthAttemptRepository,
+    authAttemptRepository: AuthAttemptRepositoryInterface,
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepositoryInterface,

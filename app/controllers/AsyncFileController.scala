@@ -3,6 +3,7 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.libs.json._
+import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import services.S3ServiceInterface
 import utils.silhouette.auth.AuthEnv
@@ -15,9 +16,10 @@ import scala.concurrent.ExecutionContext
 class AsyncFileController @Inject() (
     val asyncFileRepository: AsyncFileRepositoryInterface,
     val silhouette: Silhouette[AuthEnv],
-    val s3Service: S3ServiceInterface
+    val s3Service: S3ServiceInterface,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   def listAsyncFiles(kind: Option[String]) = SecuredAction.async { implicit request =>
     for {

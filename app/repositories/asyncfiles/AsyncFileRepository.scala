@@ -2,10 +2,10 @@ package repositories.asyncfiles
 
 import enumeratum.SlickEnumSupport
 import models._
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.asyncfiles.AsyncFilesColumnType._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.util.UUID
@@ -15,14 +15,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
+class AsyncFileRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[AsyncFilesTable, AsyncFile]
     with SlickEnumSupport
     with AsyncFileRepositoryInterface {
 
-  override val profile: slick.jdbc.JdbcProfile = dbConfigProvider.get.profile
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
+  override val profile: slick.jdbc.JdbcProfile = dbConfig.profile
   override val table: TableQuery[AsyncFilesTable] = AsyncFilesTable.table
   import dbConfig._
 

@@ -1,12 +1,12 @@
 package repositories.companyaccess
 
 import models._
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._
 import repositories.computeTickValues
 import repositories.user.UserTable
+import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
@@ -20,10 +20,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+class CompanyAccessRepository @Inject() (val dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
     extends CompanyAccessRepositoryInterface {
 
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
   val table: TableQuery[CompanyAccessTable] = CompanyAccessTable.table
   import dbConfig._
 

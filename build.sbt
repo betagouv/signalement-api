@@ -60,6 +60,8 @@ scalacOptions ++= Seq(
   "-Yrangepos"
 )
 
+routesGenerator := InjectedRoutesGenerator
+
 routesImport ++= Seq(
   "models.website.WebsiteKind",
   "utils.SIRET",
