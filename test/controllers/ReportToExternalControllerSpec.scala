@@ -121,7 +121,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       }
     }
 
-    lazy val application = new GuiceApplicationBuilder()
+    lazy val application = new GuiceApplicationBuilder
       .configure(
         Configuration(
           "play.evolutions.enabled" -> false,
@@ -131,7 +131,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
           "play.tmpDirectory" -> "./target"
         )
       )
-      .overrides(new FakeModule())
+      .overrides(new FakeModule)
       .build()
   }
 }

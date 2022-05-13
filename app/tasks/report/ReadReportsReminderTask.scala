@@ -27,7 +27,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReadReportsReminderTask @Inject() (
+class ReadReportsReminderTask @Inject(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     emailService: MailService

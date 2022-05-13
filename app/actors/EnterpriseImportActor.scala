@@ -65,7 +65,7 @@ final case class ProcessedFile(
 )
 
 @Singleton
-class EnterpriseSyncActor @Inject() (
+class EnterpriseSyncActor @Inject(
     enterpriseSyncInfoRepo: EnterpriseImportInfoRepository,
     companyDataRepository: CompanyDataRepositoryInterface
 )(implicit

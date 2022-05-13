@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit
+class CompanyDataRepository @Inject(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[CompanyDataTable, CompanyData]
     with CompanyDataRepositoryInterface {

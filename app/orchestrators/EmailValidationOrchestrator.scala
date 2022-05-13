@@ -19,7 +19,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class EmailValidationOrchestrator @Inject() (
+class EmailValidationOrchestrator @Inject(
     mailService: MailService,
     emailValidationRepository: EmailValidationRepositoryInterface,
     emailConfiguration: EmailConfiguration

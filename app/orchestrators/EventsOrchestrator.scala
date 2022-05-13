@@ -43,7 +43,7 @@ trait EventsOrchestratorInterface {
 }
 
 @Singleton
-class EventsOrchestrator @Inject() (
+class EventsOrchestrator @Inject(
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
     companyRepository: CompanyRepositoryInterface

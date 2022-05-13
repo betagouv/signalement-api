@@ -249,7 +249,7 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
 
   def e5 = {
     val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
-    invalidToken.map(_.valid) shouldEqual (Some(true))
+    invalidToken.map(_.valid) shouldEqual Some(true)
   }
 
   def e6 = {
@@ -260,8 +260,8 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   def e7 = {
     val userCreationToken = Await.result(accessTokenRepository.fetchPendingTokens(newProUser.email), Duration.Inf)
     userCreationToken.length shouldEqual 1
-    userCreationToken.headOption.map(_.kind) shouldEqual (Some(CompanyJoin))
-    userCreationToken.headOption.map(_.valid) shouldEqual (Some(true))
+    userCreationToken.headOption.map(_.kind) shouldEqual Some(CompanyJoin)
+    userCreationToken.headOption.map(_.valid) shouldEqual Some(true)
   }
 
 }
@@ -326,7 +326,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
 
   def e5 = {
     val invalidToken = Await.result(accessTokenRepository.get(companyActivationToken.id), Duration.Inf)
-    invalidToken.map(_.valid) shouldEqual (Some(true))
+    invalidToken.map(_.valid) shouldEqual Some(true)
   }
 
   def e6 = {
@@ -338,9 +338,9 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
     val userCreationTokenList =
       Await.result(accessTokenRepository.fetchPendingTokens(existingProUser.email), Duration.Inf)
     userCreationTokenList.length shouldEqual 1
-    userCreationTokenList.headOption.map(_.kind) shouldEqual (Some(CompanyJoin))
-    userCreationTokenList.headOption.map(_.valid) shouldEqual (Some(true))
-    userCreationTokenList.headOption.map(_.id) shouldEqual (Some(initialUserCreationToken.id))
+    userCreationTokenList.headOption.map(_.kind) shouldEqual Some(CompanyJoin)
+    userCreationTokenList.headOption.map(_.valid) shouldEqual Some(true)
+    userCreationTokenList.headOption.map(_.id) shouldEqual Some(initialUserCreationToken.id)
     userCreationTokenList.headOption.flatMap(
       _.expirationDate.map(_.isAfter(OffsetDateTime.now().plus(initialUserTokenValidity)))
     ) shouldEqual Some(true)
@@ -392,7 +392,7 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
 
   def e5 = {
     val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
-    invalidToken.map(_.valid) shouldEqual (Some(false))
+    invalidToken.map(_.valid) shouldEqual Some(false)
   }
 
   def e6 = {

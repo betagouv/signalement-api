@@ -15,7 +15,7 @@ import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class MailService @Inject() (
+class MailService @Inject(
     @Named("email-actor") actor: ActorRef,
     emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,

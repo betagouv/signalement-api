@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ConsumerRepository @Inject() (
+class ConsumerRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[ConsumerTable, Consumer]

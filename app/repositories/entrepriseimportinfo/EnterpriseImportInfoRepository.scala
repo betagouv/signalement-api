@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class EnterpriseImportInfoRepository @Inject() (@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(
+class EnterpriseImportInfoRepository @Inject(@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(
     implicit ec: ExecutionContext
 ) {
 

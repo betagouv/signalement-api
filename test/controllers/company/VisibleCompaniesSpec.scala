@@ -196,7 +196,7 @@ The get visible companies endpoint should
       Duration.Inf
     )
     val subsidiaryViewers = Await.result(
-      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice((subsidiaryCompany.siret)),
+      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(subsidiaryCompany.siret),
       Duration.Inf
     )
     subsidiaryViewersList(subsidiaryCompany.id).map(_.id).sorted must beEqualTo(subsidiaryViewers.map(_.id).sorted)

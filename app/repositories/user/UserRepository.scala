@@ -25,7 +25,7 @@ import scala.concurrent.Future
   *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
-class UserRepository @Inject() (
+class UserRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider,
     passwordHasherRegistry: PasswordHasherRegistry
 )(implicit
@@ -72,7 +72,7 @@ class UserRepository @Inject() (
         yield refUser
     db.run(
       queryUser
-        .map(u => (u.password))
+        .map(u => u.password)
         .update(passwordHasherRegistry.current.hash(password).password)
     )
   }

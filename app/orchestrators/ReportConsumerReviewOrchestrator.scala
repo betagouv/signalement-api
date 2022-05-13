@@ -24,7 +24,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportConsumerReviewOrchestrator @Inject() (
+class ReportConsumerReviewOrchestrator @Inject(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface

@@ -124,8 +124,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
-        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
-        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(InvalidPassword(login).details))
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(false)
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual Some(InvalidPassword(login).details)
 
       }
 
@@ -150,8 +150,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
-        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
-        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(UserNotFound(login).details))
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(false)
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual Some(UserNotFound(login).details)
 
       }
 
@@ -175,7 +175,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       val authAttempts = Await.result(result.map(_._2), Duration.Inf)
       authAttempts.length shouldEqual 1
       authAttempts.headOption.map(_.login) shouldEqual Some(login)
-      authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(true))
+      authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(true)
       authAttempts.headOption.flatMap(_.failureCause) shouldEqual None
 
     }

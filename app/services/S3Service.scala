@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class S3Service @Inject() (implicit
+class S3Service @Inject(implicit
     val materializer: Materializer,
     val executionContext: ExecutionContext,
     val bucketConfiguration: BucketConfiguration
@@ -65,8 +65,8 @@ class S3Service @Inject() (implicit
       .download(bucketName, bucketKey)
       .runWith(Sink.head)
       .map {
-        case Some((byteStringSource, _)) => byteStringSource
-        case None                        => throw BucketFileNotFound(bucketName, bucketKey)
+        case Some(byteStringSource, _) => byteStringSource
+        case None                      => throw BucketFileNotFound(bucketName, bucketKey)
       }
 
   override def delete(bucketKey: String): Future[Done] =

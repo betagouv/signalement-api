@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class EventRepository @Inject() (
+class EventRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EventTable, Event]

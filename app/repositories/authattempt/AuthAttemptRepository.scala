@@ -16,7 +16,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 @Singleton
-class AuthAttemptRepository @Inject() (
+class AuthAttemptRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthAttemptTable, AuthAttempt]

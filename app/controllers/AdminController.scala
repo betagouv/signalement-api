@@ -56,7 +56,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
-class AdminController @Inject() (
+class AdminController @Inject(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,

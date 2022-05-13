@@ -28,7 +28,7 @@ import models.report.ReportTag
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 
-class ReportToExternalController @Inject() (
+class ReportToExternalController @Inject(
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,

@@ -21,7 +21,7 @@ import scala.concurrent.Future
   *   The Play db config provider. Play will inject this for you.
   */
 @Singleton
-class AuthTokenRepository @Inject() (
+class AuthTokenRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthTokenTable, AuthToken]

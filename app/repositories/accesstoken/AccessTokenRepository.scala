@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class AccessTokenRepository @Inject() (
+class AccessTokenRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider,
     val companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit override val ec: ExecutionContext)

@@ -14,7 +14,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class EventsController @Inject() (
+class EventsController @Inject(
     eventsOrchestrator: EventsOrchestratorInterface,
     val silhouette: Silhouette[AuthEnv]
 )(implicit

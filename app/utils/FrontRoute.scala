@@ -9,7 +9,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FrontRoute @Inject() (signalConsoConfiguration: SignalConsoConfiguration) {
+class FrontRoute @Inject(signalConsoConfiguration: SignalConsoConfiguration) {
 
   object website {
     val url = signalConsoConfiguration.websiteURL

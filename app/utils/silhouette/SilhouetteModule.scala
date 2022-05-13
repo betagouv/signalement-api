@@ -194,7 +194,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     */
   @Provides
   def provideDummyAuthenticatorService: AuthenticatorService[DummyAuthenticator] =
-    new DummyAuthenticatorService()
+    new DummyAuthenticatorService
 
   /** See https://www.silhouette.rocks/docs/migration-guide
     */

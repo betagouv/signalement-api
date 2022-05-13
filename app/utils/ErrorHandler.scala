@@ -16,7 +16,7 @@ import javax.inject.Singleton
 import scala.concurrent.Future
 
 @Singleton
-class ErrorHandler @Inject() (
+class ErrorHandler @Inject(
     env: Environment,
     config: Configuration,
     sourceMapper: OptionalSourceMapper,

@@ -32,7 +32,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class CompanyOrchestrator @Inject() (
+class CompanyOrchestrator @Inject(
     val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
@@ -85,7 +85,7 @@ class CompanyOrchestrator @Inject() (
       )
 
   private def toCompanyWithNbReports(company: Company, count: Int, responseCount: Int) = {
-    val responseRate: Float = if (count > 0) (responseCount.toFloat / count) * 100 else 0f
+    val responseRate: Float = if (count > 0) responseCount.toFloat / count * 100 else 0f
     company
       .into[CompanyWithNbReports]
       .withFieldConst(_.count, count)

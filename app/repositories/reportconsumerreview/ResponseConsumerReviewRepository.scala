@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ResponseConsumerReviewRepository @Inject() (
+class ResponseConsumerReviewRepository @Inject(
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends TypedCRUDRepository[ResponseConsumerReviewTable, ResponseConsumerReview, ResponseConsumerReviewId]

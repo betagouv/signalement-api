@@ -10,7 +10,7 @@ import play.api.libs.mailer.AttachmentData
 import play.api.libs.mailer.AttachmentFile
 import utils.FrontRoute
 
-class AttachementService @Inject() (environment: Environment, pdfService: PDFService, frontRoute: FrontRoute) {
+class AttachementService @Inject(environment: Environment, pdfService: PDFService, frontRoute: FrontRoute) {
 
   val defaultAttachments: Seq[Attachment] = Seq(
     AttachmentFile(

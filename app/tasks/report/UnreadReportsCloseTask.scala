@@ -29,7 +29,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class UnreadReportsCloseTask @Inject() (
+class UnreadReportsCloseTask @Inject(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,

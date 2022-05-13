@@ -31,7 +31,7 @@ object EmailActor {
 }
 
 @Singleton
-class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
+class EmailActor @Inject(mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
   import EmailActor._
   implicit val ec: ExecutionContext = context.dispatcher
 

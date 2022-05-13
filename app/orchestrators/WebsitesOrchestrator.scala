@@ -19,7 +19,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class WebsitesOrchestrator @Inject() (
+class WebsitesOrchestrator @Inject(
     val repository: WebsiteRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface
 )(implicit

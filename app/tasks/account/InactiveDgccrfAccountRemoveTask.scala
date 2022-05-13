@@ -17,7 +17,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class InactiveDgccrfAccountRemoveTask @Inject() (
+class InactiveDgccrfAccountRemoveTask @Inject(
     userRepository: UserRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
     eventRepository: EventRepositoryInterface,

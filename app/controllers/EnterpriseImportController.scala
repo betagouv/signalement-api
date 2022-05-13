@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @Singleton
-class EnterpriseImportController @Inject() (
+class EnterpriseImportController @Inject(
     enterpriseSyncOrchestrator: EnterpriseImportOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)

@@ -18,7 +18,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class PDFService @Inject() (
+class PDFService @Inject(
     signalConsoConfiguration: SignalConsoConfiguration
 ) {
 

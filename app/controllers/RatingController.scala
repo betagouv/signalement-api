@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class RatingController @Inject() (ratingRepository: RatingRepositoryInterface, val silhouette: Silhouette[AuthEnv])(
+class RatingController @Inject(ratingRepository: RatingRepositoryInterface, val silhouette: Silhouette[AuthEnv])(
     implicit val ec: ExecutionContext
 ) extends BaseController {
 
