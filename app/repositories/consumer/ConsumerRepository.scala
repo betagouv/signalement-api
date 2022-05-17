@@ -22,7 +22,10 @@ class ConsumerRepository @Inject() (
 
   override val table = ConsumerTable.table
 
-  override def getAll(): Future[Seq[Consumer]] =
+  override def getAll(): Future[Seq[Consumer]] = {
+    println(s"------------------  ------------------")
+
     db.run(table.filter(_.deleteDate.isEmpty).result)
+  }
 
 }

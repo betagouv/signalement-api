@@ -162,13 +162,18 @@ class AuthOrchestrator @Inject() (
       token <- silhouette.env.authenticatorService.init(authenticator)
     } yield token
 
-  private def authenticate(login: String, password: String) = credentialsProvider
-    .authenticate(Credentials(login, password))
-    .recoverWith {
-      case _: InvalidPasswordException  => Future.failed(InvalidPassword(login))
-      case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
-      case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
-    }
+  private def authenticate(login: String, password: String) = {
+    println(s"------------------ login = ${login} ------------------")
+    println(s"------------------ password = ${password} ------------------")
+
+    credentialsProvider
+      .authenticate(Credentials(login, password))
+      .recoverWith {
+        case _: InvalidPasswordException  => Future.failed(InvalidPassword(login))
+        case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
+        case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
+      }
+  }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>

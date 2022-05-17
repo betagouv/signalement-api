@@ -3,7 +3,6 @@ package controllers.report
 import java.net.URI
 import java.time.OffsetDateTime
 import java.util.UUID
-import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -26,24 +25,14 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
-import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.reportfile.ReportFileRepositoryInterface
-import repositories.user.UserRepositoryInterface
-import services.AttachementService
-import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
 import utils.SIREN
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -243,17 +232,17 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
 
 abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val reportFileRepository = app.injector.instanceOf[ReportFileRepositoryInterface]
-  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
-  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
-  lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
-  lazy val mailerService = app.injector.instanceOf[MailerService]
-  lazy val attachementService = app.injector.instanceOf[AttachementService]
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  lazy val reportRepository = components.reportRepository
+  lazy val reportFileRepository = components.reportFileRepository
+  lazy val userRepository = components.userRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val companyDataRepository = components.companyDataRepository
+  lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
+  implicit lazy val frontRoute = components.frontRoute
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
@@ -308,7 +297,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   override def setupData() = {
     reviewUrl = new URI(
-      config.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
+      configLoader.dashboardURL.toString + s"/suivi-des-signalements/${reportFixture.id}/avis"
     )
     Await.result(
       for {
@@ -336,21 +325,17 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     )
   }
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
-
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(
       concernedProLoginInfo -> concernedProUser,
       concernedHeadOfficeProLoginInfo -> concernedHeadOfficeProUser,
       notConcernedProLoginInfo -> notConcernedProUser
+    )
+  )
+
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
     )
   )
 

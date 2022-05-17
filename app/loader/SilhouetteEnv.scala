@@ -1,3 +1,5 @@
+package loader
+
 import com.mohiva.play.silhouette.api.Env
 
 import com.mohiva.play.silhouette.api.Environment

@@ -1,57 +1,46 @@
-import actors.AntivirusScanActor
+package loader
 
-import actors.EmailActor
-import actors.EnterpriseSyncActor
-import actors.ReportedPhonesExtractActor
-import actors.ReportsExtractActor
-import actors.WebsitesExtractActor
-import akka.actor.typed
-import akka.actor.Props
-import play.api._
-import play.api.routing.Router
-import play.filters.HttpFiltersComponents
+import _root_.controllers._
+import actors._
 import akka.actor.ActorRef
+import akka.actor.Props
+import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
-import com.mohiva.play.silhouette.api.actions.SecuredActionComponents
-import com.mohiva.play.silhouette.api.actions.SecuredErrorHandlerComponents
-import com.mohiva.play.silhouette.api.actions.UnsecuredActionComponents
-import com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandlerComponents
-import com.mohiva.play.silhouette.api.actions.UserAwareActionComponents
-import com.mohiva.play.silhouette.api.SilhouetteProvider
-import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.SilhouetteProvider
+import com.mohiva.play.silhouette.api.actions._
+import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticatorService
+import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
-import config.ApplicationConfiguration
-import config.BucketConfiguration
-import config.TaskConfiguration
-import orchestrators.AccessesOrchestrator
-import orchestrators.AuthOrchestrator
-import orchestrators.CompaniesVisibilityOrchestrator
-import orchestrators.CompanyAccessOrchestrator
-import orchestrators.CompanyOrchestrator
-import orchestrators.DataEconomieOrchestrator
-import orchestrators.EmailValidationOrchestrator
-import orchestrators.EnterpriseImportOrchestrator
-import orchestrators.EventsOrchestrator
-import orchestrators.ReportBlockedNotificationOrchestrator
-import orchestrators.ReportConsumerReviewOrchestrator
-import orchestrators.ReportOrchestrator
-import orchestrators.StatsOrchestrator
-import orchestrators.WebsitesOrchestrator
-import _root_.controllers._
-import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticatorService
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import play.api.db.slick.SlickComponents
+import config.ApplicationConfiguration
+import config.BucketConfiguration
+import config.SignalConsoConfiguration
+import config.TaskConfiguration
+import config.UploadConfiguration
+import orchestrators._
+import play.api._
 import play.api.db.slick.DbName
+import play.api.db.slick.SlickComponents
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.BodyParsers
 import play.api.mvc.EssentialFilter
+import play.api.routing.Router
+import play.filters.HttpFiltersComponents
+import pureconfig.ConfigConvert
+import pureconfig.ConfigReader
+import pureconfig.ConfigSource
+import pureconfig.configurable.localTimeConfigConvert
+import pureconfig.generic.auto._
+import pureconfig.generic.semiauto.deriveReader
 import repositories.accesstoken.AccessTokenRepository
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.asyncfiles.AsyncFileRepository
@@ -91,41 +80,40 @@ import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
-import services.AttachementService
-import services.MailService
-import services.MailerService
-import services.PDFService
-import services.S3Service
+import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import tasks.account.InactiveAccountTask
+import tasks.account.InactiveDgccrfAccountRemoveTask
+import tasks.report.NoActionReportsCloseTask
+import tasks.report.ReadReportsReminderTask
+import tasks.report.ReportNotificationTask
+import tasks.report.ReportTask
+import tasks.report.UnreadReportsCloseTask
+import tasks.report.UnreadReportsReminderTask
 import utils.EmailAddress
 import utils.FrontRoute
+import utils.silhouette.api.APIKeyEnv
+import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.PasswordInfoDAO
 import utils.silhouette.auth.UserService
-import pureconfig.ConfigConvert
-import pureconfig.ConfigReader
-import pureconfig.ConfigSource
-import pureconfig.configurable.localTimeConfigConvert
-import pureconfig.generic.auto._
-import pureconfig.generic.semiauto.deriveReader
-import utils.silhouette.api.ApiKeyService
-import utils.silhouette.api.APIKeyEnv
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-class SignalConsoApplicationLoader extends ApplicationLoader {
-  private var components: MyComponents = _
+class SignalConsoApplicationLoader() extends ApplicationLoader {
+  var components: SignalConsoComponents = _
 
   override def load(context: ApplicationLoader.Context): Application = {
-    components = new MyComponents(context)
+    components = new SignalConsoComponents(context)
     components.application
   }
 }
 
-class MyComponents(context: ApplicationLoader.Context)
-    extends BuiltInComponentsFromContext(context)
+class SignalConsoComponents(
+    context: ApplicationLoader.Context
+) extends BuiltInComponentsFromContext(context)
     with HttpFiltersComponents
     with play.filters.cors.CORSComponents
     with AssetsComponents
@@ -138,17 +126,16 @@ class MyComponents(context: ApplicationLoader.Context)
     with UserAwareActionComponents
     with MailerComponents {
 
-  println(
-    s"------------------ configuration.get(play.mailer.host).toString = ${configuration.get[Config]("play.filters")} ------------------"
-  )
-
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
-  val emailConfiguration = applicationConfiguration.mail
+  def emailConfiguration = applicationConfiguration.mail
+  def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
+  def tokenConfiguration = signalConsoConfiguration.token
+  def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
 
   val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     new BCryptSha256PasswordHasher(),
@@ -159,8 +146,8 @@ class MyComponents(context: ApplicationLoader.Context)
 
   //  Repositories
 
-  private val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
-  private val dbConfigCompanyDb: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("company_db"))
+  val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
+  val dbConfigCompanyDb: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("company_db"))
 
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
@@ -176,14 +163,14 @@ class MyComponents(context: ApplicationLoader.Context)
   val enterpriseImportInfoRepository: EnterpriseImportInfoRepository = new EnterpriseImportInfoRepository(
     dbConfigCompanyDb
   )
-  val eventRepository: EventRepositoryInterface = new EventRepository(dbConfig)
+  def eventRepository: EventRepositoryInterface = new EventRepository(dbConfig)
   val ratingRepository: RatingRepositoryInterface = new RatingRepository(dbConfig)
-  val reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
+  def reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
     new ResponseConsumerReviewRepository(dbConfig)
-  val reportFileRepository: ReportFileRepositoryInterface = new ReportFileRepository(dbConfig)
+  def reportFileRepository: ReportFileRepositoryInterface = new ReportFileRepository(dbConfig)
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   val userRepository: UserRepositoryInterface = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface = new WebsiteRepository(dbConfig)
@@ -191,13 +178,17 @@ class MyComponents(context: ApplicationLoader.Context)
   val userService = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
 
-  val authEnv: Environment[AuthEnv] =
-    SilhouetteEnv.getEnv[AuthEnv](userService, SilhouetteEnv.getJWTAuthenticatorService(configuration))
+  val authenticatorService: AuthenticatorService[JWTAuthenticator] =
+    SilhouetteEnv.getJWTAuthenticatorService(configuration)
+
+  def authEnv: Environment[AuthEnv] = SilhouetteEnv.getEnv[AuthEnv](userService, authenticatorService)
+
   val silhouette: Silhouette[AuthEnv] =
     new SilhouetteProvider[AuthEnv](authEnv, securedAction, unsecuredAction, userAwareAction)
 
-  val authApiEnv: Environment[APIKeyEnv] =
+  def authApiEnv: Environment[APIKeyEnv] =
     SilhouetteEnv.getEnv[APIKeyEnv](apiUserService, new DummyAuthenticatorService())
+
   val silhouetteApi: Silhouette[APIKeyEnv] =
     new SilhouetteProvider[APIKeyEnv](authApiEnv, securedAction, unsecuredAction, userAwareAction)
 
@@ -215,35 +206,36 @@ class MyComponents(context: ApplicationLoader.Context)
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
-  val s3Service = new S3Service()
+  def s3Service: S3ServiceInterface = new S3Service()
+  def mailer = new MailerService(mailerClient)
 
-  private val mailer = new MailerService(mailerClient)
   //  Actor
   val emailActor: ActorRef = actorSystem.actorOf(Props(new EmailActor(mailer)), "email-actor")
   val enterpriseSyncActor: ActorRef = actorSystem.actorOf(
     Props(new EnterpriseSyncActor(enterpriseImportInfoRepository, companyDataRepository)),
     "enterprise-sync-actor"
   )
+
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
-    AntivirusScanActor.create(applicationConfiguration.app.upload, reportFileRepository, s3Service),
+    AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
     "antivirus-scan-actor"
   )
   val reportedPhonesExtractActor: ActorRef =
     actorSystem.actorOf(
       Props(
-        new ReportedPhonesExtractActor(applicationConfiguration.app, reportRepository, asyncFileRepository, s3Service)
+        new ReportedPhonesExtractActor(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service)
       ),
       "reported-phones-extract-actor"
     )
 
   val websitesExtractActor: ActorRef =
     actorSystem.actorOf(
-      Props(new WebsitesExtractActor(reportRepository, asyncFileRepository, s3Service, applicationConfiguration.app)),
+      Props(new WebsitesExtractActor(reportRepository, asyncFileRepository, s3Service, signalConsoConfiguration)),
       "websites-extract-actor"
     )
 
-  val pdfService = new PDFService(applicationConfiguration.app)
-  val frontRoute = new FrontRoute(applicationConfiguration.app)
+  val pdfService = new PDFService(signalConsoConfiguration)
+  val frontRoute = new FrontRoute(signalConsoConfiguration)
   val attachementService = new AttachementService(environment, pdfService, frontRoute)
   val mailService = new MailService(
     emailActor,
@@ -265,7 +257,7 @@ class MyComponents(context: ApplicationLoader.Context)
     mailService,
     frontRoute,
     emailConfiguration,
-    applicationConfiguration.app.token
+    tokenConfiguration
   )
 
   val authOrchestrator = new AuthOrchestrator(
@@ -274,13 +266,13 @@ class MyComponents(context: ApplicationLoader.Context)
     userRepository,
     accessesOrchestrator,
     authTokenRepository,
-    applicationConfiguration.app.token,
+    tokenConfiguration,
     credentialsProvider,
     mailService,
     silhouette
   )
 
-  val companiesVisibilityOrchestrator =
+  def companiesVisibilityOrchestrator =
     new CompaniesVisibilityOrchestrator(companyDataRepository, companyRepository, companyAccessRepository)
 
   val companyAccessOrchestrator =
@@ -329,8 +321,8 @@ class MyComponents(context: ApplicationLoader.Context)
     antivirusScanActor,
     s3Service,
     emailConfiguration,
-    applicationConfiguration.app.token,
-    applicationConfiguration.app
+    tokenConfiguration,
+    signalConsoConfiguration
   )
 
   val reportsExtractActor: ActorRef =
@@ -343,7 +335,7 @@ class MyComponents(context: ApplicationLoader.Context)
           eventRepository,
           asyncFileRepository,
           s3Service,
-          applicationConfiguration.app
+          signalConsoConfiguration
         )
       ),
       "reports-extract-actor"
@@ -354,8 +346,40 @@ class MyComponents(context: ApplicationLoader.Context)
 
   val websitesOrchestrator = new WebsitesOrchestrator(websiteRepository, companyRepository)
 
-  // Controller
+  val unreadReportsReminderTask =
+    new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
+  val unreadReportsCloseTask =
+    new UnreadReportsCloseTask(applicationConfiguration.task, eventRepository, reportRepository, mailService)
 
+  val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
+
+  val noActionReportsCloseTask =
+    new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)
+
+  val reportTask = new ReportTask(
+    actorSystem,
+    reportRepository,
+    eventRepository,
+    companiesVisibilityOrchestrator,
+    signalConsoConfiguration,
+    unreadReportsReminderTask,
+    unreadReportsCloseTask,
+    readReportsReminderTask,
+    noActionReportsCloseTask,
+    taskConfiguration
+  )
+  val reportNotificationTask =
+    new ReportNotificationTask(actorSystem, reportRepository, subscriptionRepository, mailService, taskConfiguration)
+
+  val inactiveDgccrfAccountRemoveTask =
+    new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, eventRepository, asyncFileRepository)
+  val inactiveAccountTask = new InactiveAccountTask(
+    actorSystem,
+    inactiveDgccrfAccountRemoveTask,
+    applicationConfiguration.task.inactiveAccounts
+  )
+
+  // Controller
   val accountController = new AccountController(
     silhouette,
     userRepository,
@@ -435,7 +459,7 @@ class MyComponents(context: ApplicationLoader.Context)
     pdfService,
     frontRoute,
     silhouette,
-    applicationConfiguration.app,
+    signalConsoConfiguration,
     controllerComponents
   )
   val reportedPhoneController = new ReportedPhoneController(

@@ -1,8 +1,6 @@
 package controllers.report
 
 import akka.util.Timeout
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -20,16 +18,11 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers
 import play.mvc.Http.Status
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.user.UserRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
+import utils.TestApp
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
@@ -131,12 +124,12 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
 
   implicit val timeout: Timeout = 30.seconds
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
-  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val companyDataRepository = components.companyDataRepository
+  lazy val accessTokenRepository = components.accessTokenRepository
+  lazy val reportRepository = components.reportRepository
 
   val noAccessUser = Fixtures.genProUser.sample.get
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -242,9 +235,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](
@@ -253,12 +243,11 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     )
   )
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
 
   def getReports(status: Option[String] = None) = {
     val request = FakeRequest(

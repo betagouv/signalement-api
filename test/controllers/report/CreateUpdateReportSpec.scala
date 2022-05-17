@@ -2,7 +2,6 @@ package controllers.report
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -21,23 +20,14 @@ import org.specs2.matcher._
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.emailvalidation.EmailValidationRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.user.UserRepositoryInterface
-import services.AttachementService
-import services.MailerService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
+import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.duration.Duration
@@ -219,17 +209,17 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   implicit val ec = ExecutionContext.global
 
-  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
-  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val mailerService = app.injector.instanceOf[MailerService]
-  lazy val attachmentService = app.injector.instanceOf[AttachementService]
-  lazy val emailValidationRepository = app.injector.instanceOf[EmailValidationRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
+  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val mailerService = components.mailer
+  lazy val attachmentService = components.attachementService
+  lazy val emailValidationRepository = components.emailValidationRepository
+  lazy val companyDataRepository = components.companyDataRepository
 
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
@@ -282,25 +272,21 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       Duration.Inf
     )
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
-
   implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](
     Seq(
       concernedAdminLoginInfo -> concernedAdminUser
     )
   )
 
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
+
   def createReport() =
     Await.result(
-      app.injector.instanceOf[ReportController].createReport().apply(FakeRequest().withBody(Json.toJson(draftReport))),
+      components.reportController.createReport().apply(FakeRequest().withBody(Json.toJson(draftReport))),
       Duration.Inf
     )
 

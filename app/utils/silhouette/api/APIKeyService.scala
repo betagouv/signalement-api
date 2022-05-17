@@ -13,8 +13,15 @@ class ApiKeyService @Inject() (consumerRepository: ConsumerRepositoryInterface)(
     val executionContext: ExecutionContext
 ) extends IdentityService[APIKey] {
 
-  def retrieve(loginInfo: LoginInfo): Future[Option[APIKey]] = consumerRepository
-    .get(UUID.fromString(loginInfo.providerKey))
-    .map(_.map(c => APIKey(c.id)))
+  def retrieve(loginInfo: LoginInfo): Future[Option[APIKey]] = {
+    println(s"------------------ loginInfo = ${loginInfo} ------------------")
+    consumerRepository
+      .get(UUID.fromString(loginInfo.providerKey))
+      .map(_.map(c => APIKey(c.id)))
+      .map { e =>
+        println(s"------------------ e = ${e} ------------------")
+        e
+      }
+  }
 
 }

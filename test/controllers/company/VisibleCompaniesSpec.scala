@@ -1,13 +1,10 @@
 package controllers.company
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import controllers.routes
 import models._
-import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -17,15 +14,12 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
 import utils.SIRET
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -39,11 +33,11 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
-  lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val companyDataRepository = components.companyDataRepository
+  lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
 
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val adminWithAccessToHeadOffice = Fixtures.genProUser.sample.get
@@ -122,21 +116,16 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](
     Seq(proUserWithAccessToHeadOffice, proUserWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
   )
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(env)
+  )
+
 }
 
 class VisibleCompaniesSpec(implicit ee: ExecutionEnv) extends BaseVisibleCompaniesSpec {

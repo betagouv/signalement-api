@@ -25,7 +25,8 @@ class APIKeyRequestProvider @Inject() (
     val headerValueOpt = request.headers.get("X-Api-Key")
 
     headerValueOpt
-      .map(headerValue =>
+      .map { headerValue =>
+        println(s"------------------ headerValue = ${headerValue} ------------------")
         consumerRepository.getAll().map { consumers =>
           val keyMatchOpt = consumers.find { c =>
             hasher.matches(toPasswordInfo(c.apiKey), headerValue)
@@ -41,7 +42,7 @@ class APIKeyRequestProvider @Inject() (
               None
           }
         }
-      )
+      }
       .getOrElse {
         logger.error(
           s"Access denied to the external API, missing X-Api-Key header when calling ${request.uri}."

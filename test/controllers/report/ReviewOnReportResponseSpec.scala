@@ -1,7 +1,5 @@
 package controllers.report
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -28,13 +26,10 @@ import utils.Constants.EventType
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
@@ -101,26 +96,22 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
   val adminUser = Fixtures.genAdminUser.sample.get
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env: FakeEnvironment[AuthEnv] =
     new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
 
-  lazy val reportRepository = app.injector.instanceOf[ReportRepository]
-  lazy val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
-  lazy val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepositoryInterface]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
+  lazy val companyRepository = components.companyRepository
 
   val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
 
