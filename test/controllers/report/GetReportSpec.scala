@@ -337,6 +337,16 @@ trait GetReportContext extends AppSpec {
     )
   )
 
+  val mockReportRepository = new ReportRepositoryMock()
+  mockReportRepository.create(neverRequestedReport)
+  mockReportRepository.create(neverRequestedFinalReport)
+  mockReportRepository.create(alreadyRequestedReport)
+
+  val mockReportFileRepository = mock[ReportFileRepositoryInterface]
+  val mockEventRepository = mock[EventRepositoryInterface]
+  val mockMailerService = mock[MailerService]
+  val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
+
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
 
@@ -369,15 +379,6 @@ trait GetReportContext extends AppSpec {
   val app: Application = TestApp.buildApp(new FakeApplicationLoader())
   val components: SignalConsoComponents = appLoader.components
 
-  val mockReportRepository = new ReportRepositoryMock()
-  mockReportRepository.create(neverRequestedReport)
-  mockReportRepository.create(neverRequestedFinalReport)
-  mockReportRepository.create(alreadyRequestedReport)
-
-  val mockReportFileRepository = mock[ReportFileRepositoryInterface]
-  val mockEventRepository = mock[EventRepositoryInterface]
-  val mockMailerService = mock[MailerService]
-  val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
   lazy val mailerService = components.mailer
   lazy val attachementService = components.attachementService
   lazy val mailService = components.mailService
