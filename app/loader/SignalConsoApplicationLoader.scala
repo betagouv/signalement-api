@@ -137,7 +137,7 @@ class SignalConsoComponents(
   def tokenConfiguration = signalConsoConfiguration.token
   def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
 
-  val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
+  def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     new BCryptPasswordHasher()
   )
 

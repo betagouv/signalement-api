@@ -30,8 +30,6 @@ class APIKeyRequestProvider @Inject() (
         consumerRepository.getAll().map { consumers =>
           println(s"------------------ consumers = ${consumers} ------------------")
           val keyMatchOpt = consumers.find { c =>
-            val t = hasher.hash("test")
-            println("coucou    " + hasher.matches(t, "test"))
             hasher.matches(toPasswordInfo(c.apiKey), headerValue)
           }
           keyMatchOpt match {

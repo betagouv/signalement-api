@@ -25,6 +25,7 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepositoryInterface)(implic
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     userRepository.findByLogin(loginInfo.providerKey).map {
       case Some(user) =>
+        println(s"------------------ user.password = ${user.password} ------------------")
         Some(toPasswordInfo(user.password))
       case _ => None
     }

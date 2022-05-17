@@ -1,18 +1,19 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.api.util.PasswordInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
-import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import loader.SignalConsoComponents
 import models._
 import models.auth.AuthToken
 import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
+import play.api.Application
+import play.api.ApplicationLoader
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
@@ -20,6 +21,7 @@ import play.api.test._
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
+import utils.silhouette.Credentials.toLoginInfo
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
@@ -35,31 +37,44 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
   val validPassword = "test"
 
-  val identity = Fixtures.genAdminUser.sample.get
-    .copy(
-      id = UUID.randomUUID(),
-      password = PasswordHasherRegistry(
-        new BCryptSha256PasswordHasher(),
-        Seq(
-          new BCryptPasswordHasher()
-        )
-      ).current.hash(validPassword).password
-    )
-  val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
-
-  val (app, components) = TestApp.buildApp(
-    Some(
-      new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
-    )
+  private val hasher: PasswordHasherRegistry = PasswordHasherRegistry(
+    new BCryptPasswordHasher()
   )
+
+  val identity = Fixtures.genAdminUser.sample.get.copy(
+    id = UUID.randomUUID(),
+    password = hasher.current.hash(validPassword).password
+  )
+
+  val identLoginInfo = toLoginInfo(identity.email.value)
+
+  val env = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
+
+  class FakeApplicationLoader extends ApplicationLoader {
+    var components: SignalConsoComponents = _
+
+    override def load(context: ApplicationLoader.Context): Application = {
+      components = new SignalConsoComponents(context) {
+        override def passwordHasherRegistry = hasher
+        override def authEnv: Environment[AuthEnv] = env
+      }
+      components.application
+    }
+
+  }
+
+  val loader = new FakeApplicationLoader()
+  val app = TestApp.buildApp(loader)
+  val components = loader.components
+
   override def afterAll(): Unit = app.stop()
-  implicit val authEnv = components.authEnv
+  implicit val authEnv = env
 
   lazy val userRepository = components.userRepository
 
   lazy val passwordHasherRegistry = components.passwordHasherRegistry
-  lazy val authAttemptRepository = components.authAttemptRepository
 
+  lazy val authAttemptRepository = components.authAttemptRepository
   lazy val companyRepository = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val authTokenRepository = components.authTokenRepository
@@ -67,17 +82,16 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
 
-  override def setupData() =
-    Await.result(
-      for {
-        _ <- userRepository.create(proUser)
-        _ <- userRepository.create(identity)
-        _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- accessTokenRepository
-          .create(AccessToken.build(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None))
-      } yield (),
-      Duration.Inf
-    )
+  override def setupData() = Await.result(
+    for {
+      _ <- userRepository.create(proUser)
+      _ <- userRepository.create(identity)
+      _ <- companyRepository.getOrCreate(company.siret, company)
+      _ <- accessTokenRepository
+        .create(AccessToken.build(CompanyJoin, "123456", None, Some(company.id), Some(AccessLevel.ADMIN), None))
+    } yield (),
+    Duration.Inf
+  )
 
   "AuthController" should {
 //    "login" should {
