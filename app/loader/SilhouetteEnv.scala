@@ -1,9 +1,9 @@
 package loader
 
 import com.mohiva.play.silhouette.api.Env
-
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.EventBus
+import com.mohiva.play.silhouette.api.RequestProvider
 import com.mohiva.play.silhouette.api.crypto.CrypterAuthenticatorEncoder
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.services.IdentityService
@@ -27,12 +27,13 @@ object SilhouetteEnv {
 
   def getEnv[E <: Env](
       identityServiceImpl: IdentityService[E#I],
-      authenticatorServiceImpl: AuthenticatorService[E#A]
+      authenticatorServiceImpl: AuthenticatorService[E#A],
+      requestProvidersImpl: Seq[RequestProvider] = Seq()
   )(implicit ec: ExecutionContext): Environment[E] =
     Environment[E](
       identityServiceImpl,
       authenticatorServiceImpl,
-      Seq(),
+      requestProvidersImpl,
       eventBus
     )
 
@@ -43,6 +44,9 @@ object SilhouetteEnv {
     val crypterSettings = configuration.underlying.as[JcaCrypterSettings]("silhouette.authenticator.crypter")
     val jWTAuthenticatorSettings = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.authenticator")
     val crypter = new JcaCrypter(crypterSettings)
+
+    println(s"------------------ crypterSettings = ${crypterSettings} ------------------")
+    println(s"------------------ jWTAuthenticatorSettings = ${jWTAuthenticatorSettings} ------------------")
 
     val encoder = new CrypterAuthenticatorEncoder(crypter)
 

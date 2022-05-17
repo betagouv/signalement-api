@@ -71,16 +71,20 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
       "ReportController3" in new Context {
         new WithApplication(app) {
 
+          println(
+            s"------------------ components.passwordHasherRegistry.current.hash().password = ${components.passwordHasherRegistry.current.hash("test").password} ------------------"
+          )
+
           Await.result(
             for {
               _ <- components.consumerRepository.create(
-                Consumer(name = "test", apiKey = "$2a$10$UQef47G7Lhns033SSGde6emWEKe/TsgtzpUXSe9BcE1gWoRciMpBW")
+                Consumer(name = "test", apiKey = components.passwordHasherRegistry.current.hash("test").password)
               )
             } yield (),
             Duration.Inf
           )
 
-          val request = FakeRequest("GET", s"/api/ext/reports/siret/$siretFixture").withHeaders(
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture").withHeaders(
             "X-Api-Key" -> "test"
           )
           val result = route(app, request).get

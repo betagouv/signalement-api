@@ -16,7 +16,6 @@ import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
-import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -94,6 +93,7 @@ import tasks.report.UnreadReportsReminderTask
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.silhouette.api.APIKeyEnv
+import utils.silhouette.api.APIKeyRequestProvider
 import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.PasswordInfoDAO
@@ -138,10 +138,7 @@ class SignalConsoComponents(
   def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
 
   val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-    new BCryptSha256PasswordHasher(),
-    Seq(
-      new BCryptPasswordHasher()
-    )
+    new BCryptPasswordHasher()
   )
 
   //  Repositories
@@ -187,7 +184,11 @@ class SignalConsoComponents(
     new SilhouetteProvider[AuthEnv](authEnv, securedAction, unsecuredAction, userAwareAction)
 
   def authApiEnv: Environment[APIKeyEnv] =
-    SilhouetteEnv.getEnv[APIKeyEnv](apiUserService, new DummyAuthenticatorService())
+    SilhouetteEnv.getEnv[APIKeyEnv](
+      apiUserService,
+      new DummyAuthenticatorService(),
+      Seq(new APIKeyRequestProvider(passwordHasherRegistry, consumerRepository))
+    )
 
   val silhouetteApi: Silhouette[APIKeyEnv] =
     new SilhouetteProvider[APIKeyEnv](authApiEnv, securedAction, unsecuredAction, userAwareAction)

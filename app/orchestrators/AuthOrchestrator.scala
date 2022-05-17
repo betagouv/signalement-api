@@ -26,8 +26,10 @@ import cats.instances.future.catsStdInstancesForFuture
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
+import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthAttempt
@@ -163,8 +165,17 @@ class AuthOrchestrator @Inject() (
     } yield token
 
   private def authenticate(login: String, password: String) = {
+
     println(s"------------------ login = ${login} ------------------")
     println(s"------------------ password = ${password} ------------------")
+
+    val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
+      new BCryptPasswordHasher()
+    )
+
+    val t = passwordHasherRegistry.current.hash(password)
+    println(s"------------------ t.password = ${t.password} ------------------")
+    println("coucou    " + passwordHasherRegistry.current.matches(t, password))
 
     credentialsProvider
       .authenticate(Credentials(login, password))

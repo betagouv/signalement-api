@@ -23,9 +23,7 @@ abstract class ApiKeyBaseController(override val controllerComponents: Controlle
   type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
   implicit val ec: ExecutionContext
 
-  def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] = {
-
-    println(s"------------------  = !!!!!! ------------------")
+  def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] =
     silhouette.SecuredAction andThen new ActionFunction[SecuredApiRequestWrapper, SecuredApiRequestWrapper] {
 
       def invokeBlock[A](
@@ -36,7 +34,6 @@ abstract class ApiKeyBaseController(override val controllerComponents: Controlle
 
       override protected def executionContext: ExecutionContext = ec
     }
-  }
 
 }
 
