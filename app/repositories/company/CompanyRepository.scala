@@ -54,17 +54,15 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
            * Equivalent to following select clause
            * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
            */
-          (
-            all
-              .map(_._2)
-              .map(b =>
-                b.flatMap { a =>
-                  Case If a.status.inSet(
-                    ReportStatusProResponse.map(_.entryName)
-                  ) Then a.id
-                }
-              )
-            )
+          all
+            .map(_._2)
+            .map(
+            b =>
+              b.flatMap { a =>
+                Case If a.status.inSet(
+                  ReportStatusProResponse.map(_.entryName)
+                ) Then a.id
+              })
             .countDefined: Rep[Int]
         )
       }

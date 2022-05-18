@@ -65,7 +65,7 @@ class UserRepository(
         yield refUser
     db.run(
       queryUser
-        .map(u => (u.password))
+        .map(u => u.password)
         .update(passwordHasherRegistry.current.hash(password).password)
     )
   }

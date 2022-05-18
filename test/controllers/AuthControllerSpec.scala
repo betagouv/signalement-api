@@ -46,7 +46,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   val validPassword = "test"
 
   private val hasher: PasswordHasherRegistry = PasswordHasherRegistry(
-    new BCryptPasswordHasher()
+    new BCryptPasswordHasher
   )
 
   val identity = Fixtures.genAdminUser.sample.get.copy(
@@ -71,7 +71,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
   }
 
-  val loader = new FakeApplicationLoader()
+  val loader = new FakeApplicationLoader
   val app = TestApp.buildApp(loader)
   val components = loader.components
 
@@ -123,7 +123,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
-        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(true))
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(true)
         authAttempts.headOption.flatMap(_.failureCause) shouldEqual None
 
       }
@@ -165,8 +165,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
-        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
-        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(InvalidPassword(login).details))
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(false)
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual Some(InvalidPassword(login).details)
 
       }
 
@@ -191,8 +191,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val authAttempts = Await.result(result.map(_._2), Duration.Inf)
         authAttempts.length shouldEqual 1
         authAttempts.headOption.map(_.login) shouldEqual Some(login)
-        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual (Some(false))
-        authAttempts.headOption.flatMap(_.failureCause) shouldEqual (Some(UserNotFound(login).details))
+        authAttempts.headOption.flatMap(_.isSuccess) shouldEqual Some(false)
+        authAttempts.headOption.flatMap(_.failureCause) shouldEqual Some(UserNotFound(login).details)
 
       }
 

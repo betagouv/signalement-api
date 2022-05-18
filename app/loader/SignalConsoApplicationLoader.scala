@@ -138,7 +138,7 @@ class SignalConsoComponents(
   def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
 
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-    new BCryptPasswordHasher()
+    new BCryptPasswordHasher
   )
 
   //  Repositories
@@ -186,7 +186,7 @@ class SignalConsoComponents(
   def authApiEnv: Environment[APIKeyEnv] =
     SilhouetteEnv.getEnv[APIKeyEnv](
       apiUserService,
-      new DummyAuthenticatorService(),
+      new DummyAuthenticatorService,
       Seq(new APIKeyRequestProvider(passwordHasherRegistry, consumerRepository))
     )
 
@@ -207,7 +207,7 @@ class SignalConsoComponents(
     amazonBucketName = applicationConfiguration.amazonBucketName
   )
 
-  def s3Service: S3ServiceInterface = new S3Service()
+  def s3Service: S3ServiceInterface = new S3Service
   def mailer = new MailerService(mailerClient)
 
   //  Actor

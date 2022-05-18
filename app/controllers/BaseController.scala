@@ -67,7 +67,7 @@ abstract class BaseController(override val controllerComponents: ControllerCompo
     )
 
   def UnsecuredAction: ActionBuilder[Request, AnyContent] =
-    silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]()
+    silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]
 
   def UserAwareAction: ActionBuilder[UserAwareRequestWrapper, AnyContent] =
     silhouette.UserAwareAction andThen

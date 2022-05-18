@@ -53,7 +53,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
 
   lazy val actorSystem: ActorSystem = new ActorSystemProvider(appEnv, context.initialConfiguration).get
   val executionContext: ExecutionContext = actorSystem.dispatcher
-  val slickApi: SlickApi = new DefaultSlickApi(appEnv, context.initialConfiguration, new DefaultApplicationLifecycle())(
+  val slickApi: SlickApi = new DefaultSlickApi(appEnv, context.initialConfiguration, new DefaultApplicationLifecycle)(
     executionContext
   )
   val database: Database = SlickDBApi(slickApi).database("default")

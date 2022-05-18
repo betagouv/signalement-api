@@ -62,8 +62,8 @@ class S3Service(implicit
       .download(bucketName, bucketKey)
       .runWith(Sink.head)
       .map {
-        case Some((byteStringSource, _)) => byteStringSource
-        case None                        => throw BucketFileNotFound(bucketName, bucketKey)
+        case Some(byteStringSource, _) => byteStringSource
+        case None                      => throw BucketFileNotFound(bucketName, bucketKey)
       }
 
   override def delete(bucketKey: String): Future[Done] =

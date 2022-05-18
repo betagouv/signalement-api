@@ -267,7 +267,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
 
   def aReport(report: Report): Matcher[String] =
-    /("report") / "id" andHave (report.id.toString)
+    /("report") / "id" andHave report.id.toString
 
   def haveReports(reports: Matcher[String]*): Matcher[String] =
     /("entities").andHave(allOf(reports: _*))

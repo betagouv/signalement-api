@@ -181,7 +181,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockMailerService = mock[MailerService]
-    val mockS3Service = new S3ServiceMock()
+    val mockS3Service = new S3ServiceMock
 
     def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
 

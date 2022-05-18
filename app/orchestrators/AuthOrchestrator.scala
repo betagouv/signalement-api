@@ -165,7 +165,7 @@ class AuthOrchestrator(
 
   private def authenticate(login: String, password: String) = {
     val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-      new BCryptPasswordHasher()
+      new BCryptPasswordHasher
     )
 
     passwordHasherRegistry.current.hash(password)

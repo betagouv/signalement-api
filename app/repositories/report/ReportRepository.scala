@@ -291,7 +291,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
 object ReportRepository {
   object ReportFileOrdering extends Ordering[Report] {
     def compare(a: Report, b: Report) =
-      b.creationDate compareTo (a.creationDate)
+      b.creationDate compareTo a.creationDate
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {

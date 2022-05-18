@@ -117,7 +117,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     }
 
-    val appLoader = new FakeApplicationLoader()
+    val appLoader = new FakeApplicationLoader
     val app: Application = TestApp.buildApp(appLoader)
     val components: SignalConsoComponents = appLoader.components
 
