@@ -31,11 +31,10 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class StatsOrchestrator @Inject() (
+class StatsOrchestrator(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,

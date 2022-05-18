@@ -45,9 +45,6 @@ object SilhouetteEnv {
     val jWTAuthenticatorSettings = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.authenticator")
     val crypter = new JcaCrypter(crypterSettings)
 
-    println(s"------------------ crypterSettings = ${crypterSettings} ------------------")
-    println(s"------------------ jWTAuthenticatorSettings = ${jWTAuthenticatorSettings} ------------------")
-
     val encoder = new CrypterAuthenticatorEncoder(crypter)
 
     new JWTAuthenticatorService(jWTAuthenticatorSettings, None, encoder, new SecureRandomIDGenerator, Clock())

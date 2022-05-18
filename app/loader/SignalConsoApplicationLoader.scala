@@ -506,6 +506,10 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  io.sentry.Sentry.captureException(
+    new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
+  )
+
   // Routes
   lazy val router: Router =
     new _root_.router.Routes(

@@ -13,14 +13,12 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.URL
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
 import slick.basic.DatabaseConfig
-@Singleton
-class WebsiteRepository @Inject() (
+
+class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit
     override val ec: ExecutionContext

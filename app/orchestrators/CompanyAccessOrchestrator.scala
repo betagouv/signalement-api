@@ -14,11 +14,9 @@ import utils.SIRET
 
 import java.time.OffsetDateTime.now
 import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
 class CompanyAccessOrchestrator @Inject(
 ) (
     val companyRepository: CompanyRepositoryInterface,

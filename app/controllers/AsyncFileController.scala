@@ -8,12 +8,9 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import services.S3ServiceInterface
 import utils.silhouette.auth.AuthEnv
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
-@Singleton
-class AsyncFileController @Inject() (
+class AsyncFileController(
     val asyncFileRepository: AsyncFileRepositoryInterface,
     val silhouette: Silhouette[AuthEnv],
     val s3Service: S3ServiceInterface,

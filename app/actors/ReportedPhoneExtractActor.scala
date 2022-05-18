@@ -3,7 +3,6 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import com.google.inject.AbstractModule
 import spoiwo.model._
 import spoiwo.model.enums.CellFill
 import spoiwo.model.enums.CellHorizontalAlignment
@@ -13,7 +12,6 @@ import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
-import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.S3ServiceInterface
@@ -24,8 +22,6 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
@@ -36,8 +32,7 @@ object ReportedPhonesExtractActor {
   case class ExtractRequest(fileId: UUID, requestedBy: User, rawFilters: RawFilters)
 }
 
-@Singleton
-class ReportedPhonesExtractActor @Inject() (
+class ReportedPhonesExtractActor(
     config: SignalConsoConfiguration,
     reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
@@ -154,9 +149,4 @@ class ReportedPhonesExtractActor @Inject() (
     val remotePath = s"reported-phones-extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
-}
-
-class ReportedPhonesExtractModule extends AbstractModule with AkkaGuiceSupport {
-  override def configure =
-    bindActor[ReportedPhonesExtractActor]("reported-phones-extract-actor")
 }

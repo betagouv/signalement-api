@@ -20,13 +20,10 @@ import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class AccessTokenRepository @Inject() (
+class AccessTokenRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile],
     val companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit override val ec: ExecutionContext)

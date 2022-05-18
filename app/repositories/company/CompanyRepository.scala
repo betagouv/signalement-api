@@ -14,13 +14,10 @@ import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[CompanyTable, Company]
     with CompanyRepositoryInterface {

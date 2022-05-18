@@ -8,13 +8,10 @@ import play.api.mvc.ControllerComponents
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-@Singleton
-class EnterpriseImportController @Inject() (
+class EnterpriseImportController(
     enterpriseSyncOrchestrator: EnterpriseImportOrchestrator,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents

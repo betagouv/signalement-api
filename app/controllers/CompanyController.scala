@@ -27,13 +27,10 @@ import utils.silhouette.auth.WithRole
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyController @Inject() (
+class CompanyController(
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val companyRepository: CompanyRepositoryInterface,

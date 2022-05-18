@@ -40,27 +40,10 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   val appEnv: play.api.Environment = play.api.Environment.simple(new File("."))
   val context: ApplicationLoader.Context = ApplicationLoader.Context.create(appEnv)
 
-//  def configureFakeModule(): AbstractModule =
-//    new AppFakeModule
-
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
-
-//  class AppFakeModule extends AbstractModule with ScalaModule {
-//    val appConfigLoader = mock[SignalConsoConfiguration]
-//
-//
-
-//
-//    override def configure() =
-//      bind[MailerService].toInstance(mailerServiceMock)
-//  }
-
-//  private val loader = new SignalConsoApplicationLoader()
-//  val app: Application = loader.load(context)
-//  val components = loader.components
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
@@ -75,9 +58,6 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   )
   val database: Database = SlickDBApi(slickApi).database("default")
   val company_database: Database = SlickDBApi(slickApi).database("company_db")
-
-//  lazy val database = SlickDBApi(slickApi).database("default")
-//  lazy val company_database = SlickDBApi(slickApi).database("company_db")
 
   def setupData() = {}
   def cleanupData() = {}

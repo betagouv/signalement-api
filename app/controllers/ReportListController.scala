@@ -15,15 +15,12 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import javax.inject.Inject
 import javax.inject.Named
-import javax.inject.Singleton
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ReportListController @Inject() (
+class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,

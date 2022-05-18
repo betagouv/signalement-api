@@ -1,7 +1,6 @@
 package repositories.event
 
 import cats.data.NonEmptyList
-import com.google.inject.ImplementedBy
 import models.User
 import models.event.Event
 import models.report.Report
@@ -17,7 +16,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[EventRepository])
 trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def deleteByUserId(userId: UUID): Future[Int]

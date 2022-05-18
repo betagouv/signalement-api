@@ -20,11 +20,10 @@ import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterfa
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportConsumerReviewOrchestrator @Inject() (
+class ReportConsumerReviewOrchestrator(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface

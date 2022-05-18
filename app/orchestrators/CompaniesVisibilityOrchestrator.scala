@@ -12,7 +12,6 @@ import utils.SIREN
 import utils.SIRET
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -20,7 +19,7 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
   def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
-class CompaniesVisibilityOrchestrator @Inject() (
+class CompaniesVisibilityOrchestrator(
     companyDataRepo: CompanyDataRepositoryInterface,
     companyRepo: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface

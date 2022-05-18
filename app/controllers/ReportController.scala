@@ -37,11 +37,10 @@ import utils.silhouette.auth.WithRole
 
 import java.nio.file.Paths
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportController @Inject() (
+class ReportController(
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,

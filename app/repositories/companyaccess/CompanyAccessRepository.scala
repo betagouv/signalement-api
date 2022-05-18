@@ -14,13 +14,10 @@ import slick.sql.FixedSqlAction
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyAccessRepository @Inject() (val dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
+class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit ec: ExecutionContext)
     extends CompanyAccessRepositoryInterface {
 
   val table: TableQuery[CompanyAccessTable] = CompanyAccessTable.table

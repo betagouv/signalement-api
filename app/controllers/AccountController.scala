@@ -19,13 +19,10 @@ import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class AccountController @Inject() (
+class AccountController(
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,

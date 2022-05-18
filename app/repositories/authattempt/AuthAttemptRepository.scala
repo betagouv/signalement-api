@@ -9,14 +9,11 @@ import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-@Singleton
-class AuthAttemptRepository @Inject() (
+class AuthAttemptRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthAttemptTable, AuthAttempt]

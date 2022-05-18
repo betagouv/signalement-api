@@ -9,12 +9,11 @@ import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.Credentials._
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-class PasswordInfoDAO @Inject() (userRepository: UserRepositoryInterface)(implicit val classTag: ClassTag[PasswordInfo])
+class PasswordInfoDAO(userRepository: UserRepositoryInterface)(implicit val classTag: ClassTag[PasswordInfo])
     extends DelegableAuthInfoDAO[PasswordInfo] {
 
   val logger: Logger = Logger(this.getClass())
@@ -25,7 +24,6 @@ class PasswordInfoDAO @Inject() (userRepository: UserRepositoryInterface)(implic
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     userRepository.findByLogin(loginInfo.providerKey).map {
       case Some(user) =>
-        println(s"------------------ user.password = ${user.password} ------------------")
         Some(toPasswordInfo(user.password))
       case _ => None
     }

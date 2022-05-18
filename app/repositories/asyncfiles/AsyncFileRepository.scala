@@ -9,13 +9,10 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class AsyncFileRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class AsyncFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[AsyncFilesTable, AsyncFile]
     with SlickEnumSupport

@@ -64,13 +64,12 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
 
-class ReportOrchestrator @Inject() (
+class ReportOrchestrator(
     mailService: MailService,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
@@ -427,7 +426,7 @@ class ReportOrchestrator @Inject() (
     for {
       reportFile <- reportFileRepository.get(id)
       res <- reportFile
-        .map(f => reportFileRepository.delete(f.id).map(x => println(s" x ${x}")))
+        .map(f => reportFileRepository.delete(f.id))
         .getOrElse(Future(None))
       _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
     } yield res

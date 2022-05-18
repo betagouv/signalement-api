@@ -11,13 +11,10 @@ import slick.lifted.TableQuery
 import utils.SIREN
 import utils.SIRET
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyDataRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class CompanyDataRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[CompanyDataTable, CompanyData]
     with CompanyDataRepositoryInterface {

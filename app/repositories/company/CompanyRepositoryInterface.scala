@@ -1,6 +1,5 @@
 package repositories.company
 
-import com.google.inject.ImplementedBy
 import models.Company
 import models.CompanyRegisteredSearch
 import models.PaginatedResult
@@ -12,7 +11,6 @@ import utils.SIRET
 
 import java.util.UUID
 import scala.concurrent.Future
-@ImplementedBy(classOf[CompanyRepository])
 trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def searchWithReportsCount(

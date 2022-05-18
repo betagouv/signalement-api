@@ -15,11 +15,10 @@ import utils.Country
 import utils.URL
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class WebsitesOrchestrator @Inject() (
+class WebsitesOrchestrator(
     val repository: WebsiteRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface
 )(implicit

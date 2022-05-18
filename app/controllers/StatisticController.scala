@@ -14,11 +14,10 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class StatisticController @Inject() (
+class StatisticController(
     statsOrchestrator: StatsOrchestrator,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents

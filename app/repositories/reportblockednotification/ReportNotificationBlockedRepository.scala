@@ -8,13 +8,10 @@ import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ReportNotificationBlockedRepository @Inject() (val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class ReportNotificationBlockedRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     ec: ExecutionContext
 ) extends ReportNotificationBlockedRepositoryInterface {
 

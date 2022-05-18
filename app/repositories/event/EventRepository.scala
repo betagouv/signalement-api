@@ -24,13 +24,10 @@ import java.time.format.DateTimeFormatter
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class EventRepository @Inject() (
+class EventRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EventTable, Event]

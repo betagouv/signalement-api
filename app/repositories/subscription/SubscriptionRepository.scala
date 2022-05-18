@@ -11,15 +11,12 @@ import utils.EmailAddress.EmailColumnType
 
 import java.time.Period
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
 import slick.basic.DatabaseConfig
 
-@Singleton
-class SubscriptionRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class SubscriptionRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[SubscriptionTable, Subscription]
     with SubscriptionRepositoryInterface {

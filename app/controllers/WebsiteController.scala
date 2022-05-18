@@ -26,8 +26,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-@Singleton
-class WebsiteController @Inject() (
+class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
     val websiteRepository: WebsiteRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,

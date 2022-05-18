@@ -17,9 +17,9 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-//@Singleton
+//
 class AuthController
-//@Inject()
+//
 (
     val silhouette: Silhouette[AuthEnv],
     authOrchestrator: AuthOrchestrator,

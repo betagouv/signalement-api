@@ -10,8 +10,6 @@ import slick.lifted.TableQuery
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -20,8 +18,8 @@ import scala.concurrent.Future
   * @param dbConfigProvider
   *   The Play db config provider. Play will inject this for you.
   */
-@Singleton
-class AuthTokenRepository @Inject() (
+
+class AuthTokenRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthTokenTable, AuthToken]

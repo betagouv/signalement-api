@@ -17,7 +17,6 @@ import utils.QueryStringMapper
 import utils.silhouette.api.APIKeyEnv
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -29,7 +28,7 @@ import play.api.mvc.ControllerComponents
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 
-class ReportToExternalController @Inject() (
+class ReportToExternalController(
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,

@@ -42,38 +42,34 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
   "getReportCountBySiret" should {
     val siretFixture = Fixtures.genSiret().sample.get
 
-//    "return unauthorized when there no X-Api-Key header" should {
-//
-//      "ReportController1" in new Context {
-//        new WithApplication(app) {
-//          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture")
-//          val result = route(app, request).get
-//          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-//        }
-//      }
-//    }
-//
-//    "return unauthorized when X-Api-Key header is invalid" should {
-//
-//      "ReportController2" in new Context {
-//        new WithApplication(app) {
-//          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture").withHeaders(
-//            "X-Api-Key" -> "invalid_key"
-//          )
-//          val result = route(app, request).get
-//          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
-//        }
-//      }
-//    }
+    "return unauthorized when there no X-Api-Key header" should {
+
+      "ReportController1" in new Context {
+        new WithApplication(app) {
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture")
+          val result = route(app, request).get
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+        }
+      }
+    }
+
+    "return unauthorized when X-Api-Key header is invalid" should {
+
+      "ReportController2" in new Context {
+        new WithApplication(app) {
+          val request = FakeRequest("GET", s"/api/ext/reports?siret=$siretFixture").withHeaders(
+            "X-Api-Key" -> "invalid_key"
+          )
+          val result = route(app, request).get
+          Helpers.status(result) must beEqualTo(UNAUTHORIZED)
+        }
+      }
+    }
 
     "return report count when X-Api-Key header is valid" should {
 
       "ReportController3" in new Context {
         new WithApplication(app) {
-
-          println(
-            s"------------------ components.passwordHasherRegistry.current.hash().password = ${components.passwordHasherRegistry.current.hash("test").password} ------------------"
-          )
 
           Await.result(
             for {
@@ -96,15 +92,7 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
   trait Context extends Scope {
 
-//    val adminIdentity = Fixtures.genAdminUser.sample.get
-//    val adminLoginInfo = LoginInfo(CredentialsProvider.ID, adminIdentity.email.value)
-//    val proIdentity = Fixtures.genProUser.sample.get
-//    val proLoginInfo = LoginInfo(CredentialsProvider.ID, proIdentity.email.value)
-
     val companyId = UUID.randomUUID
-
-//    implicit val env: Environment[AuthEnv] =
-//      new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockReportRepository: ReportRepositoryInterface = mock[ReportRepositoryInterface]
     val mockReportFileRepository: ReportFileRepositoryInterface = mock[ReportFileRepositoryInterface]
@@ -120,20 +108,9 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
       override def load(context: ApplicationLoader.Context): Application = {
         components = new SignalConsoComponents(context) {
-
-//          override def authEnv: Environment[AuthEnv] = env
           override def reportRepository: ReportRepositoryInterface = mockReportRepository
           override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
           override def configuration: Configuration = super.configuration
-//            Configuration(
-//              "play.evolutions.enabled" -> false,
-//              "slick.dbs.default.db.connectionPool" -> "disabled",
-//              "play.mailer.mock" -> true,
-//              "silhouette.authenticator.sharedSecret" -> "sharedSecret",
-//              "play.tmpDirectory" -> "./target"
-//            ).withFallback(super.configuration)
-//          }
-
         }
         components.application
       }

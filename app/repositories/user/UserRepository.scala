@@ -14,8 +14,6 @@ import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -24,8 +22,8 @@ import scala.concurrent.Future
   * @param dbConfigProvider
   *   The Play db config provider. Play will inject this for you.
   */
-@Singleton
-class UserRepository @Inject() (
+
+class UserRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile],
     passwordHasherRegistry: PasswordHasherRegistry
 )(implicit
@@ -33,7 +31,6 @@ class UserRepository @Inject() (
 ) extends CRUDRepository[UserTable, User]
     with UserRepositoryInterface {
 
-//  override val dbConfig: DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[UserTable] = UserTable.table
   val logger: Logger = Logger(this.getClass)
 

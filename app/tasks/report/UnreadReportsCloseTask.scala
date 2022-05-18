@@ -25,11 +25,10 @@ import utils.Constants.EventType.SYSTEM
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class UnreadReportsCloseTask @Inject() (
+class UnreadReportsCloseTask(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,

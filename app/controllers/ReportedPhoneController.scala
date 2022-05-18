@@ -19,8 +19,7 @@ import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-@Singleton
-class ReportedPhoneController @Inject() (
+class ReportedPhoneController(
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,

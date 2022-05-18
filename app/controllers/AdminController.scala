@@ -50,14 +50,11 @@ import utils.silhouette.auth.WithRole
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-@Singleton
-class AdminController @Inject() (
+class AdminController(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,

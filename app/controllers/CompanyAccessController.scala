@@ -20,13 +20,10 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyAccessController @Inject() (
+class CompanyAccessController(
     val userRepository: UserRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     val companyAccessRepository: CompanyAccessRepositoryInterface,

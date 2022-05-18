@@ -15,12 +15,10 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class SubscriptionController @Inject() (
+class SubscriptionController(
     subscriptionRepository: SubscriptionRepositoryInterface,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents

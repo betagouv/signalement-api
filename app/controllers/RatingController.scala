@@ -11,12 +11,10 @@ import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class RatingController @Inject() (
+class RatingController(
     ratingRepository: RatingRepositoryInterface,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents

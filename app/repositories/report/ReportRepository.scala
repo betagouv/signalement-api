@@ -13,17 +13,14 @@ import utils._
 
 import java.time._
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import ReportRepository.queryFilter
+import repositories.report.ReportRepository.queryFilter
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
-@Singleton
-class ReportRepository @Inject() (override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
     with ReportRepositoryInterface {

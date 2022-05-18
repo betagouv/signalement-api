@@ -8,15 +8,12 @@ import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
 import slick.basic.DatabaseConfig
 
-@Singleton
-class EmailValidationRepository @Inject() (
+class EmailValidationRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EmailValidationTable, EmailValidation]

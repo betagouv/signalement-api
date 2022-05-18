@@ -1,9 +1,6 @@
 package orchestrators
 import cats.implicits.catsSyntaxOption
 
-import javax.inject.Singleton
-import javax.inject.Inject
-import com.google.inject.ImplementedBy
 import controllers.error.AppError.CompanySiretNotFound
 import controllers.error.AppError.ReportNotFound
 import io.scalaland.chimney.dsl.TransformerOps
@@ -26,7 +23,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[EventsOrchestrator])
 trait EventsOrchestratorInterface {
 
   def getReportsEvents(
@@ -42,8 +38,7 @@ trait EventsOrchestratorInterface {
   ): Future[List[EventWithUser]]
 }
 
-@Singleton
-class EventsOrchestrator @Inject() (
+class EventsOrchestrator(
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
     companyRepository: CompanyRepositoryInterface

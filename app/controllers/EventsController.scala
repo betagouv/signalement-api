@@ -12,10 +12,9 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class EventsController @Inject() (
+class EventsController(
     eventsOrchestrator: EventsOrchestratorInterface,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents

@@ -8,7 +8,6 @@ scalaVersion := "2.13.8"
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 libraryDependencies ++= Seq(
-  guice,
   evolutions,
   ws,
   ehcache,

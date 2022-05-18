@@ -15,7 +15,6 @@ import models.UserRole
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -55,7 +54,7 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
 
-class AuthOrchestrator @Inject() (
+class AuthOrchestrator(
     userService: UserService,
     authAttemptRepository: AuthAttemptRepositoryInterface,
     userRepository: UserRepositoryInterface,
@@ -165,18 +164,11 @@ class AuthOrchestrator @Inject() (
     } yield token
 
   private def authenticate(login: String, password: String) = {
-
-    println(s"------------------ login = ${login} ------------------")
-    println(s"------------------ password = ${password} ------------------")
-
     val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
       new BCryptPasswordHasher()
     )
 
-    val t = passwordHasherRegistry.current.hash(password)
-    println(s"------------------ t.password = ${t.password} ------------------")
-    println("coucou    " + passwordHasherRegistry.current.matches(t, password))
-
+    passwordHasherRegistry.current.hash(password)
     credentialsProvider
       .authenticate(Credentials(login, password))
       .recoverWith {

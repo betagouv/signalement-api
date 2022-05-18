@@ -13,11 +13,10 @@ import tasks.TaskExecutionResults
 import tasks.toValidated
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class InactiveDgccrfAccountRemoveTask @Inject() (
+class InactiveDgccrfAccountRemoveTask(
     userRepository: UserRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
     eventRepository: EventRepositoryInterface,

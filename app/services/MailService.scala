@@ -10,12 +10,11 @@ import repositories.reportblockednotification.ReportNotificationBlockedRepositor
 import utils.EmailAddress
 import utils.FrontRoute
 
-import javax.inject.Inject
 import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class MailService @Inject() (
+class MailService(
     @Named("email-actor") actor: ActorRef,
     emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,

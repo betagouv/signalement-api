@@ -7,13 +7,10 @@ import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class EnterpriseImportInfoRepository @Inject() (val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+class EnterpriseImportInfoRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     ec: ExecutionContext
 ) {
 

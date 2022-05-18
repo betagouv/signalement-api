@@ -9,14 +9,11 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import utils.silhouette.auth.AuthEnv
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 
-@Singleton
-class EmailValidationController @Inject() (
+class EmailValidationController(
     val silhouette: Silhouette[AuthEnv],
     emailValidationOrchestrator: EmailValidationOrchestrator,
     controllerComponents: ControllerComponents

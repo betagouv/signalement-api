@@ -43,12 +43,11 @@ import utils.SIRET
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class AccessesOrchestrator @Inject() (
+class AccessesOrchestrator(
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepositoryInterface,

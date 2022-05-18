@@ -12,11 +12,10 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import utils.silhouette.api.APIKeyEnv
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class DataEconomieController @Inject() (
+class DataEconomieController(
     service: DataEconomieOrchestrator,
     val silhouette: Silhouette[APIKeyEnv],
     controllerComponents: ControllerComponents

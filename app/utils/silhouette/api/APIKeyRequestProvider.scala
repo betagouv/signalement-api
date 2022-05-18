@@ -8,11 +8,10 @@ import play.api.mvc.Request
 import repositories.consumer.ConsumerRepositoryInterface
 import utils.silhouette.Credentials._
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class APIKeyRequestProvider @Inject() (
+class APIKeyRequestProvider(
     passwordHasherRegistry: PasswordHasherRegistry,
     consumerRepository: ConsumerRepositoryInterface
 )(implicit ec: ExecutionContext)
@@ -26,9 +25,7 @@ class APIKeyRequestProvider @Inject() (
 
     headerValueOpt
       .map { headerValue =>
-        println(s"------------------ headerValue = ${headerValue} ------------------")
         consumerRepository.getAll().map { consumers =>
-          println(s"------------------ consumers = ${consumers} ------------------")
           val keyMatchOpt = consumers.find { c =>
             hasher.matches(toPasswordInfo(c.apiKey), headerValue)
           }

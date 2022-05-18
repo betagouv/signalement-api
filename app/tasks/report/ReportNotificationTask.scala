@@ -13,12 +13,11 @@ import tasks.computeStartingTime
 import utils.Constants.Departments
 
 import java.time._
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ReportNotificationTask @Inject() (
+class ReportNotificationTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,

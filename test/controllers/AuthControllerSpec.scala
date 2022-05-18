@@ -110,8 +110,6 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
         val login = identity.email.value
         val jsonBody = Json.obj("login" -> login, "password" -> validPassword)
 
-        println(s"------------------ jsonBody = ${jsonBody} ------------------")
-
         val request = FakeRequest(POST, routes.AuthController.authenticate().toString)
           .withJsonBody(jsonBody)
 
