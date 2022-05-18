@@ -21,11 +21,10 @@ import utils.EmailAddress
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class UnreadReportsReminderTask @Inject() (
+class UnreadReportsReminderTask(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     emailService: MailService

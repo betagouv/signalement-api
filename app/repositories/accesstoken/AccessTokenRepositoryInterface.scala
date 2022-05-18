@@ -1,18 +1,18 @@
 package repositories.accesstoken
 
-import com.google.inject.ImplementedBy
 import models.AccessLevel
 import models.AccessToken
 import models.Company
 import models.User
+import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
+
 import java.sql.Timestamp
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[AccessTokenRepository])
-trait AccessTokenRepositoryInterface {
+trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken] {
 
   def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]]
 

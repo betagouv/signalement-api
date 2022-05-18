@@ -1,6 +1,5 @@
 package repositories.companydata
 
-import com.google.inject.ImplementedBy
 import models.CompanyActivity
 import models.CompanyData
 import repositories.CRUDRepositoryInterface
@@ -10,7 +9,6 @@ import utils.SIRET
 
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[CompanyDataRepository])
 trait CompanyDataRepositoryInterface extends CRUDRepositoryInterface[CompanyData] {
 
   def insertAll(companies: Map[String, Option[String]]): PostgresProfile.api.DBIO[Int]

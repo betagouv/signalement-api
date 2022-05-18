@@ -1,7 +1,8 @@
 package controllers
 
+import play.api.mvc.Results
+
 import java.util.UUID
-import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -16,25 +17,20 @@ import models.report.review.ResponseEvaluation.Positive
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewId
 import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
+import loader.SignalConsoComponents
 import models.report.ReportFile
 import models.report.ReportFileOrigin
-import net.codingwell.scalaguice.ScalaModule
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
+import play.api.Application
+import play.api.ApplicationLoader
 import play.api.Configuration
 import play.api.Logger
-import repositories.company.CompanyRepositoryInterface
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepositoryInterface
-import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-import repositories.reportfile.ReportFileRepositoryInterface
 import services.MailerService
 import services.S3ServiceInterface
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
@@ -43,6 +39,7 @@ import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
 import utils.S3ServiceMock
+import utils.TestApp
 
 import java.net.URI
 import java.time.OffsetDateTime
@@ -186,53 +183,59 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mockMailerService = mock[MailerService]
     val mockS3Service = new S3ServiceMock()
 
-    class FakeModule(skipValidation: Boolean, spammerBlacklist: List[String]) extends AbstractModule with ScalaModule {
-      override def configure() = {
-        bind[Environment[AuthEnv]].toInstance(env)
-        bind[MailerService].toInstance(mockMailerService)
-        bind[S3ServiceInterface].toInstance(mockS3Service)
-        bind[EmailConfiguration].toInstance(
-          EmailConfiguration(EmailAddress("test@sc.com"), EmailAddress("test@sc.com"), skipValidation, "", List(""))
-        )
-
-        val tokenConfiguration = TokenConfiguration(None, None, None, Period.ZERO)
-        val uploadConfiguration = UploadConfiguration(Seq.empty, false)
-
-        bind[SignalConsoConfiguration].toInstance(
-          SignalConsoConfiguration(
-            "",
-            new URI("http://test.com"),
-            new URI("http://test.com"),
-            new URI("http://test.com"),
-            tokenConfiguration,
-            uploadConfiguration,
-            spammerBlacklist
-          )
-        )
-      }
-    }
-
     def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
 
-      val app = new GuiceApplicationBuilder()
-        .configure(
-          Configuration(
-            "play.evolutions.enabled" -> false,
-            "slick.dbs.default.db.connectionPool" -> "disabled",
-            "play.mailer.mock" -> true,
-            "skip-report-email-validation" -> true,
-            "silhouette.apiKeyAuthenticator.sharedSecret" -> "sharedSecret",
-            "play.tmpDirectory" -> "./target"
-          )
-        )
-        .overrides(new FakeModule(skipValidation, spammerBlacklist))
-        .build()
+      class FakeApplicationLoader(skipValidation: Boolean = false, emailProviderBlocklist: List[String])
+          extends ApplicationLoader {
+        var components: SignalConsoComponents = _
 
-      val reportRepository = app.injector.instanceOf[ReportRepositoryInterface]
-      val reportFileRepository = app.injector.instanceOf[ReportFileRepositoryInterface]
-      val eventRepository = app.injector.instanceOf[EventRepositoryInterface]
-      val responseConsumerReviewRepository = app.injector.instanceOf[ResponseConsumerReviewRepositoryInterface]
-      val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
+        override def load(context: ApplicationLoader.Context): Application = {
+          components = new SignalConsoComponents(context) {
+
+            override def authEnv: Environment[AuthEnv] = env
+            override def configuration: Configuration = Configuration(
+              "play.evolutions.enabled" -> false,
+              "slick.dbs.default.db.connectionPool" -> "disabled",
+              "play.mailer.mock" -> true,
+              "skip-report-email-validation" -> true,
+              "silhouette.authenticator.sharedSecret" -> "sharedSecret",
+              "play.tmpDirectory" -> "./target"
+            ).withFallback(
+              super.configuration
+            )
+
+            override def s3Service: S3ServiceInterface = mockS3Service
+            override def tokenConfiguration = TokenConfiguration(None, None, None, Period.ZERO)
+            override def uploadConfiguration = UploadConfiguration(Seq.empty, false)
+            override def signalConsoConfiguration: SignalConsoConfiguration =
+              SignalConsoConfiguration(
+                "",
+                new URI("http://test.com"),
+                new URI("http://test.com"),
+                new URI("http://test.com"),
+                tokenConfiguration,
+                uploadConfiguration,
+                spammerBlacklist
+              )
+
+            override def emailConfiguration: EmailConfiguration =
+              EmailConfiguration(EmailAddress("test@sc.com"), EmailAddress("test@sc.com"), skipValidation, "", List(""))
+
+          }
+          components.application
+        }
+
+      }
+
+      val loader = new FakeApplicationLoader(skipValidation, spammerBlacklist)
+
+      val app = TestApp.buildApp(loader)
+
+      lazy val reportRepository = loader.components.reportRepository
+      lazy val reportFileRepository = loader.components.reportFileRepository
+      lazy val eventRepository = loader.components.eventRepository
+      lazy val responseConsumerReviewRepository = loader.components.responseConsumerReviewRepository
+      lazy val companyRepository = loader.components.companyRepository
 
     }
 

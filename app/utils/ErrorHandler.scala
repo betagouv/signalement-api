@@ -10,13 +10,10 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
 
-import javax.inject.Inject
 import javax.inject.Provider
-import javax.inject.Singleton
 import scala.concurrent.Future
 
-@Singleton
-class ErrorHandler @Inject() (
+class ErrorHandler(
     env: Environment,
     config: Configuration,
     sourceMapper: OptionalSourceMapper,

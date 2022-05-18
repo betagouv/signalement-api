@@ -9,12 +9,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepository
-import services.AttachementService
-import services.MailerService
 import tasks.Task
 import tasks.TaskExecutionResults
 import tasks.model.TaskType.CloseUnreadReport
@@ -23,7 +18,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
+import utils.TestApp
 
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -103,7 +98,11 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
     with Mockito
     with FutureMatchers {
 
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  val (app, components) = TestApp.buildApp(
+    None
+  )
+
+  implicit lazy val frontRoute = components.frontRoute
 
   implicit val ec = ee.executionContext
 
@@ -170,12 +169,12 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
     reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
-  lazy val reminderTask = injector.instanceOf[ReportTask]
-  lazy val mailerService = app.injector.instanceOf[MailerService]
-  lazy val attachementService = app.injector.instanceOf[AttachementService]
+  lazy val companyRepository = components.companyRepository
+  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val reminderTask = components.reportTask
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
 
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)

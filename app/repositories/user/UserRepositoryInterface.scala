@@ -1,6 +1,5 @@
 package repositories.user
 
-import com.google.inject.ImplementedBy
 import models.User
 import models.UserRole
 import repositories.CRUDRepositoryInterface
@@ -10,7 +9,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[UserRepository])
 trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]]

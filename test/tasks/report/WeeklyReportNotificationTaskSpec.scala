@@ -4,12 +4,6 @@ import models._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories.company.CompanyRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.user.UserRepositoryInterface
-import services.AttachementService
-import services.MailerService
 import utils._
 
 import java.time.LocalDate
@@ -55,14 +49,18 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
-  lazy val mailerService = injector.instanceOf[MailerService]
-  lazy val attachementService = injector.instanceOf[AttachementService]
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  val (app, components) = TestApp.buildApp(
+    None
+  )
+
+  lazy val userRepository = components.userRepository
+  lazy val subscriptionRepository = components.subscriptionRepository
+  lazy val reportRepository = components.reportRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val reportNotificationTask = components.reportNotificationTask
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
+  implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   implicit val ec = ee.executionContext

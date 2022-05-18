@@ -23,11 +23,10 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReadReportsReminderTask @Inject() (
+class ReadReportsReminderTask(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     emailService: MailService

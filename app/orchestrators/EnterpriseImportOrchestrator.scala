@@ -8,15 +8,13 @@ import models.EtablissementFile
 import models.UniteLegaleFile
 import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 
-import javax.inject.Inject
-import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class EnterpriseImportOrchestrator @Inject() (
+class EnterpriseImportOrchestrator(
     enterpriseSyncInfoRepository: EnterpriseImportInfoRepository,
-    @Named("enterprise-sync-actor") enterpriseActor: ActorRef
+    enterpriseActor: ActorRef
 )(implicit val executionContext: ExecutionContext) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds

@@ -8,10 +8,9 @@ import models.report.ReportTag.ReportTagTranslationOps
 import play.api.Logger
 import repositories.dataeconomie.DataEconomieRepositoryInterface
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class DataEconomieOrchestrator @Inject() (
+class DataEconomieOrchestrator(
     reportRepository: DataEconomieRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 

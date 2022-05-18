@@ -9,17 +9,18 @@ import com.mohiva.play.silhouette.api.Silhouette
 import orchestrators.DataEconomieOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import utils.silhouette.api.APIKeyEnv
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class DataEconomieController @Inject() (
+class DataEconomieController(
     service: DataEconomieOrchestrator,
-    val silhouette: Silhouette[APIKeyEnv]
+    val silhouette: Silhouette[APIKeyEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends ApiKeyBaseController {
+    extends ApiKeyBaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

@@ -3,15 +3,11 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import cats.data.NonEmptyList
-import com.google.inject.AbstractModule
 import play.api.Logger
-import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -30,8 +26,7 @@ object EmailActor {
   )
 }
 
-@Singleton
-class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
+class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
   import EmailActor._
   implicit val ec: ExecutionContext = context.dispatcher
 
@@ -71,9 +66,4 @@ class EmailActor @Inject() (mailerService: MailerService)(implicit val mat: Mate
       logger.debug("Could not handle request, ignoring message")
 
   }
-}
-
-class EmailActorModule extends AbstractModule with AkkaGuiceSupport {
-  override def configure =
-    bindActor[EmailActor]("email-actor")
 }

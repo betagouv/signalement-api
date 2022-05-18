@@ -13,29 +13,39 @@ import utils.SIRET
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-trait ApiKeyBaseController extends InjectedController {
+class ErrorHandlerActionFunction[R[_] <: play.api.mvc.Request[_]](
+    getIdentity: R[_] => Option[UUID] = (_: R[_]) => None
+)(implicit
+    ec: ExecutionContext
+) extends ActionFunction[R, R] {
+
+  def invokeBlock[A](
+      request: R[A],
+      block: R[A] => Future[Result]
+  ): Future[Result] = block(request).recover { case err => handleError(request, err, getIdentity(request)) }
+
+  override protected def executionContext: ExecutionContext = ec
+}
+
+abstract class ApiKeyBaseController(override val controllerComponents: ControllerComponents)
+    extends AbstractController(controllerComponents) {
 
   def silhouette: Silhouette[APIKeyEnv]
   type SecuredApiRequestWrapper[A] = SecuredRequest[APIKeyEnv, A]
   implicit val ec: ExecutionContext
 
   def SecuredAction: ActionBuilder[SecuredApiRequestWrapper, AnyContent] =
-    silhouette.SecuredAction andThen new ActionFunction[SecuredApiRequestWrapper, SecuredApiRequestWrapper] {
-
-      def invokeBlock[A](
-          request: SecuredApiRequestWrapper[A],
-          block: SecuredApiRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
-
-      override protected def executionContext: ExecutionContext = ec
-    }
-
+    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredApiRequestWrapper](request =>
+      Some(request.identity.id)
+    )
 }
 
-trait BaseController extends InjectedController {
+abstract class BaseController(override val controllerComponents: ControllerComponents)
+    extends AbstractController(controllerComponents) {
 
   type SecuredRequestWrapper[A] = SecuredRequest[AuthEnv, A]
   type UserAwareRequestWrapper[A] = UserAwareRequest[AuthEnv, A]
@@ -45,50 +55,23 @@ trait BaseController extends InjectedController {
   implicit val ec: ExecutionContext
 
   def SecuredAction: ActionBuilder[SecuredRequestWrapper, AnyContent] =
-    silhouette.SecuredAction andThen new ActionFunction[SecuredRequestWrapper, SecuredRequestWrapper] {
-
-      def invokeBlock[A](
-          request: SecuredRequestWrapper[A],
-          block: SecuredRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
-
-      override protected def executionContext: ExecutionContext = ec
-    }
+    silhouette.SecuredAction andThen new ErrorHandlerActionFunction[SecuredRequestWrapper](request =>
+      Some(request.identity.id)
+    )
 
   def SecuredAction(
       authorization: Authorization[AuthEnv#I, AuthEnv#A]
   ): ActionBuilder[SecuredRequestWrapper, AnyContent] =
-    silhouette.SecuredAction(authorization) andThen new ActionFunction[SecuredRequestWrapper, SecuredRequestWrapper] {
-
-      def invokeBlock[A](
-          request: SecuredRequestWrapper[A],
-          block: SecuredRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(request, err, Some(request.identity.id)) }
-
-      override protected def executionContext: ExecutionContext = ec
-    }
+    silhouette.SecuredAction(authorization) andThen new ErrorHandlerActionFunction[SecuredRequestWrapper](request =>
+      Some(request.identity.id)
+    )
 
   def UnsecuredAction: ActionBuilder[Request, AnyContent] =
-    silhouette.UnsecuredAction andThen new ActionFunction[Request, Request] {
-
-      def invokeBlock[A](
-          request: Request[A],
-          block: Request[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(request, err) }
-
-      override protected def executionContext: ExecutionContext = ec
-    }
+    silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]()
 
   def UserAwareAction: ActionBuilder[UserAwareRequestWrapper, AnyContent] =
-    silhouette.UserAwareAction andThen new ActionFunction[UserAwareRequestWrapper, UserAwareRequestWrapper] {
-
-      def invokeBlock[A](
-          request: UserAwareRequestWrapper[A],
-          block: UserAwareRequestWrapper[A] => Future[Result]
-      ): Future[Result] = block(request).recover { case err => handleError(request, err, request.identity.map(_.id)) }
-
-      override protected def executionContext: ExecutionContext = ec
-    }
+    silhouette.UserAwareAction andThen
+      new ErrorHandlerActionFunction[UserAwareRequestWrapper](request => request.identity.map(_.id))
 
   implicit def securedRequest2User[A](implicit req: SecuredRequest[AuthEnv, A]) = req.identity
 
@@ -99,7 +82,8 @@ trait BaseController extends InjectedController {
   implicit def userAwareRequest2UserOpt[A](implicit req: UserAwareRequest[AuthEnv, A]) = req.identity
 }
 
-trait BaseCompanyController extends BaseController {
+abstract class BaseCompanyController(override val controllerComponents: ControllerComponents)
+    extends BaseController(controllerComponents) {
   def companyRepository: CompanyRepositoryInterface
   def companyVisibilityOrch: CompaniesVisibilityOrchestrator
 

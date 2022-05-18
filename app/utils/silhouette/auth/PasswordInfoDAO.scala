@@ -9,12 +9,11 @@ import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.Credentials._
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 
-class PasswordInfoDAO @Inject() (userRepository: UserRepositoryInterface)(implicit val classTag: ClassTag[PasswordInfo])
+class PasswordInfoDAO(userRepository: UserRepositoryInterface)(implicit val classTag: ClassTag[PasswordInfo])
     extends DelegableAuthInfoDAO[PasswordInfo] {
 
   val logger: Logger = Logger(this.getClass())

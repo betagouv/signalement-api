@@ -1,6 +1,5 @@
 package tasks.account
 
-import akka.actor.ActorSystem
 import config.InactiveAccountsTaskConfiguration
 import models.AsyncFile
 import models.AsyncFileKind
@@ -11,14 +10,11 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.event.EventRepositoryInterface
-import repositories.subscription.SubscriptionRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
 import utils.Constants.ActionEvent.CONTROL
 import utils.Constants.EventType
-import utils.Fixtures
 
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -35,12 +31,15 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val asyncFileRepository = injector.instanceOf[AsyncFileRepositoryInterface]
-  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
-  lazy val inactiveDgccrfAccountRemoveTask = injector.instanceOf[InactiveDgccrfAccountRemoveTask]
-  lazy val actorSystem = injector.instanceOf[ActorSystem]
+  val (app, components) = TestApp.buildApp(
+  )
+
+  lazy val userRepository = components.userRepository
+  lazy val asyncFileRepository = components.asyncFileRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val subscriptionRepository = components.subscriptionRepository
+  lazy val inactiveDgccrfAccountRemoveTask = components.inactiveDgccrfAccountRemoveTask
+//  lazy val actorSystem = components.actorSystem
 
   "InactiveAccountTask" should {
 

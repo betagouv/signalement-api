@@ -17,12 +17,11 @@ import utils.Constants.ActionEvent._
 
 import java.time._
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ReportTask @Inject() (
+class ReportTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,

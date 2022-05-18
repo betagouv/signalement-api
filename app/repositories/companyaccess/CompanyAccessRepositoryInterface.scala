@@ -1,5 +1,4 @@
 package repositories.companyaccess
-import com.google.inject.ImplementedBy
 import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
@@ -12,7 +11,6 @@ import java.sql.Timestamp
 import java.util.UUID
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[CompanyAccessRepository])
 trait CompanyAccessRepositoryInterface {
 
   def getUserLevel(companyId: UUID, user: User): Future[AccessLevel]

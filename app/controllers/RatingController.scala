@@ -5,19 +5,22 @@ import models.Rating
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.rating.RatingRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class RatingController @Inject() (ratingRepository: RatingRepositoryInterface, val silhouette: Silhouette[AuthEnv])(
-    implicit val ec: ExecutionContext
-) extends BaseController {
+class RatingController(
+    ratingRepository: RatingRepositoryInterface,
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
+)(implicit
+    val ec: ExecutionContext
+) extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

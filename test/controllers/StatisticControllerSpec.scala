@@ -2,8 +2,6 @@ package controllers
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -16,11 +14,10 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.company.CompanyRepositoryInterface
-import repositories.report.ReportRepository
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -86,8 +83,8 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
+  lazy val companyRepository = components.companyRepository
+  lazy val reportRepository = components.reportRepository
 
   val company = Fixtures.genCompany.sample.get
 
@@ -209,17 +206,13 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
       Await.result(reportRepository.create(report), Duration.Inf)
   }
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
-
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq().map(user => loginInfo(user) -> user))
+  implicit val env = new FakeEnvironment[AuthEnv](Seq())
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
 }
