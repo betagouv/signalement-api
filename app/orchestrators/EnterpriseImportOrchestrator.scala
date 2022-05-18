@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class EnterpriseImportOrchestrator @Inject(
+class EnterpriseImportOrchestrator @Inject() (
     enterpriseSyncInfoRepository: EnterpriseImportInfoRepository,
     @Named("enterprise-sync-actor") enterpriseActor: ActorRef
 )(implicit val executionContext: ExecutionContext) {

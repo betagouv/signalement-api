@@ -20,7 +20,7 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
   def toList() = sirens.map(_.value).concat(sirets.map(_.value)).distinct
 }
 
-class CompaniesVisibilityOrchestrator @Inject(
+class CompaniesVisibilityOrchestrator @Inject() (
     companyDataRepo: CompanyDataRepositoryInterface,
     companyRepo: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface

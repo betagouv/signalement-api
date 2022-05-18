@@ -45,14 +45,15 @@ object User {
     )
   }
 
-  implicit val userReads: Reads[User] =
+  implicit val userReads: Reads[User] = (
     (JsPath \ "id").read[UUID] and
       (JsPath \ "password").read[String] and
       (JsPath \ "email").read[EmailAddress] and
       (JsPath \ "firstName").read[String] and
       (JsPath \ "lastName").read[String] and
       ((JsPath \ "role").read[String]).map(UserRole.withName) and
-      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime] (User.apply _)
+      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
+  )(User.apply _)
 }
 
 object UserPermission extends Enumeration {

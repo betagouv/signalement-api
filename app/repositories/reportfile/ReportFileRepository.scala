@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportFileRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit
+class ReportFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportFileTable, ReportFile]
     with ReportFileRepositoryInterface {

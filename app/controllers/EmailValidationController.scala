@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 import play.api.mvc.Action
 
 @Singleton
-class EmailValidationController @Inject(
+class EmailValidationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     emailValidationOrchestrator: EmailValidationOrchestrator
 )(implicit val ec: ExecutionContext)

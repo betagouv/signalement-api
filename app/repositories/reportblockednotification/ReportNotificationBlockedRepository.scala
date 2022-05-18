@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportNotificationBlockedRepository @Inject(
+class ReportNotificationBlockedRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
 )(implicit
     ec: ExecutionContext
@@ -29,7 +29,7 @@ class ReportNotificationBlockedRepository @Inject(
   override def filterBlockedEmails(email: Seq[EmailAddress], companyId: UUID): Future[Seq[EmailAddress]] =
     db.run(
       UserTable.table
-        .filter(_.id in ReportNotificationBlocklistTable.table.filter(_.companyId === companyId).map(_.userId))
+        .filter(_.id in (ReportNotificationBlocklistTable.table.filter(_.companyId === companyId).map(_.userId)))
         .map(_.email)
         .to[List]
         .result

@@ -34,7 +34,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
       bind[MailerService].toInstance(mailerServiceMock)
   }
 
-  lazy val app = new GuiceApplicationBuilder
+  lazy val app = new GuiceApplicationBuilder()
     .overrides(configureFakeModule())
     .build()
 

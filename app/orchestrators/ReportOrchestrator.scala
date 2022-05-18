@@ -70,7 +70,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Random
 
-class ReportOrchestrator @Inject(
+class ReportOrchestrator @Inject() (
     mailService: MailService,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,

@@ -8,7 +8,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportBlockedNotificationOrchestrator @Inject(
+class ReportBlockedNotificationOrchestrator @Inject() (
     repository: ReportNotificationBlockedRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 

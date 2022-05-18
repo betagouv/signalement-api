@@ -48,7 +48,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class AccessesOrchestrator @Inject(
+class AccessesOrchestrator @Inject() (
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepositoryInterface,

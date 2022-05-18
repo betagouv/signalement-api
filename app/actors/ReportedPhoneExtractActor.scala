@@ -37,7 +37,7 @@ object ReportedPhonesExtractActor {
 }
 
 @Singleton
-class ReportedPhonesExtractActor @Inject(
+class ReportedPhonesExtractActor @Inject() (
     config: SignalConsoConfiguration,
     reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,

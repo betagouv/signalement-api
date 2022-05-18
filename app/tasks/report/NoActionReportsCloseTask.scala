@@ -30,7 +30,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class NoActionReportsCloseTask @Inject(
+class NoActionReportsCloseTask @Inject() (
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
     emailService: MailService,

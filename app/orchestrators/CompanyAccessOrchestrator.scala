@@ -20,6 +20,7 @@ import scala.concurrent.Future
 
 @Singleton
 class CompanyAccessOrchestrator @Inject(
+) (
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepository,
     val accessesOrchestrator: AccessesOrchestrator

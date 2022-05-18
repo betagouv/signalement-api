@@ -230,7 +230,7 @@ trait GetReportSpec extends Spec with GetReportContext {
       mockReportRepository.get(id),
       Duration.Inf
     )
-    maybeReport.map(_ => status) mustEqual Some(status)
+    maybeReport.map(_ => status) mustEqual (Some(status))
   }
 
   def reportMustNotHaveBeenUpdated() =
@@ -340,7 +340,7 @@ trait GetReportContext extends AppSpec {
     )
   )
 
-  val mockReportRepository = new ReportRepositoryMock
+  val mockReportRepository = new ReportRepositoryMock()
   mockReportRepository.create(neverRequestedReport)
   mockReportRepository.create(neverRequestedFinalReport)
   mockReportRepository.create(alreadyRequestedReport)
@@ -389,7 +389,7 @@ trait GetReportContext extends AppSpec {
     }
   }
 
-  lazy val application = new GuiceApplicationBuilder
+  lazy val application = new GuiceApplicationBuilder()
     .configure(
       Configuration(
         "play.evolutions.enabled" -> false,
@@ -397,7 +397,7 @@ trait GetReportContext extends AppSpec {
         "play.mailer.mock" -> true
       )
     )
-    .overrides(new FakeModule)
+    .overrides(new FakeModule())
     .build()
 
 }

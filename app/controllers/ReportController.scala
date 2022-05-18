@@ -40,7 +40,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportController @Inject(
+class ReportController @Inject() (
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,

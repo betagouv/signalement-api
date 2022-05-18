@@ -66,7 +66,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   }
 
   def app(skipValidation: Boolean = false, emailProviderBlocklist: List[String] = List.empty) =
-    new GuiceApplicationBuilder
+    new GuiceApplicationBuilder()
       .overrides(new FakeModule(skipValidation, emailProviderBlocklist))
       .build()
 

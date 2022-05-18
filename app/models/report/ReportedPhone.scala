@@ -79,14 +79,13 @@ case class ReportedPhone(
 
 object ReportedPhone {
 
-  implicit val writes: Writes[ReportedPhone] =
+  implicit val writes: Writes[ReportedPhone] = (
     (JsPath \ "id").write[UUID] and
       (JsPath \ "creationDate").write[OffsetDateTime] and
       (JsPath \ "phone").write[String] and
       (JsPath \ "companyId").write[UUID] and
-      (JsPath \ "status").write[ReportedPhoneStatus] ((w: ReportedPhone) =>
-      (w.id, w.creationDate, w.phone, w.companyId, w.status)
-    )
+      (JsPath \ "status").write[ReportedPhoneStatus]
+  )((w: ReportedPhone) => (w.id, w.creationDate, w.phone, w.companyId, w.status))
 }
 
 object ReportedPhoneCompanyFormat {

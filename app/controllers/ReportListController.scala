@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportListController @Inject(
+class ReportListController @Inject() (
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
     @Named("reports-extract-actor") reportsExtractActor: ActorRef,

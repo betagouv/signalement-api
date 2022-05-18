@@ -12,7 +12,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DataEconomieRepository @Inject(
+class DataEconomieRepository @Inject() (
     system: ActorSystem
 ) extends DataEconomieRepositoryInterface {
 

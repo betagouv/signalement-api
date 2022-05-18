@@ -48,7 +48,7 @@ object ReportsExtractActor {
 }
 
 @Singleton
-class ReportsExtractActor @Inject(
+class ReportsExtractActor @Inject() (
     reportFileRepository: ReportFileRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,

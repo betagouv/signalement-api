@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+class CompanyRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
     extends CRUDRepository[CompanyTable, Company]
     with CompanyRepositoryInterface {
 
@@ -56,15 +56,17 @@ class CompanyRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implic
            * Equivalent to following select clause
            * count((case when (status in ('Promesse action','Signalement infondé','Signalement mal attribué') then id end))
            */
-          all
-            .map(_._2)
-            .map(
-            b =>
-              b.flatMap { a =>
-                Case If a.status.inSet(
-                  ReportStatusProResponse.map(_.entryName)
-                ) Then a.id
-              })
+          (
+            all
+              .map(_._2)
+              .map(b =>
+                b.flatMap { a =>
+                  Case If a.status.inSet(
+                    ReportStatusProResponse.map(_.entryName)
+                  ) Then a.id
+                }
+              )
+            )
             .countDefined: Rep[Int]
         )
       }

@@ -16,7 +16,7 @@ import scala.concurrent.Future
 import PostgresProfile.api._
 
 @Singleton
-class EmailValidationRepository @Inject(
+class EmailValidationRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EmailValidationTable, EmailValidation]

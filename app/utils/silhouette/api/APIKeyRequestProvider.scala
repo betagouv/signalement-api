@@ -12,7 +12,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class APIKeyRequestProvider @Inject(
+class APIKeyRequestProvider @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,
     _consumer: ConsumerRepositoryInterface
 )(implicit ec: ExecutionContext)

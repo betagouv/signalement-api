@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
-class InactiveAccountTask @Inject(
+class InactiveAccountTask @Inject() (
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
     inactiveAccountsTaskConfiguration: InactiveAccountsTaskConfiguration

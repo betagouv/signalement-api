@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyAccessController @Inject(
+class CompanyAccessController @Inject() (
     val userRepository: UserRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     val companyAccessRepository: CompanyAccessRepositoryInterface,

@@ -16,15 +16,15 @@ class ReportTagTest extends Specification {
 
     Fragments.foreach(ReportTag.values) { v =>
       s"parse from entry name ${v.entryName}" in {
-        v shouldEqual Json.toJson(v.entryName).as[ReportTag]
+        v shouldEqual (Json.toJson(v.entryName).as[ReportTag])
       }
 
       s"parse from translated name ${v.translate()}" in {
-        v shouldEqual Json.toJson(v.translate()).as[ReportTag](ReportTag.TranslationReportTagReads)
+        v shouldEqual (Json.toJson(v.translate()).as[ReportTag](ReportTag.TranslationReportTagReads))
       }
 
       s"parse with TranslationReportTagReads from entry name ${v.translate()}" in {
-        v shouldEqual Json.toJson(v.entryName).as[ReportTag](ReportTag.TranslationReportTagReads)
+        v shouldEqual (Json.toJson(v.entryName).as[ReportTag](ReportTag.TranslationReportTagReads))
       }
     }
 

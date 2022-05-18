@@ -17,7 +17,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class StatisticController @Inject(
+class StatisticController @Inject() (
     statsOrchestrator: StatsOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)

@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class AsyncFileRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit
+class AsyncFileRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[AsyncFilesTable, AsyncFile]
     with SlickEnumSupport

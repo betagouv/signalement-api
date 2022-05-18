@@ -21,7 +21,7 @@ import scala.concurrent.Future
 
 import PostgresProfile.api._
 @Singleton
-class WebsiteRepository @Inject(
+class WebsiteRepository @Inject() (
     dbConfigProvider: DatabaseConfigProvider
 )(implicit
     override val ec: ExecutionContext
@@ -39,10 +39,10 @@ class WebsiteRepository @Inject(
       table
         .filter(_.host === newWebsite.host)
         .filter(website =>
-          website.kind === WebsiteKind.values
+          (website.kind === WebsiteKind.values
             .filter(_.isExclusive)
             .bind
-            .any || website.companyId === newWebsite.companyId
+            .any) || (website.companyId === newWebsite.companyId)
         )
         .result
         .headOption

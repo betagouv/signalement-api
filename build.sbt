@@ -77,7 +77,7 @@ ThisBuild / coverageEnabled := true
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 
 Universal / mappings ++=
-  baseDirectory.value / "appfiles" * "*" get map
+  (baseDirectory.value / "appfiles" * "*" get) map
     (x => x -> ("appfiles/" + x.getName))
 
 Test / javaOptions += "-Dconfig.resource=test.application.conf"

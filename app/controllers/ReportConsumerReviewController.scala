@@ -15,7 +15,7 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class ReportConsumerReviewController @Inject(
+class ReportConsumerReviewController @Inject() (
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)

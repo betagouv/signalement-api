@@ -9,7 +9,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ApiKeyService @Inject(consumerRepository: ConsumerRepositoryInterface)(implicit
+class ApiKeyService @Inject() (consumerRepository: ConsumerRepositoryInterface)(implicit
     val executionContext: ExecutionContext
 ) extends IdentityService[APIKey] {
 

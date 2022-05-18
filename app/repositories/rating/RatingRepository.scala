@@ -10,7 +10,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class RatingRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+class RatingRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
     extends CRUDRepository[RatingTable, Rating]
     with RatingRepositoryInterface {
 

@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class AccountController @Inject(
+class AccountController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
     accessTokenRepository: AccessTokenRepository,

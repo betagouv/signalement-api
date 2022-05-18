@@ -19,7 +19,7 @@ import scala.concurrent.Future
 import PostgresProfile.api._
 
 @Singleton
-class SubscriptionRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit
+class SubscriptionRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[SubscriptionTable, Subscription]
     with SubscriptionRepositoryInterface {

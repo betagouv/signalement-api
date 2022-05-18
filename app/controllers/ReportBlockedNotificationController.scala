@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ReportBlockedNotificationController @Inject(
+class ReportBlockedNotificationController @Inject() (
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     val orchestrator: ReportBlockedNotificationOrchestrator

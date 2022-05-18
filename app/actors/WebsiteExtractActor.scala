@@ -36,7 +36,7 @@ object WebsitesExtractActor {
 }
 
 @Singleton
-class WebsitesExtractActor @Inject(
+class WebsitesExtractActor @Inject() (
     reportRepository: ReportRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
     s3Service: S3ServiceInterface,

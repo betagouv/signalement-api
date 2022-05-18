@@ -23,7 +23,7 @@ import ReportRepository.queryFilter
 import repositories.CRUDRepository
 
 @Singleton
-class ReportRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
+class ReportRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit override val ec: ExecutionContext)
     extends CRUDRepository[ReportTable, Report]
     with ReportRepositoryInterface {
 
@@ -294,7 +294,7 @@ class ReportRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implici
 object ReportRepository {
   object ReportFileOrdering extends Ordering[Report] {
     def compare(a: Report, b: Report) =
-      b.creationDate compareTo a.creationDate
+      b.creationDate compareTo (a.creationDate)
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {

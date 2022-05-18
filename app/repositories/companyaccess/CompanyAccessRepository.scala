@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class CompanyAccessRepository @Inject(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+class CompanyAccessRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
     extends CompanyAccessRepositoryInterface {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]

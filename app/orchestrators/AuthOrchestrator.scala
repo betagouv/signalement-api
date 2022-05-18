@@ -53,7 +53,7 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
 
-class AuthOrchestrator @Inject(
+class AuthOrchestrator @Inject() (
     userService: UserService,
     authAttemptRepository: AuthAttemptRepository,
     userRepository: UserRepositoryInterface,

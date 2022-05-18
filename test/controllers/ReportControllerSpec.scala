@@ -184,7 +184,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
     val mockMailerService = mock[MailerService]
-    val mockS3Service = new S3ServiceMock
+    val mockS3Service = new S3ServiceMock()
 
     class FakeModule(skipValidation: Boolean, spammerBlacklist: List[String]) extends AbstractModule with ScalaModule {
       override def configure() = {
@@ -214,7 +214,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
 
-      val app = new GuiceApplicationBuilder
+      val app = new GuiceApplicationBuilder()
         .configure(
           Configuration(
             "play.evolutions.enabled" -> false,

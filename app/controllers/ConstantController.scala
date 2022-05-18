@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class ConstantController @Inject(val silhouette: Silhouette[AuthEnv])(implicit val ec: ExecutionContext)
+class ConstantController @Inject() (val silhouette: Silhouette[AuthEnv])(implicit val ec: ExecutionContext)
     extends BaseController {
   val logger: Logger = Logger(this.getClass)
 

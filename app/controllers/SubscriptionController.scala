@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class SubscriptionController @Inject(
+class SubscriptionController @Inject() (
     subscriptionRepository: SubscriptionRepositoryInterface,
     val silhouette: Silhouette[AuthEnv]
 )(implicit val ec: ExecutionContext)

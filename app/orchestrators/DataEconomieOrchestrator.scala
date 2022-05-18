@@ -11,7 +11,7 @@ import repositories.dataeconomie.DataEconomieRepositoryInterface
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class DataEconomieOrchestrator @Inject(
+class DataEconomieOrchestrator @Inject() (
     reportRepository: DataEconomieRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 

@@ -75,8 +75,7 @@ object ReportDraft {
       || draft.websiteURL.isDefined
       || draft.tags.contains(ReportTag.Influenceur) && draft.companyAddress
         .exists(_.postalCode.isDefined)
-      || draft.companyAddress.exists(
-      x => x.country.isDefined || x.postalCode.isDefined)
+      || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
       || draft.phone.isDefined)
 
   /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of

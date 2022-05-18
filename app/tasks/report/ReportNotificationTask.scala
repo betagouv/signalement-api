@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ReportNotificationTask @Inject(
+class ReportNotificationTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,

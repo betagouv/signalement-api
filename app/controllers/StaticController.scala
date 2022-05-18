@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 @Singleton
-class StaticController @Inject(val silhouette: Silhouette[AuthEnv])(implicit val ec: ExecutionContext)
+class StaticController @Inject() (val silhouette: Silhouette[AuthEnv])(implicit val ec: ExecutionContext)
     extends BaseController {
 
   def api = UserAwareAction.async(parse.empty) { _ =>

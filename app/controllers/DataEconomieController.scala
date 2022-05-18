@@ -15,7 +15,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class DataEconomieController @Inject(
+class DataEconomieController @Inject() (
     service: DataEconomieOrchestrator,
     val silhouette: Silhouette[APIKeyEnv]
 )(implicit val ec: ExecutionContext)
@@ -29,7 +29,7 @@ class DataEconomieController @Inject(
         .getReportDataEconomie()
         .map(Json.toJson(_).toString())
         .intersperse[String]("[", ",", "]")
-        .map(x => ByteString(x.getBytes))
+        .map(x => (ByteString(x.getBytes)))
 
     val zipSource: Source[ByteString, NotUsed] =
       Source(List((ArchiveMetadata(s"${DataEconomieController.ReportFileName}.json"), source)))

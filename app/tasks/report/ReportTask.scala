@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ReportTask @Inject(
+class ReportTask @Inject() (
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
