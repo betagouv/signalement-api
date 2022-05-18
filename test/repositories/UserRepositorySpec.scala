@@ -5,13 +5,17 @@ import scala.concurrent.duration._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 
 class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
+  val (app, components) = TestApp.buildApp(
+    None
+  )
+
+  lazy val userRepository = components.userRepository
   val userToto = Fixtures.genProUser.sample.get
 
   override def setupData() = {

@@ -5,18 +5,21 @@ import models.website.WebsiteKind
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import repositories.company.CompanyRepositoryInterface
-import repositories.website.WebsiteRepositoryInterface
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val websiteRepository = injector.instanceOf[WebsiteRepositoryInterface]
+  val (app, components) = TestApp.buildApp(
+    None
+  )
+
+  lazy val companyRepository = components.companyRepository
+  lazy val websiteRepository = components.websiteRepository
 
   val defaultCompany = Fixtures.genCompany.sample.get
   val marketplaceCompany = Fixtures.genCompany.sample.get

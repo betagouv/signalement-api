@@ -4,7 +4,6 @@ import models._
 import models.website.Website
 import models.website.WebsiteKind
 import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile
 import repositories.company.CompanyTable
@@ -14,22 +13,19 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.URL
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import PostgresProfile.api._
-@Singleton
-class WebsiteRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+import slick.basic.DatabaseConfig
+
+class WebsiteRepository(
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[WebsiteTable, Website]
     with WebsiteRepositoryInterface {
 
   val logger: Logger = Logger(this.getClass())
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[WebsiteTable] = WebsiteTable.table
 
   import dbConfig._

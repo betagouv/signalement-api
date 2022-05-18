@@ -19,13 +19,11 @@ import akka.stream.scaladsl.Partition
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
-import com.google.inject.AbstractModule
 import models.CompanyFile
 import models.EnterpriseImportInfo
 import models.EtablissementFile
 import models.UniteLegaleFile
 import play.api.Logger
-import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 import utils.SIREN
@@ -36,8 +34,6 @@ import java.nio.file.Paths
 import java.time.OffsetDateTime
 import java.util.UUID
 import java.util.zip.ZipInputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -54,18 +50,12 @@ object EnterpriseSyncActor {
 
 }
 
-class EnterpriseSyncActorModule extends AbstractModule with AkkaGuiceSupport {
-  override def configure =
-    bindActor[EnterpriseSyncActor]("enterprise-sync-actor")
-}
-
 final case class ProcessedFile(
     infoId: UUID,
     stream: SharedKillSwitch
 )
 
-@Singleton
-class EnterpriseSyncActor @Inject() (
+class EnterpriseSyncActor(
     enterpriseSyncInfoRepo: EnterpriseImportInfoRepository,
     companyDataRepository: CompanyDataRepositoryInterface
 )(implicit

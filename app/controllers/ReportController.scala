@@ -21,6 +21,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
 import play.api.mvc.MultipartFormData
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
@@ -36,11 +37,10 @@ import utils.silhouette.auth.WithRole
 
 import java.nio.file.Paths
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportController @Inject() (
+class ReportController(
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
@@ -49,9 +49,10 @@ class ReportController @Inject() (
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    signalConsoConfiguration: SignalConsoConfiguration
+    signalConsoConfiguration: SignalConsoConfiguration,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

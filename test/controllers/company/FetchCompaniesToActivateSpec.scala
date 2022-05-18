@@ -2,8 +2,6 @@ package controllers.company
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -19,15 +17,12 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.event.EventRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType._
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -42,10 +37,10 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val accessTokenRepository = components.accessTokenRepository
+  lazy val eventRepository = components.eventRepository
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
@@ -184,19 +179,17 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
       } yield (),
       Duration.Inf
     )
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
+
 }
 
 class FetchCompaniesToActivateSpec(implicit ee: ExecutionEnv) extends BaseFetchCompaniesToActivateSpec {

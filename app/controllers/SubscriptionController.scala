@@ -8,22 +8,22 @@ import models.UserPermission
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.subscription.SubscriptionRepositoryInterface
 import utils.Country
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class SubscriptionController @Inject() (
+class SubscriptionController(
     subscriptionRepository: SubscriptionRepositoryInterface,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

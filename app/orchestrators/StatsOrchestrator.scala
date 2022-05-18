@@ -12,7 +12,7 @@ import models.report.ReportTag
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
@@ -31,15 +31,14 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class StatsOrchestrator @Inject() (
+class StatsOrchestrator(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository
+    accessTokenRepository: AccessTokenRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =

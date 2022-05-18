@@ -12,26 +12,25 @@ import play.api._
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
-import repositories.accesstoken.AccessTokenRepository
+import play.api.mvc.ControllerComponents
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class AccountController @Inject() (
+class AccountController(
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository,
+    accessTokenRepository: AccessTokenRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
-    emailConfiguration: EmailConfiguration
+    emailConfiguration: EmailConfiguration,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

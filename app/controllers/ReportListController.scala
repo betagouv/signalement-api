@@ -9,27 +9,25 @@ import models.report.ReportFilter
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import javax.inject.Inject
-import javax.inject.Named
-import javax.inject.Singleton
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ReportListController @Inject() (
+class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    @Named("reports-extract-actor") reportsExtractActor: ActorRef,
+    reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
-    val silhouetteAPIKey: Silhouette[APIKeyEnv]
+    val silhouetteAPIKey: Silhouette[APIKeyEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)

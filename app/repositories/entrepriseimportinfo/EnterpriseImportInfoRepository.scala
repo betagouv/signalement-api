@@ -1,24 +1,18 @@
 package repositories.entrepriseimportinfo
 
 import models._
-import play.api.db.slick.DatabaseConfigProvider
-import play.db.NamedDatabase
 import repositories.PostgresProfile
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class EnterpriseImportInfoRepository @Inject() (@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(
-    implicit ec: ExecutionContext
+class EnterpriseImportInfoRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit
+    ec: ExecutionContext
 ) {
-
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import PostgresProfile.api._
   import dbConfig._

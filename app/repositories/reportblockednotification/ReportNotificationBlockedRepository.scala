@@ -1,25 +1,19 @@
 package repositories.reportblockednotification
 
 import models.report.ReportBlockedNotification
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.PostgresProfile.api._
 import repositories.user.UserTable
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ReportNotificationBlockedRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
-)(implicit
+class ReportNotificationBlockedRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     ec: ExecutionContext
 ) extends ReportNotificationBlockedRepositoryInterface {
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   import dbConfig._
 

@@ -2,28 +2,24 @@ package repositories.emailvalidation
 
 import models.EmailValidation
 import play.api.Logger
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import slick.basic.DatabaseConfig
 
-@Singleton
-class EmailValidationRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+class EmailValidationRepository(
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EmailValidationTable, EmailValidation]
     with EmailValidationRepositoryInterface {
 
   val logger: Logger = Logger(this.getClass)
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[EmailValidationTable] = EmailValidationTable.table
   import dbConfig._
 

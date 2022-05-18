@@ -1,7 +1,5 @@
 package controllers
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -18,12 +16,9 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import utils.AppSpec
 import utils.EmailAddress
+import utils.TestApp
 import utils.Fixtures
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
@@ -39,25 +34,23 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
 
   val identity = Fixtures.genAdminUser.sample.get
   val identLoginInfo = LoginInfo(CredentialsProvider.ID, identity.email.value)
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
 
-  lazy val userRepository = app.injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = app.injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val accessTokenRepository = app.injector.instanceOf[AccessTokenRepository]
+  val (app, components) = TestApp.buildApp(
+    Some(
+      new FakeEnvironment[AuthEnv](Seq(identLoginInfo -> identity))
+    )
+  )
 
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
+  val userRepository = components.userRepository
+  val companyRepository = components.companyRepository
+  val companyAccessRepository = components.companyAccessRepository
+  val accessTokenRepository = components.accessTokenRepository
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  implicit val authEnv = components.authEnv
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get
+
   override def setupData() =
     Await.result(
       for {
@@ -212,4 +205,6 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
       }
     }
   }
+
+  override def afterAll(): Unit = app.stop()
 }

@@ -11,7 +11,8 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger
 import play.api.libs.json._
-import repositories.accesstoken.AccessTokenRepository
+import play.api.mvc.ControllerComponents
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -26,17 +27,14 @@ import utils.silhouette.auth.WithRole
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyController @Inject() (
+class CompanyController(
     val companyOrchestrator: CompanyOrchestrator,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val companyRepository: CompanyRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepository,
+    val accessTokenRepository: AccessTokenRepositoryInterface,
     val eventRepository: EventRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
     val pdfService: PDFService,
@@ -44,9 +42,10 @@ class CompanyController @Inject() (
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val frontRoute: FrontRoute,
     val taskConfiguration: TaskConfiguration,
-    val emailConfiguration: EmailConfiguration
+    val emailConfiguration: EmailConfiguration,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseCompanyController {
+    extends BaseCompanyController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

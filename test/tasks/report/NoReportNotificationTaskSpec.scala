@@ -6,13 +6,8 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import services.AttachementService
-import services.MailerService
 import utils._
 import play.api.libs.mailer.Attachment
-import repositories.company.CompanyRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.subscription.SubscriptionRepositoryInterface
 
 import java.time.LocalDate
 import java.time.Period
@@ -34,14 +29,18 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     with AppSpec
     with FutureMatchers {
 
-  lazy val subscriptionRepository = injector.instanceOf[SubscriptionRepositoryInterface]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val reportNotificationTask = injector.instanceOf[ReportNotificationTask]
-  lazy val mailerService = injector.instanceOf[MailerService]
-  lazy val attachementService = injector.instanceOf[AttachementService]
+  val (app, components) = TestApp.buildApp(
+    None
+  )
 
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  lazy val subscriptionRepository = components.subscriptionRepository
+  lazy val reportRepository = components.reportRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val reportNotificationTask = components.reportNotificationTask
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
+
+  implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   implicit val ec = ee.executionContext

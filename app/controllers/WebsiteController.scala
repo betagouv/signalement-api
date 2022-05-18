@@ -12,6 +12,7 @@ import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
@@ -20,21 +21,20 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-@Singleton
-class WebsiteController @Inject() (
+class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
     val websiteRepository: WebsiteRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
-    @Named("websites-extract-actor") websitesExtractActor: ActorRef,
-    val silhouette: Silhouette[AuthEnv]
+    websitesExtractActor: ActorRef,
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   implicit val timeout: akka.util.Timeout = 5.seconds
   val logger: Logger = Logger(this.getClass)

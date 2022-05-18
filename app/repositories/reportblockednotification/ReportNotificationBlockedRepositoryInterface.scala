@@ -1,12 +1,10 @@
 package repositories.reportblockednotification
-import com.google.inject.ImplementedBy
 import models.report.ReportBlockedNotification
 import utils.EmailAddress
 
 import java.util.UUID
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[ReportNotificationBlockedRepository])
 trait ReportNotificationBlockedRepositoryInterface {
 
   def findByUserId(userId: UUID): Future[Seq[ReportBlockedNotification]]

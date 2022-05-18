@@ -22,7 +22,6 @@ object Dependencies {
     lazy val jacksonModuleScalaVersion = "2.13.2"
     lazy val postgresqlVersion = "42.3.4"
     lazy val refindedVersion = "0.9.28"
-    lazy val scalaGuiceVersion = "4.2.11"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "7.2.2"
@@ -51,7 +50,6 @@ object Dependencies {
     val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % Versions.slickPgVersion
     val alpakkaSlick = "com.lightbend.akka" %% "akka-stream-alpakka-slick" % Versions.alpakkaVersion
     val playMailer = "com.typesafe.play" %% "play-mailer" % Versions.playMailerVersion
-    val playMailerGuice = "com.typesafe.play" %% "play-mailer-guice" % Versions.playMailerVersion
     val alpakkaS3 = "com.lightbend.akka" %% "akka-stream-alpakka-s3" % Versions.alpakkaVersion
     val alpakkaCSV = "com.lightbend.akka" %% "akka-stream-alpakka-csv" % Versions.alpakkaVersion
     val alpakkaFile = "com.lightbend.akka" %% "akka-stream-alpakka-file" % Versions.alpakkaVersion
@@ -70,7 +68,6 @@ object Dependencies {
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql" % "postgresql" % Versions.postgresqlVersion
     val refinded = "eu.timepit" %% "refined" % Versions.refindedVersion
-    val scalaGuice = "net.codingwell" %% "scala-guice" % Versions.scalaGuiceVersion
     val ficus = "com.iheart" %% "ficus" % Versions.ficusVersion
     val spoiwo = "com.norbitltd" %% "spoiwo" % Versions.spoiwoVersion
     val itext7Core = "com.itextpdf" % "itext7-core" % Versions.itext7CoreVersion
@@ -90,7 +87,6 @@ object Dependencies {
     Compile.slickPgPlayJson,
     Compile.alpakkaSlick,
     Compile.playMailer,
-    Compile.playMailerGuice,
     Compile.alpakkaS3,
     Compile.alpakkaCSV,
     Compile.alpakkaFile,
@@ -107,7 +103,6 @@ object Dependencies {
     Compile.jacksonModuleScala,
     Compile.postgresql,
     Compile.refinded,
-    Compile.scalaGuice,
     Compile.ficus,
     Compile.spoiwo,
     Compile.itext7Core,
