@@ -15,7 +15,6 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -23,7 +22,7 @@ class ReportedPhoneController(
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    @Named("reported-phones-extract-actor") reportedPhonesExtractActor: ActorRef,
+    reportedPhonesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)

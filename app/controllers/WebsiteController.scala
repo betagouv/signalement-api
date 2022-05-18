@@ -21,7 +21,6 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
 import java.util.UUID
-import javax.inject._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -31,7 +30,7 @@ class WebsiteController(
     val websiteRepository: WebsiteRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
-    @Named("websites-extract-actor") websitesExtractActor: ActorRef,
+    websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)

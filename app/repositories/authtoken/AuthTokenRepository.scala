@@ -14,11 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 /** A repository for authToken.
-  *
-  * @param dbConfigProvider
-  *   The Play db config provider. Play will inject this for you.
   */
-
 class AuthTokenRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)

@@ -13,12 +13,10 @@ import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 
 import java.time.OffsetDateTime.now
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class CompanyAccessOrchestrator @Inject(
-) (
+class CompanyAccessOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val accessesOrchestrator: AccessesOrchestrator

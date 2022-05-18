@@ -236,13 +236,12 @@ class SignalConsoComponents(
     )
 
   val pdfService = new PDFService(signalConsoConfiguration)
-  val frontRoute = new FrontRoute(signalConsoConfiguration)
+  implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
   val attachementService = new AttachementService(environment, pdfService, frontRoute)
   val mailService = new MailService(
     emailActor,
     emailConfiguration,
     reportNotificationBlockedRepository,
-    frontRoute,
     pdfService,
     attachementService
   )

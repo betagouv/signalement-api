@@ -10,18 +10,17 @@ import repositories.reportblockednotification.ReportNotificationBlockedRepositor
 import utils.EmailAddress
 import utils.FrontRoute
 
-import javax.inject.Named
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class MailService(
-    @Named("email-actor") actor: ActorRef,
+    actor: ActorRef,
     emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,
-    implicit val frontRoute: FrontRoute,
     val pdfService: PDFService,
     attachementService: AttachementService
 )(implicit
+    val frontRoute: FrontRoute,
     private[this] val executionContext: ExecutionContext
 ) {
 

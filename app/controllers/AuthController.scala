@@ -17,10 +17,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-//
-class AuthController
-//
-(
+class AuthController(
     val silhouette: Silhouette[AuthEnv],
     authOrchestrator: AuthOrchestrator,
     controllerComponents: ControllerComponents

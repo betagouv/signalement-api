@@ -18,11 +18,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 /** A repository for user.
-  *
-  * @param dbConfigProvider
-  *   The Play db config provider. Play will inject this for you.
   */
-
 class UserRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile],
     passwordHasherRegistry: PasswordHasherRegistry

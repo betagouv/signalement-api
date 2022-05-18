@@ -15,7 +15,6 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
-import javax.inject.Named
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -23,7 +22,7 @@ import scala.concurrent.Future
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    @Named("reports-extract-actor") reportsExtractActor: ActorRef,
+    reportsExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
     controllerComponents: ControllerComponents
