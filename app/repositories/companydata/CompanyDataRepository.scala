@@ -1,29 +1,24 @@
 package repositories.companydata
 
 import models._
-import play.api.db.slick.DatabaseConfigProvider
-import play.db.NamedDatabase
 import repositories.PostgresProfile.api._
 import repositories.CRUDRepository
 import repositories.companydata.CompanyDataRepository.toOptionalSqlValue
 import repositories.companydata.CompanyDataTable.DENOMINATION_USUELLE_ETABLISSEMENT
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.SIREN
 import utils.SIRET
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyDataRepository @Inject() (@NamedDatabase("company_db") dbConfigProvider: DatabaseConfigProvider)(implicit
+class CompanyDataRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[CompanyDataTable, CompanyData]
     with CompanyDataRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[CompanyDataTable] = CompanyDataTable.table
 
   import dbConfig._

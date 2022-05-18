@@ -1,33 +1,26 @@
 package repositories.authtoken
 
 import models.auth.AuthToken
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 /** A repository for authToken.
-  *
-  * @param dbConfigProvider
-  *   The Play db config provider. Play will inject this for you.
   */
-@Singleton
-class AuthTokenRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+class AuthTokenRepository(
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[AuthTokenTable, AuthToken]
     with AuthTokenRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[AuthTokenTable] = AuthTokenTable.table
   import dbConfig._
 

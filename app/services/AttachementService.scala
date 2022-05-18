@@ -1,6 +1,5 @@
 package services
 
-import com.google.inject.Inject
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
@@ -10,7 +9,7 @@ import play.api.libs.mailer.AttachmentData
 import play.api.libs.mailer.AttachmentFile
 import utils.FrontRoute
 
-class AttachementService @Inject() (environment: Environment, pdfService: PDFService, frontRoute: FrontRoute) {
+class AttachementService(environment: Environment, pdfService: PDFService, frontRoute: FrontRoute) {
 
   val defaultAttachments: Seq[Attachment] = Seq(
     AttachmentFile(

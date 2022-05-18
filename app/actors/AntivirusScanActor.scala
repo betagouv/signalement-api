@@ -7,13 +7,11 @@ import akka.Done
 import akka.actor.typed._
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-import com.google.inject.AbstractModule
-import com.google.inject.Provides
+
 import config.UploadConfiguration
 import models.report.ReportFile
 import play.api.Logger
-import play.api.libs.concurrent.ActorModule
-import play.api.libs.concurrent.AkkaGuiceSupport
+
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
 
@@ -23,7 +21,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.sys.process._
 
-object AntivirusScanActor extends ActorModule {
+object AntivirusScanActor {
   type Message = ScanCommand
   sealed trait ScanCommand
   final case class ScanFromFile(reportFile: ReportFile, file: java.io.File) extends ScanCommand
@@ -38,7 +36,6 @@ object AntivirusScanActor extends ActorModule {
       AntivirusScanExecution(AntivirusScanExitCode.withValue(exitCode), stdout.toString())
     }
 
-  @Provides
   def create(
       uploadConfiguration: UploadConfiguration,
       reportFileRepository: ReportFileRepositoryInterface,
@@ -90,9 +87,4 @@ object AntivirusScanActor extends ActorModule {
       }
     }
 
-}
-
-class AntivirusScanActorModule extends AbstractModule with AkkaGuiceSupport {
-  override def configure =
-    bindTypedActor(AntivirusScanActor, "antivirus-scan-actor")
 }

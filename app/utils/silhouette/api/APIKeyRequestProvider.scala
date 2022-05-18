@@ -8,13 +8,12 @@ import play.api.mvc.Request
 import repositories.consumer.ConsumerRepositoryInterface
 import utils.silhouette.Credentials._
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class APIKeyRequestProvider @Inject() (
+class APIKeyRequestProvider(
     passwordHasherRegistry: PasswordHasherRegistry,
-    _consumer: ConsumerRepositoryInterface
+    consumerRepository: ConsumerRepositoryInterface
 )(implicit ec: ExecutionContext)
     extends RequestProvider {
 
@@ -25,8 +24,8 @@ class APIKeyRequestProvider @Inject() (
     val headerValueOpt = request.headers.get("X-Api-Key")
 
     headerValueOpt
-      .map(headerValue =>
-        _consumer.getAll().map { consumers =>
+      .map { headerValue =>
+        consumerRepository.getAll().map { consumers =>
           val keyMatchOpt = consumers.find { c =>
             hasher.matches(toPasswordInfo(c.apiKey), headerValue)
           }
@@ -41,7 +40,7 @@ class APIKeyRequestProvider @Inject() (
               None
           }
         }
-      )
+      }
       .getOrElse {
         logger.error(
           s"Access denied to the external API, missing X-Api-Key header when calling ${request.uri}."

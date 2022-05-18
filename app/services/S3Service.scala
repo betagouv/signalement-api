@@ -21,13 +21,10 @@ import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest
 import config.BucketConfiguration
 import controllers.error.AppError.BucketFileNotFound
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class S3Service @Inject() (implicit
+class S3Service(implicit
     val materializer: Materializer,
     val executionContext: ExecutionContext,
     val bucketConfiguration: BucketConfiguration

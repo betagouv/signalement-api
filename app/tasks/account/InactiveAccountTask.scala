@@ -7,13 +7,12 @@ import tasks.computeStartingTime
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 
-class InactiveAccountTask @Inject() (
+class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
     inactiveAccountsTaskConfiguration: InactiveAccountsTaskConfiguration

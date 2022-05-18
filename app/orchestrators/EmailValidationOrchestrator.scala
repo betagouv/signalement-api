@@ -15,11 +15,10 @@ import play.api.Logger
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 
 import java.time.OffsetDateTime
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class EmailValidationOrchestrator @Inject() (
+class EmailValidationOrchestrator(
     mailService: MailService,
     emailValidationRepository: EmailValidationRepositoryInterface,
     emailConfiguration: EmailConfiguration

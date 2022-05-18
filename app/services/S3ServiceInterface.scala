@@ -5,11 +5,9 @@ import akka.stream.alpakka.s3.MultipartUploadResult
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import com.amazonaws.HttpMethod
-import com.google.inject.ImplementedBy
 
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[S3Service])
 trait S3ServiceInterface {
 
   def upload(bucketKey: String): Sink[ByteString, Future[MultipartUploadResult]]

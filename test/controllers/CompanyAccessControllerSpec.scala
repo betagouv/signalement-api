@@ -1,7 +1,5 @@
 package controllers
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -17,28 +15,36 @@ import play.api.test.Helpers._
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 import models._
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
-import repositories.accesstoken.AccessTokenRepository
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.user.UserRepositoryInterface
 
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
-  lazy val accessTokenRepository = injector.instanceOf[AccessTokenRepository]
 
   val proAdminUser = Fixtures.genProUser.sample.get
   val proMemberUser = Fixtures.genProUser.sample.get
+  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
+
+  val (app, components) = TestApp.buildApp(
+    Some(
+      new FakeEnvironment[AuthEnv](Seq(proAdminUser, proMemberUser).map(user => loginInfo(user) -> user))
+    )
+  )
+  override def afterAll(): Unit = app.stop()
+
+  implicit val authEnv = components.authEnv
+
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val companyDataRepository = components.companyDataRepository
+  lazy val accessTokenRepository = components.accessTokenRepository
+
   val company = Fixtures.genCompany.sample.get
   val companyData = Fixtures.genCompanyData(Some(company)).sample.get.copy(etablissementSiege = Some("true"))
 
@@ -54,19 +60,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
       } yield (),
       Duration.Inf
     )
-  override def configureFakeModule(): AbstractModule =
-    new FakeModule
 
-  def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
-
-  implicit val env = new FakeEnvironment[AuthEnv](Seq(proAdminUser, proMemberUser).map(user => loginInfo(user) -> user))
-
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
 }
 
 class ListAccessSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {

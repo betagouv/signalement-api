@@ -15,7 +15,6 @@ import models.UserRole
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -26,8 +25,10 @@ import cats.instances.future.catsStdInstancesForFuture
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
+import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
+import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthAttempt
@@ -43,7 +44,7 @@ import orchestrators.AuthOrchestrator.authTokenExpiration
 import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
 import play.api.mvc.Request
-import repositories.authattempt.AuthAttemptRepository
+import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
@@ -53,9 +54,9 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
 
-class AuthOrchestrator @Inject() (
+class AuthOrchestrator(
     userService: UserService,
-    authAttemptRepository: AuthAttemptRepository,
+    authAttemptRepository: AuthAttemptRepositoryInterface,
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     authTokenRepository: AuthTokenRepositoryInterface,
@@ -162,13 +163,22 @@ class AuthOrchestrator @Inject() (
       token <- silhouette.env.authenticatorService.init(authenticator)
     } yield token
 
-  private def authenticate(login: String, password: String) = credentialsProvider
-    .authenticate(Credentials(login, password))
-    .recoverWith {
-      case _: InvalidPasswordException  => Future.failed(InvalidPassword(login))
-      case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
-      case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
-    }
+  private def authenticate(login: String, password: String) = {
+    val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
+      new BCryptPasswordHasher()
+    )
+
+    passwordHasherRegistry.current.hash(password)
+    credentialsProvider
+      .authenticate(Credentials(login, password))
+      .recoverWith {
+        case e: InvalidPasswordException =>
+          logger.error("Invalid password ", e)
+          Future.failed(InvalidPassword(login))
+        case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
+        case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
+      }
+  }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>

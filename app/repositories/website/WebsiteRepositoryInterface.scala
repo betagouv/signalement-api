@@ -1,6 +1,5 @@
 package repositories.website
 
-import com.google.inject.ImplementedBy
 import models.Company
 import models.PaginatedResult
 import models.website.Website
@@ -9,7 +8,6 @@ import repositories.CRUDRepositoryInterface
 
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[WebsiteRepository])
 trait WebsiteRepositoryInterface extends CRUDRepositoryInterface[Website] {
 
   def validateAndCreate(newWebsite: Website): Future[Website]
