@@ -347,6 +347,32 @@ trait GetReportContext extends AppSpec {
   val mockMailerService = mock[MailerService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
 
+  mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
+    Future(
+      if (pro.asInstanceOf[User].id == concernedProUser.id) List(CompanyWithAccess(company, AccessLevel.ADMIN))
+      else List()
+    )
+  }
+
+  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
+
+  mockEventRepository.create(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
+  mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
+  mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
+  mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
+    List(
+      Event(
+        UUID.randomUUID(),
+        Some(alreadyRequestedReport.id),
+        Some(company.id),
+        Some(concernedProUser.id),
+        OffsetDateTime.now(),
+        EventType.PRO,
+        ActionEvent.REPORT_READING_BY_PRO
+      )
+    )
+  )
+
   class FakeApplicationLoader extends ApplicationLoader {
     var components: SignalConsoComponents = _
 
@@ -376,37 +402,11 @@ trait GetReportContext extends AppSpec {
   }
 
   val appLoader = new FakeApplicationLoader()
-  val app: Application = TestApp.buildApp(new FakeApplicationLoader())
+  val app: Application = TestApp.buildApp(appLoader)
   val components: SignalConsoComponents = appLoader.components
 
   lazy val mailerService = components.mailer
   lazy val attachementService = components.attachementService
   lazy val mailService = components.mailService
-
-  mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
-    Future(
-      if (pro.asInstanceOf[User].id == concernedProUser.id) List(CompanyWithAccess(company, AccessLevel.ADMIN))
-      else List()
-    )
-  }
-
-  mockReportFileRepository.retrieveReportFiles(any[UUID]) returns Future(List.empty)
-
-  mockEventRepository.create(any[Event]) answers { (event: Any) => Future(event.asInstanceOf[Event]) }
-  mockEventRepository.getEvents(neverRequestedReport.id, EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(neverRequestedFinalReport.id, EventFilter(None)) returns Future(List.empty)
-  mockEventRepository.getEvents(alreadyRequestedReport.id, EventFilter(None)) returns Future(
-    List(
-      Event(
-        UUID.randomUUID(),
-        Some(alreadyRequestedReport.id),
-        Some(company.id),
-        Some(concernedProUser.id),
-        OffsetDateTime.now(),
-        EventType.PRO,
-        ActionEvent.REPORT_READING_BY_PRO
-      )
-    )
-  )
 
 }

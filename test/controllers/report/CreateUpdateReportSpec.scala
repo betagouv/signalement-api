@@ -7,7 +7,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import controllers.ReportController
 import models._
 import models.event.Event
 import models.report.Report
@@ -292,8 +291,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany) =
     Await.result(
-      app.injector
-        .instanceOf[ReportController]
+      components.reportController
         .updateReportCompany(reportId)
         .apply(
           FakeRequest()
@@ -305,8 +303,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def updateReportConsumer(reportId: UUID, reportConsumer: ReportConsumerUpdate) =
     Await.result(
-      app.injector
-        .instanceOf[ReportController]
+      components.reportController
         .updateReportConsumer(reportId)
         .apply(
           FakeRequest()

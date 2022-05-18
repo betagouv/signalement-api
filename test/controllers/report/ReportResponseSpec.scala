@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
-import controllers.ReportController
 import models._
 import models.event.Event
 import models.report.Report
@@ -341,8 +340,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
 
   def postReportResponse(reportResponse: ReportResponse) =
     Await.result(
-      app.injector
-        .instanceOf[ReportController]
+      components.reportController
         .reportResponse(reportFixture.id)
         .apply(
           someLoginInfo

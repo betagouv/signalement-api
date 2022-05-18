@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 
 import java.util.UUID
-import controllers.ReportConsumerReviewController
 import controllers.routes
 import models.User
 import models.report.Report
@@ -169,8 +168,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
 
   def postReview(reviewOnReportResponse: ResponseConsumerReviewApi) =
     Await.result(
-      app.injector
-        .instanceOf[ReportConsumerReviewController]
+      components.reportConsumerReviewController
         .reviewOnReportResponse(reportId)
         .apply(
           FakeRequest("POST", s"/api/reports/${reportId}/response/review").withBody(Json.toJson(reviewOnReportResponse))
