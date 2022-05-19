@@ -6,23 +6,22 @@ import models.report.ReportBlockedNotificationBody
 import orchestrators.ReportBlockedNotificationOrchestrator
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ReportBlockedNotificationController @Inject() (
+class ReportBlockedNotificationController(
     val silhouette: Silhouette[AuthEnv],
     val silhouetteAPIKey: Silhouette[APIKeyEnv],
-    val orchestrator: ReportBlockedNotificationOrchestrator
+    val orchestrator: ReportBlockedNotificationOrchestrator,
+    controllerComponents: ControllerComponents
 )(implicit
     val ec: ExecutionContext
-) extends BaseController {
+) extends BaseController(controllerComponents) {
 
   def getAll() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
     orchestrator.findByUserId(request.identity.id).map(entities => Ok(Json.toJson(entities)))

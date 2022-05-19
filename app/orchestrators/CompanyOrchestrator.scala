@@ -14,7 +14,7 @@ import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
@@ -28,17 +28,16 @@ import utils.SIRET
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class CompanyOrchestrator @Inject() (
+class CompanyOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
     val companyDataRepository: CompanyDataRepositoryInterface,
     val websiteRepository: WebsiteRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepository,
+    val accessTokenRepository: AccessTokenRepositoryInterface,
     val eventRepository: EventRepositoryInterface,
     val taskConfiguration: TaskConfiguration
 )(implicit ec: ExecutionContext) {

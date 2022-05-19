@@ -10,15 +10,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mock.Mockito
 import play.api.libs.mailer.Attachment
-import repositories.accesstoken.AccessTokenRepositoryInterface
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
-import repositories.report.ReportRepository
-import repositories.user.UserRepositoryInterface
-import services.AttachementService
-import services.MailerService
 import tasks.Task
 import tasks.TaskExecutionResults
 import tasks.model.TaskType.CloseUnreadReport
@@ -30,7 +22,7 @@ import utils.Constants.EventType.PRO
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
+import utils.TestApp
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -264,6 +256,10 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
     with Mockito
     with FutureMatchers {
 
+  val (app, components) = TestApp.buildApp(
+    None
+  )
+
   implicit val ec = ee.executionContext
   val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
@@ -299,7 +295,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
       )
 
   def mailMustNotHaveBeenSent() =
-    there was no(app.injector.instanceOf[MailerService])
+    there was no(components.mailer)
       .sendEmail(
         any[EmailAddress],
         any[Seq[EmailAddress]],
@@ -334,17 +330,17 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
   def reporStatustMustNotHaveBeenUpdated(report: Report) =
     reportRepository.get(report.id).map(_.get.status) must beEqualTo(report.status).await
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val reportRepository = injector.instanceOf[ReportRepository]
-  lazy val eventRepository = injector.instanceOf[EventRepositoryInterface]
-  lazy val reportTask = injector.instanceOf[ReportTask]
-  lazy val companyRepository = app.injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val AccessTokenRepositoryInterface = app.injector.instanceOf[AccessTokenRepositoryInterface]
-  lazy val mailerService = app.injector.instanceOf[MailerService]
-  lazy val attachementService = app.injector.instanceOf[AttachementService]
+  lazy val userRepository = components.userRepository
+  lazy val reportRepository = components.reportRepository
+  lazy val eventRepository = components.eventRepository
+  lazy val reportTask = components.reportTask
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
 
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
+  implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
 
   def setupUser(user: User) =

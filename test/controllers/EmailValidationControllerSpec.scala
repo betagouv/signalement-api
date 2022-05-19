@@ -1,18 +1,19 @@
 package controllers
 
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import config.EmailConfiguration
 import controllers.error.AppError.EmailOrCodeIncorrect
 import controllers.error.AppError.InvalidEmail
 import controllers.error.AppError.InvalidEmailProvider
 import controllers.error.ErrorPayload
+import loader.SignalConsoComponents
 import models.EmailValidation
 import models.email.EmailValidationResult
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
-import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Application
+import play.api.ApplicationLoader
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
@@ -22,12 +23,10 @@ import services.Email.ConsumerValidateEmail
 
 import java.time.OffsetDateTime
 import scala.concurrent.Await
-import services.AttachementService
-import services.MailerService
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
+import utils.TestApp
 import utils.EmailAddress.EmptyEmailAddress
 import utils.silhouette.auth.AuthEnv
 
@@ -39,36 +38,46 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  implicit val env: Environment[AuthEnv] = new FakeEnvironment[AuthEnv](Seq.empty)
+  val (app, components) = TestApp.buildApp(
+    Some(
+      new FakeEnvironment[AuthEnv](Seq.empty)
+    )
+  )
+  override def afterAll(): Unit = app.stop()
+
+  implicit val authEnv = components.authEnv
+
   lazy val emailValidationRepository: EmailValidationRepositoryInterface =
-    injector.instanceOf[EmailValidationRepositoryInterface]
+    components.emailValidationRepository
 
-  lazy val mailerService = injector.instanceOf[MailerService]
-  lazy val attachementService = injector.instanceOf[AttachementService]
+  lazy val mailerService = components.mailer
+  lazy val attachementService = components.attachementService
 
-  lazy val frontRoute = injector.instanceOf[FrontRoute]
+  lazy val frontRoute = components.frontRoute
   lazy val contactAddress = emailConfiguration.contactAddress
 
-  class FakeModule(skipValidation: Boolean = false, emailProviderBlocklist: List[String]) extends AppFakeModule {
-    override def configure() = {
-      super.configure
-      bind[Environment[AuthEnv]].toInstance(env)
-      bind[EmailConfiguration].toInstance(
-        EmailConfiguration(
+  class FakeApplicationLoader(skipValidation: Boolean = false, emailProviderBlocklist: List[String])
+      extends ApplicationLoader {
+    var components: SignalConsoComponents = _
+
+    override def load(context: ApplicationLoader.Context): Application = {
+      components = new SignalConsoComponents(context) {
+        override def emailConfiguration: EmailConfiguration = EmailConfiguration(
           from = EmptyEmailAddress,
           contactAddress = EmptyEmailAddress,
           skipReportEmailValidation = skipValidation,
           ccrfEmailSuffix = "*",
           emailProvidersBlocklist = emailProviderBlocklist
         )
-      )
+
+      }
+      components.application
     }
+
   }
 
   def app(skipValidation: Boolean = false, emailProviderBlocklist: List[String] = List.empty) =
-    new GuiceApplicationBuilder()
-      .overrides(new FakeModule(skipValidation, emailProviderBlocklist))
-      .build()
+    TestApp.buildApp(new FakeApplicationLoader(skipValidation, emailProviderBlocklist))
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get

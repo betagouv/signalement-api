@@ -7,12 +7,12 @@ import models.report.Report
 import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
-import play.api.db.slick.DatabaseConfigProvider
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.report.ReportTable
 import repositories.user.UserTable
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
@@ -24,19 +24,15 @@ import java.time.format.DateTimeFormatter
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class EventRepository @Inject() (
-    dbConfigProvider: DatabaseConfigProvider
+class EventRepository(
+    override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit override val ec: ExecutionContext)
     extends CRUDRepository[EventTable, Event]
     with EventRepositoryInterface {
 
-  override val dbConfig = dbConfigProvider.get[JdbcProfile]
   override val table: TableQuery[EventTable] = EventTable.table
 
   val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")

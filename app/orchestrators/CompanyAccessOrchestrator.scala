@@ -8,21 +8,17 @@ import models.AccessLevel
 import models.AccessToken
 import models.access.ActivationLinkRequest
 import play.api.Logger
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import utils.SIRET
 
 import java.time.OffsetDateTime.now
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class CompanyAccessOrchestrator @Inject(
-) (
+class CompanyAccessOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
-    val accessTokenRepository: AccessTokenRepository,
+    val accessTokenRepository: AccessTokenRepositoryInterface,
     val accessesOrchestrator: AccessesOrchestrator
 )(implicit val ec: ExecutionContext) {
 

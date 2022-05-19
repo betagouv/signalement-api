@@ -3,7 +3,6 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
-import com.google.inject.AbstractModule
 import spoiwo.model._
 import spoiwo.model.enums.CellFill
 import spoiwo.model.enums.CellHorizontalAlignment
@@ -22,7 +21,6 @@ import models.report.ReportResponse
 import models.report.ReportStatus
 import orchestrators.ReportOrchestrator
 import play.api.Logger
-import play.api.libs.concurrent.AkkaGuiceSupport
 import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
@@ -36,8 +34,6 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
@@ -47,8 +43,7 @@ object ReportsExtractActor {
   case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter)
 }
 
-@Singleton
-class ReportsExtractActor @Inject() (
+class ReportsExtractActor(
     reportFileRepository: ReportFileRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
@@ -396,9 +391,4 @@ class ReportsExtractActor @Inject() (
     val remotePath = s"extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
-}
-
-class ReportsExtractModule extends AbstractModule with AkkaGuiceSupport {
-  override def configure =
-    bindActor[ReportsExtractActor]("reports-extract-actor")
 }

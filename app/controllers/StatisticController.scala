@@ -8,20 +8,21 @@ import models.report.ReportResponseType
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import utils.QueryStringMapper
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class StatisticController @Inject() (
+class StatisticController(
     statsOrchestrator: StatsOrchestrator,
-    val silhouette: Silhouette[AuthEnv]
+    val silhouette: Silhouette[AuthEnv],
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
 

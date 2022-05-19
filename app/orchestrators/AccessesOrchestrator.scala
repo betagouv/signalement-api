@@ -23,7 +23,7 @@ import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
-import repositories.accesstoken.AccessTokenRepository
+import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.companydata.CompanyDataRepositoryInterface
@@ -43,16 +43,15 @@ import utils.SIRET
 import java.time.Duration
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class AccessesOrchestrator @Inject() (
+class AccessesOrchestrator(
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     companyDataRepository: CompanyDataRepositoryInterface,
-    accessTokenRepository: AccessTokenRepository,
+    accessTokenRepository: AccessTokenRepositoryInterface,
     userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,

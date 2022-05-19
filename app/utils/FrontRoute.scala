@@ -5,11 +5,8 @@ import models.auth.AuthToken
 import models.report.review.ResponseEvaluation
 
 import java.net.URI
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class FrontRoute @Inject() (signalConsoConfiguration: SignalConsoConfiguration) {
+class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
   object website {
     val url = signalConsoConfiguration.websiteURL

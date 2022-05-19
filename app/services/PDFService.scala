@@ -15,10 +15,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
-class PDFService @Inject() (
+class PDFService(
     signalConsoConfiguration: SignalConsoConfiguration
 ) {
 

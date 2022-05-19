@@ -8,11 +8,7 @@ import akka.stream.scaladsl.Source
 import models.report.Report
 import repositories.report.ReportTable
 
-import javax.inject.Inject
-import javax.inject.Singleton
-
-@Singleton
-class DataEconomieRepository @Inject() (
+class DataEconomieRepository(
     system: ActorSystem
 ) extends DataEconomieRepositoryInterface {
 

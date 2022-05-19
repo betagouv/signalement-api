@@ -1,30 +1,22 @@
 package services
 
 import cats.data.NonEmptyList
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
 import models.report.Report
-import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import repositories.company.CompanyRepositoryInterface
-import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
-import repositories.user.UserRepositoryInterface
 import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
 import utils.Fixtures
-import utils.FrontRoute
 import utils.SIREN
+import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Await
@@ -40,15 +32,16 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
-  lazy val userRepository = injector.instanceOf[UserRepositoryInterface]
-  lazy val companyRepository = injector.instanceOf[CompanyRepositoryInterface]
-  lazy val companyAccessRepository = injector.instanceOf[CompanyAccessRepositoryInterface]
-  lazy val companyDataRepository = injector.instanceOf[CompanyDataRepositoryInterface]
-  lazy val companiesVisibilityOrchestrator = injector.instanceOf[CompaniesVisibilityOrchestrator]
-  lazy val reportNotificationBlocklistRepository = injector.instanceOf[ReportNotificationBlockedRepositoryInterface]
-  implicit lazy val frontRoute = injector.instanceOf[FrontRoute]
-  lazy val mailerService = injector.instanceOf[MailerService]
-  lazy val mailService = injector.instanceOf[MailService]
+  lazy val userRepository = components.userRepository
+  lazy val companyRepository = components.companyRepository
+  lazy val companyAccessRepository = components.companyAccessRepository
+  lazy val companyDataRepository = components.companyDataRepository
+  lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
+  lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
+
+//  implicit lazy val frontRoute = components.frontRoute
+  lazy val mailerService = components.mailer
+  lazy val mailService = components.mailService
 
   val proWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proWithAccessToSubsidiary = Fixtures.genProUser.sample.get
@@ -113,20 +106,17 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def configureFakeModule(): AbstractModule = new FakeModule
-
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](
     Seq(proWithAccessToHeadOffice, proWithAccessToSubsidiary).map(user => loginInfo(user) -> user)
   )
 
-  class FakeModule extends AppFakeModule {
-    override def configure() = {
-      super.configure()
-      bind[Environment[AuthEnv]].toInstance(env)
-    }
-  }
+  val (app, components) = TestApp.buildApp(
+    Some(
+      env
+    )
+  )
 
   protected def sendEmail(emails: NonEmptyList[EmailAddress], report: Report) =
     Await.result(

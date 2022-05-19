@@ -4,11 +4,10 @@ import models.report.ReportBlockedNotification
 import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
 
 import java.util.UUID
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ReportBlockedNotificationOrchestrator @Inject() (
+class ReportBlockedNotificationOrchestrator(
     repository: ReportNotificationBlockedRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 

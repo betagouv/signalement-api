@@ -1,6 +1,5 @@
 package repositories.report
 
-import com.google.inject.ImplementedBy
 import models.report._
 import models.CountByDate
 import models.PaginatedResult
@@ -13,7 +12,6 @@ import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.Future
 
-@ImplementedBy(classOf[ReportRepository])
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def findSimilarReportCount(report: Report): Future[Int]

@@ -19,6 +19,7 @@ import models.report.WebsiteURL
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -49,23 +50,21 @@ import utils.silhouette.auth.WithRole
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-@Singleton
-class AdminController @Inject() (
+class AdminController(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
-    implicit val frontRoute: FrontRoute
+    implicit val frontRoute: FrontRoute,
+    controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
-    extends BaseController {
+    extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
   implicit val contactAddress = emailConfiguration.contactAddress
