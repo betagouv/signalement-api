@@ -11,6 +11,7 @@ import play.api.mvc.Request
 import cats.syntax.either._
 import models.extractUUID
 import models.report.ReportResponseType
+import models.report.reportfile.ReportFileId
 import utils.SIRET
 
 import java.util.UUID
@@ -33,6 +34,13 @@ package object controllers {
       .transform[UUID](
         id => extractUUID(id),
         uuid => uuid.toString
+      )
+
+  implicit val ReportFileIdPathBindable =
+    PathBindable.bindableString
+      .transform[ReportFileId](
+        id => ReportFileId(extractUUID(id)),
+        reportFileId => reportFileId.value.toString
       )
 
   implicit val SIRETPathBindable =

@@ -6,6 +6,7 @@ import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 import ReportTag._
+import models.report.reportfile.ReportFileId
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -77,7 +78,7 @@ object ReportToExternal {
 }
 
 case class ReportFileToExternal(
-    id: UUID,
+    id: ReportFileId,
     filename: String
 )
 

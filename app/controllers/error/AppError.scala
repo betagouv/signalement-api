@@ -1,5 +1,6 @@
 package controllers.error
 
+import models.report.reportfile.ReportFileId
 import utils.EmailAddress
 import utils.SIRET
 
@@ -227,18 +228,18 @@ object AppError {
     override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
   }
 
-  final case class AttachmentNotReady(reportFileId: UUID) extends ConflictError {
+  final case class AttachmentNotReady(reportFileId: ReportFileId) extends ConflictError {
     override val `type`: String = "SC-0027"
     override val title: String = "Attachement not available"
     override val details: String =
-      s"Le fichier [id = ${reportFileId.toString}] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
+      s"Le fichier [id = ${reportFileId.value.toString}] n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
   }
 
-  final case class AttachmentNotFound(reportFileId: UUID, reportFileName: String) extends NotFoundError {
+  final case class AttachmentNotFound(reportFileId: ReportFileId, reportFileName: String) extends NotFoundError {
     override val `type`: String = "SC-0028"
     override val title: String = "Cannot download attachment"
     override val details: String =
-      s"Impossible de récupérer le fichier [id = ${reportFileId.toString}, nom = $reportFileName]"
+      s"Impossible de récupérer le fichier [id = ${reportFileId.value.toString}, nom = $reportFileName]"
   }
 
   final case class BucketFileNotFound(bucketName: String, fileName: String) extends NotFoundError {
@@ -284,10 +285,33 @@ object AppError {
   }
 
   final case class CompanyNotFound(companyId: UUID) extends NotFoundError {
-    override val `type`: String = "SC-0033"
+    override val `type`: String = "SC-0035"
     override val title: String = s"Company with id ${companyId.toString} not found"
     override val details: String =
       s"Entreprise avec id ${companyId.toString} introuvable"
+  }
+
+  final case object CantPerformAction extends ForbiddenError {
+    override val `type`: String = "SC-0036"
+    override val title: String = s"Access forbidden"
+    override val details: String =
+      s"L'action demandée n'est pas autorisée."
+  }
+
+  final case class InvalidFileExtension(currentExtension: String, validExtensions: Seq[String])
+      extends BadRequestError {
+    override val `type`: String = "SC-0037"
+    override val title: String = s"Invalid file extension"
+    override val details: String =
+      s"Impossible de charger un fichier avec l'extension '.$currentExtension', extensions valides : ${validExtensions
+          .mkString("'", "' , '", "'")}"
+  }
+
+  final case class MalformedFileKey(key: String) extends BadRequestError {
+    override val `type`: String = "SC-0038"
+    override val title: String = "Malformed file key"
+    override val details: String =
+      s"Cannot find file with key $key"
   }
 
 }

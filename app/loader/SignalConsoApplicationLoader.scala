@@ -306,11 +306,13 @@ class SignalConsoComponents(
   val reportConsumerReviewOrchestrator =
     new ReportConsumerReviewOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository)
 
+  val reportFileOrchestrator = new ReportFileOrchestrator(reportFileRepository, antivirusScanActor, s3Service)
+
   val reportOrchestrator = new ReportOrchestrator(
     mailService,
     reportConsumerReviewOrchestrator,
     reportRepository,
-    reportFileRepository,
+    reportFileOrchestrator,
     companyRepository,
     accessTokenRepository,
     eventRepository,
@@ -318,8 +320,6 @@ class SignalConsoComponents(
     companiesVisibilityOrchestrator,
     subscriptionRepository,
     emailValidationOrchestrator,
-    antivirusScanActor,
-    s3Service,
     emailConfiguration,
     tokenConfiguration,
     signalConsoConfiguration
@@ -450,6 +450,10 @@ class SignalConsoComponents(
     )
   val reportConsumerReviewController =
     new ReportConsumerReviewController(reportConsumerReviewOrchestrator, silhouette, controllerComponents)
+
+  val reportFileController =
+    new ReportFileController(reportFileOrchestrator, silhouette, signalConsoConfiguration, controllerComponents)
+
   val reportController = new ReportController(
     reportOrchestrator,
     reportRepository,
@@ -517,6 +521,7 @@ class SignalConsoComponents(
       statisticController,
       companyAccessController,
       reportListController,
+      reportFileController,
       reportController,
       reportConsumerReviewController,
       eventsController,

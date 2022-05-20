@@ -1,10 +1,12 @@
 package repositories.reportfile
 
 import models.report._
-import repositories.CRUDRepository
+import models.report.reportfile.ReportFileId
+import repositories.TypedCRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import repositories.reportfile.ReportFileColumnType._
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -12,13 +14,13 @@ import scala.concurrent.Future
 
 class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
-) extends CRUDRepository[ReportFileTable, ReportFile]
+) extends TypedCRUDRepository[ReportFileTable, ReportFile, ReportFileId]
     with ReportFileRepositoryInterface {
 
   override val table: TableQuery[ReportFileTable] = ReportFileTable.table
   import dbConfig._
 
-  override def attachFilesToReport(fileIds: List[UUID], reportId: UUID): Future[Int] = {
+  override def attachFilesToReport(fileIds: List[ReportFileId], reportId: UUID): Future[Int] = {
     val queryFile =
       for (refFile <- table.filter(_.id.inSet(fileIds)))
         yield refFile.reportId
@@ -43,7 +45,7 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .result
     ).map(events => events.groupBy(_.reportId.get))
 
-  override def setAvOutput(fileId: UUID, output: String): Future[Int] = db
+  override def setAvOutput(fileId: ReportFileId, output: String): Future[Int] = db
     .run(
       table
         .filter(_.id === fileId)
@@ -51,7 +53,7 @@ class ReportFileRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(i
         .update(Some(output))
     )
 
-  override def removeStorageFileName(fileId: UUID): Future[Int] = db
+  override def removeStorageFileName(fileId: ReportFileId): Future[Int] = db
     .run(
       table
         .filter(_.id === fileId)

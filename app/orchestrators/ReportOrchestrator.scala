@@ -1,17 +1,12 @@
 package orchestrators
 
-import actors.AntivirusScanActor
-import akka.actor.typed.ActorRef
 import akka.stream.Materializer
-import akka.stream.scaladsl.FileIO
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
-import controllers.error.AppError.AttachmentNotFound
-import controllers.error.AppError.AttachmentNotReady
 import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
@@ -26,7 +21,6 @@ import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
 import models.report.ReportFile
-import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportResponse
 import models.report.ReportResponseType
@@ -42,7 +36,6 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email.ConsumerProResponseNotification
@@ -52,7 +45,6 @@ import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.ProNewReportNotification
 import services.Email.ProResponseAcknowledgment
 import services.MailService
-import services.S3ServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -73,7 +65,7 @@ class ReportOrchestrator(
     mailService: MailService,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
-    reportFileRepository: ReportFileRepositoryInterface,
+    reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -81,8 +73,6 @@ class ReportOrchestrator(
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
-    antivirusScanActor: ActorRef[AntivirusScanActor.ScanCommand],
-    s3Service: S3ServiceInterface,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
@@ -198,8 +188,7 @@ class ReportOrchestrator(
       _ <- reportRepository.findSimilarReportCount(reportToCreate).ensure(DuplicateReportCreation)(_ == 0)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
-      _ <- reportFileRepository.attachFilesToReport(draftReport.fileIds, report.id)
-      files <- reportFileRepository.retrieveReportFiles(report.id)
+      files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
       _ <- notifyDgccrfIfNeeded(updatedReport)
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
@@ -399,38 +388,6 @@ class ReportOrchestrator(
       Future(report)
     }
 
-  def saveReportFile(filename: String, file: java.io.File, origin: ReportFileOrigin): Future[ReportFile] =
-    for {
-      reportFile <- reportFileRepository.create(
-        ReportFile(
-          UUID.randomUUID,
-          reportId = None,
-          creationDate = OffsetDateTime.now(),
-          filename = filename,
-          storageFilename = file.getName(),
-          origin = origin,
-          avOutput = None
-        )
-      )
-      _ <- FileIO
-        .fromPath(file.toPath)
-        .to(s3Service.upload(reportFile.storageFilename))
-        .run()
-      _ = logger.debug(s"Uploaded file ${reportFile.id} to S3")
-    } yield {
-      antivirusScanActor ! AntivirusScanActor.ScanFromFile(reportFile, file)
-      reportFile
-    }
-
-  def removeReportFile(id: UUID) =
-    for {
-      reportFile <- reportFileRepository.get(id)
-      res <- reportFile
-        .map(f => reportFileRepository.delete(f.id))
-        .getOrElse(Future(None))
-      _ <- reportFile.map(f => s3Service.delete(f.storageFilename)).getOrElse(Future(None))
-    } yield res
-
   private def removeAccessToken(companyId: UUID) =
     for {
       company <- companyRepository.get(companyId)
@@ -447,8 +404,7 @@ class ReportOrchestrator(
     for {
       report <- reportRepository.get(id)
       _ <- eventRepository.deleteByReportId(id)
-      reportFilesToDelete <- reportFileRepository.retrieveReportFiles(id)
-      _ <- reportFilesToDelete.map(file => removeReportFile(file.id)).sequence
+      _ <- reportFileOrchestrator.removeFromReportId(id)
       _ <- reportConsumerReviewOrchestrator.remove(id)
       _ <- reportRepository.delete(id)
       _ <- report.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
@@ -553,7 +509,7 @@ class ReportOrchestrator(
           Json.toJson(reportResponse)
         )
       )
-      _ <- reportFileRepository.attachFilesToReport(reportResponse.fileIds, report.id)
+      _ <- reportFileOrchestrator.attachFilesToReport(reportResponse.fileIds, report.id)
       updatedReport <- reportRepository.update(
         report.id,
         report.copy(
@@ -606,7 +562,7 @@ class ReportOrchestrator(
             .getOrElse(Json.toJson(reportAction))
         )
       )
-      _ <- reportFileRepository.attachFilesToReport(reportAction.fileIds, report.id)
+      _ <- reportFileOrchestrator.attachFilesToReport(reportAction.fileIds, report.id)
     } yield {
       logger.debug(
         s"Create event ${newEvent.id} on report ${report.id} for reportActionType ${reportAction.actionType}"
@@ -660,22 +616,8 @@ class ReportOrchestrator(
           validOffset,
           validLimit
         )
-      reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+      reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
 
-  def downloadReportAttachment(uuid: UUID, filename: String): Future[String] = {
-    logger.info(s"Downloading file with id $uuid")
-    reportFileRepository
-      .get(uuid)
-      .flatMap {
-        case Some(reportFile) if reportFile.filename == filename && reportFile.avOutput.isEmpty =>
-          logger.info("Attachment has not been scan by antivirus, rescheduling scan")
-          antivirusScanActor ! AntivirusScanActor.ScanFromBucket(reportFile)
-          Future.failed(AttachmentNotReady(uuid))
-        case Some(file) if file.filename == filename && file.avOutput.isDefined =>
-          Future.successful(s3Service.getSignedUrl(file.storageFilename))
-        case _ => Future.failed(AttachmentNotFound(uuid, filename))
-      }
-  }
 }

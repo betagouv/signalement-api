@@ -5,12 +5,13 @@ import models.report.ReportFileOrigin
 import repositories.PostgresProfile.api._
 import repositories.report.ReportTable
 import ReportFileColumnType._
-import repositories.DatabaseTable
+import models.report.reportfile.ReportFileId
+import repositories.TypedDatabaseTable
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ReportFileTable(tag: Tag) extends DatabaseTable[ReportFile](tag, "report_files") {
+class ReportFileTable(tag: Tag) extends TypedDatabaseTable[ReportFile, ReportFileId](tag, "report_files") {
 
   def reportId = column[Option[UUID]]("report_id")
   def creationDate = column[OffsetDateTime]("creation_date")
@@ -20,7 +21,7 @@ class ReportFileTable(tag: Tag) extends DatabaseTable[ReportFile](tag, "report_f
   def avOutput = column[Option[String]]("av_output")
   def report = foreignKey("report_files_fk", reportId, ReportTable.table)(_.id.?)
 
-  type FileData = (UUID, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
+  type FileData = (ReportFileId, Option[UUID], OffsetDateTime, String, String, ReportFileOrigin, Option[String])
 
   def constructFile: FileData => ReportFile = {
     case (id, reportId, creationDate, filename, storageFilename, origin, avOutput) =>
