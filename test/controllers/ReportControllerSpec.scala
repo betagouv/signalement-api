@@ -20,6 +20,7 @@ import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import loader.SignalConsoComponents
 import models.report.ReportFile
 import models.report.ReportFileOrigin
+import models.report.reportfile.ReportFileId
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -120,7 +121,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val report = Fixtures.genReportForCompany(company).sample.get
         val event = Fixtures.genEventForReport(report.id, EventType.PRO, POST_ACCOUNT_ACTIVATION_DOC).sample.get
         val reportFile = ReportFile(
-          UUID.randomUUID(),
+          ReportFileId.generateId(),
           Some(report.id),
           OffsetDateTime.now(),
           "fileName",

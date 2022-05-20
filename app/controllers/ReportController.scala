@@ -10,19 +10,16 @@ import models.report.ReportAction
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
-import models.report.ReportFileOrigin
 import models.report.ReportResponse
 import models.report.ReportWithFiles
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
-import play.api.libs.Files
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import play.api.mvc.MultipartFormData
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -35,7 +32,6 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
-import java.nio.file.Paths
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -126,57 +122,6 @@ class ReportController(
         .getOrElse(NotFound)
 
     }
-
-  def uploadReportFile: Action[MultipartFormData[Files.TemporaryFile]] =
-    UnsecuredAction.async(parse.multipartFormData) { request =>
-      request.body
-        .file("reportFile")
-        .filter(f =>
-          signalConsoConfiguration.upload.allowedExtensions
-            .contains(f.filename.toLowerCase.toString.split("\\.").last)
-        )
-        .map { reportFile =>
-          val filename = Paths.get(reportFile.filename).getFileName
-          val tmpFile =
-            new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
-          reportFile.ref.copyTo(tmpFile)
-          reportOrchestrator
-            .saveReportFile(
-              filename.toString,
-              tmpFile,
-              request.body.dataParts
-                .get("reportFileOrigin")
-                .map(o => ReportFileOrigin(o.head))
-                .getOrElse(ReportFileOrigin.CONSUMER)
-            )
-            .map(file => Ok(Json.toJson(file)))
-        }
-        .getOrElse(Future(InternalServerError("Echec de l'upload")))
-    }
-
-  def downloadReportFile(uuid: UUID, filename: String) = UnsecuredAction.async { _ =>
-    reportOrchestrator
-      .downloadReportAttachment(uuid, filename)
-      .map(signedUrl => Redirect(signedUrl))
-
-  }
-
-  def deleteReportFile(uuid: UUID, filename: String) = UserAwareAction.async { implicit request =>
-    reportFileRepository
-      .get(uuid)
-      .flatMap {
-        case Some(file) if file.filename == filename =>
-          (file.reportId, request.identity) match {
-            case (None, _) =>
-              reportOrchestrator.removeReportFile(uuid).map(_ => NoContent)
-            case (Some(_), Some(identity)) if identity.userRole.permissions.contains(UserPermission.deleteFile) =>
-              reportOrchestrator.removeReportFile(uuid).map(_ => NoContent)
-            case (_, _) => Future(Forbidden)
-          }
-        case _ => Future(NotFound)
-      }
-  }
-
   def getReport(uuid: UUID) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     for {
       visibleReport <- getVisibleReportForUser(uuid, request.identity)

@@ -6,10 +6,10 @@ import utils.SIRET
 import utils.URL
 import models.report.ReportTag.TranslationReportTagReads
 
-import java.util.UUID
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.report.ReportTag
+import models.report.reportfile.ReportFileId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
@@ -31,7 +31,7 @@ case class ReportDraft(
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Option[Boolean] = Some(false),
-    fileIds: List[UUID],
+    fileIds: List[ReportFileId],
     vendor: Option[String] = None,
     tags: List[ReportTag] = Nil,
     reponseconsoCode: Option[List[String]] = None,

@@ -2,16 +2,15 @@ package models.report
 
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
+import models.report.reportfile.ReportFileId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-
-import java.util.UUID
 
 case class ReportResponse(
     responseType: ReportResponseType,
     consumerDetails: String,
     dgccrfDetails: Option[String],
-    fileIds: List[UUID]
+    fileIds: List[ReportFileId]
 )
 
 object ReportResponse {
