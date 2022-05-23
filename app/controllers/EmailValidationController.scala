@@ -1,17 +1,24 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models.email.ValidateEmailCode
 import models.email.ValidateEmail
+import models.email.ValidateEmailCode
+import models.EmailValidationFilter
+import models.PaginatedSearch
+import models.UserRole
 import orchestrators.EmailValidationOrchestrator
 import play.api._
+import _root_.controllers.error.AppError.MalformedQueryParams
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import utils.silhouette.auth.AuthEnv
-
-import scala.concurrent.ExecutionContext
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
+import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.WithRole
+import models.PaginatedResult.paginatedResultWrites
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class EmailValidationController(
     val silhouette: Silhouette[AuthEnv],
@@ -32,11 +39,25 @@ class EmailValidationController(
 
   def validEmail(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
-
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()
       validationResult <- emailValidationOrchestrator.validateEmailCode(validateEmailCode)
     } yield Ok(Json.toJson(validationResult))
+  }
 
+  def search() = SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
+    EmailValidationFilter
+      .fromQueryString(request.queryString)
+      .flatMap(filters => PaginatedSearch.fromQueryString(request.queryString).map((filters, _)))
+      .fold(
+        error => {
+          logger.error("Cannot parse querystring" + request.queryString, error)
+          Future.failed(MalformedQueryParams)
+        },
+        filters =>
+          for {
+            res <- emailValidationOrchestrator.search(filters._1, filters._2)
+          } yield Ok(Json.toJson(res)(paginatedResultWrites))
+      )
   }
 }

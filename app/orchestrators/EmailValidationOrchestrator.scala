@@ -6,6 +6,9 @@ import controllers.error.AppError
 import eu.timepit.refined.api.RefType
 import models.EmailApi.EmailString
 import models.EmailValidation
+import models.EmailValidationFilter
+import models.PaginatedResult
+import models.PaginatedSearch
 import services.Email.ConsumerValidateEmail
 import services.MailService
 import utils.EmailAddress
@@ -109,4 +112,7 @@ class EmailValidationOrchestrator(
         logger.debug(s"Found email in validation email table ")
         Future(foundEmail)
     }
+
+  def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
+    emailValidationRepository.search(search, paginate)
 }

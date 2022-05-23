@@ -108,6 +108,7 @@ POST          /api/account/validate-email                       controllers.Acco
 # EmailValidation API
 POST          /api/email/check                                  controllers.EmailValidationController.checkEmail()
 POST          /api/email/validate                               controllers.EmailValidationController.validEmail()
+GET           /api/email/search                                 controllers.EmailValidationController.search()
 
 # Company details API
 POST          /api/companies                                    controllers.CompanyController.create()
