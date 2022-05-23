@@ -1,6 +1,9 @@
 package repositories.emailvalidation
 
 import models.EmailValidation
+import models.EmailValidationFilter
+import models.PaginatedResult
+import models.PaginatedSearch
 import play.api.Logger
 import repositories.CRUDRepository
 import repositories.PostgresProfile
@@ -52,4 +55,10 @@ class EmailValidationRepository(
         .headOption
     ).map(_.isDefined)
 
+  def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
+    table
+      .filterOpt(search.email)(_.email === _)
+      .filterOpt(search.validated)(_.lastValidationDate.isDefined === _)
+      .sortBy(_.creationDate.desc)
+      .withPagination(db)(paginate.offset, paginate.limit)
 }
