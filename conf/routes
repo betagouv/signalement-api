@@ -106,9 +106,10 @@ GET           /api/account/dgccrf/users                         controllers.Acco
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 
 # EmailValidation API
-POST          /api/email/check                                  controllers.EmailValidationController.checkEmail()
-POST          /api/email/validate                               controllers.EmailValidationController.validEmail()
-GET           /api/email/search                                 controllers.EmailValidationController.search()
+POST          /api/email-validation/check                                  controllers.EmailValidationController.check()
+POST          /api/email-validation/check-and-validate                               controllers.EmailValidationController.checkAndValidate()
+GET           /api/email-validation/search                                 controllers.EmailValidationController.search()
+POST           /api/email-validation/validate                                 controllers.EmailValidationController.validate()
 
 # Company details API
 POST          /api/companies                                    controllers.CompanyController.create()

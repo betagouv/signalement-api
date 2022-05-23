@@ -9,13 +9,13 @@ import models.EmailValidation
 import models.EmailValidationFilter
 import models.PaginatedResult
 import models.PaginatedSearch
-import services.Email.ConsumerValidateEmail
 import services.MailService
 import utils.EmailAddress
-import models.email.ValidateEmailCode
 import models.email.EmailValidationResult
+import models.email.ValidateEmailCode
 import play.api.Logger
 import repositories.emailvalidation.EmailValidationRepositoryInterface
+import services.Email.ConsumerValidateEmail
 
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
@@ -36,7 +36,7 @@ class EmailValidationOrchestrator(
       emailValidation <- emailValidationRepository.findByEmail(email)
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
-  def validateEmailCode(emailValidationBody: ValidateEmailCode) =
+  def checkCodeAndValidateEmail(emailValidationBody: ValidateEmailCode) =
     for {
       maybeEmailValidation <- emailValidationRepository.findByEmail(emailValidationBody.email)
       emailValidation <- maybeEmailValidation.liftTo[Future] {
@@ -44,7 +44,7 @@ class EmailValidationOrchestrator(
         AppError.EmailOrCodeIncorrect(emailValidationBody.email)
       }
       _ = logger.debug("validating code")
-      result <- validateCode(emailValidationBody, emailValidation)
+      result <- checkCodeAndValidate(emailValidationBody, emailValidation)
     } yield result
 
   def checkEmail(email: EmailAddress): Future[EmailValidationResult] = for {
@@ -55,13 +55,16 @@ class EmailValidationOrchestrator(
       } else sendValidationEmailIfNeeded(email)
   } yield result
 
-  private[this] def validateCode(emailValidationBody: ValidateEmailCode, emailValidation: EmailValidation) =
-    if (emailValidation.confirmationCode == emailValidationBody.confirmationCode)
-      emailValidationRepository.validate(emailValidationBody.email).map { _ =>
-        logger.debug("Email validated")
-        EmailValidationResult.success
-      }
-    else
+  def validateEmail(email: EmailAddress): Future[EmailValidationResult] =
+    emailValidationRepository.validate(email).map { _ =>
+      logger.debug("Email validated")
+      EmailValidationResult.success
+    }
+
+  private[this] def checkCodeAndValidate(emailValidationBody: ValidateEmailCode, emailValidation: EmailValidation) =
+    if (emailValidation.confirmationCode == emailValidationBody.confirmationCode) {
+      validateEmail(emailValidationBody.email)
+    } else
       emailValidationRepository
         .update(
           emailValidation.copy(

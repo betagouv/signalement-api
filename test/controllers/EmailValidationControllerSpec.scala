@@ -8,7 +8,7 @@ import controllers.error.AppError.InvalidEmailProvider
 import controllers.error.ErrorPayload
 import loader.SignalConsoComponents
 import models.EmailValidation
-import models.email.EmailValidationResult
+import models.email.EmailValidation
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
@@ -94,7 +94,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           val result = route(app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
-            Json.toJson(EmailValidationResult.success)
+            Json.toJson(EmailValidation.success)
           )
         }
       }
@@ -124,7 +124,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           val result = route(app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
-            Json.toJson(EmailValidationResult.success)
+            Json.toJson(EmailValidation.success)
           )
 
         }
@@ -161,7 +161,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(200)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(EmailValidationResult.failure)
+          Json.toJson(EmailValidation.failure)
         )
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true
@@ -187,7 +187,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(200)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(EmailValidationResult.failure)
+          Json.toJson(EmailValidation.failure)
         )
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true
@@ -211,7 +211,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         } yield res
         Helpers.status(result) must beEqualTo(200)
         Helpers.contentAsJson(result) must beEqualTo(
-          Json.toJson(EmailValidationResult.success)
+          Json.toJson(EmailValidation.success)
         )
       }
     }
@@ -236,7 +236,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(200)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(EmailValidationResult.success)
+          Json.toJson(EmailValidation.success)
         )
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true
@@ -285,7 +285,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
         Helpers.status(result.map(_._1)) must beEqualTo(200)
         Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
-          Json.toJson(EmailValidationResult.invalidCode)
+          Json.toJson(EmailValidation.invalidCode)
         )
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true

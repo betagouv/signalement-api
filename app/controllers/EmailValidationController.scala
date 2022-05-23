@@ -29,7 +29,7 @@ class EmailValidationController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def checkEmail(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+  def check(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("Calling checking email API")
     for {
       validateEmail <- request.parseBody[ValidateEmail]()
@@ -37,11 +37,19 @@ class EmailValidationController(
     } yield Ok(Json.toJson(validationResult))
   }
 
-  def validEmail(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
+  def checkAndValidate(): Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
     logger.debug("Calling validate email API")
     for {
       validateEmailCode <- request.parseBody[ValidateEmailCode]()
-      validationResult <- emailValidationOrchestrator.validateEmailCode(validateEmailCode)
+      validationResult <- emailValidationOrchestrator.checkCodeAndValidateEmail(validateEmailCode)
+    } yield Ok(Json.toJson(validationResult))
+  }
+
+  def validate(): Action[JsValue] = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    logger.debug("Calling validate email API")
+    for {
+      body <- request.parseBody[ValidateEmail]()
+      validationResult <- emailValidationOrchestrator.validateEmail(body.email)
     } yield Ok(Json.toJson(validationResult))
   }
 

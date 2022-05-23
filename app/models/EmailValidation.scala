@@ -24,7 +24,8 @@ object EmailValidation {
 }
 
 final case class EmailValidationFilter(
-    email: Option[EmailAddress]
+    email: Option[EmailAddress],
+    validated: Option[Boolean]
 )
 
 object EmailValidationFilter {
@@ -33,7 +34,8 @@ object EmailValidationFilter {
   def fromQueryString(q: Map[String, Seq[String]]): Try[EmailValidationFilter] = Try {
     val mapper = new QueryStringMapper(q)
     EmailValidationFilter(
-      email = mapper.string("email").map(EmailAddress(_))
+      email = mapper.string("email").map(EmailAddress(_)),
+      validated = mapper.boolean("validated")
     )
   }
 }

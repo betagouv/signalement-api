@@ -58,6 +58,7 @@ class EmailValidationRepository(
   def search(search: EmailValidationFilter, paginate: PaginatedSearch): Future[PaginatedResult[EmailValidation]] =
     table
       .filterOpt(search.email)(_.email === _)
+      .filterOpt(search.validated)(_.lastValidationDate.isDefined === _)
       .sortBy(_.creationDate.desc)
       .withPagination(db)(paginate.offset, paginate.limit)
 }
