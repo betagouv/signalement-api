@@ -173,7 +173,7 @@ class AuthOrchestrator(
       .authenticate(Credentials(login, password))
       .recoverWith {
         case e: InvalidPasswordException =>
-          logger.error("Invalid password ", e)
+          logger.warn("Invalid password ", e)
           Future.failed(InvalidPassword(login))
         case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
         case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))

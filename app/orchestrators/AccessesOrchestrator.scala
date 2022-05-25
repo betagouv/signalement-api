@@ -16,6 +16,7 @@ import models._
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.event.Event
+import models.token.AccessTokenApi
 import models.token.CompanyUserActivationToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
@@ -63,6 +64,14 @@ class AccessesOrchestrator(
   val logger = Logger(this.getClass)
   implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
+
+  def listPendingToken(company: Company, user: User): Future[List[AccessTokenApi]] =
+    for {
+      tokens <- accessTokenRepository.fetchPendingTokens(company)
+    } yield tokens
+      .map { token =>
+        AccessTokenApi(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
+      }
 
   def listAccesses(company: Company, user: User): Future[List[UserWithAccessLevel]] =
     getHeadOffice(company).flatMap {

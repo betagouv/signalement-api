@@ -118,20 +118,9 @@ class CompanyAccessController(
   }
 
   def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
-    for {
-      tokens <- accessTokenRepository.fetchPendingTokens(request.company)
-    } yield Ok(
-      Json.toJson(
-        tokens.map(token =>
-          Json.obj(
-            "id" -> token.id.toString,
-            "level" -> token.companyLevel.get.value,
-            "emailedTo" -> token.emailedTo,
-            "expirationDate" -> token.expirationDate
-          )
-        )
-      )
-    )
+    accessesOrchestrator
+      .listPendingToken(request.company, request.identity)
+      .map(tokens => Ok(Json.toJson(tokens)))
   }
 
   def removePendingToken(siret: String, tokenId: UUID) = withCompany(siret, List(AccessLevel.ADMIN)).async {
