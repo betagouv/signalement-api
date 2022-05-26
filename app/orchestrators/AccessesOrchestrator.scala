@@ -22,6 +22,7 @@ import utils.EmailAddress
 import utils.FrontRoute
 
 import java.time.Duration
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -120,8 +121,8 @@ class AccessesOrchestrator(
       token <- accessTokenRepository.create(
         AccessToken.build(
           kind = ValidateEmail,
-          token = UUID.randomUUID.toString,
-          validity = Some(Duration.ofDays(1)),
+          token = randomToken,
+          validity = tokenConfiguration.dgccrfRevalidationTokenDuration,
           companyId = None,
           level = None,
           emailedTo = Some(user.email)
@@ -130,6 +131,7 @@ class AccessesOrchestrator(
       _ <- mailService.send(
         Email.ValidateEmail(
           user,
+          tokenConfiguration.dgccrfRevalidationTokenDuration.map(_.getDays).getOrElse(7),
           frontRoute.dashboard.validateEmail(token.token)
         )
       )

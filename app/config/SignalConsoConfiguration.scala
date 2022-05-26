@@ -20,5 +20,6 @@ case class TokenConfiguration(
     companyInitDuration: Option[Period],
     companyJoinDuration: Option[Period],
     dgccrfJoinDuration: Option[Period],
-    dgccrfDelayBeforeRevalidation: Period
+    dgccrfDelayBeforeRevalidation: Period,
+    dgccrfRevalidationTokenDuration: Option[Period]
 )

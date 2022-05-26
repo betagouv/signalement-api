@@ -45,12 +45,12 @@ object Email {
       views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
   }
 
-  final case class ValidateEmail(user: User, validationUrl: URI) extends ConsumerEmail {
+  final case class ValidateEmail(user: User, daysBeforeExpiry: Int, validationUrl: URI) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.validateEmail(validationUrl).toString
+      views.html.mails.validateEmail(validationUrl, daysBeforeExpiry).toString
   }
 
   final case class ProCompanyAccessInvitation(
