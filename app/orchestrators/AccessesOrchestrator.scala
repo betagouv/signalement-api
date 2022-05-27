@@ -16,9 +16,10 @@ import models._
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.event.Event
-import models.token.AccessTokenApi
 import models.token.CompanyUserActivationToken
+import models.token.DGCCRFAccessToken
 import models.token.DGCCRFUserActivationToken
+import models.token.ProAccessToken
 import models.token.TokenKind
 import models.token.TokenKind.CompanyJoin
 import models.token.TokenKind.DGCCRFAccount
@@ -65,12 +66,20 @@ class AccessesOrchestrator(
   implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  def listPendingToken(company: Company, user: User): Future[List[AccessTokenApi]] =
+  def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]] =
     for {
       tokens <- accessTokenRepository.fetchPendingTokens(company)
     } yield tokens
       .map { token =>
-        AccessTokenApi(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
+        ProAccessToken(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
+      }
+
+  def listDGCCRFPendingToken(user: User): Future[List[DGCCRFAccessToken]] =
+    for {
+      tokens <- accessTokenRepository.fetchPendingTokensDGCCRF
+    } yield tokens
+      .map { token =>
+        DGCCRFAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
       }
 
   def listAccesses(company: Company, user: User): Future[List[UserWithAccessLevel]] =
@@ -376,17 +385,29 @@ class AccessesOrchestrator(
           Future.failed(InvalidDGCCRFEmail(email, ccrfEmailSuffix))
         }
       _ <- userRepository.list(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
+      existingTokens <- accessTokenRepository.fetchPendingTokens(email)
+      existingToken = existingTokens.find(_.emailedTo.contains(email))
       token <-
-        accessTokenRepository.create(
-          AccessToken.build(
-            kind = DGCCRFAccount,
-            token = randomToken,
-            validity = tokenConfiguration.dgccrfJoinDuration,
-            companyId = None,
-            level = None,
-            emailedTo = Some(email)
-          )
-        )
+        existingToken match {
+          case Some(token) =>
+            logger.debug("reseting token validity")
+            accessTokenRepository.update(
+              token.id,
+              AccessToken.resetExpirationDate(token, tokenConfiguration.dgccrfJoinDuration)
+            )
+          case None =>
+            logger.debug("creating token")
+            accessTokenRepository.create(
+              AccessToken.build(
+                kind = DGCCRFAccount,
+                token = randomToken,
+                validity = tokenConfiguration.dgccrfJoinDuration,
+                companyId = None,
+                level = None,
+                emailedTo = Some(email)
+              )
+            )
+        }
       _ <- mailService.send(
         DgccrfAccessLink(recipient = email, invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token))
       )
@@ -421,4 +442,33 @@ class AccessesOrchestrator(
       logger.debug(s"Validated email ${token.emailedTo.get}")
       u
     }
+
+  def resetLastEmailValidation(email: EmailAddress): Future[User] = for {
+    tokens <- accessTokenRepository.fetchPendingTokens(email)
+    _ = logger.debug("Fetching email validation token")
+    emailValidationToken = tokens.filter(_.kind == ValidateEmail)
+    _ = logger.debug(s"Found email validation token : $emailValidationToken")
+    _ = println(s"Found email validation token : $emailValidationToken")
+    _ = logger.debug(s"Fetching user for $email")
+    maybeUser <- userRepository
+      .findByLogin(email.value)
+      .ensure {
+        logger.error("Cannot revalidate user with role different from DGCCRF")
+        println("Cannot revalidate user with role different from DGCCRF")
+        CantPerformAction
+      }(_.exists(_.userRole == UserRole.DGCCRF))
+    user <- maybeUser.liftTo[Future] {
+      logger.error(s"User with email $email does not exist")
+      println(s"User with email $email does not exist")
+      CantPerformAction
+    }
+    _ = logger.debug(s"Validating DGCCRF user email")
+    _ = println(s"Validating DGCCRF user email")
+    _ <-
+      if (emailValidationToken.nonEmpty) {
+        emailValidationToken.map(accessTokenRepository.useEmailValidationToken(_, user)).sequence
+      } else accessTokenRepository.updateLastEmailValidation(user)
+    _ = logger.debug(s"Successfully validated email ${email}")
+    _ = println(s"Successfully validated email ${email}")
+  } yield user
 }

@@ -54,6 +54,7 @@ class AccountController(
     } yield NoContent
 
   }
+
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
       request.body
@@ -63,21 +64,13 @@ class AccountController(
           email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
         )
   }
-  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
-    for {
-      accessToken <- accessTokenRepository.fetchPendingTokensDGCCRF
-    } yield Ok(
-      Json.toJson(
-        accessToken.map(t =>
-          Json.obj(
-            "email" -> t.emailedTo,
-            "tokenCreation" -> t.creationDate,
-            "tokenExpiration" -> t.expirationDate
-          )
-        )
-      )
-    )
+
+  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
+    accessesOrchestrator
+      .listDGCCRFPendingToken(request.identity)
+      .map(tokens => Ok(Json.toJson(tokens)))
   }
+
   def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
       users <- userRepository.list(UserRole.DGCCRF)
@@ -94,13 +87,14 @@ class AccountController(
       )
     )
   }
+
   def fetchTokenInfo(token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>
+  def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     request.body
       .validate[String]((JsPath \ "token").read[String])
       .fold(
@@ -126,4 +120,8 @@ class AccountController(
       )
   }
 
+  def forceValidateEmail(email: String) =
+    SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
+      accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
+    }
 }

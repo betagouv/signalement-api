@@ -213,18 +213,23 @@ class AccessTokenRepository(
   override def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchValidActivationToken(company.id).map(_.map(_.token))
 
+  override def updateLastEmailValidation(user: User): Future[Boolean] =
+    db.run(resetLastEmailValidation(user)).map(_ => true)
+
   override def useEmailValidationToken(token: AccessToken, user: User): Future[Boolean] =
     db.run(
       DBIO
         .seq(
-          UserTable.table
-            .filter(_.id === user.id)
-            .map(_.lastEmailValidation)
-            .update(Some(OffsetDateTime.now(ZoneOffset.UTC))),
+          resetLastEmailValidation(user),
           table.filter(_.id === token.id).map(_.valid).update(false)
         )
         .transactionally
     ).map(_ => true)
+
+  private def resetLastEmailValidation(user: User) = UserTable.table
+    .filter(_.id === user.id)
+    .map(_.lastEmailValidation)
+    .update(Some(OffsetDateTime.now(ZoneOffset.UTC)))
 
   override def dgccrfAccountsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""

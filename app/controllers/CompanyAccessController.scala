@@ -119,7 +119,7 @@ class CompanyAccessController(
 
   def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     accessesOrchestrator
-      .listPendingToken(request.company, request.identity)
+      .listProPendingToken(request.company, request.identity)
       .map(tokens => Ok(Json.toJson(tokens)))
   }
 

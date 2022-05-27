@@ -57,4 +57,6 @@ trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken
   def dgccrfActiveAccountsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]]
 
   def dgccrfControlsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]]
+
+  def updateLastEmailValidation(user: User): Future[Boolean]
 }
