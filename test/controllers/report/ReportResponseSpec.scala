@@ -2,7 +2,6 @@ package controllers.report
 
 import java.net.URI
 import java.time.OffsetDateTime
-import java.util.UUID
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -16,6 +15,7 @@ import models.report.ReportFileOrigin
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
+import models.report.reportfile.ReportFileId
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -274,7 +274,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   var someResult: Option[Result] = None
 
   val reportResponseFile = ReportFile(
-    UUID.randomUUID(),
+    ReportFileId.generateId(),
     None,
     OffsetDateTime.now,
     "fichier.jpg",

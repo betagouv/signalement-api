@@ -1,20 +1,21 @@
 package repositories.reportfile
 
 import models.report.ReportFile
-import repositories.CRUDRepositoryInterface
+import models.report.reportfile.ReportFileId
+import repositories.TypedCRUDRepositoryInterface
 
 import java.util.UUID
 import scala.concurrent.Future
 
-trait ReportFileRepositoryInterface extends CRUDRepositoryInterface[ReportFile] {
+trait ReportFileRepositoryInterface extends TypedCRUDRepositoryInterface[ReportFile, ReportFileId] {
 
-  def attachFilesToReport(fileIds: List[UUID], reportId: UUID): Future[Int]
+  def attachFilesToReport(fileIds: List[ReportFileId], reportId: UUID): Future[Int]
 
   def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]]
 
   def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]]
 
-  def setAvOutput(fileId: UUID, output: String): Future[Int]
+  def setAvOutput(fileId: ReportFileId, output: String): Future[Int]
 
-  def removeStorageFileName(fileId: UUID): Future[Int]
+  def removeStorageFileName(fileId: ReportFileId): Future[Int]
 }

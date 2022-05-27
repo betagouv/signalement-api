@@ -15,7 +15,7 @@ GET           /api/stats/reports/status                         controllers.Stat
 GET           /api/stats/reports/reviews                        controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat(ticks: Option[Int])
 GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]])
-GET           /api/stats/pro-account-rate                      controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
+GET           /api/stats/pro-account-rate                       controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
 GET           /api/stats/dgccrf-account                         controllers.StatisticController.dgccrfAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-active-account                  controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-subscriptions                   controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
@@ -28,9 +28,9 @@ GET           /api/reports                                      controllers.Repo
 POST          /api/reports/extract                              controllers.ReportListController.extractReports()
 
 # Report API
-GET           /api/reports/files/:uuid/:filename                controllers.ReportController.downloadReportFile(uuid: java.util.UUID, filename)
-DELETE        /api/reports/files/:uuid/:filename                controllers.ReportController.deleteReportFile(uuid: java.util.UUID, filename)
-POST          /api/reports/files                                controllers.ReportController.uploadReportFile()
+GET           /api/reports/files/:uuid/:filename                controllers.ReportFileController.downloadReportFile(uuid: ReportFileId, filename)
+DELETE        /api/reports/files/:uuid/:filename                controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
+POST          /api/reports/files                                controllers.ReportFileController.uploadReportFile()
 
 GET           /api/reports/:uuid                                controllers.ReportController.getReport(uuid: java.util.UUID)
 GET           /api/reports/:uuid/download                       controllers.ReportController.reportAsPDF(uuid: java.util.UUID)
@@ -106,8 +106,10 @@ GET           /api/account/dgccrf/users                         controllers.Acco
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 
 # EmailValidation API
-POST          /api/email/check                                  controllers.EmailValidationController.checkEmail()
-POST          /api/email/validate                               controllers.EmailValidationController.validEmail()
+POST          /api/email-validation/check                       controllers.EmailValidationController.check()
+POST          /api/email-validation/validate                    controllers.EmailValidationController.validate()
+POST          /api/email-validation/check-and-validate          controllers.EmailValidationController.checkAndValidate()
+GET           /api/email-validation/search                      controllers.EmailValidationController.search()
 
 # Company details API
 POST          /api/companies                                    controllers.CompanyController.create()

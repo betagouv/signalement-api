@@ -1,5 +1,6 @@
 package models.report
 
+import models.report.reportfile.ReportFileId
 import play.api.libs.json._
 
 import java.time.OffsetDateTime
@@ -18,7 +19,7 @@ object ReportFileOrigin {
 }
 
 case class ReportFile(
-    id: UUID,
+    id: ReportFileId,
     reportId: Option[UUID],
     creationDate: OffsetDateTime,
     filename: String,

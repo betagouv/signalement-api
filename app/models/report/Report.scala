@@ -8,6 +8,7 @@ import models.Company
 import models.PaginatedResult
 import models.UserRole
 import models.report.ReportTag.jsonFormat
+import models.report.reportfile.ReportFileId
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
@@ -196,7 +197,7 @@ object ReportConsumerUpdate {
 case class ReportAction(
     actionType: ActionEventValue,
     details: Option[String],
-    fileIds: List[UUID]
+    fileIds: List[ReportFileId]
 )
 
 object ReportAction {
