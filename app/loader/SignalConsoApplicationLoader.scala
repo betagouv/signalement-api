@@ -383,7 +383,6 @@ class SignalConsoComponents(
   val accountController = new AccountController(
     silhouette,
     userRepository,
-    accessTokenRepository,
     accessesOrchestrator,
     emailConfiguration,
     controllerComponents

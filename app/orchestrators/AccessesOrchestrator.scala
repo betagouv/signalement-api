@@ -434,14 +434,21 @@ class AccessesOrchestrator(
       )
     } yield logger.debug(s"Sent email validation to ${user.email}")
 
-  def validateEmail(token: AccessToken): Future[Option[User]] =
+  def validateEmail(token: String): Future[User] =
     for {
-      u <- userRepository.findByLogin(token.emailedTo.map(_.toString).get)
-      _ <- u.map(accessTokenRepository.useEmailValidationToken(token, _)).getOrElse(Future(false))
-    } yield {
-      logger.debug(s"Validated email ${token.emailedTo.get}")
-      u
-    }
+      accessToken <- accessTokenRepository.findToken(token)
+      emailValidationToken <- accessToken
+        .filter(_.kind == ValidateEmail)
+        .liftTo[Future](DGCCRFActivationTokenNotFound(token))
+
+      emailTo <- emailValidationToken.emailedTo.liftTo[Future](
+        ServerError("ValidateEmailToken should have valid email associated")
+      )
+      maybeUser <- userRepository.findByLogin(emailTo.value)
+      user <- maybeUser.liftTo[Future](UserNotFound(emailTo.value))
+      _ <- accessTokenRepository.useEmailValidationToken(emailValidationToken, user)
+      _ = logger.debug(s"Validated email ${emailValidationToken.emailedTo.get}")
+    } yield user
 
   def resetLastEmailValidation(email: EmailAddress): Future[User] = for {
     tokens <- accessTokenRepository.fetchPendingTokens(email)

@@ -162,7 +162,7 @@ class CompanyAccessController(
                   .findValidToken(_, acceptTokenRequest.token)
                   .map(
                     _.filter(
-                      _.emailedTo.filter(email => email != request.identity.email).isEmpty
+                      _.emailedTo.filter(_ != request.identity.email).isEmpty
                     )
                   )
               )

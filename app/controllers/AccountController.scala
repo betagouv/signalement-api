@@ -6,26 +6,21 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import config.EmailConfiguration
 import models._
-import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
-import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class AccountController(
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
-    accessTokenRepository: AccessTokenRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     emailConfiguration: EmailConfiguration,
     controllerComponents: ControllerComponents
@@ -57,12 +52,9 @@ class AccountController(
 
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
-      request.body
-        .validate[EmailAddress]((JsPath \ "email").read[EmailAddress])
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
-        )
+      request
+        .parseBody[EmailAddress]((JsPath \ "email"))
+        .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
   }
 
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
@@ -95,29 +87,14 @@ class AccountController(
   }
 
   def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[String]((JsPath \ "token").read[String])
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        token =>
-          for {
-            accessToken <- accessTokenRepository.findToken(token)
-            oUser <- accessToken
-              .filter(_.kind == ValidateEmail)
-              .map(accessesOrchestrator.validateEmail)
-              .getOrElse(Future(None))
-            authToken <- oUser
-              .map(user =>
-                silhouette.env.authenticatorService
-                  .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
-                  .flatMap { authenticator =>
-                    silhouette.env.eventBus.publish(LoginEvent(user, request))
-                    silhouette.env.authenticatorService.init(authenticator).map(Some(_))
-                  }
-              )
-              .getOrElse(Future(None))
-          } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
-      )
+    for {
+      token <- request.parseBody[String]((JsPath \ "token"))
+      user <- accessesOrchestrator.validateEmail(token)
+      authenticator <- silhouette.env.authenticatorService
+        .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
+      _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
+      authToken <- silhouette.env.authenticatorService.init(authenticator)
+    } yield Ok(Json.obj("token" -> authToken, "user" -> user))
   }
 
   def forceValidateEmail(email: String) =
