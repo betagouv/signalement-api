@@ -6,27 +6,23 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import config.EmailConfiguration
 import models._
-import models.token.TokenKind.ValidateEmail
 import orchestrators._
 import play.api._
-import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
-import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 class AccountController(
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
-    accessTokenRepository: AccessTokenRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
+    proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     emailConfiguration: EmailConfiguration,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -50,34 +46,28 @@ class AccountController(
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()
-      _ <- accessesOrchestrator.handleActivationRequest(activationRequest)
+      _ <- activationRequest.companySiret match {
+        case Some(siret) =>
+          proAccessTokenOrchestrator.activateProUser(activationRequest.draftUser, activationRequest.token, siret)
+        case None => accessesOrchestrator.activateDGCCRFUser(activationRequest.draftUser, activationRequest.token)
+      }
     } yield NoContent
 
   }
+
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
-      request.body
-        .validate[EmailAddress]((JsPath \ "email").read[EmailAddress])
-        .fold(
-          errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok)
-        )
+      request
+        .parseBody[EmailAddress]((JsPath \ "email"))
+        .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
   }
-  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
-    for {
-      accessToken <- accessTokenRepository.fetchPendingTokensDGCCRF
-    } yield Ok(
-      Json.toJson(
-        accessToken.map(t =>
-          Json.obj(
-            "email" -> t.emailedTo,
-            "tokenCreation" -> t.creationDate,
-            "tokenExpiration" -> t.expirationDate
-          )
-        )
-      )
-    )
+
+  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
+    accessesOrchestrator
+      .listDGCCRFPendingToken(request.identity)
+      .map(tokens => Ok(Json.toJson(tokens)))
   }
+
   def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
     for {
       users <- userRepository.list(UserRole.DGCCRF)
@@ -94,36 +84,26 @@ class AccountController(
       )
     )
   }
+
   def fetchTokenInfo(token: String) = UnsecuredAction.async { _ =>
     accessesOrchestrator
       .fetchDGCCRFUserActivationToken(token)
       .map(token => Ok(Json.toJson(token)))
   }
 
-  def validateEmail = UnsecuredAction.async(parse.json) { implicit request =>
-    request.body
-      .validate[String]((JsPath \ "token").read[String])
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        token =>
-          for {
-            accessToken <- accessTokenRepository.findToken(token)
-            oUser <- accessToken
-              .filter(_.kind == ValidateEmail)
-              .map(accessesOrchestrator.validateEmail)
-              .getOrElse(Future(None))
-            authToken <- oUser
-              .map(user =>
-                silhouette.env.authenticatorService
-                  .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
-                  .flatMap { authenticator =>
-                    silhouette.env.eventBus.publish(LoginEvent(user, request))
-                    silhouette.env.authenticatorService.init(authenticator).map(Some(_))
-                  }
-              )
-              .getOrElse(Future(None))
-          } yield authToken.map(token => Ok(Json.obj("token" -> token, "user" -> oUser.get))).getOrElse(NotFound)
-      )
+  def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
+    for {
+      token <- request.parseBody[String]((JsPath \ "token"))
+      user <- accessesOrchestrator.validateDGCCRFEmail(token)
+      authenticator <- silhouette.env.authenticatorService
+        .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
+      _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
+      authToken <- silhouette.env.authenticatorService.init(authenticator)
+    } yield Ok(Json.obj("token" -> authToken, "user" -> user))
   }
 
+  def forceValidateEmail(email: String) =
+    SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
+      accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
+    }
 }

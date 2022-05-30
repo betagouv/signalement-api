@@ -24,6 +24,7 @@ import config.BucketConfiguration
 import config.SignalConsoConfiguration
 import config.TaskConfiguration
 import config.UploadConfiguration
+import orchestrators.ProAccessTokenOrchestrator
 import orchestrators._
 import play.api._
 import play.api.db.slick.DbName
@@ -247,13 +248,26 @@ class SignalConsoComponents(
   )
 
   // Orchestrator
-  val accessesOrchestrator = new AccessesOrchestrator(
+
+  val userOrchestrator = new UserOrchestrator(userRepository)
+
+  val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
+    userOrchestrator,
     companyRepository,
     companyAccessRepository,
     companyDataRepository,
     accessTokenRepository,
     userRepository,
     eventRepository,
+    mailService,
+    frontRoute,
+    emailConfiguration,
+    tokenConfiguration
+  )
+
+  val accessesOrchestrator = new AccessesOrchestrator(
+    userOrchestrator,
+    accessTokenRepository,
     mailService,
     frontRoute,
     emailConfiguration,
@@ -276,7 +290,13 @@ class SignalConsoComponents(
     new CompaniesVisibilityOrchestrator(companyDataRepository, companyRepository, companyAccessRepository)
 
   val companyAccessOrchestrator =
-    new CompanyAccessOrchestrator(companyRepository, accessTokenRepository, accessesOrchestrator)
+    new CompanyAccessOrchestrator(
+      companyDataRepository,
+      companyAccessRepository,
+      companyRepository,
+      accessTokenRepository,
+      proAccessTokenOrchestrator
+    )
 
   private val taskConfiguration: TaskConfiguration = applicationConfiguration.task
   val companyOrchestrator = new CompanyOrchestrator(
@@ -383,8 +403,8 @@ class SignalConsoComponents(
   val accountController = new AccountController(
     silhouette,
     userRepository,
-    accessTokenRepository,
     accessesOrchestrator,
+    proAccessTokenOrchestrator,
     emailConfiguration,
     controllerComponents
   )
@@ -410,7 +430,7 @@ class SignalConsoComponents(
       companyRepository,
       companyAccessRepository,
       accessTokenRepository,
-      accessesOrchestrator,
+      proAccessTokenOrchestrator,
       companiesVisibilityOrchestrator,
       companyAccessOrchestrator,
       silhouette,

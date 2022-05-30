@@ -19,8 +19,6 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def updatePassword(userId: UUID, password: String): Future[Int]
 
-  def list(email: EmailAddress): Future[Seq[User]]
-
   def delete(email: EmailAddress): Future[Int]
 
   def findByLogin(login: String): Future[Option[User]]

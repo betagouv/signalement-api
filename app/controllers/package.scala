@@ -3,6 +3,7 @@ import controllers.error.AppError.MalformedBody
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsError
+import play.api.libs.json.JsPath
 import play.api.libs.json.JsValue
 import play.api.libs.json.Reads
 import play.api.mvc.PathBindable
@@ -58,11 +59,13 @@ package object controllers {
       )
 
   implicit class RequestOps[T <: JsValue](request: Request[T])(implicit ec: ExecutionContext) {
-    def parseBody[B]()(implicit reads: Reads[B]) = request.body
-      .validate[B]
+    def parseBody[B](path: JsPath = JsPath())(implicit reads: Reads[B]) = request.body
+      .validate[B](path.read[B])
       .asEither
       .leftMap { errors =>
-        logger.error(s"Malformed request body  [error : ${JsError.toJson(errors)} , body ${request.body} ]")
+        logger.error(
+          s"Malformed request body path ${path} [error : ${JsError.toJson(errors)} , body ${request.body} ]"
+        )
         MalformedBody
       }
       .liftTo[Future]
