@@ -166,7 +166,6 @@ class AccessesOrchestrator(
     _ = logger.debug(s"Validating DGCCRF user email")
     _ <-
       if (emailValidationToken.nonEmpty) {
-        println(s"------------------  = $emailValidationToken ------------------")
         emailValidationToken.map(accessTokenRepository.validateEmail(_, user)).sequence
       } else accessTokenRepository.updateLastEmailValidation(user)
     _ = logger.debug(s"Successfully validated email ${email}")
