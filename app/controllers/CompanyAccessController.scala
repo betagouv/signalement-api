@@ -3,9 +3,9 @@ package controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import models.access.ActivationLinkRequest
-import orchestrators.AccessesOrchestrator
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
+import orchestrators.ProAccessTokenOrchestrator
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Json
@@ -28,7 +28,7 @@ class CompanyAccessController(
     val companyRepository: CompanyRepositoryInterface,
     val companyAccessRepository: CompanyAccessRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
-    val accessesOrchestrator: AccessesOrchestrator,
+    val accessesOrchestrator: ProAccessTokenOrchestrator,
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
     val companyAccessOrchestrator: CompanyAccessOrchestrator,
     val silhouette: Silhouette[AuthEnv],
@@ -39,14 +39,14 @@ class CompanyAccessController(
   val logger: Logger = Logger(this.getClass())
 
   def listAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
-    accessesOrchestrator
+    companyAccessOrchestrator
       .listAccesses(request.company, request.identity)
       .map(userWithAccessLevel => Ok(Json.toJson(userWithAccessLevel)))
   }
 
   def countAccesses(siret: String) = withCompany(siret, List(AccessLevel.ADMIN, AccessLevel.MEMBER)).async {
     implicit request =>
-      accessesOrchestrator
+      companyAccessOrchestrator
         .listAccesses(request.company, request.identity)
         .map(_.length)
         .map(count => Ok(Json.toJson(count)))

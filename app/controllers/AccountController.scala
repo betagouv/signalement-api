@@ -22,6 +22,7 @@ class AccountController(
     val silhouette: Silhouette[AuthEnv],
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
+    proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
     emailConfiguration: EmailConfiguration,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -45,7 +46,11 @@ class AccountController(
   def activateAccount = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       activationRequest <- request.parseBody[ActivationRequest]()
-      _ <- accessesOrchestrator.handleActivationRequest(activationRequest)
+      _ <- activationRequest.companySiret match {
+        case Some(siret) =>
+          proAccessTokenOrchestrator.activateProUser(activationRequest.draftUser, activationRequest.token, siret)
+        case None => accessesOrchestrator.activateDGCCRFUser(activationRequest.draftUser, activationRequest.token)
+      }
     } yield NoContent
 
   }
@@ -89,7 +94,7 @@ class AccountController(
   def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     for {
       token <- request.parseBody[String]((JsPath \ "token"))
-      user <- accessesOrchestrator.validateEmail(token)
+      user <- accessesOrchestrator.validateDGCCRFEmail(token)
       authenticator <- silhouette.env.authenticatorService
         .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
       _ = silhouette.env.eventBus.publish(LoginEvent(user, request))

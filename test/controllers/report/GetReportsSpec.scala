@@ -88,21 +88,6 @@ class GetReportsByProUserWithInvalidStatusFilter(implicit ee: ExecutionEnv) exte
     """
 }
 
-class GetReportsByProWithAccessToSubsidiary(implicit ee: ExecutionEnv) extends GetReportsSpec {
-  override def is =
-    s2"""
-         Given an authenticated pro user who only access to the subsidiary      ${step {
-        someLoginInfo = Some(loginInfo(proUserWithAccessToSubsidiary))
-      }}
-         When retrieving reports                                                ${step {
-        someResult = Some(getReports())
-      }}
-         Then subsidiary reports are rendered to the user as a Pro              ${reportsMustBeRenderedForUser(
-        proUserWithAccessToSubsidiary
-      )}
-    """
-}
-
 class GetReportsByProWithoutAccessNone(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =
     s2"""

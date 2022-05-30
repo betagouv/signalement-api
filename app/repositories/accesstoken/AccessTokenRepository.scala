@@ -216,7 +216,7 @@ class AccessTokenRepository(
   override def updateLastEmailValidation(user: User): Future[Boolean] =
     db.run(resetLastEmailValidation(user)).map(_ => true)
 
-  override def useEmailValidationToken(token: AccessToken, user: User): Future[Boolean] =
+  override def validateEmail(token: AccessToken, user: User): Future[Boolean] =
     db.run(
       DBIO
         .seq(
