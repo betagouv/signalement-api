@@ -9,7 +9,7 @@ import utils.EmailAddress
 import java.time.OffsetDateTime
 import java.util.UUID
 
-case class AccessTokenApi private (
+case class ProAccessToken private (
     id: UUID,
     level: Option[AccessLevel],
     emailedTo: Option[EmailAddress],
@@ -17,7 +17,7 @@ case class AccessTokenApi private (
     token: Option[String]
 )
 
-object AccessTokenApi {
+object ProAccessToken {
   def apply(
       id: UUID,
       level: Option[AccessLevel],
@@ -25,11 +25,11 @@ object AccessTokenApi {
       expirationDate: Option[OffsetDateTime],
       token: String,
       userRole: UserRole
-  ): AccessTokenApi =
+  ): ProAccessToken =
     userRole match {
-      case UserRole.Admin => new AccessTokenApi(id, level, emailedTo, expirationDate, Some(token))
-      case _              => new AccessTokenApi(id, level, emailedTo, expirationDate, token = None)
+      case UserRole.Admin => new ProAccessToken(id, level, emailedTo, expirationDate, Some(token))
+      case _              => new ProAccessToken(id, level, emailedTo, expirationDate, token = None)
     }
 
-  implicit val AccessTokenApiFormat: OFormat[AccessTokenApi] = Json.format[AccessTokenApi]
+  implicit val ProAccessTokenFormat: OFormat[ProAccessToken] = Json.format[ProAccessToken]
 }

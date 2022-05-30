@@ -22,13 +22,13 @@ class MailService(
 )(implicit
     val frontRoute: FrontRoute,
     private[this] val executionContext: ExecutionContext
-) {
+) extends MailServiceInterface {
 
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = emailConfiguration.from
   implicit private[this] val contactAddress = emailConfiguration.contactAddress
 
-  def send(
+  override def send(
       email: Email
   ): Future[Unit] = email match {
     case email: ProFilteredEmail => filterBlockedAndSend(email)

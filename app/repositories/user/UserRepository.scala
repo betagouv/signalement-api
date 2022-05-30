@@ -70,9 +70,6 @@ class UserRepository(
     )
   }
 
-  override def list(email: EmailAddress): Future[Seq[User]] = db
-    .run(table.filter(_.email === email).result)
-
   override def delete(email: EmailAddress): Future[Int] = db
     .run(table.filter(_.email === email).delete)
 
