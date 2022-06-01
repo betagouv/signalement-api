@@ -218,7 +218,7 @@ trait GetReportSpec extends Spec with GetReportContext {
         any[Seq[EmailAddress]],
         anyString,
         anyString,
-        any
+        any[Seq[Attachment]]
       )
 
   def reportStatusMustMatch(id: UUID, status: ReportStatus) = {

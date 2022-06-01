@@ -17,6 +17,7 @@ import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
+import scala.annotation.nowarn
 
 case class Report(
     id: UUID = UUID.randomUUID(),
@@ -69,6 +70,7 @@ case class Report(
 
 object Report {
 
+  @nowarn
   private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
   implicit val reportReads: Reads[Report] = jsonFormatX
 

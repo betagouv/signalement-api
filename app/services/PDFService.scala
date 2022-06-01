@@ -39,7 +39,13 @@ class PDFService(
       converterProperties
     )
     logger.debug(f"Generated ${tmpFileName}")
-    play.api.mvc.Results.Ok.sendFile(new File(tmpFileName), onClose = () => new File(tmpFileName).delete)
+    play.api.mvc.Results.Ok.sendFile(
+      new File(tmpFileName),
+      onClose = () => {
+        new File(tmpFileName).delete
+        ()
+      }
+    )
   }
 
   def getPdfData(htmlDocument: HtmlFormat.Appendable) = {

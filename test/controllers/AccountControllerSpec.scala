@@ -206,5 +206,8 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  override def afterAll(): Unit = app.stop()
+  override def afterAll(): Unit = {
+    app.stop()
+    ()
+  }
 }

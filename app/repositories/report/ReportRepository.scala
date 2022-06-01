@@ -73,7 +73,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .run(
         queryFilter(filter)
           .filter(report =>
-            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks).withDayOfMonth(1)
+            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong).withDayOfMonth(1)
           )
           .groupBy(report =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
@@ -82,7 +82,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           .result
       )
       .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
-      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i).withDayOfMonth(1)))
+      .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i.toLong).withDayOfMonth(1)))
 
   def getDailyCount(
       filter: ReportFilter,
@@ -104,7 +104,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
     .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
-    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i)))
+    .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i.toLong)))
 
   private[this] def fillFullPeriod(
       ticks: Int,

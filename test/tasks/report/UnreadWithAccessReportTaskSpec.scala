@@ -302,7 +302,7 @@ abstract class UnreadWithAccessReportTaskSpec(implicit ee: ExecutionEnv)
         any[Seq[EmailAddress]],
         anyString,
         anyString,
-        any
+        any[Seq[Attachment]]
       )
 
   val noTaskProcessed = Valid(List.empty[Task])

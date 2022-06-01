@@ -1,6 +1,5 @@
 package orchestrators
 
-import akka.stream.Materializer
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
@@ -76,7 +75,7 @@ class ReportOrchestrator(
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val executionContext: ExecutionContext, mat: Materializer) {
+)(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
   implicit val timeout: akka.util.Timeout = 5.seconds
