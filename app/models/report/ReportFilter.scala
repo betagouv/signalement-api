@@ -25,10 +25,12 @@ case class ReportFilter(
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
+    contactAgreement: Option[Boolean] = None,
     hasForeignCountry: Option[Boolean] = None,
     hasWebsite: Option[Boolean] = None,
     hasPhone: Option[Boolean] = None,
     hasCompany: Option[Boolean] = None,
+    hasAttachment: Option[Boolean] = None,
     withTags: Seq[ReportTag] = Seq.empty,
     withoutTags: Seq[ReportTag] = Seq.empty,
     activityCodes: Seq[String] = Seq.empty
@@ -63,6 +65,8 @@ object ReportFilter {
       hasWebsite = mapper.boolean("hasWebsite"),
       hasPhone = mapper.boolean("hasPhone"),
       hasCompany = mapper.boolean("hasCompany"),
+      hasAttachment = mapper.boolean("hasAttachment"),
+      contactAgreement = mapper.boolean("contactAgreement"),
       withTags = mapper.seq("withTags").map(ReportTag.withName),
       withoutTags = mapper.seq("withoutTags").map(ReportTag.withName),
       activityCodes = mapper.seq("activityCodes")
