@@ -1,6 +1,7 @@
 package controllers.error
 
 import models.report.reportfile.ReportFileId
+import models.website.WebsiteId
 import utils.EmailAddress
 import utils.SIRET
 
@@ -47,9 +48,9 @@ object AppError {
     override val details: String = s"Le SIRET ${siret.value} ne correspond à aucune entreprise connue"
   }
 
-  final case class WebsiteNotFound(websiteId: UUID) extends NotFoundError {
+  final case class WebsiteNotFound(websiteId: WebsiteId) extends NotFoundError {
     override val `type`: String = "SC-0005"
-    override val title: String = s"Website ${websiteId.toString} not found"
+    override val title: String = s"Website ${websiteId.value.toString} not found"
     override val details: String = "L'association site internet n'existe pas."
   }
 

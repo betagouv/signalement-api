@@ -20,7 +20,6 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -45,7 +44,7 @@ class WebsiteController(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
-    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -85,35 +84,37 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    websitesOrchestrator
-      .updateWebsiteKind(uuid, kind)
-      .map(website => Ok(Json.toJson(website)))
+  def updateWebsiteKind(websiteId: WebsiteId, kind: WebsiteKind) =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+      websitesOrchestrator
+        .updateWebsiteKind(websiteId, kind)
+        .map(website => Ok(Json.toJson(website)))
+    }
+
+  def updateCompany(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+    implicit request =>
+      request.body
+        .validate[CompanyCreation]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          company =>
+            websitesOrchestrator
+              .updateCompany(websiteId, company)
+              .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
+        )
   }
 
-  def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    request.body
-      .validate[CompanyCreation]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        company =>
-          websitesOrchestrator
-            .updateCompany(uuid, company)
-            .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-      )
-  }
-
-  def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
-    _ =>
+  def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
-  }
+    }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+  def remove(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     websiteRepository
-      .delete(uuid)
+      .delete(websiteId)
       .map(_ => Ok)
   }
 }

@@ -1,5 +1,6 @@
 import controllers.error.AppError.MalformedBody
 
+import models.website.WebsiteId
 import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -42,6 +43,13 @@ package object controllers {
       .transform[ReportFileId](
         id => ReportFileId(extractUUID(id)),
         reportFileId => reportFileId.value.toString
+      )
+
+  implicit val WebsiteIdPathBindable =
+    PathBindable.bindableString
+      .transform[WebsiteId](
+        id => WebsiteId(extractUUID(id)),
+        websiteId => websiteId.value.toString
       )
 
   implicit val SIRETPathBindable =

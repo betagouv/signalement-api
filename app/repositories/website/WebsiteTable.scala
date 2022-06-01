@@ -1,15 +1,16 @@
 package repositories.website
 
 import models.website.Website
+import models.website.WebsiteId
 import models.website.WebsiteKind
 import repositories.PostgresProfile.api._
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import WebsiteColumnType.WebsiteKindColumnType
-import repositories.DatabaseTable
+import WebsiteColumnType._
+import repositories.TypedDatabaseTable
 
-class WebsiteTable(tag: Tag) extends DatabaseTable[Website](tag, "websites") {
+class WebsiteTable(tag: Tag) extends TypedDatabaseTable[Website, WebsiteId](tag, "websites") {
   def creationDate = column[OffsetDateTime]("creation_date")
   def host = column[String]("host")
   def companyCountry = column[Option[String]]("company_country")

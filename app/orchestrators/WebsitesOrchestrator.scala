@@ -14,7 +14,6 @@ import repositories.website.WebsiteRepositoryInterface
 import utils.Country
 import utils.URL
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -47,7 +46,7 @@ class WebsitesOrchestrator(
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
 
-  def updateWebsiteKind(websiteId: UUID, kind: WebsiteKind): Future[Website] = for {
+  def updateWebsiteKind(websiteId: WebsiteId, kind: WebsiteKind): Future[Website] = for {
     website <- findWebsite(websiteId)
     _ = logger.debug(s"Updating website kind to ${kind}")
     updatedWebsite = website.copy(kind = kind)
@@ -60,7 +59,7 @@ class WebsitesOrchestrator(
       } else Future.successful(())
   } yield updatedWebsite
 
-  def updateCompany(websiteId: UUID, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
+  def updateCompany(websiteId: WebsiteId, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
     company <- {
       logger.debug(s"Updating website id ${websiteId} with company siret : ${companyToAssign.siret}")
       getOrCreateCompay(companyToAssign)
@@ -75,9 +74,9 @@ class WebsitesOrchestrator(
     _ = logger.debug(s"Website company successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
-  def updateCompanyCountry(websiteId: UUID, companyCountry: String): Future[WebsiteAndCompany] = for {
+  def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String): Future[WebsiteAndCompany] = for {
     website <- {
-      logger.debug(s"Updating website id ${websiteId} with company country : ${companyCountry}")
+      logger.debug(s"Updating website id ${websiteId.value} with company country : ${companyCountry}")
       findWebsite(websiteId)
     }
     websiteToUpdate = website.copy(
@@ -104,7 +103,7 @@ class WebsitesOrchestrator(
       )
     )
 
-  private[this] def findWebsite(websiteId: UUID): Future[Website] = for {
+  private[this] def findWebsite(websiteId: WebsiteId): Future[Website] = for {
     maybeWebsite <- {
       logger.debug(s"Searching for website with id : $websiteId")
       repository.get(websiteId)

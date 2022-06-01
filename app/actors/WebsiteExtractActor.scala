@@ -59,7 +59,10 @@ class WebsitesExtractActor(
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
       } yield logger.debug(s"Built websites for User ${requestedBy.id} — async file ${asyncFile.id}")
-    case _ => logger.debug("Could not handle request")
+      ()
+    case _ =>
+      logger.debug("Could not handle request")
+      ()
   }
 
   // Common layout variables

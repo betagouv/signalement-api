@@ -80,6 +80,8 @@ import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
+import repositories.websiteinvestigation.WebsiteInvestigationRepository
+import repositories.websiteinvestigation.WebsiteInvestigationRepositoryInterface
 import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -175,6 +177,9 @@ class SignalConsoComponents(
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   val userRepository: UserRepositoryInterface = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface = new WebsiteRepository(dbConfig)
+  val websiteInvestigationRepository: WebsiteInvestigationRepositoryInterface = new WebsiteInvestigationRepository(
+    dbConfig
+  )
 
   val userService = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
@@ -253,6 +258,8 @@ class SignalConsoComponents(
   // Orchestrator
 
   val userOrchestrator = new UserOrchestrator(userRepository)
+
+  val websiteInvestigationOrchestrator = new WebsiteInvestigationOrchestrator(websiteInvestigationRepository)
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,
@@ -428,6 +435,9 @@ class SignalConsoComponents(
 
   val authController = new AuthController(silhouette, authOrchestrator, controllerComponents)
 
+  val websiteInvestigationController =
+    new WebsiteInvestigationController(websiteInvestigationOrchestrator, silhouette, controllerComponents)
+
   val companyAccessController =
     new CompanyAccessController(
       userRepository,
@@ -562,6 +572,7 @@ class SignalConsoComponents(
       companyController,
       ratingController,
       subscriptionController,
+      websiteInvestigationController,
       websiteController,
       reportedPhoneController,
       reportBlockedNotificationController,

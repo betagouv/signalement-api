@@ -2,13 +2,14 @@ package repositories.website
 
 import models._
 import models.website.Website
+import models.website.WebsiteId
 import models.website.WebsiteKind
 import play.api.Logger
-import repositories.CRUDRepository
 import repositories.PostgresProfile
+import repositories.TypedCRUDRepository
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
-import repositories.website.WebsiteColumnType.WebsiteKindColumnType
+import repositories.website.WebsiteColumnType._
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.URL
@@ -22,7 +23,7 @@ class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit
     override val ec: ExecutionContext
-) extends CRUDRepository[WebsiteTable, Website]
+) extends TypedCRUDRepository[WebsiteTable, Website, WebsiteId]
     with WebsiteRepositoryInterface {
 
   val logger: Logger = Logger(this.getClass())

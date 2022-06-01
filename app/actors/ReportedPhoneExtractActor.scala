@@ -55,6 +55,7 @@ class ReportedPhonesExtractActor(
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
       } yield logger.debug(s"Built reportedPhones for User ${requestedBy.id} — async file ${fileId}")
+      ()
     case _ => logger.debug("Could not handle request")
   }
 

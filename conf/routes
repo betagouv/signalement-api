@@ -139,15 +139,16 @@ PUT           /api/subscriptions/:subscriptionId                controllers.Subs
 GET           /api/subscriptions/:subscriptionId                controllers.SubscriptionController.getSubscription(subscriptionId: java.util.UUID)
 DELETE        /api/subscriptions/:subscriptionId                controllers.SubscriptionController.removeSubscription(subscriptionId: java.util.UUID)
 
+GET           /api/website-investigations                       controllers.WebsiteInvestigationController.list(host: Option[String], kinds: Option[Seq[WebsiteKind]], offset: Option[Long], limit: Option[Int])
 # Websites API
 GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], kinds: Option[Seq[WebsiteKind]], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/search-url                          controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                        controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/websites/unregistered/extract                controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
-PUT           /api/websites/:id/company                         controllers.WebsiteController.updateCompany(id: java.util.UUID)
-PUT           /api/websites/:id/country                         controllers.WebsiteController.updateCompanyCountry(id: java.util.UUID, companyCountry : String)
-PUT           /api/websites/:id                                 controllers.WebsiteController.updateWebsiteKind(id: java.util.UUID, kind :WebsiteKind)
-DELETE        /api/websites/:id                                 controllers.WebsiteController.remove(id: java.util.UUID)
+PUT           /api/websites/:id/company                         controllers.WebsiteController.updateCompany(id: WebsiteId)
+PUT           /api/websites/:id/country                         controllers.WebsiteController.updateCompanyCountry(id: WebsiteId, companyCountry : String)
+PUT           /api/websites/:id                                 controllers.WebsiteController.updateWebsiteKind(id: WebsiteId, kind :WebsiteKind)
+DELETE        /api/websites/:id                                 controllers.WebsiteController.remove(id: WebsiteId)
 
 # Reported phones API
 GET           /api/reported-phones                              controllers.ReportedPhoneController.fetchGrouped(q: Option[String], start: Option[String], end: Option[String])

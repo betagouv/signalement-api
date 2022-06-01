@@ -157,7 +157,7 @@ class StatsOrchestrator(
 object StatsOrchestrator {
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
-    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks - 1).withDayOfMonth(1)
+    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
 
   /** Fill data with default value when there missing data in database
     */

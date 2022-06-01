@@ -6,7 +6,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 case class Website(
-    id: UUID = UUID.randomUUID(),
+    id: WebsiteId = WebsiteId.generateId(),
     creationDate: OffsetDateTime = OffsetDateTime.now,
     host: String,
     companyCountry: Option[String],
