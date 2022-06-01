@@ -121,7 +121,7 @@ class AccessesOrchestrator(
       token <- accessTokenRepository.create(
         AccessToken.build(
           kind = ValidateEmail,
-          token = randomToken,
+          token = UUID.randomUUID.toString,
           validity = tokenConfiguration.dgccrfRevalidationTokenDuration,
           companyId = None,
           level = None,
