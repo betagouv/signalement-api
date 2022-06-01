@@ -474,17 +474,18 @@ class SignalConsoComponents(
   val reportFileController =
     new ReportFileController(reportFileOrchestrator, silhouette, signalConsoConfiguration, controllerComponents)
 
+  val reportWithDataOrchestrator =
+    new ReportWithDataOrchestrator(reportOrchestrator, eventRepository, reportFileRepository)
+
   val reportController = new ReportController(
     reportOrchestrator,
     reportRepository,
     reportFileRepository,
-    eventRepository,
-    companiesVisibilityOrchestrator,
     pdfService,
     frontRoute,
     silhouette,
-    signalConsoConfiguration,
-    controllerComponents
+    controllerComponents,
+    reportWithDataOrchestrator
   )
   val reportedPhoneController = new ReportedPhoneController(
     reportRepository,

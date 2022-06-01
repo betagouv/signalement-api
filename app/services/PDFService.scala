@@ -24,7 +24,7 @@ class PDFService(
   val logger: Logger = Logger(this.getClass)
   val tmpDirectory = signalConsoConfiguration.tmpDirectory
 
-  def Ok(htmlDocuments: List[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
+  def Ok(htmlDocuments: Seq[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
     val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
     val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 

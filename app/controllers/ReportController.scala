@@ -2,32 +2,28 @@ package controllers
 
 import cats.implicits.toTraverseOps
 import com.mohiva.play.silhouette.api.Silhouette
-import config.SignalConsoConfiguration
 import controllers.error.AppError.SpammerEmailBlocked
 import models._
-import models.report.Report
 import models.report.ReportAction
 import models.report.ReportCompany
 import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
 import models.report.ReportResponse
 import models.report.ReportWithFiles
-import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.ReportOrchestrator
+import orchestrators.ReportWithDataOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import repositories.event.EventFilter
-import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.PDFService
 import utils.Constants.ActionEvent._
-import utils.Constants
 import utils.FrontRoute
+import utils.QueryStringMapper
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
@@ -40,13 +36,11 @@ class ReportController(
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
-    eventRepository: EventRepositoryInterface,
-    companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
-    signalConsoConfiguration: SignalConsoConfiguration,
-    controllerComponents: ControllerComponents
+    controllerComponents: ControllerComponents,
+    reportWithDataOrchestrator: ReportWithDataOrchestrator
 )(implicit val ec: ExecutionContext)
     extends BaseController(controllerComponents) {
 
@@ -97,7 +91,7 @@ class ReportController(
       logger.debug(s"reportResponse ${uuid}")
       for {
         reportResponse <- request.parseBody[ReportResponse]()
-        visibleReport <- getVisibleReportForUser(uuid, request.identity)
+        visibleReport <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
         updatedReport <- visibleReport
           .map(reportOrchestrator.handleReportResponse(_, reportResponse, request.identity))
           .sequence
@@ -124,7 +118,7 @@ class ReportController(
     }
   def getReport(uuid: UUID) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
     for {
-      visibleReport <- getVisibleReportForUser(uuid, request.identity)
+      visibleReport <- reportOrchestrator.getVisibleReportForUser(uuid, request.identity)
       viewedReport <- visibleReport
         .map(r => reportOrchestrator.handleReportView(r, request.identity).map(Some(_)))
         .getOrElse(Future(None))
@@ -136,55 +130,25 @@ class ReportController(
       .getOrElse(NotFound)
   }
 
-  def reportAsPDF(uuid: UUID) = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-    for {
-      visibleReport <- getVisibleReportForUser(uuid, request.identity)
-      events <- eventRepository.getEventsWithUsers(uuid, EventFilter())
-      companyEvents <- visibleReport
-        .flatMap(_.companyId)
-        .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
-        .getOrElse(Future(List.empty))
-      reportFiles <- reportFileRepository.retrieveReportFiles(uuid)
-    } yield {
-      val responseOption = events
-        .map(_._1)
-        .find(_.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
-        .map(_.details)
-        .map(_.as[ReportResponse])
-
-      visibleReport
-        .map(report =>
-          pdfService.Ok(
-            List(
-              views.html.pdfs.report(report, events, responseOption, companyEvents, reportFiles)(frontRoute =
-                frontRoute
-              )
-            )
+  def reportsAsPDF() = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
+    val reportFutures = new QueryStringMapper(request.queryString)
+      .seq("ids")
+      .map(extractUUID)
+      .map(reportId => reportWithDataOrchestrator.getReportFull(reportId, request.identity))
+    Future
+      .sequence(reportFutures)
+      .map(_.flatten)
+      .map(
+        _.map(x =>
+          views.html.pdfs.report(x.report, x.events, x.responseOption, x.companyEvents, x.files)(frontRoute =
+            frontRoute
           )
         )
-        .getOrElse(NotFound)
-    }
-
+      )
+      .map(pdfService.Ok)
   }
 
   def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
   }
-
-  private def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
-    for {
-      report <- reportRepository.get(reportId)
-      visibleReport <-
-        if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
-          Future(report)
-        else {
-          companiesVisibilityOrchestrator
-            .fetchVisibleCompanies(user)
-            .map(_.map(v => Some(v.company.siret)))
-            .map { visibleSirets =>
-              report.filter(r => visibleSirets.contains(r.companySiret))
-            }
-        }
-    } yield visibleReport
-
 }
