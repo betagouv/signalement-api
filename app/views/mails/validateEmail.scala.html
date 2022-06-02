@@ -1,6 +1,6 @@
 @import java.net.URI
 @import utils.FrontRoute
-@(validationUrl: URI)
+@(validationUrl: URI, daysBeforeExpiry: Int)
 
 @views.html.mails.layout("Confirmez votre adresse email SignalConso") {
     <p>
@@ -10,7 +10,7 @@
         Pour confirmer votre email utilisateur sur SignalConso veuillez cliquer sur le lien suivant : @validationUrl
     </p>
     <p>
-        ATTENTION : Ce lien n'est valable que 24 heures après l'envoi de cet e-mail
+        ATTENTION : Ce lien n'est valable que @daysBeforeExpiry jours après l'envoi de cet e-mail
     </p>
 
     <p>

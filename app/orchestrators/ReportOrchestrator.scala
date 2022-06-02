@@ -620,4 +620,19 @@ class ReportOrchestrator(
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
 
+  def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
+    for {
+      report <- reportRepository.get(reportId)
+      visibleReport <-
+        if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
+          Future(report)
+        else {
+          companiesVisibilityOrchestrator
+            .fetchVisibleCompanies(user)
+            .map(_.map(v => Some(v.company.siret)))
+            .map { visibleSirets =>
+              report.filter(r => visibleSirets.contains(r.companySiret))
+            }
+        }
+    } yield visibleReport
 }

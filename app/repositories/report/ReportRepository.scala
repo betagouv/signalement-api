@@ -378,6 +378,16 @@ object ReportRepository {
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
+      .filterOpt(filter.contactAgreement) { case (table, contactAgreement) =>
+        table.contactAgreement === contactAgreement
+      }
+      .filterOpt(filter.hasAttachment) { case (table, hasAttachment) =>
+        val exists = ReportFileTable.table
+          .filter(x => x.reportId === table.id)
+          .map(_.reportId)
+          .exists
+        if (hasAttachment) exists else !exists
+      }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
         filter.departments
           .flatMap(toPostalCode)
@@ -387,5 +397,4 @@ object ReportRepository {
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
       }
-
 }
