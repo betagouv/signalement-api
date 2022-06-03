@@ -21,8 +21,6 @@ import services.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
 
-import java.time.Duration
-import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
