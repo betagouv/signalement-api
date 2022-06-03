@@ -108,6 +108,9 @@ class SignalConsoApplicationLoader() extends ApplicationLoader {
 
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context)
+    LoggerConfigurator(context.environment.classLoader).foreach {
+      _.configure(context.environment, context.initialConfiguration, Map.empty)
+    }
     components.application
   }
 }
