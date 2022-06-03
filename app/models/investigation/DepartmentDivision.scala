@@ -1,10 +1,19 @@
 package models.investigation
 
-import enumeratum._
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
+import play.api.libs.json.Json
 
-sealed abstract class DepartmentDivision(val departmentCode: String, val name: String) extends EnumEntry
+case class DepartmentDivisionOptionValue(code: String, name: String)
+
+object DepartmentDivisionOptionValue {
+  implicit val Writes = Json.writes[DepartmentDivisionOptionValue]
+}
+
+sealed abstract class DepartmentDivision(val code: String, val name: String) extends EnumEntry
 
 object DepartmentDivision extends PlayEnum[DepartmentDivision] {
+
   val values = findValues
 
   case object DD01 extends DepartmentDivision("1", "DDPP DE L'AIN")

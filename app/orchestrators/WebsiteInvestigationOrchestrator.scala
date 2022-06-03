@@ -2,6 +2,7 @@ package orchestrators
 
 import models.PaginatedResult
 import models.investigation.DepartmentDivision
+import models.investigation.DepartmentDivisionOptionValue
 import models.investigation.InvestigationStatus
 import models.investigation.Practice
 import models.investigation.WebsiteInvestigationCompanyReportCount
@@ -33,7 +34,8 @@ class WebsiteInvestigationOrchestrator(
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
 
-  def listDepartmentDivision(): Seq[DepartmentDivision] = DepartmentDivision.values
+  def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
+    DepartmentDivision.values.map(d => DepartmentDivisionOptionValue(d.entryName, d.name))
 
   def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
 
