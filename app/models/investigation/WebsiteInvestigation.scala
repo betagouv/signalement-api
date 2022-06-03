@@ -11,9 +11,10 @@ case class WebsiteInvestigation(
     id: WebsiteInvestigationId,
     websiteId: WebsiteId,
     practice: Option[Practice],
-    investigation: InvestigationStatus = NotProcessed,
+    investigationStatus: InvestigationStatus = NotProcessed,
     attribution: Option[DepartmentDivision],
-    creationDate: OffsetDateTime
+    creationDate: OffsetDateTime,
+    lastUpdate: OffsetDateTime
 )
 
 object WebsiteInvestigation {

@@ -15,8 +15,9 @@ class WebsiteInvestigationTable(tag: Tag)
   def websiteId = column[WebsiteId]("website_id")
   def practice = column[Option[Practice]]("practice")
   def investigationStatus = column[InvestigationStatus]("investigation_status")
-  def attribution = column[Option[DepartmentDivision]]("investigation_status")
+  def attribution = column[Option[DepartmentDivision]]("attribution")
   def creationDate = column[OffsetDateTime]("creation_date")
+  def lastUpdated = column[OffsetDateTime]("last_updated")
 
   def * = (
     id,
@@ -24,7 +25,8 @@ class WebsiteInvestigationTable(tag: Tag)
     practice,
     investigationStatus,
     attribution,
-    creationDate
+    creationDate,
+    lastUpdated
   ) <> ((WebsiteInvestigation.apply _).tupled, WebsiteInvestigation.unapply)
 }
 

@@ -1,9 +1,6 @@
 package repositories.websiteinvestigation
 
-import models.investigation.DepartmentDivision
-import models.investigation.InvestigationStatus
-import models.investigation.Practice
-import models.investigation.WebsiteInvestigationId
+import models.investigation._
 import repositories.PostgresProfile.api._
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType

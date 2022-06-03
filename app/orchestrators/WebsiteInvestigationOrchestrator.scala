@@ -1,6 +1,9 @@
 package orchestrators
 
 import models.PaginatedResult
+import models.investigation.DepartmentDivision
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
 import models.investigation.WebsiteInvestigationCompanyReportCount
 import models.investigation.WebsiteInvestigationCompanyReportCount.toApi
 import models.website.WebsiteKind
@@ -29,5 +32,11 @@ class WebsiteInvestigationOrchestrator(
       _ = logger.debug("Website investigation fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
+
+  def listDepartmentDivision(): Seq[DepartmentDivision] = DepartmentDivision.values
+
+  def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
+
+  def listPractice(): Seq[Practice] = Practice.values
 
 }

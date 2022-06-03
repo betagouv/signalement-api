@@ -46,4 +46,19 @@ class WebsiteInvestigationController(
       } yield Ok(resultAsJson)
     }
 
+  def listDepartmentDivision(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(orchestrator.listDepartmentDivision()))
+    }
+
+  def listInvestigationStatus(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(orchestrator.listInvestigationStatus()))
+    }
+
+  def listPractice(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(orchestrator.listPractice()))
+    }
+
 }
