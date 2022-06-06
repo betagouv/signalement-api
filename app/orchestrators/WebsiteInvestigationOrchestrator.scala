@@ -1,5 +1,6 @@
 package orchestrators
 
+import cats.implicits.toTraverseOps
 import models.PaginatedResult
 import models.investigation.DepartmentDivision
 import models.investigation.DepartmentDivisionOptionValue
@@ -44,7 +45,7 @@ class WebsiteInvestigationOrchestrator(
   def createOrUpdate(investigationApi: WebsiteInvestigationApi): Future[WebsiteInvestigation] = for {
     _ <- validateWebsite(investigationApi.websiteId)
     _ = logger.debug("Create or Update investigation")
-    maybeInvestigation <- repository.get(investigationApi.id)
+    maybeInvestigation <- investigationApi.id.map(repository.get).flatSequence
     _ = maybeInvestigation.fold(logger.debug("Investigation not found, creating it"))(_ =>
       logger.debug("Found investigation, updating it")
     )

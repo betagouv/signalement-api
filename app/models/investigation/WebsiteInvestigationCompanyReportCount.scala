@@ -24,7 +24,7 @@ case class WebsiteInvestigationCompanyReportCount(
     company: Option[Company],
     count: Int,
     practice: Option[Practice],
-    investigation: InvestigationStatus,
+    investigationStatus: InvestigationStatus,
     attribution: Option[DepartmentDivision]
 )
 
@@ -44,7 +44,7 @@ object WebsiteInvestigationCompanyReportCount {
       .withFieldConst(_.company, maybeCompany)
       .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromName))
       .withFieldConst(_.practice, websiteInvestigation.flatMap(_.practice))
-      .withFieldConst(_.investigation, websiteInvestigation.map(_.investigationStatus).getOrElse(NotProcessed))
+      .withFieldConst(_.investigationStatus, websiteInvestigation.map(_.investigationStatus).getOrElse(NotProcessed))
       .withFieldConst(_.attribution, websiteInvestigation.flatMap(_.attribution))
       .withFieldConst(_.count, count)
       .transform

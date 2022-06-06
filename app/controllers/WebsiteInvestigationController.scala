@@ -53,8 +53,12 @@ class WebsiteInvestigationController(
       for {
         websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
         updated <- orchestrator.createOrUpdate(websiteInvestigationApi)
-        x = updated.into[WebsiteInvestigationApi].transform
-      } yield Ok(Json.toJson(x))
+        updatedWebsiteInvestigationApi = updated
+          .into[WebsiteInvestigationApi]
+          .withFieldConst(_.id, Some(updated.id))
+          .withFieldConst(_.lastUpdated, Some(updated.lastUpdated))
+          .transform
+      } yield Ok(Json.toJson(updatedWebsiteInvestigationApi))
   }
 
   def listDepartmentDivision(): Action[AnyContent] =
