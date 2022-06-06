@@ -259,7 +259,8 @@ class SignalConsoComponents(
 
   val userOrchestrator = new UserOrchestrator(userRepository)
 
-  val websiteInvestigationOrchestrator = new WebsiteInvestigationOrchestrator(websiteInvestigationRepository)
+  val websiteInvestigationOrchestrator =
+    new WebsiteInvestigationOrchestrator(websiteInvestigationRepository, websiteRepository)
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,

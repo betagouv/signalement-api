@@ -1,8 +1,10 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import io.scalaland.chimney.dsl.TransformerOps
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.investigation.WebsiteInvestigationApi
 import models.investigation.WebsiteInvestigationCompanyReportCount
 import models.website._
 import orchestrators.WebsiteInvestigationOrchestrator
@@ -45,6 +47,15 @@ class WebsiteInvestigationController(
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteInvestigationCompanyReportCount])
       } yield Ok(resultAsJson)
     }
+
+  def createOrUpdate() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+    implicit request =>
+      for {
+        websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
+        updated <- orchestrator.createOrUpdate(websiteInvestigationApi)
+        x = updated.into[WebsiteInvestigationApi].transform
+      } yield Ok(Json.toJson(x))
+  }
 
   def listDepartmentDivision(): Action[AnyContent] =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>

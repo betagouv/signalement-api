@@ -27,4 +27,14 @@ class CRUDRepositoryMock[E](database: mutable.Map[UUID, E], getId: E => UUID) ex
 
   def list(): Future[List[E]] = Future.successful(database.view.values.toList)
 
+  override def createOrUpdate(element: E): Future[E] = Future.successful {
+    database
+      .get(getId(element))
+      .map(_ => database.update(getId(element), element))
+      .getOrElse(
+        database
+          .put(getId(element), element)
+      )
+    element
+  }
 }

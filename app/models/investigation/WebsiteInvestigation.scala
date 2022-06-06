@@ -14,7 +14,7 @@ case class WebsiteInvestigation(
     investigationStatus: InvestigationStatus = NotProcessed,
     attribution: Option[DepartmentDivision],
     creationDate: OffsetDateTime,
-    lastUpdate: OffsetDateTime
+    lastUpdated: OffsetDateTime
 )
 
 object WebsiteInvestigation {

@@ -16,9 +16,10 @@ libraryDependencies ++= Seq(
 
 scalafmtOnCompile := true
 scalacOptions ++= Seq(
-  "-explaintypes", // Explain type errors in more detail.
+  "-explaintypes",
   "-Ywarn-macros:after",
   "-Wconf:cat=unused-imports&src=views/.*:s",
+  "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",
   "-Yrangepos"
 )

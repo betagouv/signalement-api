@@ -315,4 +315,11 @@ object AppError {
       s"Cannot find file with key $key"
   }
 
+  final case class WebsiteNotIdentified(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0039"
+    override val title: String = s"Website must be associated to update /create investigation"
+    override val details: String =
+      s"Le site $host doit être associé à une entreprise ou un pays pour modifier l'enquête"
+  }
+
 }
