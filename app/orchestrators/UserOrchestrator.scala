@@ -7,11 +7,14 @@ import models.AccessToken
 import models.DraftUser
 import models.User
 import models.UserRole
+import models.UserUpdate
 import play.api.Logger
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import cats.syntax.option._
+
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -22,11 +25,21 @@ trait UserOrchestratorInterface {
   def findOrError(emailAddress: EmailAddress): Future[User]
 
   def find(emailAddress: EmailAddress): Future[Option[User]]
+
+  def edit(userId: UUID, update: UserUpdate): Future[Option[User]]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: ExecutionContext)
     extends UserOrchestratorInterface {
   val logger: Logger = Logger(this.getClass)
+
+  override def edit(id: UUID, update: UserUpdate): Future[Option[User]] =
+    for {
+      userOpt <- userRepository.get(id)
+      updatedUser <- userOpt
+        .map(user => userRepository.update(user.id, update.mergeToUser(user)).map(Some(_)))
+        .getOrElse(Future(None))
+    } yield updatedUser
 
   override def createUser(draftUser: DraftUser, accessToken: AccessToken, role: UserRole): Future[User] = {
     val email: EmailAddress = accessToken.emailedTo.getOrElse(draftUser.email)

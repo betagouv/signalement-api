@@ -16,10 +16,12 @@ import utils.EmailAddress
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 class AccountController(
     val silhouette: Silhouette[AuthEnv],
+    userOrchestrator: UserOrchestrator,
     userRepository: UserRepositoryInterface,
     accessesOrchestrator: AccessesOrchestrator,
     proAccessTokenOrchestrator: ProAccessTokenOrchestrator,
@@ -106,4 +108,14 @@ class AccountController(
     SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
+
+  def edit(id: UUID) = SecuredAction.async(parse.json) { implicit request =>
+    for {
+      userUpdate <- request.parseBody[UserUpdate]()
+      updatedUserOpt <- userOrchestrator.edit(id, userUpdate)
+    } yield updatedUserOpt match {
+      case Some(updatedUser) => Ok(Json.toJson(updatedUser))
+      case _                 => NotFound
+    }
+  }
 }

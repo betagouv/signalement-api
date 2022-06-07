@@ -105,6 +105,7 @@ GET           /api/account/dgccrf/pending                       controllers.Acco
 GET           /api/account/dgccrf/users                         controllers.AccountController.fetchDGCCRFUsers()
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 POST          /api/account/validate-email/:email                controllers.AccountController.forceValidateEmail(email : String)
+PUT           /api/account/:id                                       controllers.AccountController.edit(id: java.util.UUID)
 
 # EmailValidation API
 POST          /api/email-validation/check                       controllers.EmailValidationController.check()
