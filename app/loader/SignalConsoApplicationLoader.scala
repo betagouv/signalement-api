@@ -402,6 +402,7 @@ class SignalConsoComponents(
   // Controller
   val accountController = new AccountController(
     silhouette,
+    userOrchestrator,
     userRepository,
     accessesOrchestrator,
     proAccessTokenOrchestrator,
