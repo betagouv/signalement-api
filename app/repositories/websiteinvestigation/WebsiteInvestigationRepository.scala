@@ -39,29 +39,24 @@ class WebsiteInvestigationRepository(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[(((Website, Option[WebsiteInvestigation]), Option[Company]), Int)]] = {
-    val baseQuery = WebsiteTable.table
-      .joinLeft(table)
-      .on(_.id === _.websiteId)
-      .joinLeft(CompanyTable.table)
-      .on(_._1.companyId === _.id)
-      .joinLeft(ReportTable.table)
-      .on { (tupleTable, reportTable) =>
-        val ((websiteTable, _), _) = tupleTable
-        websiteTable.host === reportTable.host &&
-        (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
-          .map(_.asColumnOf[String]))
-      }
-      .filter(
-        _._2.map(reportTable => reportTable.host.isDefined)
-      )
-      .filter { tupleTable =>
-        val (((websiteTable, _), _), _) = tupleTable
-        websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
-      }
-      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
-      .filter(websiteCompanyTable =>
-        kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1._1.kind inSet filteredKind)
-      )
+    val baseQuery =
+      WebsiteTable.table
+        .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
+        .filter(websiteTable => kinds.fold(true.bind)(filteredKind => websiteTable.kind inSet filteredKind))
+        .filter { websiteTable =>
+          websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
+        }
+        .joinLeft(table)
+        .on(_.id === _.websiteId)
+        .joinLeft(CompanyTable.table)
+        .on(_._1.companyId === _.id)
+        .joinLeft(ReportTable.table)
+        .on { (tupleTable, reportTable) =>
+          val ((websiteTable, _), _) = tupleTable
+          websiteTable.host === reportTable.host && reportTable.host.isDefined &&
+          (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
+            .map(_.asColumnOf[String]))
+        }
 
     val query = baseQuery
       .groupBy(_._1)
