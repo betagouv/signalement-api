@@ -64,3 +64,19 @@ object UserPermission extends Enumeration {
 
   implicit def enumWrites: Writes[UserPermission.Value] = EnumUtils.enumWrites
 }
+
+case class UserUpdate(
+    firstName: Option[String],
+    lastName: Option[String]
+) {
+  def mergeToUser(user: User) =
+    user.copy(
+      firstName = firstName.getOrElse(user.firstName),
+      lastName = lastName.getOrElse(user.lastName)
+    )
+}
+
+object UserUpdate {
+  implicit val userUpdateFormat: OFormat[UserUpdate] = Json.format[UserUpdate]
+
+}
