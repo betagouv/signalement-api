@@ -10,6 +10,7 @@ local.conf
 /bin/
 /.metals/
 .bloop
+metals.sbt
 .java-version
 conf/local.application.conf
 .clever.json
@@ -19,4 +20,3 @@ conf/local.application.conf
 /out/
 /.bsp
 javaOptions.sbt
-
