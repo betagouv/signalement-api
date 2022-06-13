@@ -31,10 +31,11 @@ class CRUDRepositoryMock[E](database: mutable.Map[UUID, E], getId: E => UUID) ex
     database
       .get(getId(element))
       .map(_ => database.update(getId(element), element))
-      .getOrElse(
+      .getOrElse {
         database
           .put(getId(element), element)
-      )
+        ()
+      }
     element
   }
 }
