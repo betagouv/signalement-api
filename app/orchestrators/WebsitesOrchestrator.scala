@@ -1,16 +1,19 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
+import models.investigation.InvestigationStatus.NotProcessed
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
+import repositories.websiteinvestigation.WebsiteInvestigationRepositoryInterface
 import utils.Country
 import utils.URL
 
@@ -19,6 +22,7 @@ import scala.concurrent.Future
 
 class WebsitesOrchestrator(
     val repository: WebsiteRepositoryInterface,
+    val websiteInvestigationRepository: WebsiteInvestigationRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface
 )(implicit
     ec: ExecutionContext
@@ -91,6 +95,30 @@ class WebsitesOrchestrator(
       .removeOtherWebsitesWithSameHost(website)
     _ = logger.debug(s"Website company country successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
+
+  def delete(websiteId: WebsiteId): Future[Unit] =
+    for {
+      maybeWebsite <- repository.get(websiteId)
+      website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
+      maybeInvestigation <- websiteInvestigationRepository.get(websiteId)
+      _ <-
+        if (website.kind == WebsiteKind.DEFAULT) {
+          logger.debug(s"Cannot delete identified website")
+          Future.failed(CannotDeleteWebsite(website.host))
+        } else {
+          Future.unit
+        }
+      _ <- maybeInvestigation match {
+        case Some(i) if i.attribution.isEmpty && i.investigationStatus == NotProcessed =>
+          websiteInvestigationRepository.delete(i.id)
+        case Some(_) =>
+          logger.debug(s"Cannot delete website under investigation")
+          Future.failed(CannotDeleteWebsite(website.host))
+        case None => Future.unit
+      }
+      _ <- repository
+        .delete(websiteId)
+    } yield ()
 
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(

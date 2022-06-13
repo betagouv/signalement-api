@@ -113,7 +113,7 @@ class WebsiteController(
     }
 
   def remove(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    websiteRepository
+    websitesOrchestrator
       .delete(websiteId)
       .map(_ => Ok)
   }

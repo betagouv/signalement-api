@@ -5,6 +5,7 @@ import models.PaginatedResult
 import models.investigation.WebsiteInvestigation
 import models.investigation.WebsiteInvestigationId
 import models.website.Website
+import models.website.WebsiteId
 import models.website.WebsiteKind
 import repositories.TypedCRUDRepositoryInterface
 
@@ -19,4 +20,7 @@ trait WebsiteInvestigationRepositoryInterface
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[(((Website, Option[WebsiteInvestigation]), Option[Company]), Int)]]
+
+  def get(websiteId: WebsiteId): Future[Option[WebsiteInvestigation]]
+
 }

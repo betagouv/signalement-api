@@ -1,10 +1,12 @@
 package repositories.websiteinvestigation
 
+import controllers.error.AppError
 import models.Company
 import models.PaginatedResult
 import models.investigation.WebsiteInvestigation
 import models.investigation.WebsiteInvestigationId
 import models.website.Website
+import models.website.WebsiteId
 import models.website.WebsiteKind
 import play.api.Logger
 import repositories.PostgresProfile.api._
@@ -69,4 +71,12 @@ class WebsiteInvestigationRepository(
 
     query.withPagination(db)(maybeOffset, maybeLimit)
   }
+
+  override def get(websiteId: WebsiteId): Future[Option[WebsiteInvestigation]] =
+    db.run(table.filter(_.websiteId === websiteId).result)
+      .map {
+        case l if l.size > 1 =>
+          throw AppError.ServerError(s"There should be only one investigation linked to website id $websiteId")
+        case l => l.headOption
+      }
 }

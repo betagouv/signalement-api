@@ -1,5 +1,6 @@
 package orchestrators
 
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import models.PaginatedResult
 import models.investigation.DepartmentDivision
@@ -10,8 +11,6 @@ import models.investigation.WebsiteInvestigation
 import models.investigation.WebsiteInvestigationApi
 import models.investigation.WebsiteInvestigationCompanyReportCount
 import models.investigation.WebsiteInvestigationCompanyReportCount.toApi
-import models.website.Website
-import models.website.WebsiteId
 import models.website.WebsiteKind
 import play.api.Logger
 import repositories.websiteinvestigation.WebsiteInvestigationRepositoryInterface
@@ -43,7 +42,8 @@ class WebsiteInvestigationOrchestrator(
     } yield websitesWithCount
 
   def createOrUpdate(investigationApi: WebsiteInvestigationApi): Future[WebsiteInvestigation] = for {
-    _ <- validateWebsite(investigationApi.websiteId)
+    maybeWebsite <- websiteRepository.get(investigationApi.websiteId)
+    _ <- maybeWebsite.liftTo[Future](WebsiteNotFound(investigationApi.websiteId))
     _ = logger.debug("Create or Update investigation")
     maybeInvestigation <- investigationApi.id.map(repository.get).flatSequence
     _ = maybeInvestigation.fold(logger.debug("Investigation not found, creating it"))(_ =>
@@ -52,19 +52,6 @@ class WebsiteInvestigationOrchestrator(
     investigation = investigationApi.createOrCopyToDomain(maybeInvestigation)
     websiteInvestigationResult <- repository.createOrUpdate(investigation)
   } yield websiteInvestigationResult
-
-  private def validateWebsite(websiteId: WebsiteId): Future[Website] = {
-    logger.debug("Validating website")
-    websiteRepository.get(websiteId).map {
-      case Some(website) if website.kind == WebsiteKind.DEFAULT =>
-        logger.debug("Website is valid")
-        website
-      case Some(website) => throw WebsiteNotIdentified(website.host)
-      case None =>
-        logger.warn("Website should exist to update/create investigation")
-        throw WebsiteNotFound(websiteId)
-    }
-  }
 
   def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
     DepartmentDivision.values.map(d => DepartmentDivisionOptionValue(d.entryName, d.name))

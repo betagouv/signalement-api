@@ -322,4 +322,11 @@ object AppError {
       s"Le site $host doit être associé à une entreprise ou un pays pour modifier l'enquête"
   }
 
+  final case class CannotDeleteWebsite(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0040"
+    override val title: String = s"Website must not be under investigation"
+    override val details: String =
+      s"Impossible de supprimer le site. Vérifiez que l'identification se soit pas validée (bouton vert) ou que le site ne fasse pas l'objet d'une enquête / affectation"
+  }
+
 }
