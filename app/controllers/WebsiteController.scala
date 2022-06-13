@@ -7,11 +7,14 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -117,4 +120,28 @@ class WebsiteController(
       .delete(websiteId)
       .map(_ => Ok)
   }
+
+  def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+    implicit request =>
+      for {
+        websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
+        updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+      } yield Ok(Json.toJson(updated))
+  }
+
+  def listDepartmentDivision(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listDepartmentDivision()))
+    }
+
+  def listInvestigationStatus(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listInvestigationStatus()))
+    }
+
+  def listPractice(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listPractice()))
+    }
+
 }

@@ -80,8 +80,6 @@ import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
-import repositories.websiteinvestigation.WebsiteInvestigationRepository
-import repositories.websiteinvestigation.WebsiteInvestigationRepositoryInterface
 import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -177,9 +175,6 @@ class SignalConsoComponents(
   val subscriptionRepository: SubscriptionRepositoryInterface = new SubscriptionRepository(dbConfig)
   val userRepository: UserRepositoryInterface = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface = new WebsiteRepository(dbConfig)
-  val websiteInvestigationRepository: WebsiteInvestigationRepositoryInterface = new WebsiteInvestigationRepository(
-    dbConfig
-  )
 
   val userService = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
@@ -258,9 +253,6 @@ class SignalConsoComponents(
   // Orchestrator
 
   val userOrchestrator = new UserOrchestrator(userRepository)
-
-  val websiteInvestigationOrchestrator =
-    new WebsiteInvestigationOrchestrator(websiteInvestigationRepository, websiteRepository)
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,
@@ -376,7 +368,7 @@ class SignalConsoComponents(
     new StatsOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository, accessTokenRepository)
 
   val websitesOrchestrator =
-    new WebsitesOrchestrator(websiteRepository, websiteInvestigationRepository, companyRepository)
+    new WebsitesOrchestrator(websiteRepository, companyRepository)
 
   val unreadReportsReminderTask =
     new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
@@ -436,9 +428,6 @@ class SignalConsoComponents(
   val asyncFileController = new AsyncFileController(asyncFileRepository, silhouette, s3Service, controllerComponents)
 
   val authController = new AuthController(silhouette, authOrchestrator, controllerComponents)
-
-  val websiteInvestigationController =
-    new WebsiteInvestigationController(websiteInvestigationOrchestrator, silhouette, controllerComponents)
 
   val companyAccessController =
     new CompanyAccessController(
@@ -574,7 +563,6 @@ class SignalConsoComponents(
       companyController,
       ratingController,
       subscriptionController,
-      websiteInvestigationController,
       websiteController,
       reportedPhoneController,
       reportBlockedNotificationController,

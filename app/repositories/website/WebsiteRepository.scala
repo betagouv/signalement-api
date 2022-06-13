@@ -91,27 +91,30 @@ class WebsiteRepository(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
-    val baseQuery = table
-      .joinLeft(CompanyTable.table)
-      .on(_.companyId === _.id)
-      .joinLeft(ReportTable.table)
-      .on((c, r) =>
-        c._1.host === r.host &&
-          (c._1.companyId === r.companyId || c._1.companyCountry === r.companyCountry.map(_.asColumnOf[String]))
-      )
-      .filter(
-        _._2.map(reportTable => reportTable.host.isDefined)
-      )
-      .filter(x => x._1._1.companyId.nonEmpty || x._1._1.companyCountry.nonEmpty)
-      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
-      .filter(websiteCompanyTable =>
-        kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)
-      )
+    val baseQuery =
+      WebsiteTable.table
+        .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
+        .filter(websiteTable => kinds.fold(true.bind)(filteredKind => websiteTable.kind inSet filteredKind))
+        .filter { websiteTable =>
+          websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
+        }
+        .joinLeft(CompanyTable.table)
+        .on(_.companyId === _.id)
+        .joinLeft(ReportTable.table)
+        .on { (tupleTable, reportTable) =>
+          val (websiteTable, _) = tupleTable
+          websiteTable.host === reportTable.host && reportTable.host.isDefined &&
+          (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
+            .map(_.asColumnOf[String]))
+        }
 
     val query = baseQuery
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-      .sortBy(w => (w._2.desc, w._1._1.host.desc, w._1._1.id.desc))
+      .sortBy { tupleTable =>
+        val ((websiteTable, _), reportCount) = tupleTable
+        (reportCount.desc, websiteTable.host.desc, websiteTable.id.desc)
+      }
       .to[Seq]
 
     query.withPagination(db)(maybeOffset, maybeLimit)

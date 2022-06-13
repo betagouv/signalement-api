@@ -8,12 +8,16 @@ import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
 import models.investigation.InvestigationStatus.NotProcessed
+import models.investigation.DepartmentDivision
+import models.investigation.DepartmentDivisionOptionValue
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
+import models.investigation.WebsiteInvestigationApi
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import repositories.websiteinvestigation.WebsiteInvestigationRepositoryInterface
 import utils.Country
 import utils.URL
 
@@ -22,7 +26,6 @@ import scala.concurrent.Future
 
 class WebsitesOrchestrator(
     val repository: WebsiteRepositoryInterface,
-    val websiteInvestigationRepository: WebsiteInvestigationRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface
 )(implicit
     ec: ExecutionContext
@@ -100,25 +103,32 @@ class WebsitesOrchestrator(
     for {
       maybeWebsite <- repository.get(websiteId)
       website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
-      maybeInvestigation <- websiteInvestigationRepository.get(websiteId)
+      isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus == NotProcessed
       _ <-
-        if (website.kind == WebsiteKind.DEFAULT) {
-          logger.debug(s"Cannot delete identified website")
+        if (website.kind == WebsiteKind.DEFAULT || isWebsiteUnderInvestigation) {
+          logger.debug(s"Cannot delete identified / under investigation website")
           Future.failed(CannotDeleteWebsite(website.host))
         } else {
           Future.unit
         }
-      _ <- maybeInvestigation match {
-        case Some(i) if i.attribution.isEmpty && i.investigationStatus == NotProcessed =>
-          websiteInvestigationRepository.delete(i.id)
-        case Some(_) =>
-          logger.debug(s"Cannot delete website under investigation")
-          Future.failed(CannotDeleteWebsite(website.host))
-        case None => Future.unit
-      }
       _ <- repository
         .delete(websiteId)
     } yield ()
+
+  def updateInvestigation(investigationApi: WebsiteInvestigationApi): Future[Website] = for {
+    maybeWebsite <- repository.get(investigationApi.id)
+    website <- maybeWebsite.liftTo[Future](WebsiteNotFound(investigationApi.id))
+    _ = logger.debug("Update investigation")
+    updatedWebsite = investigationApi.copyToDomain(website)
+    website <- repository.update(updatedWebsite.id, updatedWebsite)
+  } yield website
+
+  def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
+    DepartmentDivision.values.map(d => DepartmentDivisionOptionValue(d.entryName, d.name))
+
+  def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
+
+  def listPractice(): Seq[Practice] = Practice.values
 
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(

@@ -141,12 +141,11 @@ DELETE        /api/subscriptions/:subscriptionId                controllers.Subs
 
 
 # ressources
-GET           /api/resources/department-division                controllers.WebsiteInvestigationController.listDepartmentDivision()
-GET           /api/resources/investigation-status               controllers.WebsiteInvestigationController.listInvestigationStatus()
-GET           /api/resources/practice                           controllers.WebsiteInvestigationController.listPractice()
+GET           /api/resources/department-division                controllers.WebsiteController.listDepartmentDivision()
+GET           /api/resources/investigation-status               controllers.WebsiteController.listInvestigationStatus()
+GET           /api/resources/practice                           controllers.WebsiteController.listPractice()
 
-GET           /api/website-investigations                       controllers.WebsiteInvestigationController.list(host: Option[String], kinds: Option[Seq[WebsiteKind]], offset: Option[Long], limit: Option[Int])
-POST          /api/website-investigations                       controllers.WebsiteInvestigationController.createOrUpdate()
+POST          /api/website-investigations                       controllers.WebsiteController.updateInvestigation()
 # Websites API
 GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], kinds: Option[Seq[WebsiteKind]], offset: Option[Long], limit: Option[Int])
 GET           /api/websites/search-url                          controllers.WebsiteController.searchByHost(url: String)
