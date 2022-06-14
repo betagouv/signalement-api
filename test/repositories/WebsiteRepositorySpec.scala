@@ -29,18 +29,18 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
     .genWebsite()
     .sample
     .get
-    .copy(companyCountry = None, companyId = Some(defaultCompany.id), kind = WebsiteKind.DEFAULT)
+    .copy(companyCountry = None, companyId = Some(defaultCompany.id), kind = WebsiteKind.Default)
   val marketplaceWebsite =
     Fixtures
       .genWebsite()
       .sample
       .get
-      .copy(companyCountry = None, companyId = Some(marketplaceCompany.id), kind = WebsiteKind.MARKETPLACE)
+      .copy(companyCountry = None, companyId = Some(marketplaceCompany.id), kind = WebsiteKind.Marketplace)
   val pendingWebsite = Fixtures
     .genWebsite()
     .sample
     .get
-    .copy(companyCountry = None, companyId = Some(pendingCompany.id), kind = WebsiteKind.PENDING)
+    .copy(companyCountry = None, companyId = Some(pendingCompany.id), kind = WebsiteKind.Pending)
 
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
@@ -76,7 +76,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   ).await
   def e2 = websiteRepository.searchCompaniesByUrl(
     s"http://${pendingWebsite.host}",
-    Some(Seq(WebsiteKind.MARKETPLACE))
+    Some(Seq(WebsiteKind.Marketplace))
   ) must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
     Seq((marketplaceWebsite, marketplaceCompany))
@@ -93,7 +93,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       )
     newWebsite
       .map(w => (w.host, w.companyId, w.kind)) must beEqualTo(
-      (newHost, Some(defaultCompany.id), WebsiteKind.PENDING)
+      (newHost, Some(defaultCompany.id), WebsiteKind.Pending)
     ).await
   }
 }

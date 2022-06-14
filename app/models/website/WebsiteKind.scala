@@ -1,26 +1,38 @@
 package models.website
 
-import play.api.libs.json.JsResult
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Reads
-import play.api.libs.json.Writes
+import controllers.error.AppError.MalformedQueryParams
+import enumeratum.EnumEntry.UpperSnakecase
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
+import play.api.Logger
 
-sealed case class WebsiteKind(value: String, isExclusive: Boolean)
+sealed trait WebsiteKind extends EnumEntry with UpperSnakecase
 
-object WebsiteKind {
-  val DEFAULT = WebsiteKind("DEFAULT", true)
-  val MARKETPLACE = WebsiteKind("MARKETPLACE", true)
-  val PENDING = WebsiteKind("PENDING", false)
+sealed trait DirectSellerIdentificationStatus extends WebsiteKind
 
-  val values = List(DEFAULT, MARKETPLACE, PENDING)
+object DirectSellerIdentificationStatus {
+  val logger: Logger = Logger(this.getClass())
 
-  def fromValue(v: String) =
-    values.find(_.value == v).head
-  implicit val reads = new Reads[WebsiteKind] {
-    def reads(json: JsValue): JsResult[WebsiteKind] = json.validate[String].map(fromValue(_))
-  }
-  implicit val writes = new Writes[WebsiteKind] {
-    def writes(kind: WebsiteKind) = Json.toJson(kind.value)
-  }
+  def withName(kind: String): DirectSellerIdentificationStatus =
+    WebsiteKind
+      .withNameOption(kind)
+      .filter(_.isInstanceOf[DirectSellerIdentificationStatus]) match {
+      case Some(value: DirectSellerIdentificationStatus) => value
+      case _ =>
+        logger.error(s"Cannot parse $kind into a valid DirectSellerIdentificationStatus")
+        throw MalformedQueryParams
+    }
+
+}
+
+object WebsiteKind extends PlayEnum[WebsiteKind] {
+
+  val values: IndexedSeq[WebsiteKind] = findValues
+
+  final case object Default extends DirectSellerIdentificationStatus
+
+  final case object Pending extends DirectSellerIdentificationStatus
+
+  final case object Marketplace extends WebsiteKind
+
 }

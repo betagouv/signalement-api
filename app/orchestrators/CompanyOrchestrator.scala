@@ -165,7 +165,7 @@ class CompanyOrchestrator(
     logger.debug(s"searchCompaniesByHost $url")
     for {
       companiesByUrl <-
-        websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
+        websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.Default, WebsiteKind.Marketplace)))
       _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository
@@ -173,7 +173,7 @@ class CompanyOrchestrator(
           .map { companies =>
             logger.debug(s"Found ${companies.length} entries in company database")
             companies.map { case (company, activity) =>
-              company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
+              company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.Marketplace)
             }
           }
       })

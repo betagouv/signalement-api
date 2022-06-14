@@ -17,6 +17,7 @@ import utils.URL
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import models.website.WebsiteKind.Pending
 import slick.basic.DatabaseConfig
 
 class WebsiteRepository(
@@ -36,8 +37,8 @@ class WebsiteRepository(
       table
         .filter(_.host === newWebsite.host)
         .filter(website =>
-          (website.kind === WebsiteKind.values
-            .filter(_.isExclusive)
+          (website.kind === WebsiteKind.values.toList
+            .filter(_ != Pending)
             .bind
             .any) || (website.companyId === newWebsite.companyId)
         )
@@ -54,7 +55,7 @@ class WebsiteRepository(
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
-        .filter(_.kind === WebsiteKind.DEFAULT)
+        .filter(_.kind inSet List(WebsiteKind.Default))
         .result
     )
 

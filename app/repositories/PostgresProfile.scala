@@ -4,7 +4,6 @@ import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
 import models.report.ReportTag
-import models.website.WebsiteKind
 
 import java.time.OffsetDateTime
 
@@ -24,9 +23,9 @@ trait PostgresProfile
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
-    implicit val websiteKindListTypeMapper = new SimpleArrayJdbcType[String]("text")
-      .mapTo[WebsiteKind](WebsiteKind.fromValue(_), _.value)
-      .to(_.toList)
+//    implicit val websiteKindListTypeMapper = new SimpleArrayJdbcType[String]("text")
+//      .mapTo[WebsiteKind](WebsiteKind.fromValue(_), _.value)
+//      .to(_.toList)
 
     val SubstrSQLFunction = SimpleFunction.ternary[String, Int, Int, String]("substr")
 

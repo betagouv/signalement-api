@@ -43,7 +43,7 @@ class WebsiteController(
 
   def fetchWithCompanies(
       maybeHost: Option[String],
-      maybeKinds: Option[Seq[WebsiteKind]],
+      maybeKinds: Option[Seq[DirectSellerIdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
@@ -87,7 +87,7 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteKind(websiteId: WebsiteId, kind: WebsiteKind) =
+  def updateWebsiteKind(websiteId: WebsiteId, kind: DirectSellerIdentificationStatus) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       websitesOrchestrator
         .updateWebsiteKind(websiteId, kind)

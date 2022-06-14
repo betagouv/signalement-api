@@ -43,7 +43,7 @@ class WebsitesOrchestrator(
 
   def getWebsiteCompanyCount(
       maybeHost: Option[String],
-      kinds: Option[Seq[WebsiteKind]],
+      kinds: Option[Seq[DirectSellerIdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
@@ -53,13 +53,13 @@ class WebsitesOrchestrator(
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
 
-  def updateWebsiteKind(websiteId: WebsiteId, kind: WebsiteKind): Future[Website] = for {
+  def updateWebsiteKind(websiteId: WebsiteId, kind: DirectSellerIdentificationStatus): Future[Website] = for {
     website <- findWebsite(websiteId)
     _ = logger.debug(s"Updating website kind to ${kind}")
     updatedWebsite = website.copy(kind = kind)
     _ <- repository.update(updatedWebsite.id, updatedWebsite)
     _ <-
-      if (kind == WebsiteKind.DEFAULT) {
+      if (kind == WebsiteKind.Default) {
         logger.debug(s"Removing other websites with the same host : ${website.host}")
         repository
           .removeOtherWebsitesWithSameHost(website)
@@ -72,7 +72,7 @@ class WebsitesOrchestrator(
       getOrCreateCompay(companyToAssign)
     }
     website <- findWebsite(websiteId)
-    websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.DEFAULT)
+    websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.Default)
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
@@ -89,7 +89,7 @@ class WebsitesOrchestrator(
     websiteToUpdate = website.copy(
       companyCountry = Some(companyCountry),
       companyId = None,
-      kind = WebsiteKind.DEFAULT
+      kind = WebsiteKind.Default
     )
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
@@ -105,7 +105,7 @@ class WebsitesOrchestrator(
       website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
       isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus == NotProcessed
       _ <-
-        if (website.kind == WebsiteKind.DEFAULT || isWebsiteUnderInvestigation) {
+        if (website.kind == WebsiteKind.Default || isWebsiteUnderInvestigation) {
           logger.debug(s"Cannot delete identified / under investigation website")
           Future.failed(CannotDeleteWebsite(website.host))
         } else {

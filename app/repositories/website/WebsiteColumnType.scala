@@ -12,7 +12,14 @@ import slick.jdbc.JdbcType
 import java.util.UUID
 
 object WebsiteColumnType {
-  implicit val WebsiteKindColumnType = MappedColumnType.base[WebsiteKind, String](_.value, WebsiteKind.fromValue(_))
+
+  implicit val WebsiteKindListColumnType =
+    MappedColumnType.base[List[WebsiteKind], List[String]](
+      _.map(_.entryName),
+      _.map(WebsiteKind.namesToValuesMap)
+    )
+
+  implicit val WebsiteKindColumnType = MappedColumnType.base[WebsiteKind, String](_.entryName, WebsiteKind.withName)
 
   implicit val InvestigationColumnType =
     MappedColumnType.base[InvestigationStatus, String](_.entryName, InvestigationStatus.withName)

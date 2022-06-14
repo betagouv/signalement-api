@@ -1,7 +1,7 @@
 import controllers.error.AppError.MalformedBody
 
+import models.website.DirectSellerIdentificationStatus
 import models.website.WebsiteId
-import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
@@ -24,11 +24,12 @@ package object controllers {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val WebsiteKindQueryStringBindable: QueryStringBindable[WebsiteKind] =
+  implicit val DirectSellerIdentificationStatusQueryStringBindable
+      : QueryStringBindable[DirectSellerIdentificationStatus] =
     QueryStringBindable.bindableString
-      .transform[WebsiteKind](
-        kinds => WebsiteKind.fromValue(kinds),
-        websiteKinds => websiteKinds.value
+      .transform[DirectSellerIdentificationStatus](
+        kind => DirectSellerIdentificationStatus.withName(kind),
+        websiteKinds => websiteKinds.entryName
       )
 
   implicit val UUIDPathBindable =
