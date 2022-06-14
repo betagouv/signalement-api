@@ -2,7 +2,7 @@ package repositories.website
 
 import models.website.Website
 import models.website.WebsiteId
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
 import repositories.PostgresProfile.api._
 
 import java.time.OffsetDateTime
@@ -16,10 +16,10 @@ import repositories.TypedDatabaseTable
 class WebsiteTable(tag: Tag) extends TypedDatabaseTable[Website, WebsiteId](tag, "websites") {
   def creationDate = column[OffsetDateTime]("creation_date")
   def host = column[String]("host")
-//  def isMarketplace = column[Boolean]("is_marketplace")
+  def isMarketplace = column[Boolean]("is_marketplace")
   def companyCountry = column[Option[String]]("company_country")
   def companyId = column[Option[UUID]]("company_id")
-  def kind = column[WebsiteKind]("kind")
+  def identificationStatus = column[IdentificationStatus]("identification_status")
   def practice = column[Option[Practice]]("practice")
   def investigationStatus = column[InvestigationStatus]("investigation_status")
   def attribution = column[Option[DepartmentDivision]]("attribution")
@@ -28,10 +28,10 @@ class WebsiteTable(tag: Tag) extends TypedDatabaseTable[Website, WebsiteId](tag,
     id,
     creationDate,
     host,
-//    isMarketplace,
+    isMarketplace,
     companyCountry,
     companyId,
-    kind,
+    identificationStatus,
     practice,
     investigationStatus,
     attribution,

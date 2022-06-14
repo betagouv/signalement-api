@@ -4,7 +4,7 @@ import models.investigation.DepartmentDivision
 import models.investigation.InvestigationStatus
 import models.investigation.Practice
 import models.website.WebsiteId
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
 import repositories.PostgresProfile.api._
 import slick.ast.BaseTypedType
 import slick.jdbc.JdbcType
@@ -14,12 +14,13 @@ import java.util.UUID
 object WebsiteColumnType {
 
   implicit val WebsiteKindListColumnType =
-    MappedColumnType.base[List[WebsiteKind], List[String]](
+    MappedColumnType.base[List[IdentificationStatus], List[String]](
       _.map(_.entryName),
-      _.map(WebsiteKind.namesToValuesMap)
+      _.map(IdentificationStatus.namesToValuesMap)
     )
 
-  implicit val WebsiteKindColumnType = MappedColumnType.base[WebsiteKind, String](_.entryName, WebsiteKind.withName)
+  implicit val WebsiteKindColumnType =
+    MappedColumnType.base[IdentificationStatus, String](_.entryName, IdentificationStatus.withName)
 
   implicit val InvestigationColumnType =
     MappedColumnType.base[InvestigationStatus, String](_.entryName, InvestigationStatus.withName)

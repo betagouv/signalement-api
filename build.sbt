@@ -25,12 +25,12 @@ scalacOptions ++= Seq(
 )
 
 routesImport ++= Seq(
-  "models.website.DirectSellerIdentificationStatus",
+  "models.website.IdentificationStatus",
   "models.website.WebsiteId",
   "utils.SIRET",
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",
-  "controllers.DirectSellerIdentificationStatusQueryStringBindable",
+  "controllers.IdentificationStatusQueryStringBindable",
   "controllers.WebsiteIdPathBindable",
   "controllers.UUIDPathBindable",
   "controllers.SIRETPathBindable",

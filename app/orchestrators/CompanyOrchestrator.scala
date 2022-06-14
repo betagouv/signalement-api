@@ -11,7 +11,7 @@ import models.event.Event
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -165,7 +165,11 @@ class CompanyOrchestrator(
     logger.debug(s"searchCompaniesByHost $url")
     for {
       companiesByUrl <-
-        websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.Default, WebsiteKind.Marketplace)))
+        websiteRepository.searchCompaniesByUrl(
+          url,
+          Some(Seq(IdentificationStatus.Identified)),
+          isMarketPlace = Some(true)
+        )
       _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository
@@ -173,7 +177,7 @@ class CompanyOrchestrator(
           .map { companies =>
             logger.debug(s"Found ${companies.length} entries in company database")
             companies.map { case (company, activity) =>
-              company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.Marketplace)
+              company.toSearchResult(activity.map(_.label), website.isMarketplace)
             }
           }
       })

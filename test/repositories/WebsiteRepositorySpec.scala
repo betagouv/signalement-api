@@ -1,7 +1,7 @@
 package repositories
 
 import models.website.Website
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -29,18 +29,32 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
     .genWebsite()
     .sample
     .get
-    .copy(companyCountry = None, companyId = Some(defaultCompany.id), kind = WebsiteKind.Default)
+    .copy(
+      companyCountry = None,
+      companyId = Some(defaultCompany.id),
+      identificationStatus = IdentificationStatus.Identified
+    )
   val marketplaceWebsite =
     Fixtures
       .genWebsite()
       .sample
       .get
-      .copy(companyCountry = None, companyId = Some(marketplaceCompany.id), kind = WebsiteKind.Marketplace)
+      .copy(
+        companyCountry = None,
+        companyId = Some(marketplaceCompany.id),
+        identificationStatus = IdentificationStatus.Identified,
+        isMarketplace = true
+      )
+
   val pendingWebsite = Fixtures
     .genWebsite()
     .sample
     .get
-    .copy(companyCountry = None, companyId = Some(pendingCompany.id), kind = WebsiteKind.Pending)
+    .copy(
+      companyCountry = None,
+      companyId = Some(pendingCompany.id),
+      identificationStatus = IdentificationStatus.NotIdentified
+    )
 
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
@@ -76,7 +90,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   ).await
   def e2 = websiteRepository.searchCompaniesByUrl(
     s"http://${pendingWebsite.host}",
-    Some(Seq(WebsiteKind.Marketplace))
+    isMarketPlace = Some(true)
   ) must beEqualTo(Seq.empty).await
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
     Seq((marketplaceWebsite, marketplaceCompany))
@@ -92,8 +106,8 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
         Website(host = newHost, companyCountry = None, companyId = Some(defaultCompany.id))
       )
     newWebsite
-      .map(w => (w.host, w.companyId, w.kind)) must beEqualTo(
-      (newHost, Some(defaultCompany.id), WebsiteKind.Pending)
+      .map(w => (w.host, w.companyId, w.identificationStatus)) must beEqualTo(
+      (newHost, Some(defaultCompany.id), IdentificationStatus.NotIdentified)
     ).await
   }
 }
