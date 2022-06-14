@@ -16,17 +16,17 @@ class StatsOrchestratorTest extends Specification {
       val now = LocalDate.now().withDayOfMonth(1).atStartOfDay()
 
       val data = Vector(
-        (Timestamp.valueOf(now.minusMonths(3)), 1234),
-        (Timestamp.valueOf(now.minusMonths(2)), 1234)
+        (Timestamp.valueOf(now.minusMonths(3L)), 1234),
+        (Timestamp.valueOf(now.minusMonths(2L)), 1234)
       )
 
       val tick = 5
       val expected = Seq(
-        CountByDate(0, now.minusMonths(4).toLocalDate),
-        CountByDate(1234, now.minusMonths(3).toLocalDate),
-        CountByDate(1234, now.minusMonths(2).toLocalDate),
-        CountByDate(0, now.minusMonths(1).toLocalDate),
-        CountByDate(0, now.minusMonths(0).toLocalDate)
+        CountByDate(0, now.minusMonths(4L).toLocalDate),
+        CountByDate(1234, now.minusMonths(3L).toLocalDate),
+        CountByDate(1234, now.minusMonths(2L).toLocalDate),
+        CountByDate(0, now.minusMonths(1L).toLocalDate),
+        CountByDate(0, now.minusMonths(0L).toLocalDate)
       )
 
       formatStatData(data, tick) shouldEqual expected
@@ -38,16 +38,16 @@ class StatsOrchestratorTest extends Specification {
       val now = LocalDate.now().withDayOfMonth(1).atStartOfDay()
 
       val data = Vector(
-        (Timestamp.valueOf(now.minusMonths(3)), 1234),
-        (Timestamp.valueOf(now.minusMonths(2)), 1234)
+        (Timestamp.valueOf(now.minusMonths(3L)), 1234),
+        (Timestamp.valueOf(now.minusMonths(2L)), 1234)
       )
 
       val tick = 4
       val expected = Seq(
-        CountByDate(1234, now.minusMonths(3).toLocalDate),
-        CountByDate(1234, now.minusMonths(2).toLocalDate),
-        CountByDate(0, now.minusMonths(1).toLocalDate),
-        CountByDate(0, now.minusMonths(0).toLocalDate)
+        CountByDate(1234, now.minusMonths(3L).toLocalDate),
+        CountByDate(1234, now.minusMonths(2L).toLocalDate),
+        CountByDate(0, now.minusMonths(1L).toLocalDate),
+        CountByDate(0, now.minusMonths(0L).toLocalDate)
       )
 
       formatStatData(data, tick) shouldEqual expected
@@ -59,15 +59,15 @@ class StatsOrchestratorTest extends Specification {
       val now = LocalDate.now().withDayOfMonth(1).atStartOfDay()
 
       val data = Vector(
-        (Timestamp.valueOf(now.minusMonths(1)), 1234),
-        (Timestamp.valueOf(now.minusMonths(0)), 1234)
+        (Timestamp.valueOf(now.minusMonths(1L)), 1234),
+        (Timestamp.valueOf(now.minusMonths(0L)), 1234)
       )
 
       val tick = 3
       val expected = Seq(
-        CountByDate(0, now.minusMonths(2).toLocalDate),
-        CountByDate(1234, now.minusMonths(1).toLocalDate),
-        CountByDate(1234, now.minusMonths(0).toLocalDate)
+        CountByDate(0, now.minusMonths(2L).toLocalDate),
+        CountByDate(1234, now.minusMonths(1L).toLocalDate),
+        CountByDate(1234, now.minusMonths(0L).toLocalDate)
       )
 
       formatStatData(data, tick) shouldEqual expected
@@ -79,14 +79,14 @@ class StatsOrchestratorTest extends Specification {
       val now = LocalDate.now().withDayOfMonth(1).atStartOfDay()
 
       val data = Vector(
-        (Timestamp.valueOf(now.minusMonths(1)), 1234),
-        (Timestamp.valueOf(now.minusMonths(0)), 1234)
+        (Timestamp.valueOf(now.minusMonths(1L)), 1234),
+        (Timestamp.valueOf(now.minusMonths(0L)), 1234)
       )
 
       val tick = 2
       val expected = Seq(
-        CountByDate(1234, now.minusMonths(1).toLocalDate),
-        CountByDate(1234, now.minusMonths(0).toLocalDate)
+        CountByDate(1234, now.minusMonths(1L).toLocalDate),
+        CountByDate(1234, now.minusMonths(0L).toLocalDate)
       )
 
       formatStatData(data, tick) shouldEqual expected
@@ -102,9 +102,9 @@ class StatsOrchestratorTest extends Specification {
 
       val tick = 3
       val expected = Seq(
-        CountByDate(0, now.minusMonths(2).toLocalDate),
-        CountByDate(0, now.minusMonths(1).toLocalDate),
-        CountByDate(0, now.minusMonths(0).toLocalDate)
+        CountByDate(0, now.minusMonths(2L).toLocalDate),
+        CountByDate(0, now.minusMonths(1L).toLocalDate),
+        CountByDate(0, now.minusMonths(0L).toLocalDate)
       )
 
       formatStatData(data, tick) shouldEqual expected

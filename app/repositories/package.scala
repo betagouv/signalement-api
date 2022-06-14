@@ -37,7 +37,7 @@ package object repositories {
   }
 
   def computeTickValues(ticks: Int) = Seq
-    .iterate(OffsetDateTime.now().minusMonths(ticks - 1).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .iterate(OffsetDateTime.now().minusMonths(ticks.toLong - 1L).withDayOfMonth(1), ticks)(_.plusMonths(1))
     .map(_.toLocalDate)
     .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
     .map(t => s"('$t'::timestamp)")

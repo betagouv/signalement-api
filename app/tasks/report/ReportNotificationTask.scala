@@ -33,15 +33,15 @@ class ReportNotificationTask(
 
   val departments = Departments.ALL
 
-  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days) { () =>
+  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
 
     if (LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay) {
       runPeriodicNotificationTask(LocalDate.now, Period.ofDays(7))
     }
-
     runPeriodicNotificationTask(LocalDate.now, Period.ofDays(1))
-  }
+    ()
+  })
 
   def runPeriodicNotificationTask(taskDate: LocalDate, period: Period): Future[Unit] = {
 

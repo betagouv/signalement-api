@@ -52,8 +52,8 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     val content = contentAsJson(result).toString
     val startDate = LocalDate.now.withDayOfMonth(1)
     content must haveMonthlyStats(
-      aMonthlyStat(CountByDate(0, startDate.minusMonths(2))),
-      aMonthlyStat(CountByDate(lastMonthReports.length, startDate.minusMonths(1))),
+      aMonthlyStat(CountByDate(0, startDate.minusMonths(2L))),
+      aMonthlyStat(CountByDate(lastMonthReports.length, startDate.minusMonths(1L))),
       aMonthlyStat(CountByDate(currentMonthReports.length, startDate))
     )
   }
@@ -71,7 +71,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     val content = contentAsJson(result).toString
     val startDate = LocalDate.now.withDayOfMonth(1)
     content must haveMonthlyStats(
-      aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1))),
+      aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1L))),
       aMonthlyStat(CountByDate(currentMonthReportsWithResponse.length, startDate))
     )
   }
@@ -133,37 +133,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
   val lastMonthReportsAccepted = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
   val lastMonthReportsRejected = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.Infonde)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
   val lastMonthReportsNotConcerned = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
   val lastMonthReportsClosedByNoAction = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
   val lastMonthReportsNotForwarded = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.NA)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1))) :::
+    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L))) :::
     Fixtures
       .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
-      .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1)))
+      .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
 
   val lastMonthReportsWithResponse =
     lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned

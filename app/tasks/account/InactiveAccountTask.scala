@@ -32,6 +32,7 @@ class InactiveAccountTask(
       OffsetDateTime
         .now(ZoneOffset.UTC)
     )
+    ()
   }
 
   def runTask(now: OffsetDateTime) = {

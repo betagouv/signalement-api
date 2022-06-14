@@ -186,8 +186,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
 
-      class FakeApplicationLoader(skipValidation: Boolean = false, emailProviderBlocklist: List[String])
-          extends ApplicationLoader {
+      class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
 
         override def load(context: ApplicationLoader.Context): Application = {
@@ -228,7 +227,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
       }
 
-      val loader = new FakeApplicationLoader(skipValidation, spammerBlacklist)
+      val loader = new FakeApplicationLoader(skipValidation)
 
       val app = TestApp.buildApp(loader)
 

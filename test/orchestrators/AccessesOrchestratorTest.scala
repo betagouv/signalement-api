@@ -18,7 +18,10 @@ import scala.concurrent.Future
 
 class AccessesOrchestratorTest extends Specification with AppSpec {
 
-  override def afterAll(): Unit = app.stop()
+  override def afterAll(): Unit = {
+    app.stop()
+    ()
+  }
 
   val (app, components) = TestApp.buildApp()
 

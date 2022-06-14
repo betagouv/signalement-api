@@ -70,7 +70,10 @@ class ReportsExtractActor(
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
       } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
-    case _ => logger.debug("Could not handle request")
+      ()
+    case _ =>
+      logger.debug("Could not handle request")
+      ()
   }
 
   // Common layout variables

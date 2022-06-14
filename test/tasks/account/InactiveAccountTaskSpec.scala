@@ -47,7 +47,8 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
       val conf = InactiveAccountsTaskConfiguration(startTime = LocalTime.now(), inactivePeriod = Period.ofYears(1))
       val now: LocalDateTime = LocalDateTime.now()
-      val expirationDateTime: LocalDateTime = LocalDateTime.now().minusYears(conf.inactivePeriod.getYears).minusDays(1)
+      val expirationDateTime: LocalDateTime =
+        LocalDateTime.now().minusYears(conf.inactivePeriod.getYears.toLong).minusDays(1L)
       new WithApplication(app) {
 
         // Inactive account to be removed

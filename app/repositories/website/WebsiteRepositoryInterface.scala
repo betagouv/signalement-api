@@ -3,12 +3,13 @@ package repositories.website
 import models.Company
 import models.PaginatedResult
 import models.website.Website
+import models.website.WebsiteId
 import models.website.WebsiteKind
-import repositories.CRUDRepositoryInterface
+import repositories.TypedCRUDRepositoryInterface
 
 import scala.concurrent.Future
 
-trait WebsiteRepositoryInterface extends CRUDRepositoryInterface[Website] {
+trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, WebsiteId] {
 
   def validateAndCreate(newWebsite: Website): Future[Website]
 

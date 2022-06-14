@@ -367,7 +367,8 @@ class SignalConsoComponents(
   val statsOrchestrator =
     new StatsOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository, accessTokenRepository)
 
-  val websitesOrchestrator = new WebsitesOrchestrator(websiteRepository, companyRepository)
+  val websitesOrchestrator =
+    new WebsitesOrchestrator(websiteRepository, companyRepository)
 
   val unreadReportsReminderTask =
     new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)

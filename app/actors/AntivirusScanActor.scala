@@ -31,8 +31,11 @@ object AntivirusScanActor {
 
   private def performAntivirusScan(file: java.io.File)(implicit ec: ExecutionContext): Future[AntivirusScanExecution] =
     Future {
-      val stdout = new StringBuilder
-      val exitCode = Seq("clamdscan", "--remove", "--fdpass", file.toString) ! ProcessLogger(stdout append _)
+      val stdout = new StringBuilder()
+      val exitCode = Seq("clamdscan", "--remove", "--fdpass", file.toString) ! ProcessLogger(fn = s => {
+        stdout.append(s)
+        ()
+      })
       AntivirusScanExecution(AntivirusScanExitCode.withValue(exitCode), stdout.toString())
     }
 
