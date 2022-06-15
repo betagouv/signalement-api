@@ -153,7 +153,7 @@ GET           /api/websites/unregistered                        controllers.Webs
 GET           /api/websites/unregistered/extract                controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 PUT           /api/websites/:id/company                         controllers.WebsiteController.updateCompany(id: WebsiteId)
 PUT           /api/websites/:id/country                         controllers.WebsiteController.updateCompanyCountry(id: WebsiteId, companyCountry : String)
-PUT           /api/websites/:id                                 controllers.WebsiteController.updateWebsiteIdentificationStatus(id: WebsiteId, kind :IdentificationStatus)
+PUT           /api/websites/:id                                 controllers.WebsiteController.updateWebsiteIdentificationStatus(id: WebsiteId, identificationStatus :IdentificationStatus)
 DELETE        /api/websites/:id                                 controllers.WebsiteController.remove(id: WebsiteId)
 
 # Reported phones API
