@@ -3,7 +3,7 @@ package repositories.website
 import models._
 import models.website.Website
 import models.website.WebsiteId
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
 import play.api.Logger
 import repositories.PostgresProfile
 import repositories.TypedCRUDRepository
@@ -17,6 +17,7 @@ import utils.URL
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import models.website.IdentificationStatus.NotIdentified
 import slick.basic.DatabaseConfig
 
 class WebsiteRepository(
@@ -36,8 +37,8 @@ class WebsiteRepository(
       table
         .filter(_.host === newWebsite.host)
         .filter(website =>
-          (website.kind === WebsiteKind.values
-            .filter(_.isExclusive)
+          (website.identificationStatus === IdentificationStatus.values.toList
+            .filter(_ != NotIdentified)
             .bind
             .any) || (website.companyId === newWebsite.companyId)
         )
@@ -54,18 +55,15 @@ class WebsiteRepository(
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
-        .filter(_.kind === WebsiteKind.DEFAULT)
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .result
     )
 
-  override def searchCompaniesByHost(
-      host: String,
-      kinds: Option[Seq[WebsiteKind]] = None
-  ): Future[Seq[(Website, Company)]] =
+  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table
         .filter(_.host === host)
-        .filter(w => kinds.fold(true.bind)(w.kind.inSet(_)))
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .result
@@ -80,21 +78,23 @@ class WebsiteRepository(
     )
 
   override def searchCompaniesByUrl(
-      url: String,
-      kinds: Option[Seq[WebsiteKind]] = None
+      url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
+    URL(url).getHost.map(searchCompaniesByHost(_)).getOrElse(Future(Nil))
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
-      kinds: Option[Seq[WebsiteKind]],
+      identificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
     val baseQuery =
       WebsiteTable.table
         .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
-        .filter(websiteTable => kinds.fold(true.bind)(filteredKind => websiteTable.kind inSet filteredKind))
+        .filterOpt(identificationStatus) { case (websiteTable, statusList) =>
+          websiteTable.identificationStatus inSet statusList
+        }
+        .filter(_.isMarketplace === false)
         .filter { websiteTable =>
           websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
         }

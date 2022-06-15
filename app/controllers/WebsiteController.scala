@@ -43,7 +43,7 @@ class WebsiteController(
 
   def fetchWithCompanies(
       maybeHost: Option[String],
-      maybeKinds: Option[Seq[WebsiteKind]],
+      maybeIdentificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
@@ -52,7 +52,7 @@ class WebsiteController(
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
             maybeHost.filter(_.nonEmpty),
-            maybeKinds.filter(_.nonEmpty),
+            maybeIdentificationStatus.filter(_.nonEmpty),
             maybeOffset,
             maybeLimit
           )
@@ -87,10 +87,10 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteKind(websiteId: WebsiteId, kind: WebsiteKind) =
+  def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       websitesOrchestrator
-        .updateWebsiteKind(websiteId, kind)
+        .updateWebsiteIdentificationStatus(websiteId, identificationStatus)
         .map(website => Ok(Json.toJson(website)))
     }
 

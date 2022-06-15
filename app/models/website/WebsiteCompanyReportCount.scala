@@ -18,7 +18,10 @@ case class WebsiteCompanyReportCount(
     host: String,
     companyId: Option[UUID],
     companyCountry: Option[Country],
-    kind: WebsiteKind,
+    isMarketplace: Boolean,
+    identificationStatus: IdentificationStatus,
+    // For backward compatibility, to be removed
+    kind: String,
     company: Option[Company],
     practice: Option[Practice],
     investigationStatus: InvestigationStatus,
@@ -38,6 +41,7 @@ object WebsiteCompanyReportCount {
       .withFieldConst(_.company, maybeCompany)
       .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromName))
       .withFieldConst(_.count, count)
+      .withFieldConst(_.kind, IdentificationStatus.toKind(website.identificationStatus))
       .transform
   }
 }
