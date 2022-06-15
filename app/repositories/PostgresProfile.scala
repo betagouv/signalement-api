@@ -23,10 +23,6 @@ trait PostgresProfile
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
-//    implicit val websiteKindListTypeMapper = new SimpleArrayJdbcType[String]("text")
-//      .mapTo[WebsiteKind](WebsiteKind.fromValue(_), _.value)
-//      .to(_.toList)
-
     val SubstrSQLFunction = SimpleFunction.ternary[String, Int, Int, String]("substr")
 
     val DatePartSQLFunction = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")

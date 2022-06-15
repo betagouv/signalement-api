@@ -59,16 +59,11 @@ class WebsiteRepository(
         .result
     )
 
-  override def searchCompaniesByHost(
-      host: String,
-      identificationStatus: Option[Seq[IdentificationStatus]] = None,
-      isMarketPlace: Option[Boolean]
-  ): Future[Seq[(Website, Company)]] =
+  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table
         .filter(_.host === host)
-        .filter(w => identificationStatus.fold(true.bind)(w.identificationStatus.inSet(_)))
-        .filterOpt(isMarketPlace) { case (websiteTable, isMarketplace) => websiteTable.isMarketplace === isMarketplace }
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .result
@@ -83,11 +78,9 @@ class WebsiteRepository(
     )
 
   override def searchCompaniesByUrl(
-      url: String,
-      identificationStatus: Option[Seq[IdentificationStatus]] = None,
-      isMarketPlace: Option[Boolean]
+      url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost(_, identificationStatus, isMarketPlace)).getOrElse(Future(Nil))
+    URL(url).getHost.map(searchCompaniesByHost(_)).getOrElse(Future(Nil))
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
@@ -98,9 +91,10 @@ class WebsiteRepository(
     val baseQuery =
       WebsiteTable.table
         .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
-        .filter(websiteTable =>
-          identificationStatus.fold(true.bind)(filteredKind => websiteTable.identificationStatus inSet filteredKind)
-        )
+        .filterOpt(identificationStatus) { case (websiteTable, statusList) =>
+          websiteTable.identificationStatus inSet statusList
+        }
+        .filter(_.isMarketplace === false)
         .filter { websiteTable =>
           websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
         }

@@ -77,8 +77,8 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
 
  Searching by URL should
     retrieve default website                                            $e1
-    retrieve marketplace website                                        $e2
-    not retrieve pending website                                        $e3
+    retrieve marketplace website                                        $e3
+    not retrieve pending website                                        $e2
 
  Adding new website on company should
     if the website is already define for the company, return existing website       $e5
@@ -89,12 +89,13 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
     Seq((defaultWebsite, defaultCompany))
   ).await
   def e2 = websiteRepository.searchCompaniesByUrl(
-    s"http://${pendingWebsite.host}",
-    isMarketPlace = Some(true)
+    s"http://${pendingWebsite.host}"
   ) must beEqualTo(Seq.empty).await
+
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
     Seq((marketplaceWebsite, marketplaceCompany))
   ).await
+
   def e5 = websiteRepository.validateAndCreate(
     Website(host = defaultWebsite.host, companyCountry = None, companyId = Some(defaultCompany.id))
   ) must beEqualTo(

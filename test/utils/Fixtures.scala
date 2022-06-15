@@ -238,7 +238,6 @@ object Fixtures {
     id = WebsiteId.generateId(),
     creationDate = OffsetDateTime.now(),
     host = websiteUrl.getHost.get,
-    isMarketplace = false,
     companyCountry = None,
     companyId = Some(companyId),
     identificationStatus = kind

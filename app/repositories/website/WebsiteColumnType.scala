@@ -13,13 +13,13 @@ import java.util.UUID
 
 object WebsiteColumnType {
 
-  implicit val WebsiteKindListColumnType =
+  implicit val IdentificationStatusListColumnType =
     MappedColumnType.base[List[IdentificationStatus], List[String]](
       _.map(_.entryName),
       _.map(IdentificationStatus.namesToValuesMap)
     )
 
-  implicit val WebsiteKindColumnType =
+  implicit val IdentificationStatusColumnType =
     MappedColumnType.base[IdentificationStatus, String](_.entryName, IdentificationStatus.withName)
 
   implicit val InvestigationColumnType =

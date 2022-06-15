@@ -15,18 +15,10 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
 
   def searchValidWebsiteAssociationByHost(host: String): Future[Seq[Website]]
 
-  def searchCompaniesByHost(
-      host: String,
-      identificationStatus: Option[Seq[IdentificationStatus]] = None,
-      isMarketPlace: Option[Boolean]
-  ): Future[Seq[(Website, Company)]]
-
   def removeOtherWebsitesWithSameHost(website: Website): Future[Int]
 
   def searchCompaniesByUrl(
-      url: String,
-      identificationStatus: Option[Seq[IdentificationStatus]] = None,
-      isMarketPlace: Option[Boolean] = None
+      url: String
   ): Future[Seq[(Website, Company)]]
 
   def listWebsitesCompaniesByReportCount(
