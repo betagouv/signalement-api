@@ -115,7 +115,7 @@ class WebsitesOrchestrator(
     for {
       maybeWebsite <- repository.get(websiteId)
       website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
-      isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus == NotProcessed
+      isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus != NotProcessed
       _ <-
         if (website.identificationStatus == IdentificationStatus.Identified || isWebsiteUnderInvestigation) {
           logger.debug(s"Cannot delete identified / under investigation website")
