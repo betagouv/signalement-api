@@ -11,7 +11,8 @@ import models.report.ReportDraft
 import models.report.ReportStatus
 import models.report.WebsiteURL
 import models.website.Website
-import models.website.WebsiteKind
+import models.website.WebsiteId
+import models.website.IdentificationStatus
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
@@ -230,10 +231,16 @@ object Fixtures {
   )
 
   def genWebsite() = for {
-    id <- arbitrary[UUID]
     companyId <- arbitrary[UUID]
     websiteUrl <- genWebsiteURL
-    kind <- Gen.oneOf(WebsiteKind.values)
-  } yield Website(id, OffsetDateTime.now(), websiteUrl.getHost.get, None, Some(companyId), kind)
+    kind <- Gen.oneOf(IdentificationStatus.values)
+  } yield Website(
+    id = WebsiteId.generateId(),
+    creationDate = OffsetDateTime.now(),
+    host = websiteUrl.getHost.get,
+    companyCountry = None,
+    companyId = Some(companyId),
+    identificationStatus = kind
+  )
 
 }

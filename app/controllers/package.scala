@@ -1,6 +1,7 @@
 import controllers.error.AppError.MalformedBody
 
-import models.website.WebsiteKind
+import models.website.IdentificationStatus
+import models.website.WebsiteId
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.JsPath
@@ -23,11 +24,11 @@ package object controllers {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val WebsiteKindQueryStringBindable: QueryStringBindable[WebsiteKind] =
+  implicit val IdentificationStatusQueryStringBindable: QueryStringBindable[IdentificationStatus] =
     QueryStringBindable.bindableString
-      .transform[WebsiteKind](
-        kinds => WebsiteKind.fromValue(kinds),
-        websiteKinds => websiteKinds.value
+      .transform[IdentificationStatus](
+        identificationStatus => IdentificationStatus.withName(identificationStatus),
+        identificationStatus => identificationStatus.entryName
       )
 
   implicit val UUIDPathBindable =
@@ -42,6 +43,13 @@ package object controllers {
       .transform[ReportFileId](
         id => ReportFileId(extractUUID(id)),
         reportFileId => reportFileId.value.toString
+      )
+
+  implicit val WebsiteIdPathBindable =
+    PathBindable.bindableString
+      .transform[WebsiteId](
+        id => WebsiteId(extractUUID(id)),
+        websiteId => websiteId.value.toString
       )
 
   implicit val SIRETPathBindable =

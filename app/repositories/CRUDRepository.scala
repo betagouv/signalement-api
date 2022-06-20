@@ -16,6 +16,8 @@ trait TypedCRUDRepositoryInterface[E, ID] {
 
   def update(id: ID, element: E): Future[E]
 
+  def createOrUpdate(element: E): Future[E]
+
   def get(id: ID): Future[Option[E]]
 
   def delete(id: ID): Future[Int]
@@ -38,6 +40,12 @@ abstract class TypedCRUDRepository[T <: TypedDatabaseTable[E, ID], E, ID](implic
   def create(element: E): Future[E] = db
     .run(
       table returning table += element
+    )
+    .map(_ => element)
+
+  def createOrUpdate(element: E): Future[E] = db
+    .run(
+      table.insertOrUpdate(element)
     )
     .map(_ => element)
 

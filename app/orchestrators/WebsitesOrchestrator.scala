@@ -1,11 +1,18 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
+import models.investigation.InvestigationStatus.NotProcessed
+import models.investigation.DepartmentDivision
+import models.investigation.DepartmentDivisionOptionValue
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
+import models.investigation.WebsiteInvestigationApi
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
@@ -14,7 +21,6 @@ import repositories.website.WebsiteRepositoryInterface
 import utils.Country
 import utils.URL
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -37,36 +43,48 @@ class WebsitesOrchestrator(
 
   def getWebsiteCompanyCount(
       maybeHost: Option[String],
-      kinds: Option[Seq[WebsiteKind]],
+      identificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
-      websites <- repository.listWebsitesCompaniesByReportCount(maybeHost, kinds, maybeOffset, maybeLimit)
+      websites <- repository.listWebsitesCompaniesByReportCount(
+        maybeHost,
+        identificationStatus,
+        maybeOffset,
+        maybeLimit
+      )
       _ = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
     } yield websitesWithCount
 
-  def updateWebsiteKind(websiteId: UUID, kind: WebsiteKind): Future[Website] = for {
+  def updateWebsiteIdentificationStatus(
+      websiteId: WebsiteId,
+      identificationStatus: IdentificationStatus
+  ): Future[Website] = for {
     website <- findWebsite(websiteId)
-    _ = logger.debug(s"Updating website kind to ${kind}")
-    updatedWebsite = website.copy(kind = kind)
+    _ = logger.debug(s"Updating website kind to ${identificationStatus}")
+    updatedWebsite = website.copy(identificationStatus = identificationStatus)
     _ <- repository.update(updatedWebsite.id, updatedWebsite)
     _ <-
-      if (kind == WebsiteKind.DEFAULT) {
+      if (identificationStatus == IdentificationStatus.Identified) {
         logger.debug(s"Removing other websites with the same host : ${website.host}")
         repository
           .removeOtherWebsitesWithSameHost(website)
       } else Future.successful(())
   } yield updatedWebsite
 
-  def updateCompany(websiteId: UUID, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
+  def updateCompany(websiteId: WebsiteId, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
     company <- {
       logger.debug(s"Updating website id ${websiteId} with company siret : ${companyToAssign.siret}")
       getOrCreateCompay(companyToAssign)
     }
     website <- findWebsite(websiteId)
-    websiteToUpdate = website.copy(companyCountry = None, companyId = Some(company.id), kind = WebsiteKind.DEFAULT)
+    websiteToUpdate = website.copy(
+      companyCountry = None,
+      companyId = Some(company.id),
+      identificationStatus = IdentificationStatus.Identified
+    )
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
@@ -75,15 +93,15 @@ class WebsitesOrchestrator(
     _ = logger.debug(s"Website company successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
-  def updateCompanyCountry(websiteId: UUID, companyCountry: String): Future[WebsiteAndCompany] = for {
+  def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String): Future[WebsiteAndCompany] = for {
     website <- {
-      logger.debug(s"Updating website id ${websiteId} with company country : ${companyCountry}")
+      logger.debug(s"Updating website id ${websiteId.value} with company country : ${companyCountry}")
       findWebsite(websiteId)
     }
     websiteToUpdate = website.copy(
       companyCountry = Some(companyCountry),
       companyId = None,
-      kind = WebsiteKind.DEFAULT
+      identificationStatus = IdentificationStatus.Identified
     )
     _ = logger.debug(s"Website to update : ${websiteToUpdate}")
     updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
@@ -92,6 +110,37 @@ class WebsitesOrchestrator(
       .removeOtherWebsitesWithSameHost(website)
     _ = logger.debug(s"Website company country successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
+
+  def delete(websiteId: WebsiteId): Future[Unit] =
+    for {
+      maybeWebsite <- repository.get(websiteId)
+      website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
+      isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus != NotProcessed
+      _ <-
+        if (website.identificationStatus == IdentificationStatus.Identified || isWebsiteUnderInvestigation) {
+          logger.debug(s"Cannot delete identified / under investigation website")
+          Future.failed(CannotDeleteWebsite(website.host))
+        } else {
+          Future.unit
+        }
+      _ <- repository
+        .delete(websiteId)
+    } yield ()
+
+  def updateInvestigation(investigationApi: WebsiteInvestigationApi): Future[Website] = for {
+    maybeWebsite <- repository.get(investigationApi.id)
+    website <- maybeWebsite.liftTo[Future](WebsiteNotFound(investigationApi.id))
+    _ = logger.debug("Update investigation")
+    updatedWebsite = investigationApi.copyToDomain(website)
+    website <- repository.update(updatedWebsite.id, updatedWebsite)
+  } yield website
+
+  def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
+    DepartmentDivision.values.map(d => DepartmentDivisionOptionValue(d.entryName, d.name))
+
+  def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
+
+  def listPractice(): Seq[Practice] = Practice.values
 
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(
@@ -104,7 +153,7 @@ class WebsitesOrchestrator(
       )
     )
 
-  private[this] def findWebsite(websiteId: UUID): Future[Website] = for {
+  private[this] def findWebsite(websiteId: WebsiteId): Future[Website] = for {
     maybeWebsite <- {
       logger.debug(s"Searching for website with id : $websiteId")
       repository.get(websiteId)

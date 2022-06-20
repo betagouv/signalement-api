@@ -157,7 +157,7 @@ class StatsOrchestrator(
 object StatsOrchestrator {
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
-    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks - 1).withDayOfMonth(1)
+    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
 
   /** Fill data with default value when there missing data in database
     */
@@ -167,7 +167,7 @@ object StatsOrchestrator {
 
     if (ticks - data.length > 0) {
       val upperBound = LocalDate.now().withDayOfMonth(1)
-      val lowerBound = upperBound.minusMonths(ticks - 1)
+      val lowerBound = upperBound.minusMonths(ticks.toLong - 1L)
 
       val minAvailableDatabaseDataDate = countByDateList.map(_.date).minOption.getOrElse(lowerBound)
       val maxAvailableDatabaseDataDate = countByDateList.map(_.date).maxOption.getOrElse(upperBound)
@@ -183,7 +183,7 @@ object StatsOrchestrator {
       } else {
         // Missing data , filling the data with default value
         val missingLowerBoundData =
-          Seq.iterate(lowerBound, missingMonthsLowerBound.getMonths)(_.minusMonths(1)).map(CountByDate(0, _))
+          Seq.iterate(lowerBound, missingMonthsLowerBound.getMonths)(_.minusMonths(1L)).map(CountByDate(0, _))
 
         val missingUpperBoundData =
           Seq

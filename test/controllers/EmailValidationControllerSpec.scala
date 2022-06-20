@@ -43,7 +43,10 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
       new FakeEnvironment[AuthEnv](Seq.empty)
     )
   )
-  override def afterAll(): Unit = app.stop()
+  override def afterAll(): Unit = {
+    app.stop()
+    ()
+  }
 
   implicit val authEnv = components.authEnv
 

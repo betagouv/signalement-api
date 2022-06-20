@@ -4,13 +4,13 @@ import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
+import models.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
 import models.event.Event
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
-import models.website.WebsiteKind
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -164,7 +164,9 @@ class CompanyOrchestrator(
     logger.debug(s"searchCompaniesByHost $url")
     for {
       companiesByUrl <-
-        websiteRepository.searchCompaniesByUrl(url, Some(Seq(WebsiteKind.DEFAULT, WebsiteKind.MARKETPLACE)))
+        websiteRepository.searchCompaniesByUrl(
+          url
+        )
       _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyDataRepository
@@ -172,7 +174,7 @@ class CompanyOrchestrator(
           .map { companies =>
             logger.debug(s"Found ${companies.length} entries in company database")
             companies.map { case (company, activity) =>
-              company.toSearchResult(activity.map(_.label), website.kind == WebsiteKind.MARKETPLACE)
+              company.toSearchResult(activity.map(_.label), website.isMarketplace)
             }
           }
       })

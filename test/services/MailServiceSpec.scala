@@ -11,6 +11,7 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
+import play.api.libs.mailer.Attachment
 import services.Email.ProNewReportNotification
 import utils.AppSpec
 import utils.EmailAddress
@@ -131,15 +132,22 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
-      there was no(mailerService).sendEmail(any, any, any, any, any, any)
+      there was no(mailerService).sendEmail(
+        any[EmailAddress],
+        any[Seq[EmailAddress]],
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any[Seq[Attachment]]
+      )
     } else {
       there was one(mailerService).sendEmail(
-        any,
+        any[EmailAddress],
         argThat((list: Seq[EmailAddress]) => list.sortBy(_.value) == expectedRecipients.sortBy(_.value)),
-        any,
-        any,
-        any,
-        any
+        any[Seq[EmailAddress]],
+        anyString,
+        anyString,
+        any[Seq[Attachment]]
       )
     }
 }

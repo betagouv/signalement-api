@@ -27,8 +27,10 @@ import config.UploadConfiguration
 import orchestrators.ProAccessTokenOrchestrator
 import orchestrators._
 import play.api._
+import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.slick.DbName
 import play.api.db.slick.SlickComponents
+import play.api.db.slick.evolutions.SlickEvolutionsComponents
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.BodyParsers
@@ -123,12 +125,16 @@ class SignalConsoComponents(
     with AssetsComponents
     with AhcWSComponents
     with SlickComponents
+    with SlickEvolutionsComponents
+    with EvolutionsComponents
     with SecuredActionComponents
     with SecuredErrorHandlerComponents
     with UnsecuredActionComponents
     with UnsecuredErrorHandlerComponents
     with UserAwareActionComponents
     with MailerComponents {
+
+  applicationEvolutions
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
@@ -367,7 +373,8 @@ class SignalConsoComponents(
   val statsOrchestrator =
     new StatsOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository, accessTokenRepository)
 
-  val websitesOrchestrator = new WebsitesOrchestrator(websiteRepository, companyRepository)
+  val websitesOrchestrator =
+    new WebsitesOrchestrator(websiteRepository, companyRepository)
 
   val unreadReportsReminderTask =
     new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
@@ -578,4 +585,5 @@ class SignalConsoComponents(
 
   override def httpFilters: Seq[EssentialFilter] =
     Seq(csrfFilter, securityHeadersFilter, allowedHostsFilter, corsFilter)
+
 }

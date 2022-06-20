@@ -1,6 +1,5 @@
 package orchestrators
 
-import akka.stream.Materializer
 import models.User
 import models.event.Event
 import models.report.Report
@@ -28,7 +27,7 @@ class ReportWithDataOrchestrator(
     reportOrchestrator: ReportOrchestrator,
     eventRepository: EventRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface
-)(implicit val executionContext: ExecutionContext, mat: Materializer) {
+)(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
   def getReportFull(uuid: UUID, userToCheckAuthorization: User): Future[Option[ReportWithData]] =

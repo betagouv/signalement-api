@@ -35,7 +35,10 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
       new FakeEnvironment[AuthEnv](Seq(proAdminUser, proMemberUser).map(user => loginInfo(user) -> user))
     )
   )
-  override def afterAll(): Unit = app.stop()
+  override def afterAll(): Unit = {
+    app.stop()
+    ()
+  }
 
   implicit val authEnv = components.authEnv
 

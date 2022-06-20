@@ -297,7 +297,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
         any[Seq[EmailAddress]],
         anyString,
         anyString,
-        any
+        any[Seq[Attachment]]
       )
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) =

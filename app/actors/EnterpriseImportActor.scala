@@ -98,8 +98,11 @@ class EnterpriseSyncActor(
         }
         _ = logger.debug(s"File saved in ${filePath}")
       } yield ingestFile(jobId, companyFile)
+      ()
 
-    case Cancel(name) => cancel(name)
+    case Cancel(name) =>
+      cancel(name)
+      ()
 
   }
 

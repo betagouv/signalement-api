@@ -2,13 +2,14 @@ package repositories.website
 
 import models._
 import models.website.Website
-import models.website.WebsiteKind
+import models.website.WebsiteId
+import models.website.IdentificationStatus
 import play.api.Logger
-import repositories.CRUDRepository
 import repositories.PostgresProfile
+import repositories.TypedCRUDRepository
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
-import repositories.website.WebsiteColumnType.WebsiteKindColumnType
+import repositories.website.WebsiteColumnType._
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.URL
@@ -16,13 +17,14 @@ import utils.URL
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import models.website.IdentificationStatus.NotIdentified
 import slick.basic.DatabaseConfig
 
 class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
 )(implicit
     override val ec: ExecutionContext
-) extends CRUDRepository[WebsiteTable, Website]
+) extends TypedCRUDRepository[WebsiteTable, Website, WebsiteId]
     with WebsiteRepositoryInterface {
 
   val logger: Logger = Logger(this.getClass())
@@ -35,8 +37,8 @@ class WebsiteRepository(
       table
         .filter(_.host === newWebsite.host)
         .filter(website =>
-          (website.kind === WebsiteKind.values
-            .filter(_.isExclusive)
+          (website.identificationStatus === IdentificationStatus.values.toList
+            .filter(_ != NotIdentified)
             .bind
             .any) || (website.companyId === newWebsite.companyId)
         )
@@ -53,18 +55,15 @@ class WebsiteRepository(
         .filter(_.host === host)
         .filter(_.companyId.isEmpty)
         .filter(_.companyCountry.nonEmpty)
-        .filter(_.kind === WebsiteKind.DEFAULT)
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .result
     )
 
-  override def searchCompaniesByHost(
-      host: String,
-      kinds: Option[Seq[WebsiteKind]] = None
-  ): Future[Seq[(Website, Company)]] =
+  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table
         .filter(_.host === host)
-        .filter(w => kinds.fold(true.bind)(w.kind.inSet(_)))
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .result
@@ -79,38 +78,43 @@ class WebsiteRepository(
     )
 
   override def searchCompaniesByUrl(
-      url: String,
-      kinds: Option[Seq[WebsiteKind]] = None
+      url: String
   ): Future[Seq[(Website, Company)]] =
-    URL(url).getHost.map(searchCompaniesByHost(_, kinds)).getOrElse(Future(Nil))
+    URL(url).getHost.map(searchCompaniesByHost(_)).getOrElse(Future(Nil))
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
-      kinds: Option[Seq[WebsiteKind]],
+      identificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
-    val baseQuery = table
-      .joinLeft(CompanyTable.table)
-      .on(_.companyId === _.id)
-      .joinLeft(ReportTable.table)
-      .on((c, r) =>
-        c._1.host === r.host &&
-          (c._1.companyId === r.companyId || c._1.companyCountry === r.companyCountry.map(_.asColumnOf[String]))
-      )
-      .filter(
-        _._2.map(reportTable => reportTable.host.isDefined)
-      )
-      .filter(x => x._1._1.companyId.nonEmpty || x._1._1.companyCountry.nonEmpty)
-      .filter(t => maybeHost.fold(true.bind)(h => t._2.fold(true.bind)(_.host.fold(true.bind)(_ like s"%${h}%"))))
-      .filter(websiteCompanyTable =>
-        kinds.fold(true.bind)(filteredKind => websiteCompanyTable._1._1.kind inSet filteredKind)
-      )
+    val baseQuery =
+      WebsiteTable.table
+        .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
+        .filterOpt(identificationStatus) { case (websiteTable, statusList) =>
+          websiteTable.identificationStatus inSet statusList
+        }
+        .filter(_.isMarketplace === false)
+        .filter { websiteTable =>
+          websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
+        }
+        .joinLeft(CompanyTable.table)
+        .on(_.companyId === _.id)
+        .joinLeft(ReportTable.table)
+        .on { (tupleTable, reportTable) =>
+          val (websiteTable, _) = tupleTable
+          websiteTable.host === reportTable.host && reportTable.host.isDefined &&
+          (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
+            .map(_.asColumnOf[String]))
+        }
 
     val query = baseQuery
       .groupBy(_._1)
       .map { case (grouped, all) => (grouped, all.map(_._2).size) }
-      .sortBy(w => (w._2.desc, w._1._1.host.desc, w._1._1.id.desc))
+      .sortBy { tupleTable =>
+        val ((websiteTable, _), reportCount) = tupleTable
+        (reportCount.desc, websiteTable.host.desc, websiteTable.id.desc)
+      }
       .to[Seq]
 
     query.withPagination(db)(maybeOffset, maybeLimit)

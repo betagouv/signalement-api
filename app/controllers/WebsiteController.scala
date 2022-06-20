@@ -7,11 +7,14 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -20,7 +23,6 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
-import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -41,16 +43,16 @@ class WebsiteController(
 
   def fetchWithCompanies(
       maybeHost: Option[String],
-      maybeKinds: Option[Seq[WebsiteKind]],
+      maybeIdentificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ) =
-    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
             maybeHost.filter(_.nonEmpty),
-            maybeKinds.filter(_.nonEmpty),
+            maybeIdentificationStatus.filter(_.nonEmpty),
             maybeOffset,
             maybeLimit
           )
@@ -85,35 +87,61 @@ class WebsiteController(
       .map(countries => Ok(Json.toJson(countries)))
   }
 
-  def updateWebsiteKind(uuid: UUID, kind: WebsiteKind) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    websitesOrchestrator
-      .updateWebsiteKind(uuid, kind)
-      .map(website => Ok(Json.toJson(website)))
+  def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+      websitesOrchestrator
+        .updateWebsiteIdentificationStatus(websiteId, identificationStatus)
+        .map(website => Ok(Json.toJson(website)))
+    }
+
+  def updateCompany(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+    implicit request =>
+      request.body
+        .validate[CompanyCreation]
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          company =>
+            websitesOrchestrator
+              .updateCompany(websiteId, company)
+              .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
+        )
   }
 
-  def updateCompany(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    request.body
-      .validate[CompanyCreation]
-      .fold(
-        errors => Future.successful(BadRequest(JsError.toJson(errors))),
-        company =>
-          websitesOrchestrator
-            .updateCompany(uuid, company)
-            .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
-      )
-  }
-
-  def updateCompanyCountry(websiteId: UUID, companyCountry: String) = SecuredAction(WithRole(UserRole.Admin)).async {
-    _ =>
+  def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
-  }
+    }
 
-  def remove(uuid: UUID) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
-    websiteRepository
-      .delete(uuid)
+  def remove(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    websitesOrchestrator
+      .delete(websiteId)
       .map(_ => Ok)
   }
+
+  def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+    implicit request =>
+      for {
+        websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
+        updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+      } yield Ok(Json.toJson(updated))
+  }
+
+  def listDepartmentDivision(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listDepartmentDivision()))
+    }
+
+  def listInvestigationStatus(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listInvestigationStatus()))
+    }
+
+  def listPractice(): Action[AnyContent] =
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+      Ok(Json.toJson(websitesOrchestrator.listPractice()))
+    }
+
 }

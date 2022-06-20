@@ -143,7 +143,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
         any[Seq[EmailAddress]],
         anyString,
         anyString,
-        any
+        any[Seq[Attachment]]
       )
 
   def eventMustHaveBeenCreatedWithAction(reportUUID: UUID, action: ActionEventValue) =
@@ -179,6 +179,8 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)
 
-  override def setupData(): Unit =
+  override def setupData(): Unit = {
     Await.result(companyRepository.getOrCreate(company.siret, company), Duration.Inf)
+    ()
+  }
 }

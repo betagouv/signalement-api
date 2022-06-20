@@ -1,6 +1,7 @@
 package controllers.error
 
 import models.report.reportfile.ReportFileId
+import models.website.WebsiteId
 import utils.EmailAddress
 import utils.SIRET
 
@@ -47,9 +48,9 @@ object AppError {
     override val details: String = s"Le SIRET ${siret.value} ne correspond à aucune entreprise connue"
   }
 
-  final case class WebsiteNotFound(websiteId: UUID) extends NotFoundError {
+  final case class WebsiteNotFound(websiteId: WebsiteId) extends NotFoundError {
     override val `type`: String = "SC-0005"
-    override val title: String = s"Website ${websiteId.toString} not found"
+    override val title: String = s"Website ${websiteId.value.toString} not found"
     override val details: String = "L'association site internet n'existe pas."
   }
 
@@ -312,6 +313,20 @@ object AppError {
     override val title: String = "Malformed file key"
     override val details: String =
       s"Cannot find file with key $key"
+  }
+
+  final case class WebsiteNotIdentified(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0039"
+    override val title: String = s"Website must be associated to update /create investigation"
+    override val details: String =
+      s"Le site $host doit être associé à une entreprise ou un pays pour modifier l'enquête"
+  }
+
+  final case class CannotDeleteWebsite(host: String) extends BadRequestError {
+    override val `type`: String = "SC-0040"
+    override val title: String = s"Website must not be under investigation"
+    override val details: String =
+      s"Impossible de supprimer le site. Vérifiez que l'identification se soit pas validée (bouton vert) ou que le site ne fasse pas l'objet d'une enquête / affectation"
   }
 
 }

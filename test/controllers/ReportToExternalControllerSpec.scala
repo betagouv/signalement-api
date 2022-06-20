@@ -5,6 +5,7 @@ import models.Consumer
 import models.PaginatedResult
 import models.report.Report
 import models.report.ReportFile
+import models.report.ReportFilter
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -99,9 +100,13 @@ class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
 
     implicit val ordering: ReportRepository.ReportFileOrdering.type = ReportRepository.ReportFileOrdering
 
-    mockReportRepository.getReports(any, any, any) returns Future(PaginatedResult(0, false, List()))
-    mockReportRepository.getReportsWithFiles(any) returns Future(SortedMap.empty[Report, List[ReportFile]])
-    mockReportFileRepository.prefetchReportsFiles(any) returns Future(Map())
+    mockReportRepository.getReports(any[ReportFilter], any[Option[Long]], any[Option[Int]]) returns Future(
+      PaginatedResult(0, false, List())
+    )
+    mockReportRepository.getReportsWithFiles(any[ReportFilter]) returns Future(
+      SortedMap.empty[Report, List[ReportFile]]
+    )
+    mockReportFileRepository.prefetchReportsFiles(any[List[UUID]]) returns Future(Map())
 
     class FakeApplicationLoader extends ApplicationLoader {
       var components: SignalConsoComponents = _

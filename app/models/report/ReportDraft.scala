@@ -5,13 +5,14 @@ import utils.EmailAddress
 import utils.SIRET
 import utils.URL
 import models.report.ReportTag.TranslationReportTagReads
-
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.report.ReportTag
 import models.report.reportfile.ReportFileId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+
+import scala.annotation.nowarn
 
 case class ReportDraft(
     gender: Option[Gender],
@@ -82,6 +83,7 @@ object ReportDraft {
     * entry name Make sure no translated values is passed as ReportTag to remove this reads
     */
   implicit val reportTagReads = TranslationReportTagReads
+  @nowarn
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
   implicit val draftReportWrites = Json.writes[ReportDraft]
 }

@@ -75,7 +75,10 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
   val app = TestApp.buildApp(loader)
   val components = loader.components
 
-  override def afterAll(): Unit = app.stop()
+  override def afterAll(): Unit = {
+    app.stop()
+    ()
+  }
   implicit val authEnv = env
 
   lazy val userRepository = components.userRepository
@@ -295,7 +298,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     "fail on token expired" in {
 
       val tokenId = UUID.randomUUID()
-      val expiredToken = AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().minusMonths(10))
+      val expiredToken = AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().minusMonths(10L))
       val jsonBody = Json.obj("password" -> "test")
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)

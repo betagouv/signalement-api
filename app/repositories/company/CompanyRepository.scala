@@ -1,5 +1,10 @@
 package repositories.company
 
+import models.SearchCompanyIdentity.SearchCompanyIdentityId
+import models.SearchCompanyIdentity.SearchCompanyIdentityName
+import models.SearchCompanyIdentity.SearchCompanyIdentityRCS
+import models.SearchCompanyIdentity.SearchCompanyIdentitySiren
+import models.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
 import models.report.ReportStatus.ReportStatusProResponse
 import repositories.PostgresProfile.api._
