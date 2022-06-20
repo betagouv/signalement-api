@@ -1,8 +1,10 @@
 package orchestrators
 
+import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
+import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
 import models.Company
 import models.CompanyCreation
@@ -36,7 +38,7 @@ class WebsitesOrchestrator(
   def searchByHost(host: String): Future[Seq[Country]] =
     for {
       validHost <- URL(host).getHost.liftTo[Future](MalformedHost(host))
-      websites <- repository.searchValidWebsiteAssociationByHost(validHost)
+      websites <- repository.searchValidWebsiteCountryAssociationByHost(validHost)
     } yield websites
       .flatMap(_.companyCountry)
       .map(Country.fromName)
@@ -60,18 +62,29 @@ class WebsitesOrchestrator(
 
   def updateWebsiteIdentificationStatus(
       websiteId: WebsiteId,
-      identificationStatus: IdentificationStatus
+      newIdentificationStatus: IdentificationStatus
   ): Future[Website] = for {
     website <- findWebsite(websiteId)
-    _ = logger.debug(s"Updating website kind to ${identificationStatus}")
-    updatedWebsite = website.copy(identificationStatus = identificationStatus)
-    _ <- repository.update(updatedWebsite.id, updatedWebsite)
+
     _ <-
-      if (identificationStatus == IdentificationStatus.Identified) {
+      if (newIdentificationStatus == IdentificationStatus.Identified) {
+        logger.debug(s"Validating that ${website.host} has not already been validated")
+        repository
+          .searchValidAssociationByHost(website.host)
+          .ensure(WebsiteHostIsAlreadyIdentified(website.host))(
+            _.isEmpty
+          )
+      } else Future.unit
+    _ <-
+      if (newIdentificationStatus == IdentificationStatus.Identified) {
         logger.debug(s"Removing other websites with the same host : ${website.host}")
         repository
-          .removeOtherWebsitesWithSameHost(website)
+          .removeOtherNonIdentifiedWebsitesWithSameHost(website)
       } else Future.successful(())
+
+    _ = logger.debug(s"Updating website kind to ${newIdentificationStatus}")
+    updatedWebsite = website.copy(identificationStatus = newIdentificationStatus)
+    _ <- repository.update(updatedWebsite.id, updatedWebsite)
   } yield updatedWebsite
 
   def updateCompany(websiteId: WebsiteId, companyToAssign: CompanyCreation): Future[WebsiteAndCompany] = for {
@@ -82,14 +95,13 @@ class WebsitesOrchestrator(
     website <- findWebsite(websiteId)
     websiteToUpdate = website.copy(
       companyCountry = None,
-      companyId = Some(company.id),
-      identificationStatus = IdentificationStatus.Identified
+      companyId = Some(company.id)
     )
-    _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
     _ <- repository
-      .removeOtherWebsitesWithSameHost(website)
+      .removeOtherNonIdentifiedWebsitesWithSameHost(website)
+    _ = logger.debug(s"Website to update : ${websiteToUpdate}")
+    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Website company successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
@@ -100,14 +112,13 @@ class WebsitesOrchestrator(
     }
     websiteToUpdate = website.copy(
       companyCountry = Some(companyCountry),
-      companyId = None,
-      identificationStatus = IdentificationStatus.Identified
+      companyId = None
     )
-    _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Removing other websites with the same host : ${website.host}")
     _ <- repository
-      .removeOtherWebsitesWithSameHost(website)
+      .removeOtherNonIdentifiedWebsitesWithSameHost(website)
+    _ = logger.debug(s"Website to update : ${websiteToUpdate}")
+    updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
     _ = logger.debug(s"Website company country successfully updated")
   } yield WebsiteAndCompany.toApi(updatedWebsite, maybeCompany = None)
 
@@ -117,7 +128,9 @@ class WebsitesOrchestrator(
       website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
       isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus != NotProcessed
       _ <-
-        if (website.identificationStatus == IdentificationStatus.Identified || isWebsiteUnderInvestigation) {
+        if (
+          website.identificationStatus == IdentificationStatus.Identified || isWebsiteUnderInvestigation || website.identificationStatus == IdentificationStatus.Identified
+        ) {
           logger.debug(s"Cannot delete identified / under investigation website")
           Future.failed(CannotDeleteWebsite(website.host))
         } else {

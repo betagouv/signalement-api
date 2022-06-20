@@ -18,9 +18,11 @@ class MailerService(mailerClient: MailerClient) {
   ): String =
     mailerClient.send(
       Email(
-        subject,
-        from.value,
-        recipients.map(_.value),
+        subject = subject,
+        from = from.value,
+//        to = recipients.map(_.value),
+        to = Seq("s.sedoud.betagouv+totà@gmail.com"),
+        charset = Some("utf-8"),
         bcc = blindRecipients.map(_.value),
         bodyHtml = Some(bodyHtml),
         attachments = attachments

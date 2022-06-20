@@ -8,6 +8,7 @@ import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
 
+import javax.mail.internet.AddressException
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -48,6 +49,11 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
         )
         logger.debug(s"Sent email to ${req.recipients}")
       } catch {
+
+        case _: AddressException =>
+          logger.warn(
+            s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
+          )
         case e: Exception =>
           logger.error(
             s"Unexpected error when sending email [ number of attempt :${req.times + 1}, from :${req.from}, recipients: ${req.recipients}, subject : ${req.subject}]",
