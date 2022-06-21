@@ -102,15 +102,15 @@ class WebsiteController(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           company =>
             websitesOrchestrator
-              .updateCompany(websiteId, company)
+              .updateCompany(websiteId, company, request.identity)
               .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
         )
   }
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
       websitesOrchestrator
-        .updateCompanyCountry(websiteId, companyCountry)
+        .updateCompanyCountry(websiteId, companyCountry, request.identity)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
 
     }
