@@ -13,9 +13,9 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
 
   def validateAndCreate(newWebsite: Website): Future[Website]
 
-  def searchValidWebsiteAssociationByHost(host: String): Future[Seq[Website]]
+  def searchValidWebsiteCountryAssociationByHost(host: String): Future[Seq[Website]]
 
-  def removeOtherWebsitesWithSameHost(website: Website): Future[Int]
+  def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int]
 
   def searchCompaniesByUrl(
       url: String
@@ -27,4 +27,6 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       maybeOffset: Option[Long],
       maybeLimit: Option[Int]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]]
+
+  def searchValidAssociationByHost(host: String): Future[Seq[Website]]
 }
