@@ -89,7 +89,7 @@ class WebsitesOrchestrator(
   def updateCompany(websiteId: WebsiteId, companyToAssign: CompanyCreation, user: User): Future[WebsiteAndCompany] =
     for {
       company <- {
-        logger.debug(s"Updating website id ${websiteId} with company siret : ${companyToAssign.siret}")
+        logger.debug(s"Updating website (id ${websiteId}) with company siret : ${companyToAssign.siret}")
         getOrCreateCompay(companyToAssign)
       }
       website <- findWebsite(websiteId)
@@ -102,7 +102,7 @@ class WebsitesOrchestrator(
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String, user: User): Future[WebsiteAndCompany] = for {
     website <- {
-      logger.debug(s"Updating website id ${websiteId.value} with company country : ${companyCountry}")
+      logger.debug(s"Updating website (id ${websiteId.value}) with company country : ${companyCountry}")
       findWebsite(websiteId)
     }
     websiteToUpdate = website.copy(
