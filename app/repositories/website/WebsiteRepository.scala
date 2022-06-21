@@ -49,7 +49,16 @@ class WebsiteRepository(
         .getOrElse(super.create(newWebsite))
     )
 
-  override def searchValidWebsiteAssociationByHost(host: String): Future[Seq[Website]] =
+  override def searchValidAssociationByHost(host: String): Future[Seq[Website]] =
+    db.run(
+      table
+        .filter(_.host === host)
+        .filter(x => x.companyId.nonEmpty || x.companyCountry.nonEmpty)
+        .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+        .result
+    )
+
+  override def searchValidWebsiteCountryAssociationByHost(host: String): Future[Seq[Website]] =
     db.run(
       table
         .filter(_.host === host)
@@ -69,11 +78,12 @@ class WebsiteRepository(
         .result
     )
 
-  override def removeOtherWebsitesWithSameHost(website: Website): Future[Int] =
+  override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(
       table
         .filter(_.host === website.host)
         .filterNot(_.id === website.id)
+        .filterNot(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .delete
     )
 

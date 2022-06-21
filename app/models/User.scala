@@ -29,7 +29,8 @@ case class User(
     userRole: UserRole,
     lastEmailValidation: Option[OffsetDateTime]
 ) extends Identity {
-  def fullName = s"${firstName} ${lastName}"
+  def fullName: String = s"${firstName} ${lastName}"
+  def isAdmin: Boolean = this.userRole == UserRole.Admin
 }
 
 object User {

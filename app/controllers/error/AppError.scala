@@ -54,11 +54,15 @@ object AppError {
     override val details: String = "L'association site internet n'existe pas."
   }
 
-  final case class CompanyAlreadyAssociatedToWebsite(websiteId: UUID, siret: SIRET) extends BadRequestError {
+  final case class WebsiteHostIsAlreadyIdentified(
+      host: String,
+      companyId: Option[UUID] = None,
+      country: Option[String] = None
+  ) extends BadRequestError {
     override val `type`: String = "SC-0006"
-    override val title: String = s"Company already associated to website  ${websiteId.toString}"
+    override val title: String = s"Website ${host} already associated to a country or company"
     override val details: String =
-      s"Le SIRET ${siret.value} est déjà associé au site internet"
+      s"Le site internet ${host} est déjà associé à un autre pays ou une entreprise"
   }
 
   final case class MalformedHost(host: String) extends BadRequestError {
@@ -324,9 +328,9 @@ object AppError {
 
   final case class CannotDeleteWebsite(host: String) extends BadRequestError {
     override val `type`: String = "SC-0040"
-    override val title: String = s"Website must not be under investigation"
+    override val title: String = s"Website must not be under investigation or identified"
     override val details: String =
-      s"Impossible de supprimer le site. Vérifiez que l'identification se soit pas validée (bouton vert) ou que le site ne fasse pas l'objet d'une enquête / affectation"
+      s"Impossible de supprimer le site. Vérifiez que le site ne soit pas identifié ou qu'il ne fasse pas l'objet d'une enquête / affectation"
   }
 
 }

@@ -18,9 +18,9 @@ class MailerService(mailerClient: MailerClient) {
   ): String =
     mailerClient.send(
       Email(
-        subject,
-        from.value,
-        recipients.map(_.value),
+        subject = subject,
+        from = from.value,
+        to = recipients.map(_.value),
         bcc = blindRecipients.map(_.value),
         bodyHtml = Some(bodyHtml),
         attachments = attachments
