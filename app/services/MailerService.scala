@@ -20,8 +20,7 @@ class MailerService(mailerClient: MailerClient) {
       Email(
         subject = subject,
         from = from.value,
-//        to = recipients.map(_.value),
-        to = Seq("s.sedoud.betagouv+totà@gmail.com"),
+        to = recipients.map(_.value),
         charset = Some("utf-8"),
         bcc = blindRecipients.map(_.value),
         bodyHtml = Some(bodyHtml),
