@@ -351,10 +351,10 @@ object ReportRepository {
           .getOrElse(false)
       }
       .filterOpt(filter.start) { case (table, start) =>
-        table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        table.creationDate >= start
       }
       .filterOpt(filter.end) { case (table, end) =>
-        table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        table.creationDate <= end
       }
       .filterOpt(filter.category) { case (table, category) =>
         table.category === category

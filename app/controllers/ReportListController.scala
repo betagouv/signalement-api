@@ -14,10 +14,12 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
-
+import cats.implicits.catsSyntaxOption
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import utils.QueryStringMapper
+import java.time.ZoneId
 
 class ReportListController(
     reportOrchestrator: ReportOrchestrator,
@@ -54,22 +56,27 @@ class ReportListController(
   }
 
   def extractReports = SecuredAction(WithPermission(UserPermission.listReports)).async { implicit request =>
-    ReportFilter
-      .fromQueryString(request.queryString, request.identity.userRole)
-      .fold(
-        error => {
-          logger.error("Cannot parse querystring", error)
-          Future.successful(BadRequest)
-        },
-        filters => {
-          logger.debug(s"Requesting report for user ${request.identity.email}")
-          asyncFileRepository
-            .create(AsyncFile.build(request.identity, kind = AsyncFileKind.Reports))
-            .map { file =>
-              reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, filters)
-            }
-            .map(_ => Ok)
+    for {
+      reportFilter <- ReportFilter
+        .fromQueryString(request.queryString, request.identity.userRole)
+        .toOption
+        .liftTo[Future] {
+          logger.warn(s"Failed to parse ReportFilter query params")
+          throw MalformedQueryParams
         }
-      )
+      _ = logger.debug(s"Parsing zone query param")
+      zone <- (new QueryStringMapper(request.queryString))
+        .timeZone("zone")
+        // temporary retrocompat, so we can mep the API safely
+        .orElse(Some(ZoneId.of("Europe/Paris")))
+        .liftTo[Future] {
+          logger.warn(s"Failed to parse zone query param")
+          throw MalformedQueryParams
+        }
+      _ = logger.debug(s"Requesting report for user ${request.identity.email}")
+      file <- asyncFileRepository
+        .create(AsyncFile.build(request.identity, kind = AsyncFileKind.Reports))
+      _ = reportsExtractActor ! ReportsExtractActor.ExtractRequest(file.id, request.identity, reportFilter, zone)
+    } yield Ok
   }
 }

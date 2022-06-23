@@ -6,9 +6,9 @@ import models.UserRole.DGCCRF
 import models.report.ReportTag
 import utils.QueryStringMapper
 
-import java.time.LocalDate
 import java.util.UUID
 import scala.util.Try
+import java.time.OffsetDateTime
 
 case class ReportFilter(
     departments: Seq[String] = Seq.empty,
@@ -19,8 +19,8 @@ case class ReportFilter(
     companyIds: Seq[UUID] = Seq.empty,
     companyName: Option[String] = None,
     companyCountries: Seq[String] = Seq.empty,
-    start: Option[LocalDate] = None,
-    end: Option[LocalDate] = None,
+    start: Option[OffsetDateTime] = None,
+    end: Option[OffsetDateTime] = None,
     category: Option[String] = None,
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
@@ -47,8 +47,9 @@ object ReportFilter {
       siretSirenList = mapper.seq("siretSirenList"),
       companyName = mapper.string("companyName"),
       companyCountries = mapper.seq("companyCountries"),
-      start = mapper.localDate("start"),
-      end = mapper.localDate("end"),
+      // temporary retrocompat, so we can mep the API safely
+      start = mapper.timeWithLocalDateRetrocompatStartOfDay("start"),
+      end = mapper.timeWithLocalDateRetrocompatEndOfDay("end"),
       category = mapper.string("category"),
       companyIds = mapper.seq("companyIds").map(UUID.fromString),
       status = ReportStatus.filterByUserRole(
