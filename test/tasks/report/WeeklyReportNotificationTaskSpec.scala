@@ -6,7 +6,6 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import utils._
 
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
 import scala.concurrent.Await
@@ -16,7 +15,7 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
   override def is =
     s2"""
       When weekly reportNotificationTask task run               ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(7)), Duration.Inf)
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningTime, Period.ofDays(7)), Duration.Inf)
       }}
 
     A mail is sent to the subscribed user                     ${mailMustHaveBeenSent(
@@ -65,7 +64,8 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningDate = LocalDate.now.plusDays(1)
+  val runningTime = OffsetDateTime.now.plusDays(1)
+  val runningDate = runningTime.toLocalDate()
 
   val department1 = "87"
   val department2 = "19"
