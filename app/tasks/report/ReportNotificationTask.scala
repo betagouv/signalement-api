@@ -36,22 +36,30 @@ class ReportNotificationTask(
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
 
+    val now = OffsetDateTime.now
+
     if (LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay) {
-      runPeriodicNotificationTask(LocalDate.now, Period.ofDays(7))
+      runPeriodicNotificationTask(now, Period.ofDays(7))
     }
-    runPeriodicNotificationTask(LocalDate.now, Period.ofDays(1))
+
+    runPeriodicNotificationTask(now, Period.ofDays(1))
     ()
   })
 
-  def runPeriodicNotificationTask(taskDate: LocalDate, period: Period): Future[Unit] = {
+  def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
 
-    logger.debug(s"Traitement de notification des signalements - period $period")
-    logger.debug(s"taskDate - ${taskDate}");
+    val end = now
+    val start = end.minus(period)
+
+    logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
 
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       reports <- reportRepository.getReports(
-        ReportFilter(start = Some(taskDate.minus(period)), end = Some(taskDate)),
+        ReportFilter(
+          start = Some(start),
+          end = Some(end)
+        ),
         Some(0),
         Some(10000)
       )
@@ -84,7 +92,7 @@ class ReportNotificationTask(
             List(emailAddress),
             subscription,
             filteredReport,
-            taskDate.minus(period)
+            start.toLocalDate()
           )
         )
       }.sequence

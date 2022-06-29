@@ -9,9 +9,11 @@ import models.UserRole.Professionnel
 import org.specs2.mutable.Specification
 import utils.DateUtils
 
-import java.time.LocalDate
 import java.util.UUID
 import scala.util.Success
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class ReportFilterTest extends Specification {
 
@@ -46,8 +48,8 @@ class ReportFilterTest extends Specification {
         companyIds = Seq(UUID.randomUUID(), UUID.randomUUID()),
         companyName = Some("Company_Name"),
         companyCountries = Seq("FR", "EN"),
-        start = Some(LocalDate.of(2021, 10, 10)),
-        end = Some(LocalDate.of(2021, 12, 10)),
+        start = Some(OffsetDateTime.of(LocalDateTime.of(2021, 10, 10, 19, 30, 40), ZoneOffset.of("+02:00"))),
+        end = Some(OffsetDateTime.of(LocalDateTime.of(2021, 12, 10, 7, 0, 25), ZoneOffset.of("-05:00"))),
         category = Some("Categorie"),
         status = ReportStatus.statusVisibleByPro,
         details = Some("My Details"),
@@ -69,8 +71,8 @@ class ReportFilterTest extends Specification {
         "siretSirenList" -> expectedReportFilter.siretSirenList,
         "companyName" -> expectedReportFilter.companyName.toSeq,
         "companyCountries" -> expectedReportFilter.companyCountries,
-        "start" -> expectedReportFilter.start.toSeq.map(_.format(DateUtils.FORMATTER)),
-        "end" -> expectedReportFilter.end.toSeq.map(_.format(DateUtils.FORMATTER)),
+        "start" -> expectedReportFilter.start.toSeq.map(_.format(DateUtils.TIME_FORMATTER)),
+        "end" -> expectedReportFilter.end.toSeq.map(_.format(DateUtils.TIME_FORMATTER)),
         "category" -> expectedReportFilter.category.toSeq,
         "companyIds" -> expectedReportFilter.companyIds.map(_.toString),
         "status" -> expectedReportFilter.status.map(_.entryName),

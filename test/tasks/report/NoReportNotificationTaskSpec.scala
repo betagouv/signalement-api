@@ -9,16 +9,16 @@ import org.specs2.matcher.FutureMatchers
 import utils._
 import play.api.libs.mailer.Attachment
 
-import java.time.LocalDate
 import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import java.time.OffsetDateTime
 
 class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificationTaskSpec {
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningTime, Period.ofDays(1)), Duration.Inf)
       }}
          And no email are sent to any users                           ${mailMustNotHaveBeenSent()}
     """
@@ -45,8 +45,8 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningDate = LocalDate.now.plusDays(1)
-
+  val runningTime = OffsetDateTime.now.plusDays(1)
+  val runningDate = runningTime.toLocalDate()
   val covidDept = "01"
   val tagDept = "02"
 

@@ -28,19 +28,20 @@ import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
 import utils.Constants
 import utils.Constants.Departments
-
+import utils.DateUtils.frenchFormatDate
+import utils.DateUtils.frenchFormatDateAndTime
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.Random
+import java.time.ZoneId
+import java.time.OffsetDateTime
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
 
-  case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter)
+  case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId)
 }
 
 class ReportsExtractActor(
@@ -62,11 +63,11 @@ class ReportsExtractActor(
   override def preRestart(reason: Throwable, message: Option[Any]): Unit =
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
-    case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter) =>
+    case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId) =>
       for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
-        tmpPath <- genTmpFile(requestedBy, filters)
+        tmpPath <- genTmpFile(requestedBy, filters, zone)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
       } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
@@ -103,12 +104,12 @@ class ReportsExtractActor(
       extract: (Report, List[ReportFile], List[Event], List[User]) => String,
       available: Boolean = true
   )
-  def buildColumns(requestedBy: User) = {
+  def buildColumns(requestedBy: User, zone: ZoneId) = {
     List(
       ReportColumn(
         "Date de création",
         centerAlignmentColumn,
-        (report, _, _, _) => report.creationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        (report, _, _, _) => frenchFormatDate(report.creationDate, zone)
       ),
       ReportColumn(
         "Département",
@@ -283,8 +284,7 @@ class ReportsExtractActor(
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
-              s"Le ${event.creationDate
-                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))} : ${event.action.value} - ${event.getDescription}"
+              s"Le ${frenchFormatDate(event.creationDate, zone)} : ${event.action.value} - ${event.getDescription}"
             )
             .mkString("\n"),
         available = requestedBy.userRole == UserRole.DGCCRF
@@ -303,9 +303,8 @@ class ReportsExtractActor(
     ).filter(_.available)
   }
 
-  def genTmpFile(requestedBy: User, filters: ReportFilter) = {
-    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    val reportColumns = buildColumns(requestedBy)
+  def genTmpFile(requestedBy: User, filters: ReportFilter, zone: ZoneId) = {
+    val reportColumns = buildColumns(requestedBy, zone)
     for {
       paginatedReports <- reportOrchestrator
         .getReportsForUser(
@@ -349,7 +348,7 @@ class ReportsExtractActor(
             Some(
               Row().withCellValues(
                 "Date de l'export",
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
+                frenchFormatDateAndTime(OffsetDateTime.now, zone)
               )
             ),
             Some(filters.departments)
@@ -358,12 +357,16 @@ class ReportsExtractActor(
             (filters.start, filters.end) match {
               case (Some(startDate), Some(endDate)) =>
                 Some(
-                  Row().withCellValues("Période", s"Du ${startDate.format(formatter)} au ${endDate.format(formatter)}")
+                  Row().withCellValues(
+                    "Période",
+                    s"Du ${frenchFormatDate(startDate, zone)} au ${frenchFormatDate(endDate, zone)}"
+                  )
                 )
               case (Some(startDate), _) =>
-                Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
-              case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
-              case (_)                => None
+                Some(Row().withCellValues("Période", s"Depuis le ${frenchFormatDate(startDate, zone)}"))
+              case (_, Some(endDate)) =>
+                Some(Row().withCellValues("Période", s"Jusqu'au ${frenchFormatDate(endDate, zone)}"))
+              case (_) => None
             },
             Some(Row().withCellValues("Siret", filters.siretSirenList.mkString(","))),
             filters.websiteURL.map(websiteURL => Row().withCellValues("Site internet", websiteURL)),
@@ -394,4 +397,5 @@ class ReportsExtractActor(
     val remotePath = s"extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
+
 }
