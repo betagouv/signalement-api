@@ -8,16 +8,16 @@ import org.specs2.matcher.FutureMatchers
 import models.report.ReportTag
 import utils._
 
-import java.time.LocalDate
 import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import java.time.OffsetDateTime
 
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningTime, Period.ofDays(1)), Duration.Inf)
       }}
          And a mail is sent to the user subscribed by category                           ${mailMustHaveBeenSent(
         Seq(covidEmail),
@@ -62,7 +62,8 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningDate = LocalDate.now.plusDays(1)
+  val runningTime = OffsetDateTime.now.plusDays(1)
+  val runningDate = runningTime.toLocalDate()
 
   val covidDept = "01"
   val tagDept = "02"

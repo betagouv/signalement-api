@@ -7,17 +7,17 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import utils._
 
-import java.time.LocalDate
-import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import java.time.OffsetDateTime
+import java.time.Period
 
 class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends ReportTagFilterNotificationTaskSpec {
 
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningTime, Period.ofDays(1)), Duration.Inf)
       }}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(tagEmail),
@@ -34,7 +34,7 @@ class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends
   override def is =
     s2"""
          When daily reportNotificationTask task run                                      ${step {
-        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningDate, Period.ofDays(1)), Duration.Inf)
+        Await.result(reportNotificationTask.runPeriodicNotificationTask(runningTime, Period.ofDays(1)), Duration.Inf)
       }}
          And a mail is sent to the user subscribed without tag                                ${mailMustHaveBeenSent(
         Seq(noTagEmail),
@@ -67,8 +67,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningDate = LocalDate.now.plusDays(1)
-
+  val runningTime = OffsetDateTime.now.plusDays(1)
+  val runningDate = runningTime.toLocalDate()
   val tagDept = "02"
 
   val tagEmail = Fixtures.genEmailAddress("tag", "abo").sample.get

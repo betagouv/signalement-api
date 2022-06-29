@@ -59,8 +59,8 @@ class ReportToExternalController(
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
-      start = qs.localDate("start"),
-      end = qs.localDate("end"),
+      start = qs.timeWithLocalDateRetrocompatStartOfDay("start"),
+      end = qs.timeWithLocalDateRetrocompatEndOfDay("end"),
       withTags = qs.seq("tags").map(ReportTag.withName)
     )
 
@@ -84,8 +84,8 @@ class ReportToExternalController(
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = qs.string("siret").map(List(_)).getOrElse(List()),
-      start = qs.localDate("start"),
-      end = qs.localDate("end"),
+      start = qs.timeWithLocalDateRetrocompatStartOfDay("start"),
+      end = qs.timeWithLocalDateRetrocompatEndOfDay("end"),
       withTags = qs.seq("tags").map(ReportTag.withName)
     )
     val offset = qs.long("offset")
@@ -114,11 +114,12 @@ class ReportToExternalController(
     val qs = new QueryStringMapper(request.queryString)
     val filter = ReportFilter(
       siretSirenList = List(siret),
-      start = qs.localDate("start"),
-      end = qs.localDate("end")
+      start = qs.timeWithLocalDateRetrocompatStartOfDay("start"),
+      end = qs.timeWithLocalDateRetrocompatEndOfDay("end")
     )
     for {
       reports <- reportRepository.getReports(filter, Some(0), Some(1000000))
     } yield Ok(Json.toJson(reports.entities.map(ReportToExternal.fromReport)))
   }
+
 }
