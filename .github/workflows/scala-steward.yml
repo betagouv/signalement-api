@@ -13,3 +13,4 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN_GITHUB }}
           branches: master,TRELLO-1327
+          author-email: dev@signalconso.gouv.fr
