@@ -28,10 +28,10 @@ class InactiveDgccrfAccountRemoveTask(
   def removeInactiveAccounts(expirationDateThreshold: OffsetDateTime): Future[TaskExecutionResults] = {
 
     logger.info(s"Removing inactive DGCCRF accounts with last validation below $expirationDateThreshold")
-    (for {
+    for {
       inactiveDGCCRFAccounts <- userRepository.listExpiredDGCCRF(expirationDateThreshold)
       results <- inactiveDGCCRFAccounts.map(removeWithSubscriptions).sequence
-    } yield results.sequence)
+    } yield results.sequence
   }
 
   private def removeWithSubscriptions(user: User): Future[TaskExecutionResult] = {

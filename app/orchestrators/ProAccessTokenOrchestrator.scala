@@ -61,7 +61,7 @@ class ProAccessTokenOrchestrator(
   def proFirstActivationCount(ticks: Option[Int]) =
     companyAccessRepository
       .proFirstActivationCount(ticks.getOrElse(12))
-      .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
+      .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET) = for {
     token <- fetchCompanyToken(token, siret)
