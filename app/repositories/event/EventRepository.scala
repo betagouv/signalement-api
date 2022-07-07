@@ -188,15 +188,17 @@ and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
       responseTypes: NonEmptyList[ReportResponseType]
   ): Future[Vector[(Timestamp, Int)]] =
     db.run(
-      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
+      sql"""select
+    my_date_trunc('month'::text, creation_date)::timestamp as creation_month,
+    count(distinct report_id)
   from events
     where event_type = '#${PRO.value}'
     and report_id is not null
     and action = '#${REPORT_PRO_RESPONSE.value}'
     and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
-and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-  group by  my_date_trunc('month'::text,creation_date)
-  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
+    and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+  group by creation_month
+  order by 1 ASC LIMIT #${ticks} """.as[(Timestamp, Int)]
     )
 
 }
