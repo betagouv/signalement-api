@@ -333,4 +333,11 @@ object AppError {
       s"Impossible de supprimer le site. Vérifiez que le site ne soit pas identifié ou qu'il ne fasse pas l'objet d'une enquête / affectation"
   }
 
+  final case object CannotReportPublicAdministration extends BadRequestError {
+    override val `type`: String = "SC-0041"
+    override val title: String = s"Cannot report public administration"
+    override val details: String =
+      s"Impossible de signaler une administration publique"
+  }
+
 }
