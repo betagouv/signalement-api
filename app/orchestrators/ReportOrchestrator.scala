@@ -1,11 +1,13 @@
 package orchestrators
 
+import akka.Done
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
+import controllers.error.AppError
 import controllers.error.AppError.DuplicateReportCreation
 import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
 import controllers.error.AppError.InvalidEmail
@@ -160,6 +162,7 @@ class ReportOrchestrator(
 
   def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
     for {
+      _ <- validateCompany(draftReport)
       _ <- if (ReportDraft.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
       _ <- emailValidationOrchestrator
         .isEmailValid(draftReport.email)
@@ -176,6 +179,13 @@ class ReportOrchestrator(
       Future.failed(SpammerEmailBlocked(emailAddress))
     } else {
       Future.unit
+    }
+
+  private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] =
+    reportDraft.companyActivityCode match {
+      case Some(activityCode) if activityCode.startsWith("84.") =>
+        Future.failed(AppError.CannotReportPublicAdministration)
+      case _ => Future.successful(Done)
     }
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
