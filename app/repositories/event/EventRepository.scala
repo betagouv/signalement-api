@@ -182,7 +182,7 @@ WITH reports_sent_by_courrier AS (
 		WHERE action = ${POST_ACCOUNT_ACTIVATION_DOC.value}
 		AND creation_date >= '#$startStr'
 		AND company_id IS NOT NULL
-		ORDER BY company_id ASC, creation_date ASC
+		ORDER BY company_id ASC, creation_date DESC
 	)
 	SELECT
 		reports.id AS report_id,
