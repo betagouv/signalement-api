@@ -177,8 +177,8 @@ class CompanyAccessController(
       )
   }
 
-  def proFirstActivationCount(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    accessesOrchestrator.proFirstActivationCount(ticks).map(x => Ok(Json.toJson(x)))
+  def proFirstActivationCount() = SecuredAction.async(parse.empty) { _ =>
+    accessesOrchestrator.proFirstActivationCount().map(x => Ok(Json.toJson(x)))
   }
 
 }

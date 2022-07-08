@@ -58,10 +58,12 @@ class ProAccessTokenOrchestrator(
         ProAccessToken(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
       }
 
-  def proFirstActivationCount(ticks: Option[Int]) =
+  def proFirstActivationCount() = {
+    val months = 12
     companyAccessRepository
-      .proFirstActivationCount(ticks.getOrElse(12))
-      .map(StatsOrchestrator.formatStatData(_, (ticks.getOrElse(12))))
+      .proFirstActivationCount(months)
+      .map(StatsOrchestrator.formatStatData(_, months))
+  }
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET) = for {
     token <- fetchCompanyToken(token, siret)
