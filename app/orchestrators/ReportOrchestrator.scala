@@ -269,9 +269,19 @@ class ReportOrchestrator(
       }
   } yield ()
 
-  private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) =
+  private def notifyConsumer(report: Report, maybeCompany: Option[Company], reportAttachements: List[ReportFile]) = {
+    val event = Event(
+      UUID.randomUUID(),
+      Some(report.id),
+      maybeCompany.map(_.id),
+      None,
+      OffsetDateTime.now(),
+      Constants.EventType.CONSO,
+      Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
+    )
     for {
-      event <- eventRepository.create(
+      _ <- mailService.send(ConsumerReportAcknowledgment(report, event, reportAttachements))
+      _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
           Some(report.id),
@@ -282,8 +292,8 @@ class ReportOrchestrator(
           Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
         )
       )
-      _ <- mailService.send(ConsumerReportAcknowledgment(report, event, reportAttachements))
     } yield ()
+  }
 
   private def notifyProfessionalIfNeeded(maybeCompany: Option[Company], report: Report) =
     (report.status, maybeCompany) match {
@@ -492,6 +502,7 @@ class ReportOrchestrator(
 
   private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
+      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
       _ <- mailService.send(ConsumerReportReadByProNotification(report))
       _ <- eventRepository.create(
         Event(
@@ -504,7 +515,6 @@ class ReportOrchestrator(
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
       )
-      newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
     } yield newReport
 
   private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
@@ -556,6 +566,17 @@ class ReportOrchestrator(
   def handleReportResponse(report: Report, reportResponse: ReportResponse, user: User): Future[Report] = {
     logger.debug(s"handleReportResponse ${reportResponse.responseType}")
     for {
+      _ <- reportFileOrchestrator.attachFilesToReport(reportResponse.fileIds, report.id)
+      updatedReport <- reportRepository.update(
+        report.id,
+        report.copy(
+          status = reportResponse.responseType match {
+            case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
+            case ReportResponseType.REJECTED      => ReportStatus.Infonde
+            case ReportResponseType.NOT_CONCERNED => ReportStatus.MalAttribue
+          }
+        )
+      )
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -566,17 +587,6 @@ class ReportOrchestrator(
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
-        )
-      )
-      _ <- reportFileOrchestrator.attachFilesToReport(reportResponse.fileIds, report.id)
-      updatedReport <- reportRepository.update(
-        report.id,
-        report.copy(
-          status = reportResponse.responseType match {
-            case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
-            case ReportResponseType.REJECTED      => ReportStatus.Infonde
-            case ReportResponseType.NOT_CONCERNED => ReportStatus.MalAttribue
-          }
         )
       )
       _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
@@ -607,6 +617,7 @@ class ReportOrchestrator(
 
   def handleReportAction(report: Report, reportAction: ReportAction, user: User): Future[Event] =
     for {
+      _ <- reportFileOrchestrator.attachFilesToReport(reportAction.fileIds, report.id)
       newEvent <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -621,7 +632,6 @@ class ReportOrchestrator(
             .getOrElse(Json.toJson(reportAction))
         )
       )
-      _ <- reportFileOrchestrator.attachFilesToReport(reportAction.fileIds, report.id)
     } yield {
       logger.debug(
         s"Create event ${newEvent.id} on report ${report.id} for reportActionType ${reportAction.actionType}"
