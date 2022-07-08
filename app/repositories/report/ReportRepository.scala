@@ -20,6 +20,9 @@ import repositories.report.ReportRepository.queryFilter
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
+import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
+
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -105,6 +108,25 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     )
     .map(_.map { case (day, month, year, length) => CountByDate(length, LocalDate.of(year, month, day)) })
     .map(fillFullPeriod(ticks, (x, i) => x.minusDays(i.toLong)))
+
+  def getMonthlyReportsTransmissibleStat(start: OffsetDateTime): Future[Vector[(Timestamp, Int)]] = {
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val startStr = dateFormatter.format(OffsetDateTime.now().minusMonths(12).withDayOfMonth(1))
+    db.run(sql"""
+SELECT
+	DATE_TRUNC('month', creation_date)::timestamp AS creation_month,
+	count(*) as cpt
+FROM reports
+WHERE company_siret IS NOT NULL
+AND 'ReponseConso' != ANY (tags)
+AND 'ProduitDangereux' != ANY (tags)
+AND 'BlocTel' != ANY (tags)
+AND status != 'LanceurAlerte'
+AND creation_date >= '#$startStr'
+GROUP BY creation_month
+ORDER BY creation_month
+""".as[(Timestamp, Int)])
+  }
 
   private[this] def fillFullPeriod(
       ticks: Int,

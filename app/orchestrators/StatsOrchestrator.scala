@@ -103,6 +103,15 @@ class StatsOrchestrator(
     )
   }
 
+  def getReportTransmissibleStat() = {
+    val months = 12
+    reportRepository
+      .getMonthlyReportsTransmissibleStat(start =
+        OffsetDateTime.now(ZoneOffset.UTC).minusMonths(months.toLong).withDayOfMonth(1)
+      )
+      .map(formatStatData(_, months))
+  }
+
   def getProReportTransmittedStat() = {
     val months = 12
     eventRepository

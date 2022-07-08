@@ -7,7 +7,9 @@ import models.UserRole
 import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
 
+import java.sql.Timestamp
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.Future
@@ -28,6 +30,8 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
       filter: ReportFilter,
       ticks: Int
   ): Future[Seq[CountByDate]]
+
+  def getMonthlyReportsTransmissibleStat(start: OffsetDateTime): Future[Vector[(Timestamp, Int)]]
 
   def getReports(companyId: UUID): Future[List[Report]]
 

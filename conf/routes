@@ -13,6 +13,7 @@ GET           /api/stats/reports/delay/read                     controllers.Stat
 GET           /api/stats/reports/tags                           controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                         controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/reviews                        controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/transmissible                  controllers.StatisticController.getReportTransmissibleStat()
 GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat()
 GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]])
 GET           /api/stats/pro-account-rate                       controllers.CompanyAccessController.proFirstActivationCount()

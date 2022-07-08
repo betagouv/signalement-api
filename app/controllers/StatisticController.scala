@@ -89,6 +89,10 @@ class StatisticController(
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
+  def getReportTransmissibleStat() = SecuredAction.async { _ =>
+    statsOrchestrator.getReportTransmissibleStat().map(x => Ok(Json.toJson(x)))
+  }
+
   def getProReportTransmittedStat() = SecuredAction.async(parse.empty) { _ =>
     statsOrchestrator.getProReportTransmittedStat().map(x => Ok(Json.toJson(x)))
   }
