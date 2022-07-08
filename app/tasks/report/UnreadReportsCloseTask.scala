@@ -106,6 +106,7 @@ class UnreadReportsCloseTask(
 
   private def closeUnreadReport(report: Report) = {
     val taskExecution: Future[Unit] = for {
+      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.NonConsulte))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -118,6 +119,7 @@ class UnreadReportsCloseTask(
           stringToDetailsJsValue("Clôture automatique : signalement non consulté")
         )
       )
+      _ <- emailService.send(ConsumerReportClosedNoReading(report))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -129,8 +131,6 @@ class UnreadReportsCloseTask(
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
         )
       )
-      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.NonConsulte))
-      _ <- emailService.send(ConsumerReportClosedNoReading(report))
     } yield ()
 
     toValidated(taskExecution, report.id, TaskType.CloseUnreadReport)

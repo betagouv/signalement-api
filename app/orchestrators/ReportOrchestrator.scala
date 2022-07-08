@@ -53,6 +53,7 @@ import utils.Constants
 import utils.EmailAddress
 import utils.URL
 
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
@@ -163,16 +164,53 @@ class ReportOrchestrator(
   def validateAndCreateReport(draftReport: ReportDraft): Future[Report] =
     for {
       _ <- validateCompany(draftReport)
-      _ <- if (ReportDraft.isValid(draftReport)) Future.unit else Future.failed(ReportCreationInvalidBody)
-      _ <- emailValidationOrchestrator
-        .isEmailValid(draftReport.email)
-        .ensure {
-          logger.warn(s"Email ${draftReport.email} is not valid, abort report creation")
-          InvalidEmail(draftReport.email.value)
-        }(isValid => isValid || emailConfiguration.skipReportEmailValidation)
-      _ <- validateReportSpammerBlockList(draftReport.email)
+      _ <- validateSpamSimilarReport(draftReport)
+      _ <- validateReportIdentification(draftReport)
+      _ <- validateConsumerEmail(draftReport)
       createdReport <- createReport(draftReport)
     } yield createdReport
+
+  private def validateReportIdentification(draftReport: ReportDraft) =
+    if (ReportDraft.isValid(draftReport)) {
+      Future.unit
+    } else {
+      Future.failed(ReportCreationInvalidBody)
+    }
+
+  private def validateConsumerEmail(draftReport: ReportDraft) = for {
+    _ <- emailValidationOrchestrator
+      .isEmailValid(draftReport.email)
+      .ensure {
+        logger.warn(s"Email ${draftReport.email} is not valid, abort report creation")
+        InvalidEmail(draftReport.email.value)
+      }(isValid => isValid || emailConfiguration.skipReportEmailValidation)
+    _ <- validateReportSpammerBlockList(draftReport.email)
+  } yield ()
+
+  def validateSpamSimilarReport(draftReport: ReportDraft) = {
+    logger.debug(s"Checking if similar report have been submitted")
+    val startOfDay = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC)
+    val startOfWeek = LocalDate.now().minusDays(7).atStartOfDay().atOffset(ZoneOffset.UTC)
+    val MAX_EXACT_SIMILAR_REPORT_WHITHIN_A_DAY = 1
+    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY = 2
+    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK = 4
+
+    for {
+      _ <- reportRepository
+        .findSimilarReportCount(draftReport, includeDetails = true, after = startOfDay)
+        .ensure(DuplicateReportCreation)(count => count < MAX_EXACT_SIMILAR_REPORT_WHITHIN_A_DAY)
+      _ = logger.debug(s"No exact similar report have been submitted")
+      _ = logger.debug(s"Checking if report from same user & company have been submitted more than twice today")
+      _ <- reportRepository
+        .findSimilarReportCount(draftReport, includeDetails = false, after = startOfDay)
+        .ensure(DuplicateReportCreation)(count => count < MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY)
+      _ = logger.debug(s"No report from same user & company")
+      _ = logger.debug(s"Checking if report from same user & company have been submitted more than 4 times this week")
+      _ <- reportRepository
+        .findSimilarReportCount(draftReport, includeDetails = false, after = startOfWeek)
+        .ensure(DuplicateReportCreation)(count => count < MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK)
+    } yield ()
+  }
 
   private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
     if (signalConsoConfiguration.reportEmailsBlacklist.contains(emailAddress.value)) {
@@ -194,7 +232,6 @@ class ReportOrchestrator(
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
-      _ <- reportRepository.findSimilarReportCount(reportToCreate).ensure(DuplicateReportCreation)(_ == 0)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)

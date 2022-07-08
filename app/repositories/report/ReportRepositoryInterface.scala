@@ -8,13 +8,14 @@ import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
 
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.Future
 
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
-  def findSimilarReportCount(report: Report): Future[Int]
+  def findSimilarReportCount(report: ReportDraft, includeDetails: Boolean, after: OffsetDateTime): Future[Int]
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]]
 

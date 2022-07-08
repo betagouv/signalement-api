@@ -4,6 +4,7 @@ import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
 import models.report.Report
+import models.report.ReportDraft
 import models.report.ReportFile
 import models.report.ReportFilter
 import models.report.ReportStatus
@@ -13,6 +14,7 @@ import utils.CRUDRepositoryMock
 import utils.EmailAddress
 
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.collection.mutable
@@ -22,7 +24,11 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
     extends CRUDRepositoryMock[Report](database, _.id)
     with ReportRepositoryInterface {
 
-  override def findSimilarReportCount(report: Report): Future[Int] = ???
+  override def findSimilarReportCount(
+      report: ReportDraft,
+      includeDetails: Boolean,
+      after: OffsetDateTime
+  ): Future[Int] = ???
 
   override def findByEmail(email: EmailAddress): Future[Seq[Report]] = ???
 
