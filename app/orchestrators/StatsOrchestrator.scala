@@ -18,11 +18,6 @@ import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 
 import java.sql.Timestamp
 import java.time.Duration
@@ -108,20 +103,14 @@ class StatsOrchestrator(
     )
   }
 
-  def getProReportTransmittedStat(ticks: Int) =
+  def getProReportTransmittedStat() = {
+    val months = 12
     eventRepository
-      .getProReportStat(
-        ticks,
-        computeStartingDate(ticks),
-        NonEmptyList.of(
-          REPORT_READING_BY_PRO,
-          REPORT_CLOSED_BY_NO_READING,
-          REPORT_CLOSED_BY_NO_ACTION,
-          EMAIL_PRO_NEW_REPORT,
-          REPORT_PRO_RESPONSE
-        )
+      .getMonthlyReportsTransmittedToProStat(start =
+        OffsetDateTime.now(ZoneOffset.UTC).minusMonths(months.toLong).withDayOfMonth(1)
       )
-      .map(formatStatData(_, ticks))
+      .map(formatStatData(_, months))
+  }
 
   def getProReportResponseStat(ticks: Int, responseTypes: NonEmptyList[ReportResponseType]) =
     eventRepository

@@ -89,8 +89,8 @@ class StatisticController(
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    statsOrchestrator.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  def getProReportTransmittedStat() = SecuredAction.async(parse.empty) { _ =>
+    statsOrchestrator.getProReportTransmittedStat().map(x => Ok(Json.toJson(x)))
   }
 
   def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =

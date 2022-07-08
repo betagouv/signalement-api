@@ -43,10 +43,8 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def getReportCountHavingEvent(action: ActionEvent.ActionEventValue, companyId: Option[UUID] = None): Future[Int]
 
-  def getProReportStat(
-      ticks: Int,
-      startingDate: OffsetDateTime,
-      actions: NonEmptyList[ActionEvent.ActionEventValue]
+  def getMonthlyReportsTransmittedToProStat(
+      start: OffsetDateTime
   ): Future[Vector[(Timestamp, Int)]]
 
   def getProReportResponseStat(

@@ -15,6 +15,8 @@ import repositories.user.UserTable
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
+import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.PRO
@@ -35,7 +37,7 @@ class EventRepository(
 
   override val table: TableQuery[EventTable] = EventTable.table
 
-  val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+  val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
   import dbConfig._
 
@@ -166,21 +168,49 @@ class EventRepository(
         .result
     )
 
-  override def getProReportStat(
-      ticks: Int,
-      startingDate: OffsetDateTime,
-      actions: NonEmptyList[ActionEventValue]
-  ): Future[Vector[(Timestamp, Int)]] =
-    db.run(
-      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
-  from events
-    where event_type = '#${PRO.value}'
-    and report_id is not null
-    and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
-and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-  group by  my_date_trunc('month'::text,creation_date)
-  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
-    )
+  override def getMonthlyReportsTransmittedToProStat(
+      start: OffsetDateTime
+  ): Future[Vector[(Timestamp, Int)]] = {
+    val startStr = dateFormatter.format(start)
+    db.run(sql"""
+WITH reports_sent_by_courrier AS (
+	WITH companies_courrier_sent AS (
+		SELECT DISTINCT ON (company_id)
+			company_id,
+			creation_date
+		FROM events
+		WHERE action = ${POST_ACCOUNT_ACTIVATION_DOC.value}
+		AND creation_date >= '#$startStr'
+		AND company_id IS NOT NULL
+		ORDER BY company_id ASC, creation_date ASC
+	)
+	SELECT
+		reports.id AS report_id,
+		companies_courrier_sent.creation_date
+	FROM companies_courrier_sent
+	JOIN reports
+	ON reports.company_id = companies_courrier_sent.company_id
+	WHERE reports.creation_date < companies_courrier_sent.creation_date
+), reports_sent_by_email AS (
+	SELECT DISTINCT ON (report_id)
+		report_id,
+		creation_date
+	FROM events
+  WHERE action = ${EMAIL_PRO_NEW_REPORT.value}
+	AND creation_date >= '#$startStr'
+	AND report_id IS NOT NULL
+	ORDER BY report_id ASC, creation_date ASC
+)
+SELECT
+	DATE_TRUNC('month', LEAST (reports_sent_by_courrier.creation_date, reports_sent_by_email.creation_date))::timestamp AS transmission_month,
+	count(*) as cpt
+FROM reports_sent_by_courrier
+    FULL JOIN reports_sent_by_email
+ON reports_sent_by_courrier.report_id = reports_sent_by_email.report_id
+GROUP BY transmission_month
+ORDER by transmission_month
+""".as[(Timestamp, Int)])
+  }
 
   override def getProReportResponseStat(
       ticks: Int,
@@ -196,7 +226,7 @@ and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
     and report_id is not null
     and action = '#${REPORT_PRO_RESPONSE.value}'
     and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
-    and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
+    and creation_date >= '#${dateFormatter.format(startingDate)}'::timestamp
   group by creation_month
   order by 1 ASC LIMIT #${ticks} """.as[(Timestamp, Int)]
     )
