@@ -16,6 +16,7 @@ import scala.concurrent.Future
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def findSimilarReportCount(report: ReportDraft, includeDetails: Boolean, after: OffsetDateTime): Future[Int]
+  def findSimilarReportList(report: ReportDraft, includeDetails: Boolean, after: OffsetDateTime): Future[List[Report]]
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]]
 

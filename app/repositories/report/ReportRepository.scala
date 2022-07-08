@@ -28,6 +28,38 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   override val table: TableQuery[ReportTable] = ReportTable.table
   import dbConfig._
 
+  def findSimilarReportList(
+      report: ReportDraft,
+      includeDetails: Boolean,
+      after: OffsetDateTime
+  ): Future[List[Report]] = {
+
+    val emailCompanyIdentification = table
+      .filter(_.email === report.email)
+      .filterOpt(report.companyAddress.flatMap(_.postalCode))(_.companyPostalCode === _)
+      .filterIf(report.companyAddress.flatMap(_.postalCode).isEmpty)(_.companyPostalCode.isEmpty)
+      .filterOpt(report.companyAddress.flatMap(_.number))(_.companyStreetNumber === _)
+      .filterIf(report.companyAddress.flatMap(_.number).isEmpty)(_.companyStreetNumber.isEmpty)
+      .filterOpt(report.companyAddress.flatMap(_.street))(_.companyStreet === _)
+      .filterIf(report.companyAddress.flatMap(_.street).isEmpty)(_.companyStreet.isEmpty)
+      .filterOpt(report.companyAddress.flatMap(_.addressSupplement))(_.companyAddressSupplement === _)
+      .filterIf(report.companyAddress.flatMap(_.addressSupplement).isEmpty)(_.companyAddressSupplement.isEmpty)
+      .filterOpt(report.companyAddress.flatMap(_.city))(_.companyCity === _)
+      .filterIf(report.companyAddress.flatMap(_.city).isEmpty)(_.companyCity.isEmpty)
+      .filter(_.firstName === report.firstName)
+      .filter(_.lastName === report.lastName)
+      .filter(_.creationDate >= after)
+
+    val similarReportIdentification = if (includeDetails) {
+      emailCompanyIdentification
+        .filter(_.details === report.details.map(detailInputValuetoString(_)))
+    } else {
+      emailCompanyIdentification
+    }
+
+    db.run(similarReportIdentification.result).map(_.toList)
+  }
+
   def findSimilarReportCount(report: ReportDraft, includeDetails: Boolean, after: OffsetDateTime): Future[Int] = {
 
     val emailCompanyIdentification = table

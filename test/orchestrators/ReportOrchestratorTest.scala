@@ -1,11 +1,12 @@
 package orchestrators
 
 import akka.Done
+import controllers.error.AppError.CannotReportPublicAdministration
+import controllers.error.AppError.DuplicateReportCreation
 import org.specs2.mutable.Specification
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models.report.DetailInputValue
 import models.report.Report
@@ -31,7 +32,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
 
   def deriveSameReport(report: Report, creationDate: OffsetDateTime): Report = report.copy(
     id = UUID.randomUUID(),
-    details = List(DetailInputValue(UUID.randomUUID().toString, UUID.randomUUID().toString)),
+    details = List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString)),
     creationDate = creationDate
   )
 
@@ -47,7 +48,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
         .sample
         .get
         .copy(
-          companyActivityCode = Some("90")
+          companyActivityCode = Some("90"),
+          details = List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
         )
 
       val res = for {
@@ -56,12 +58,13 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
         reportDraft = report
           .into[ReportDraft]
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
+          .withFieldComputed(_.details, _.details)
           .withFieldConst(_.fileIds, List.empty)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
 
-      res must throwA[DuplicateReportCreation.type].await
+      res must throwA[DuplicateReportCreation].await
     }
 
     "fail when report on same company by same user has been made more than twice a day" in {
@@ -72,11 +75,12 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
         .sample
         .get
         .copy(
-          companyActivityCode = Some("90")
+          companyActivityCode = Some("90"),
+          creationDate = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC)
         )
 
       val secondReport =
-        deriveSameReport(report, creationDate = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC))
+        deriveSameReport(report, creationDate = LocalDate.now().atStartOfDay().plusHours(3).atOffset(ZoneOffset.UTC))
 
       val res = for {
         _ <- components.companyRepository.create(company)
@@ -91,7 +95,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
 
-      res must throwA[DuplicateReportCreation.type].await
+      res must throwA[DuplicateReportCreation].await
     }
 
     "succeed when report on same company by same user has been made less than twice a day" in {
@@ -150,12 +154,15 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .into[ReportDraft]
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
-          .withFieldConst(_.details, List(DetailInputValue(UUID.randomUUID().toString, UUID.randomUUID().toString)))
+          .withFieldConst(
+            _.details,
+            List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
+          )
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
 
-      res must throwA[DuplicateReportCreation.type].await
+      res must throwA[DuplicateReportCreation].await
     }
 
     "success when report on same company by same user has been made less than four time a week" in {
@@ -183,7 +190,10 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .into[ReportDraft]
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
-          .withFieldConst(_.details, List(DetailInputValue(UUID.randomUUID().toString, UUID.randomUUID().toString)))
+          .withFieldConst(
+            _.details,
+            List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
+          )
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result

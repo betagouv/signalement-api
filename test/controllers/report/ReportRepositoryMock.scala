@@ -30,6 +30,9 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
       after: OffsetDateTime
   ): Future[Int] = ???
 
+  def findSimilarReportList(report: ReportDraft, includeDetails: Boolean, after: OffsetDateTime): Future[List[Report]] =
+    ???
+
   override def findByEmail(email: EmailAddress): Future[Seq[Report]] = ???
 
   override def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] = ???

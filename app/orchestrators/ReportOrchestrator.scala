@@ -187,29 +187,42 @@ class ReportOrchestrator(
     _ <- validateReportSpammerBlockList(draftReport.email)
   } yield ()
 
-  def validateSpamSimilarReport(draftReport: ReportDraft) = {
+  private[orchestrators] def validateSpamSimilarReport(draftReport: ReportDraft): Future[Unit] = {
     logger.debug(s"Checking if similar report have been submitted")
+
     val startOfDay = LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC)
     val startOfWeek = LocalDate.now().minusDays(7).atStartOfDay().atOffset(ZoneOffset.UTC)
-    val MAX_EXACT_SIMILAR_REPORT_WHITHIN_A_DAY = 1
-    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY = 2
-    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK = 4
 
-    for {
-      _ <- reportRepository
-        .findSimilarReportCount(draftReport, includeDetails = true, after = startOfDay)
-        .ensure(DuplicateReportCreation)(count => count < MAX_EXACT_SIMILAR_REPORT_WHITHIN_A_DAY)
-      _ = logger.debug(s"No exact similar report have been submitted")
-      _ = logger.debug(s"Checking if report from same user & company have been submitted more than twice today")
-      _ <- reportRepository
-        .findSimilarReportCount(draftReport, includeDetails = false, after = startOfDay)
-        .ensure(DuplicateReportCreation)(count => count < MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY)
-      _ = logger.debug(s"No report from same user & company")
-      _ = logger.debug(s"Checking if report from same user & company have been submitted more than 4 times this week")
-      _ <- reportRepository
-        .findSimilarReportCount(draftReport, includeDetails = false, after = startOfWeek)
-        .ensure(DuplicateReportCreation)(count => count < MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK)
-    } yield ()
+    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK = 4
+    val MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY = 2
+
+    reportRepository
+      .findSimilarReportList(draftReport, includeDetails = false, after = startOfWeek)
+      .map { reportList =>
+        val exactSameReportList =
+          reportList
+            .filter(r => r.creationDate.isAfter(startOfDay) || r.creationDate.isEqual(startOfDay))
+            .filter(_.details.containsSlice(draftReport.details))
+
+        val reportsWithSameUserAndCompanyTodayList =
+          reportList.filter(r => r.creationDate.isAfter(startOfDay) || r.creationDate.isEqual(startOfDay))
+
+        val reportsWithSameUserAndCompanyThisWeek =
+          reportList.filter(r => r.creationDate.isAfter(startOfWeek) || r.creationDate.isEqual(startOfWeek))
+
+        if (exactSameReportList.nonEmpty) {
+          throw DuplicateReportCreation(exactSameReportList)
+        } else if (
+          reportsWithSameUserAndCompanyTodayList.size > MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_DAY - 1
+        ) {
+          throw DuplicateReportCreation(reportsWithSameUserAndCompanyTodayList)
+        } else if (
+          reportsWithSameUserAndCompanyThisWeek.size > MAX_SIMILAR_CONSUMER_COMPANY_REPORT_WHITHIN_A_WEEK - 1
+        ) {
+          throw DuplicateReportCreation(reportsWithSameUserAndCompanyThisWeek)
+        } else ()
+      }
+
   }
 
   private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
