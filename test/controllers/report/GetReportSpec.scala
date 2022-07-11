@@ -406,7 +406,7 @@ trait GetReportContext extends AppSpec {
   val components: SignalConsoComponents = appLoader.components
 
   lazy val mailerService = components.mailer
-  lazy val attachementService = components.attachementService
+  lazy val attachementService = components.attachmentService
   lazy val mailService = components.mailService
 
 }

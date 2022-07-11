@@ -1,7 +1,6 @@
 package services
 
 import actors.EmailActor.EmailRequest
-import akka.actor.ActorRef
 import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
@@ -14,11 +13,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class MailService(
-    actor: ActorRef,
+    sendEmail: EmailRequest => Unit,
     emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,
     val pdfService: PDFService,
-    attachementService: AttachementService
+    attachmentService: AttachmentService
 )(implicit
     val frontRoute: FrontRoute,
     private[this] val executionContext: ExecutionContext
@@ -37,7 +36,7 @@ class MailService(
         email.recipients,
         email.subject,
         email.getBody(frontRoute, contactAddress),
-        email.getAttachements(attachementService)
+        email.getAttachements(attachmentService)
       )
   }
 
@@ -53,12 +52,26 @@ class MailService(
               recipient.toList,
               email.subject,
               email.getBody(frontRoute, contactAddress),
-              email.getAttachements(attachementService)
+              email.getAttachements(attachmentService)
             )
           )
       case None =>
         logger.debug("No company linked to report, not sending emails")
         Future.successful(())
+    }
+
+  private def filterEmail(recipients: Seq[EmailAddress]): Seq[EmailAddress] =
+    recipients.filter(_.nonEmpty).filter { emailAddress =>
+      val isAllowed = emailConfiguration.outboundEmailFilterRegex.findFirstIn(emailAddress.value).nonEmpty
+      if (!isAllowed) {
+        logger.warn(
+          s"""Filtering email ${emailAddress}
+             |because it does not match outboundEmailFilterRegex conf pattern :
+             | ${emailConfiguration.outboundEmailFilterRegex
+              .toString()}""".stripMargin
+        )
+      }
+      isAllowed
     }
 
   private def send(
@@ -67,7 +80,7 @@ class MailService(
       bodyHtml: String,
       attachments: Seq[Attachment]
   ): Future[Unit] = {
-    val filteredEmptyEmail: Seq[EmailAddress] = recipients.filter(_.nonEmpty)
+    val filteredEmptyEmail: Seq[EmailAddress] = filterEmail(recipients)
     NonEmptyList.fromList(filteredEmptyEmail.toList) match {
       case None =>
         Future.successful(())
@@ -79,7 +92,7 @@ class MailService(
           bodyHtml = bodyHtml,
           attachments = attachments
         )
-        Future.successful(actor ! emailRequest)
+        Future.successful(sendEmail(emailRequest))
     }
   }
 

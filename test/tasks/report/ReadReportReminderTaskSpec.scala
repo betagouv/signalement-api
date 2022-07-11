@@ -331,7 +331,7 @@ abstract class ReadReportReminderTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyAccessRepository = components.companyAccessRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val mailerService = components.mailer
-  lazy val attachementService = components.attachementService
+  lazy val attachementService = components.attachmentService
 
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress

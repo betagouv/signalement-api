@@ -1,7 +1,7 @@
 package tasks.account
 
 import akka.actor.ActorSystem
-import config.InactiveAccountsTaskConfiguration
+import config.TaskConfiguration
 import play.api.Logger
 import tasks.computeStartingTime
 
@@ -15,7 +15,7 @@ import scala.concurrent.duration.FiniteDuration
 class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
-    inactiveAccountsTaskConfiguration: InactiveAccountsTaskConfiguration
+    taskConfiguration: TaskConfiguration
 )(implicit
     executionContext: ExecutionContext
 ) {
@@ -23,21 +23,23 @@ class InactiveAccountTask(
   val logger: Logger = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = inactiveAccountsTaskConfiguration.startTime
+  val startTime = taskConfiguration.inactiveAccounts.startTime
   val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.day) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
-    runTask(
-      OffsetDateTime
-        .now(ZoneOffset.UTC)
-    )
+    if (taskConfiguration.active) {
+      runTask(
+        OffsetDateTime
+          .now(ZoneOffset.UTC)
+      )
+    }
     ()
   }
 
   def runTask(now: OffsetDateTime) = {
     logger.info(s"taskDate - ${now}")
-    val expirationDateThreshold: OffsetDateTime = now.minus(inactiveAccountsTaskConfiguration.inactivePeriod)
+    val expirationDateThreshold: OffsetDateTime = now.minus(taskConfiguration.inactiveAccounts.inactivePeriod)
 
     inactiveDgccrfAccountRemoveTask.removeInactiveAccounts(expirationDateThreshold).recoverWith { case err =>
       logger.error(

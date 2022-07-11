@@ -24,7 +24,7 @@ sealed trait Email {
   val recipients: Seq[EmailAddress]
   val subject: String
   def getBody: (FrontRoute, EmailAddress) => String
-  def getAttachements: AttachementService => Seq[Attachment] = _.defaultAttachments
+  def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
 sealed trait DgccrfEmail extends Email
@@ -165,7 +165,7 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportAcknowledgment(report, files.toList)(frontRoute).toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
+    override def getAttachements: AttachmentService => Seq[Attachment] =
       _.reportAcknowledgmentAttachement(report, event, files)
   }
 
@@ -183,7 +183,7 @@ object Email {
         )
         .toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
+    override def getAttachements: AttachmentService => Seq[Attachment] =
       _.ConsumerProResponseNotificationAttachement
   }
 
@@ -194,7 +194,7 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportClosedByNoAction(report)(frontRoute).toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
+    override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(4, report)
 
   }
@@ -206,7 +206,7 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer.reportClosedByNoReading(report)(frontRoute).toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
+    override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(3, report)
 
   }
@@ -228,7 +228,7 @@ object Email {
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.consumer.reportTransmission(report).toString
 
-    override def getAttachements: AttachementService => Seq[Attachment] =
+    override def getAttachements: AttachmentService => Seq[Attachment] =
       _.attachmentSeqForWorkflowStepN(3)
   }
 

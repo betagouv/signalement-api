@@ -174,7 +174,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
   lazy val eventRepository = components.eventRepository
   lazy val reminderTask = components.reportTask
   lazy val mailerService = components.mailer
-  lazy val attachementService = components.attachementService
+  lazy val attachementService = components.attachmentService
 
   def setupReport(report: Report) =
     Await.result(reportRepository.create(report), Duration.Inf)

@@ -38,7 +38,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = components.companyRepository
   lazy val reportNotificationTask = components.reportNotificationTask
   lazy val mailerService = components.mailer
-  lazy val attachementService = components.attachementService
+  lazy val attachementService = components.attachmentService
 
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress

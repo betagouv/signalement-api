@@ -219,7 +219,14 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               )
 
             override def emailConfiguration: EmailConfiguration =
-              EmailConfiguration(EmailAddress("test@sc.com"), EmailAddress("test@sc.com"), skipValidation, "", List(""))
+              EmailConfiguration(
+                EmailAddress("test@sc.com"),
+                EmailAddress("test@sc.com"),
+                skipValidation,
+                "",
+                List(""),
+                ".*".r
+              )
 
           }
           components.application
