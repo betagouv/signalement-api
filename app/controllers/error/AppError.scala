@@ -1,5 +1,6 @@
 package controllers.error
 
+import models.report.Report
 import models.report.reportfile.ReportFileId
 import models.website.WebsiteId
 import utils.EmailAddress
@@ -220,11 +221,11 @@ object AppError {
       s"Le nombre d'entrée par page demandé est trop élevé. Il doit être inférieur ou égal à $maxSize"
   }
 
-  final case object DuplicateReportCreation extends BadRequestError {
+  final case class DuplicateReportCreation(reportList: List[Report]) extends BadRequestError {
     override val `type`: String = "SC-0025"
-    override val title: String = s"Same report has already been created"
+    override val title: String = s"Same report has already been created with id ${reportList.map(_.id).mkString(",")}"
     override val details: String =
-      s"Un signalement similaire a été créé aujourd'hui."
+      s"Il existe un ou plusieurs signalements similaire"
   }
 
   final case object MalformedQueryParams extends BadRequestError {
