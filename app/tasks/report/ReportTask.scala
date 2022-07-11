@@ -46,7 +46,9 @@ class ReportTask(
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = interval) { () =>
     logger.debug(s"initialDelay - ${initialDelay}");
-    runTask(LocalDate.now.atStartOfDay())
+    if (taskConfiguration.active) {
+      runTask(LocalDate.now.atStartOfDay())
+    }
     ()
   }
 

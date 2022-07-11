@@ -6,6 +6,7 @@ import java.time.Period
 import scala.concurrent.duration.FiniteDuration
 
 case class TaskConfiguration(
+    active: Boolean,
     subscription: SubscriptionTaskConfiguration,
     report: ReportTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration

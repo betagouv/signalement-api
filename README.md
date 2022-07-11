@@ -53,6 +53,8 @@ Runtime / javaOptions += s"-DMAILER_TLS_REQUIRED=no"
 Runtime / javaOptions += s"-DMAILER_USER="
 Runtime / javaOptions += s"-DMAILER_PASSWORD="
 Runtime / javaOptions += s"-DMAILER_MOCK=yes"
+Runtime / javaOptions += s"""-DOUTBOUND_EMAIL_FILTER_REGEX=beta?.gouv|@.*gouv.fr"""
+Runtime / javaOptions += s"""-DSIGNAL_CONSO_SCHEDULED_JOB_ACTIVE=false"""
 
 // MAIL
 Runtime / javaOptions += s"-DMAIL_FROM="

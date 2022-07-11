@@ -214,7 +214,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
   lazy val mailerService = components.mailer
-  lazy val attachmentService = components.attachementService
+  lazy val attachmentService = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
   lazy val companyDataRepository = components.companyDataRepository
 
