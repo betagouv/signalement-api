@@ -89,28 +89,30 @@ class UnreadReportsReminderTask(
       reportEventsMap: Map[UUID, List[Event]]
   ) = {
 
-    val taskExecution: Future[Unit] = for {
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          Some(report.id),
-          report.companyId,
-          None,
-          OffsetDateTime.now(),
-          SYSTEM,
-          EMAIL_PRO_REMIND_NO_READING,
-          stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
+    val reportExpirationDate = ReportTask.computeReportExpirationDate(
+      mailReminderDelay,
+      report.id,
+      reportEventsMap,
+      EMAIL_PRO_REMIND_NO_READING
+    )
+    val taskExecution: Future[Unit] = {
+      logger.debug(s"Sending email")
+      for {
+        _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
+        _ <- eventRepository.create(
+          Event(
+            UUID.randomUUID(),
+            Some(report.id),
+            report.companyId,
+            None,
+            OffsetDateTime.now(),
+            SYSTEM,
+            EMAIL_PRO_REMIND_NO_READING,
+            stringToDetailsJsValue(s"Relance envoyée à ${adminMails.mkString(", ")}")
+          )
         )
-      )
-      reportExpirationDate = ReportTask.computeReportExpirationDate(
-        mailReminderDelay,
-        report.id,
-        reportEventsMap,
-        EMAIL_PRO_REMIND_NO_READING
-      )
-      _ = logger.debug(s"Sending email")
-      _ <- emailService.send(ProReportUnreadReminder(adminMails, report, reportExpirationDate))
-    } yield ()
+      } yield ()
+    }
 
     toValidated(taskExecution, report.id, TaskType.RemindUnreadReportsByEmail)
   }

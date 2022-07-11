@@ -75,6 +75,7 @@ class NoActionReportsCloseTask(
 
   private def closeTransmittedReportByNoAction(report: Report) = {
     val taskExecution: Future[Unit] = for {
+      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.ConsulteIgnore))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -87,6 +88,7 @@ class NoActionReportsCloseTask(
           stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré")
         )
       )
+      _ <- emailService.send(ConsumerReportClosedNoAction(report))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -98,8 +100,6 @@ class NoActionReportsCloseTask(
           EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
         )
       )
-      _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.ConsulteIgnore))
-      _ <- emailService.send(ConsumerReportClosedNoAction(report))
     } yield ()
     toValidated(taskExecution, report.id, TaskType.CloseReadReportWithNoAction)
 
