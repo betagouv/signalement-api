@@ -28,6 +28,8 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.ReportWithFiles
+import models.report.ReportWordOccurrence
+import models.report.ReportWordOccurrence.StopWords
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.libs.json.Json
@@ -704,4 +706,15 @@ class ReportOrchestrator(
             }
         }
     } yield visibleReport
+
+  def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
+    reportRepository.cloudWord(companyId).map { wordOccurenceList =>
+      wordOccurenceList
+        .filterNot { wordOccurrence =>
+          wordOccurrence.value.exists(_.isDigit) || wordOccurrence.count < 10 || StopWords
+            .contains(wordOccurrence.value)
+        }
+        .sortWith(_.count > _.count)
+        .slice(0, 50)
+    }
 }

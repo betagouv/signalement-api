@@ -20,8 +20,6 @@ import repositories.report.ReportRepository.queryFilter
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
-import scala.collection.immutable.ListMap
-
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -251,11 +249,6 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def cloudWord(companyId: UUID) =
-    db.run(sql"""SELECT to_tsvector('french', STRING_AGG(t.d, ' ')) 
-          FROM (SELECT unnest(details) as d from reports where company_id = '#${companyId.toString}') as t
-          WHERE t.d like 'Description%'""".as[TsVector])
-
   def getUnkonwnReportCountByHost(
       host: Option[String],
       start: Option[LocalDate] = None,
@@ -279,35 +272,46 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] =
-    cloudWord(UUID.fromString("2b606068-5d08-4599-8c7c-ec163e7ac0f6")).flatMap { x =>
-      println("-------------------")
-      println(x)
-
-      val g: Array[(String, Int)] = x.head.value.split(' ').map { arrayOfOccurences =>
-        val value = arrayOfOccurences.split(":")
-        (value.head, value.apply(1).split(",").length)
+  override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
+    db.run(
+      sql"""
+        SELECT to_tsvector('french', STRING_AGG(replace(reportDetail.detailField,'Description : ',''), ''))
+        FROM (
+            SELECT unnest(details) as detailField
+            FROM reports
+            WHERE company_id = '#${companyId.toString}') as reportDetail
+        WHERE reportDetail.detailField like 'Description%';
+        """.as[TsVector]
+    ).map { c =>
+      val tsVector = c.headOption.getOrElse(TsVector.apply(""))
+      tsVector.value.split(' ').toList.flatMap { arrayOfOccurences =>
+        arrayOfOccurences.split(":").toList match {
+          case word :: occurrences :: Nil =>
+            List(
+              ReportWordOccurrence(
+                value = word.replace("\'", ""),
+                count = occurrences.split(",").length
+              )
+            )
+          case _ => List.empty[ReportWordOccurrence]
+        }
       }
-      println(
-        s"------------------ ${ListMap(g.filter(_._2 > 10).filter(x => !x._1.exists(_.isDigit)).toSeq.sortWith(_._2 > _._2): _*)}  ------------------"
-      )
-
-      println("-------------------")
-      db
-        .run(
-          table
-            .filter(_.phone.isDefined)
-            .filterOpt(start) { case (table, start) =>
-              table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
-            }
-            .filterOpt(end) { case (table, end) =>
-              table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-            }
-            .to[List]
-            .result
-        )
     }
 
+  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] =
+    db
+      .run(
+        table
+          .filter(_.phone.isDefined)
+          .filterOpt(start) { case (table, start) =>
+            table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+          }
+          .filterOpt(end) { case (table, end) =>
+            table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+          }
+          .to[List]
+          .result
+      )
 }
 
 object ReportRepository {
