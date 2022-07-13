@@ -45,10 +45,12 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
     "remove inactive DGCCRF and subscriptions accounts only" in {
 
-      val conf = InactiveAccountsTaskConfiguration(startTime = LocalTime.now(), inactivePeriod = Period.ofYears(1))
+      val conf = components.applicationConfiguration.task.copy(inactiveAccounts =
+        InactiveAccountsTaskConfiguration(startTime = LocalTime.now(), inactivePeriod = Period.ofYears(1))
+      )
       val now: LocalDateTime = LocalDateTime.now()
       val expirationDateTime: LocalDateTime =
-        LocalDateTime.now().minusYears(conf.inactivePeriod.getYears.toLong).minusDays(1L)
+        LocalDateTime.now().minusYears(conf.inactiveAccounts.inactivePeriod.getYears.toLong).minusDays(1L)
       new WithApplication(app) {
 
         // Inactive account to be removed

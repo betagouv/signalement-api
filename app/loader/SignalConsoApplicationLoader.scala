@@ -1,6 +1,7 @@
 package loader
 
 import _root_.controllers._
+import actors.EmailActor.EmailRequest
 import actors._
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -247,13 +248,13 @@ class SignalConsoComponents(
 
   val pdfService = new PDFService(signalConsoConfiguration)
   implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
-  val attachementService = new AttachementService(environment, pdfService, frontRoute)
+  val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
   val mailService = new MailService(
-    emailActor,
+    (emailRequest: EmailRequest) => emailActor ! emailRequest,
     emailConfiguration,
     reportNotificationBlockedRepository,
     pdfService,
-    attachementService
+    attachmentService
   )
 
   // Orchestrator
@@ -406,7 +407,7 @@ class SignalConsoComponents(
   val inactiveAccountTask = new InactiveAccountTask(
     actorSystem,
     inactiveDgccrfAccountRemoveTask,
-    applicationConfiguration.task.inactiveAccounts
+    applicationConfiguration.task
   )
 
   // Controller

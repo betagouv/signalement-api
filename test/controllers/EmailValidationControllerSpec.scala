@@ -54,7 +54,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     components.emailValidationRepository
 
   lazy val mailerService = components.mailer
-  lazy val attachementService = components.attachementService
+  lazy val attachementService = components.attachmentService
 
   lazy val frontRoute = components.frontRoute
   lazy val contactAddress = emailConfiguration.contactAddress
@@ -70,7 +70,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           contactAddress = EmptyEmailAddress,
           skipReportEmailValidation = skipValidation,
           ccrfEmailSuffix = "*",
-          emailProvidersBlocklist = emailProviderBlocklist
+          emailProvidersBlocklist = emailProviderBlocklist,
+          outboundEmailFilterRegex = ".*".r
         )
 
       }

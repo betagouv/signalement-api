@@ -1,5 +1,6 @@
 package services
 
+import actors.EmailActor.EmailRequest
 import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -20,6 +21,8 @@ import utils.SIREN
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
+import java.util.UUID
+import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -193,6 +196,96 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
 
     sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
     checkRecipients(Seq())
+  }
+}
+
+class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+
+  override def is = s2"""No email must be filtered $e1"""
+
+  def e1 = {
+
+    val emailQueue = mutable.Queue.empty[EmailRequest]
+
+    val nonFilteredEmails = List(
+      EmailAddress(s"${UUID.randomUUID().toString}@betagouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}@beta.gouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}beta.gouv@gmail.com"),
+      EmailAddress(s"${UUID.randomUUID().toString}@dgccrf.finances.gouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}@${UUID.randomUUID().toString}.gouv.fr")
+    )
+
+    val filteredEmail = List(
+      EmailAddress(s"${UUID.randomUUID().toString}@gmail.com"),
+      EmailAddress(s"${UUID.randomUUID().toString}@outlook.com")
+    )
+
+    val mailService = new MailService(
+      (emailRequest: EmailRequest) => {
+        emailQueue.appendAll(List(emailRequest))
+        ()
+      },
+      emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = ".*".r),
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(components.frontRoute, executionContext)
+
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
+    emailQueue.dequeue().recipients.mustEqual(NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail))
+  }
+}
+
+class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+
+  override def is = s2"""email must be filtered $e1"""
+
+  def e1 = {
+
+    val emailQueue = mutable.Queue.empty[EmailRequest]
+
+    val nonFilteredEmails = List(
+      EmailAddress(s"${UUID.randomUUID().toString}@betagouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}@beta.gouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}@beta.gouv@gmail.com"),
+      EmailAddress(s"${UUID.randomUUID().toString}@dgccrf.finances.gouv.fr"),
+      EmailAddress(s"${UUID.randomUUID().toString}@${UUID.randomUUID().toString}.gouv.fr")
+    )
+
+    val filteredEmail = List(
+      EmailAddress(s"${UUID.randomUUID().toString}@gmail.com"),
+      EmailAddress(s"${UUID.randomUUID().toString}@outlook.com")
+    )
+
+    val mailService = new MailService(
+      (emailRequest: EmailRequest) => {
+        emailQueue.appendAll(List(emailRequest))
+        ()
+      },
+      emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = """beta?.gouv|@.*gouv.fr""".r),
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(components.frontRoute, executionContext)
+
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
+    emailQueue.dequeue().recipients.mustEqual(NonEmptyList.fromListUnsafe(nonFilteredEmails))
   }
 }
 
