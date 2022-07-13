@@ -3,6 +3,7 @@ package orchestrators
 import akka.Done
 import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxMonadError
+import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
@@ -708,13 +709,18 @@ class ReportOrchestrator(
     } yield visibleReport
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
-    reportRepository.cloudWord(companyId).map { wordOccurenceList =>
-      wordOccurenceList
-        .filterNot { wordOccurrence =>
-          wordOccurrence.value.exists(_.isDigit) || wordOccurrence.count < 10 || StopWords
-            .contains(wordOccurrence.value)
-        }
-        .sortWith(_.count > _.count)
-        .slice(0, 50)
-    }
+    for {
+      maybeCompany <- companyRepository.get(companyId)
+      company <- maybeCompany.liftTo[Future](AppError.CompanyNotFound(companyId))
+      wordOccurenceList <- reportRepository.cloudWord(companyId)
+    } yield wordOccurenceList
+      .filterNot { wordOccurrence =>
+        wordOccurrence.value.exists(_.isDigit) ||
+        wordOccurrence.count < 10 ||
+        StopWords.contains(wordOccurrence.value) ||
+        wordOccurrence.value.contains(company.name.toLowerCase)
+      }
+      .sortWith(_.count > _.count)
+      .slice(0, 50)
+
 }
