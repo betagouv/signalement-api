@@ -9,6 +9,7 @@ import models.report.ReportFile
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
+import models.report.ReportWordOccurrence
 import repositories.report.ReportRepositoryInterface
 import utils.CRUDRepositoryMock
 import utils.EmailAddress
@@ -74,4 +75,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   ): Future[List[(Option[String], Int)]] = ???
 
   override def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = ???
+
+  override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 }

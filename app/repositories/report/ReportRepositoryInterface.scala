@@ -15,6 +15,8 @@ import scala.concurrent.Future
 
 trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
+  def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]]
+
   def findSimilarReportList(report: ReportDraft, after: OffsetDateTime): Future[List[Report]]
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]]
