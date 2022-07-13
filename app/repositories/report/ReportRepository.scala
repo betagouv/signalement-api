@@ -1,5 +1,6 @@
 package repositories.report
 
+import com.github.tminglei.slickpg.TsVector
 import models._
 import models.report._
 import repositories.PostgresProfile.api._
@@ -271,20 +272,46 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = db
-    .run(
-      table
-        .filter(_.phone.isDefined)
-        .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+  override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
+    db.run(
+      sql"""
+        SELECT to_tsvector('french', STRING_AGG(replace(reportDetail.detailField,'Description : ',''), ''))
+        FROM (
+            SELECT unnest(details) as detailField
+            FROM reports
+            WHERE company_id = '#${companyId.toString}') as reportDetail
+        WHERE reportDetail.detailField like 'Description%';
+        """.as[TsVector]
+    ).map { c =>
+      val tsVector = c.headOption.getOrElse(TsVector.apply(""))
+      tsVector.value.split(' ').toList.flatMap { arrayOfOccurences =>
+        arrayOfOccurences.split(":").toList match {
+          case word :: occurrences :: Nil =>
+            List(
+              ReportWordOccurrence(
+                value = word.replace("\'", ""),
+                count = occurrences.split(",").length
+              )
+            )
+          case _ => List.empty[ReportWordOccurrence]
         }
-        .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-        }
-        .to[List]
-        .result
-    )
+      }
+    }
 
+  def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] =
+    db
+      .run(
+        table
+          .filter(_.phone.isDefined)
+          .filterOpt(start) { case (table, start) =>
+            table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+          }
+          .filterOpt(end) { case (table, end) =>
+            table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+          }
+          .to[List]
+          .result
+      )
 }
 
 object ReportRepository {
@@ -396,4 +423,5 @@ object ReportRepository {
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
       }
+
 }

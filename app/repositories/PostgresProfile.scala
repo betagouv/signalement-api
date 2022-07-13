@@ -11,6 +11,7 @@ trait PostgresProfile
     extends ExPostgresProfile
     with PgPlayJsonSupport
     with PgArraySupport
+    with PgSearchSupport
     with PgDate2Support
     with PgAggFuncSupport
     with PgTrgmSupport {
@@ -19,7 +20,13 @@ trait PostgresProfile
 
   override val api = MyAPI
 
-  object MyAPI extends API with ArrayImplicits with JsonImplicits with DateTimeImplicits with PgTrgmImplicits {
+  object MyAPI
+      extends API
+      with ArrayImplicits
+      with JsonImplicits
+      with DateTimeImplicits
+      with PgTrgmImplicits
+      with SimpleSearchPlainImplicits {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 

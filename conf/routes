@@ -32,7 +32,8 @@ GET           /api/reports/files/:uuid/:filename                controllers.Repo
 DELETE        /api/reports/files/:uuid/:filename                controllers.ReportFileController.deleteReportFile(uuid: ReportFileId, filename)
 POST          /api/reports/files                                controllers.ReportFileController.uploadReportFile()
 
-GET           /api/reports/download                       controllers.ReportController.reportsAsPDF()
+GET           /api/reports/download                             controllers.ReportController.reportsAsPDF()
+GET           /api/reports/cloudword/:companyId                 controllers.ReportController.cloudWord(companyId: java.util.UUID)
 GET           /api/reports/:uuid                                controllers.ReportController.getReport(uuid: java.util.UUID)
 DELETE        /api/reports/:uuid                                controllers.ReportController.deleteReport(uuid: java.util.UUID)
 
@@ -105,7 +106,7 @@ GET           /api/account/dgccrf/pending                       controllers.Acco
 GET           /api/account/dgccrf/users                         controllers.AccountController.fetchDGCCRFUsers()
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 POST          /api/account/validate-email/:email                controllers.AccountController.forceValidateEmail(email : String)
-PUT           /api/account/:id                                       controllers.AccountController.edit(id: java.util.UUID)
+PUT           /api/account/:id                                  controllers.AccountController.edit(id: java.util.UUID)
 
 # EmailValidation API
 POST          /api/email-validation/check                       controllers.EmailValidationController.check()

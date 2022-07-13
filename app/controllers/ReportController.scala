@@ -148,6 +148,12 @@ class ReportController(
       .map(pdfService.Ok)
   }
 
+  def cloudWord(companyId: UUID) = UserAwareAction.async(parse.empty) { _ =>
+    reportOrchestrator
+      .getCloudWord(companyId)
+      .map(cloudword => Ok(Json.toJson(cloudword)))
+  }
+
   def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
   }
