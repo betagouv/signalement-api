@@ -68,6 +68,7 @@ GET           /api/async-files                                  controllers.Asyn
 
 # Constants API
 GET           /api/constants/countries                          controllers.ConstantController.getCountries()
+GET           /api/constants/categories                         controllers.ConstantController.getCategories()
 
 # Authentication API
 POST          /api/authenticate                                 controllers.AuthController.authenticate()

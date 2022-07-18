@@ -52,9 +52,10 @@ class ReportNotificationTask(
     val start = end.minus(period)
 
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
-
+    println(s"------------------  =  1 ------------------")
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
+      _ = println(s"------------------  = 2 ------------------")
       reports <- reportRepository.getReports(
         ReportFilter(
           start = Some(start),
@@ -63,6 +64,7 @@ class ReportNotificationTask(
         Some(0),
         Some(10000)
       )
+      _ = println(s"------------------  = 3 ------------------")
       subscriptionsEmailAndReports = subscriptions.map { case (subscription, emailAddress) =>
         val filteredReport = reports.entities
           .filter(report =>
@@ -71,7 +73,7 @@ class ReportNotificationTask(
               .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode))
           )
           .filter(report =>
-            subscription.categories.isEmpty || subscription.categories.map(_.value).contains(report.category)
+            subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
           )
           .filter(report =>
             subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
