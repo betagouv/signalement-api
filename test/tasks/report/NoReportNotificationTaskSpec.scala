@@ -58,7 +58,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     userId = None,
     email = Some(covidEmail),
     departments = List(covidDept),
-    categories = List(ReportCategory.Covid),
+    categories = List(ReportCategory.Coronavirus),
     frequency = Period.ofDays(1)
   )
 
@@ -82,7 +82,10 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .genReportForCompany(company)
     .sample
     .get
-    .copy(companyAddress = Address(postalCode = Some(covidDept + "000")), category = ReportCategory.Covid.value)
+    .copy(
+      companyAddress = Address(postalCode = Some(covidDept + "000")),
+      category = ReportCategory.Coronavirus.entryName
+    )
   val tagReport = Fixtures
     .genReportForCompany(company)
     .sample

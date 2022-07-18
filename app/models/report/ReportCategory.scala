@@ -1,17 +1,15 @@
 package models.report
 
 import controllers.error.AppError.MalformedValue
-import enumeratum.values.StringEnumEntry
-import enumeratum.values.StringPlayEnum
+import enumeratum.EnumEntry
+import enumeratum.PlayEnum
 
-sealed abstract class ReportCategory(val value: String, val legacy: Boolean = false) extends StringEnumEntry
+sealed abstract class ReportCategory(override val entryName: String, val legacy: Boolean = false) extends EnumEntry
 
-object ReportCategory extends StringPlayEnum[ReportCategory] {
-
-  val values = findValues
+object ReportCategory extends PlayEnum[ReportCategory] {
 
   case object RetraitRappelSpecifique extends ReportCategory("Retrait-Rappel pécifique")
-  case object Covid extends ReportCategory("COVID-19 (coronavirus)")
+  case object Coronavirus extends ReportCategory("COVID-19 (coronavirus)")
   case object CafeRestaurant extends ReportCategory("Café / Restaurant")
   case object AchatMagasin extends ReportCategory("Achat / Magasin", legacy = true)
   case object AchatMagasinInternet extends ReportCategory("Achat (Magasin ou Internet)")
@@ -33,5 +31,7 @@ object ReportCategory extends StringPlayEnum[ReportCategory] {
   case object VoitureVehiculeVelo extends ReportCategory("Voiture / Véhicule / Vélo")
   case object DemarchageAbusif extends ReportCategory("Démarchage abusif")
 
-  def fromValue(v: String): ReportCategory = withValueOpt(v).fold(throw MalformedValue(v))(identity)
+  def fromValue(v: String): ReportCategory = withNameOption(v).fold(throw MalformedValue(v))(identity)
+
+  override def values: IndexedSeq[ReportCategory] = findValues
 }

@@ -15,17 +15,17 @@ class ReportCategoryTest extends Specification {
     Fragments.foreach(
       ReportCategory.values
     ) { v =>
-      s"parse json from value ${v.value}" in {
+      s"parse json from value ${v.entryName}" in {
         v shouldEqual (Json.toJson(v).as[ReportCategory])
       }
 
-      s"retreive from value ${v.value}" in {
-        v shouldEqual fromValue(v.value)
+      s"retreive from entryName ${v.entryName}" in {
+        v shouldEqual fromValue(v.entryName)
       }
 
     }
 
-    "Failed when passing unvalid value" in {
+    "Failed when passing unvalid entryName" in {
       fromValue(UUID.randomUUID().toString) must throwA[MalformedValue]
     }
 

@@ -90,7 +90,7 @@ class SubscriptionTable(tag: Tag) extends DatabaseTable[Subscription](tag, "subs
         userId,
         email,
         departments,
-        categories.map(_.value),
+        categories.map(_.entryName),
         withTags,
         withoutTags,
         countries,
