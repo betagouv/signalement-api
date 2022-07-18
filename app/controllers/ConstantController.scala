@@ -1,6 +1,7 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import models.report.ReportCategory
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -17,6 +18,10 @@ class ConstantController(val silhouette: Silhouette[AuthEnv], controllerComponen
 
   def getCountries = UnsecuredAction.async {
     Future(Ok(Json.toJson(Country.countries)))
+  }
+
+  def getCategories = UnsecuredAction.async {
+    Future(Ok(Json.toJson(ReportCategory.values.filterNot(_.legacy))))
   }
 
 }
