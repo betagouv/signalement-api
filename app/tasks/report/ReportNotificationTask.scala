@@ -52,17 +52,14 @@ class ReportNotificationTask(
     val start = end.minus(period)
 
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
-    println(s"------------------  =  1 ------------------")
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
-      _ = println(s"------------------  = 2 ------------------")
       reportsWithFiles <- reportRepository.getReportsWithFiles(
         ReportFilter(
           start = Some(start),
           end = Some(end)
         )
       )
-      _ = println(s"------------------  = 3 ------------------")
       subscriptionsEmailAndReports = subscriptions.map { case (subscription, emailAddress) =>
         val filteredReport = reportsWithFiles
           .filter { case (report, _) =>
