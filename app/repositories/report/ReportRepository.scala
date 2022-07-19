@@ -283,7 +283,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         WHERE reportDetail.detailField like 'Description%';
         """.as[TsVector]
     ).map { c =>
-      val tsVector = c.headOption.getOrElse(TsVector.apply(""))
+      val tsVector = c.headOption.filterNot(_ == null).getOrElse(TsVector.apply(""))
       tsVector.value.split(' ').toList.flatMap { arrayOfOccurences =>
         arrayOfOccurences.split(":").toList match {
           case word :: occurrences :: Nil =>
