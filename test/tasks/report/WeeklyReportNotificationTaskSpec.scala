@@ -22,21 +22,29 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
         Seq(user.email),
         s"[SignalConso] 3 nouveaux signalements",
         views.html.mails.dgccrf
-          .reportNotification(userSubscription, Seq(report11, report12, reportGuadeloupe), runningDate.minusDays(7))
+          .reportNotification(
+            userSubscription,
+            Seq((report11, List.empty), (report12, List.empty), (reportGuadeloupe, List.empty)),
+            runningDate.minusDays(7)
+          )
           .toString
       )}
     A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
         Seq(user.email),
         s"[SignalConso] Un nouveau signalement",
         views.html.mails.dgccrf
-          .reportNotification(userSubscriptionCountries, Seq(reportArgentine), runningDate.minusDays(7))
+          .reportNotification(userSubscriptionCountries, Seq((reportArgentine, List.empty)), runningDate.minusDays(7))
           .toString
       )}
         And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
         Seq(officeEmail),
         s"[SignalConso] 3 nouveaux signalements",
         views.html.mails.dgccrf
-          .reportNotification(officeSubscription, Seq(report11, report12, report2), runningDate.minusDays(7))
+          .reportNotification(
+            officeSubscription,
+            Seq((report11, List.empty), (report12, List.empty), (report2, List.empty)),
+            runningDate.minusDays(7)
+          )
           .toString
       )}
       """
