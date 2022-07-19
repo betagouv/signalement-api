@@ -5,6 +5,7 @@ import models.auth.AuthToken
 import models.report.review.ResponseEvaluation
 
 import java.net.URI
+import java.util.UUID
 
 class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
 
@@ -16,6 +17,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
   object dashboard {
     def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
     def login = url("/connexion")
+    def report(reportId: UUID) = url(s"/suivi-des-signalements/report/${reportId.toString}")
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url(
       s"/suivi-des-signalements/$id/avis?evaluation=${evaluation.entryName}"
@@ -26,6 +28,7 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
       def register(token: String) = url(s"/dgccrf/rejoindre/?token=$token")
     }
     object Pro {
+      def companySummary(companyId: UUID) = url(s"/bilan-entreprise/${companyId.toString}")
       def register(siret: SIRET, token: String) = url(s"/entreprise/rejoindre/${siret}?token=${token}")
       def manageNotification() = url(s"/mes-entreprises")
     }

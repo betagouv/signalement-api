@@ -19,7 +19,7 @@
         <ul>
             <li>
                 Catégories :
-                @if(subscription.categories.length > 0) {
+                @if(subscription.categories.nonEmpty) {
                     <ul>
                         @subscription.categories.map { category =>
                             <li>
@@ -33,13 +33,13 @@
             </li>
             <li>
                 Départements :
-                @if(subscription.departments.length > 0) {
+                @if(subscription.departments.nonEmpty) {
                     @subscription.departments.mkString(" - ")
                 } else {
                     Tous
                 }
             </li>
-            @if(subscription.sirets.length > 0) {
+            @if(subscription.sirets.nonEmpty) {
                 <li>
                     Numéros SIRET :
                     <ul>
@@ -51,7 +51,7 @@
                     </ul>
                 </li>
             }
-            @if(subscription.withTags.length > 0) {
+            @if(subscription.withTags.nonEmpty) {
                 <li>
                     Avec les tags :
                     <ul>
@@ -63,7 +63,7 @@
                     </ul>
                 </li>
             }
-            @if(subscription.withoutTags.length > 0) {
+            @if(subscription.withoutTags.nonEmpty) {
                 <li>
                     Sans les tags :
                     <ul>
@@ -75,7 +75,7 @@
                     </ul>
                 </li>
             }
-            @if(subscription.countries.length > 0) {
+            @if(subscription.countries.nonEmpty) {
                 <li>
                     Pays :
                     <ul>
@@ -117,7 +117,7 @@
                             <br />
                         }
                         <br />
-                        <b>Description</b>
+                        <b>Description</b> (<a href="@frontRoute.dashboard.report(report.id)">Voir plus de détails sur ce signalement </a>)
                         <br/>
                         @report.details.map { detailInputValue =>
                             @Html(detailInputValue.label) @Html(detailInputValue.value)
@@ -127,7 +127,9 @@
                         <br />
 
                         <b>
-                            Entreprise @report.companySiret.getOrElse("")
+                            Entreprise @report.companySiret.getOrElse("")  @report.companyId.map{r =>
+                            (<a href="@frontRoute.dashboard.Pro.companySummary(r)">Voir la fiche entreprise</a>)
+                            }.getOrElse("")
                         </b>
                         <p style="text-align: center;">
                             @views.html.fragments.address(report.companyName, report.companyAddress)
