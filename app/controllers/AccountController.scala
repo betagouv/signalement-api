@@ -60,7 +60,7 @@ class AccountController(
   def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
     implicit request =>
       request
-        .parseBody[EmailAddress]((JsPath \ "email"))
+        .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
   }
 
@@ -95,7 +95,7 @@ class AccountController(
 
   def validateEmail() = UnsecuredAction.async(parse.json) { implicit request =>
     for {
-      token <- request.parseBody[String]((JsPath \ "token"))
+      token <- request.parseBody[String](JsPath \ "token")
       user <- accessesOrchestrator.validateDGCCRFEmail(token)
       authenticator <- silhouette.env.authenticatorService
         .create(LoginInfo(CredentialsProvider.ID, user.email.toString))

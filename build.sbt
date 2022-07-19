@@ -40,8 +40,8 @@ routesImport ++= Seq(
 
 scalafixOnCompile := true
 
-ThisBuild / coverageEnabled := true
-coverageDataDir := target.value / "custom-test"
+//ThisBuild / coverageEnabled := true
+//coverageDataDir := target.value / "custom-test"
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 

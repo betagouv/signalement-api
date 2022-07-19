@@ -5,27 +5,27 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    lazy val playSlickVersion = "5.0.0"
+    lazy val playSlickVersion = "5.0.2"
     lazy val slickPgVersion = "0.20.3"
     lazy val playMailerVersion = "8.0.1"
     lazy val AkkaHttpVersion = "10.2.9"
     lazy val alpakkaVersion = "2.0.2"
     lazy val enumeratumVersion = "1.7.0"
-    lazy val sentryVersion = "5.7.3"
+    lazy val sentryVersion = "5.7.4"
     lazy val playSilhouetteVersion = "7.0.0"
     lazy val specs2MatcherExtraVersion = "4.10.5"
-    lazy val scalaCheckVersion = "1.15.4"
-    lazy val catsCoreVersion = "2.7.0"
+    lazy val scalaCheckVersion = "1.16.0"
+    lazy val catsCoreVersion = "2.8.0"
     lazy val pureConfigVersion = "0.17.1"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version = "1.12.207"
-    lazy val jacksonModuleScalaVersion = "2.13.2"
-    lazy val postgresqlVersion = "42.3.4"
-    lazy val refindedVersion = "0.9.28"
+    lazy val awsJavaSdkS3Version = "1.12.259"
+    lazy val jacksonModuleScalaVersion = "2.13.3"
+    lazy val postgresqlVersion = "42.3.6"
+    lazy val refinedVersion = "0.9.29"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
-    lazy val itext7CoreVersion = "7.2.2"
-    lazy val html2pdfVersion = "4.0.2"
+    lazy val itext7CoreVersion = "7.2.3"
+    lazy val html2pdfVersion = "4.0.3"
     lazy val chimneyVersion = "0.6.1"
 
   }
@@ -67,7 +67,7 @@ object Dependencies {
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
     val postgresql = "org.postgresql" % "postgresql" % Versions.postgresqlVersion
-    val refinded = "eu.timepit" %% "refined" % Versions.refindedVersion
+    val refinded = "eu.timepit" %% "refined" % Versions.refinedVersion
     val ficus = "com.iheart" %% "ficus" % Versions.ficusVersion
     val spoiwo = "com.norbitltd" %% "spoiwo" % Versions.spoiwoVersion
     val itext7Core = "com.itextpdf" % "itext7-core" % Versions.itext7CoreVersion
