@@ -56,35 +56,37 @@ class ReportNotificationTask(
     for {
       subscriptions <- subscriptionRepository.listForFrequency(period)
       _ = println(s"------------------  = 2 ------------------")
-      reports <- reportRepository.getReports(
+      reportsWithFiles <- reportRepository.getReportsWithFiles(
         ReportFilter(
           start = Some(start),
           end = Some(end)
-        ),
-        Some(0),
-        Some(10000)
+        )
       )
       _ = println(s"------------------  = 3 ------------------")
       subscriptionsEmailAndReports = subscriptions.map { case (subscription, emailAddress) =>
-        val filteredReport = reports.entities
-          .filter(report =>
+        val filteredReport = reportsWithFiles
+          .filter { case (report, _) =>
             subscription.departments.isEmpty || subscription.departments
               .map(Some(_))
               .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode))
-          )
-          .filter(report =>
+          }
+          .filter { case (report, _) =>
             subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
-          )
-          .filter(report =>
+          }
+          .filter { case (report, _) =>
             subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
-          )
-          .filter(report =>
+          }
+          .filter { case (report, _) =>
             subscription.countries.isEmpty || subscription.countries
               .map(Some(_))
               .contains(report.companyAddress.country)
-          )
-          .filter(report => subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty)
-          .filter(report => subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty)
+          }
+          .filter { case (report, _) =>
+            subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty
+          }
+          .filter { case (report, _) =>
+            subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
+          }
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
@@ -93,7 +95,7 @@ class ReportNotificationTask(
           DgccrfReportNotification(
             List(emailAddress),
             subscription,
-            filteredReport,
+            filteredReport.toList,
             start.toLocalDate()
           )
         )

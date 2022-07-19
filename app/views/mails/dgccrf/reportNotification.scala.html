@@ -1,14 +1,15 @@
 @import models.report.Report
+@import models.report.ReportFile
 @import java.time.LocalDate
 @import utils.FrontRoute
 @import models.report.Report
 @import utils.EmailAddress
-@(subscription: Subscription, reports: Seq[Report], startDate: LocalDate)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
+@(subscription: Subscription, reportsWithFile: Seq[(Report,List[ReportFile])], startDate: LocalDate)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
     <p>
         Depuis le @startDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-        @reports.length match {
+        @reportsWithFile.length match {
             case 0 => { aucun nouveau signalement n'a été déposé }
             case 1 => { 1 nouveau signalement a été déposé }
             case n => {
@@ -90,20 +91,20 @@
         </ul>
     </p>
 
-    @if(reports.length > 0) {
+    @if(reportsWithFile.nonEmpty) {
         <div style="padding-bottom: 0.5em">
             <div style="font-weight: bold;
                 text-align: center;
                 border-bottom: 2px solid #898989;
                 padding-bottom: 20px;
                 margin-bottom: 20px">
-            @reports.length match {
+            @reportsWithFile.length match {
                 case 1 => { Aperçu du signalement }
                 case n => { Aperçu des signalements }
             }
             </div>
 
-            @reports.sortBy(_.creationDate).reverse.zipWithIndex.map { case(report, index) =>
+            @reportsWithFile.sortBy(_._1.creationDate).reverse.zipWithIndex.map { case( (report,files), index) =>
                 @if(index < 20) {
                     <div style="border-bottom: 2px solid #898989;
                         padding-top: 20px;
@@ -125,7 +126,6 @@
                         }
 
                         <br />
-
                         <b>
                             Entreprise @report.companySiret.getOrElse("")  @report.companyId.map{r =>
                             (<a href="@frontRoute.dashboard.Pro.companySummary(r)">Voir la fiche entreprise</a>)
@@ -152,11 +152,23 @@
                             @report.tags.mkString(", ")
                         </p>
                         }
+                        @if(files.nonEmpty) {
+                            <b>Pièces jointes  (<a href="@frontRoute.dashboard.report(report.id)">Voir les pièces jointes</a>)</b>
+                            <p>
+                                <ul>
+                                @files.map{ f =>
+                                <li>
+                                @f.filename
+                                </li>
+                                }
+                                </ul>
+                            </p>
+                        }
 
                     </div>
                 }
             }
-            @if(reports.length > 20) {
+            @if(reportsWithFile.length > 20) {
                 [...]
             }
         </div>

@@ -9,8 +9,11 @@ import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
 import models.event.Event
+import models.report.ReportFileOrigin.CONSUMER
+import models.report.reportfile.ReportFileId
 import models.report.Gender
 import models.report.Report
+import models.report.ReportFile
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
@@ -94,6 +97,16 @@ class AdminController(
     status = ReportStatus.TraitementEnCours
   )
 
+  private def genReportFile = ReportFile(
+    id = ReportFileId.generateId(),
+    reportId = Some(UUID.randomUUID),
+    creationDate = OffsetDateTime.now,
+    filename = UUID.randomUUID.toString,
+    storageFilename = "String",
+    origin = CONSUMER,
+    avOutput = None
+  )
+
   private def genReportResponse = ReportResponse(
     responseType = ReportResponseType.ACCEPTED,
     consumerDetails = "",
@@ -168,7 +181,10 @@ class AdminController(
       DgccrfReportNotification(
         List(recipient),
         genSubscription,
-        List(genReport, genReport.copy(tags = List(ReportTag.ReponseConso))),
+        List(
+          (genReport, List(genReportFile)),
+          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
+        ),
         LocalDate.now.minusDays(10)
       )
     ),
