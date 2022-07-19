@@ -101,7 +101,7 @@ class AdminController(
     id = ReportFileId.generateId(),
     reportId = Some(UUID.randomUUID),
     creationDate = OffsetDateTime.now,
-    filename = UUID.randomUUID.toString,
+    filename = s"${UUID.randomUUID.toString}.png",
     storageFilename = "String",
     origin = CONSUMER,
     avOutput = None
