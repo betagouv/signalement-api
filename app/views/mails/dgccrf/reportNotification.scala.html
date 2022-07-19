@@ -118,7 +118,7 @@
                             <br />
                         }
                         <br />
-                        <b>Description</b> (<a href="@frontRoute.dashboard.report(report.id)">Voir plus de détails sur ce signalement </a>)
+                        <b>Description</b> (<a href="@frontRoute.dashboard.subscriptionDGCCRFReport(report.id)">Voir plus de détails sur ce signalement </a>)
                         <br/>
                         @report.details.map { detailInputValue =>
                             @Html(detailInputValue.label) @Html(detailInputValue.value)
@@ -128,7 +128,7 @@
                         <br />
                         <b>
                             Entreprise @report.companySiret.getOrElse("")  @report.companyId.map{r =>
-                            (<a href="@frontRoute.dashboard.Pro.companySummary(r)">Voir la fiche entreprise</a>)
+                            (<a href="@frontRoute.dashboard.Pro.subscriptionDGCCRFCompanySummary(r)">Voir la fiche entreprise</a>)
                             }.getOrElse("")
                         </b>
                         <p style="text-align: center;">
@@ -153,7 +153,7 @@
                         </p>
                         }
                         @if(files.nonEmpty) {
-                            <b>Pièces jointes  (<a href="@frontRoute.dashboard.report(report.id)">Voir les pièces jointes</a>)</b>
+                            <b>Pièces jointes  (<a href="@frontRoute.dashboard.subscriptionDGCCRFReport(report.id)">Voir les pièces jointes</a>)</b>
                             <p>
                                 <ul>
                                 @files.map{ f =>
