@@ -21,7 +21,7 @@ object Dependencies {
     lazy val awsJavaSdkS3Version = "1.12.259"
     lazy val jacksonModuleScalaVersion = "2.13.3"
     lazy val postgresqlVersion = "42.3.6"
-    lazy val refinedVersion = "0.9.29"
+    lazy val refinedVersion = "0.10.1"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "7.2.3"
