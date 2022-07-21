@@ -49,7 +49,7 @@ case class ReportDraft(
       companyName = companyName,
       companyAddress = companyAddress.getOrElse(Address()),
       companySiret = companySiret,
-      companyActivityCode = None,
+      companyActivityCode = companyActivityCode,
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
