@@ -153,13 +153,11 @@
                         </p>
                         }
                         @if(files.nonEmpty) {
-                            <b>Pièces jointes  </b>
+                            <b>Pièces jointes ( <a href="@frontRoute.dashboard.subscriptionDGCCRFReport(report.id)">voir les pièces jointes</a>)  </b>
                             <p>
                                 <ul>
                                 @files.map{ f =>
-                                <li>
-                                 <a href="@frontRoute.dashboard.subscriptionDGCCRFReport(report.id)">voir @f.filename</a>
-                                </li>
+                                <li>@f.filename</li>
                                 }
                                 </ul>
                             </p>
