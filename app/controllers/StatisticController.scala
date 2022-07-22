@@ -67,6 +67,15 @@ class StatisticController(
       )
   }
 
+  def getPublicStatCount(publicStat: PublicStat) = Action.async {
+    ((publicStat.filter, publicStat.percentageBaseFilter) match {
+      case (filter, Some(percentageBaseFilter)) =>
+        statsOrchestrator.getReportCountPercentageWithinReliableDates(filter, percentageBaseFilter)
+      case (filter, _) =>
+        statsOrchestrator.getReportCount(filter)
+    }).map(curve => Ok(Json.toJson(curve)))
+  }
+
   def getPublicStatCurve(publicStat: PublicStat) = Action.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
