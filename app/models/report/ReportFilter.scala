@@ -77,9 +77,9 @@ object ReportFilter {
     )
   }
 
-  val everything = ReportFilter()
+  val allReportsFilter = ReportFilter()
 
-  val transmittedFilter = ReportFilter(
+  val transmittedReportsFilter = ReportFilter(
     status = ReportStatus.values.filterNot(_ == LanceurAlerte),
     withoutTags = ReportTagHiddenToProfessionnel,
     siretSirenDefined = Some(true)

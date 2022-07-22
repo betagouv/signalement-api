@@ -5,8 +5,8 @@ import enumeratum.PlayEnum
 import models.report.ReportStatus.statusReadByPro
 import models.report.ReportStatus.statusWithProResponse
 import models.report.ReportFilter
-import models.report.ReportFilter.everything
-import models.report.ReportFilter.transmittedFilter
+import models.report.ReportFilter.allReportsFilter
+import models.report.ReportFilter.transmittedReportsFilter
 import models.report.ReportStatus
 
 import java.time.LocalDate
@@ -38,25 +38,31 @@ object ReportReviewStats {
   implicit val format: OFormat[ReportReviewStats] = Json.format[ReportReviewStats]
 }
 
-case class PublicStat(filter: ReportFilter, percentageBaseFilter: Option[ReportFilter] = None) extends EnumEntry
+sealed abstract class PublicStat(val filter: ReportFilter, val percentageBaseFilter: Option[ReportFilter] = None)
+    extends EnumEntry
+
 object MonEnum extends PlayEnum[PublicStat] {
   val values = findValues
   case object PromesseAction extends PublicStat(ReportFilter(status = Seq(ReportStatus.PromesseAction)))
-  case object Reports extends PublicStat(everything)
-  case object TransmittedPercentage extends PublicStat(transmittedFilter, percentageBaseFilter = Some(everything))
+  case object Reports extends PublicStat(allReportsFilter)
+  case object TransmittedPercentage
+      extends PublicStat(
+        transmittedReportsFilter,
+        Some(allReportsFilter)
+      )
   case object ReadPercentage
       extends PublicStat(
         ReportFilter(status = statusReadByPro),
-        percentageBaseFilter = Some(transmittedFilter)
+        Some(transmittedReportsFilter)
       )
   case object ResponsePercentage
       extends PublicStat(
         ReportFilter(status = statusWithProResponse),
-        percentageBaseFilter = Some(ReadPercentage.filter)
+        Some(ReadPercentage.filter)
       )
   case object WebsitePercentage
       extends PublicStat(
         ReportFilter(hasWebsite = Some(true)),
-        percentageBaseFilter = Some(everything)
+        Some(allReportsFilter)
       )
 }

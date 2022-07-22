@@ -15,20 +15,12 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 
 import java.sql.Timestamp
-import java.time.Duration
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.ZoneOffset
+import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -72,6 +64,20 @@ class StatsOrchestrator(
     tickDuration match {
       case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
       case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
+    }
+
+  def getReportsCountPercentageCurve(
+      reportFilter: ReportFilter,
+      baseFilter: ReportFilter
+  ): Future[Seq[CountByDate]] =
+    for {
+      rawCurve <- getReportsCountCurve(reportFilter)
+      baseCurve <- getReportsCountCurve(baseFilter)
+    } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
+      CountByDate(
+        count = Math.max(0, Math.min(100, (a.count / b.count) * 100)),
+        date = a.date
+      )
     }
 
   def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =

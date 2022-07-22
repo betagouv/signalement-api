@@ -2,7 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
-import models.report.ReportFilter.transmittedFilter
+import models.report.ReportFilter.transmittedReportsFilter
 import models.report.ReportFilter
 import models.report.ReportResponseType
 import models.report.ReportStatus
@@ -66,30 +66,15 @@ class StatisticController(
         }
       )
   }
-//
-//  case class PublicStatComputation(
-//      filter: ReportFilter,
-//      baseFilterForPercentage: Option[ReportFilter]
-//  )
-//
-//  def getPublicStatCurve(publicStat: PublicStat) = Action.async { req =>
-//    val computation: PublicStatComputation = publicStat match {
-//      case PublicStat.PromesseAction =>
-//        ReportFilter(status = Seq(ReportStatus.PromesseAction))
-//      case PublicStat.Reports =>
-//        ReportFilter()
-//      case PublicStat.TransmittedPercentage =>
-//        ReportFilter()
-//    }
-//
-//    statsOrchestrator.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
-//
-//    ???
-//  }
-//
-//  def getPublicStatCount(publicStat: PublicStat) = Action.async { req =>
-//    ???
-//  }
+
+  def getPublicStatCurve(publicStat: PublicStat) = Action.async {
+    ((publicStat.filter, publicStat.percentageBaseFilter) match {
+      case (filter, Some(percentageBaseFilter)) =>
+        statsOrchestrator.getReportsCountPercentageCurve(filter, percentageBaseFilter)
+      case (filter, _) =>
+        statsOrchestrator.getReportsCountCurve(filter)
+    }).map(curve => Ok(Json.toJson(curve)))
+  }
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRole.Admin, UserRole.DGCCRF)
@@ -129,7 +114,7 @@ class StatisticController(
     }
 
   def getProReportTransmittedStat(ticks: Option[Int]) = Action.async { _ =>
-    statsOrchestrator.getReportsCountCurve(transmittedFilter).map(curve => Ok(Json.toJson(curve)))
+    statsOrchestrator.getReportsCountCurve(transmittedReportsFilter).map(curve => Ok(Json.toJson(curve)))
   }
 
   def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
