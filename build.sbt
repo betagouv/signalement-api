@@ -30,12 +30,14 @@ routesImport ++= Seq(
   "utils.SIRET",
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",
+  "models.PublicStat",
   "controllers.IdentificationStatusQueryStringBindable",
   "controllers.WebsiteIdPathBindable",
   "controllers.UUIDPathBindable",
   "controllers.SIRETPathBindable",
   "controllers.ReportFileIdPathBindable",
-  "controllers.ReportResponseTypeQueryStringBindable"
+  "controllers.ReportResponseTypeQueryStringBindable",
+  "controllers.PublicStatQueryStringBindable"
 )
 
 scalafixOnCompile := true

@@ -3,7 +3,6 @@ package models
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.report.ReportStatus.statusReadByPro
-import models.report.ReportStatus.statusWithProResponse
 import models.report.ReportFilter
 import models.report.ReportFilter.allReportsFilter
 import models.report.ReportFilter.transmittedReportsFilter
@@ -41,7 +40,7 @@ object ReportReviewStats {
 sealed abstract class PublicStat(val filter: ReportFilter, val percentageBaseFilter: Option[ReportFilter] = None)
     extends EnumEntry
 
-object MonEnum extends PlayEnum[PublicStat] {
+object PublicStat extends PlayEnum[PublicStat] {
   val values = findValues
   case object PromesseAction extends PublicStat(ReportFilter(status = Seq(ReportStatus.PromesseAction)))
   case object Reports extends PublicStat(allReportsFilter)
@@ -57,7 +56,7 @@ object MonEnum extends PlayEnum[PublicStat] {
       )
   case object ResponsePercentage
       extends PublicStat(
-        ReportFilter(status = statusWithProResponse),
+        ReportFilter(),
         Some(ReadPercentage.filter)
       )
   case object WebsitePercentage

@@ -122,7 +122,7 @@ class StatisticController(
       statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async { _ =>
+  def getProReportTransmittedStat() = SecuredAction.async { _ =>
     statsOrchestrator.getReportsCountCurve(transmittedReportsFilter).map(curve => Ok(Json.toJson(curve)))
   }
 

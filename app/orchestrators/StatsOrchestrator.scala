@@ -175,7 +175,7 @@ object StatsOrchestrator {
     reportFilter.copy(start = Some(reliableStatsStartDate), end = Some(OffsetDateTime.now.minusDays(30)))
 
   private[orchestrators] def toPercentage(numerator: Int, denominator: Int): Int =
-    Math.max(0, Math.min(100, (numerator / denominator) * 100))
+    Math.max(0, Math.min(100, numerator * 100 / denominator))
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
     OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
