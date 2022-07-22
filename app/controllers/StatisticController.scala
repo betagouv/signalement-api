@@ -122,12 +122,12 @@ class StatisticController(
       statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
     }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = Action.async { _ =>
+  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async { _ =>
     statsOrchestrator.getReportsCountCurve(transmittedReportsFilter).map(curve => Ok(Json.toJson(curve)))
   }
 
   def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
-    Action.async(parse.empty) { _ =>
+    SecuredAction.async(parse.empty) { _ =>
       val statusFilter = responseTypeQuery
         .filter(_.nonEmpty)
         .map(_.map(ReportStatus.fromResponseType))
