@@ -38,41 +38,25 @@ object ReportReviewStats {
   implicit val format: OFormat[ReportReviewStats] = Json.format[ReportReviewStats]
 }
 
-sealed trait PublicStat extends EnumEntry {
-  val filter: ReportFilter
-}
-sealed trait PublicStatPercentage extends PublicStat {
-  val baseFilter: ReportFilter
-}
-
-object PublicStat extends PlayEnum[PublicStat] {
+case class PublicStat(filter: ReportFilter, percentageBaseFilter: Option[ReportFilter] = None) extends EnumEntry
+object MonEnum extends PlayEnum[PublicStat] {
   val values = findValues
-  case object PromesseAction extends PublicStat {
-    override val filter = ReportFilter(status = Seq(ReportStatus.PromesseAction))
-  }
-  case object Reports extends PublicStat {
-    override val filter = everything
-  }
-  case object TransmittedPercentage extends PublicStatPercentage {
-    override val filter = transmittedFilter
-    override val baseFilter = everything
-  }
-  case object ReadPercentage extends PublicStatPercentage {
-    override val filter = ReportFilter(
-      status = statusReadByPro
-    )
-    override val baseFilter = transmittedFilter
-  }
-  case object ResponsePercentage extends PublicStatPercentage {
-    override val filter = ReportFilter(
-      status = statusWithProResponse
-    )
-    override val baseFilter = ReadPercentage.filter
-  }
-  case object WebsitePercentage extends PublicStatPercentage {
-    override val filter = ReportFilter(
-      hasWebsite = Some(true)
-    )
-    override val baseFilter = everything
-  }
+  case object PromesseAction extends PublicStat(ReportFilter(status = Seq(ReportStatus.PromesseAction)))
+  case object Reports extends PublicStat(everything)
+  case object TransmittedPercentage extends PublicStat(transmittedFilter, percentageBaseFilter = Some(everything))
+  case object ReadPercentage
+      extends PublicStat(
+        ReportFilter(status = statusReadByPro),
+        percentageBaseFilter = Some(transmittedFilter)
+      )
+  case object ResponsePercentage
+      extends PublicStat(
+        ReportFilter(status = statusWithProResponse),
+        percentageBaseFilter = Some(ReadPercentage.filter)
+      )
+  case object WebsitePercentage
+      extends PublicStat(
+        ReportFilter(hasWebsite = Some(true)),
+        percentageBaseFilter = Some(everything)
+      )
 }
