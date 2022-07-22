@@ -38,7 +38,12 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       MalAttribue
     )
 
-  val ReportStatusProResponse = Seq(ReportStatus.PromesseAction, ReportStatus.Infonde, ReportStatus.MalAttribue)
+  val statusWithProResponse = Seq(PromesseAction, Infonde, MalAttribue)
+
+  val statusReadByPro = Seq(
+    Transmis,
+    ConsulteIgnore
+  ) ++ statusWithProResponse
 
   def filterByUserRole(status: Seq[ReportStatus], userRole: UserRole) = {
     val requestedStatus = if (status.isEmpty) ReportStatus.values else status
@@ -49,7 +54,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
     }
   }
 
-  def hasResponse(report: Report): Boolean = ReportStatusProResponse.contains(report.status)
+  def hasResponse(report: Report): Boolean = statusWithProResponse.contains(report.status)
 
   def isFinal(status: ReportStatus): Boolean =
     Seq(MalAttribue, ConsulteIgnore, NonConsulte, Infonde, PromesseAction, LanceurAlerte, NA).contains(status)

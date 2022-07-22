@@ -3,6 +3,8 @@ package models.report
 import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
+import models.report.ReportStatus.LanceurAlerte
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
@@ -74,4 +76,12 @@ object ReportFilter {
       activityCodes = mapper.seq("activityCodes")
     )
   }
+
+  val everything = ReportFilter()
+
+  val transmittedFilter = ReportFilter(
+    status = ReportStatus.values.filterNot(_ == LanceurAlerte),
+    withoutTags = ReportTagHiddenToProfessionnel,
+    siretSirenDefined = Some(true)
+  )
 }

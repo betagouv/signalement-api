@@ -114,7 +114,7 @@ class CompanyOrchestrator(
     val responseReportsFilter =
       ReportFilter(
         companyIds = Seq(companyId),
-        status = ReportStatus.ReportStatusProResponse,
+        status = ReportStatus.statusWithProResponse,
         withoutTags = tagFilter
       )
     val totalReportsFilter =
