@@ -7,6 +7,7 @@ import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import play.api.libs.json._
@@ -51,7 +52,7 @@ case class Report(
     if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (
       companySiret.isDefined && tags
-        .intersect(Seq(ReportTag.ReponseConso, ReportTag.ProduitDangereux, ReportTag.Bloctel))
+        .intersect(ReportTagHiddenToProfessionnel)
         .isEmpty
     ) {
       ReportStatus.TraitementEnCours

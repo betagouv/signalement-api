@@ -68,4 +68,11 @@ object ReportStatus extends PlayEnum[ReportStatus] {
       case MalAttribue       => if (isPro) "Clôturé" else "Signalement mal attribué"
     }
   }
+
+  def fromResponseType(reportResponseType: ReportResponseType) =
+    reportResponseType match {
+      case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
+      case ReportResponseType.REJECTED      => ReportStatus.Infonde
+      case ReportResponseType.NOT_CONCERNED => ReportStatus.MalAttribue
+    }
 }
