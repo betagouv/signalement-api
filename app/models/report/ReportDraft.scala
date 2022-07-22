@@ -12,6 +12,8 @@ import models.report.reportfile.ReportFileId
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.annotation.nowarn
 
 case class ReportDraft(
@@ -39,13 +41,19 @@ case class ReportDraft(
     ccrfCode: Option[List[String]] = None
 ) {
 
-  def generateReport: Report = {
+  def generateReport(
+      maybeCompanyId: Option[UUID],
+      reportId: UUID = UUID.randomUUID(),
+      creationDate: OffsetDateTime = OffsetDateTime.now()
+  ): Report = {
     val report = Report(
+      reportId,
       gender = gender,
+      creationDate = creationDate,
       category = category,
       subcategories = subcategories,
       details = details,
-      companyId = None,
+      companyId = maybeCompanyId,
       companyName = companyName,
       companyAddress = companyAddress.getOrElse(Address()),
       companySiret = companySiret,

@@ -53,9 +53,9 @@ case class Report(
       companySiret.isDefined && tags
         .intersect(Seq(ReportTag.ReponseConso, ReportTag.ProduitDangereux, ReportTag.Bloctel))
         .isEmpty
-    )
+    ) {
       ReportStatus.TraitementEnCours
-    else ReportStatus.NA
+    } else { ReportStatus.NA }
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
