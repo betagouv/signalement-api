@@ -76,7 +76,7 @@ class AdminController(
   val dummyURL = java.net.URI.create("https://lien-test")
 
   private def genReport = Report(
-    id = UUID.randomUUID,
+    id = UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c"),
     gender = Some(Gender.Female),
     category = "Test",
     subcategories = List("test"),
@@ -99,7 +99,7 @@ class AdminController(
 
   private def genReportFile = ReportFile(
     id = ReportFileId.generateId(),
-    reportId = Some(UUID.randomUUID),
+    reportId = Some(UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c")),
     creationDate = OffsetDateTime.now,
     filename = s"${UUID.randomUUID.toString}.png",
     storageFilename = "String",

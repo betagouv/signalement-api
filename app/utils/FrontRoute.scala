@@ -18,8 +18,9 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     def url(path: String) = new URI(signalConsoConfiguration.dashboardURL.toString + path)
     def login = url("/connexion")
     def subscriptionDGCCRFReport(reportId: UUID) = url(
-      s"/suivi-des-signalements/report/${reportId.toString}?mtm_campaign=subscription"
+      s"/suivi-des-signalements/report/${reportId.toString}?mtm_campaign=subscription&anchor=attachment"
     )
+
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
     def reportReview(id: String)(evaluation: ResponseEvaluation) = url(
       s"/suivi-des-signalements/$id/avis?evaluation=${evaluation.entryName}"
