@@ -29,9 +29,9 @@ class StatisticController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportsCount() = UserAwareAction.async { request =>
+  def getReportsCount() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -46,9 +46,9 @@ class StatisticController(
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = UserAwareAction.async { request =>
+  def getReportsCountCurve() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
