@@ -1,13 +1,18 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import enumeratum.{EnumEntry, PlayEnum}
 import models._
+
 import models.report.ReportFilter
 import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportStatus.ReportStatusProResponse
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
+import models.report.Gender.findValues
+import models.report.{ReportFilter, ReportResponseType, ReportStatus}
+
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -65,6 +70,63 @@ class StatisticController(
         }
       )
   }
+
+
+  sealed trait PublicStat extends EnumEntry {
+    val filter: ReportFilter
+  }
+  sealed trait PublicStatPercentage extends PublicStat {
+    val baseFilter: ReportFilter
+  }
+
+  object PublicStat extends PlayEnum[PublicStat] {
+    val values = findValues
+    case object PromesseAction extends PublicStat {
+      override val filter = ReportFilter(status = Seq(ReportStatus.PromesseAction))
+    }
+    case object Reports extends PublicStat {
+      override val filter = ReportFilter()
+    }
+    case object TransmittedPercentage extends PublicStatPercentage {
+      override val filter = ReportFilter(....)
+      override val baseFilter: ReportFilter = _
+    }
+    case object TransmittedPercentage extends PublicStat
+    case object ReadPercentage extends PublicStat
+    case object ResponsePercentage extends PublicStat
+  }
+
+
+  case class PublicStatComputation(
+    filter: ReportFilter,
+    baseFilterForPercentage: Option[ReportFilter]
+  )
+
+  def getPublicStatCurve(publicStat: PublicStat) = Action.async { req =>
+    val computation: PublicStatComputation = publicStat match {
+      case PublicStat.PromesseAction =>
+        ReportFilter(status = Seq(ReportStatus.PromesseAction))
+      case PublicStat.Reports =>
+        ReportFilter()
+      case PublicStat.TransmittedPercentage =>
+        ReportFilter()
+    }
+
+
+
+    statsOrchestrator.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
+
+
+    ???
+  }
+
+  def getPublicStatCount(publicStat: PublicStat) = Action.async { req =>
+
+
+
+    ???
+  }
+
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
     WithRole(UserRole.Admin, UserRole.DGCCRF)
