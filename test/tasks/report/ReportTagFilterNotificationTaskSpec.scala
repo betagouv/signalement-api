@@ -23,7 +23,7 @@ class DailyReporFilterWithTagNotification(implicit ee: ExecutionEnv) extends Rep
         Seq(tagEmail),
         "[SignalConso] [Produits dangereux] Un nouveau signalement",
         views.html.mails.dgccrf
-          .reportNotification(tagSubscription, Seq(reportProduitDangereux), runningDate.minusDays(1))
+          .reportNotification(tagSubscription, Seq((reportProduitDangereux, List.empty)), runningDate.minusDays(1))
           .toString
       )}
     """
@@ -40,7 +40,7 @@ class DailyReportFilterWithoutTagNotification(implicit ee: ExecutionEnv) extends
         Seq(noTagEmail),
         "[SignalConso] Un nouveau signalement",
         views.html.mails.dgccrf
-          .reportNotification(noTagSubscription, Seq(reportNoTag), runningDate.minusDays(1))
+          .reportNotification(noTagSubscription, Seq((reportNoTag, List.empty)), runningDate.minusDays(1))
           .toString
       )}
     """

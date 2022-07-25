@@ -23,19 +23,21 @@ class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNoti
         Seq(covidEmail),
         s"[SignalConso] Un nouveau signalement",
         views.html.mails.dgccrf
-          .reportNotification(covidSubscription, Seq(covidReport), runningDate.minusDays(1))
+          .reportNotification(covidSubscription, Seq((covidReport, List.empty)), runningDate.minusDays(1))
           .toString
       )}
          And a mail is sent to the user subscribed by tag                                ${mailMustHaveBeenSent(
         Seq(tagEmail),
         s"[SignalConso] [Produits dangereux] Un nouveau signalement",
-        views.html.mails.dgccrf.reportNotification(tagSubscription, Seq(tagReport), runningDate.minusDays(1)).toString
+        views.html.mails.dgccrf
+          .reportNotification(tagSubscription, Seq((tagReport, List.empty)), runningDate.minusDays(1))
+          .toString
       )}
          And a mail is sent to the user subscribed by country                            ${mailMustHaveBeenSent(
         Seq(countryEmail),
         s"[SignalConso] Un nouveau signalement",
         views.html.mails.dgccrf
-          .reportNotification(countrySubscription, Seq(countryReport), runningDate.minusDays(1))
+          .reportNotification(countrySubscription, Seq((countryReport, List.empty)), runningDate.minusDays(1))
           .toString
       )}
     """

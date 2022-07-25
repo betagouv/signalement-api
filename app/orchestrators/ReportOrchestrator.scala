@@ -247,7 +247,7 @@ class ReportOrchestrator(
       maybeCompany <- extractOptionnalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
+      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id))
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
