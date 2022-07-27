@@ -1,4 +1,4 @@
-# Routes
+ # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
@@ -13,8 +13,9 @@ GET           /api/stats/reports/delay/read                     controllers.Stat
 GET           /api/stats/reports/tags                           controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                         controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/reviews                        controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
+GET           /api/stats/reports/pro-totransmit                 controllers.StatisticController.getProReportToTransmitStat()
 GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat(ticks: Option[Int])
-GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]])
+GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(responseStatusQuery: Option[List[ReportResponseType]])
 GET           /api/stats/pro-account-rate                       controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
 GET           /api/stats/dgccrf-account                         controllers.StatisticController.dgccrfAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-active-account                  controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])

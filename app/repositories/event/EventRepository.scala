@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import models._
 import models.event.Event
 import models.report.Report
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import repositories.CRUDRepository
@@ -15,7 +14,8 @@ import repositories.user.UserTable
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+// import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
+// import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_REVIEW_ON_RESPONSE
 import utils.Constants.EventType.PRO
 
@@ -177,23 +177,6 @@ class EventRepository(
     where event_type = '#${PRO.value}'
     and report_id is not null
     and action in (#${actions.toList.map(_.value).mkString("'", "','", "'")}) 
-and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
-  group by  my_date_trunc('month'::text,creation_date)
-  order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
-    )
-
-  override def getProReportResponseStat(
-      ticks: Int,
-      startingDate: OffsetDateTime,
-      responseTypes: NonEmptyList[ReportResponseType]
-  ): Future[Vector[(Timestamp, Int)]] =
-    db.run(
-      sql"""select * from (select my_date_trunc('month'::text, creation_date)::timestamp, count(distinct report_id)
-  from events
-    where event_type = '#${PRO.value}'
-    and report_id is not null
-    and action = '#${REPORT_PRO_RESPONSE.value}'
-    and  (details->>'responseType')::varchar in (#${responseTypes.toList.map(_.toString).mkString("'", "','", "'")})
 and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
