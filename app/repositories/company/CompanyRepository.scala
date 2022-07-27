@@ -6,7 +6,7 @@ import models.SearchCompanyIdentity.SearchCompanyIdentityRCS
 import models.SearchCompanyIdentity.SearchCompanyIdentitySiren
 import models.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
-import models.report.ReportStatus.ReportStatusProResponse
+import models.report.ReportStatus.statusWithProResponse
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
 import repositories.report.ReportTable
@@ -64,7 +64,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
             .map(b =>
               b.flatMap { a =>
                 Case If a.status.inSet(
-                  ReportStatusProResponse.map(_.entryName)
+                  statusWithProResponse.map(_.entryName)
                 ) Then a.id
               }
             )
