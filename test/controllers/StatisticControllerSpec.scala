@@ -28,6 +28,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
        return reports count                               ${getReportCount}
        return reports curve                               ${getReportsCurve}
        return reports curve filted by status              ${getReportsCurveFilteredByStatus}
+       return a public stat curve                         ${gePublicStatCurve}
        """
 
   def aMonthlyStat(monthlyStat: CountByDate): Matcher[String] =
@@ -76,6 +77,19 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1L))),
       aMonthlyStat(CountByDate(currentMonthReportsWithResponse.length, startDate))
+    )
+  }
+
+  def gePublicStatCurve = {
+    val request =
+      FakeRequest(GET, routes.StatisticController.getPublicStatCurve(PublicStat.PromesseAction).toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    val startDate = LocalDate.now.withDayOfMonth(1)
+    content must haveMonthlyStats(
+      aMonthlyStat(CountByDate(lastMonthReportsAccepted.length, startDate.minusMonths(1L))),
+      aMonthlyStat(CountByDate(currentMonthReportsAccepted.length, startDate))
     )
   }
 }
