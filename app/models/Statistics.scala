@@ -3,6 +3,7 @@ package models
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import models.report.ReportStatus.statusReadByPro
+import models.report.ReportStatus.statusWithProResponse
 import models.report.ReportFilter
 import models.report.ReportFilter.allReportsFilter
 import models.report.ReportFilter.transmittedReportsFilter
@@ -56,7 +57,7 @@ object PublicStat extends PlayEnum[PublicStat] {
       )
   case object ResponsePercentage
       extends PublicStat(
-        ReportFilter(),
+        ReportFilter(status = statusWithProResponse),
         Some(ReadPercentage.filter)
       )
   case object WebsitePercentage
