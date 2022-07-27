@@ -1,10 +1,13 @@
 package controllers
 
-import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import models.report.ReportFilter
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportStatus.LanceurAlerte
+import models.report.ReportStatus.ReportStatusProResponse
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -89,30 +92,34 @@ class StatisticController(
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    statsOrchestrator.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  def getProReportToTransmitStat() =
+    Action.async { _ =>
+      // Includes the reports that we want to transmit to a pro
+      // but we have not identified the company
+      val filter = ReportFilter(
+        status = ReportStatus.values.filterNot(_ == LanceurAlerte),
+        withoutTags = ReportTagHiddenToProfessionnel
+      )
+      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
+    }
+
+  def getProReportTransmittedStat(ticks: Option[Int]) = Action.async { _ =>
+    val filter = ReportFilter(
+      status = ReportStatus.values.filterNot(_ == LanceurAlerte),
+      withoutTags = ReportTagHiddenToProfessionnel,
+      siretSirenDefined = Some(true)
+    )
+    statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
   }
 
-  def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
-    SecuredAction.async(parse.empty) { _ =>
-      val reportResponseStatus =
-        NonEmptyList
-          .fromList(responseStatusQuery.getOrElse(List.empty))
-          .getOrElse(
-            NonEmptyList.of(
-              ReportResponseType.ACCEPTED,
-              ReportResponseType.NOT_CONCERNED,
-              ReportResponseType.REJECTED
-            )
-          )
-
-      statsOrchestrator
-        .getProReportResponseStat(
-          ticks.getOrElse(12),
-          reportResponseStatus
-        )
-        .map(x => Ok(Json.toJson(x)))
-
+  def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
+    Action.async(parse.empty) { _ =>
+      val statusFilter = responseTypeQuery
+        .filter(_.nonEmpty)
+        .map(_.map(ReportStatus.fromResponseType))
+        .getOrElse(ReportStatusProResponse)
+      val filter = ReportFilter(status = statusFilter)
+      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
     }
 
   def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>

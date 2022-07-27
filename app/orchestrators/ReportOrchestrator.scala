@@ -25,7 +25,6 @@ import models.report.ReportDraft
 import models.report.ReportFile
 import models.report.ReportFilter
 import models.report.ReportResponse
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.ReportWithFiles
@@ -573,11 +572,7 @@ class ReportOrchestrator(
       updatedReport <- reportRepository.update(
         report.id,
         report.copy(
-          status = reportResponse.responseType match {
-            case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
-            case ReportResponseType.REJECTED      => ReportStatus.Infonde
-            case ReportResponseType.NOT_CONCERNED => ReportStatus.MalAttribue
-          }
+          status = ReportStatus.fromResponseType(reportResponse.responseType)
         )
       )
       _ <- eventRepository.create(

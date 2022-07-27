@@ -6,7 +6,6 @@ import models.CurveTickDuration
 import models.ReportReviewStats
 import models.UserRole
 import models.report.ReportFilter
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.review.ResponseEvaluation
@@ -67,8 +66,8 @@ class StatsOrchestrator(
 
   def getReportsCountCurve(
       reportFilter: ReportFilter,
-      ticks: Int,
-      tickDuration: CurveTickDuration
+      ticks: Int = 12,
+      tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
     tickDuration match {
       case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
@@ -123,15 +122,6 @@ class StatsOrchestrator(
       )
       .map(formatStatData(_, ticks))
 
-  def getProReportResponseStat(ticks: Int, responseTypes: NonEmptyList[ReportResponseType]) =
-    eventRepository
-      .getProReportResponseStat(
-        ticks,
-        computeStartingDate(ticks),
-        responseTypes
-      )
-      .map(formatStatData(_, ticks))
-
   def dgccrfAccountsCurve(ticks: Int) =
     accessTokenRepository
       .dgccrfAccountsCurve(ticks)
@@ -151,7 +141,6 @@ class StatsOrchestrator(
     accessTokenRepository
       .dgccrfControlsCurve(ticks)
       .map(formatStatData(_, ticks))
-
 }
 
 object StatsOrchestrator {

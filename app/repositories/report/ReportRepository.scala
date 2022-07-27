@@ -368,6 +368,9 @@ object ReportRepository {
           )
           .getOrElse(false)
       }
+      .filterOpt(filter.siretSirenDefined) { case (table, siretSirenDefined) =>
+        if (siretSirenDefined) table.companySiret.nonEmpty else table.companySiret.isEmpty
+      }
       .filterOpt(filter.companyName) { case (table, companyName) =>
         table.companyName like s"${companyName}%"
       }
