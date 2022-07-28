@@ -7,6 +7,9 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.investigation.DepartmentDivision
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
 import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
@@ -45,7 +48,10 @@ class WebsiteController(
       maybeHost: Option[String],
       maybeIdentificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatus: Option[Seq[InvestigationStatus]],
+      practice: Option[Seq[Practice]],
+      attribution: Option[Seq[DepartmentDivision]]
   ) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
@@ -54,7 +60,10 @@ class WebsiteController(
             maybeHost.filter(_.nonEmpty),
             maybeIdentificationStatus.filter(_.nonEmpty),
             maybeOffset,
-            maybeLimit
+            maybeLimit,
+            investigationStatus.filter(_.nonEmpty),
+            practice.filter(_.nonEmpty),
+            attribution.filter(_.nonEmpty)
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)

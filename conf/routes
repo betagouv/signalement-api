@@ -152,7 +152,7 @@ GET           /api/resources/practice                           controllers.Webs
 
 POST          /api/website-investigations                       controllers.WebsiteController.updateInvestigation()
 # Websites API
-GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int])
+GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],practice: Option[Seq[Practice]],attribution: Option[Seq[DepartmentDivision]])
 GET           /api/websites/search-url                          controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                        controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/websites/unregistered/extract                controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
