@@ -9,8 +9,7 @@ import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.report.ReportTag
 import models.report.reportfile.ReportFileId
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.Reads
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -94,6 +93,6 @@ object ReportDraft {
     */
   implicit val reportTagReads = TranslationReportTagReads
   @nowarn
-  implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
-  implicit val draftReportWrites = Json.writes[ReportDraft]
+  implicit val draftReportReads: Reads[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
+
 }
