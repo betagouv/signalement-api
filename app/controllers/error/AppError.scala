@@ -341,10 +341,11 @@ object AppError {
       s"Impossible de signaler une administration publique"
   }
 
-  final case class MalformedValue(value: String) extends BadRequestError {
+  final case class MalformedValue(value: String, expectedValidType: String) extends BadRequestError {
     override val `type`: String = "SC-0042"
-    override val title: String = s"Malformed value, $value is not a valid value"
-    override val details: String = s"La valeur $value ne correspond pas à ce qui est attendu par l'API."
+    override val title: String = s"Malformed value, $value is not a valid value, expecting valid $expectedValidType"
+    override val details: String =
+      s"La valeur $value ne correspond pas à ce qui est attendu par l'API. Merci de renseigner une valeur valide pour $expectedValidType"
   }
 
 }

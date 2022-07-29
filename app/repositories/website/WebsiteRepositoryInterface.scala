@@ -10,6 +10,7 @@ import models.website.WebsiteId
 import models.website.IdentificationStatus
 import repositories.TypedCRUDRepositoryInterface
 
+import java.time.OffsetDateTime
 import scala.concurrent.Future
 
 trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, WebsiteId] {
@@ -31,7 +32,9 @@ trait WebsiteRepositoryInterface extends TypedCRUDRepositoryInterface[Website, W
       maybeLimit: Option[Int],
       investigationStatus: Option[Seq[InvestigationStatus]],
       practiceType: Option[Seq[Practice]],
-      affectation: Option[Seq[DepartmentDivision]]
+      affectation: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]]
 
   def searchValidAssociationByHost(host: String): Future[Seq[Website]]

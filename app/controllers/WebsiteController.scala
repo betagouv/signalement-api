@@ -26,6 +26,7 @@ import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -51,7 +52,9 @@ class WebsiteController(
       maybeLimit: Option[Int],
       investigationStatus: Option[Seq[InvestigationStatus]],
       practice: Option[Seq[Practice]],
-      attribution: Option[Seq[DepartmentDivision]]
+      attribution: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
   ) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
@@ -63,7 +66,9 @@ class WebsiteController(
             maybeLimit,
             investigationStatus.filter(_.nonEmpty),
             practice.filter(_.nonEmpty),
-            attribution.filter(_.nonEmpty)
+            attribution.filter(_.nonEmpty),
+            start,
+            end
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
