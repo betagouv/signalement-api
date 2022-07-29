@@ -273,7 +273,7 @@ class ReportsExtractActor(
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
-        "Numéro de référence",
+        "Numéro de référence dossier",
         leftAlignmentColumn,
         (report, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
