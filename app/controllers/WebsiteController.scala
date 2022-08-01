@@ -140,6 +140,7 @@ class WebsiteController(
       for {
         websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
         updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+        _ = logger.debug(updated.toString)
       } yield Ok(Json.toJson(updated))
   }
 

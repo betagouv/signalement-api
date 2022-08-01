@@ -82,8 +82,7 @@ class WebsitesOrchestrator(
       if (newIdentificationStatus == Identified) { validateAndCleanAssociation(website) }
       else Future.unit
     _ = logger.debug(s"Updating website kind to ${newIdentificationStatus}")
-    updatedWebsite = website.copy(identificationStatus = newIdentificationStatus)
-    _ <- repository.update(updatedWebsite.id, updatedWebsite)
+    updatedWebsite <- update(website.copy(identificationStatus = newIdentificationStatus))
   } yield updatedWebsite
 
   private def validateAndCleanAssociation(website: Website) = {
@@ -131,7 +130,7 @@ class WebsitesOrchestrator(
       _ = logger.debug(s"updating identification status when Admin is updating identification")
       websiteToUpdate = if (user.isAdmin) website.copy(identificationStatus = Identified) else website
       _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-      updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
+      updatedWebsite <- update(websiteToUpdate)
       _ = logger.debug(s"Website company country successfully updated")
     } yield updatedWebsite
   }
@@ -157,7 +156,7 @@ class WebsitesOrchestrator(
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(investigationApi.id))
     _ = logger.debug("Update investigation")
     updatedWebsite = investigationApi.copyToDomain(website)
-    website <- repository.update(updatedWebsite.id, updatedWebsite)
+    website <- update(updatedWebsite)
   } yield website
 
   def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
@@ -186,5 +185,7 @@ class WebsitesOrchestrator(
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
     _ = logger.debug(s"Found website")
   } yield website
+
+  private def update(website: Website) = repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
 
 }
