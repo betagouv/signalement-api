@@ -15,8 +15,10 @@ import models.PublicStat
 import models.extractUUID
 import models.report.ReportResponseType
 import models.report.reportfile.ReportFileId
+import utils.DateUtils
 import utils.SIRET
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -37,6 +39,13 @@ package object controllers {
       .transform[UUID](
         id => extractUUID(id),
         uuid => uuid.toString
+      )
+
+  implicit val OffsetDateTimeQueryStringBindable: QueryStringBindable[OffsetDateTime] =
+    QueryStringBindable.bindableString
+      .transform[OffsetDateTime](
+        stringOffsetDateTime => DateUtils.parseTime(stringOffsetDateTime),
+        offsetDateTime => offsetDateTime.toString
       )
 
   implicit val ReportFileIdPathBindable =

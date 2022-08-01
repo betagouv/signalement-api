@@ -25,6 +25,7 @@ import repositories.website.WebsiteRepositoryInterface
 import utils.Country
 import utils.URL
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -49,14 +50,24 @@ class WebsitesOrchestrator(
       maybeHost: Option[String],
       identificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatusFilter: Option[Seq[InvestigationStatus]],
+      practiceFilter: Option[Seq[Practice]],
+      attributionFilter: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
       websites <- repository.listWebsitesCompaniesByReportCount(
         maybeHost,
         identificationStatus,
         maybeOffset,
-        maybeLimit
+        maybeLimit,
+        investigationStatusFilter,
+        practiceFilter,
+        attributionFilter,
+        start,
+        end
       )
       _ = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))

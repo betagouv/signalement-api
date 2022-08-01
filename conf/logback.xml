@@ -39,7 +39,7 @@
     <logger name="tasks" level="DEBUG"/>
     <logger name="utils" level="DEBUG"/>
 
-<!--  <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>-->
+  <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>
 
     <root level="DEBUG">
         <appender-ref ref="ASYNCSTDOUT"/>

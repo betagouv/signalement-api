@@ -17,8 +17,13 @@ import utils.URL
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import PostgresProfile.api._
+import models.investigation.DepartmentDivision
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
 import models.website.IdentificationStatus.NotIdentified
 import slick.basic.DatabaseConfig
+
+import java.time.OffsetDateTime
 
 class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
@@ -94,15 +99,36 @@ class WebsiteRepository(
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
-      identificationStatus: Option[Seq[IdentificationStatus]],
+      identificationStatusFilter: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatusFilter: Option[Seq[InvestigationStatus]],
+      practiceFilter: Option[Seq[Practice]],
+      attributionFilter: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
+
     val baseQuery =
       WebsiteTable.table
         .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
-        .filterOpt(identificationStatus) { case (websiteTable, statusList) =>
+        .filterOpt(identificationStatusFilter) { case (websiteTable, statusList) =>
           websiteTable.identificationStatus inSet statusList
+        }
+        .filterOpt(investigationStatusFilter) { case (websiteTable, statusList) =>
+          websiteTable.investigationStatus inSet statusList
+        }
+        .filterOpt(practiceFilter) { case (websiteTable, practice) =>
+          websiteTable.practice inSet practice
+        }
+        .filterOpt(attributionFilter) { case (websiteTable, attribution) =>
+          websiteTable.attribution inSet attribution
+        }
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= start
+        }
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate <= end
         }
         .filter(_.isMarketplace === false)
         .filter { websiteTable =>
