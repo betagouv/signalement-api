@@ -14,6 +14,7 @@ import java.util.UUID
 case class WebsiteAndCompany(
     id: UUID,
     creationDate: OffsetDateTime,
+    lastUpdated: OffsetDateTime,
     host: String,
     companyCountry: Option[String],
     companyId: Option[UUID],
