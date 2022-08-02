@@ -22,7 +22,10 @@ object DateUtils {
     }
 
   def parseTime(source: Option[String]): Option[OffsetDateTime] =
-    source.map(parseTime)
+    try source.map(s => OffsetDateTime.parse(s, TIME_FORMATTER))
+    catch {
+      case _: DateTimeParseException => None
+    }
 
   def parseTime(source: String): OffsetDateTime =
     try OffsetDateTime.parse(source, TIME_FORMATTER)
