@@ -1,29 +1,27 @@
 package repositories.website
 
 import models._
-import models.website.Website
-import models.website.WebsiteId
-import models.website.IdentificationStatus
-import play.api.Logger
-import repositories.PostgresProfile
-import repositories.TypedCRUDRepository
-import repositories.company.CompanyTable
-import repositories.report.ReportTable
-import repositories.website.WebsiteColumnType._
-import slick.jdbc.JdbcProfile
-import slick.lifted.TableQuery
-import utils.URL
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import PostgresProfile.api._
 import models.investigation.DepartmentDivision
 import models.investigation.InvestigationStatus
 import models.investigation.Practice
 import models.website.IdentificationStatus.NotIdentified
+import models.website.IdentificationStatus
+import models.website.Website
+import models.website.WebsiteId
+import play.api.Logger
+import repositories.PostgresProfile.api._
+import repositories.TypedCRUDRepository
+import repositories.company.CompanyTable
+import repositories.report.ReportTable
+import repositories.website.WebsiteColumnType._
 import slick.basic.DatabaseConfig
+import slick.jdbc.JdbcProfile
+import slick.lifted.TableQuery
+import utils.URL
 
-import java.time.OffsetDateTime
+import java.time._
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
@@ -106,7 +104,8 @@ class WebsiteRepository(
       practiceFilter: Option[Seq[Practice]],
       attributionFilter: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
-      end: Option[OffsetDateTime]
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
 
     val baseQuery =
@@ -130,18 +129,19 @@ class WebsiteRepository(
         .filterOpt(end) { case (table, end) =>
           table.creationDate <= end
         }
-        .filter(_.isMarketplace === false)
-        .filter { websiteTable =>
-          websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
+        .filterOpt(hasAssociation) {
+          case (table, true) =>
+            table.companyCountry.isDefined || table.companyId.isDefined
+          case (table, false) =>
+            table.companyCountry.isEmpty || table.companyId.isEmpty
         }
+        .filter(_.isMarketplace === false)
         .joinLeft(CompanyTable.table)
         .on(_.companyId === _.id)
         .joinLeft(ReportTable.table)
         .on { (tupleTable, reportTable) =>
           val (websiteTable, _) = tupleTable
-          websiteTable.host === reportTable.host && reportTable.host.isDefined &&
-          (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
-            .map(_.asColumnOf[String]))
+          websiteTable.host === reportTable.host && reportTable.host.isDefined
         }
 
     val query = baseQuery
@@ -155,5 +155,31 @@ class WebsiteRepository(
 
     query.withPagination(db)(maybeOffset, maybeLimit)
   }
+
+  def getUnkonwnReportCountByHost(
+      host: Option[String],
+      start: Option[LocalDate] = None,
+      end: Option[LocalDate] = None
+  ): Future[List[(String, Int)]] = db
+    .run(
+      WebsiteTable.table
+        .filter(t => host.fold(true.bind)(h => t.host like s"%${h}%"))
+        .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .joinLeft(ReportTable.table)
+        .on { (websiteTable, reportTable) =>
+          websiteTable.host === reportTable.host && reportTable.host.isDefined
+        }
+        .groupBy(_._1.host)
+        .map { case (host, report) => (host, report.map(_._2).size) }
+        .sortBy(_._2.desc)
+        .to[List]
+        .result
+    )
 
 }

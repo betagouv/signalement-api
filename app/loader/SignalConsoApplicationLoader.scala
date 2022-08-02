@@ -242,7 +242,7 @@ class SignalConsoComponents(
 
   val websitesExtractActor: ActorRef =
     actorSystem.actorOf(
-      Props(new WebsitesExtractActor(reportRepository, asyncFileRepository, s3Service, signalConsoConfiguration)),
+      Props(new WebsitesExtractActor(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration)),
       "websites-extract-actor"
     )
 
@@ -534,8 +534,6 @@ class SignalConsoComponents(
   val subscriptionController = new SubscriptionController(subscriptionRepository, silhouette, controllerComponents)
   val websiteController = new WebsiteController(
     websitesOrchestrator,
-    websiteRepository,
-    reportRepository,
     companyRepository,
     websitesExtractActor,
     silhouette,
