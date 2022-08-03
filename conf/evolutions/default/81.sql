@@ -4,4 +4,3 @@
 
 -- !Downs
 
---ALTER TABLE reports DROP COLUMN consumer_reference_number;
