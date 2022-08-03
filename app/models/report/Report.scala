@@ -101,7 +101,8 @@ object Report {
           Json.obj(
             "firstName" -> report.firstName,
             "lastName" -> report.lastName,
-            "email" -> report.email
+            "email" -> report.email,
+            "consumerReferenceNumber" -> report.consumerReferenceNumber
           )
       }) ++ (userRole match {
         case Some(UserRole.Professionnel) => Json.obj()
@@ -110,7 +111,6 @@ object Report {
             "ccrfCode" -> report.ccrfCode,
             "phone" -> report.phone,
             "consumerPhone" -> report.consumerPhone,
-            "consumerReferenceNumber" -> report.consumerReferenceNumber,
             "employeeConsumer" -> report.employeeConsumer,
             "reponseconsoCode" -> report.reponseconsoCode,
             "gender" -> report.gender
