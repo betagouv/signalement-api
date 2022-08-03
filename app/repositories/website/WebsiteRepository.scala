@@ -39,12 +39,17 @@ class WebsiteRepository(
     db.run(
       table
         .filter(_.host === newWebsite.host)
-        .filter(website =>
-          (website.identificationStatus === IdentificationStatus.values.toList
-            .filter(_ != NotIdentified)
-            .bind
-            .any) || (website.companyId === newWebsite.companyId)
-        )
+        .filter { website =>
+          val hasBeenAlreadyIdentifiedByConso =
+            (website.companyId === newWebsite.companyId) || (website.companyCountry === newWebsite.companyCountry) || (website.companyCountry.isEmpty && website.companyId.isEmpty)
+
+          val hasBeenIdentifiedByAdmin = website.identificationStatus ===
+            IdentificationStatus.values.toList
+              .filter(_ != NotIdentified)
+              .bind
+              .any
+          hasBeenIdentifiedByAdmin || hasBeenAlreadyIdentifiedByConso
+        }
         .result
         .headOption
     ).flatMap(
