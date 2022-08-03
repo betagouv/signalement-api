@@ -6,6 +6,7 @@ import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
+import controllers.error.AppError.WebsiteNotIdentified
 import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
@@ -81,6 +82,9 @@ class WebsitesOrchestrator(
       newIdentificationStatus: IdentificationStatus
   ): Future[Website] = for {
     website <- findWebsite(websiteId)
+    _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
+      throw WebsiteNotIdentified(website.host)
+    }
     _ <-
       if (newIdentificationStatus == Identified) { validateAndCleanAssociation(website) }
       else Future.unit
