@@ -190,7 +190,7 @@ object Fixtures {
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
-  def genReportConsumer = for {
+  def genReportConsumerUpdate = for {
     firstName <- genFirstName
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
