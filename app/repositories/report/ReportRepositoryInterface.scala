@@ -58,17 +58,6 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]]
 
-  def getWebsiteReportsWithoutCompany(
-      start: Option[LocalDate] = None,
-      end: Option[LocalDate] = None
-  ): Future[List[Report]]
-
-  def getUnkonwnReportCountByHost(
-      host: Option[String],
-      start: Option[LocalDate] = None,
-      end: Option[LocalDate] = None
-  ): Future[List[(Option[String], Int)]]
-
   def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]]
 
 }

@@ -20,9 +20,6 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import repositories.report.ReportRepositoryInterface
-import repositories.website.WebsiteRepositoryInterface
-import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
@@ -33,8 +30,6 @@ import scala.concurrent.duration._
 
 class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
-    val websiteRepository: WebsiteRepositoryInterface,
-    val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
@@ -54,7 +49,8 @@ class WebsiteController(
       practice: Option[Seq[Practice]],
       attribution: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
-      end: Option[OffsetDateTime]
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
@@ -68,7 +64,8 @@ class WebsiteController(
             practice.filter(_.nonEmpty),
             attribution.filter(_.nonEmpty),
             start,
-            end
+            end,
+            hasAssociation
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
@@ -76,13 +73,9 @@ class WebsiteController(
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
-      reportRepository
-        .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
-        .map(_.collect { case (Some(host), count) =>
-          Json.obj("host" -> host, "count" -> count)
-        })
-        .map(Json.toJson(_))
-        .map(Ok(_))
+      websitesOrchestrator
+        .fetchUnregisteredHost(host, start, end)
+        .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)))
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =

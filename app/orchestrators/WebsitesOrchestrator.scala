@@ -6,6 +6,7 @@ import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
+import controllers.error.AppError.WebsiteNotIdentified
 import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
@@ -23,6 +24,7 @@ import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import utils.Country
+import utils.DateUtils
 import utils.URL
 
 import java.time.OffsetDateTime
@@ -55,7 +57,8 @@ class WebsitesOrchestrator(
       practiceFilter: Option[Seq[Practice]],
       attributionFilter: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
-      end: Option[OffsetDateTime]
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
       websites <- repository.listWebsitesCompaniesByReportCount(
@@ -67,7 +70,8 @@ class WebsitesOrchestrator(
         practiceFilter,
         attributionFilter,
         start,
-        end
+        end,
+        hasAssociation
       )
       _ = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
@@ -78,6 +82,9 @@ class WebsitesOrchestrator(
       newIdentificationStatus: IdentificationStatus
   ): Future[Website] = for {
     website <- findWebsite(websiteId)
+    _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
+      throw WebsiteNotIdentified(website.host)
+    }
     _ <-
       if (newIdentificationStatus == Identified) { validateAndCleanAssociation(website) }
       else Future.unit
@@ -187,5 +194,14 @@ class WebsitesOrchestrator(
   } yield website
 
   private def update(website: Website) = repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
+
+  def fetchUnregisteredHost(
+      host: Option[String],
+      start: Option[String],
+      end: Option[String]
+  ): Future[List[WebsiteHostCount]] =
+    repository
+      .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
+      .map(_.map { case (host, count) => WebsiteHostCount(host, count) })
 
 }
