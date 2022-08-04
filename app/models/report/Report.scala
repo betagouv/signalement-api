@@ -38,6 +38,7 @@ case class Report(
     lastName: String,
     email: EmailAddress,
     consumerPhone: Option[String] = None,
+    consumerReferenceNumber: Option[String] = None,
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
@@ -100,7 +101,8 @@ object Report {
           Json.obj(
             "firstName" -> report.firstName,
             "lastName" -> report.lastName,
-            "email" -> report.email
+            "email" -> report.email,
+            "consumerReferenceNumber" -> report.consumerReferenceNumber
           )
       }) ++ (userRole match {
         case Some(UserRole.Professionnel) => Json.obj()
@@ -190,7 +192,8 @@ case class ReportConsumerUpdate(
     firstName: String,
     lastName: String,
     email: EmailAddress,
-    contactAgreement: Boolean
+    contactAgreement: Boolean,
+    consumerReferenceNumber: Option[String]
 )
 
 object ReportConsumerUpdate {

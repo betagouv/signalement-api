@@ -9,9 +9,7 @@ import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.report.ReportTag
 import models.report.reportfile.ReportFileId
-import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.annotation.nowarn
@@ -31,6 +29,7 @@ case class ReportDraft(
     lastName: String,
     email: EmailAddress,
     consumerPhone: Option[String],
+    consumerReferenceNumber: Option[String],
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Option[Boolean] = Some(false),
@@ -64,6 +63,7 @@ case class ReportDraft(
       lastName = lastName,
       email = email,
       consumerPhone = consumerPhone,
+      consumerReferenceNumber = consumerReferenceNumber,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
       status = ReportStatus.NA,
@@ -93,5 +93,5 @@ object ReportDraft {
   implicit val reportTagReads = TranslationReportTagReads
   @nowarn
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
-  implicit val draftReportWrites = Json.writes[ReportDraft]
+
 }

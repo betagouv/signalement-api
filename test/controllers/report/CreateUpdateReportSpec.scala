@@ -155,14 +155,15 @@ object UpdateReportConsumer extends CreateUpdateReportSpec {
     s2"""
          Given a preexisting report                                     ${step { report = existingReport }}
          When the report consumer is updated                            ${step {
-        updateReportConsumer(report.id, reportConsumer)
+        updateReportConsumer(report.id, reportConsumerUpdate)
       }}
          Then the report contains updated info                          ${checkReport(
         report.copy(
-          firstName = reportConsumer.firstName,
-          lastName = reportConsumer.lastName,
-          email = reportConsumer.email,
-          contactAgreement = reportConsumer.contactAgreement
+          firstName = reportConsumerUpdate.firstName,
+          lastName = reportConsumerUpdate.lastName,
+          email = reportConsumerUpdate.email,
+          contactAgreement = reportConsumerUpdate.contactAgreement,
+          consumerReferenceNumber = reportConsumerUpdate.consumerReferenceNumber
         )
       )}
     """
@@ -240,7 +241,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
   val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
 
-  val reportConsumer = Fixtures.genReportConsumer.sample.get
+  val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
     .copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))

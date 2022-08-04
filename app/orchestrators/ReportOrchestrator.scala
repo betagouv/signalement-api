@@ -415,7 +415,8 @@ class ReportOrchestrator(
                 firstName = reportConsumer.firstName,
                 lastName = reportConsumer.lastName,
                 email = reportConsumer.email,
-                contactAgreement = reportConsumer.contactAgreement
+                contactAgreement = reportConsumer.contactAgreement,
+                consumerReferenceNumber = reportConsumer.consumerReferenceNumber
               )
             )
             .map(Some(_))
@@ -434,7 +435,8 @@ class ReportOrchestrator(
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
                 stringToDetailsJsValue(
-                  s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
+                  s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email}" +
+                    report.consumerReferenceNumber.map(nb => s" - ref $nb").getOrElse("") +
                     s"- Accord pour contact : ${if (report.contactAgreement) "oui" else "non"}"
                 )
               )
