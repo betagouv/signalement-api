@@ -195,7 +195,8 @@ object Fixtures {
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement)
+    consumerReferenceNumber <- arbString.arbitrary
+  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement, Some(consumerReferenceNumber))
 
   def genReportCompany = for {
     name <- arbString.arbitrary
