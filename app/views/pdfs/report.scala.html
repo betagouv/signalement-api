@@ -127,6 +127,11 @@
                             @phone
                         </div>
                     }
+                    @report.consumerReferenceNumber.map { consumerReferenceNumber =>
+                    <div>
+                        Numéro de référence dossier : @consumerReferenceNumber
+                    </div>
+                    }
                 </div>
                 <div>
                     <h2>Pièces jointes</h2>

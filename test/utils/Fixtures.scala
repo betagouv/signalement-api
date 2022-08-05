@@ -148,6 +148,7 @@ object Fixtures {
     lastName = lastName,
     email = email,
     consumerPhone = None,
+    consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     fileIds = List.empty
@@ -180,6 +181,7 @@ object Fixtures {
     lastName = lastName,
     email = email,
     consumerPhone = None,
+    consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status
@@ -188,12 +190,13 @@ object Fixtures {
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
-  def genReportConsumer = for {
+  def genReportConsumerUpdate = for {
     firstName <- genFirstName
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement)
+    consumerReferenceNumber <- arbString.arbitrary
+  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement, Some(consumerReferenceNumber))
 
   def genReportCompany = for {
     name <- arbString.arbitrary

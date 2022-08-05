@@ -13,7 +13,7 @@ import config.SignalConsoConfiguration
 import models._
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.report.ReportRepositoryInterface
+import repositories.website.WebsiteRepositoryInterface
 import services.S3ServiceInterface
 import utils.DateUtils
 
@@ -32,7 +32,7 @@ object WebsitesExtractActor {
 }
 
 class WebsitesExtractActor(
-    reportRepository: ReportRepositoryInterface,
+    websiteRepository: WebsiteRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
     s3Service: S3ServiceInterface,
     signalConsoConfiguration: SignalConsoConfiguration
@@ -91,12 +91,8 @@ class WebsitesExtractActor(
     val endDate = DateUtils.parseDate(filters.end)
     val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    reportRepository.getWebsiteReportsWithoutCompany(startDate, endDate).map { reports =>
-      val hostsWithCount = reports
-        .groupBy(_.websiteURL.websiteURL.flatMap(_.getHost))
-        .collect {
-          case (Some(host), reports) if filters.query.map(host.contains(_)).getOrElse(true) => (host, reports.length)
-        }
+    websiteRepository.getUnkonwnReportCountByHost(filters.query, startDate, endDate).map { reports =>
+      val hostsWithCount: Map[String, Int] = Map.from(reports)
 
       val targetFilename = s"sites-non-identifies-${Random.alphanumeric.take(12).mkString}.xlsx"
       val extractSheet = Sheet(name = "Sites non identifiés")
