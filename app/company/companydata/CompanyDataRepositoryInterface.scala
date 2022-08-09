@@ -1,7 +1,7 @@
-package repositories.companydata
+package company.companydata
 
-import models.CompanyActivity
-import models.CompanyData
+import company.CompanyActivity
+import company.CompanyData
 import repositories.CRUDRepositoryInterface
 import repositories.PostgresProfile
 import utils.SIREN

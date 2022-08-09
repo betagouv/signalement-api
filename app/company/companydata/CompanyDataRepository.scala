@@ -1,10 +1,11 @@
-package repositories.companydata
+package company.companydata
 
-import models._
 import repositories.PostgresProfile.api._
 import repositories.CRUDRepository
-import repositories.companydata.CompanyDataRepository.toOptionalSqlValue
-import repositories.companydata.CompanyDataTable.DENOMINATION_USUELLE_ETABLISSEMENT
+import CompanyDataRepository.toOptionalSqlValue
+import CompanyDataTable.DENOMINATION_USUELLE_ETABLISSEMENT
+import company.CompanyActivity
+import company.CompanyData
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery

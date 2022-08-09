@@ -1,5 +1,7 @@
-package models
+package company
 
+import models.Address
+import models.Company
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.SIREN
@@ -43,7 +45,7 @@ case class CompanyData(
     addressSupplement = complementAdresseEtablissement
   )
 
-  def toSearchResult(activityLabel: Option[String], isMarketPlace: Boolean = false) = CompanySearchResult(
+  def toSearchResult(activityLabel: Option[String], isMarketPlace: Boolean = false) = company.CompanySearchResult(
     siret = siret,
     name = denominationUsuelleEtablissement,
     brand = enseigne1Etablissement.filter(!denominationUsuelleEtablissement.contains(_)),
@@ -51,7 +53,12 @@ case class CompanyData(
     address = toAddress,
     activityCode = activitePrincipaleEtablissement,
     activityLabel = activityLabel,
-    isMarketPlace = isMarketPlace
+    isMarketPlace = isMarketPlace,
+    isOpen = etatAdministratifEtablissement.forall {
+      case "O" => true
+      case "F" => false
+      case _   => true
+    }
   )
 }
 
@@ -68,12 +75,15 @@ case class CompanySearchResult(
     address: Address,
     activityCode: String,
     activityLabel: Option[String],
-    isMarketPlace: Boolean = false
+    isMarketPlace: Boolean = false,
+    isOpen: Boolean
 ) {
-  def toCompany = Company(
+  def toCompany() = Company(
     siret = siret,
     name = name.getOrElse(""),
     address = address,
+    isHeadOffice = isHeadOffice,
+    isOpen = isOpen,
     activityCode = Some(activityCode)
   )
 }

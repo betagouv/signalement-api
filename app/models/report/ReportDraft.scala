@@ -23,6 +23,8 @@ case class ReportDraft(
     companyAddress: Option[Address],
     companySiret: Option[SIRET],
     companyActivityCode: Option[String],
+    companyIsHeadOffice: Boolean,
+    companyIsOpen: Boolean,
     websiteURL: Option[URL],
     phone: Option[String],
     firstName: String,

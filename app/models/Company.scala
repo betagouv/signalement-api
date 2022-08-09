@@ -40,7 +40,9 @@ case class Company(
     creationDate: OffsetDateTime = OffsetDateTime.now,
     name: String,
     address: Address,
-    activityCode: Option[String]
+    activityCode: Option[String],
+    isHeadOffice: Boolean,
+    isOpen: Boolean
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
@@ -85,13 +87,17 @@ case class CompanyCreation(
     siret: SIRET,
     name: String,
     address: Address,
-    activityCode: Option[String]
+    activityCode: Option[String],
+    isHeadOffice: Boolean,
+    isOpen: Boolean
 ) {
   def toCompany(): Company = Company(
     siret = siret,
     name = name,
     address = address,
-    activityCode = activityCode
+    activityCode = activityCode,
+    isHeadOffice = isHeadOffice,
+    isOpen = isOpen
   )
 }
 

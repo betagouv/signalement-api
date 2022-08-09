@@ -125,7 +125,9 @@ class AdminController(
       postalCode = Some("75015"),
       city = Some("Paris")
     ),
-    activityCode = None
+    activityCode = None,
+    isHeadOffice = true,
+    isOpen = true
   )
 
   private def genUser = User(
