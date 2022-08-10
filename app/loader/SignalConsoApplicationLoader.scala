@@ -387,7 +387,7 @@ class SignalConsoComponents(
 
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
 
-  val companyTask = new CompanyUpdateTask(actorSystem, companyRepository)
+  val companyTask = new CompanyUpdateTask(actorSystem, applicationConfiguration.task.companyUpdate, companyRepository)
   val noActionReportsCloseTask =
     new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)
 

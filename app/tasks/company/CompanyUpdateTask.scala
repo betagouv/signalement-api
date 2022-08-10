@@ -5,6 +5,7 @@ import akka.stream.Materializer
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
 import company.CompanySearchResult
+import config.CompanyUpdateTaskConfiguration
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanyTable
@@ -21,6 +22,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class CompanyUpdateTask(
     actorSystem: ActorSystem,
+    companyUpdate: CompanyUpdateTaskConfiguration,
     companyRepository: CompanyRepositoryInterface
 )(implicit
     executionContext: ExecutionContext,

@@ -318,8 +318,8 @@ class ReportOrchestrator(
           name = draftReport.companyName.get,
           address = draftReport.companyAddress.get,
           activityCode = draftReport.companyActivityCode,
-          isHeadOffice = draftReport.companyIsHeadOffice,
-          isOpen = draftReport.companyIsOpen
+          isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
+          isOpen = draftReport.companyIsOpen.getOrElse(true)
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")

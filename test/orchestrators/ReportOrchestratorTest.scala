@@ -60,8 +60,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldComputed(_.details, _.details)
           .withFieldConst(_.fileIds, List.empty)
-          .withFieldConst(_.companyIsHeadOffice, company.isHeadOffice)
-          .withFieldConst(_.companyIsOpen, company.isOpen)
+          .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
+          .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -93,8 +93,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
           .withFieldConst(_.details, List(DetailInputValue("test", "test")))
-          .withFieldConst(_.companyIsHeadOffice, company.isHeadOffice)
-          .withFieldConst(_.companyIsOpen, company.isOpen)
+          .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
+          .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -121,8 +121,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
           .withFieldConst(_.details, List(DetailInputValue("test", "test")))
-          .withFieldConst(_.companyIsHeadOffice, company.isHeadOffice)
-          .withFieldConst(_.companyIsOpen, company.isOpen)
+          .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
+          .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result
@@ -160,8 +160,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .into[ReportDraft]
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
-          .withFieldConst(_.companyIsHeadOffice, company.isHeadOffice)
-          .withFieldConst(_.companyIsOpen, company.isOpen)
+          .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
+          .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .withFieldConst(
             _.details,
             List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
@@ -198,8 +198,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .into[ReportDraft]
           .withFieldComputed(_.websiteURL, _.websiteURL.websiteURL)
           .withFieldConst(_.fileIds, List.empty)
-          .withFieldConst(_.companyIsHeadOffice, company.isHeadOffice)
-          .withFieldConst(_.companyIsOpen, company.isOpen)
+          .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
+          .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .withFieldConst(
             _.details,
             List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
