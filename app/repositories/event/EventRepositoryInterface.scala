@@ -4,7 +4,6 @@ import cats.data.NonEmptyList
 import models.User
 import models.event.Event
 import models.report.Report
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import repositories.CRUDRepositoryInterface
@@ -49,9 +48,4 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
       actions: NonEmptyList[ActionEvent.ActionEventValue]
   ): Future[Vector[(Timestamp, Int)]]
 
-  def getProReportResponseStat(
-      ticks: Int,
-      startingDate: OffsetDateTime,
-      responseTypes: NonEmptyList[ReportResponseType]
-  ): Future[Vector[(Timestamp, Int)]]
 }

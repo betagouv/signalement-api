@@ -1,5 +1,6 @@
 package utils
 
+import company.CompanyData
 import models.event.Event._
 import models._
 import models.event.Event
@@ -84,7 +85,9 @@ object Fixtures {
     siret = siret,
     name = name,
     address = address,
-    activityCode = None
+    activityCode = None,
+    isOpen = true,
+    isHeadOffice = false
   )
 
   def genCompanyData(company: Option[Company] = None) = for {
@@ -142,12 +145,15 @@ object Fixtures {
     companyAddress = Some(company.address),
     companySiret = Some(company.siret),
     companyActivityCode = None,
+    companyIsHeadOffice = Some(company.isHeadOffice),
+    companyIsOpen = Some(company.isOpen),
     websiteURL = Some(websiteURL),
     phone = None,
     firstName = firstName,
     lastName = lastName,
     email = email,
     consumerPhone = None,
+    consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     fileIds = List.empty
@@ -180,6 +186,7 @@ object Fixtures {
     lastName = lastName,
     email = email,
     consumerPhone = None,
+    consumerReferenceNumber = None,
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status
@@ -188,18 +195,19 @@ object Fixtures {
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
     Gen.listOfN(Random.nextInt(10), genReportForCompany(company).map(_.copy(status = status)))
 
-  def genReportConsumer = for {
+  def genReportConsumerUpdate = for {
     firstName <- genFirstName
     lastName <- genLastName
     email <- genEmailAddress(firstName, lastName)
     contactAgreement <- arbitrary[Boolean]
-  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement)
+    consumerReferenceNumber <- arbString.arbitrary
+  } yield ReportConsumerUpdate(firstName, lastName, email, contactAgreement, Some(consumerReferenceNumber))
 
   def genReportCompany = for {
     name <- arbString.arbitrary
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
     siret <- genSiret()
-  } yield ReportCompany(name, address, siret, None)
+  } yield ReportCompany(name, address, siret, None, isHeadOffice = true, isOpen = true)
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]

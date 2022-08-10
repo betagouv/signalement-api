@@ -6,30 +6,23 @@ import models.CurveTickDuration
 import models.ReportReviewStats
 import models.UserRole
 import models.report.ReportFilter
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
+import orchestrators.StatsOrchestrator.restrictToReliableDates
+import orchestrators.StatsOrchestrator.toPercentage
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
-import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
-import utils.Constants.ActionEvent.REPORT_READING_BY_PRO
 
 import java.sql.Timestamp
-import java.time.Duration
-import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.time.Period
-import java.time.ZoneOffset
+import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -65,14 +58,43 @@ class StatsOrchestrator(
   def getReportCount(reportFilter: ReportFilter): Future[Int] =
     reportRepository.count(reportFilter)
 
+  def getReportCountPercentage(filter: ReportFilter, basePercentageFilter: ReportFilter): Future[Int] =
+    for {
+      count <- reportRepository.count(filter)
+      baseCount <- reportRepository.count(basePercentageFilter)
+    } yield toPercentage(count, baseCount)
+
+  def getReportCountPercentageWithinReliableDates(
+      filter: ReportFilter,
+      basePercentageFilter: ReportFilter
+  ): Future[Int] =
+    getReportCountPercentage(
+      restrictToReliableDates(filter),
+      restrictToReliableDates(basePercentageFilter)
+    )
+
   def getReportsCountCurve(
       reportFilter: ReportFilter,
-      ticks: Int,
-      tickDuration: CurveTickDuration
+      ticks: Int = 12,
+      tickDuration: CurveTickDuration = CurveTickDuration.Month
   ): Future[Seq[CountByDate]] =
     tickDuration match {
       case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
       case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
+    }
+
+  def getReportsCountPercentageCurve(
+      reportFilter: ReportFilter,
+      baseFilter: ReportFilter
+  ): Future[Seq[CountByDate]] =
+    for {
+      rawCurve <- getReportsCountCurve(reportFilter)
+      baseCurve <- getReportsCountCurve(baseFilter)
+    } yield rawCurve.sortBy(_.date).zip(baseCurve.sortBy(_.date)).map { case (a, b) =>
+      CountByDate(
+        count = toPercentage(a.count, b.count),
+        date = a.date
+      )
     }
 
   def getReportsTagsDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[ReportTag, Int]] =
@@ -123,15 +145,6 @@ class StatsOrchestrator(
       )
       .map(formatStatData(_, ticks))
 
-  def getProReportResponseStat(ticks: Int, responseTypes: NonEmptyList[ReportResponseType]) =
-    eventRepository
-      .getProReportResponseStat(
-        ticks,
-        computeStartingDate(ticks),
-        responseTypes
-      )
-      .map(formatStatData(_, ticks))
-
   def dgccrfAccountsCurve(ticks: Int) =
     accessTokenRepository
       .dgccrfAccountsCurve(ticks)
@@ -151,10 +164,19 @@ class StatsOrchestrator(
     accessTokenRepository
       .dgccrfControlsCurve(ticks)
       .map(formatStatData(_, ticks))
-
 }
 
 object StatsOrchestrator {
+
+  private[orchestrators] val reliableStatsStartDate = OffsetDateTime.parse("2019-01-01T00:00:00Z")
+
+  private[orchestrators] def restrictToReliableDates(reportFilter: ReportFilter): ReportFilter =
+    // Percentages would be messed up if we look at really old data or really fresh one
+    reportFilter.copy(start = Some(reliableStatsStartDate), end = Some(OffsetDateTime.now.minusDays(30)))
+
+  private[orchestrators] def toPercentage(numerator: Int, denominator: Int): Int =
+    if (denominator == 0) 0
+    else Math.max(0, Math.min(100, numerator * 100 / denominator))
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
     OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)

@@ -1,12 +1,9 @@
-package orchestrators
+package company
 
 import actors.EnterpriseSyncActor
 import akka.actor.ActorRef
 import akka.pattern.ask
-import models.EnterpriseImportInfo
-import models.EtablissementFile
-import models.UniteLegaleFile
-import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
+import company.entrepriseimportinfo.EnterpriseImportInfoRepository
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

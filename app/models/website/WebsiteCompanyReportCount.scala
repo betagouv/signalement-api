@@ -15,6 +15,7 @@ import java.util.UUID
 case class WebsiteCompanyReportCount(
     id: WebsiteId,
     creationDate: OffsetDateTime,
+    lastUpdated: OffsetDateTime,
     host: String,
     companyId: Option[UUID],
     companyCountry: Option[Country],

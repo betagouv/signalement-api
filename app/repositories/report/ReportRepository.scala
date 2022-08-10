@@ -231,47 +231,6 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .result
     )
 
-  def getWebsiteReportsWithoutCompany(
-      start: Option[LocalDate] = None,
-      end: Option[LocalDate] = None
-  ): Future[List[Report]] = db
-    .run(
-      table
-        .filter(_.websiteURL.isDefined)
-        .filter(x => x.companyId.isEmpty || x.companyCountry.isEmpty)
-        .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
-        }
-        .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-        }
-        .to[List]
-        .result
-    )
-
-  def getUnkonwnReportCountByHost(
-      host: Option[String],
-      start: Option[LocalDate] = None,
-      end: Option[LocalDate] = None
-  ): Future[List[(Option[String], Int)]] = db
-    .run(
-      table
-        .filter(_.host.isDefined)
-        .filter(t => host.fold(true.bind)(h => t.host.fold(true.bind)(_ like s"%${h}%")))
-        .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
-        .filterOpt(start) { case (table, start) =>
-          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
-        }
-        .filterOpt(end) { case (table, end) =>
-          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-        }
-        .groupBy(_.host)
-        .map { case (host, report) => (host, report.size) }
-        .sortBy(_._2.desc)
-        .to[List]
-        .result
-    )
-
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     db.run(
       sql"""
@@ -367,6 +326,9 @@ object ReportRepository {
                 .distinct)
           )
           .getOrElse(false)
+      }
+      .filterOpt(filter.siretSirenDefined) { case (table, siretSirenDefined) =>
+        if (siretSirenDefined) table.companySiret.nonEmpty else table.companySiret.isEmpty
       }
       .filterOpt(filter.companyName) { case (table, companyName) =>
         table.companyName like s"${companyName}%"

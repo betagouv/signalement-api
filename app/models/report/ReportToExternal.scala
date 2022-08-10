@@ -25,6 +25,7 @@ case class ReportToExternal(
     websiteURL: Option[URL],
     phone: Option[String],
     consumerPhone: Option[String],
+    consumerReferenceNumber: Option[String],
     firstName: String,
     lastName: String,
     email: EmailAddress,
@@ -64,6 +65,7 @@ object ReportToExternal {
       lastName = r.lastName,
       email = r.email,
       consumerPhone = r.consumerPhone,
+      consumerReferenceNumber = r.consumerReferenceNumber,
       contactAgreement = r.contactAgreement,
       effectiveDate = r.details
         .filter(d => d.label.matches("Date .* (constat|contrat|rendez-vous|course) .*"))

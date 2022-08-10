@@ -1,4 +1,4 @@
-# Routes
+ # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
@@ -6,6 +6,8 @@
 GET           /api                                              controllers.StaticController.api
 
 # Statistics API
+GET           /api/stats/reports/public/count                   controllers.StatisticController.getPublicStatCount(publicStat: PublicStat)
+GET           /api/stats/reports/public/curve                   controllers.StatisticController.getPublicStatCurve(publicStat: PublicStat)
 GET           /api/stats/reports/count                          controllers.StatisticController.getReportsCount()
 GET           /api/stats/reports/curve                          controllers.StatisticController.getReportsCountCurve()
 GET           /api/stats/reports/delay/responsed                controllers.StatisticController.getDelayReportResponseInHours(companyId: Option[java.util.UUID])
@@ -13,8 +15,9 @@ GET           /api/stats/reports/delay/read                     controllers.Stat
 GET           /api/stats/reports/tags                           controllers.StatisticController.getReportsTagsDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/status                         controllers.StatisticController.getReportsStatusDistribution(companyId: Option[java.util.UUID])
 GET           /api/stats/reports/reviews                        controllers.StatisticController.getReportResponseReviews(companyId: Option[java.util.UUID])
-GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat(ticks: Option[Int])
-GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]])
+GET           /api/stats/reports/pro-totransmit                 controllers.StatisticController.getProReportToTransmitStat()
+GET           /api/stats/reports/pro-transmitted                controllers.StatisticController.getProReportTransmittedStat()
+GET           /api/stats/reports/pro-response                   controllers.StatisticController.getProReportResponseStat(responseStatusQuery: Option[List[ReportResponseType]])
 GET           /api/stats/pro-account-rate                       controllers.CompanyAccessController.proFirstActivationCount(ticks: Option[Int])
 GET           /api/stats/dgccrf-account                         controllers.StatisticController.dgccrfAccountsCurve(ticks: Option[Int])
 GET           /api/stats/dgccrf-active-account                  controllers.StatisticController.dgccrfActiveAccountsCurve(ticks: Option[Int])
@@ -77,12 +80,12 @@ POST          /api/authenticate/password/reset                  controllers.Auth
 POST          /api/account/password                             controllers.AuthController.changePassword()
 
 # Enterprises sync
-POST          /api/enterprises-sync/start-etablissement         controllers.EnterpriseImportController.startEtablissementFile()
-POST          /api/enterprises-sync/start-unitelegale           controllers.EnterpriseImportController.startUniteLegaleFile()
-POST          /api/enterprises-sync/cancel                      controllers.EnterpriseImportController.cancelAllFiles()
-POST          /api/enterprises-sync/cancel-etablissement        controllers.EnterpriseImportController.cancelEtablissementFile()
-POST          /api/enterprises-sync/cancel-unitelegale          controllers.EnterpriseImportController.cancelUniteLegaleFile()
-GET           /api/enterprises-sync/info                        controllers.EnterpriseImportController.getSyncInfo()
+POST          /api/enterprises-sync/start-etablissement         company.EnterpriseImportController.startEtablissementFile()
+POST          /api/enterprises-sync/start-unitelegale           company.EnterpriseImportController.startUniteLegaleFile()
+POST          /api/enterprises-sync/cancel                      company.EnterpriseImportController.cancelAllFiles()
+POST          /api/enterprises-sync/cancel-etablissement        company.EnterpriseImportController.cancelEtablissementFile()
+POST          /api/enterprises-sync/cancel-unitelegale          company.EnterpriseImportController.cancelUniteLegaleFile()
+GET           /api/enterprises-sync/info                        company.EnterpriseImportController.getSyncInfo()
 
 # Accesses API
 GET           /api/accesses/connected-user                      controllers.CompanyAccessController.myCompanies()
@@ -149,7 +152,7 @@ GET           /api/resources/practice                           controllers.Webs
 
 POST          /api/website-investigations                       controllers.WebsiteController.updateInvestigation()
 # Websites API
-GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int])
+GET           /api/websites                                     controllers.WebsiteController.fetchWithCompanies(host: Option[String], identificationStatus: Option[Seq[IdentificationStatus]], offset: Option[Long], limit: Option[Int],investigationStatus: Option[Seq[InvestigationStatus]],practice: Option[Seq[Practice]],attribution: Option[Seq[DepartmentDivision]],start: Option[OffsetDateTime],end: Option[OffsetDateTime],hasAssociation: Option[Boolean])
 GET           /api/websites/search-url                          controllers.WebsiteController.searchByHost(url: String)
 GET           /api/websites/unregistered                        controllers.WebsiteController.fetchUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])
 GET           /api/websites/unregistered/extract                controllers.WebsiteController.extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String])

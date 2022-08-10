@@ -127,7 +127,7 @@ object Email {
   final case class DgccrfReportNotification(
       recipients: List[EmailAddress],
       subscription: Subscription,
-      reports: Seq[Report],
+      reports: Seq[(Report, List[ReportFile])],
       startDate: LocalDate
   ) extends DgccrfEmail {
     override val subject: String = EmailSubjects.REPORT_NOTIF_DGCCRF(

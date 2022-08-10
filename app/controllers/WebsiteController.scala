@@ -7,6 +7,9 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.investigation.DepartmentDivision
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
 import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
@@ -17,20 +20,16 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import repositories.company.CompanyRepositoryInterface
-import repositories.report.ReportRepositoryInterface
-import repositories.website.WebsiteRepositoryInterface
-import utils.DateUtils
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithRole
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
-    val websiteRepository: WebsiteRepositoryInterface,
-    val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     websitesExtractActor: ActorRef,
     val silhouette: Silhouette[AuthEnv],
@@ -45,7 +44,13 @@ class WebsiteController(
       maybeHost: Option[String],
       maybeIdentificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatus: Option[Seq[InvestigationStatus]],
+      practice: Option[Seq[Practice]],
+      attribution: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
       for {
@@ -54,7 +59,13 @@ class WebsiteController(
             maybeHost.filter(_.nonEmpty),
             maybeIdentificationStatus.filter(_.nonEmpty),
             maybeOffset,
-            maybeLimit
+            maybeLimit,
+            investigationStatus.filter(_.nonEmpty),
+            practice.filter(_.nonEmpty),
+            attribution.filter(_.nonEmpty),
+            start,
+            end,
+            hasAssociation
           )
         resultAsJson = Json.toJson(result)(paginatedResultWrites[WebsiteCompanyReportCount])
       } yield Ok(resultAsJson)
@@ -62,13 +73,9 @@ class WebsiteController(
 
   def fetchUnregisteredHost(host: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
-      reportRepository
-        .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
-        .map(_.collect { case (Some(host), count) =>
-          Json.obj("host" -> host, "count" -> count)
-        })
-        .map(Json.toJson(_))
-        .map(Ok(_))
+      websitesOrchestrator
+        .fetchUnregisteredHost(host, start, end)
+        .map(websiteHostCount => Ok(Json.toJson(websiteHostCount)))
     }
 
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
@@ -126,6 +133,7 @@ class WebsiteController(
       for {
         websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
         updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+        _ = logger.debug(updated.toString)
       } yield Ok(Json.toJson(updated))
   }
 

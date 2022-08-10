@@ -11,11 +11,14 @@ import play.api.mvc.PathBindable
 import play.api.mvc.QueryStringBindable
 import play.api.mvc.Request
 import cats.syntax.either._
+import models.PublicStat
 import models.extractUUID
 import models.report.ReportResponseType
 import models.report.reportfile.ReportFileId
+import utils.DateUtils
 import utils.SIRET
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -36,6 +39,13 @@ package object controllers {
       .transform[UUID](
         id => extractUUID(id),
         uuid => uuid.toString
+      )
+
+  implicit val OffsetDateTimeQueryStringBindable: QueryStringBindable[OffsetDateTime] =
+    QueryStringBindable.bindableString
+      .transform[OffsetDateTime](
+        stringOffsetDateTime => DateUtils.parseTime(stringOffsetDateTime),
+        offsetDateTime => offsetDateTime.toString
       )
 
   implicit val ReportFileIdPathBindable =
@@ -64,6 +74,13 @@ package object controllers {
       .transform[ReportResponseType](
         reportResponseType => ReportResponseType.withName(reportResponseType),
         reportResponseType => reportResponseType.entryName
+      )
+
+  implicit val PublicStatQueryStringBindable: QueryStringBindable[PublicStat] =
+    QueryStringBindable.bindableString
+      .transform[PublicStat](
+        publicStat => PublicStat.withName(publicStat),
+        publicStat => publicStat.entryName
       )
 
   implicit class RequestOps[T <: JsValue](request: Request[T])(implicit ec: ExecutionContext) {

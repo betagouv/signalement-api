@@ -9,8 +9,11 @@ import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
 import models.event.Event
+import models.report.ReportFileOrigin.CONSUMER
+import models.report.reportfile.ReportFileId
 import models.report.Gender
 import models.report.Report
+import models.report.ReportFile
 import models.report.ReportResponse
 import models.report.ReportResponseType
 import models.report.ReportStatus
@@ -73,7 +76,7 @@ class AdminController(
   val dummyURL = java.net.URI.create("https://lien-test")
 
   private def genReport = Report(
-    id = UUID.randomUUID,
+    id = UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c"),
     gender = Some(Gender.Female),
     category = "Test",
     subcategories = List("test"),
@@ -94,6 +97,16 @@ class AdminController(
     status = ReportStatus.TraitementEnCours
   )
 
+  private def genReportFile = ReportFile(
+    id = ReportFileId.generateId(),
+    reportId = Some(UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c")),
+    creationDate = OffsetDateTime.now,
+    filename = s"${UUID.randomUUID.toString}.png",
+    storageFilename = "String",
+    origin = CONSUMER,
+    avOutput = None
+  )
+
   private def genReportResponse = ReportResponse(
     responseType = ReportResponseType.ACCEPTED,
     consumerDetails = "",
@@ -112,7 +125,9 @@ class AdminController(
       postalCode = Some("75015"),
       city = Some("Paris")
     ),
-    activityCode = None
+    activityCode = None,
+    isHeadOffice = true,
+    isOpen = true
   )
 
   private def genUser = User(
@@ -168,7 +183,10 @@ class AdminController(
       DgccrfReportNotification(
         List(recipient),
         genSubscription,
-        List(genReport, genReport.copy(tags = List(ReportTag.ReponseConso))),
+        List(
+          (genReport, List(genReportFile)),
+          (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
+        ),
         LocalDate.now.minusDays(10)
       )
     ),

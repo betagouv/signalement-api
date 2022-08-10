@@ -1,24 +1,27 @@
 package repositories.website
 
 import models._
+import models.investigation.DepartmentDivision
+import models.investigation.InvestigationStatus
+import models.investigation.Practice
+import models.website.IdentificationStatus.NotIdentified
+import models.website.IdentificationStatus
 import models.website.Website
 import models.website.WebsiteId
-import models.website.IdentificationStatus
 import play.api.Logger
-import repositories.PostgresProfile
+import repositories.PostgresProfile.api._
 import repositories.TypedCRUDRepository
 import repositories.company.CompanyTable
 import repositories.report.ReportTable
 import repositories.website.WebsiteColumnType._
+import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.URL
 
+import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import PostgresProfile.api._
-import models.website.IdentificationStatus.NotIdentified
-import slick.basic.DatabaseConfig
 
 class WebsiteRepository(
     override val dbConfig: DatabaseConfig[JdbcProfile]
@@ -36,12 +39,17 @@ class WebsiteRepository(
     db.run(
       table
         .filter(_.host === newWebsite.host)
-        .filter(website =>
-          (website.identificationStatus === IdentificationStatus.values.toList
-            .filter(_ != NotIdentified)
-            .bind
-            .any) || (website.companyId === newWebsite.companyId)
-        )
+        .filter { website =>
+          val hasBeenAlreadyIdentifiedByConso =
+            (website.companyId === newWebsite.companyId) || (website.companyCountry === newWebsite.companyCountry) || (website.companyCountry.isEmpty && website.companyId.isEmpty)
+
+          val hasBeenIdentifiedByAdmin = website.identificationStatus ===
+            IdentificationStatus.values.toList
+              .filter(_ != NotIdentified)
+              .bind
+              .any
+          hasBeenIdentifiedByAdmin || hasBeenAlreadyIdentifiedByConso
+        }
         .result
         .headOption
     ).flatMap(
@@ -94,28 +102,51 @@ class WebsiteRepository(
 
   override def listWebsitesCompaniesByReportCount(
       maybeHost: Option[String],
-      identificationStatus: Option[Seq[IdentificationStatus]],
+      identificationStatusFilter: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatusFilter: Option[Seq[InvestigationStatus]],
+      practiceFilter: Option[Seq[Practice]],
+      attributionFilter: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ): Future[PaginatedResult[((Website, Option[Company]), Int)]] = {
+
     val baseQuery =
       WebsiteTable.table
         .filterOpt(maybeHost) { case (websiteTable, filterHost) => websiteTable.host like s"%${filterHost}%" }
-        .filterOpt(identificationStatus) { case (websiteTable, statusList) =>
+        .filterOpt(identificationStatusFilter) { case (websiteTable, statusList) =>
           websiteTable.identificationStatus inSet statusList
         }
-        .filter(_.isMarketplace === false)
-        .filter { websiteTable =>
-          websiteTable.companyId.nonEmpty || websiteTable.companyCountry.nonEmpty
+        .filterOpt(investigationStatusFilter) { case (websiteTable, statusList) =>
+          websiteTable.investigationStatus inSet statusList
         }
+        .filterOpt(practiceFilter) { case (websiteTable, practice) =>
+          websiteTable.practice inSet practice
+        }
+        .filterOpt(attributionFilter) { case (websiteTable, attribution) =>
+          websiteTable.attribution inSet attribution
+        }
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= start
+        }
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate <= end
+        }
+        .filterOpt(hasAssociation) {
+          case (table, true) =>
+            table.companyCountry.isDefined || table.companyId.isDefined
+          case (table, false) =>
+            table.companyCountry.isEmpty || table.companyId.isEmpty
+        }
+        .filter(_.isMarketplace === false)
         .joinLeft(CompanyTable.table)
         .on(_.companyId === _.id)
         .joinLeft(ReportTable.table)
         .on { (tupleTable, reportTable) =>
           val (websiteTable, _) = tupleTable
-          websiteTable.host === reportTable.host && reportTable.host.isDefined &&
-          (websiteTable.companyId === reportTable.companyId || websiteTable.companyCountry === reportTable.companyCountry
-            .map(_.asColumnOf[String]))
+          websiteTable.host === reportTable.host && reportTable.host.isDefined
         }
 
     val query = baseQuery
@@ -129,5 +160,31 @@ class WebsiteRepository(
 
     query.withPagination(db)(maybeOffset, maybeLimit)
   }
+
+  def getUnkonwnReportCountByHost(
+      host: Option[String],
+      start: Option[LocalDate] = None,
+      end: Option[LocalDate] = None
+  ): Future[List[(String, Int)]] = db
+    .run(
+      WebsiteTable.table
+        .filter(t => host.fold(true.bind)(h => t.host like s"%${h}%"))
+        .filter(x => x.companyId.isEmpty && x.companyCountry.isEmpty)
+        .filterOpt(start) { case (table, start) =>
+          table.creationDate >= ZonedDateTime.of(start, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .filterOpt(end) { case (table, end) =>
+          table.creationDate < ZonedDateTime.of(end, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .joinLeft(ReportTable.table)
+        .on { (websiteTable, reportTable) =>
+          websiteTable.host === reportTable.host && reportTable.host.isDefined
+        }
+        .groupBy(_._1.host)
+        .map { case (host, report) => (host, report.map(_._2).size) }
+        .sortBy(_._2.desc)
+        .to[List]
+        .result
+    )
 
 }

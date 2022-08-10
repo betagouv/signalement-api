@@ -155,14 +155,15 @@ object UpdateReportConsumer extends CreateUpdateReportSpec {
     s2"""
          Given a preexisting report                                     ${step { report = existingReport }}
          When the report consumer is updated                            ${step {
-        updateReportConsumer(report.id, reportConsumer)
+        updateReportConsumer(report.id, reportConsumerUpdate)
       }}
          Then the report contains updated info                          ${checkReport(
         report.copy(
-          firstName = reportConsumer.firstName,
-          lastName = reportConsumer.lastName,
-          email = reportConsumer.email,
-          contactAgreement = reportConsumer.contactAgreement
+          firstName = reportConsumerUpdate.firstName,
+          lastName = reportConsumerUpdate.lastName,
+          email = reportConsumerUpdate.email,
+          contactAgreement = reportConsumerUpdate.contactAgreement,
+          consumerReferenceNumber = reportConsumerUpdate.consumerReferenceNumber
         )
       )}
     """
@@ -234,13 +235,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
-  var report = draftReport.generateReport
+  var report = draftReport.generateReport(None)
   val proUser = Fixtures.genProUser.sample.get
 
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
   val concernedAdminLoginInfo = LoginInfo(CredentialsProvider.ID, concernedAdminUser.email.value)
 
-  val reportConsumer = Fixtures.genReportConsumer.sample.get
+  val reportConsumerUpdate = Fixtures.genReportConsumerUpdate.sample.get
   val reportCompanySameSiret = Fixtures.genReportCompany.sample.get.copy(siret = existingCompany.siret)
   val reportCompanyAnotherSiret = Fixtures.genReportCompany.sample.get
     .copy(siret = anotherCompany.siret, address = Address(postalCode = Some("45000")))
@@ -336,12 +337,13 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
-    val expectedReport = draftReport.generateReport.copy(
-      id = reports.head.id,
-      creationDate = reports.head.creationDate,
-      companyId = reports.head.companyId,
-      status = status
-    )
+    val expectedReport = draftReport
+      .generateReport(reports.head.companyId)
+      .copy(
+        id = reports.head.id,
+        creationDate = reports.head.creationDate,
+        status = status
+      )
     report = reports.head
     reports.length must beEqualTo(1) and
       (report.companyId must beSome) and

@@ -30,6 +30,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val reportRepository = components.reportRepository
   lazy val companyRepository = components.companyRepository
+  lazy val websiteRepository = components.websiteRepository
 
   val adminUser = Fixtures.genAdminUser.sample.get
   val company = Fixtures.genCompany.sample.get
@@ -43,11 +44,33 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
         _ <- userRepository.create(adminUser)
         c <- companyRepository.getOrCreate(company.siret, company)
         _ <-
-          reportRepository.create(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website1)).generateReport)
+          reportRepository.create(
+            Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website1)).generateReport(None)
+          )
         _ <-
-          reportRepository.create(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)).generateReport)
+          websiteRepository.create(
+            Fixtures
+              .genWebsite()
+              .sample
+              .get
+              .copy(host = website1.getHost.getOrElse(""), companyId = None, companyCountry = None)
+          )
+        _ <-
+          reportRepository.create(
+            Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)).generateReport(None)
+          )
+        _ <-
+          websiteRepository.create(
+            Fixtures
+              .genWebsite()
+              .sample
+              .get
+              .copy(host = website2.getHost.getOrElse(""), companyId = None, companyCountry = None)
+          )
         _ <- reportRepository.create(
-          Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(URL(s"${website2}/test?query"))).generateReport
+          Fixtures.genDraftReport.sample.get
+            .copy(websiteURL = Some(URL(s"${website2}/test?query")))
+            .generateReport(None)
         )
         _ <- reportRepository.create(
           Fixtures

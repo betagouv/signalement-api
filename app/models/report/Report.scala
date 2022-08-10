@@ -7,6 +7,7 @@ import models.Address
 import models.Company
 import models.PaginatedResult
 import models.UserRole
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import play.api.libs.json._
@@ -37,6 +38,7 @@ case class Report(
     lastName: String,
     email: EmailAddress,
     consumerPhone: Option[String] = None,
+    consumerReferenceNumber: Option[String] = None,
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Boolean = false,
@@ -51,11 +53,11 @@ case class Report(
     if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (
       companySiret.isDefined && tags
-        .intersect(Seq(ReportTag.ReponseConso, ReportTag.ProduitDangereux, ReportTag.Bloctel))
+        .intersect(ReportTagHiddenToProfessionnel)
         .isEmpty
-    )
+    ) {
       ReportStatus.TraitementEnCours
-    else ReportStatus.NA
+    } else { ReportStatus.NA }
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
@@ -99,7 +101,8 @@ object Report {
           Json.obj(
             "firstName" -> report.firstName,
             "lastName" -> report.lastName,
-            "email" -> report.email
+            "email" -> report.email,
+            "consumerReferenceNumber" -> report.consumerReferenceNumber
           )
       }) ++ (userRole match {
         case Some(UserRole.Professionnel) => Json.obj()
@@ -178,7 +181,9 @@ case class ReportCompany(
     name: String,
     address: Address,
     siret: SIRET,
-    activityCode: Option[String]
+    activityCode: Option[String],
+    isHeadOffice: Boolean,
+    isOpen: Boolean
 )
 
 object ReportCompany {
@@ -189,7 +194,8 @@ case class ReportConsumerUpdate(
     firstName: String,
     lastName: String,
     email: EmailAddress,
-    contactAgreement: Boolean
+    contactAgreement: Boolean,
+    consumerReferenceNumber: Option[String]
 )
 
 object ReportConsumerUpdate {

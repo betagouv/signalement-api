@@ -36,6 +36,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def lastName = column[String]("last_name")
   def email = column[EmailAddress]("email")
   def consumerPhone = column[Option[String]]("consumer_phone")
+  def consumerReferenceNumber = column[Option[String]]("consumer_reference_number")
   def contactAgreement = column[Boolean]("contact_agreement")
   def employeeConsumer = column[Boolean]("employee_consumer")
   def forwardToReponseConso = column[Boolean]("forward_to_reponseconso")
@@ -76,6 +77,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       String,
       EmailAddress,
       Option[String],
+      Option[String],
       Boolean,
       Boolean,
       Boolean,
@@ -112,6 +114,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
           lastName,
           email,
           consumerPhone,
+          consumerReferenceNumber,
           contactAgreement,
           employeeConsumer,
           forwardToReponseConso,
@@ -146,6 +149,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         lastName = lastName,
         email = email,
         consumerPhone = consumerPhone,
+        consumerReferenceNumber = consumerReferenceNumber,
         contactAgreement = contactAgreement,
         employeeConsumer = employeeConsumer,
         forwardToReponseConso = forwardToReponseConso,
@@ -183,6 +187,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.lastName,
       r.email,
       r.consumerPhone,
+      r.consumerReferenceNumber,
       r.contactAgreement,
       r.employeeConsumer,
       r.forwardToReponseConso,
@@ -219,6 +224,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
     lastName,
     email,
     consumerPhone,
+    consumerReferenceNumber,
     contactAgreement,
     employeeConsumer,
     forwardToReponseConso,

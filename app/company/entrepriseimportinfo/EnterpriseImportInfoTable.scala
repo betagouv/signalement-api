@@ -1,6 +1,6 @@
-package repositories.entrepriseimportinfo
+package company.entrepriseimportinfo
 
-import models.EnterpriseImportInfo
+import company.EnterpriseImportInfo
 import repositories.PostgresProfile.api._
 import java.time.OffsetDateTime
 import java.util.UUID

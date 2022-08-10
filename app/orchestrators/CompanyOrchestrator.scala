@@ -1,5 +1,7 @@
 package orchestrators
 
+import company.CompanySearchResult
+import company.companydata.CompanyDataRepositoryInterface
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
@@ -16,7 +18,6 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
@@ -114,7 +115,7 @@ class CompanyOrchestrator(
     val responseReportsFilter =
       ReportFilter(
         companyIds = Seq(companyId),
-        status = ReportStatus.ReportStatusProResponse,
+        status = ReportStatus.statusWithProResponse,
         withoutTags = tagFilter
       )
     val totalReportsFilter =

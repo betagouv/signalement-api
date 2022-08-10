@@ -322,9 +322,9 @@ object AppError {
 
   final case class WebsiteNotIdentified(host: String) extends BadRequestError {
     override val `type`: String = "SC-0039"
-    override val title: String = s"Website must be associated to update /create investigation"
+    override val title: String = s"Website must be associated to identify or update investigation"
     override val details: String =
-      s"Le site $host doit être associé à une entreprise ou un pays pour modifier l'enquête"
+      s"Le site $host doit être associé à une entreprise ou un pays pour l'identifier ou modifier l'enquête"
   }
 
   final case class CannotDeleteWebsite(host: String) extends BadRequestError {
@@ -341,10 +341,11 @@ object AppError {
       s"Impossible de signaler une administration publique"
   }
 
-  final case class MalformedValue(value: String) extends BadRequestError {
+  final case class MalformedValue(value: String, expectedValidType: String) extends BadRequestError {
     override val `type`: String = "SC-0042"
-    override val title: String = s"Malformed value, $value is not a valid value"
-    override val details: String = s"La valeur $value ne correspond pas à ce qui est attendu par l'API."
+    override val title: String = s"Malformed value, $value is not a valid value, expecting valid $expectedValidType"
+    override val details: String =
+      s"La valeur $value ne correspond pas à ce qui est attendu par l'API. Merci de renseigner une valeur valide pour $expectedValidType"
   }
 
 }

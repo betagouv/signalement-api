@@ -22,8 +22,10 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def postalCode = column[Option[String]]("postal_code")
   def department = column[Option[String]]("department")
   def activityCode = column[Option[String]]("activity_code")
+  def isHeadOffice = column[Boolean]("is_headoffice")
+  def isOpen = column[Boolean]("is_open")
 
-  type CompanyData = (
+  type CompanyTuple = (
       UUID,
       SIRET,
       OffsetDateTime,
@@ -34,10 +36,12 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Option[String],
       Option[String],
       Option[String],
-      Option[String]
+      Option[String],
+      Boolean,
+      Boolean
   )
 
-  def constructCompany: CompanyData => Company = {
+  def constructCompany: CompanyTuple => Company = {
     case (
           id,
           siret,
@@ -49,7 +53,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           postalCode,
           city,
           _,
-          activityCode
+          activityCode,
+          isHeadOffice,
+          isOpen
         ) =>
       Company(
         id = id,
@@ -63,18 +69,22 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           postalCode = postalCode,
           city = city
         ),
-        activityCode = activityCode
+        activityCode = activityCode,
+        isHeadOffice = isHeadOffice,
+        isOpen = isOpen
       )
   }
 
-  def extractCompany: PartialFunction[Company, CompanyData] = {
+  def extractCompany: PartialFunction[Company, CompanyTuple] = {
     case Company(
           id,
           siret,
           creationDate,
           name,
           address,
-          activityCode
+          activityCode,
+          isHeadOffice,
+          isOpen
         ) =>
       (
         id,
@@ -87,7 +97,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         address.postalCode,
         address.city,
         address.postalCode.flatMap(Departments.fromPostalCode),
-        activityCode
+        activityCode,
+        isHeadOffice,
+        isOpen
       )
   }
 
@@ -102,7 +114,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
     postalCode,
     city,
     department,
-    activityCode
+    activityCode,
+    isHeadOffice,
+    isOpen
   ) <> (constructCompany, extractCompany.lift)
 }
 

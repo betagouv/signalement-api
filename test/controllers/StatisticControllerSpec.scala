@@ -28,6 +28,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
        return reports count                               ${getReportCount}
        return reports curve                               ${getReportsCurve}
        return reports curve filted by status              ${getReportsCurveFilteredByStatus}
+       return a public stat curve                         ${gePublicStatCurve}
        """
 
   def aMonthlyStat(monthlyStat: CountByDate): Matcher[String] =
@@ -39,6 +40,7 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
 
   def getReportCount = {
     val request = FakeRequest(GET, routes.StatisticController.getReportsCount().toString)
+      .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -46,7 +48,8 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
   }
 
   def getReportsCurve = {
-    val request = FakeRequest(GET, routes.StatisticController.getReportsCountCurve().toString + "?ticks=3")
+    val request = FakeRequest(GET, routes.StatisticController.getReportsCountCurve().toString)
+      .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -64,8 +67,9 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
         GET,
         routes.StatisticController
           .getReportsCountCurve()
-          .toString + "?ticks=2&status=PromesseAction&status=Infonde&status=MalAttribue"
+          .toString + "?status=PromesseAction&status=Infonde&status=MalAttribue"
       )
+        .withAuthenticator[AuthEnv](loginInfo(adminUser))
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
@@ -73,6 +77,19 @@ class ReportStatisticSpec(implicit ee: ExecutionEnv) extends StatisticController
     content must haveMonthlyStats(
       aMonthlyStat(CountByDate(lastMonthReportsWithResponse.length, startDate.minusMonths(1L))),
       aMonthlyStat(CountByDate(currentMonthReportsWithResponse.length, startDate))
+    )
+  }
+
+  def gePublicStatCurve = {
+    val request =
+      FakeRequest(GET, routes.StatisticController.getPublicStatCurve(PublicStat.PromesseAction).toString)
+    val result = route(app, request).get
+    status(result) must beEqualTo(OK)
+    val content = contentAsJson(result).toString
+    val startDate = LocalDate.now.withDayOfMonth(1)
+    content must haveMonthlyStats(
+      aMonthlyStat(CountByDate(lastMonthReportsAccepted.length, startDate.minusMonths(1L))),
+      aMonthlyStat(CountByDate(currentMonthReportsAccepted.length, startDate))
     )
   }
 }
@@ -85,6 +102,8 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   lazy val companyRepository = components.companyRepository
   lazy val reportRepository = components.reportRepository
+
+  val adminUser = Fixtures.genAdminUser.sample.get
 
   val company = Fixtures.genCompany.sample.get
 
@@ -208,7 +227,8 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq())
+  implicit val env: FakeEnvironment[AuthEnv] =
+    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(
     Some(

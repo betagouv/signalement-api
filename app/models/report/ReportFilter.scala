@@ -3,12 +3,13 @@ package models.report
 import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
-import models.report.ReportTag
+import models.report.ReportStatus.LanceurAlerte
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import utils.QueryStringMapper
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
-import java.time.OffsetDateTime
 
 case class ReportFilter(
     departments: Seq[String] = Seq.empty,
@@ -16,6 +17,7 @@ case class ReportFilter(
     websiteURL: Option[String] = None,
     phone: Option[String] = None,
     siretSirenList: Seq[String] = Seq.empty,
+    siretSirenDefined: Option[Boolean] = None,
     companyIds: Seq[UUID] = Seq.empty,
     companyName: Option[String] = None,
     companyCountries: Seq[String] = Seq.empty,
@@ -37,6 +39,7 @@ case class ReportFilter(
 )
 
 object ReportFilter {
+
   def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
@@ -73,4 +76,12 @@ object ReportFilter {
       activityCodes = mapper.seq("activityCodes")
     )
   }
+
+  val allReportsFilter = ReportFilter()
+
+  val transmittedReportsFilter = ReportFilter(
+    status = ReportStatus.values.filterNot(_ == LanceurAlerte),
+    withoutTags = ReportTagHiddenToProfessionnel,
+    siretSirenDefined = Some(true)
+  )
 }

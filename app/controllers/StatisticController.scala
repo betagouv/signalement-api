@@ -1,10 +1,14 @@
 package controllers
 
-import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
+import models.report.ReportFilter.transmittedReportsFilter
 import models.report.ReportFilter
 import models.report.ReportResponseType
+import models.report.ReportStatus
+import models.report.ReportStatus.LanceurAlerte
+import models.report.ReportStatus.statusWithProResponse
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -26,9 +30,9 @@ class StatisticController(
 
   val logger: Logger = Logger(this.getClass)
 
-  def getReportsCount() = UserAwareAction.async { request =>
+  def getReportsCount() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -43,9 +47,9 @@ class StatisticController(
 
   /** Nom de fonction adoubé par Saïd. En cas d'incompréhension, merci de le contacter directement
     */
-  def getReportsCountCurve() = UserAwareAction.async { request =>
+  def getReportsCountCurve() = SecuredAction.async { request =>
     ReportFilter
-      .fromQueryString(request.queryString, request.identity.map(_.userRole).getOrElse(UserRole.Admin))
+      .fromQueryString(request.queryString, request.identity.userRole)
       .fold(
         error => {
           logger.error("Cannot parse querystring", error)
@@ -61,6 +65,24 @@ class StatisticController(
           statsOrchestrator.getReportsCountCurve(filters, ticks, tickDuration).map(curve => Ok(Json.toJson(curve)))
         }
       )
+  }
+
+  def getPublicStatCount(publicStat: PublicStat) = Action.async {
+    ((publicStat.filter, publicStat.percentageBaseFilter) match {
+      case (filter, Some(percentageBaseFilter)) =>
+        statsOrchestrator.getReportCountPercentageWithinReliableDates(filter, percentageBaseFilter)
+      case (filter, _) =>
+        statsOrchestrator.getReportCount(filter)
+    }).map(curve => Ok(Json.toJson(curve)))
+  }
+
+  def getPublicStatCurve(publicStat: PublicStat) = Action.async {
+    ((publicStat.filter, publicStat.percentageBaseFilter) match {
+      case (filter, Some(percentageBaseFilter)) =>
+        statsOrchestrator.getReportsCountPercentageCurve(filter, percentageBaseFilter)
+      case (filter, _) =>
+        statsOrchestrator.getReportsCountCurve(filter)
+    }).map(curve => Ok(Json.toJson(curve)))
   }
 
   def getDelayReportReadInHours(companyId: Option[UUID]) = SecuredAction(
@@ -89,30 +111,29 @@ class StatisticController(
     statsOrchestrator.getReportsStatusDistribution(companyId, request.identity.userRole).map(x => Ok(Json.toJson(x)))
   }
 
-  def getProReportTransmittedStat(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>
-    statsOrchestrator.getProReportTransmittedStat(ticks.getOrElse(12)).map(x => Ok(Json.toJson(x)))
+  def getProReportToTransmitStat() =
+    Action.async { _ =>
+      // Includes the reports that we want to transmit to a pro
+      // but we have not identified the company
+      val filter = ReportFilter(
+        status = ReportStatus.values.filterNot(_ == LanceurAlerte),
+        withoutTags = ReportTagHiddenToProfessionnel
+      )
+      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
+    }
+
+  def getProReportTransmittedStat() = SecuredAction.async { _ =>
+    statsOrchestrator.getReportsCountCurve(transmittedReportsFilter).map(curve => Ok(Json.toJson(curve)))
   }
 
-  def getProReportResponseStat(ticks: Option[Int], responseStatusQuery: Option[List[ReportResponseType]]) =
+  def getProReportResponseStat(responseTypeQuery: Option[List[ReportResponseType]]) =
     SecuredAction.async(parse.empty) { _ =>
-      val reportResponseStatus =
-        NonEmptyList
-          .fromList(responseStatusQuery.getOrElse(List.empty))
-          .getOrElse(
-            NonEmptyList.of(
-              ReportResponseType.ACCEPTED,
-              ReportResponseType.NOT_CONCERNED,
-              ReportResponseType.REJECTED
-            )
-          )
-
-      statsOrchestrator
-        .getProReportResponseStat(
-          ticks.getOrElse(12),
-          reportResponseStatus
-        )
-        .map(x => Ok(Json.toJson(x)))
-
+      val statusFilter = responseTypeQuery
+        .filter(_.nonEmpty)
+        .map(_.map(ReportStatus.fromResponseType))
+        .getOrElse(statusWithProResponse)
+      val filter = ReportFilter(status = statusFilter)
+      statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
     }
 
   def dgccrfAccountsCurve(ticks: Option[Int]) = SecuredAction.async(parse.empty) { _ =>

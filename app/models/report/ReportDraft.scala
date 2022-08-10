@@ -9,9 +9,9 @@ import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.report.ReportTag
 import models.report.reportfile.ReportFileId
-import play.api.libs.json.Json
 import play.api.libs.json.OFormat
-
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.annotation.nowarn
 
 case class ReportDraft(
@@ -23,12 +23,15 @@ case class ReportDraft(
     companyAddress: Option[Address],
     companySiret: Option[SIRET],
     companyActivityCode: Option[String],
+    companyIsHeadOffice: Option[Boolean],
+    companyIsOpen: Option[Boolean],
     websiteURL: Option[URL],
     phone: Option[String],
     firstName: String,
     lastName: String,
     email: EmailAddress,
     consumerPhone: Option[String],
+    consumerReferenceNumber: Option[String],
     contactAgreement: Boolean,
     employeeConsumer: Boolean,
     forwardToReponseConso: Option[Boolean] = Some(false),
@@ -39,23 +42,30 @@ case class ReportDraft(
     ccrfCode: Option[List[String]] = None
 ) {
 
-  def generateReport: Report = {
+  def generateReport(
+      maybeCompanyId: Option[UUID],
+      reportId: UUID = UUID.randomUUID(),
+      creationDate: OffsetDateTime = OffsetDateTime.now()
+  ): Report = {
     val report = Report(
+      reportId,
       gender = gender,
+      creationDate = creationDate,
       category = category,
       subcategories = subcategories,
       details = details,
-      companyId = None,
+      companyId = maybeCompanyId,
       companyName = companyName,
       companyAddress = companyAddress.getOrElse(Address()),
       companySiret = companySiret,
-      companyActivityCode = None,
+      companyActivityCode = companyActivityCode,
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
       lastName = lastName,
       email = email,
       consumerPhone = consumerPhone,
+      consumerReferenceNumber = consumerReferenceNumber,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
       status = ReportStatus.NA,
@@ -85,5 +95,5 @@ object ReportDraft {
   implicit val reportTagReads = TranslationReportTagReads
   @nowarn
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
-  implicit val draftReportWrites = Json.writes[ReportDraft]
+
 }

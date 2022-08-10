@@ -25,7 +25,6 @@ import models.report.ReportDraft
 import models.report.ReportFile
 import models.report.ReportFilter
 import models.report.ReportResponse
-import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.ReportWithFiles
@@ -247,7 +246,7 @@ class ReportOrchestrator(
       maybeCompany <- extractOptionnalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      reportToCreate = draftReport.generateReport.copy(companyId = maybeCompany.map(_.id))
+      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id))
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
@@ -318,7 +317,9 @@ class ReportOrchestrator(
           siret = siret,
           name = draftReport.companyName.get,
           address = draftReport.companyAddress.get,
-          activityCode = draftReport.companyActivityCode
+          activityCode = draftReport.companyActivityCode,
+          isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
+          isOpen = draftReport.companyIsOpen.getOrElse(true)
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -338,7 +339,9 @@ class ReportOrchestrator(
           siret = reportCompany.siret,
           name = reportCompany.name,
           address = reportCompany.address,
-          activityCode = reportCompany.activityCode
+          activityCode = reportCompany.activityCode,
+          isHeadOffice = reportCompany.isHeadOffice,
+          isOpen = reportCompany.isOpen
         )
       )
       reportWithNewData <- existingReport match {
@@ -416,7 +419,8 @@ class ReportOrchestrator(
                 firstName = reportConsumer.firstName,
                 lastName = reportConsumer.lastName,
                 email = reportConsumer.email,
-                contactAgreement = reportConsumer.contactAgreement
+                contactAgreement = reportConsumer.contactAgreement,
+                consumerReferenceNumber = reportConsumer.consumerReferenceNumber
               )
             )
             .map(Some(_))
@@ -435,7 +439,8 @@ class ReportOrchestrator(
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
                 stringToDetailsJsValue(
-                  s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email} " +
+                  s"Consommateur précédent : ${report.firstName} ${report.lastName} - ${report.email}" +
+                    report.consumerReferenceNumber.map(nb => s" - ref $nb").getOrElse("") +
                     s"- Accord pour contact : ${if (report.contactAgreement) "oui" else "non"}"
                 )
               )
@@ -573,11 +578,7 @@ class ReportOrchestrator(
       updatedReport <- reportRepository.update(
         report.id,
         report.copy(
-          status = reportResponse.responseType match {
-            case ReportResponseType.ACCEPTED      => ReportStatus.PromesseAction
-            case ReportResponseType.REJECTED      => ReportStatus.Infonde
-            case ReportResponseType.NOT_CONCERNED => ReportStatus.MalAttribue
-          }
+          status = ReportStatus.fromResponseType(reportResponse.responseType)
         )
       )
       _ <- eventRepository.create(

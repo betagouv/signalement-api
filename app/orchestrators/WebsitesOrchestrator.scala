@@ -6,6 +6,7 @@ import controllers.error.AppError.CannotDeleteWebsite
 import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
+import controllers.error.AppError.WebsiteNotIdentified
 import models.Company
 import models.CompanyCreation
 import models.PaginatedResult
@@ -23,8 +24,10 @@ import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import utils.Country
+import utils.DateUtils
 import utils.URL
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -49,14 +52,26 @@ class WebsitesOrchestrator(
       maybeHost: Option[String],
       identificationStatus: Option[Seq[IdentificationStatus]],
       maybeOffset: Option[Long],
-      maybeLimit: Option[Int]
+      maybeLimit: Option[Int],
+      investigationStatusFilter: Option[Seq[InvestigationStatus]],
+      practiceFilter: Option[Seq[Practice]],
+      attributionFilter: Option[Seq[DepartmentDivision]],
+      start: Option[OffsetDateTime],
+      end: Option[OffsetDateTime],
+      hasAssociation: Option[Boolean]
   ): Future[PaginatedResult[WebsiteCompanyReportCount]] =
     for {
       websites <- repository.listWebsitesCompaniesByReportCount(
         maybeHost,
         identificationStatus,
         maybeOffset,
-        maybeLimit
+        maybeLimit,
+        investigationStatusFilter,
+        practiceFilter,
+        attributionFilter,
+        start,
+        end,
+        hasAssociation
       )
       _ = logger.debug("Website company report fetched")
       websitesWithCount = websites.copy(entities = websites.entities.map(toApi))
@@ -67,12 +82,14 @@ class WebsitesOrchestrator(
       newIdentificationStatus: IdentificationStatus
   ): Future[Website] = for {
     website <- findWebsite(websiteId)
+    _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
+      throw WebsiteNotIdentified(website.host)
+    }
     _ <-
       if (newIdentificationStatus == Identified) { validateAndCleanAssociation(website) }
       else Future.unit
     _ = logger.debug(s"Updating website kind to ${newIdentificationStatus}")
-    updatedWebsite = website.copy(identificationStatus = newIdentificationStatus)
-    _ <- repository.update(updatedWebsite.id, updatedWebsite)
+    updatedWebsite <- update(website.copy(identificationStatus = newIdentificationStatus))
   } yield updatedWebsite
 
   private def validateAndCleanAssociation(website: Website) = {
@@ -120,7 +137,7 @@ class WebsitesOrchestrator(
       _ = logger.debug(s"updating identification status when Admin is updating identification")
       websiteToUpdate = if (user.isAdmin) website.copy(identificationStatus = Identified) else website
       _ = logger.debug(s"Website to update : ${websiteToUpdate}")
-      updatedWebsite <- repository.update(websiteToUpdate.id, websiteToUpdate)
+      updatedWebsite <- update(websiteToUpdate)
       _ = logger.debug(s"Website company country successfully updated")
     } yield updatedWebsite
   }
@@ -146,7 +163,7 @@ class WebsitesOrchestrator(
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(investigationApi.id))
     _ = logger.debug("Update investigation")
     updatedWebsite = investigationApi.copyToDomain(website)
-    website <- repository.update(updatedWebsite.id, updatedWebsite)
+    website <- update(updatedWebsite)
   } yield website
 
   def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
@@ -159,12 +176,7 @@ class WebsitesOrchestrator(
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(
       companyCreate.siret,
-      Company(
-        siret = companyCreate.siret,
-        name = companyCreate.name,
-        address = companyCreate.address,
-        activityCode = companyCreate.activityCode
-      )
+      companyCreate.toCompany()
     )
 
   private[this] def findWebsite(websiteId: WebsiteId): Future[Website] = for {
@@ -175,5 +187,16 @@ class WebsitesOrchestrator(
     website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
     _ = logger.debug(s"Found website")
   } yield website
+
+  private def update(website: Website) = repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
+
+  def fetchUnregisteredHost(
+      host: Option[String],
+      start: Option[String],
+      end: Option[String]
+  ): Future[List[WebsiteHostCount]] =
+    repository
+      .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
+      .map(_.map { case (host, count) => WebsiteHostCount(host, count) })
 
 }

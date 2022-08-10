@@ -1,6 +1,6 @@
-package repositories.companydata
+package company.companydata
 
-import models.CompanyActivity
+import company.CompanyActivity
 import repositories.PostgresProfile.api._
 
 class CompanyActivityTable(tag: Tag) extends Table[CompanyActivity](tag, "activites") {

@@ -31,7 +31,7 @@ object ReportCategory extends PlayEnum[ReportCategory] {
   case object VoitureVehiculeVelo extends ReportCategory("Voiture / Véhicule / Vélo")
   case object DemarchageAbusif extends ReportCategory("Démarchage abusif")
 
-  def fromValue(v: String): ReportCategory = withNameOption(v).fold(throw MalformedValue(v))(identity)
+  def fromValue(v: String): ReportCategory = withNameOption(v).fold(throw MalformedValue(v, "ReportCategory"))(identity)
 
   override def values: IndexedSeq[ReportCategory] = findValues
 }

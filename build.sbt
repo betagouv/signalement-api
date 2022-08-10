@@ -26,22 +26,26 @@ scalacOptions ++= Seq(
 
 routesImport ++= Seq(
   "models.website.IdentificationStatus",
+  "java.time.OffsetDateTime",
+  "models.investigation.Practice",
+  "models.investigation.DepartmentDivision",
+  "models.investigation.InvestigationStatus",
   "models.website.WebsiteId",
   "utils.SIRET",
   "models.report.reportfile.ReportFileId",
   "models.report.ReportResponseType",
+  "models.PublicStat",
   "controllers.IdentificationStatusQueryStringBindable",
   "controllers.WebsiteIdPathBindable",
   "controllers.UUIDPathBindable",
+  "controllers.OffsetDateTimeQueryStringBindable",
   "controllers.SIRETPathBindable",
   "controllers.ReportFileIdPathBindable",
-  "controllers.ReportResponseTypeQueryStringBindable"
+  "controllers.ReportResponseTypeQueryStringBindable",
+  "controllers.PublicStatQueryStringBindable"
 )
 
 scalafixOnCompile := true
-
-//ThisBuild / coverageEnabled := true
-//coverageDataDir := target.value / "custom-test"
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
 

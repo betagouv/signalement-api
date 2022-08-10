@@ -1,5 +1,7 @@
 package utils
 
+import controllers.error.AppError.MalformedValue
+
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -23,6 +25,12 @@ object DateUtils {
     try source.map(s => OffsetDateTime.parse(s, TIME_FORMATTER))
     catch {
       case _: DateTimeParseException => None
+    }
+
+  def parseTime(source: String): OffsetDateTime =
+    try OffsetDateTime.parse(source, TIME_FORMATTER)
+    catch {
+      case _: DateTimeParseException => throw MalformedValue(source, "OffsetDateTime")
     }
 
   def withDayOfWeek(date: LocalDate, day: DayOfWeek) = {
