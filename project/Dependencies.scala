@@ -26,7 +26,7 @@ object Dependencies {
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "7.2.3"
     lazy val html2pdfVersion = "4.0.3"
-    lazy val chimneyVersion = "0.6.1"
+    lazy val chimneyVersion = "0.6.2"
     lazy val sttp = "3.7.2"
 
   }
