@@ -176,12 +176,7 @@ class WebsitesOrchestrator(
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(
       companyCreate.siret,
-      Company(
-        siret = companyCreate.siret,
-        name = companyCreate.name,
-        address = companyCreate.address,
-        activityCode = companyCreate.activityCode
-      )
+      companyCreate.toCompany()
     )
 
   private[this] def findWebsite(websiteId: WebsiteId): Future[Website] = for {

@@ -1,4 +1,4 @@
-package models
+package company
 
 import java.net.URL
 

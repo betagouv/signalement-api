@@ -20,6 +20,11 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import company.EnterpriseImportController
+import company.EnterpriseImportOrchestrator
+import company.companydata.CompanyDataRepository
+import company.companydata.CompanyDataRepositoryInterface
+import company.entrepriseimportinfo.EnterpriseImportInfoRepository
 import config.ApplicationConfiguration
 import config.BucketConfiguration
 import config.SignalConsoConfiguration
@@ -56,15 +61,12 @@ import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepository
-import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
 import repositories.dataeconomie.DataEconomieRepository
 import repositories.dataeconomie.DataEconomieRepositoryInterface
 import repositories.emailvalidation.EmailValidationRepository
 import repositories.emailvalidation.EmailValidationRepositoryInterface
-import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 import repositories.event.EventRepository
 import repositories.event.EventRepositoryInterface
 import repositories.rating.RatingRepository
@@ -88,6 +90,7 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
+import tasks.company.CompanyUpdateTask
 import tasks.report.NoActionReportsCloseTask
 import tasks.report.ReadReportsReminderTask
 import tasks.report.ReportNotificationTask
@@ -383,6 +386,15 @@ class SignalConsoComponents(
     new UnreadReportsCloseTask(applicationConfiguration.task, eventRepository, reportRepository, mailService)
 
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
+
+  val companyTask = new CompanyUpdateTask(
+    actorSystem,
+    applicationConfiguration.task.companyUpdate,
+    companyRepository,
+    companyDataRepository
+  )
+
+  companyTask.runTask()
 
   val noActionReportsCloseTask =
     new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)

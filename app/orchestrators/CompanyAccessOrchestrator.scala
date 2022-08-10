@@ -7,7 +7,6 @@ import controllers.error.AppError.ServerError
 import models.AccessLevel
 import models.AccessToken
 import models.Company
-import models.CompanyData
 import models.User
 import models.access.ActivationLinkRequest
 
@@ -15,6 +14,8 @@ import java.time.OffsetDateTime.now
 
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
+import company.CompanyData
+import company.companydata.CompanyDataRepositoryInterface
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
@@ -24,7 +25,6 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
 import utils.SIRET
 
 import scala.concurrent.ExecutionContext

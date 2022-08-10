@@ -19,13 +19,13 @@ import akka.stream.scaladsl.Partition
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.StreamConverters
-import models.CompanyFile
-import models.EnterpriseImportInfo
-import models.EtablissementFile
-import models.UniteLegaleFile
+import company.CompanyFile
+import company.EnterpriseImportInfo
+import company.EtablissementFile
+import company.UniteLegaleFile
+import company.companydata.CompanyDataRepositoryInterface
+import company.entrepriseimportinfo.EnterpriseImportInfoRepository
 import play.api.Logger
-import repositories.companydata.CompanyDataRepositoryInterface
-import repositories.entrepriseimportinfo.EnterpriseImportInfoRepository
 import utils.SIREN
 
 import java.io.BufferedInputStream

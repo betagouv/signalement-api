@@ -1,5 +1,6 @@
 package orchestrators
 
+import company.companydata.CompanyDataRepositoryInterface
 import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
@@ -7,7 +8,6 @@ import models.User
 import models.UserRole
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
 import utils.SIREN
 import utils.SIRET
 
@@ -27,6 +27,7 @@ class CompaniesVisibilityOrchestrator(
 
   def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =
     for {
+//      companies <- companyRepo.findCompanyAndHeadOffice(siret)
       companiesDataIncludingHeadOffice <- companyDataRepo.searchBySiretIncludingHeadOffice(siret)
       companies <- companyRepo.findBySirets(companiesDataIncludingHeadOffice.map(_.siret))
       admins <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
@@ -42,11 +43,11 @@ class CompaniesVisibilityOrchestrator(
           companyRepo.findBySirets(companyDatas.map(_.siret))
         }
       headOfficeAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
-      headOfficeIdByCompanyIdMap = companies
+      headOfficeIdByCompanyIdMap: Map[UUID, Option[UUID]] = companies
         .groupBy(_._2)
         .view
-        .mapValues { values =>
-          val siren = values.headOption.map(x => SIREN(x._1))
+        .mapValues { uniqueSiretCompanyIdTuple =>
+          val siren = uniqueSiretCompanyIdTuple.headOption.map(x => SIREN(x._1))
           headOfficesCompany.find(c => siren.contains(SIREN(c.siret))).map(_.id)
         }
         .toMap

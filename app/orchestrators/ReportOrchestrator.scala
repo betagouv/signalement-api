@@ -317,7 +317,9 @@ class ReportOrchestrator(
           siret = siret,
           name = draftReport.companyName.get,
           address = draftReport.companyAddress.get,
-          activityCode = draftReport.companyActivityCode
+          activityCode = draftReport.companyActivityCode,
+          isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
+          isOpen = draftReport.companyIsOpen.getOrElse(true)
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -337,7 +339,9 @@ class ReportOrchestrator(
           siret = reportCompany.siret,
           name = reportCompany.name,
           address = reportCompany.address,
-          activityCode = reportCompany.activityCode
+          activityCode = reportCompany.activityCode,
+          isHeadOffice = reportCompany.isHeadOffice,
+          isOpen = reportCompany.isOpen
         )
       )
       reportWithNewData <- existingReport match {

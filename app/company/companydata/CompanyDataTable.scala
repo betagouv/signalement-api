@@ -1,8 +1,8 @@
-package repositories.companydata
+package company.companydata
 
 import repositories.PostgresProfile.api._
-import models.CompanyData
 import CompanyDataTable.DENOMINATION_USUELLE_ETABLISSEMENT
+import company.CompanyData
 import repositories.DatabaseTable
 import utils.SIREN
 import utils.SIRET

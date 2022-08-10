@@ -99,6 +99,20 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
   override def findBySiret(siret: SIRET): Future[Option[Company]] =
     db.run(table.filter(_.siret === siret).result.headOption)
 
+  def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]] =
+    db.run(
+      table
+        .filter(_.siret.asColumnOf[String] like s"${SIREN(siret).value}%")
+        .filter { companyTable =>
+          val companyWithSameSiret: Rep[Boolean] = companyTable.siret === siret
+          val companyHeadOffice: Rep[Boolean] = companyTable.isHeadOffice
+          companyWithSameSiret || companyHeadOffice
+        }
+        .filter(_.isOpen)
+        .result
+        .map(_.toList)
+    )
+
   override def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
     db.run(table.filter(_.siret inSet sirets).to[List].result)
 
@@ -112,5 +126,14 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .to[List]
         .result
     )
+
+  override def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean): Future[SIRET] = db
+    .run(
+      table
+        .filter(_.siret === siret)
+        .map(c => (c.isHeadOffice, c.isOpen))
+        .update((isHeadOffice, isOpen))
+    )
+    .map(_ => siret)
 
 }
