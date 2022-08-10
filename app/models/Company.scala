@@ -88,16 +88,16 @@ case class CompanyCreation(
     name: String,
     address: Address,
     activityCode: Option[String],
-    isHeadOffice: Boolean,
-    isOpen: Boolean
+    isHeadOffice: Option[Boolean],
+    isOpen: Option[Boolean]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
     name = name,
     address = address,
     activityCode = activityCode,
-    isHeadOffice = isHeadOffice,
-    isOpen = isOpen
+    isHeadOffice = isHeadOffice.getOrElse(false),
+    isOpen = isOpen.getOrElse(true)
   )
 }
 
