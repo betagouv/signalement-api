@@ -1,5 +1,6 @@
 package utils
 
+import company.CompanyData
 import models.event.Event._
 import models._
 import models.event.Event
@@ -84,7 +85,9 @@ object Fixtures {
     siret = siret,
     name = name,
     address = address,
-    activityCode = None
+    activityCode = None,
+    isOpen = true,
+    isHeadOffice = false
   )
 
   def genCompanyData(company: Option[Company] = None) = for {
@@ -142,6 +145,8 @@ object Fixtures {
     companyAddress = Some(company.address),
     companySiret = Some(company.siret),
     companyActivityCode = None,
+    companyIsHeadOffice = Some(company.isHeadOffice),
+    companyIsOpen = Some(company.isOpen),
     websiteURL = Some(websiteURL),
     phone = None,
     firstName = firstName,
@@ -202,7 +207,7 @@ object Fixtures {
     name <- arbString.arbitrary
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
     siret <- genSiret()
-  } yield ReportCompany(name, address, siret, None)
+  } yield ReportCompany(name, address, siret, None, isHeadOffice = true, isOpen = true)
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]

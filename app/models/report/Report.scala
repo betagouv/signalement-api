@@ -181,7 +181,9 @@ case class ReportCompany(
     name: String,
     address: Address,
     siret: SIRET,
-    activityCode: Option[String]
+    activityCode: Option[String],
+    isHeadOffice: Boolean,
+    isOpen: Boolean
 )
 
 object ReportCompany {

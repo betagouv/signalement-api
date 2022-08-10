@@ -1,6 +1,7 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
+import company.companydata.CompanyDataRepositoryInterface
 import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
@@ -14,7 +15,6 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
-import repositories.companydata.CompanyDataRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ProCompanyAccessInvitation
@@ -144,7 +144,10 @@ class ProAccessTokenOrchestrator(
       companiesData <- Future.sequence(sirets.map(companyDataRepository.searchBySiret(_)))
       companies <-
         Future.sequence(companiesData.flatten.map { case (companyData, activity) =>
-          companyRepository.getOrCreate(companyData.siret, companyData.toSearchResult(activity.map(_.label)).toCompany)
+          companyRepository.getOrCreate(
+            companyData.siret,
+            companyData.toSearchResult(activity.map(_.label)).toCompany()
+          )
         })
       _ <- Future.sequence(companies.map(company => addUserOrInvite(company, email, level, invitedBy)))
     } yield ()

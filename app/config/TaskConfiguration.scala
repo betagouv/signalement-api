@@ -9,12 +9,15 @@ case class TaskConfiguration(
     active: Boolean,
     subscription: SubscriptionTaskConfiguration,
     report: ReportTaskConfiguration,
-    inactiveAccounts: InactiveAccountsTaskConfiguration
+    inactiveAccounts: InactiveAccountsTaskConfiguration,
+    companyUpdate: CompanyUpdateTaskConfiguration
 )
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
 
 case class InactiveAccountsTaskConfiguration(startTime: LocalTime, inactivePeriod: Period)
+
+case class CompanyUpdateTaskConfiguration(startTime: LocalTime)
 
 case class ReportTaskConfiguration(
     startTime: LocalTime,

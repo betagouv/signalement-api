@@ -27,6 +27,7 @@ object Dependencies {
     lazy val itext7CoreVersion = "7.2.3"
     lazy val html2pdfVersion = "4.0.3"
     lazy val chimneyVersion = "0.6.1"
+    lazy val sttp = "3.7.2"
 
   }
 
@@ -39,7 +40,8 @@ object Dependencies {
   }
 
   object Compile {
-
+    val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json" % "3.7.2"
+    val sttp = "com.softwaremill.sttp.client3" %% "core" % Versions.sttp
     val sentry = "io.sentry" % "sentry-logback" % Versions.sentryVersion
     val catsCore = "org.typelevel" %% "cats-core" % Versions.catsCoreVersion
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % Versions.pureConfigVersion
@@ -77,6 +79,8 @@ object Dependencies {
   }
 
   val AppDependencies = Seq(
+    Compile.sttp,
+    Compile.sttpPlayJson,
     Compile.sentry,
     Compile.catsCore,
     Compile.pureConfig,
