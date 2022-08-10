@@ -50,4 +50,5 @@ trait CompanyDataRepositoryInterface extends CRUDRepositoryInterface[CompanyData
       sirens: List[SIREN],
       includeClosed: Boolean = false
   ): Future[List[(CompanyData, Option[CompanyActivity])]]
+
 }
