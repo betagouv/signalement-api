@@ -83,6 +83,6 @@ class CompanyUpdateTask(
       )
       .log("company update")
       .run()
-      .map(_ => println("DONE"))
+      .map(_ => logger.info("Company update done"))
 
 }
