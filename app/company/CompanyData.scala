@@ -29,7 +29,7 @@ case class CompanyData(
     libelleCedexEtablissement: Option[String] = None,
     denominationUsuelleEtablissement: Option[String] = None,
     enseigne1Etablissement: Option[String] = None,
-    activitePrincipaleEtablissement: String,
+    activitePrincipaleEtablissement: Option[String],
     etatAdministratifEtablissement: Option[String] = None
 ) {
   def toAddress: Address = Address(
@@ -73,7 +73,7 @@ case class CompanySearchResult(
     brand: Option[String],
     isHeadOffice: Boolean,
     address: Address,
-    activityCode: String,
+    activityCode: Option[String],
     activityLabel: Option[String],
     isMarketPlace: Boolean = false,
     isOpen: Boolean
@@ -84,7 +84,7 @@ case class CompanySearchResult(
     address = address,
     isHeadOffice = isHeadOffice,
     isOpen = isOpen,
-    activityCode = Some(activityCode)
+    activityCode = activityCode
   )
 }
 

@@ -20,6 +20,7 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import company.CompanyDataController
 import company.EnterpriseImportController
 import company.EnterpriseImportOrchestrator
 import company.companydata.CompanyDataRepository
@@ -270,7 +271,6 @@ class SignalConsoComponents(
     userOrchestrator,
     companyRepository,
     companyAccessRepository,
-    companyDataRepository,
     accessTokenRepository,
     userRepository,
     eventRepository,
@@ -300,11 +300,10 @@ class SignalConsoComponents(
   )
 
   def companiesVisibilityOrchestrator =
-    new CompaniesVisibilityOrchestrator(companyDataRepository, companyRepository, companyAccessRepository)
+    new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
 
   val companyAccessOrchestrator =
     new CompanyAccessOrchestrator(
-      companyDataRepository,
       companyAccessRepository,
       companyRepository,
       accessTokenRepository,
@@ -316,7 +315,6 @@ class SignalConsoComponents(
     companyRepository,
     companiesVisibilityOrchestrator,
     reportRepository,
-    companyDataRepository,
     websiteRepository,
     accessTokenRepository,
     eventRepository,
@@ -462,6 +460,9 @@ class SignalConsoComponents(
       controllerComponents
     )
 
+  val companyDataController =
+    new CompanyDataController(companyDataRepository, silhouette, frontRoute, controllerComponents)
+
   val companyController = new CompanyController(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
@@ -578,6 +579,7 @@ class SignalConsoComponents(
       enterpriseImportController,
       accountController,
       emailValidationController,
+      companyDataController,
       companyController,
       ratingController,
       subscriptionController,

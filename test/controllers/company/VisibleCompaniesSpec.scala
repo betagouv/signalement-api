@@ -44,13 +44,21 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
   val adminWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany =
-    Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+    Fixtures.genCompany.sample.get
+      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get, isHeadOffice = false)
+
+  val subsidiaryClosedCompany = Fixtures.genCompany.sample.get
+    .copy(
+      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
+      isOpen = false
+    )
 
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
   val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
+
   val subsidiaryClosedCompanyData = Fixtures
     .genCompanyData()
     .sample

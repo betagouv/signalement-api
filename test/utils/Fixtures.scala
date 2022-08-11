@@ -114,7 +114,7 @@ object Fixtures {
     None,
     Some(denom),
     None,
-    "",
+    None,
     None
   )
 
