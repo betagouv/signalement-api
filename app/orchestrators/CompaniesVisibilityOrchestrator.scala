@@ -5,7 +5,6 @@ import models.Company
 import models.CompanyWithAccess
 import models.User
 import models.UserRole
-import play.api.libs.json.Json
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.SIREN
@@ -36,12 +35,6 @@ class CompaniesVisibilityOrchestrator(
       sirens = companies.map(c => SIREN(c._1))
       headOfficesCompany <-
         companyRepo.findHeadOffice(sirens, openOnly = false)
-//        companyDataRepo
-//        .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
-//        .map(_.map(_._1))
-//        .flatMap { companyDatas =>
-//          companyRepo.findBySirets(companyDatas.map(_.siret))
-//        }
       headOfficeAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
       headOfficeIdByCompanyIdMap: Map[UUID, Option[UUID]] = companies
         .groupBy(_._2)
@@ -66,17 +59,10 @@ class CompaniesVisibilityOrchestrator(
         .map(_.filter(_.isHeadOffice))
         .map(_.map(_.siret))
       companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.apply))
-      _ = println(
-        s"------------------ companiesForHeadOffices = ${Json.toJson(companiesForHeadOffices)} ------------------"
-      )
       companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
-      _ = println(
-        s"------------------ companiesForHeadOfficesWithAccesses = ${Json.toJson(companiesForHeadOfficesWithAccesses)} ------------------"
-      )
       accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
         .distinctBy(_.company.siret)
         .sortBy(_.company.siret.value)
-      _ = println(s"------------------ accessiblesCompanies = ${Json.toJson(accessiblesCompanies)} ------------------")
     } yield accessiblesCompanies
 
   private[this] def addAccessToSubsidiaries(
