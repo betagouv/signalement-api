@@ -59,10 +59,19 @@ object AntivirusScanActor {
 
         case ScanFromFile(reportFile: ReportFile, file: java.io.File) =>
           for {
+            existingFile <- {
+              if (file.exists()) {
+                Future.successful(file)
+              } else {
+                s3Service
+                  .downloadOnCurrentHost(reportFile.storageFilename, reportFile.filename)
+                  .map(_ => new File(reportFile.filename))
+              }
+            }
             antivirusScanResult <-
               if (uploadConfiguration.avScanEnabled) {
                 logger.debug("Begin Antivirus scan.")
-                performAntivirusScan(file)
+                performAntivirusScan(existingFile)
               } else {
                 logger.debug("Antivirus scan is not active, skipping scan.")
                 Future.successful(AntivirusScanExecution.Ignored)
@@ -74,7 +83,7 @@ object AntivirusScanActor {
             _ <- antivirusScanResult.exitCode match {
               case Some(NoVirusFound) | None =>
                 logger.debug("Deleting file.")
-                Future.successful(file.delete())
+                Future.successful(existingFile.delete())
               case Some(VirusFound) =>
                 logger.warn(s"Antivirus scan found virus, scan output : ${antivirusScanResult.output}")
                 logger.debug(s"File has been deleted by Antivirus, removing file from S3")
