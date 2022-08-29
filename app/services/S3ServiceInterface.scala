@@ -14,7 +14,7 @@ trait S3ServiceInterface {
 
   def download(bucketKey: String): Future[ByteString]
 
-  def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult]
+  def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult]
 
   def delete(bucketKey: String): Future[Done]
 
