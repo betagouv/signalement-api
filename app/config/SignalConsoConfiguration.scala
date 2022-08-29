@@ -14,7 +14,7 @@ case class SignalConsoConfiguration(
     reportsExportLimitMax: Int = 300000
 )
 
-case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean)
+case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean, downloadDirectory: String)
 
 case class TokenConfiguration(
     companyInitDuration: Option[Period],
