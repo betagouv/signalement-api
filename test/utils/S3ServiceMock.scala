@@ -16,7 +16,7 @@ class S3ServiceMock extends S3ServiceInterface {
 
   override def download(bucketKey: String): Future[ByteString] = ???
 
-  override def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult] = ???
+  override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] = ???
 
   override def delete(bucketKey: String): Future[Done] = Future.successful(Done)
 

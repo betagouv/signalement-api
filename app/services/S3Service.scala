@@ -54,8 +54,8 @@ class S3Service(implicit
     downloadFromBucket(bucketKey)
       .flatMap(a => a.runWith(Sink.reduce((a: ByteString, b: ByteString) => a ++ b)))
 
-  override def downloadOnCurrentHost(bucketKey: String, filename: String): Future[IOResult] =
-    downloadFromBucket(bucketKey).flatMap(a => a.runWith(FileIO.toPath(Path.of(s"./${filename}"))))
+  override def downloadOnCurrentHost(bucketKey: String, filePath: String): Future[IOResult] =
+    downloadFromBucket(bucketKey).flatMap(a => a.runWith(FileIO.toPath(Path.of(filePath))))
 
   private def downloadFromBucket(bucketKey: String): Future[Source[ByteString, NotUsed]] =
     alpakkaS3Client
