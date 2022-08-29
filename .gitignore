@@ -20,3 +20,4 @@ conf/local.application.conf
 /out/
 /.bsp
 javaOptions.sbt
+*.sc
