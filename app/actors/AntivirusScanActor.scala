@@ -51,21 +51,26 @@ object AntivirusScanActor {
       Behaviors.receiveMessage[ScanCommand] {
         case ScanFromBucket(reportFile: ReportFile) =>
           logger.warn(s"Rescanning file ${reportFile.id} : ${reportFile.storageFilename}")
+          val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
           for {
-            _ <- s3Service.downloadOnCurrentHost(reportFile.storageFilename, reportFile.filename)
-            file = new File(reportFile.filename)
+            _ <- s3Service.downloadOnCurrentHost(
+              reportFile.storageFilename,
+              filePath
+            )
+            file = new File(filePath)
           } yield context.self ! ScanFromFile(reportFile, file)
           Behaviors.same
 
         case ScanFromFile(reportFile: ReportFile, file: java.io.File) =>
+          val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
           for {
             existingFile <- {
               if (file.exists()) {
                 Future.successful(file)
               } else {
                 s3Service
-                  .downloadOnCurrentHost(reportFile.storageFilename, reportFile.filename)
-                  .map(_ => new File(reportFile.filename))
+                  .downloadOnCurrentHost(reportFile.storageFilename, filePath)
+                  .map(_ => new File(filePath))
               }
             }
             antivirusScanResult <-
@@ -91,7 +96,9 @@ object AntivirusScanActor {
                   .delete(reportFile.storageFilename)
                   .map(_ => reportFileRepository.removeStorageFileName(reportFile.id))
               case Some(ErrorOccured) =>
-                logger.error(s"Unexpected error occured when running scan : ${antivirusScanResult.output}")
+                logger.error(
+                  s"Unexpected error occured when running scan on file $filePath : ${antivirusScanResult.output}"
+                )
                 Future.successful(Done)
             }
           } yield Done
