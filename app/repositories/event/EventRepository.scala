@@ -1,7 +1,6 @@
 package repositories.event
 
 import cats.data.NonEmptyList
-import cats.implicits.toTraverseOps
 import models._
 import models.event.Event
 import models.report.Report
@@ -9,7 +8,6 @@ import models.report.ReportStatus
 import models.report.ReportTag
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
-import repositories.event.EventRepository.MaxInClauseElementCount
 import repositories.report.ReportColumnType._
 import repositories.report.ReportTable
 import repositories.user.UserTable
@@ -121,24 +119,14 @@ class EventRepository(
     ).map(events => events.groupBy(_.reportId.get))
   }
 
-  override def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] = {
-
-    val companyIdsSliced = companyIds.distinct.sliding(MaxInClauseElementCount).toList
-
-    companyIdsSliced
-      .map(ids => fetchEventsUnsafe(ids))
-      .sequence
-      .map(_.flatten)
-      .map(f => f.groupBy(_.companyId.get).toMap)
-  }
-
-  private def fetchEventsUnsafe(companyIds: List[UUID]) = db.run(
-    table
-      .filter(_.companyId inSetBind companyIds.distinct)
-      .sortBy(_.creationDate.desc.nullsLast)
-      .to[List]
-      .result
-  )
+  override def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]] =
+    db.run(
+      table
+        .filter(_.companyId inSetBind companyIds.distinct)
+        .sortBy(_.creationDate.desc.nullsLast)
+        .to[List]
+        .result
+    ).map(f => f.groupBy(_.companyId.get).toMap)
 
   override def getAvgTimeUntilEvent(
       action: ActionEventValue,
@@ -193,10 +181,5 @@ and creation_date >= '#${dateTimeFormatter.format(startingDate)}'::timestamp
   group by  my_date_trunc('month'::text,creation_date)
   order by  1 DESC LIMIT #${ticks} ) as res order by 1 ASC""".as[(Timestamp, Int)]
     )
-
-}
-
-object EventRepository {
-  val MaxInClauseElementCount = 1000
 
 }
