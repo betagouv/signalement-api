@@ -39,48 +39,57 @@ Il est possible d'injecter des données de test dans la base signal conso, pour 
 
 Lancer une base de donnes PosgreSQL provisionée avec les tables et données (voir plus haut)
 
-Créer un fichier avec les propriétés  à la racine du projet (javaOptions.sbt) et compléter les informations manquantes:
+L'application a besoin de variables d'environnements. Vous devez les configurer. Il y a plusieurs manières de faire, nous recommandons la suivante :
+
+```bash
+# à ajouter dans votre .zprofile, .zshenv .bash_profile, ou équivalent
+# pour toutes les valeurs avec XXX, vous devez renseigner des vraies valeurs.
+# Vous pouvez par exemple reprendre les valeurs de l'environnement de démo dans Clever Cloud
+
+function scsbt {
+  # Set all environnements variables for the api then launch sbt
+  # It forwards arguments, so you can do "scsbt", "scscbt compile", etc.
+  echo "Launching sbt with extra environnement variables"
+  MAILER_HOST="XXX" \
+  MAILER_PORT="XXX" \
+  MAILER_SSL="yes" \
+  MAILER_TLS="no" \
+  MAILER_TLS_REQUIRED="no" \
+  MAILER_USER="XXX" \
+  MAILER_PASSWORD="XXX" \
+  MAILER_MOCK="yes" \
+  OUTBOUND_EMAIL_FILTER_REGEX="beta?.gouv|@.*gouv.fr" \
+  SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE="false" \
+  MAIL_FROM="XXX" \
+  MAIL_CONTACT_ADDRESS="XXX" \
+  EVOLUTIONS_ENABLED=true \
+  EVOLUTIONS_AUTO_APPLY=false \
+  EVOLUTIONS_AUTO_APPLY_DOWNS=false \
+  TMP_DIR="/tmp/" \
+  S3_ACCESS_KEY_ID="XXX" \
+  S3_SECRET_ACCESS_KEY="XXX" \
+  COMPANY_DATABASE_URL="XXX" \
+  DATABASE_URL="XXX" \
+  sbt "$@"
+}
 
 ```
-run / fork := true
+Ceci définit une commande `scsbt`, à utiliser à la place de `sbt`
 
-// MAILER
-Runtime / javaOptions += s"-DMAILER_HOST="
-Runtime / javaOptions += s"-DMAILER_PORT="
-Runtime / javaOptions += s"-DMAILER_SSL=yes"
-Runtime / javaOptions += s"-DMAILER_TLS=no"
-Runtime / javaOptions += s"-DMAILER_TLS_REQUIRED=no"
-Runtime / javaOptions += s"-DMAILER_USER="
-Runtime / javaOptions += s"-DMAILER_PASSWORD="
-Runtime / javaOptions += s"-DMAILER_MOCK=yes"
-Runtime / javaOptions += s"""-DOUTBOUND_EMAIL_FILTER_REGEX=beta?.gouv|@.*gouv.fr"""
-Runtime / javaOptions += s"""-DSIGNAL_CONSO_SCHEDULED_JOB_ACTIVE=false"""
+#### ❓ Pourquoi définir cette fonction, pourquoi ne pas juste exporter les variables en permanence ?
 
-// MAIL
-Runtime / javaOptions += s"-DMAIL_FROM="
-Runtime / javaOptions += s"-DMAIL_CONTACT_ADDRESS="
+Pour éviter que ces variables ne soient lisibles dans l'environnement par n'importe quel process lancés sur votre machine. Bien sûr c'est approximatif, on ne peut pas empêcher un process de parser le fichier de conf directement, mais c'est déjà un petit niveau de protection.
 
-// EVOLUTIONS
-Runtime / javaOptions += s"-DEVOLUTIONS_ENABLED=true"
-Runtime / javaOptions += s"-DEVOLUTIONS_AUTO_APPLY=true"
-Runtime / javaOptions += s"-DEVOLUTIONS_AUTO_APPLY_DOWNS=true"
+#### ❓ Puis-je mettre ces variables dans un fichier local dans le projet, que j'ajouterai au .gitignore ?
 
-// TMP DIR ( need to add "/" at the end of the path)
-Runtime / javaOptions += s"-DTMP_DIR="
+C'est trop dangereux. Nos repos sont publics, la moindre erreur humaine au niveau du .gitignore pourrait diffuser toutes les variables.
 
-// S3
-Runtime / javaOptions += s"-DS3_ACCESS_KEY_ID="
-Runtime / javaOptions += s"-DS3_SECRET_ACCESS_KEY="
-
-//DATABASE
-Runtime / javaOptions += s"-DCOMPANY_DATABASE_URL="
-Runtime / javaOptions += s"-DDATABASE_URL="
-```
+### Lancer l'appli
 
 Lancer
 
 ```bash
-sbt run 
+scsbt run 
 ```
 
 L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement à chaud des modifications.
@@ -90,13 +99,13 @@ L'API est accessible à l'adresse `http://localhost:9000/api` avec rechargement 
 Pour exécuter les tests :
 
 ```bash
-sbt test
+scsbt test
 ```
 
 Pour éxecuter uniquement un test (donné par son nom de classe):
 
 ```bash
-sbt "testOnly *SomeTestSpec"
+scsbt "testOnly *SomeTestSpec"
 ```
 
 ## Démo
