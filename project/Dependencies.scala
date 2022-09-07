@@ -9,7 +9,7 @@ object Dependencies {
     lazy val slickPgVersion = "0.20.3"
     lazy val playMailerVersion = "8.0.1"
     lazy val AkkaHttpVersion = "10.2.9"
-    lazy val alpakkaVersion = "2.0.2"
+    lazy val alpakkaVersion = "4.0.0"
     lazy val enumeratumVersion = "1.7.0"
     lazy val sentryVersion = "5.7.4"
     lazy val playSilhouetteVersion = "7.0.0"
