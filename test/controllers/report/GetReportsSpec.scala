@@ -112,7 +112,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val reportRepository = components.reportRepository
 

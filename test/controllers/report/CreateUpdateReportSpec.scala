@@ -217,7 +217,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val mailerService = components.mailer
   lazy val attachmentService = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
-  lazy val companyDataRepository = components.companyDataRepository
 
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
@@ -253,8 +252,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         _ <- userRepository.create(concernedAdminUser)
         c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
         _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
-        _ <- companyDataRepository.create(existingCompanyData)
-        _ <- companyDataRepository.create(anotherCompanyData)
         _ <- reportRepository.create(existingReport)
         _ <- Future.sequence(
           Seq(

@@ -57,17 +57,14 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     executionContext
   )
   val database: Database = SlickDBApi(slickApi).database("default")
-  val company_database: Database = SlickDBApi(slickApi).database("company_db")
 
   def setupData() = {}
   def cleanupData() = {}
 
   def beforeAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
-    Evolutions.cleanupEvolutions(company_database)
     cleanupData()
     Evolutions.applyEvolutions(database)
-    Evolutions.applyEvolutions(company_database)
     setupData()
   }
   def afterAll(): Unit = {}

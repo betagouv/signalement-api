@@ -36,7 +36,6 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
 
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
@@ -104,25 +103,11 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-        _ <- companyDataRepository.create(headOfficeCompanyData)
-        _ <- companyDataRepository.create(subsidiaryCompanyData)
-        _ <- companyDataRepository.create(subsidiaryClosedCompanyData)
-
         _ <- companyRepository.getOrCreate(companyWithoutAccess.siret, companyWithoutAccess)
-        _ <- companyDataRepository.create(companyWithoutAccessData)
       } yield (),
       Duration.Inf
     )
-  override def cleanupData() =
-    Await.result(
-      for {
-        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryClosedCompanyData.id)
-        _ <- companyDataRepository.delete(companyWithoutAccessData.id)
-      } yield (),
-      Duration.Inf
-    )
+
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 

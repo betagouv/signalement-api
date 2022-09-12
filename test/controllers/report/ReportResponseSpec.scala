@@ -237,7 +237,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val eventRepository = components.eventRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
   lazy val mailerService = components.mailer
   lazy val attachementService = components.attachmentService
@@ -315,8 +314,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
           AccessLevel.ADMIN
         )
 
-        _ <- companyDataRepository.create(companyData)
-        _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
         _ <- reportFileRepository.create(reportResponseFile)
