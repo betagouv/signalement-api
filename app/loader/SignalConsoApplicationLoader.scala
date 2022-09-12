@@ -138,6 +138,8 @@ class SignalConsoComponents(
     with UserAwareActionComponents
     with MailerComponents {
 
+  val logger: Logger = Logger(this.getClass)
+
   applicationEvolutions
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
@@ -394,6 +396,7 @@ class SignalConsoComponents(
     companyDataRepository
   )
 
+  logger.trace("Starting App and sending sentry alert")
   companyTask.runTask()
 
   val noActionReportsCloseTask =
