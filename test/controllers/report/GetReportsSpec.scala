@@ -200,10 +200,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-//        _ <- companyDataRepository.create(standaloneCompanyData)
-//        _ <- companyDataRepository.create(headOfficeCompanyData)
-//        _ <- companyDataRepository.create(subsidiaryCompanyData)
-
         _ <- reportRepository.create(reportToStandaloneCompany)
         _ <- reportRepository.create(reportToProcessOnHeadOffice)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
@@ -212,15 +208,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       } yield (),
       Duration.Inf
     )
-
-//  override def cleanupData() =
-//    Await.result(
-//      for {
-//        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-//        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-//      } yield (),
-//      Duration.Inf
-//    )
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
@@ -260,7 +247,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     /("entities").andHave(allOf(reports: _*))
 
   def reportsMustBeRenderedForUser(user: User) =
-//    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
       case (UserRole.Admin, _) =>
         contentAsJson(Future(someResult.get))(timeout).toString must
