@@ -122,16 +122,18 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val standaloneCompany = Fixtures.genCompany.sample.get
-  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val standaloneCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, isOpen = true)
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, isOpen = true)
   val subsidiaryCompany =
-    Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+    Fixtures.genCompany.sample.get
+      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+      .copy(isHeadOffice = false, isOpen = true)
 
-  val standaloneCompanyData =
-    Fixtures.genCompanyData(Some(standaloneCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val headOfficeCompanyData =
-    Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
+//  val standaloneCompanyData =
+//    Fixtures.genCompanyData(Some(standaloneCompany)).sample.get.copy(etablissementSiege = Some("true"))
+//  val headOfficeCompanyData =
+//    Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
+//  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
 
   val reportToStandaloneCompany = Fixtures
     .genReportForCompany(standaloneCompany)
@@ -198,9 +200,9 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-        _ <- companyDataRepository.create(standaloneCompanyData)
-        _ <- companyDataRepository.create(headOfficeCompanyData)
-        _ <- companyDataRepository.create(subsidiaryCompanyData)
+//        _ <- companyDataRepository.create(standaloneCompanyData)
+//        _ <- companyDataRepository.create(headOfficeCompanyData)
+//        _ <- companyDataRepository.create(subsidiaryCompanyData)
 
         _ <- reportRepository.create(reportToStandaloneCompany)
         _ <- reportRepository.create(reportToProcessOnHeadOffice)
@@ -211,14 +213,14 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  override def cleanupData() =
-    Await.result(
-      for {
-        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-      } yield (),
-      Duration.Inf
-    )
+//  override def cleanupData() =
+//    Await.result(
+//      for {
+//        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
+//        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
+//      } yield (),
+//      Duration.Inf
+//    )
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 

@@ -655,6 +655,9 @@ class ReportOrchestrator(
         filter.siretSirenList,
         connectedUser
       )
+      _ = logger.trace(
+        s"Original sirenSirets : ${filter.siretSirenList} , SanitizedSirenSirets : $sanitizedSirenSirets"
+      )
       paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {
           Future(PaginatedResult(totalCount = 0, hasNextPage = false, entities = List.empty[ReportWithFiles]))
