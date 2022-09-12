@@ -686,7 +686,7 @@ class ReportOrchestrator(
       validLimit = limit.orElse(Some(maxResults))
       validOffset = offset.orElse(Some(0L))
       startGetReports = System.nanoTime()
-      _ = logger.debug("----------------  BEGIN  getReports  ------------------")
+      _ = logger.trace("----------------  BEGIN  getReports  ------------------")
       paginatedReports <-
         reportRepository.getReports(
           filter,
@@ -694,14 +694,14 @@ class ReportOrchestrator(
           validLimit
         )
       endGetReports = System.nanoTime()
-      _ = logger.debug(
+      _ = logger.trace(
         s"----------------  END  getReports ${TimeUnit.MILLISECONDS.convert(endGetReports - startGetReports, TimeUnit.NANOSECONDS)}  ------------------"
       )
       startGetReportFiles = System.nanoTime()
-      _ = logger.debug("----------------  BEGIN  prefetchReportsFiles  ------------------")
+      _ = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
       reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
       endGetReportFiles = System.nanoTime()
-      _ = logger.debug(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
+      _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
           .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
