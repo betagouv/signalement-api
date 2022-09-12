@@ -60,6 +60,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -673,6 +674,7 @@ class ReportOrchestrator(
       limit: Option[Int],
       toApi: (Report, Map[UUID, List[ReportFile]]) => T
   ): Future[PaginatedResult[T]] = {
+
     val maxResults = signalConsoConfiguration.reportsExportLimitMax
     for {
       _ <- limit match {
@@ -683,13 +685,24 @@ class ReportOrchestrator(
       }
       validLimit = limit.orElse(Some(maxResults))
       validOffset = offset.orElse(Some(0L))
+      startGetReports = System.nanoTime()
+      _ = logger.trace("----------------  BEGIN  getReports  ------------------")
       paginatedReports <-
         reportRepository.getReports(
           filter,
           validOffset,
           validLimit
         )
+      endGetReports = System.nanoTime()
+      _ = logger.trace(
+        s"----------------  END  getReports ${TimeUnit.MILLISECONDS.convert(endGetReports - startGetReports, TimeUnit.NANOSECONDS)}  ------------------"
+      )
+      startGetReportFiles = System.nanoTime()
+      _ = logger.trace("----------------  BEGIN  prefetchReportsFiles  ------------------")
       reportFilesMap <- reportFileOrchestrator.prefetchReportsFiles(paginatedReports.entities.map(_.id))
+      endGetReportFiles = System.nanoTime()
+      _ = logger.trace(s"----------------  END  prefetchReportsFiles ${TimeUnit.MILLISECONDS
+          .convert(endGetReportFiles - startGetReportFiles, TimeUnit.NANOSECONDS)}  ------------------")
     } yield paginatedReports.copy(entities = paginatedReports.entities.map(r => toApi(r, reportFilesMap)))
   }
 
