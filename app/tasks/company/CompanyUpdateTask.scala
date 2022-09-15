@@ -69,12 +69,16 @@ class CompanyUpdateTask(
       .map(_ => logger.info("Company update done"))
 
   private def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]] = {
+
+    val request = basicRequest
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .body(companies.map(_.siret))
+      .response(asJson[List[CompanySearchResult]])
+
+    logger.debug(request.toCurl)
+
     val response =
-      basicRequest
-        .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
-        .body(companies.map(_.siret))
-        .response(asJson[List[CompanySearchResult]])
-        .send(backend)
+      request.send(backend)
     response
       .map(_.body)
       .map {
