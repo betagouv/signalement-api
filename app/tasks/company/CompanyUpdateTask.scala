@@ -71,7 +71,7 @@ class CompanyUpdateTask(
   private def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]] = {
     val response =
       basicRequest
-        .post(uri"http://localhost:9001/api/companies/search")
+        .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
         .body(companies.map(_.siret))
         .response(asJson[List[CompanySearchResult]])
         .send(backend)
