@@ -108,7 +108,6 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
   implicit val env = new FakeEnvironment[AuthEnv](

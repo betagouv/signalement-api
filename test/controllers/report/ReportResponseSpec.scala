@@ -314,7 +314,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
           AccessLevel.ADMIN
         )
 
-
         _ <- reportRepository.create(reportFixture)
         _ <- reportFileRepository.create(reportResponseFile)
       } yield (),

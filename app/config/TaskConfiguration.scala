@@ -17,7 +17,12 @@ case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWe
 
 case class InactiveAccountsTaskConfiguration(startTime: LocalTime, inactivePeriod: Period)
 
-case class CompanyUpdateTaskConfiguration(startTime: LocalTime, localSync: Boolean, etablissementApiUrl: String, etablissementApiKey)
+case class CompanyUpdateTaskConfiguration(
+    startTime: LocalTime,
+    localSync: Boolean,
+    etablissementApiUrl: String,
+    etablissementApiKey: String
+)
 
 case class ReportTaskConfiguration(
     startTime: LocalTime,
