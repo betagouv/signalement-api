@@ -18,6 +18,7 @@ import sttp.client3.UriContext
 import sttp.client3.basicRequest
 import sttp.client3.playJson.asJson
 import sttp.client3.playJson.playJsonBodySerializer
+import sttp.model.Header
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -71,6 +72,7 @@ class CompanyUpdateTask(
   private def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]] = {
 
     val request = basicRequest
+      .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
       .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
       .body(companies.map(_.siret))
       .response(asJson[List[CompanySearchResult]])
