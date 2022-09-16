@@ -33,7 +33,6 @@ class AccountController(
   val logger: Logger = Logger(this.getClass)
 
   implicit val contactAddress = emailConfiguration.contactAddress
-  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {
@@ -63,6 +62,13 @@ class AccountController(
         .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
   }
+
+//  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.inviteAdmin)).async(parse.json) {
+//    implicit request =>
+//      request
+//        .parseBody[EmailAddress](JsPath \ "email")
+//        .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
+//  }
 
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
     accessesOrchestrator
