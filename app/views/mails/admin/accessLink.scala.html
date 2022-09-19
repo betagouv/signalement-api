@@ -3,22 +3,9 @@
 @(invitationUrl: URI)
 
 @views.html.mails.layout("Accédez à SignalConso") {
-    <p>
-        Bonjour,
-    </p>
 
     <p>
-        Vous avez été invité à accéder à l'interface administrateur sur SignalConso.
-        <br/>Afin de procéder à l'activation de votre compte, veuillez suivre le lien sécurisé ci-dessous :
+        Vous avez été invité à accéder à l'interface administrateur sur SignalConso. Veuillez suivre ce lien <a href="@invitationUrl">Finaliser mon inscription</a>
     </p>
 
-    <p style="text-align: center;">
-        <a href="@invitationUrl">Finaliser mon inscription</a>
-    </p>
-
-    <p>Cordialement,</p>
-
-    <p>
-        <i>L'équipe SignalConso</i>
-    </p>
 }
