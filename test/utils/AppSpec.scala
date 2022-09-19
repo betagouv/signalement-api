@@ -27,6 +27,7 @@ import pureconfig.configurable.localTimeConfigConvert
 import services.MailerService
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
+import tasks.company.CompanySyncServiceInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
@@ -119,6 +120,8 @@ class DefaultApplicationLoader(
       override def authEnv: Environment[AuthEnv] =
         maybeAuthEnv.getOrElse(super.authEnv)
       override def mailer: MailerService = mailerServiceMock
+
+      override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
       override def authApiEnv: Environment[APIKeyEnv] =
         maybeApiKeyEnv.getOrElse(super.authApiEnv)
       override def configuration: Configuration = maybeConfiguration.getOrElse(super.configuration)

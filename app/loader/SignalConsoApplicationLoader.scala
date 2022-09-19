@@ -91,7 +91,11 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
+import tasks.company.CompanySyncService
+import tasks.company.CompanySyncServiceInterface
 import tasks.company.CompanyUpdateTask
+import tasks.company.LocalCompanySyncService
+import tasks.company.LocalCompanySyncServiceInterface
 import tasks.report.NoActionReportsCloseTask
 import tasks.report.ReadReportsReminderTask
 import tasks.report.ReportNotificationTask
@@ -385,15 +389,22 @@ class SignalConsoComponents(
 
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
 
+  val localCompanySyncService: LocalCompanySyncServiceInterface =
+    new LocalCompanySyncService(actorSystem, applicationConfiguration.task.companyUpdate, companyDataRepository)
+
+  def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
+    applicationConfiguration.task.companyUpdate
+  )
+
   val companyTask = new CompanyUpdateTask(
     actorSystem,
-    applicationConfiguration.task.companyUpdate,
     companyRepository,
-    companyDataRepository
+    applicationConfiguration.task.companyUpdate,
+    companySyncService,
+    localCompanySyncService
   )
 
   logger.trace("Starting App and sending sentry alert")
-  companyTask.runTask()
 
   val noActionReportsCloseTask =
     new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)
