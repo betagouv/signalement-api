@@ -27,6 +27,10 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     )
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
     def activation = url("/activation")
+
+    object Admin {
+      def register(token: String) = url(s"/admin/rejoindre/?token=$token")
+    }
     object Dgccrf {
       def register(token: String) = url(s"/dgccrf/rejoindre/?token=$token")
     }

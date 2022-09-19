@@ -99,7 +99,7 @@ class AccessesOrchestrator(
           emailConfiguration.adminEmailRegexp,
           tokenConfiguration.adminJoinDuration,
           AdminAccessLink,
-          frontRoute.dashboard.Dgccrf.register _ // TODO adjust
+          frontRoute.dashboard.Admin.register _
         )
     }
     for {
