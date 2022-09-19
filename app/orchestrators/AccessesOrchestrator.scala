@@ -78,9 +78,11 @@ class AccessesOrchestrator(
     .withFieldConst(_.emailedTo, emailTo)
     .transform
 
-  def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] = ???
+  def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrDgccrfInvitation(email, TokenKind.DGCCRFAccount)
 
-  def sendAdminInvitation(email: EmailAddress): Future[Unit] = ???
+  def sendAdminInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrDgccrfInvitation(email, TokenKind.AdminAccount)
 
   def sendAdminOrDgccrfInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
     val (emailRegexp, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
