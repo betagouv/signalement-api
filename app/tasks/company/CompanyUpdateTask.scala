@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
 import company.CompanySearchResult
-import config.CompanyUpdateTaskConfiguration
+import config.TaskConfiguration
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanyTable
@@ -16,7 +16,7 @@ import scala.concurrent.duration.DurationInt
 class CompanyUpdateTask(
     actorSystem: ActorSystem,
     companyRepository: CompanyRepositoryInterface,
-    companyUpdateConfiguration: CompanyUpdateTaskConfiguration,
+    taskConfiguration: TaskConfiguration,
     companySyncService: CompanySyncServiceInterface,
     localCompanySyncService: LocalCompanySyncServiceInterface
 )(implicit
@@ -36,7 +36,9 @@ class CompanyUpdateTask(
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = 10.minutes, interval = 1.hour) { () =>
     logger.debug("Starting CompanyUpdateTask")
-    runTask()
+    if (taskConfiguration.active) {
+      runTask()
+    }
     ()
   }
 
@@ -45,7 +47,7 @@ class CompanyUpdateTask(
       .source(CompanyTable.table.result)
       .grouped(500)
       .mapAsync(1) { companies =>
-        if (companyUpdateConfiguration.localSync) {
+        if (taskConfiguration.companyUpdate.localSync) {
           localCompanySyncService.syncCompanies(companies)
         } else {
           companySyncService.syncCompanies(companies)

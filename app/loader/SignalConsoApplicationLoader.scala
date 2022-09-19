@@ -399,7 +399,7 @@ class SignalConsoComponents(
   val companyTask = new CompanyUpdateTask(
     actorSystem,
     companyRepository,
-    applicationConfiguration.task.companyUpdate,
+    applicationConfiguration.task,
     companySyncService,
     localCompanySyncService
   )
