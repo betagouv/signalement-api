@@ -69,7 +69,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           from = EmptyEmailAddress,
           contactAddress = EmptyEmailAddress,
           skipReportEmailValidation = skipValidation,
-          ccrfEmailSuffix = "*",
+          dgccrfEmailRegexp = ".*",
+          adminEmailRegexp = ".*",
           emailProvidersBlocklist = emailProviderBlocklist,
           outboundEmailFilterRegex = ".*".r
         )

@@ -205,7 +205,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             )
 
             override def s3Service: S3ServiceInterface = mockS3Service
-            override def tokenConfiguration = TokenConfiguration(None, None, None, Period.ZERO, None)
+            override def tokenConfiguration = TokenConfiguration(None, None, None, None, Period.ZERO, None)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
             override def signalConsoConfiguration: SignalConsoConfiguration =
               SignalConsoConfiguration(
@@ -223,7 +223,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 EmailAddress("test@sc.com"),
                 EmailAddress("test@sc.com"),
                 skipValidation,
-                "",
+                ".*",
+                ".*",
                 List(""),
                 ".*".r
               )
