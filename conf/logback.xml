@@ -25,7 +25,7 @@
     </appender>
 
     <appender name="Sentry" class="io.sentry.logback.SentryAppender">
-        <minimumEventLevel>WARN</minimumEventLevel>
+        <minimumEventLevel>ERROR</minimumEventLevel>
         <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
     </appender>
 
