@@ -29,22 +29,19 @@
         <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
     </appender>
 
-
-
     <logger name="play" level="INFO"/>
-    <logger name="application" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="loader" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="actors" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="controllers" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="orchestrators" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="repositories" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="services" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="tasks" level="${LOG_LEVEL:-DEBUG}"/>
-    <logger name="utils" level="${LOG_LEVEL:-DEBUG}"/>
+    <logger name="application" level="DEBUG"/>
+    <logger name="actors" level="DEBUG"/>
+    <logger name="controllers" level="DEBUG"/>
+    <logger name="orchestrators" level="DEBUG"/>
+    <logger name="repositories" level="DEBUG"/>
+    <logger name="services" level="DEBUG"/>
+    <logger name="tasks" level="DEBUG"/>
+    <logger name="utils" level="DEBUG"/>
 
 <!--  <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>-->
 
-    <root level="TRACE">
+    <root level="DEBUG">
         <appender-ref ref="ASYNCSTDOUT"/>
     </root>
     <root level="INFO">
