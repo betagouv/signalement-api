@@ -49,13 +49,16 @@ class AccessesOrchestrator(
         DGCCRFAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
       }
 
-  def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
+  def activateAdminOrDGCCRFUser(draftUser: DraftUser, token: String) = for {
     maybeAccessToken <- accessTokenRepository.findToken(token)
-    accessToken <- maybeAccessToken
-      .find(_.kind == TokenKind.DGCCRFAccount)
+    (accessToken, userRole) <- maybeAccessToken
+      .collect {
+        case t if t.kind == TokenKind.DGCCRFAccount => (t, UserRole.DGCCRF)
+        case t if t.kind == TokenKind.AdminAccount  => (t, UserRole.Admin)
+      }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
-    _ = logger.debug(s"Token $token found, creating user")
-    _ <- userOrchestrator.createUser(draftUser, accessToken, UserRole.DGCCRF)
+    _ = logger.debug(s"Token $token found, creating user with role $userRole")
+    _ <- userOrchestrator.createUser(draftUser, accessToken, userRole)
     _ = logger.debug(s"User created successfully, invalidating token")
     _ <- accessTokenRepository.invalidateToken(accessToken)
     _ = logger.debug(s"Token has been revoked")
@@ -86,6 +89,7 @@ class AccessesOrchestrator(
 
   def sendAdminOrDgccrfInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
     val (emailRegexp, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
+      // TODO ajuster tests
       // TODO faire TU sur les regexp
       case DGCCRFAccount =>
         (
