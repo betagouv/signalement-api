@@ -31,6 +31,3 @@ ALTER TABLE users ALTER COLUMN creation_date SET NOT NULL;
 ALTER TABLE users ALTER COLUMN creation_date SET DEFAULT NOW();
 
 -- !Downs
-
--- Invalid query to prevent down evolutions happening by accident
-SELECT this_function_does_not_exist();
