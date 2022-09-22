@@ -35,6 +35,11 @@ case class Address(
     country.map(_.name).getOrElse("")
   ).filter(_ != "")
 
+  def toPrivateArray: Seq[String] = Seq(
+    fullCity,
+    country.map(_.name).getOrElse("")
+  ).filter(_ != "")
+
   override def toString: String = toArray.mkString(" - ")
 }
 

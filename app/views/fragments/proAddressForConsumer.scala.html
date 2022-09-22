@@ -1,0 +1,15 @@
+@(company: Option[Company])
+
+@company.map { c => <b>@c.name</b> <br/> }
+@company.map { c =>
+    @if(c.isPublic) {
+        @c.address.toArray.map { ligne =>
+            <span>@ligne</span> <br/>
+        }
+    } else {
+        @c.address.toPrivateArray.map { ligne =>
+            <span>@ligne</span> <br/>
+        }
+    }
+
+}

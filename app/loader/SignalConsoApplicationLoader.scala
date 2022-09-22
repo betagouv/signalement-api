@@ -385,7 +385,13 @@ class SignalConsoComponents(
   val unreadReportsReminderTask =
     new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
   val unreadReportsCloseTask =
-    new UnreadReportsCloseTask(applicationConfiguration.task, eventRepository, reportRepository, mailService)
+    new UnreadReportsCloseTask(
+      applicationConfiguration.task,
+      eventRepository,
+      reportRepository,
+      companyRepository,
+      mailService
+    )
 
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
 
@@ -407,7 +413,7 @@ class SignalConsoComponents(
   logger.trace("Starting App and sending sentry alert")
 
   val noActionReportsCloseTask =
-    new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)
+    new NoActionReportsCloseTask(eventRepository, reportRepository, companyRepository, mailService, taskConfiguration)
 
   val reportTask = new ReportTask(
     actorSystem,
@@ -512,7 +518,7 @@ class SignalConsoComponents(
     new ReportFileController(reportFileOrchestrator, silhouette, signalConsoConfiguration, controllerComponents)
 
   val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(reportOrchestrator, eventRepository, reportFileRepository)
+    new ReportWithDataOrchestrator(reportOrchestrator, companyRepository, eventRepository, reportFileRepository)
 
   val reportController = new ReportController(
     reportOrchestrator,

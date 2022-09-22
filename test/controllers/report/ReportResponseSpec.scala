@@ -88,6 +88,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseAccepted,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -131,6 +132,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseAccepted,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -174,6 +176,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseRejected,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -215,6 +218,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseNotConcerned,
             frontRoute.dashboard.reportReview(report.id.toString)
           )

@@ -200,7 +200,7 @@ class CloseTransmittedReportOutOfTime(implicit ee: ExecutionEnv) extends ReadRep
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
         transmittedReport.email,
         "L'entreprise n'a pas répondu au signalement",
-        views.html.mails.consumer.reportClosedByNoAction(transmittedReport).toString,
+        views.html.mails.consumer.reportClosedByNoAction(transmittedReport, Some(company)).toString,
         attachementService.attachmentSeqForWorkflowStepN(4)
       )}    
     And outcome is empty ${result mustEqual Valid(List((transmittedReport.id, CloseReadReportWithNoAction)))}

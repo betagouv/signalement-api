@@ -1,5 +1,6 @@
 package services
 
+import models.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
@@ -58,6 +59,7 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
 
   def reportAcknowledgmentAttachement(
       report: Report,
+      maybeCompany: Option[Company],
       event: Event,
       files: Seq[ReportFile]
   ): Seq[Attachment] =
@@ -66,7 +68,7 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
         AttachmentData(
           "Signalement.pdf",
           pdfService.getPdfData(
-            views.html.pdfs.report(report, Seq((event, None)), None, Seq.empty, files)(frontRoute, None)
+            views.html.pdfs.report(report, maybeCompany, Seq((event, None)), None, Seq.empty, files)(frontRoute, None)
           ),
           "application/pdf"
         )
