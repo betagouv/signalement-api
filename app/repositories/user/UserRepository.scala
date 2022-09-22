@@ -42,11 +42,13 @@ class UserRepository(
           .result
       )
 
-  override def list(role: UserRole): Future[Seq[User]] =
+  override def list(roles: Seq[UserRole]): Future[Seq[User]] =
     db
       .run(
         table
-          .filter(_.role === role.entryName)
+          .filter(
+            _.role.inSetBind(roles.map(_.entryName))
+          )
           .result
       )
 
