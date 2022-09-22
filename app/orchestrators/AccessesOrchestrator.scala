@@ -3,7 +3,6 @@ package orchestrators
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
@@ -20,6 +19,7 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import services.Email.AdminAccessLink
 import services.Email.DgccrfAccessLink
 import services.Email
+import services.EmailAddressService
 import services.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
@@ -34,7 +34,6 @@ class AccessesOrchestrator(
     accessTokenRepository: AccessTokenRepositoryInterface,
     mailService: MailServiceInterface,
     frontRoute: FrontRoute,
-    emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
@@ -88,19 +87,17 @@ class AccessesOrchestrator(
     sendAdminOrDgccrfInvitation(email, TokenKind.AdminAccount)
 
   def sendAdminOrDgccrfInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
-    val (emailRegexp, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
-      // TODO ajuster tests
-      // TODO faire TU sur les regexp
+    val (emailValidationFunction, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
       case DGCCRFAccount =>
         (
-          emailConfiguration.dgccrfEmailRegexp,
+          EmailAddressService.isEmailAcceptableForDgccrfAccount _,
           tokenConfiguration.dgccrfJoinDuration,
           DgccrfAccessLink,
           frontRoute.dashboard.Dgccrf.register _
         )
       case AdminAccount =>
         (
-          emailConfiguration.adminEmailRegexp,
+          EmailAddressService.isEmailAcceptableForAdminAccount _,
           tokenConfiguration.adminJoinDuration,
           AdminAccessLink,
           frontRoute.dashboard.Admin.register _
@@ -108,10 +105,10 @@ class AccessesOrchestrator(
     }
     for {
       _ <-
-        if (emailRegexp.r.matches(email.value)) {
+        if (emailValidationFunction(email.value)) {
           Future.successful(())
         } else {
-          Future.failed(InvalidDGCCRFOrAdminEmail(email, emailRegexp))
+          Future.failed(InvalidDGCCRFOrAdminEmail(email))
         }
       _ <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)

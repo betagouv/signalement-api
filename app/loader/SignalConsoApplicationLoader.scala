@@ -284,7 +284,6 @@ class SignalConsoComponents(
     accessTokenRepository,
     mailService,
     frontRoute,
-    emailConfiguration,
     tokenConfiguration
   )
 
