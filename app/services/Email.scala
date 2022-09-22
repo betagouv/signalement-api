@@ -27,6 +27,7 @@ sealed trait Email {
   def getAttachements: AttachmentService => Seq[Attachment] = _.defaultAttachments
 }
 
+sealed trait AdminEmail extends Email
 sealed trait DgccrfEmail extends Email
 
 sealed trait ProEmail extends Email
@@ -151,6 +152,13 @@ object Email {
     override val subject: String = EmailSubjects.DGCCRF_ACCESS_LINK
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.dgccrf.accessLink(invitationUrl).toString
+    override val recipients: List[EmailAddress] = List(recipient)
+  }
+
+  final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
+    override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
+    override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
+      views.html.mails.admin.accessLink(invitationUrl).toString
     override val recipients: List[EmailAddress] = List(recipient)
   }
 

@@ -19,6 +19,7 @@ case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Bo
 case class TokenConfiguration(
     companyInitDuration: Option[Period],
     companyJoinDuration: Option[Period],
+    adminJoinDuration: Option[Period],
     dgccrfJoinDuration: Option[Period],
     dgccrfDelayBeforeRevalidation: Period,
     dgccrfRevalidationTokenDuration: Option[Period]

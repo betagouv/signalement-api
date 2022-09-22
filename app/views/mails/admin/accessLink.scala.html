@@ -1,0 +1,11 @@
+@import java.net.URI
+@import utils.FrontRoute
+@(invitationUrl: URI)
+
+@views.html.mails.layout("Accédez à SignalConso") {
+
+    <p>
+        Vous avez été invité à accéder à l'interface administrateur sur SignalConso. Veuillez suivre ce lien <a href="@invitationUrl">Finaliser mon inscription</a>
+    </p>
+
+}

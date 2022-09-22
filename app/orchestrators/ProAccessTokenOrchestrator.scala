@@ -2,7 +2,6 @@ package orchestrators
 
 import cats.implicits.catsSyntaxOption
 import company.companydata.CompanyDataRepositoryInterface
-import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
@@ -42,12 +41,10 @@ class ProAccessTokenOrchestrator(
     eventRepository: EventRepositoryInterface,
     mailService: MailServiceInterface,
     frontRoute: FrontRoute,
-    emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]] =

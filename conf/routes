@@ -105,6 +105,7 @@ POST          /api/accesses/:siret/invitation                   controllers.Comp
 GET           /api/account                                      controllers.AccountController.fetchUser
 GET           /api/account/token                                controllers.AccountController.fetchTokenInfo(token: String)
 POST          /api/account/activation                           controllers.AccountController.activateAccount()
+POST          /api/account/admin/invitation                     controllers.AccountController.sendAdminInvitation()
 POST          /api/account/dgccrf/invitation                    controllers.AccountController.sendDGCCRFInvitation()
 GET           /api/account/dgccrf/pending                       controllers.AccountController.fetchPendingDGCCRF()
 GET           /api/account/dgccrf/users                         controllers.AccountController.fetchDGCCRFUsers()
