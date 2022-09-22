@@ -137,13 +137,14 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .result
     )
 
-  override def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean): Future[SIRET] = db
-    .run(
-      table
-        .filter(_.siret === siret)
-        .map(c => (c.isHeadOffice, c.isOpen))
-        .update((isHeadOffice, isOpen))
-    )
-    .map(_ => siret)
+  override def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean, isPublic: Boolean): Future[SIRET] =
+    db
+      .run(
+        table
+          .filter(_.siret === siret)
+          .map(c => (c.isHeadOffice, c.isOpen, c.isPublic))
+          .update((isHeadOffice, isOpen, isPublic))
+      )
+      .map(_ => siret)
 
 }

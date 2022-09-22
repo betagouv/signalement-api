@@ -35,5 +35,5 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def findBySiren(siren: List[SIREN]): Future[List[Company]]
 
-  def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean): Future[SIRET]
+  def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean, isPublic: Boolean): Future[SIRET]
 }

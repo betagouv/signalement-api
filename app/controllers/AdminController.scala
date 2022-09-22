@@ -127,7 +127,8 @@ class AdminController(
     ),
     activityCode = None,
     isHeadOffice = true,
-    isOpen = true
+    isOpen = true,
+    isPublic = true
   )
 
   private def genUser = User(

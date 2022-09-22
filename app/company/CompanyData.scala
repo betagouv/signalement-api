@@ -1,7 +1,6 @@
 package company
 
 import models.Address
-import models.Company
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.SIREN
@@ -58,7 +57,8 @@ case class CompanyData(
       case "O" => true
       case "F" => false
       case _   => true
-    }
+    },
+    isPublic = true
   )
 }
 
@@ -76,17 +76,9 @@ case class CompanySearchResult(
     activityCode: Option[String],
     activityLabel: Option[String],
     isMarketPlace: Boolean = false,
-    isOpen: Boolean
-) {
-  def toCompany() = Company(
-    siret = siret,
-    name = name.getOrElse(""),
-    address = address,
-    isHeadOffice = isHeadOffice,
-    isOpen = isOpen,
-    activityCode = activityCode
-  )
-}
+    isOpen: Boolean,
+    isPublic: Boolean
+)
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]

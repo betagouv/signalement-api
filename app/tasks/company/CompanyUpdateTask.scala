@@ -54,7 +54,7 @@ class CompanyUpdateTask(
         }
       }
       .map((companies: Seq[CompanySearchResult]) =>
-        companies.map(c => companyRepository.updateBySiret(c.siret, c.isOpen, c.isHeadOffice))
+        companies.map(c => companyRepository.updateBySiret(c.siret, c.isOpen, c.isHeadOffice, c.isPublic))
       )
       .log("company update")
       .run()
