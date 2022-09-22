@@ -73,11 +73,11 @@ object AppError {
       s"Le site $host doit être un site valide."
   }
 
-  final case class InvalidDGCCRFEmail(email: EmailAddress, suffix: String) extends ForbiddenError {
+  final case class InvalidDGCCRFOrAdminEmail(email: EmailAddress) extends ForbiddenError {
     override val `type`: String = "SC-0008"
-    override val title: String = "Invalid Dgccrf email"
+    override val title: String = "Invalid email for this type of user"
     override val details: String =
-      s"Email ${email.value} invalide. Email acceptés : *${suffix}"
+      s"Email ${email.value} invalide pour ce type d'utilisateur"
   }
 
   final case object UserAccountEmailAlreadyExist extends BadRequestError {

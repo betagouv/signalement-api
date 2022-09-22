@@ -3,20 +3,23 @@ package orchestrators
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models._
+import models.token.AdminOrDgccrfTokenKind
 import models.token.DGCCRFAccessToken
 import models.token.DGCCRFUserActivationToken
 import models.token.TokenKind
+import models.token.TokenKind.AdminAccount
 import models.token.TokenKind.DGCCRFAccount
 import models.token.TokenKind.ValidateEmail
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
+import services.Email.AdminAccessLink
 import services.Email.DgccrfAccessLink
 import services.Email
+import services.EmailAddressService
 import services.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
@@ -31,12 +34,10 @@ class AccessesOrchestrator(
     accessTokenRepository: AccessTokenRepositoryInterface,
     mailService: MailServiceInterface,
     frontRoute: FrontRoute,
-    emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
   val logger = Logger(this.getClass)
-  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   def listDGCCRFPendingToken(user: User): Future[List[DGCCRFAccessToken]] =
@@ -47,13 +48,16 @@ class AccessesOrchestrator(
         DGCCRFAccessToken(token.creationDate, token.token, token.emailedTo, token.expirationDate, user.userRole)
       }
 
-  def activateDGCCRFUser(draftUser: DraftUser, token: String) = for {
+  def activateAdminOrDGCCRFUser(draftUser: DraftUser, token: String) = for {
     maybeAccessToken <- accessTokenRepository.findToken(token)
-    accessToken <- maybeAccessToken
-      .find(_.kind == TokenKind.DGCCRFAccount)
+    (accessToken, userRole) <- maybeAccessToken
+      .collect {
+        case t if t.kind == TokenKind.DGCCRFAccount => (t, UserRole.DGCCRF)
+        case t if t.kind == TokenKind.AdminAccount  => (t, UserRole.Admin)
+      }
       .liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token))
-    _ = logger.debug(s"Token $token found, creating user")
-    _ <- userOrchestrator.createUser(draftUser, accessToken, UserRole.DGCCRF)
+    _ = logger.debug(s"Token $token found, creating user with role $userRole")
+    _ <- userOrchestrator.createUser(draftUser, accessToken, userRole)
     _ = logger.debug(s"User created successfully, invalidating token")
     _ <- accessTokenRepository.invalidateToken(accessToken)
     _ = logger.debug(s"Token has been revoked")
@@ -77,12 +81,34 @@ class AccessesOrchestrator(
     .transform
 
   def sendDGCCRFInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrDgccrfInvitation(email, TokenKind.DGCCRFAccount)
+
+  def sendAdminInvitation(email: EmailAddress): Future[Unit] =
+    sendAdminOrDgccrfInvitation(email, TokenKind.AdminAccount)
+
+  def sendAdminOrDgccrfInvitation(email: EmailAddress, kind: AdminOrDgccrfTokenKind): Future[Unit] = {
+    val (emailValidationFunction, joinDuration, emailTemplate, invitationUrlFunction) = kind match {
+      case DGCCRFAccount =>
+        (
+          EmailAddressService.isEmailAcceptableForDgccrfAccount _,
+          tokenConfiguration.dgccrfJoinDuration,
+          DgccrfAccessLink,
+          frontRoute.dashboard.Dgccrf.register _
+        )
+      case AdminAccount =>
+        (
+          EmailAddressService.isEmailAcceptableForAdminAccount _,
+          tokenConfiguration.adminJoinDuration,
+          AdminAccessLink,
+          frontRoute.dashboard.Admin.register _
+        )
+    }
     for {
       _ <-
-        if (email.value.endsWith(ccrfEmailSuffix)) {
+        if (emailValidationFunction(email.value)) {
           Future.successful(())
         } else {
-          Future.failed(InvalidDGCCRFEmail(email, ccrfEmailSuffix))
+          Future.failed(InvalidDGCCRFOrAdminEmail(email))
         }
       _ <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)
@@ -93,15 +119,15 @@ class AccessesOrchestrator(
             logger.debug("reseting token validity")
             accessTokenRepository.update(
               token.id,
-              AccessToken.resetExpirationDate(token, tokenConfiguration.dgccrfJoinDuration)
+              AccessToken.resetExpirationDate(token, joinDuration)
             )
           case None =>
             logger.debug("creating token")
             accessTokenRepository.create(
               AccessToken.build(
-                kind = DGCCRFAccount,
+                kind = kind,
                 token = UUID.randomUUID.toString,
-                validity = tokenConfiguration.dgccrfJoinDuration,
+                validity = joinDuration,
                 companyId = None,
                 level = None,
                 emailedTo = Some(email)
@@ -109,10 +135,11 @@ class AccessesOrchestrator(
             )
         }
       _ <- mailService.send(
-        DgccrfAccessLink(recipient = email, invitationUrl = frontRoute.dashboard.Dgccrf.register(token.token))
+        emailTemplate(email, invitationUrlFunction(token.token))
       )
       _ = logger.debug(s"Sent DGCCRF account invitation to ${email}")
     } yield ()
+  }
 
   def sendEmailValidation(user: User): Future[Unit] =
     for {

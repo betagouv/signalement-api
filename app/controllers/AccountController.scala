@@ -33,7 +33,6 @@ class AccountController(
   val logger: Logger = Logger(this.getClass)
 
   implicit val contactAddress = emailConfiguration.contactAddress
-  implicit val ccrfEmailSuffix = emailConfiguration.ccrfEmailSuffix
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {
@@ -51,7 +50,8 @@ class AccountController(
       _ <- activationRequest.companySiret match {
         case Some(siret) =>
           proAccessTokenOrchestrator.activateProUser(activationRequest.draftUser, activationRequest.token, siret)
-        case None => accessesOrchestrator.activateDGCCRFUser(activationRequest.draftUser, activationRequest.token)
+        case None =>
+          accessesOrchestrator.activateAdminOrDGCCRFUser(activationRequest.draftUser, activationRequest.token)
       }
     } yield NoContent
 
@@ -62,6 +62,13 @@ class AccountController(
       request
         .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
+  }
+
+  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.inviteAdmin)).async(parse.json) {
+    implicit request =>
+      request
+        .parseBody[EmailAddress](JsPath \ "email")
+        .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
   }
 
   def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
