@@ -57,29 +57,29 @@ class AccountController(
 
   }
 
-  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async(parse.json) {
+  def sendDGCCRFInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async(parse.json) {
     implicit request =>
       request
         .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendDGCCRFInvitation(email).map(_ => Ok))
   }
 
-  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.inviteAdmin)).async(parse.json) {
+  def sendAdminInvitation = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async(parse.json) {
     implicit request =>
       request
         .parseBody[EmailAddress](JsPath \ "email")
         .flatMap(email => accessesOrchestrator.sendAdminInvitation(email).map(_ => Ok))
   }
 
-  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { request =>
+  def fetchPendingDGCCRF = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { request =>
     accessesOrchestrator
       .listDGCCRFPendingToken(request.identity)
       .map(tokens => Ok(Json.toJson(tokens)))
   }
 
-  def fetchDGCCRFUsers = SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
+  def fetchAdminOrDgccrfUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
     for {
-      users <- userRepository.list(UserRole.DGCCRF)
+      users <- userRepository.list(Seq(UserRole.DGCCRF, UserRole.Admin))
     } yield Ok(
       Json.toJson(
         users.map(u =>
@@ -87,7 +87,8 @@ class AccountController(
             "email" -> u.email,
             "firstName" -> u.firstName,
             "lastName" -> u.lastName,
-            "lastEmailValidation" -> u.lastEmailValidation
+            "lastEmailValidation" -> u.lastEmailValidation,
+            "role" -> u.userRole
           )
         )
       )
@@ -112,7 +113,7 @@ class AccountController(
   }
 
   def forceValidateEmail(email: String) =
-    SecuredAction(WithPermission(UserPermission.inviteDGCCRF)).async { _ =>
+    SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
