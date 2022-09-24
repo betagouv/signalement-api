@@ -20,6 +20,7 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import company.CompanyDataController
 import company.EnterpriseImportController
 import company.EnterpriseImportOrchestrator
 import company.companydata.CompanyDataRepository
@@ -90,7 +91,11 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
+import tasks.company.CompanySyncService
+import tasks.company.CompanySyncServiceInterface
 import tasks.company.CompanyUpdateTask
+import tasks.company.LocalCompanySyncService
+import tasks.company.LocalCompanySyncServiceInterface
 import tasks.report.NoActionReportsCloseTask
 import tasks.report.ReadReportsReminderTask
 import tasks.report.ReportNotificationTask
@@ -270,7 +275,6 @@ class SignalConsoComponents(
     userOrchestrator,
     companyRepository,
     companyAccessRepository,
-    companyDataRepository,
     accessTokenRepository,
     userRepository,
     eventRepository,
@@ -300,11 +304,10 @@ class SignalConsoComponents(
   )
 
   def companiesVisibilityOrchestrator =
-    new CompaniesVisibilityOrchestrator(companyDataRepository, companyRepository, companyAccessRepository)
+    new CompaniesVisibilityOrchestrator(companyRepository, companyAccessRepository)
 
   val companyAccessOrchestrator =
     new CompanyAccessOrchestrator(
-      companyDataRepository,
       companyAccessRepository,
       companyRepository,
       accessTokenRepository,
@@ -316,7 +319,6 @@ class SignalConsoComponents(
     companyRepository,
     companiesVisibilityOrchestrator,
     reportRepository,
-    companyDataRepository,
     websiteRepository,
     accessTokenRepository,
     eventRepository,
@@ -383,22 +385,35 @@ class SignalConsoComponents(
   val unreadReportsReminderTask =
     new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
   val unreadReportsCloseTask =
-    new UnreadReportsCloseTask(applicationConfiguration.task, eventRepository, reportRepository, mailService)
+    new UnreadReportsCloseTask(
+      applicationConfiguration.task,
+      eventRepository,
+      reportRepository,
+      companyRepository,
+      mailService
+    )
 
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
 
+  val localCompanySyncService: LocalCompanySyncServiceInterface =
+    new LocalCompanySyncService(actorSystem, applicationConfiguration.task.companyUpdate, companyDataRepository)
+
+  def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
+    applicationConfiguration.task.companyUpdate
+  )
+
   val companyTask = new CompanyUpdateTask(
     actorSystem,
-    applicationConfiguration.task.companyUpdate,
     companyRepository,
-    companyDataRepository
+    applicationConfiguration.task,
+    companySyncService,
+    localCompanySyncService
   )
 
   logger.trace("Starting App and sending sentry alert")
-  companyTask.runTask()
 
   val noActionReportsCloseTask =
-    new NoActionReportsCloseTask(eventRepository, reportRepository, mailService, taskConfiguration)
+    new NoActionReportsCloseTask(eventRepository, reportRepository, companyRepository, mailService, taskConfiguration)
 
   val reportTask = new ReportTask(
     actorSystem,
@@ -462,6 +477,9 @@ class SignalConsoComponents(
       controllerComponents
     )
 
+  val companyDataController =
+    new CompanyDataController(companyDataRepository, silhouette, frontRoute, controllerComponents)
+
   val companyController = new CompanyController(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
@@ -500,7 +518,7 @@ class SignalConsoComponents(
     new ReportFileController(reportFileOrchestrator, silhouette, signalConsoConfiguration, controllerComponents)
 
   val reportWithDataOrchestrator =
-    new ReportWithDataOrchestrator(reportOrchestrator, eventRepository, reportFileRepository)
+    new ReportWithDataOrchestrator(reportOrchestrator, companyRepository, eventRepository, reportFileRepository)
 
   val reportController = new ReportController(
     reportOrchestrator,
@@ -578,6 +596,7 @@ class SignalConsoComponents(
       enterpriseImportController,
       accountController,
       emailValidationController,
+      companyDataController,
       companyController,
       ratingController,
       subscriptionController,

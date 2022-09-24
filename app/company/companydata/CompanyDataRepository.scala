@@ -211,7 +211,7 @@ object CompanyDataRepository {
       "libellecedexetablissement" -> companyData.libelleCedexEtablissement,
       DENOMINATION_USUELLE_ETABLISSEMENT -> companyData.denominationUsuelleEtablissement,
       "enseigne1etablissement" -> companyData.enseigne1Etablissement,
-      "activiteprincipaleetablissement" -> Some(companyData.activitePrincipaleEtablissement),
+      "activiteprincipaleetablissement" -> companyData.activitePrincipaleEtablissement,
       "etatadministratifetablissement" -> companyData.etatAdministratifEtablissement
     )
 }

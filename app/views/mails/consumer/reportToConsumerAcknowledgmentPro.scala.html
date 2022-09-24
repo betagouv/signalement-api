@@ -4,7 +4,7 @@
 @import models.report.Report
 @import models.report.ReportResponse
 @import models.report.review.ResponseEvaluation
-@(report: Report, reportResponse: ReportResponse, reviewUrl: (ResponseEvaluation) => URI)
+@(report: Report,maybeCompany: Option[Company], reportResponse: ReportResponse, reviewUrl: (ResponseEvaluation) => URI)
 
 @views.html.mails.layout("L'entreprise a répondu à votre signalement, donnez nous votre avis sur sa réponse") {
     <p>
@@ -20,7 +20,7 @@
         </p>
     }
     <p style="text-align: center;">
-    @views.html.fragments.address(report.companyName, report.companyAddress)
+    @views.html.fragments.proAddressForConsumer(maybeCompany)
     </p>
 
     <p>

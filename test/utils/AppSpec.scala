@@ -27,6 +27,7 @@ import pureconfig.configurable.localTimeConfigConvert
 import services.MailerService
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
+import tasks.company.CompanySyncServiceInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
 
@@ -57,17 +58,14 @@ trait AppSpec extends BeforeAfterAll with Mockito {
     executionContext
   )
   val database: Database = SlickDBApi(slickApi).database("default")
-  val company_database: Database = SlickDBApi(slickApi).database("company_db")
 
   def setupData() = {}
   def cleanupData() = {}
 
   def beforeAll(): Unit = {
     Evolutions.cleanupEvolutions(database)
-    Evolutions.cleanupEvolutions(company_database)
     cleanupData()
     Evolutions.applyEvolutions(database)
-    Evolutions.applyEvolutions(company_database)
     setupData()
   }
   def afterAll(): Unit = {}
@@ -122,6 +120,8 @@ class DefaultApplicationLoader(
       override def authEnv: Environment[AuthEnv] =
         maybeAuthEnv.getOrElse(super.authEnv)
       override def mailer: MailerService = mailerServiceMock
+
+      override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
       override def authApiEnv: Environment[APIKeyEnv] =
         maybeApiKeyEnv.getOrElse(super.authApiEnv)
       override def configuration: Configuration = maybeConfiguration.getOrElse(super.configuration)

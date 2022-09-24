@@ -127,7 +127,8 @@ class AdminController(
     ),
     activityCode = None,
     isHeadOffice = true,
-    isOpen = true
+    isOpen = true,
+    isPublic = true
   )
 
   private def genUser = User(
@@ -191,12 +192,13 @@ class AdminController(
       )
     ),
     "consumer.report_ack" -> (recipient =>
-      ConsumerReportAcknowledgment(genReport.copy(email = recipient), genEvent, Nil)
+      ConsumerReportAcknowledgment(genReport.copy(email = recipient), Some(genCompany), genEvent, Nil)
     ),
     "consumer.report_ack_case_reponseconso" ->
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -205,6 +207,7 @@ class AdminController(
       (recipient =>
         ConsumerReportAcknowledgment(
           genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -217,6 +220,7 @@ class AdminController(
             tags = List(ReportTag.ProduitDangereux),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -229,6 +233,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Italie)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -242,6 +247,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Islande)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -254,6 +260,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Andorre)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -267,6 +274,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Andorre)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -280,6 +288,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Suisse)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -292,6 +301,7 @@ class AdminController(
           companyAddress = Address(country = Some(Country.Suisse)),
           email = recipient
         ),
+        Some(genCompany),
         genEvent,
         Nil
       )
@@ -304,6 +314,7 @@ class AdminController(
             email = recipient,
             tags = List(ReportTag.CompagnieAerienne)
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -316,6 +327,7 @@ class AdminController(
             companyAddress = Address(country = Some(Country.Bahamas)),
             email = recipient
           ),
+          Some(genCompany),
           genEvent,
           Nil
         )
@@ -328,28 +340,35 @@ class AdminController(
           companyAddress = Address(country = Some(Country.Bahamas)),
           email = recipient
         ),
+        Some(genCompany),
         genEvent,
         Nil
       )
     ),
     "consumer.report_transmitted" -> (recipient =>
-      ConsumerReportReadByProNotification(genReport.copy(email = recipient))
+      ConsumerReportReadByProNotification(genReport.copy(email = recipient), Some(genCompany))
     ),
     "consumer.report_ack_pro_consumer" -> (recipient =>
-      ConsumerProResponseNotification(genReport.copy(email = recipient), genReportResponse)
+      ConsumerProResponseNotification(genReport.copy(email = recipient), genReportResponse, Some(genCompany))
     ),
     "consumer.report_closed_no_reading" -> (recipient =>
-      ConsumerReportClosedNoReading(genReport.copy(email = recipient))
+      ConsumerReportClosedNoReading(genReport.copy(email = recipient), Some(genCompany))
     ),
     "consumer.report_closed_no_reading_case_dispute" ->
       (recipient =>
-        ConsumerReportClosedNoReading(genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)))
+        ConsumerReportClosedNoReading(
+          genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
+          Some(genCompany)
+        )
       ),
     "consumer.report_closed_no_action" -> (recipient =>
-      ConsumerReportClosedNoAction(genReport.copy(email = recipient))
+      ConsumerReportClosedNoAction(genReport.copy(email = recipient), Some(genCompany))
     ),
     "consumer.report_closed_no_action_case_dispute" -> (recipient =>
-      ConsumerReportClosedNoAction(genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)))
+      ConsumerReportClosedNoAction(
+        genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
+        Some(genCompany)
+      )
     )
   )
 
@@ -382,7 +401,9 @@ class AdminController(
                 .map(evt => (report, evt))
             }
             _ <- filteredEvents.map { case (report, responseEvent) =>
-              mailService.send(ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse]))
+              mailService.send(
+                ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse], Some(genCompany))
+              )
             }.sequence
           } yield Ok
       )

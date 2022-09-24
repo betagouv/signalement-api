@@ -91,20 +91,6 @@ class CompanyController(
 
   }
 
-  def searchCompany(q: String, postalCode: String) = UnsecuredAction.async { _ =>
-    logger.debug(s"searchCompany $postalCode $q")
-    companyOrchestrator
-      .searchCompany(q, postalCode)
-      .map(results => Ok(Json.toJson(results)))
-  }
-
-  def searchCompanyByIdentity(identity: String) = UnsecuredAction.async { _ =>
-    logger.debug(s"searchCompanyByIdentity $identity")
-    companyOrchestrator
-      .searchCompanyByIdentity(identity)
-      .map(res => Ok(Json.toJson(res)))
-  }
-
   def searchCompanyByWebsite(url: String) = UnsecuredAction.async { _ =>
     companyOrchestrator
       .searchCompanyByWebsite(url)

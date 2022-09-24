@@ -201,7 +201,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
          And a mail is sent to the consumer                                           ${mailMustHaveBeenSent(
         report.email,
         "L'entreprise n'a pas souhaité consulter votre signalement",
-        views.html.mails.consumer.reportClosedByNoReading(report).toString,
+        views.html.mails.consumer.reportClosedByNoReading(report, Some(company)).toString,
         attachementService.attachmentSeqForWorkflowStepN(3)
       )}
     And outcome is successful CloseUnreadReport                                    ${result mustEqual Valid(

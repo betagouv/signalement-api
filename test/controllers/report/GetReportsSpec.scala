@@ -112,7 +112,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val reportRepository = components.reportRepository
 
@@ -122,16 +121,18 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val standaloneCompany = Fixtures.genCompany.sample.get
-  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val standaloneCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, isOpen = true)
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, isOpen = true)
   val subsidiaryCompany =
-    Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+    Fixtures.genCompany.sample.get
+      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+      .copy(isHeadOffice = false, isOpen = true)
 
-  val standaloneCompanyData =
-    Fixtures.genCompanyData(Some(standaloneCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val headOfficeCompanyData =
-    Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
+//  val standaloneCompanyData =
+//    Fixtures.genCompanyData(Some(standaloneCompany)).sample.get.copy(etablissementSiege = Some("true"))
+//  val headOfficeCompanyData =
+//    Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
+//  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
 
   val reportToStandaloneCompany = Fixtures
     .genReportForCompany(standaloneCompany)
@@ -198,24 +199,11 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-        _ <- companyDataRepository.create(standaloneCompanyData)
-        _ <- companyDataRepository.create(headOfficeCompanyData)
-        _ <- companyDataRepository.create(subsidiaryCompanyData)
-
         _ <- reportRepository.create(reportToStandaloneCompany)
         _ <- reportRepository.create(reportToProcessOnHeadOffice)
         _ <- reportRepository.create(reportToProcessOnSubsidiary)
         _ <- reportRepository.create(reportFromEmployeeOnHeadOffice)
         _ <- reportRepository.create(reportNAOnHeadOffice)
-      } yield (),
-      Duration.Inf
-    )
-
-  override def cleanupData() =
-    Await.result(
-      for {
-        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
       } yield (),
       Duration.Inf
     )
@@ -258,7 +246,6 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
     /("entities").andHave(allOf(reports: _*))
 
   def reportsMustBeRenderedForUser(user: User) =
-//    implicit val someUserRole = Some(user.userRole)
     (user.userRole, user) match {
       case (UserRole.Admin, _) =>
         contentAsJson(Future(someResult.get))(timeout).toString must

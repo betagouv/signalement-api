@@ -1,11 +1,14 @@
 package orchestrators
 
+import cats.implicits.toTraverseOps
+import models.Company
 import models.User
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
 import play.api.Logger
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
@@ -17,6 +20,7 @@ import scala.concurrent.Future
 
 case class ReportWithData(
     report: Report,
+    maybeCompany: Option[Company],
     events: Seq[(Event, Option[User])],
     responseOption: Option[ReportResponse],
     companyEvents: Seq[(Event, Option[User])],
@@ -25,6 +29,7 @@ case class ReportWithData(
 
 class ReportWithDataOrchestrator(
     reportOrchestrator: ReportOrchestrator,
+    companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
@@ -37,6 +42,7 @@ class ReportWithDataOrchestrator(
         maybeReport.map(report =>
           for {
             events <- eventRepository.getEventsWithUsers(uuid, EventFilter())
+            maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
             companyEvents <- report.companyId
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
               .getOrElse(Future(List.empty))
@@ -49,6 +55,7 @@ class ReportWithDataOrchestrator(
               .map(_.as[ReportResponse])
             ReportWithData(
               report,
+              maybeCompany,
               events,
               responseOption,
               companyEvents,

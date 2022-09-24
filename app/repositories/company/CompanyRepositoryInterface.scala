@@ -27,11 +27,21 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def findCompanyAndHeadOffice(siret: SIRET): Future[List[Company]]
 
+  def findHeadOffice(siren: List[SIREN], openOnly: Boolean): Future[List[Company]]
+
   def findBySirets(sirets: List[SIRET]): Future[List[Company]]
 
   def findByName(name: String): Future[List[Company]]
 
   def findBySiren(siren: List[SIREN]): Future[List[Company]]
 
-  def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean): Future[SIRET]
+  def updateBySiret(
+      siret: SIRET,
+      isOpen: Boolean,
+      isHeadOffice: Boolean,
+      isPublic: Boolean,
+      number: Option[String],
+      street: Option[String],
+      addressSupplement: Option[String]
+  ): Future[SIRET]
 }

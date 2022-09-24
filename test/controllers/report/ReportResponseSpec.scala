@@ -88,6 +88,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseAccepted,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -131,6 +132,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseAccepted,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -174,6 +176,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseRejected,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -215,6 +218,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
         views.html.mails.consumer
           .reportToConsumerAcknowledgmentPro(
             report,
+            Some(company),
             reportResponseNotConcerned,
             frontRoute.dashboard.reportReview(report.id.toString)
           )
@@ -237,7 +241,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val eventRepository = components.eventRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
   lazy val mailerService = components.mailer
   lazy val attachementService = components.attachmentService
@@ -248,9 +251,10 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val siretForConcernedPro = Fixtures.genSiret().sample.get
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
-  val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro)
+  val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro, isHeadOffice = false)
   val headOfficeCompany =
-    Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(siretForConcernedPro))).sample.get)
+    Fixtures.genCompany.sample.get
+      .copy(siret = Fixtures.genSiret(Some(SIREN(siretForConcernedPro))).sample.get, isHeadOffice = true)
 
   val companyData = Fixtures.genCompanyData(Some(company)).sample.get
   val headOfficeCompanyData =
@@ -313,9 +317,6 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
           concernedHeadOfficeProUser.id,
           AccessLevel.ADMIN
         )
-
-        _ <- companyDataRepository.create(companyData)
-        _ <- companyDataRepository.create(headOfficeCompanyData)
 
         _ <- reportRepository.create(reportFixture)
         _ <- reportFileRepository.create(reportResponseFile)

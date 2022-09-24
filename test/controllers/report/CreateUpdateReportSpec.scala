@@ -35,12 +35,18 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 object CreateReportFromDomTom extends CreateUpdateReportSpec {
+
+  val address = Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))
+  val company = Fixtures.genCompany.sample.get.copy(address = address)
   override def is =
     s2"""
          Given a draft report which concerns
           a dom tom department                                              ${step {
-        draftReport =
-          draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))))
+        draftReport = draftReport.copy(
+          companyName = Some(company.name),
+          companySiret = Some(company.siret),
+          companyAddress = Some(address)
+        )
       }}
          When create the report                                             ${step(createReport())}
          Then create the report with reportStatusList "ReportStatus.TraitementEnCours" ${reportMustHaveBeenCreatedWithStatus(
@@ -49,17 +55,25 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                    ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, Some(company), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2)
       )}
     """
 }
 object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
+
+  val address = Address(postalCode = Some(Departments.ALL(0)))
+  val company = Fixtures.genCompany.sample.get.copy(address = address)
+
   override def is =
     s2"""
          Given a draft report which concerns
           an experimentation department                                   ${step {
-        draftReport = draftReport.copy(companyAddress = Some(Address(postalCode = Some(Departments.ALL(0)))))
+        draftReport = draftReport.copy(
+          companyName = Some(company.name),
+          companySiret = Some(company.siret),
+          companyAddress = Some(address)
+        )
       }}
           an employee consumer                                            ${step {
         draftReport = draftReport.copy(employeeConsumer = true)
@@ -71,7 +85,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                  ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString
+        views.html.mails.consumer.reportAcknowledgment(report, Some(company), Nil).toString
       )}
     """
 }
@@ -93,7 +107,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                      ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, Some(anotherCompany), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2)
       )}
     """
@@ -113,7 +127,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString,
+        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
         attachmentService.attachmentSeqForWorkflowStepN(2)
       )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
@@ -145,7 +159,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Nil).toString
+        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString
       )}
     """
 }
@@ -217,7 +231,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val mailerService = components.mailer
   lazy val attachmentService = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
-  lazy val companyDataRepository = components.companyDataRepository
 
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
@@ -253,8 +266,6 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
         _ <- userRepository.create(concernedAdminUser)
         c <- companyRepository.getOrCreate(existingCompany.siret, existingCompany)
         _ <- companyRepository.getOrCreate(anotherCompany.siret, anotherCompany)
-        _ <- companyDataRepository.create(existingCompanyData)
-        _ <- companyDataRepository.create(anotherCompanyData)
         _ <- reportRepository.create(existingReport)
         _ <- Future.sequence(
           Seq(

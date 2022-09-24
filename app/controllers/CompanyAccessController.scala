@@ -17,7 +17,6 @@ import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.WithRole
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -100,22 +99,6 @@ class CompanyAccessController(
   }
 
   case class AccessInvitationList(email: EmailAddress, level: AccessLevel, sirets: List[SIRET])
-
-  def sendGroupedInvitations = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
-    implicit val reads = Json.reads[AccessInvitationList]
-    request.body
-      .validate[AccessInvitationList]
-      .fold(
-        errors => {
-          logger.error(s"$errors")
-          Future.successful(BadRequest(JsError.toJson(errors)))
-        },
-        invitations =>
-          accessesOrchestrator
-            .addUserOrInvite(invitations.sirets, invitations.email, invitations.level, Some(request.identity))
-            .map(_ => Ok)
-      )
-  }
 
   def listPendingTokens(siret: String) = withCompany(siret, List(AccessLevel.ADMIN)).async { implicit request =>
     accessesOrchestrator

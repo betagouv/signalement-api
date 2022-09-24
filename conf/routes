@@ -98,7 +98,6 @@ GET           /api/accesses/:siret/token                        controllers.Comp
 POST          /api/accesses/:siret/send-activation-link         controllers.CompanyAccessController.sendActivationLink(siret: String)
 POST          /api/accesses/:siret/token/accept                 controllers.CompanyAccessController.acceptToken(siret: String)
 DELETE        /api/accesses/:siret/token/:tokenId               controllers.CompanyAccessController.removePendingToken(siret: String, tokenId: java.util.UUID)
-POST          /api/accesses/grouped/invitations                 controllers.CompanyAccessController.sendGroupedInvitations()
 POST          /api/accesses/:siret/invitation                   controllers.CompanyAccessController.sendInvitation(siret: String)
 
 # Account API
@@ -119,6 +118,10 @@ POST          /api/email-validation/validate                    controllers.Emai
 POST          /api/email-validation/check-and-validate          controllers.EmailValidationController.checkAndValidate()
 GET           /api/email-validation/search                      controllers.EmailValidationController.search()
 
+# Company data API
+GET           /api/companies/search/:identity                   company.CompanyDataController.searchCompanyByIdentity(identity: String)
+GET           /api/companies/search                             company.CompanyDataController.searchCompany(q: String, postalCode: String)
+
 # Company details API
 POST          /api/companies                                    controllers.CompanyController.create()
 GET           /api/companies                                    controllers.CompanyController.searchRegistered()
@@ -127,9 +130,7 @@ GET           /api/companies/to-activate                        controllers.Comp
 GET           /api/companies/hosts/:companyId                   controllers.CompanyController.fetchHosts(companyId: java.util.UUID)
 POST          /api/companies/activation-document                controllers.CompanyController.getActivationDocument()
 POST          /api/companies/companies-posted                   controllers.CompanyController.confirmContactByPostOnCompanyList()
-GET           /api/companies/search/:identity                   controllers.CompanyController.searchCompanyByIdentity(identity: String)
 GET           /api/companies/search-url                         controllers.CompanyController.searchCompanyByWebsite(url: String)
-GET           /api/companies/search                             controllers.CompanyController.searchCompany(q: String, postalCode: String)
 PUT           /api/companies/:id/address                        controllers.CompanyController.updateCompanyAddress(id: java.util.UUID)
 GET           /api/companies/:id/response-rate                  controllers.CompanyController.getResponseRate(id: java.util.UUID)
 POST          /api/companies/:siret/undelivered-document        controllers.CompanyController.handleUndeliveredDocument(siret)

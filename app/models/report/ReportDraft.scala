@@ -25,6 +25,7 @@ case class ReportDraft(
     companyActivityCode: Option[String],
     companyIsHeadOffice: Option[Boolean],
     companyIsOpen: Option[Boolean],
+    companyIsPublic: Option[Boolean],
     websiteURL: Option[URL],
     phone: Option[String],
     firstName: String,

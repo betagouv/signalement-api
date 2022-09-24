@@ -140,9 +140,10 @@ class ReportController(
       .map(_.flatten)
       .map(
         _.map(x =>
-          views.html.pdfs.report(x.report, x.events, x.responseOption, x.companyEvents, x.files)(frontRoute =
-            frontRoute
-          )
+          views.html.pdfs
+            .report(x.report, x.maybeCompany, x.events, x.responseOption, x.companyEvents, x.files)(frontRoute =
+              frontRoute
+            )
         )
       )
       .map(pdfService.Ok)

@@ -164,6 +164,7 @@ object Email {
 
   final case class ConsumerReportAcknowledgment(
       report: Report,
+      maybeCompany: Option[Company],
       event: Event,
       files: Seq[ReportFile]
   ) extends ConsumerEmail {
@@ -171,14 +172,17 @@ object Email {
     override val subject: String = EmailSubjects.REPORT_ACK
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportAcknowledgment(report, files.toList)(frontRoute).toString
+      views.html.mails.consumer.reportAcknowledgment(report, maybeCompany, files.toList)(frontRoute).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.reportAcknowledgmentAttachement(report, event, files)
+      _.reportAcknowledgmentAttachement(report, maybeCompany, event, files)
   }
 
-  final case class ConsumerProResponseNotification(report: Report, reportResponse: ReportResponse)
-      extends ConsumerEmail {
+  final case class ConsumerProResponseNotification(
+      report: Report,
+      reportResponse: ReportResponse,
+      maybeCompany: Option[Company]
+  ) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_ACK_PRO_CONSUMER
 
@@ -186,6 +190,7 @@ object Email {
       views.html.mails.consumer
         .reportToConsumerAcknowledgmentPro(
           report,
+          maybeCompany,
           reportResponse,
           frontRoute.dashboard.reportReview(report.id.toString)
         )
@@ -195,24 +200,24 @@ object Email {
       _.ConsumerProResponseNotificationAttachement
   }
 
-  final case class ConsumerReportClosedNoAction(report: Report) extends ConsumerEmail {
+  final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company]) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_CLOSED_NO_ACTION
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportClosedByNoAction(report)(frontRoute).toString
+      views.html.mails.consumer.reportClosedByNoAction(report, maybeCompany)(frontRoute).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(4, report)
 
   }
 
-  final case class ConsumerReportClosedNoReading(report: Report) extends ConsumerEmail {
+  final case class ConsumerReportClosedNoReading(report: Report, maybeCompany: Option[Company]) extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_CLOSED_NO_READING
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportClosedByNoReading(report)(frontRoute).toString
+      views.html.mails.consumer.reportClosedByNoReading(report, maybeCompany)(frontRoute).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(3, report)
@@ -229,12 +234,13 @@ object Email {
         .toString
   }
 
-  final case class ConsumerReportReadByProNotification(report: Report) extends ConsumerEmail {
+  final case class ConsumerReportReadByProNotification(report: Report, maybeCompany: Option[Company])
+      extends ConsumerEmail {
     override val recipients: List[EmailAddress] = List(report.email)
     override val subject: String = EmailSubjects.REPORT_TRANSMITTED
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
-      views.html.mails.consumer.reportTransmission(report).toString
+      views.html.mails.consumer.reportTransmission(report, maybeCompany).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.attachmentSeqForWorkflowStepN(3)

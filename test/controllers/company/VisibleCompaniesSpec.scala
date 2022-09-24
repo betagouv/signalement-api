@@ -36,7 +36,6 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
 
   val proUserWithAccessToHeadOffice = Fixtures.genProUser.sample.get
@@ -44,13 +43,21 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   val proUserWithAccessToSubsidiary = Fixtures.genProUser.sample.get
   val adminWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany =
-    Fixtures.genCompany.sample.get.copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+    Fixtures.genCompany.sample.get
+      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get, isHeadOffice = false)
+
+  val subsidiaryClosedCompany = Fixtures.genCompany.sample.get
+    .copy(
+      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
+      isOpen = false
+    )
 
   val headOfficeCompanyData =
     Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
   val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
+
   val subsidiaryClosedCompanyData = Fixtures
     .genCompanyData()
     .sample
@@ -96,22 +103,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-        _ <- companyDataRepository.create(headOfficeCompanyData)
-        _ <- companyDataRepository.create(subsidiaryCompanyData)
-        _ <- companyDataRepository.create(subsidiaryClosedCompanyData)
-
         _ <- companyRepository.getOrCreate(companyWithoutAccess.siret, companyWithoutAccess)
-        _ <- companyDataRepository.create(companyWithoutAccessData)
-      } yield (),
-      Duration.Inf
-    )
-  override def cleanupData() =
-    Await.result(
-      for {
-        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryClosedCompanyData.id)
-        _ <- companyDataRepository.delete(companyWithoutAccessData.id)
       } yield (),
       Duration.Inf
     )

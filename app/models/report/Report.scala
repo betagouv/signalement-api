@@ -183,7 +183,8 @@ case class ReportCompany(
     siret: SIRET,
     activityCode: Option[String],
     isHeadOffice: Boolean,
-    isOpen: Boolean
+    isOpen: Boolean,
+    isPublic: Boolean
 )
 
 object ReportCompany {
