@@ -100,7 +100,7 @@ case class CompanyCreation(
     activityCode = activityCode,
     isHeadOffice = isHeadOffice.getOrElse(false),
     isOpen = isOpen.getOrElse(true),
-    isPublic = isPublic.getOrElse(false)
+    isPublic = isPublic.getOrElse(true)
   )
 }
 
