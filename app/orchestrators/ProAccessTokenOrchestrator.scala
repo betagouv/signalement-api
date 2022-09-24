@@ -1,8 +1,6 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
-import company.companydata.CompanyDataRepositoryInterface
-import config.EmailConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
