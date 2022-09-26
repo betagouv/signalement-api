@@ -1,6 +1,5 @@
 package orchestrators
 
-import company.companydata.CompanyDataRepositoryInterface
 import models.AccessLevel
 import models.Company
 import models.CompanyWithAccess
@@ -20,28 +19,22 @@ case class SiretsSirens(sirens: Seq[SIREN], sirets: Seq[SIRET]) {
 }
 
 class CompaniesVisibilityOrchestrator(
-    companyDataRepo: CompanyDataRepositoryInterface,
     companyRepo: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
   def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =
     for {
-//      companies <- companyRepo.findCompanyAndHeadOffice(siret)
-      companiesDataIncludingHeadOffice <- companyDataRepo.searchBySiretIncludingHeadOffice(siret)
-      companies <- companyRepo.findBySirets(companiesDataIncludingHeadOffice.map(_.siret))
+      companies <- companyRepo.findCompanyAndHeadOffice(siret)
       admins <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
     } yield admins
 
   def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
       adminsByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyId(companies.map(_._2))
-      headOfficesCompany <- companyDataRepo
-        .searchHeadOfficeBySiren(companies.map(c => SIREN(c._1)), includeClosed = true)
-        .map(_.map(_._1))
-        .flatMap { companyDatas =>
-          companyRepo.findBySirets(companyDatas.map(_.siret))
-        }
+      sirens = companies.map(c => SIREN(c._1))
+      headOfficesCompany <-
+        companyRepo.findHeadOffice(sirens, openOnly = false)
       headOfficeAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
       headOfficeIdByCompanyIdMap: Map[UUID, Option[UUID]] = companies
         .groupBy(_._2)
@@ -60,8 +53,10 @@ class CompaniesVisibilityOrchestrator(
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =
     for {
       authorizedCompanies <- companyAccessRepository.fetchCompaniesWithLevel(pro)
-      headOfficeSirets <- companyDataRepo
-        .filterHeadOffices(authorizedCompanies.map(_.company.siret))
+      authorizedCompaniesSiret = authorizedCompanies.map(_.company.siret)
+      headOfficeSirets <- companyRepo
+        .findBySirets(authorizedCompaniesSiret)
+        .map(_.filter(_.isHeadOffice))
         .map(_.map(_.siret))
       companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.apply))
       companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
@@ -86,15 +81,16 @@ class CompaniesVisibilityOrchestrator(
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
     for {
-      authorizedSirets <- companyAccessRepository.fetchCompaniesWithLevel(user).map(_.map(_.company.siret))
-      authorizedHeadofficeSirens <- companyDataRepo
-        .searchBySirets(authorizedSirets, includeClosed = true)
-        .map(companies =>
-          companies
-            .map(_._1)
-            .filter(_.etablissementSiege.contains("true"))
-            .map(_.siren)
-        )
+      companyWithAccessList <- companyAccessRepository.fetchCompaniesWithLevel(user)
+      authorizedSirets = companyWithAccessList.map(_.company.siret)
+      authorizedHeadofficeSirens <-
+        companyRepo
+          .findBySirets(authorizedSirets)
+          .map(companies =>
+            companies
+              .filter(_.isHeadOffice)
+              .map(c => SIREN(c.siret))
+          )
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
   def filterUnauthorizedSiretSirenList(siretSirenList: Seq[String], user: User): Future[Seq[String]] =

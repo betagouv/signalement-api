@@ -1,7 +1,7 @@
 @import models.report.Report
 @import utils.FrontRoute
 @import models.report.Report
-@(report: Report)(implicit frontRoute: FrontRoute)
+@(report: Report,maybeCompany: Option[Company])(implicit frontRoute: FrontRoute)
 
 
 @views.html.mails.layout("L'entreprise n'a pas souhaité consulter votre signalement") {
@@ -18,7 +18,7 @@
         </p>
     }
     <p style="text-align: center;">
-        @views.html.fragments.address(report.companyName, report.companyAddress)
+        @views.html.fragments.proAddressForConsumer(maybeCompany)
     </p>
 
     <p>

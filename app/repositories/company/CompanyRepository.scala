@@ -113,6 +113,16 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .map(_.toList)
     )
 
+  def findHeadOffice(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] =
+    db.run(
+      table
+        .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))
+        .filterIf(openOnly) { case (table) => table.isOpen }
+        .filter(_.isHeadOffice)
+        .result
+        .map(_.toList)
+    )
+
   override def findBySirets(sirets: List[SIRET]): Future[List[Company]] =
     db.run(table.filter(_.siret inSet sirets).to[List].result)
 
@@ -127,13 +137,22 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .result
     )
 
-  override def updateBySiret(siret: SIRET, isOpen: Boolean, isHeadOffice: Boolean): Future[SIRET] = db
-    .run(
-      table
-        .filter(_.siret === siret)
-        .map(c => (c.isHeadOffice, c.isOpen))
-        .update((isHeadOffice, isOpen))
-    )
-    .map(_ => siret)
+  override def updateBySiret(
+      siret: SIRET,
+      isOpen: Boolean,
+      isHeadOffice: Boolean,
+      isPublic: Boolean,
+      number: Option[String],
+      street: Option[String],
+      addressSupplement: Option[String]
+  ): Future[SIRET] =
+    db
+      .run(
+        table
+          .filter(_.siret === siret)
+          .map(c => (c.isHeadOffice, c.isOpen, c.isPublic, c.streetNumber, c.street, c.addressSupplement))
+          .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement))
+      )
+      .map(_ => siret)
 
 }

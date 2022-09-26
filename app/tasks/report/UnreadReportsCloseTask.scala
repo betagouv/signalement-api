@@ -1,5 +1,6 @@
 package tasks.report
 
+import cats.implicits.toTraverseOps
 import config.TaskConfiguration
 import models.event.Event.stringToDetailsJsValue
 import models.User
@@ -7,6 +8,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerReportClosedNoReading
@@ -32,6 +34,7 @@ class UnreadReportsCloseTask(
     taskConfiguration: TaskConfiguration,
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface,
     emailService: MailService
 )(implicit
     ec: ExecutionContext
@@ -119,7 +122,8 @@ class UnreadReportsCloseTask(
           stringToDetailsJsValue("Clôture automatique : signalement non consulté")
         )
       )
-      _ <- emailService.send(ConsumerReportClosedNoReading(report))
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+      _ <- emailService.send(ConsumerReportClosedNoReading(report, maybeCompany))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

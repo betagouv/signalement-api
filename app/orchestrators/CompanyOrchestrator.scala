@@ -1,7 +1,7 @@
 package orchestrators
 
 import company.CompanySearchResult
-import company.companydata.CompanyDataRepositoryInterface
+import company.CompanySearchResult.fromCompany
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
@@ -23,7 +23,6 @@ import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -36,7 +35,6 @@ class CompanyOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
     val companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     val reportRepository: ReportRepositoryInterface,
-    val companyDataRepository: CompanyDataRepositoryInterface,
     val websiteRepository: WebsiteRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val eventRepository: EventRepositoryInterface,
@@ -129,38 +127,6 @@ class CompanyOrchestrator(
     } yield (responses.toFloat / total * 100).round
   }
 
-  def searchCompany(q: String, postalCode: String): Future[List[CompanySearchResult]] = {
-    logger.debug(s"searchCompany $postalCode $q")
-    companyDataRepository
-      .search(q, postalCode)
-      .map(results => results.map(result => result._1.toSearchResult(result._2.map(_.label))))
-  }
-
-  def searchCompanyByIdentity(identity: String): Future[List[CompanySearchResult]] = {
-    logger.debug(s"searchCompanyByIdentity $identity")
-
-    (identity.replaceAll("\\s", "") match {
-      case q if q.matches(SIRET.pattern) =>
-        companyDataRepository.searchBySiretIncludingHeadOfficeWithActivity(SIRET.fromUnsafe(q))
-      case q =>
-        SIREN.pattern.r
-          .findFirstIn(q)
-          .map(siren =>
-            for {
-              headOffice <- companyDataRepository.searchHeadOfficeBySiren(SIREN(siren))
-              companies <- headOffice
-                .map(company => Future(List(company)))
-                .getOrElse(companyDataRepository.searchBySiren(SIREN(siren)))
-            } yield companies
-          )
-          .getOrElse(Future(List.empty))
-    }).map(companiesWithActivity =>
-      companiesWithActivity.map { case (company, activity) =>
-        company.toSearchResult(activity.map(_.label))
-      }
-    )
-  }
-
   def searchCompanyByWebsite(url: String): Future[Seq[CompanySearchResult]] = {
     logger.debug(s"searchCompaniesByHost $url")
     for {
@@ -170,13 +136,11 @@ class CompanyOrchestrator(
         )
       _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-        companyDataRepository
-          .searchBySiret(company.siret)
+        companyRepository
+          .findBySiret(company.siret)
+          .filter(_.exists(_.isOpen))
           .map { companies =>
-            logger.debug(s"Found ${companies.length} entries in company database")
-            companies.map { case (company, activity) =>
-              company.toSearchResult(activity.map(_.label), website.isMarketplace)
-            }
+            companies.map(fromCompany(_, website))
           }
       })
     } yield results.flatten

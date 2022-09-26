@@ -87,7 +87,8 @@ object Fixtures {
     address = address,
     activityCode = None,
     isOpen = true,
-    isHeadOffice = false
+    isHeadOffice = false,
+    isPublic = true
   )
 
   def genCompanyData(company: Option[Company] = None) = for {
@@ -114,7 +115,7 @@ object Fixtures {
     None,
     Some(denom),
     None,
-    "",
+    None,
     None
   )
 
@@ -147,6 +148,7 @@ object Fixtures {
     companyActivityCode = None,
     companyIsHeadOffice = Some(company.isHeadOffice),
     companyIsOpen = Some(company.isOpen),
+    companyIsPublic = Some(company.isPublic),
     websiteURL = Some(websiteURL),
     phone = None,
     firstName = firstName,
@@ -207,7 +209,7 @@ object Fixtures {
     name <- arbString.arbitrary
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
     siret <- genSiret()
-  } yield ReportCompany(name, address, siret, None, isHeadOffice = true, isOpen = true)
+  } yield ReportCompany(name, address, siret, None, isHeadOffice = true, isOpen = true, isPublic = true)
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]

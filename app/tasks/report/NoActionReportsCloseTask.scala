@@ -20,6 +20,7 @@ import cats.implicits._
 import models.event.Event
 import models.report.Report
 import models.report.ReportStatus
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 
@@ -32,6 +33,7 @@ import scala.concurrent.Future
 class NoActionReportsCloseTask(
     eventRepository: EventRepositoryInterface,
     reportRepository: ReportRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface,
     emailService: MailService,
     taskConfiguration: TaskConfiguration
 )(implicit
@@ -76,6 +78,7 @@ class NoActionReportsCloseTask(
   private def closeTransmittedReportByNoAction(report: Report) = {
     val taskExecution: Future[Unit] = for {
       _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.ConsulteIgnore))
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -88,7 +91,7 @@ class NoActionReportsCloseTask(
           stringToDetailsJsValue("Clôture automatique : signalement consulté ignoré")
         )
       )
-      _ <- emailService.send(ConsumerReportClosedNoAction(report))
+      _ <- emailService.send(ConsumerReportClosedNoAction(report, maybeCompany))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

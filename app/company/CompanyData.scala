@@ -1,5 +1,7 @@
 package company
 
+import io.scalaland.chimney.dsl.TransformerOps
+import models.website.Website
 import models.Address
 import models.Company
 import play.api.libs.json.Json
@@ -29,7 +31,7 @@ case class CompanyData(
     libelleCedexEtablissement: Option[String] = None,
     denominationUsuelleEtablissement: Option[String] = None,
     enseigne1Etablissement: Option[String] = None,
-    activitePrincipaleEtablissement: String,
+    activitePrincipaleEtablissement: Option[String],
     etatAdministratifEtablissement: Option[String] = None
 ) {
   def toAddress: Address = Address(
@@ -58,7 +60,8 @@ case class CompanyData(
       case "O" => true
       case "F" => false
       case _   => true
-    }
+    },
+    isPublic = true
   )
 }
 
@@ -73,23 +76,24 @@ case class CompanySearchResult(
     brand: Option[String],
     isHeadOffice: Boolean,
     address: Address,
-    activityCode: String,
+    activityCode: Option[String],
     activityLabel: Option[String],
     isMarketPlace: Boolean = false,
-    isOpen: Boolean
-) {
-  def toCompany() = Company(
-    siret = siret,
-    name = name.getOrElse(""),
-    address = address,
-    isHeadOffice = isHeadOffice,
-    isOpen = isOpen,
-    activityCode = Some(activityCode)
-  )
-}
+    isOpen: Boolean,
+    isPublic: Boolean
+)
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
+
+  def fromCompany(company: Company, website: Website) =
+    company
+      .into[CompanySearchResult]
+      .withFieldConst(_.isMarketPlace, website.isMarketplace)
+      .withFieldConst(_.activityLabel, None)
+      .withFieldConst(_.brand, None)
+      .withFieldConst(_.address, company.address.toFilteredAddress(company.isPublic))
+      .transform
 }
 
 object TypeVoies {

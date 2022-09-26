@@ -39,7 +39,6 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val companiesVisibilityOrchestrator = components.companiesVisibilityOrchestrator
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
@@ -94,21 +93,21 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-        _ <- companyDataRepository.create(headOfficeCompanyData)
-        _ <- companyDataRepository.create(subsidiaryCompanyData)
-        _ <- companyDataRepository.create(unrelatedCompanyData)
+//        _ <- companyDataRepository.create(headOfficeCompanyData)
+//        _ <- companyDataRepository.create(subsidiaryCompanyData)
+//        _ <- companyDataRepository.create(unrelatedCompanyData)
       } yield (),
       Duration.Inf
     )
 
-  override def cleanupData() =
-    Await.result(
-      for {
-        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-      } yield (),
-      Duration.Inf
-    )
+//  override def cleanupData() =
+//    Await.result(
+//      for {
+//        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
+//        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
+//      } yield (),
+//      Duration.Inf
+//    )
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 

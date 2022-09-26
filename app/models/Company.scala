@@ -42,7 +42,8 @@ case class Company(
     address: Address,
     activityCode: Option[String],
     isHeadOffice: Boolean,
-    isOpen: Boolean
+    isOpen: Boolean,
+    isPublic: Boolean
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
@@ -89,7 +90,8 @@ case class CompanyCreation(
     address: Address,
     activityCode: Option[String],
     isHeadOffice: Option[Boolean],
-    isOpen: Option[Boolean]
+    isOpen: Option[Boolean],
+    isPublic: Option[Boolean]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
@@ -97,7 +99,8 @@ case class CompanyCreation(
     address = address,
     activityCode = activityCode,
     isHeadOffice = isHeadOffice.getOrElse(false),
-    isOpen = isOpen.getOrElse(true)
+    isOpen = isOpen.getOrElse(true),
+    isPublic = isPublic.getOrElse(true)
   )
 }
 

@@ -11,11 +11,8 @@ import models.User
 import models.access.ActivationLinkRequest
 
 import java.time.OffsetDateTime.now
-
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
-import company.CompanyData
-import company.companydata.CompanyDataRepositoryInterface
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
@@ -25,13 +22,13 @@ import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import utils.SIREN
 import utils.SIRET
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class CompanyAccessOrchestrator(
-    companyDataRepository: CompanyDataRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
@@ -82,7 +79,6 @@ class CompanyAccessOrchestrator(
 
   def listAccesses(company: Company, user: User): Future[List[UserWithAccessLevel]] =
     getHeadOffice(company).flatMap {
-
       case Some(headOffice) if headOffice.siret == company.siret =>
         logger.debug(s"$company is a head office, returning access for head office")
         for {
@@ -111,19 +107,21 @@ class CompanyAccessOrchestrator(
         } yield filteredHeadOfficeAccess.getOrElse(List.empty) ++ subsidiaryUserAccess
     }
 
-  private def getHeadOffice(company: Company): Future[Option[CompanyData]] =
-    companyDataRepository.getHeadOffice(company.siret).flatMap {
-      case Nil =>
-        logger.warn(s"No head office for siret ${company.siret}")
-        Future.successful(None)
-      case c :: Nil =>
-        Future.successful(Some(c))
-      case companies =>
-        logger.error(s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} ")
-        Future.failed(
-          ServerError(s"Unexpected error when fetching head office for company with siret ${company.siret}")
-        )
-    }
+  private def getHeadOffice(company: Company): Future[Option[Company]] =
+    companyRepository
+      .findHeadOffice(List(SIREN(company.siret)), openOnly = false)
+      .flatMap {
+        case Nil =>
+          logger.warn(s"No head office for siret ${company.siret}")
+          Future.successful(None)
+        case c :: Nil =>
+          Future.successful(Some(c))
+        case companies =>
+          logger.error(s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} ")
+          Future.failed(
+            ServerError(s"Unexpected error when fetching head office for company with siret ${company.siret}")
+          )
+      }
 
   private def getHeadOfficeAccess(
       user: User,

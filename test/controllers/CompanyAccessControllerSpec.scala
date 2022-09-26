@@ -45,10 +45,9 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val companyDataRepository = components.companyDataRepository
   lazy val accessTokenRepository = components.accessTokenRepository
 
-  val company = Fixtures.genCompany.sample.get
+  val company = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val companyData = Fixtures.genCompanyData(Some(company)).sample.get.copy(etablissementSiege = Some("true"))
 
   override def setupData() =
@@ -57,7 +56,6 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
         admin <- userRepository.create(proAdminUser)
         member <- userRepository.create(proMemberUser)
         c <- companyRepository.getOrCreate(company.siret, company)
-        _ <- companyDataRepository.create(companyData)
         _ <- companyAccessRepository.createUserAccess(c.id, admin.id, AccessLevel.ADMIN)
         _ <- companyAccessRepository.createUserAccess(c.id, member.id, AccessLevel.MEMBER)
       } yield (),

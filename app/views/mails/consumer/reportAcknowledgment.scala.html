@@ -4,7 +4,7 @@
 @import utils.Country
 @import models.report._
 @import models.report.ReportTag
-@(report: Report, files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
+@(report: Report,maybeCompany: Option[Company], files: List[ReportFile] = Nil)(implicit frontRoute: FrontRoute)
 
 
 @views.html.mails.layout("Votre signalement") {
@@ -209,7 +209,7 @@
             <b>Entreprise</b>
             <br/>
             @if(report.companyAddress.isDefined) {
-                @views.html.fragments.address(report.companyName, report.companyAddress)
+                @views.html.fragments.proAddressForConsumer(maybeCompany)
                 <br/>
             }
             @if(report.websiteURL.websiteURL.isDefined) {

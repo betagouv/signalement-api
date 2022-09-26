@@ -105,7 +105,9 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
          And a mail is sent to the consumer                                     ${mailMustHaveBeenSent(
         neverRequestedReport.email,
         "L'entreprise a pris connaissance de votre signalement",
-        views.html.mails.consumer.reportTransmission(neverRequestedReport).toString,
+        views.html.mails.consumer
+          .reportTransmission(neverRequestedReport, None)
+          .toString,
         attachementService.attachmentSeqForWorkflowStepN(3)
       )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(

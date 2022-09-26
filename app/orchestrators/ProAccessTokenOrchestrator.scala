@@ -1,7 +1,6 @@
 package orchestrators
 
 import cats.implicits.catsSyntaxOption
-import company.companydata.CompanyDataRepositoryInterface
 import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
@@ -35,7 +34,6 @@ class ProAccessTokenOrchestrator(
     userOrchestrator: UserOrchestratorInterface,
     companyRepository: CompanyRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
-    companyDataRepository: CompanyDataRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     userRepository: UserRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -130,24 +128,6 @@ class ProAccessTokenOrchestrator(
         logger.debug("No user found for given email, sending invitation")
         sendInvitation(company, email, level, invitedBy)
     }
-
-  def addUserOrInvite(
-      sirets: List[SIRET],
-      email: EmailAddress,
-      level: AccessLevel,
-      invitedBy: Option[User]
-  ): Future[Unit] =
-    for {
-      companiesData <- Future.sequence(sirets.map(companyDataRepository.searchBySiret(_)))
-      companies <-
-        Future.sequence(companiesData.flatten.map { case (companyData, activity) =>
-          companyRepository.getOrCreate(
-            companyData.siret,
-            companyData.toSearchResult(activity.map(_.label)).toCompany()
-          )
-        })
-      _ <- Future.sequence(companies.map(company => addUserOrInvite(company, email, level, invitedBy)))
-    } yield ()
 
   def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
     for {

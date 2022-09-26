@@ -24,6 +24,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def activityCode = column[Option[String]]("activity_code")
   def isHeadOffice = column[Boolean]("is_headoffice")
   def isOpen = column[Boolean]("is_open")
+  def isPublic = column[Boolean]("is_public")
 
   type CompanyTuple = (
       UUID,
@@ -37,6 +38,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Option[String],
       Option[String],
       Option[String],
+      Boolean,
       Boolean,
       Boolean
   )
@@ -55,7 +57,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           _,
           activityCode,
           isHeadOffice,
-          isOpen
+          isOpen,
+          isPublic
         ) =>
       Company(
         id = id,
@@ -71,7 +74,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         ),
         activityCode = activityCode,
         isHeadOffice = isHeadOffice,
-        isOpen = isOpen
+        isOpen = isOpen,
+        isPublic = isPublic
       )
   }
 
@@ -84,7 +88,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           address,
           activityCode,
           isHeadOffice,
-          isOpen
+          isOpen,
+          isPublic
         ) =>
       (
         id,
@@ -99,7 +104,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         address.postalCode.flatMap(Departments.fromPostalCode),
         activityCode,
         isHeadOffice,
-        isOpen
+        isOpen,
+        isPublic
       )
   }
 
@@ -116,7 +122,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
     department,
     activityCode,
     isHeadOffice,
-    isOpen
+    isOpen,
+    isPublic
   ) <> (constructCompany, extractCompany.lift)
 }
 

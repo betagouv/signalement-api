@@ -1,7 +1,7 @@
 @import models.report.Report
 @import utils.FrontRoute
 @import models.report.Report
-@(report: Report)(implicit frontRoute: FrontRoute)
+@(report: Report, company: Option[Company])(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
     <p>
@@ -9,16 +9,17 @@
     </p>
 
     <p>
-        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b> concernant une entreprise :
+        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b>
+        concernant une entreprise :
     </p>
     @if(report.companySiret.isDefined) {
-    <p style="text-align: center;">
-        SIRET : <b>@report.companySiret.get</b>
-    </p>
+        <p style="text-align: center;">
+            SIRET : <b>@report.companySiret.get</b>
+        </p>
     }
     <p style="text-align: center;">
         <b>
-            @views.html.fragments.address(report.companyName, report.companyAddress)
+        @views.html.fragments.proAddressForConsumer(company)
         </b>
     </p>
     <p>
@@ -41,7 +42,8 @@
         <p>
             Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation
         </p>
-        <p style="text-align: center; padding: 20px">
+        <p style="text-align: center;
+            padding: 20px">
             <a href="@frontRoute.website.litige" class="btn">
                 Continuer mes démarches
             </a>

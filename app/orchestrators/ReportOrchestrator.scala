@@ -283,7 +283,7 @@ class ReportOrchestrator(
       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
     )
     for {
-      _ <- mailService.send(ConsumerReportAcknowledgment(report, event, reportAttachements))
+      _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -320,7 +320,8 @@ class ReportOrchestrator(
           address = draftReport.companyAddress.get,
           activityCode = draftReport.companyActivityCode,
           isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
-          isOpen = draftReport.companyIsOpen.getOrElse(true)
+          isOpen = draftReport.companyIsOpen.getOrElse(true),
+          isPublic = draftReport.companyIsPublic.getOrElse(true)
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -342,7 +343,8 @@ class ReportOrchestrator(
           address = reportCompany.address,
           activityCode = reportCompany.activityCode,
           isHeadOffice = reportCompany.isHeadOffice,
-          isOpen = reportCompany.isOpen
+          isOpen = reportCompany.isOpen,
+          isPublic = reportCompany.isPublic
         )
       )
       reportWithNewData <- existingReport match {
@@ -512,7 +514,8 @@ class ReportOrchestrator(
   private def notifyConsumerOfReportTransmission(report: Report): Future[Report] =
     for {
       newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
-      _ <- mailService.send(ConsumerReportReadByProNotification(report))
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+      _ <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany))
       _ <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
@@ -526,9 +529,14 @@ class ReportOrchestrator(
       )
     } yield newReport
 
-  private def sendMailsAfterProAcknowledgment(report: Report, reportResponse: ReportResponse, user: User) = for {
+  private def sendMailsAfterProAcknowledgment(
+      report: Report,
+      reportResponse: ReportResponse,
+      user: User,
+      maybeCompany: Option[Company]
+  ) = for {
     _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse))
+    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany))
   } yield ()
 
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
@@ -582,6 +590,7 @@ class ReportOrchestrator(
           status = ReportStatus.fromResponseType(reportResponse.responseType)
         )
       )
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -594,7 +603,7 @@ class ReportOrchestrator(
           Json.toJson(reportResponse)
         )
       )
-      _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user)
+      _ <- sendMailsAfterProAcknowledgment(updatedReport, reportResponse, user, maybeCompany)
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),
@@ -654,6 +663,9 @@ class ReportOrchestrator(
       sanitizedSirenSirets <- companiesVisibilityOrchestrator.filterUnauthorizedSiretSirenList(
         filter.siretSirenList,
         connectedUser
+      )
+      _ = logger.trace(
+        s"Original sirenSirets : ${filter.siretSirenList} , SanitizedSirenSirets : $sanitizedSirenSirets"
       )
       paginatedReportFiles <-
         if (sanitizedSirenSirets.isEmpty && connectedUser.userRole == UserRole.Professionnel) {

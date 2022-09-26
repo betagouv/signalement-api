@@ -26,7 +26,7 @@ class CompanyDataTable(tag: Tag) extends DatabaseTable[CompanyData](tag, "etabli
   def libelleCedexEtablissement = column[Option[String]]("libellecedexetablissement")
   def denominationUsuelleEtablissement = column[Option[String]](DENOMINATION_USUELLE_ETABLISSEMENT)
   def enseigne1Etablissement = column[Option[String]]("enseigne1etablissement")
-  def activitePrincipaleEtablissement = column[String]("activiteprincipaleetablissement")
+  def activitePrincipaleEtablissement = column[Option[String]]("activiteprincipaleetablissement")
   def etatAdministratifEtablissement = column[Option[String]]("etatadministratifetablissement")
 
   def * = (
