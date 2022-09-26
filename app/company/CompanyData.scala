@@ -80,7 +80,7 @@ case class CompanySearchResult(
     activityLabel: Option[String],
     isMarketPlace: Boolean = false,
     isOpen: Boolean,
-    isPublic: Boolean
+    isPublic: Boolean = false
 )
 
 object CompanySearchResult {

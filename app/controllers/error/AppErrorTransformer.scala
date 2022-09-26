@@ -49,6 +49,10 @@ object AppErrorTransformer {
         logger.warn(formatMessage(request, maybeUserId, error))
         Results.BadRequest(Json.toJson(ErrorPayload(error)))
 
+      case error: MalformedApiBadRequestError =>
+        logger.error(formatMessage(request, maybeUserId, error))
+        Results.BadRequest(Json.toJson(ErrorPayload(error)))
+
       case error: ForbiddenError =>
         logger.warn(formatMessage(request, maybeUserId, error))
         Results.Forbidden(Json.toJson(ErrorPayload(error)))

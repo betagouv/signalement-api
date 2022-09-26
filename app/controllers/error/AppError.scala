@@ -18,6 +18,7 @@ sealed trait AppError extends Throwable with Product with Serializable with NoSt
 sealed trait UnauthorizedError extends AppError
 sealed trait NotFoundError extends AppError
 sealed trait BadRequestError extends AppError
+sealed trait MalformedApiBadRequestError extends AppError
 sealed trait ForbiddenError extends AppError
 sealed trait ConflictError extends AppError
 sealed trait InternalAppError extends AppError
@@ -59,7 +60,7 @@ object AppError {
       host: String,
       companyId: Option[UUID] = None,
       country: Option[String] = None
-  ) extends BadRequestError {
+  ) extends ConflictError {
     override val `type`: String = "SC-0006"
     override val title: String = s"Website ${host} already associated to a country or company"
     override val details: String =
@@ -80,7 +81,7 @@ object AppError {
       s"Email ${email.value} invalide pour ce type d'utilisateur"
   }
 
-  final case object UserAccountEmailAlreadyExist extends BadRequestError {
+  final case object UserAccountEmailAlreadyExist extends ConflictError {
     override val `type`: String = "SC-0009"
     override val title: String = "User already exist"
     override val details: String =
@@ -115,7 +116,7 @@ object AppError {
       s"Votre compte DGCCRF a besoin d'être revalidé, un email vous a été envoyé pour réactiver votre compte."
   }
 
-  final case object MalformedBody extends BadRequestError {
+  final case object MalformedBody extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0014"
     override val title: String = "Malformed request body"
     override val details: String = s"Le corps de la requête ne correspond pas à ce qui est attendu par l'API."
@@ -202,13 +203,13 @@ object AppError {
       s"L'email ${email.value} est bloquée car listée comme spam"
   }
 
-  final case object ReportCreationInvalidBody extends BadRequestError {
+  final case object ReportCreationInvalidBody extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0021"
     override val title: String = s"Report's body does not match specific constraints"
     override val details: String = s"Le signalement est invalide"
   }
 
-  final case class InvalidReportTagBody(name: String) extends BadRequestError {
+  final case class InvalidReportTagBody(name: String) extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0022"
     override val title: String = s"Unknown report tag $name"
     override val details: String = s"Le tag $name est invalide. Merci de fournir une valeur correcte."
@@ -221,14 +222,14 @@ object AppError {
       s"Le nombre d'entrée par page demandé est trop élevé. Il doit être inférieur ou égal à $maxSize"
   }
 
-  final case class DuplicateReportCreation(reportList: List[Report]) extends BadRequestError {
+  final case class DuplicateReportCreation(reportList: List[Report]) extends ConflictError {
     override val `type`: String = "SC-0025"
     override val title: String = s"Same report has already been created with id ${reportList.map(_.id).mkString(",")}"
     override val details: String =
       s"Il existe un ou plusieurs signalements similaire"
   }
 
-  final case object MalformedQueryParams extends BadRequestError {
+  final case object MalformedQueryParams extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0026"
     override val title: String = "Malformed request query params"
     override val details: String = s"Le paramètres de la requête ne correspondent pas à ce qui est attendu par l'API."
@@ -262,7 +263,7 @@ object AppError {
       s"Impossible de donner un avis sur la réponse donnée au signalement ${reportId.toString}"
   }
 
-  final case class MalformedId(id: String) extends BadRequestError {
+  final case class MalformedId(id: String) extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0031"
     override val title: String = "Malformed id"
     override val details: String =
@@ -283,7 +284,7 @@ object AppError {
       s"Signalement avec id ${reportId.toString} introuvable"
   }
 
-  final case class MalformedSIRET(InvalidSIRET: String) extends BadRequestError {
+  final case class MalformedSIRET(InvalidSIRET: String) extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0034"
     override val title: String = "Malformed SIRET"
     override val details: String =
@@ -341,7 +342,7 @@ object AppError {
       s"Impossible de signaler une administration publique"
   }
 
-  final case class MalformedValue(value: String, expectedValidType: String) extends BadRequestError {
+  final case class MalformedValue(value: String, expectedValidType: String) extends MalformedApiBadRequestError {
     override val `type`: String = "SC-0042"
     override val title: String = s"Malformed value, $value is not a valid value, expecting valid $expectedValidType"
     override val details: String =
