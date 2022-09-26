@@ -138,7 +138,7 @@ class CompanyOrchestrator(
       results <- Future.sequence(companiesByUrl.map { case (website, company) =>
         companyRepository
           .findBySiret(company.siret)
-          .filter(_.exists(_.isOpen))
+          .map(_.filter(_.isOpen))
           .map { companies =>
             companies.map(fromCompany(_, website))
           }
