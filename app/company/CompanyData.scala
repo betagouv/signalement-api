@@ -1,6 +1,9 @@
 package company
 
+import io.scalaland.chimney.dsl.TransformerOps
+import models.website.Website
 import models.Address
+import models.Company
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.SIREN
@@ -82,6 +85,15 @@ case class CompanySearchResult(
 
 object CompanySearchResult {
   implicit val format: OFormat[CompanySearchResult] = Json.format[CompanySearchResult]
+
+  def fromCompany(company: Company, website: Website) =
+    company
+      .into[CompanySearchResult]
+      .withFieldConst(_.isMarketPlace, website.isMarketplace)
+      .withFieldConst(_.activityLabel, None)
+      .withFieldConst(_.brand, None)
+      .withFieldConst(_.address, company.address.toFilteredAddress(company.isPublic))
+      .transform
 }
 
 object TypeVoies {

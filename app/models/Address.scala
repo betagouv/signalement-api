@@ -13,6 +13,16 @@ case class Address(
     country: Option[Country] = None
 ) {
 
+  def toFilteredAddress(isPublic: Boolean): Address =
+    this.copy(
+      number = this.number
+        .filter(_ => isPublic),
+      street = this.street
+        .filter(_ => isPublic),
+      addressSupplement = this.addressSupplement
+        .filter(_ => isPublic)
+    )
+
   def isDefined: Boolean = List(
     number,
     street,

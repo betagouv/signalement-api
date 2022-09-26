@@ -1,6 +1,7 @@
 package orchestrators
 
 import company.CompanySearchResult
+import company.CompanySearchResult.fromCompany
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
@@ -139,14 +140,7 @@ class CompanyOrchestrator(
           .findBySiret(company.siret)
           .filter(_.exists(_.isOpen))
           .map { companies =>
-            companies.map { company =>
-              company
-                .into[CompanySearchResult]
-                .withFieldConst(_.isMarketPlace, website.isMarketplace)
-                .withFieldConst(_.activityLabel, None)
-                .withFieldConst(_.brand, None)
-                .transform
-            }
+            companies.map(fromCompany(_, website))
           }
       })
     } yield results.flatten
