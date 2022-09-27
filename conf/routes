@@ -108,6 +108,7 @@ POST          /api/account/admin/invitation                     controllers.Acco
 POST          /api/account/dgccrf/invitation                    controllers.AccountController.sendDGCCRFInvitation()
 GET           /api/account/dgccrf/pending                       controllers.AccountController.fetchPendingDGCCRF()
 GET           /api/account/admin-or-dgccrf/users                controllers.AccountController.fetchAdminOrDgccrfUsers()
+GET           /api/account/all/deleted-users                    controllers.AccountController.fetchAllSoftDeletedUsers()
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 POST          /api/account/validate-email/:email                controllers.AccountController.forceValidateEmail(email : String)
 PUT           /api/account/:id                                  controllers.AccountController.edit(id: java.util.UUID)

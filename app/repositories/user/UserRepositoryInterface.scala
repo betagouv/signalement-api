@@ -12,7 +12,9 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]]
 
-  def listIncludingDeleted(roles: Seq[UserRole]): Future[Seq[User]]
+  def listForRoles(roles: Seq[UserRole]): Future[Seq[User]]
+
+  def listDeleted(): Future[Seq[User]]
 
   def create(user: User): Future[User]
 

@@ -42,14 +42,20 @@ class UserRepository(
           .result
       )
 
-  override def listIncludingDeleted(roles: Seq[UserRole]): Future[Seq[User]] =
+  override def listForRoles(roles: Seq[UserRole]): Future[Seq[User]] =
     db
       .run(
-        UserTable.fullTableIncludingDeleted
+        table
           .filter(
             _.role.inSetBind(roles.map(_.entryName))
           )
           .result
+      )
+
+  override def listDeleted(): Future[Seq[User]] =
+    db
+      .run(
+        UserTable.fullTableIncludingDeleted.filter(_.deletionDate.nonEmpty).result
       )
 
   override def create(user: User): Future[User] =

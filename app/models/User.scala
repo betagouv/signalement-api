@@ -31,7 +31,6 @@ case class User(
 ) extends Identity {
   def fullName: String = s"${firstName} ${lastName}"
   def isAdmin: Boolean = this.userRole == UserRole.Admin
-  def isDeleted: Boolean = this.deletionDate.nonEmpty
 }
 
 object User {
@@ -44,7 +43,7 @@ object User {
       "role" -> user.userRole.entryName,
       "permissions" -> user.userRole.permissions,
       "lastEmailValidation" -> user.lastEmailValidation,
-      "isDeleted" -> user.isDeleted
+      "deletionDate" -> user.deletionDate
     )
   }
 
@@ -52,7 +51,7 @@ object User {
 
 object UserPermission extends Enumeration {
   val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
-      editDocuments, subscribeReports, manageAdminOrDgccrfUsers, softDeleteUsers = Value
+      editDocuments, subscribeReports, manageAdminOrDgccrfUsers, softDeleteUsers, viewDeletedUsers = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 

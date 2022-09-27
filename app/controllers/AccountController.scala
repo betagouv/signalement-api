@@ -79,7 +79,15 @@ class AccountController(
 
   def fetchAdminOrDgccrfUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
     for {
-      users <- userRepository.listIncludingDeleted(Seq(UserRole.DGCCRF, UserRole.Admin))
+      users <- userRepository.listForRoles(Seq(UserRole.DGCCRF, UserRole.Admin))
+    } yield Ok(Json.toJson(users))
+  }
+
+  // This data is not displayed anywhere
+  // The endpoint might be useful to debug without accessing the prod DB
+  def fetchAllSoftDeletedUsers = SecuredAction(WithPermission(UserPermission.viewDeletedUsers)).async { _ =>
+    for {
+      users <- userRepository.listDeleted()
     } yield Ok(Json.toJson(users))
   }
 
