@@ -70,7 +70,7 @@ class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: Exe
       .findByEmail(emailAddress.value)
 
   override def softDelete(userId: UUID): Future[Unit] =
-    // TODO store event, send email maybe ? etc.
+    // TODO store event, log something ? etc.
     userRepository.softDelete(userId).map(_ => ())
 
 }

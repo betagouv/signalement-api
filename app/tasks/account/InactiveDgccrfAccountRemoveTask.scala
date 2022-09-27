@@ -25,11 +25,9 @@ class InactiveDgccrfAccountRemoveTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  // TODO MANU revoir ces suppressions, faire le soft delete ? faut-il aussi continuer à supprimer les events/files/etc. comme c'est fait ici ?
-
   def removeInactiveAccounts(expirationDateThreshold: OffsetDateTime): Future[TaskExecutionResults] = {
 
-    logger.info(s"Removing inactive DGCCRF accounts with last validation below $expirationDateThreshold")
+    logger.info(s"Soft delete inactive DGCCRF accounts with last validation below $expirationDateThreshold")
     for {
       inactiveDGCCRFAccounts <- userRepository.listExpiredDGCCRF(expirationDateThreshold)
       results <- inactiveDGCCRFAccounts.map(removeWithSubscriptions).sequence
@@ -37,18 +35,17 @@ class InactiveDgccrfAccountRemoveTask(
   }
 
   private def removeWithSubscriptions(user: User): Future[TaskExecutionResult] = {
-
+    // We delete some non-important stuff (subscriptions/files)
+    // We keep the events, it seems too much important for debugging, stats, etc.
     val executionOrError = for {
       subscriptionToDelete <- subscriptionRepository.list(user.id)
-      _ = logger.debug(s"Removing subscription with ids ${subscriptionToDelete.map(_.id)}")
+      _ = logger.debug(s"Deleting subscription with ids ${subscriptionToDelete.map(_.id)}")
       _ <- subscriptionToDelete.map(subscription => subscriptionRepository.delete(subscription.id)).sequence
-      _ = logger.debug(s"Removing events")
-      _ <- eventRepository.deleteByUserId(user.id)
-      _ = logger.debug(s"Removing files")
+      _ = logger.debug(s"Deleting files of user ${user.id}")
       _ <- asyncFileRepository.deleteByUserId(user.id)
-      _ = logger.debug(s"Removing user")
-      _ <- userRepository.delete(user.id)
-      _ = logger.debug(s"Inactive DGCCRF account user ${user.id} successfully removed")
+      _ = logger.debug(s"Soft deleting user ${user.id}")
+      _ <- userRepository.softDelete(user.id)
+      _ = logger.debug(s"Inactive DGCCRF account user ${user.id} successfully deleted")
     } yield ()
 
     toValidated(executionOrError, user.id, TaskType.InactiveAccountClean)

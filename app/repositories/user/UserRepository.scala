@@ -32,7 +32,6 @@ class UserRepository(
 
   import dbConfig._
 
-  // TODO ici virer les deleted
   override def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
     db
       .run(
@@ -81,7 +80,7 @@ class UserRepository(
         .headOption
     )
 
-  // Override the CRUD method to avoid accidental delete
+  // Override the base method to avoid accidental delete
   override def delete(id: UUID): Future[Int] = softDelete(id)
 
   override def softDelete(id: UUID): Future[Int] = db.run(

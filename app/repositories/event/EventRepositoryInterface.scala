@@ -17,8 +17,6 @@ import scala.concurrent.Future
 
 trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
-  def deleteByUserId(userId: UUID): Future[Int]
-
   def deleteByReportId(uuidReport: UUID): Future[Int]
 
   def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]]
