@@ -4,7 +4,6 @@ import repositories.PostgresProfile.api._
 import slick.ast.BaseTypedType
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import slick.lifted.TableQuery
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -31,7 +30,7 @@ trait CRUDRepositoryInterface[E] extends TypedCRUDRepositoryInterface[E, UUID]
 abstract class TypedCRUDRepository[T <: TypedDatabaseTable[E, ID], E, ID](implicit tt: BaseTypedType[ID])
     extends TypedCRUDRepositoryInterface[E, ID] {
 
-  val table: TableQuery[T]
+  val table: Query[T, T#TableElementType, Seq]
   implicit val ec: ExecutionContext
   val dbConfig: DatabaseConfig[JdbcProfile]
 

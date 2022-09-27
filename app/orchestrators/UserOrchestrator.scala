@@ -27,6 +27,8 @@ trait UserOrchestratorInterface {
   def find(emailAddress: EmailAddress): Future[Option[User]]
 
   def edit(userId: UUID, update: UserUpdate): Future[Option[User]]
+
+  def softDelete(userId: UUID): Future[Unit]
 }
 
 class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: ExecutionContext)
@@ -53,17 +55,22 @@ class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: Exe
       lastEmailValidation = Some(OffsetDateTime.now)
     )
     for {
-      _ <- userRepository.findByLogin(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
+      _ <- userRepository.findByEmail(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
       _ <- userRepository.create(user)
     } yield user
   }
 
   override def findOrError(emailAddress: EmailAddress): Future[User] =
     userRepository
-      .findByLogin(emailAddress.value)
+      .findByEmail(emailAddress.value)
       .flatMap(_.liftTo[Future](UserNotFound(emailAddress.value)))
 
   override def find(emailAddress: EmailAddress): Future[Option[User]] =
     userRepository
-      .findByLogin(emailAddress.value)
+      .findByEmail(emailAddress.value)
+
+  override def softDelete(userId: UUID): Future[Unit] =
+    // TODO store event, send email maybe ? etc.
+    userRepository.softDelete(userId).map(_ => ())
+
 }

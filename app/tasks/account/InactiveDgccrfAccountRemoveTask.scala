@@ -25,6 +25,8 @@ class InactiveDgccrfAccountRemoveTask(
 
   val logger: Logger = Logger(this.getClass)
 
+  // TODO MANU revoir ces suppressions, faire le soft delete ? faut-il aussi continuer à supprimer les events/files/etc. comme c'est fait ici ?
+
   def removeInactiveAccounts(expirationDateThreshold: OffsetDateTime): Future[TaskExecutionResults] = {
 
     logger.info(s"Removing inactive DGCCRF accounts with last validation below $expirationDateThreshold")

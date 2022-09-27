@@ -111,6 +111,7 @@ GET           /api/account/admin-or-dgccrf/users                controllers.Acco
 POST          /api/account/validate-email                       controllers.AccountController.validateEmail()
 POST          /api/account/validate-email/:email                controllers.AccountController.forceValidateEmail(email : String)
 PUT           /api/account/:id                                  controllers.AccountController.edit(id: java.util.UUID)
+DELETE        /api/account/:id                                  controllers.AccountController.softDelete(id: java.util.UUID)
 
 # EmailValidation API
 POST          /api/email-validation/check                       controllers.EmailValidationController.check()

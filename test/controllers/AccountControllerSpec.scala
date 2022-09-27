@@ -200,7 +200,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(204)
 
-        val createdUser = Await.result(userRepository.findByLogin("user@dgccrf.gouv.fr"), Duration.Inf)
+        val createdUser = Await.result(userRepository.findByEmail("user@dgccrf.gouv.fr"), Duration.Inf)
         createdUser.get.userRole must beEqualTo(UserRole.DGCCRF)
       }
     }

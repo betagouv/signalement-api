@@ -79,20 +79,8 @@ class AccountController(
 
   def fetchAdminOrDgccrfUsers = SecuredAction(WithPermission(UserPermission.manageAdminOrDgccrfUsers)).async { _ =>
     for {
-      users <- userRepository.list(Seq(UserRole.DGCCRF, UserRole.Admin))
-    } yield Ok(
-      Json.toJson(
-        users.map(u =>
-          Json.obj(
-            "email" -> u.email,
-            "firstName" -> u.firstName,
-            "lastName" -> u.lastName,
-            "lastEmailValidation" -> u.lastEmailValidation,
-            "role" -> u.userRole
-          )
-        )
-      )
-    )
+      users <- userRepository.listIncludingDeleted(Seq(UserRole.DGCCRF, UserRole.Admin))
+    } yield Ok(Json.toJson(users))
   }
 
   def fetchTokenInfo(token: String) = UnsecuredAction.async { _ =>
@@ -126,4 +114,10 @@ class AccountController(
       case _                 => NotFound
     }
   }
+
+  def softDelete(id: UUID) =
+    SecuredAction(WithPermission(UserPermission.softDeleteUsers)).async { _ =>
+      userOrchestrator.softDelete(id).map(_ => NoContent)
+    }
+
 }

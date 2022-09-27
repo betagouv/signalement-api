@@ -9,7 +9,6 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import slick.lifted.TableQuery
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
@@ -27,11 +26,13 @@ class UserRepository(
 ) extends CRUDRepository[UserTable, User]
     with UserRepositoryInterface {
 
-  override val table: TableQuery[UserTable] = UserTable.table
+  override val table = UserTable.table
+
   val logger: Logger = Logger(this.getClass)
 
   import dbConfig._
 
+  // TODO ici virer les deleted
   override def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]] =
     db
       .run(
@@ -42,10 +43,10 @@ class UserRepository(
           .result
       )
 
-  override def list(roles: Seq[UserRole]): Future[Seq[User]] =
+  override def listIncludingDeleted(roles: Seq[UserRole]): Future[Seq[User]] =
     db
       .run(
-        table
+        UserTable.fullTableIncludingDeleted
           .filter(
             _.role.inSetBind(roles.map(_.entryName))
           )
@@ -72,14 +73,18 @@ class UserRepository(
     )
   }
 
-  override def delete(email: EmailAddress): Future[Int] = db
-    .run(table.filter(_.email === email).delete)
-
-  override def findByLogin(login: String): Future[Option[User]] =
+  override def findByEmail(email: String): Future[Option[User]] =
     db.run(
       table
-        .filter(_.email === EmailAddress(login))
+        .filter(_.email === EmailAddress(email))
         .result
         .headOption
     )
+
+  // Override the CRUD method to avoid accidental delete
+  override def delete(id: UUID): Future[Int] = softDelete(id)
+
+  override def softDelete(id: UUID): Future[Int] = db.run(
+    table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now()))
+  )
 }

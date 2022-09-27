@@ -17,16 +17,18 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
   def lastName = column[String]("lastname")
   def role = column[String]("role")
   def lastEmailValidation = column[Option[OffsetDateTime]]("last_email_validation")
+  def deletionDate = column[Option[OffsetDateTime]]("deletion_date")
 
-  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime])
+  type UserData = (UUID, String, EmailAddress, String, String, String, Option[OffsetDateTime], Option[OffsetDateTime])
 
-  def constructUser: UserData => User = { case (id, password, email, firstName, lastName, role, lastEmailValidation) =>
-    User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation)
+  def constructUser: UserData => User = {
+    case (id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate) =>
+      User(id, password, email, firstName, lastName, UserRole.withName(role), lastEmailValidation, deletionDate)
   }
 
   def extractUser: PartialFunction[User, UserData] = {
-    case User(id, password, email, firstName, lastName, role, lastEmailValidation) =>
-      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation)
+    case User(id, password, email, firstName, lastName, role, lastEmailValidation, deletionDate) =>
+      (id, password, email, firstName, lastName, role.entryName, lastEmailValidation, deletionDate)
   }
 
   def * = (
@@ -36,10 +38,14 @@ class UserTable(tag: Tag) extends DatabaseTable[User](tag, "users") {
     firstName,
     lastName,
     role,
-    lastEmailValidation
+    lastEmailValidation,
+    deletionDate
   ) <> (constructUser, extractUser.lift)
 }
 
 object UserTable {
-  val table = TableQuery[UserTable]
+  val fullTableIncludingDeleted = TableQuery[UserTable]
+  // 99% of the queries should exclude the deleted users
+  val table: Query[UserTable, UserTable#TableElementType, Seq] =
+    fullTableIncludingDeleted.filter(_.deletionDate.isEmpty)
 }

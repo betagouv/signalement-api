@@ -1,7 +1,6 @@
 package models
 
 import com.mohiva.play.silhouette.api.Identity
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.EmailAddress
 import utils.EnumUtils
@@ -27,10 +26,12 @@ case class User(
     firstName: String,
     lastName: String,
     userRole: UserRole,
-    lastEmailValidation: Option[OffsetDateTime]
+    lastEmailValidation: Option[OffsetDateTime],
+    deletionDate: Option[OffsetDateTime] = None
 ) extends Identity {
   def fullName: String = s"${firstName} ${lastName}"
   def isAdmin: Boolean = this.userRole == UserRole.Admin
+  def isDeleted: Boolean = this.deletionDate.nonEmpty
 }
 
 object User {
@@ -42,24 +43,16 @@ object User {
       "lastName" -> user.lastName,
       "role" -> user.userRole.entryName,
       "permissions" -> user.userRole.permissions,
-      "lastEmailValidation" -> user.lastEmailValidation
+      "lastEmailValidation" -> user.lastEmailValidation,
+      "isDeleted" -> user.isDeleted
     )
   }
 
-  implicit val userReads: Reads[User] = (
-    (JsPath \ "id").read[UUID] and
-      (JsPath \ "password").read[String] and
-      (JsPath \ "email").read[EmailAddress] and
-      (JsPath \ "firstName").read[String] and
-      (JsPath \ "lastName").read[String] and
-      ((JsPath \ "role").read[String]).map(UserRole.withName) and
-      (JsPath \ "lastEmailValidation").readNullable[OffsetDateTime]
-  )(User.apply _)
 }
 
 object UserPermission extends Enumeration {
   val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
-      editDocuments, subscribeReports, manageAdminOrDgccrfUsers = Value
+      editDocuments, subscribeReports, manageAdminOrDgccrfUsers, softDeleteUsers = Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
 

@@ -12,7 +12,7 @@ import scala.concurrent.Future
 class UserService(userRepository: UserRepositoryInterface)(implicit val executionContext: ExecutionContext)
     extends IdentityService[User] {
 
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByLogin(loginInfo.providerKey)
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByEmail(loginInfo.providerKey)
 
   def save(user: User): Future[User] = userRepository.update(user.id, user)
 }
