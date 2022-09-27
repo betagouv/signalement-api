@@ -116,8 +116,8 @@ class AccountController(
   }
 
   def softDelete(id: UUID) =
-    SecuredAction(WithPermission(UserPermission.softDeleteUsers)).async { _ =>
-      userOrchestrator.softDelete(id).map(_ => NoContent)
+    SecuredAction(WithPermission(UserPermission.softDeleteUsers)).async { request =>
+      userOrchestrator.softDelete(targetUserId = id, currentUserId = request.identity.id).map(_ => NoContent)
     }
 
 }
