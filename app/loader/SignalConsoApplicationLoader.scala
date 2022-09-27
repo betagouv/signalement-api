@@ -269,7 +269,7 @@ class SignalConsoComponents(
 
   // Orchestrator
 
-  val userOrchestrator = new UserOrchestrator(userRepository)
+  val userOrchestrator = new UserOrchestrator(userRepository, eventRepository)
 
   val proAccessTokenOrchestrator = new ProAccessTokenOrchestrator(
     userOrchestrator,
