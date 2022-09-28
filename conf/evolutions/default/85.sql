@@ -11,3 +11,7 @@ WHERE deletion_date IS NULL;
 ALTER TABLE users DROP CONSTRAINT email_unique;
 
 -- !Downs
+
+-- Recreate the original constraint
+-- This is needed for unit tests, they execute all the downs and ups several times
+ALTER TABLE users ADD CONSTRAINT email_unique UNIQUE(email);
