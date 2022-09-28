@@ -27,6 +27,7 @@ class UserRepository(
     with UserRepositoryInterface {
 
   override val table = UserTable.table
+  import UserTable.fullTableIncludingDeleted
 
   val logger: Logger = Logger(this.getClass)
 
@@ -55,17 +56,20 @@ class UserRepository(
   override def listDeleted(): Future[Seq[User]] =
     db
       .run(
-        UserTable.fullTableIncludingDeleted.filter(_.deletionDate.nonEmpty).result
+        fullTableIncludingDeleted.filter(_.deletionDate.nonEmpty).result
       )
 
-  override def create(user: User): Future[User] =
-    super
-      .create(user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
+  override def create(user: User): Future[User] = {
+    val finalUser = user.copy(password = passwordHasherRegistry.current.hash(user.password).password)
+    db.run(
+      fullTableIncludingDeleted returning fullTableIncludingDeleted += finalUser
+    ).map(_ => finalUser)
       .recoverWith {
         case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
           logger.warn("Cannot create user, provided email already exists")
           Future.failed(EmailAlreadyExist)
       }
+  }
 
   override def updatePassword(userId: UUID, password: String): Future[Int] = {
     val queryUser =
