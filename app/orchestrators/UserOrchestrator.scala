@@ -14,6 +14,11 @@ import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import cats.syntax.option._
+import models.event.Event
+import models.event.Event.stringToDetailsJsValue
+import repositories.event.EventRepositoryInterface
+import utils.Constants.ActionEvent.USER_DELETION
+import utils.Constants.EventType.ADMIN
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -27,10 +32,13 @@ trait UserOrchestratorInterface {
   def find(emailAddress: EmailAddress): Future[Option[User]]
 
   def edit(userId: UUID, update: UserUpdate): Future[Option[User]]
+
+  def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit]
 }
 
-class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: ExecutionContext)
-    extends UserOrchestratorInterface {
+class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository: EventRepositoryInterface)(implicit
+    ec: ExecutionContext
+) extends UserOrchestratorInterface {
   val logger: Logger = Logger(this.getClass)
 
   override def edit(id: UUID, update: UserUpdate): Future[Option[User]] =
@@ -53,17 +61,38 @@ class UserOrchestrator(userRepository: UserRepositoryInterface)(implicit ec: Exe
       lastEmailValidation = Some(OffsetDateTime.now)
     )
     for {
-      _ <- userRepository.findByLogin(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
+      _ <- userRepository.findByEmail(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
       _ <- userRepository.create(user)
     } yield user
   }
 
   override def findOrError(emailAddress: EmailAddress): Future[User] =
     userRepository
-      .findByLogin(emailAddress.value)
+      .findByEmail(emailAddress.value)
       .flatMap(_.liftTo[Future](UserNotFound(emailAddress.value)))
 
   override def find(emailAddress: EmailAddress): Future[Option[User]] =
     userRepository
-      .findByLogin(emailAddress.value)
+      .findByEmail(emailAddress.value)
+
+  override def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit] =
+    for {
+      _ <- eventRepository.create(
+        Event(
+          id = UUID.randomUUID(),
+          reportId = None,
+          companyId = None,
+          userId = Some(targetUserId),
+          creationDate = OffsetDateTime.now(),
+          eventType = ADMIN,
+          action = USER_DELETION,
+          details = stringToDetailsJsValue(
+            s"Suppression manuelle d'un utilisateur par l'admin ${currentUserId}"
+          )
+        )
+      )
+      _ = logger.info(s"Soft deleting user ${targetUserId}")
+      _ <- userRepository.softDelete(targetUserId).map(_ => ())
+    } yield ()
+
 }

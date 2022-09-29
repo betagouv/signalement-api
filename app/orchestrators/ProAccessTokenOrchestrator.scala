@@ -120,7 +120,7 @@ class ProAccessTokenOrchestrator(
       level: AccessLevel,
       invitedBy: Option[User]
   ): Future[Unit] =
-    userRepository.findByLogin(email.value).flatMap {
+    userRepository.findByEmail(email.value).flatMap {
       case Some(user) =>
         logger.debug("User with email already exist, creating access")
         addInvitedUserAndNotify(user, company, level, invitedBy)

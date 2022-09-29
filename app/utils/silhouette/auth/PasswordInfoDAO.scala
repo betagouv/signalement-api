@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import controllers.error.AppError.UserNotFound
 import play.api.Logger
 import repositories.user.UserRepositoryInterface
-import utils.EmailAddress
 import utils.silhouette.Credentials._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,14 +21,16 @@ class PasswordInfoDAO(userRepository: UserRepositoryInterface)(implicit val clas
     update(loginInfo, authInfo)
 
   def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
-    userRepository.findByLogin(loginInfo.providerKey).map {
+    userRepository.findByEmail(loginInfo.providerKey).map {
       case Some(user) =>
         Some(toPasswordInfo(user.password))
       case _ => None
     }
 
   def remove(loginInfo: LoginInfo): Future[Unit] =
-    userRepository.delete(EmailAddress(loginInfo.providerKey)).map(_ => ()) // FIXME: Is it used ?
+    // We're not sure how/when this class is used by Silhouette
+    // But we certainly won't delete something in DB just because Silhouette says so
+    throw new Error("Unexpected call to PasswordInfoDAO.remove()")
 
   def save(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     find(loginInfo).flatMap {
@@ -38,7 +39,7 @@ class PasswordInfoDAO(userRepository: UserRepositoryInterface)(implicit val clas
     }
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    userRepository.findByLogin(loginInfo.providerKey).flatMap {
+    userRepository.findByEmail(loginInfo.providerKey).flatMap {
       case Some(user) =>
         userRepository.updatePassword(user.id, authInfo.password).map(_ => authInfo)
       case _ =>

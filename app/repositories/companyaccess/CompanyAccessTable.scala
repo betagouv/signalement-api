@@ -25,7 +25,7 @@ class CompanyAccessTable(tag: Tag) extends Table[UserAccess](tag, "company_acces
     onUpdate = ForeignKeyAction.Cascade,
     onDelete = ForeignKeyAction.Cascade
   )
-  def user = foreignKey("USER_FK", userId, UserTable.table)(
+  def user = foreignKey("USER_FK", userId, UserTable.fullTableIncludingDeleted)(
     _.id,
     onUpdate = ForeignKeyAction.Cascade,
     onDelete = ForeignKeyAction.Cascade

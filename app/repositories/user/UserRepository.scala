@@ -9,7 +9,6 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import slick.lifted.TableQuery
 import utils.EmailAddress
 
 import java.time.OffsetDateTime
@@ -27,7 +26,9 @@ class UserRepository(
 ) extends CRUDRepository[UserTable, User]
     with UserRepositoryInterface {
 
-  override val table: TableQuery[UserTable] = UserTable.table
+  override val table = UserTable.table
+  import UserTable.fullTableIncludingDeleted
+
   val logger: Logger = Logger(this.getClass)
 
   import dbConfig._
@@ -42,7 +43,7 @@ class UserRepository(
           .result
       )
 
-  override def list(roles: Seq[UserRole]): Future[Seq[User]] =
+  override def listForRoles(roles: Seq[UserRole]): Future[Seq[User]] =
     db
       .run(
         table
@@ -52,14 +53,23 @@ class UserRepository(
           .result
       )
 
-  override def create(user: User): Future[User] =
-    super
-      .create(user.copy(password = passwordHasherRegistry.current.hash(user.password).password))
+  override def listDeleted(): Future[Seq[User]] =
+    db
+      .run(
+        fullTableIncludingDeleted.filter(_.deletionDate.nonEmpty).result
+      )
+
+  override def create(user: User): Future[User] = {
+    val finalUser = user.copy(password = passwordHasherRegistry.current.hash(user.password).password)
+    db.run(
+      fullTableIncludingDeleted returning fullTableIncludingDeleted += finalUser
+    ).map(_ => finalUser)
       .recoverWith {
         case (e: org.postgresql.util.PSQLException) if e.getMessage.contains("email_unique") =>
           logger.warn("Cannot create user, provided email already exists")
           Future.failed(EmailAlreadyExist)
       }
+  }
 
   override def updatePassword(userId: UUID, password: String): Future[Int] = {
     val queryUser =
@@ -72,14 +82,18 @@ class UserRepository(
     )
   }
 
-  override def delete(email: EmailAddress): Future[Int] = db
-    .run(table.filter(_.email === email).delete)
-
-  override def findByLogin(login: String): Future[Option[User]] =
+  override def findByEmail(email: String): Future[Option[User]] =
     db.run(
       table
-        .filter(_.email === EmailAddress(login))
+        .filter(_.email === EmailAddress(email))
         .result
         .headOption
     )
+
+  // Override the base method to avoid accidental delete
+  override def delete(id: UUID): Future[Int] = softDelete(id)
+
+  override def softDelete(id: UUID): Future[Int] = db.run(
+    table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now()))
+  )
 }
