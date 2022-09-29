@@ -730,7 +730,6 @@ class ReportOrchestrator(
         city = company.flatMap(_.address.city),
         country = company.flatMap(_.address.country)
       )
-      _ = println(s"------------------ address = ${address} ------------------")
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)
