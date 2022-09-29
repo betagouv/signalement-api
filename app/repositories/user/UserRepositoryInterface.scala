@@ -3,7 +3,6 @@ package repositories.user
 import models.User
 import models.UserRole
 import repositories.CRUDRepositoryInterface
-import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -13,13 +12,15 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]]
 
-  def list(roles: Seq[UserRole]): Future[Seq[User]]
+  def listForRoles(roles: Seq[UserRole]): Future[Seq[User]]
+
+  def listDeleted(): Future[Seq[User]]
 
   def create(user: User): Future[User]
 
   def updatePassword(userId: UUID, password: String): Future[Int]
 
-  def delete(email: EmailAddress): Future[Int]
+  def findByEmail(email: String): Future[Option[User]]
 
-  def findByLogin(login: String): Future[Option[User]]
+  def softDelete(id: UUID): Future[Int]
 }

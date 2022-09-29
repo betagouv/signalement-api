@@ -39,13 +39,6 @@ class EventRepository(
 
   import dbConfig._
 
-  override def deleteByUserId(userId: UUID): Future[Int] = db
-    .run(
-      table
-        .filter(_.userId === userId)
-        .delete
-    )
-
   override def deleteByReportId(uuidReport: UUID): Future[Int] = db
     .run(
       table

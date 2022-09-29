@@ -17,7 +17,7 @@ class ReportBlockedNotificationTable(tag: Tag)
     _.id,
     onDelete = ForeignKeyAction.Cascade
   )
-  def user = foreignKey("fk_report_notification_blocklist_user", userId, UserTable.table)(
+  def user = foreignKey("fk_report_notification_blocklist_user", userId, UserTable.fullTableIncludingDeleted)(
     _.id,
     onDelete = ForeignKeyAction.Cascade
   )

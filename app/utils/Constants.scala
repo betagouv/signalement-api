@@ -104,6 +104,8 @@ object Constants {
     object PROFESSIONAL_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par l'entreprise")
     object CONTROL extends ActionEventValue("Contrôle effectué")
 
+    object USER_DELETION extends ActionEventValue("Suppression d'un utilisateur")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,
