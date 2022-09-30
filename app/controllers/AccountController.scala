@@ -34,6 +34,7 @@ class AccountController(
 
   implicit val contactAddress = emailConfiguration.contactAddress
 
+  // TODO should also be secure ?
   def fetchUser = SecuredAction.async { implicit request =>
     for {
       userOpt <- userRepository.get(request.identity.id)
@@ -113,10 +114,10 @@ class AccountController(
       accessesOrchestrator.resetLastEmailValidation(EmailAddress(email)).map(_ => NoContent)
     }
 
-  def edit(id: UUID) = SecuredAction.async(parse.json) { implicit request =>
+  def edit() = SecuredAction.async(parse.json) { implicit request =>
     for {
       userUpdate <- request.parseBody[UserUpdate]()
-      updatedUserOpt <- userOrchestrator.edit(id, userUpdate)
+      updatedUserOpt <- userOrchestrator.edit(request.identity.id, userUpdate)
     } yield updatedUserOpt match {
       case Some(updatedUser) => Ok(Json.toJson(updatedUser))
       case _                 => NotFound
