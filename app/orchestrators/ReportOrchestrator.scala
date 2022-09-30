@@ -321,12 +321,7 @@ class ReportOrchestrator(
           activityCode = draftReport.companyActivityCode,
           isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
           isOpen = draftReport.companyIsOpen.getOrElse(true),
-          isPublic = {
-            if (draftReport.companyIsPublic.isEmpty) {
-              logger.error(s"draftReport.companyIsPublic should not be empty, company details (siret:  $siret)")
-            }
-            draftReport.companyIsPublic.getOrElse(false)
-          }
+          isPublic = draftReport.companyIsPublic.getOrElse(true)
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
