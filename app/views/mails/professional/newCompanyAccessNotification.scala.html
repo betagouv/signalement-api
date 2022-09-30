@@ -2,7 +2,7 @@
 @import java.net.URI
 @(websiteUrl: URI, company: Company, invitedBy: Option[User])(implicit frontRoute: FrontRoute)
 
-@views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise @$company.name sur SignalConso") {
+@views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso") {
     <p>
         Bonjour,
     </p>
