@@ -28,6 +28,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers.contentAsJson
 import play.api.test._
 import play.mvc.Http.Status
+import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -38,6 +39,7 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
+import utils.CompanyRepositoryMock
 import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
@@ -106,7 +108,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
         neverRequestedReport.email,
         "L'entreprise a pris connaissance de votre signalement",
         views.html.mails.consumer
-          .reportTransmission(neverRequestedReport, None)
+          .reportTransmission(neverRequestedReport, Some(company))
           .toString,
         attachementService.attachmentSeqForWorkflowStepN(3)
       )}
@@ -256,10 +258,9 @@ trait GetReportContext extends AppSpec {
 
   val siretForNotConcernedPro = Fixtures.genSiret().sample.get
 
-  val company = Fixtures.genCompany.sample.get
-  val companyData = Fixtures.genCompanyData(Some(company))
+  val address = Fixtures.genAddress().sample.get
 
-  val address = Fixtures.genAddress()
+  val company = Fixtures.genCompany.sample.get.copy(address = address)
 
   private val valueGender: Option[Gender] = Fixtures.genGender.sample.get
   val neverRequestedReport = Report(
@@ -269,7 +270,7 @@ trait GetReportContext extends AppSpec {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = address.sample.get,
+    companyAddress = company.address,
     companySiret = Some(company.siret),
     companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
@@ -289,7 +290,7 @@ trait GetReportContext extends AppSpec {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = address.sample.get,
+    companyAddress = company.address,
     companySiret = Some(company.siret),
     companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
@@ -309,7 +310,7 @@ trait GetReportContext extends AppSpec {
     details = List(),
     companyId = Some(company.id),
     companyName = Some("companyName"),
-    companyAddress = address.sample.get,
+    companyAddress = company.address,
     companySiret = Some(company.siret),
     companyActivityCode = company.activityCode,
     websiteURL = WebsiteURL(None, None),
@@ -340,6 +341,10 @@ trait GetReportContext extends AppSpec {
   )
 
   val mockReportRepository = new ReportRepositoryMock()
+
+  val mockCompanyRepository = new CompanyRepositoryMock()
+
+  mockCompanyRepository.create(company)
   mockReportRepository.create(neverRequestedReport)
   mockReportRepository.create(neverRequestedFinalReport)
   mockReportRepository.create(alreadyRequestedReport)
@@ -383,6 +388,7 @@ trait GetReportContext extends AppSpec {
 
         override def authEnv: Environment[AuthEnv] = env
         override def reportRepository: ReportRepositoryInterface = mockReportRepository
+        override def companyRepository: CompanyRepositoryInterface = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
         override def mailer: MailerService = mockMailerService
         override def eventRepository: EventRepositoryInterface = mockEventRepository
