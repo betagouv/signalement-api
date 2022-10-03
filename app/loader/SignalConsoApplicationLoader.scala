@@ -173,7 +173,7 @@ class SignalConsoComponents(
   val asyncFileRepository: AsyncFileRepositoryInterface = new AsyncFileRepository(dbConfig)
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface = new AuthTokenRepository(dbConfig)
-  val companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
+  def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
   val companyDataRepository: CompanyDataRepositoryInterface = new CompanyDataRepository(dbConfigCompanyDb)
   val consumerRepository: ConsumerRepositoryInterface = new ConsumerRepository(dbConfig)
   val dataEconomieRepository: DataEconomieRepositoryInterface = new DataEconomieRepository(actorSystem)

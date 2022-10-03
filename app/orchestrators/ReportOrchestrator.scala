@@ -321,7 +321,12 @@ class ReportOrchestrator(
           activityCode = draftReport.companyActivityCode,
           isHeadOffice = draftReport.companyIsHeadOffice.getOrElse(false),
           isOpen = draftReport.companyIsOpen.getOrElse(true),
-          isPublic = draftReport.companyIsPublic.getOrElse(true)
+          isPublic = {
+            if (draftReport.companyIsPublic.isEmpty) {
+              logger.error(s"draftReport.companyIsPublic should not be empty, company details (siret:  $siret)")
+            }
+            draftReport.companyIsPublic.getOrElse(false)
+          }
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -721,6 +726,15 @@ class ReportOrchestrator(
   def getVisibleReportForUser(reportId: UUID, user: User): Future[Option[Report]] =
     for {
       report <- reportRepository.get(reportId)
+      company <- report.flatMap(_.companyId).map(r => companyRepository.get(r)).flatSequence
+      address = Address(
+        number = company.flatMap(_.address.number),
+        street = company.flatMap(_.address.street),
+        addressSupplement = company.flatMap(_.address.addressSupplement),
+        postalCode = company.flatMap(_.address.postalCode),
+        city = company.flatMap(_.address.city),
+        country = company.flatMap(_.address.country)
+      )
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
           Future(report)
@@ -732,7 +746,7 @@ class ReportOrchestrator(
               report.filter(r => visibleSirets.contains(r.companySiret))
             }
         }
-    } yield visibleReport
+    } yield visibleReport.map(_.copy(companyAddress = address))
 
   def getCloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] =
     for {
