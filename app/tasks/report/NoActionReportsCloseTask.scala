@@ -42,43 +42,36 @@ class NoActionReportsCloseTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
-  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
+  import taskConfiguration.report.mailReminderDelay
 
-  /** Close reports that have no response after MaxReminderCount sent
-    * @param readReportsWithAdmins
-    *   List of all read reports with eventual associated users
-    * @param startingPoint
-    *   starting point to compute range
-    * @return
-    *   Unread reports
-    */
-  def closeNoAction(
-      readReportsWithAdmins: List[(Report, List[User])],
+  // Close the reports that have been read by the pro but not replied to
+  // and for which we sent the reminder 2 times at least
+  // (This means that after reading the report, the pro gets 3 * 7 days to reply)
+  def closeNoActionAndRemindedEnough(
+      readNoActionReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
-      startingPoint: LocalDateTime
+      todayAtStartOfDay: LocalDateTime
   ): Future[List[TaskExecutionResult]] = Future
     .sequence(
-      extractTransmittedWithAccessReports(readReportsWithAdmins, reportEventsMap, startingPoint)
-        .map(reportWithAdmins => closeTransmittedReportByNoAction(reportWithAdmins._1))
+      readNoActionReportsWithAdmins
+        // Keep the reports with at least an admin
+        .filter { case (_, admin) => admin.exists(_.email.nonEmpty) }
+        // Keep the reports for which the email reminder "Signalement en attente de réponse" was sent exactly 2 times
+        // (looking only at emails sent at least 7 days ago)
+        .filter { case (report, _) =>
+          extractEventsWithReportIdAndAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION)
+            .count(
+              _.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(mailReminderDelay))
+            ) == MaxReminderCount
+        }
+        .map(_._1)
+        .map(closeTransmittedReportByNoAction)
     )
-
-  private def extractTransmittedWithAccessReports(
-      reportsWithAdmins: List[(Report, List[User])],
-      reportEventsMap: Map[UUID, List[Event]],
-      now: LocalDateTime
-  ): List[(Report, List[User])] =
-    reportsWithAdmins
-      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
-      .filter(reportWithAdmins =>
-        extractEventsWithReportIdAndAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_ACTION)
-          .count(_.creationDate.toLocalDateTime.isBefore(now.minus(mailReminderDelay))) == MaxReminderCount
-      )
 
   private def closeTransmittedReportByNoAction(report: Report) = {
     val taskExecution: Future[Unit] = for {
       _ <- reportRepository.update(report.id, report.copy(status = ReportStatus.ConsulteIgnore))
-      maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
+      maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

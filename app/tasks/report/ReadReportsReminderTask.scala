@@ -39,11 +39,11 @@ class ReadReportsReminderTask(
   val mailReminderDelay: Period = taskConfiguration.report.mailReminderDelay
 
   def sendReminder(
-      transmittedReportsWithAdmins: List[(Report, List[User])],
+      readNoActionReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
-      startingPoint: LocalDateTime
+      todayAtStartOfDay: LocalDateTime
   ): Future[List[TaskExecutionResult]] = Future.sequence(
-    extractTransmittedReportsToRemindByMail(transmittedReportsWithAdmins, reportEventsMap, startingPoint)
+    extractTransmittedReportsToRemindByMail(readNoActionReportsWithAdmins, reportEventsMap, todayAtStartOfDay)
       .map { case (report, users) =>
         remindTransmittedReportByMail(report, users.map(_.email), reportEventsMap)
       }
@@ -52,42 +52,39 @@ class ReadReportsReminderTask(
   private def extractTransmittedReportsToRemindByMail(
       readReportsWithAdmins: List[(Report, List[User])],
       reportIdEventsMap: Map[UUID, List[Event]],
-      startingDate: LocalDateTime
+      todayAtStartOfDay: LocalDateTime
   ): List[(Report, List[User])] = {
 
     val reportsWithNoRemindSent: List[(Report, List[User])] = readReportsWithAdmins
+      // Keep only reports for which this email reminder was never sent
       .filter { case (report, _) =>
-        // Filter reports with no "NO_ACTION" reminder events
         extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
       }
-      .filter { case (_, users) =>
-        // Filter reports with activated accounts
-        users.exists(_.email.nonEmpty)
-      }
+      // Keep only reports with an admin
+      .filter { case (_, admins) => admins.exists(_.email.nonEmpty) }
+      // Keep only reports that the pro read at least 7 days ago
       .filter { case (report, _) =>
-        // Filter reports read by pro before 7 days ago
         extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, REPORT_READING_BY_PRO).headOption
           .map(_.creationDate)
           .getOrElse(report.creationDate)
           .toLocalDateTime
-          .isBefore(startingDate.minusDays(7))
+          .isBefore(todayAtStartOfDay.minusDays(7))
       }
 
     val reportsWithUniqueRemindSent: List[(Report, List[User])] = readReportsWithAdmins
+      // Keep only reports for which this email reminder was sent exactly once
       .filter { case (report, _) =>
         extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length == 1
       }
-      .filter { case (_, users) =>
-        // Filter reports with activated accounts
-        users.exists(_.email.nonEmpty)
-      }
+      // Keep only reports with an admin
+      .filter { case (_, admins) => admins.exists(_.email.nonEmpty) }
+      // Keep only reports for which this reminder was sent at least 7 days ago
       .filter { case (report, _) =>
-        // Filter reports with one EMAIL_PRO_REMIND_NO_ACTION remind before 7 days ago
         extractEventsWithReportIdAndAction(
           reportIdEventsMap,
           report.id,
           EMAIL_PRO_REMIND_NO_ACTION
-        ).head.creationDate.toLocalDateTime.isBefore(startingDate.minusDays(7))
+        ).head.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minusDays(7))
       }
 
     reportsWithNoRemindSent ::: reportsWithUniqueRemindSent

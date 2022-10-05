@@ -60,10 +60,10 @@ class ReportTask(
     val executedTasksOrError = for {
 
       unreadReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
-      readReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
+      readNoActionReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
 
       reportEventsMap <- eventRepository.fetchEventsOfReports(
-        (unreadReportsWithAdmins ++ readReportsWithAdmins).map(_._1)
+        (unreadReportsWithAdmins ++ readNoActionReportsWithAdmins).map(_._1)
       )
       _ = logger.info("Processing unread events")
       closedUnreadNoAdmin <- unreadReportsCloseTask.closeUnreadWithNoAdmin(
@@ -84,12 +84,12 @@ class ReportTask(
       )
 
       transmittedReportsMailReminders <- readReportsReminderTask.sendReminder(
-        readReportsWithAdmins,
+        readNoActionReportsWithAdmins,
         reportEventsMap,
         todayAtStartOfDay
       )
-      closedByNoAction <- noActionReportsCloseTask.closeNoAction(
-        readReportsWithAdmins,
+      closedByNoAction <- noActionReportsCloseTask.closeNoActionAndRemindedEnough(
+        readNoActionReportsWithAdmins,
         reportEventsMap,
         todayAtStartOfDay
       )
