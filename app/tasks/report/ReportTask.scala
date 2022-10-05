@@ -66,16 +66,18 @@ class ReportTask(
         (unreadReportsWithAdmins ++ readReportsWithAdmins).map(_._1)
       )
       _ = logger.info("Processing unread events")
-      closedUnreadNoAccessReports <-
-        unreadReportsCloseTask.closeUnreadWithNoAdmin(unreadReportsWithAdmins, todayAtStartOfDay)
+      closedUnreadNoAdmin <- unreadReportsCloseTask.closeUnreadWithNoAdmin(
+        unreadReportsWithAdmins,
+        todayAtStartOfDay
+      )
 
-      unreadReportsMailReminders <- unreadReportsReminderTask.sendReminder(
+      unreadReportsMailReminders <- unreadReportsReminderTask.sendUnreadReportReminderEmail(
         unreadReportsWithAdmins,
         reportEventsMap,
         todayAtStartOfDay
       )
 
-      closedUnreadWithAccessReports <- unreadReportsCloseTask.closeUnreadWithAdminAndRemindedSeveralTimes(
+      closedUnreadAndRemindedEnough <- unreadReportsCloseTask.closeUnreadAndRemindedEnough(
         unreadReportsWithAdmins,
         reportEventsMap,
         todayAtStartOfDay
@@ -92,8 +94,8 @@ class ReportTask(
         todayAtStartOfDay
       )
 
-      reminders = closedUnreadNoAccessReports.sequence combine
-        closedUnreadWithAccessReports.sequence combine
+      reminders = closedUnreadNoAdmin.sequence combine
+        closedUnreadAndRemindedEnough.sequence combine
         unreadReportsMailReminders.sequence combine
         transmittedReportsMailReminders.sequence combine
         closedByNoAction.sequence
@@ -157,7 +159,7 @@ object ReportTask {
   ): OffsetDateTime =
     OffsetDateTime.now.plus(
       mailReminderDelay.multipliedBy(
-        MaxReminderCount - extractEventsWithAction(reportEventsMap, reportId, action).length
+        MaxReminderCount - extractEventsWithReportIdAndAction(reportEventsMap, reportId, action).length
       )
     )
 
@@ -171,7 +173,7 @@ object ReportTask {
     * @return
     *   Filtered events
     */
-  def extractEventsWithAction(
+  def extractEventsWithReportIdAndAction(
       reportEventsMap: Map[UUID, List[Event]],
       reportId: UUID,
       action: ActionEventValue

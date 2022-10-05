@@ -15,7 +15,7 @@ import services.Email.ConsumerReportClosedNoReading
 import services.MailService
 import tasks.model.TaskType
 import tasks.report.ReportTask.MaxReminderCount
-import tasks.report.ReportTask.extractEventsWithAction
+import tasks.report.ReportTask.extractEventsWithReportIdAndAction
 import tasks.TaskExecutionResult
 import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
@@ -42,8 +42,8 @@ class UnreadReportsCloseTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
-  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
+  import taskConfiguration.report.noAccessReadingDelay
+  import taskConfiguration.report.mailReminderDelay
 
   // Close reports created at least 60 days ago
   // and that do no have a Pro admin account
@@ -63,19 +63,19 @@ class UnreadReportsCloseTask(
       .map(closeUnreadReport)
   )
 
-  def closeUnreadWithAdminAndRemindedSeveralTimes(
-      reportsWithAdmins: List[(Report, List[User])],
+  def closeUnreadAndRemindedEnough(
+      unreadReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
       todayAtStartOfDay: LocalDateTime
   ): Future[List[TaskExecutionResult]] =
     Future.sequence(
-      reportsWithAdmins
+      unreadReportsWithAdmins
         // Keep the reports with at least an admin with an email
         .filter { case (_, admins) => admins.exists(_.email.nonEmpty) }
         // Keep the reports for which we sent exactly 2 emails de rappel "Signalement non consulté"
         // (looking only at the emails sent at least 7 days ago)
         .filter { case (report, _) =>
-          extractEventsWithAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_READING)
+          extractEventsWithReportIdAndAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_READING)
             .count(
               _.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(mailReminderDelay))
             ) == MaxReminderCount

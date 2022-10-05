@@ -8,7 +8,7 @@ import services.Email.ConsumerReportClosedNoAction
 import services.MailService
 import tasks.model.TaskType
 import tasks.report.ReportTask.MaxReminderCount
-import tasks.report.ReportTask.extractEventsWithAction
+import tasks.report.ReportTask.extractEventsWithReportIdAndAction
 import tasks.TaskExecutionResult
 import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
@@ -71,7 +71,7 @@ class NoActionReportsCloseTask(
     reportsWithAdmins
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
-        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_ACTION)
+        extractEventsWithReportIdAndAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_ACTION)
           .count(_.creationDate.toLocalDateTime.isBefore(now.minus(mailReminderDelay))) == MaxReminderCount
       )
 

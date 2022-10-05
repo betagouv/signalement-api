@@ -11,7 +11,7 @@ import services.Email.ProReportReadReminder
 import services.MailService
 import tasks.model.TaskType
 import tasks.report.ReportTask.MaxReminderCount
-import tasks.report.ReportTask.extractEventsWithAction
+import tasks.report.ReportTask.extractEventsWithReportIdAndAction
 import tasks.TaskExecutionResult
 import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
@@ -58,7 +58,7 @@ class ReadReportsReminderTask(
     val reportsWithNoRemindSent: List[(Report, List[User])] = readReportsWithAdmins
       .filter { case (report, _) =>
         // Filter reports with no "NO_ACTION" reminder events
-        extractEventsWithAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
+        extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
       }
       .filter { case (_, users) =>
         // Filter reports with activated accounts
@@ -66,7 +66,7 @@ class ReadReportsReminderTask(
       }
       .filter { case (report, _) =>
         // Filter reports read by pro before 7 days ago
-        extractEventsWithAction(reportIdEventsMap, report.id, REPORT_READING_BY_PRO).headOption
+        extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, REPORT_READING_BY_PRO).headOption
           .map(_.creationDate)
           .getOrElse(report.creationDate)
           .toLocalDateTime
@@ -75,7 +75,7 @@ class ReadReportsReminderTask(
 
     val reportsWithUniqueRemindSent: List[(Report, List[User])] = readReportsWithAdmins
       .filter { case (report, _) =>
-        extractEventsWithAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length == 1
+        extractEventsWithReportIdAndAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length == 1
       }
       .filter { case (_, users) =>
         // Filter reports with activated accounts
@@ -83,7 +83,7 @@ class ReadReportsReminderTask(
       }
       .filter { case (report, _) =>
         // Filter reports with one EMAIL_PRO_REMIND_NO_ACTION remind before 7 days ago
-        extractEventsWithAction(
+        extractEventsWithReportIdAndAction(
           reportIdEventsMap,
           report.id,
           EMAIL_PRO_REMIND_NO_ACTION
@@ -116,7 +116,11 @@ class ReadReportsReminderTask(
       // Delay given to a pro to reply depending on how much remind he had before ( maxMaxReminderCount )
       reportExpirationDate = OffsetDateTime.now.plus(
         mailReminderDelay.multipliedBy(
-          MaxReminderCount - extractEventsWithAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length
+          MaxReminderCount - extractEventsWithReportIdAndAction(
+            reportEventsMap,
+            report.id,
+            EMAIL_PRO_REMIND_NO_ACTION
+          ).length
         )
       )
       _ <-

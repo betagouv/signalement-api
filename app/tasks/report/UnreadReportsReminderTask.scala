@@ -10,7 +10,7 @@ import repositories.event.EventRepositoryInterface
 import services.Email.ProReportUnreadReminder
 import services.MailService
 import tasks.model.TaskType
-import tasks.report.ReportTask.extractEventsWithAction
+import tasks.report.ReportTask.extractEventsWithReportIdAndAction
 import tasks.TaskExecutionResult
 import tasks.toValidated
 import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
@@ -34,53 +34,62 @@ class UnreadReportsReminderTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
-  val mailReminderDelay = taskConfiguration.report.mailReminderDelay
+  import taskConfiguration.report.mailReminderDelay
 
-  def sendReminder(
-      onGoingReportsWithAdmins: List[(Report, List[User])],
+  def sendUnreadReportReminderEmail(
+      unreadReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
-      startingPoint: LocalDateTime
+      todayAtStartOfDay: LocalDateTime
   ): Future[List[TaskExecutionResult]] = Future.sequence(
-    extractUnreadReportsToRemindByMail(onGoingReportsWithAdmins, reportEventsMap, startingPoint)
+    filterReportsToRemindByMail(unreadReportsWithAdmins, reportEventsMap, todayAtStartOfDay)
       .map { case (report, users) =>
         remindUnreadReportByMail(report, users.map(_.email), reportEventsMap)
       }
   )
 
-  private def extractUnreadReportsToRemindByMail(
-      reportsWithAdmins: List[(Report, List[User])],
+  private def filterReportsToRemindByMail(
+      unreadReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
-      now: LocalDateTime
+      todayAtStartOfDay: LocalDateTime
   ): List[(Report, List[User])] = {
 
-    val reportWithNoRemind: List[(Report, List[User])] = reportsWithAdmins
-      .filter(reportWithAdmins =>
-        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_READING).isEmpty
-      )
-      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
-      .filter(reportWithAdmins =>
-        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_NEW_REPORT).headOption
+    val reportWithNoReminder: List[(Report, List[User])] = unreadReportsWithAdmins
+      // Keep only the reports for which we never sent this email reminder yet
+      .filter { case (report, _) =>
+        extractEventsWithReportIdAndAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_READING).isEmpty
+      }
+      // For which have an admin account
+      .filter { case (_, admin) => admin.exists(_.email.nonEmpty) }
+      // For which we sent the email "Nouveau signalement" at least 7 days ago
+      .filter { case (report, _) =>
+        extractEventsWithReportIdAndAction(reportEventsMap, report.id, EMAIL_PRO_NEW_REPORT).headOption
           .map(_.creationDate)
-          .getOrElse(reportWithAdmins._1.creationDate)
+          .getOrElse(report.creationDate)
           .toLocalDateTime
-          .isBefore(now.minusDays(7))
-      )
+          .isBefore(todayAtStartOfDay.minusDays(7))
+      }
 
-    val reportWithUniqueRemind: List[(Report, List[User])] = reportsWithAdmins
-      .filter(reportWithAdmins =>
-        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_READING).length == 1
-      )
-      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
-      .filter(reportWithAdmins =>
-        extractEventsWithAction(
+    val reportWithOneReminder: List[(Report, List[User])] = unreadReportsWithAdmins
+      // Keep only the reports for which we sent this email reminder exactly once
+      .filter { case (report, _) =>
+        extractEventsWithReportIdAndAction(
           reportEventsMap,
-          reportWithAdmins._1.id,
+          report.id,
           EMAIL_PRO_REMIND_NO_READING
-        ).head.creationDate.toLocalDateTime.isBefore(now.minusDays(7))
-      )
+        ).length == 1
+      }
+      // For which have an admin account
+      .filter { case (_, admin) => admin.exists(_.email.nonEmpty) }
+      // Keep only the reports for which this email reminder was sent at least 7 days ago
+      .filter { case (report, _) =>
+        extractEventsWithReportIdAndAction(
+          reportEventsMap,
+          report.id,
+          EMAIL_PRO_REMIND_NO_READING
+        ).head.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minusDays(7))
+      }
 
-    reportWithNoRemind ::: reportWithUniqueRemind
+    reportWithNoReminder ::: reportWithOneReminder
   }
 
   private def remindUnreadReportByMail(
