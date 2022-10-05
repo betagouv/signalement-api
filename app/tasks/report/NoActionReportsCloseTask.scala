@@ -71,7 +71,7 @@ class NoActionReportsCloseTask(
     reportsWithAdmins
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
-        extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION)
+        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_ACTION)
           .count(_.creationDate.toLocalDateTime.isBefore(now.minus(mailReminderDelay))) == MaxReminderCount
       )
 

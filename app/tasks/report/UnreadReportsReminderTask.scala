@@ -56,11 +56,11 @@ class UnreadReportsReminderTask(
 
     val reportWithNoRemind: List[(Report, List[User])] = reportsWithAdmins
       .filter(reportWithAdmins =>
-        extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING).isEmpty
+        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_READING).isEmpty
       )
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
-        extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_NEW_REPORT).headOption
+        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_NEW_REPORT).headOption
           .map(_.creationDate)
           .getOrElse(reportWithAdmins._1.creationDate)
           .toLocalDateTime
@@ -69,13 +69,13 @@ class UnreadReportsReminderTask(
 
     val reportWithUniqueRemind: List[(Report, List[User])] = reportsWithAdmins
       .filter(reportWithAdmins =>
-        extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING).length == 1
+        extractEventsWithAction(reportEventsMap, reportWithAdmins._1.id, EMAIL_PRO_REMIND_NO_READING).length == 1
       )
       .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
       .filter(reportWithAdmins =>
         extractEventsWithAction(
-          reportWithAdmins._1.id,
           reportEventsMap,
+          reportWithAdmins._1.id,
           EMAIL_PRO_REMIND_NO_READING
         ).head.creationDate.toLocalDateTime.isBefore(now.minusDays(7))
       )

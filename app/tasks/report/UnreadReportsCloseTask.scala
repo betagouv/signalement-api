@@ -45,67 +45,44 @@ class UnreadReportsCloseTask(
   val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
   val mailReminderDelay = taskConfiguration.report.mailReminderDelay
 
-  /** Close all unread report ( especially those with no pro access) within noAccessReadingDelay var
-    * @param onGoingReportsWithAdmins
-    *   List of all unread reports with eventual associated users
-    * @param startingPoint
-    *   starting point to compute range
-    * @return
-    *   Unread reports
-    */
-  def closeUnread(
-      onGoingReportsWithAdmins: List[(Report, List[User])],
-      startingPoint: LocalDateTime
+  // Close reports created at least 60 days ago
+  // and that do no have a Pro admin account
+  def closeUnreadWithNoAdmin(
+      unreadReportsWithAdmins: List[(Report, List[User])],
+      todayAtStartOfDay: LocalDateTime
   ): Future[List[TaskExecutionResult]] = Future.sequence(
-    extractAllUnreadReports(onGoingReportsWithAdmins, startingPoint)
-      .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
+    unreadReportsWithAdmins
+      // Remove the reports with at least an admin with an email
+      // not sure why we check the email is non empty, in DB there seems to always be an email
+      .filterNot { case (_, admins) => admins.exists(_.email.nonEmpty) }
+      // Keep only reports created 60 days ago or more
+      .filter { case (report, _) =>
+        report.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(noAccessReadingDelay))
+      }
+      .map(_._1)
+      .map(closeUnreadReport)
   )
 
-  def closeUnreadWithMaxReminderEventsSent(
-      onGoingReportsWithAdmins: List[(Report, List[User])],
-      reportEventsMap: Map[UUID, List[Event]],
-      startingPoint: LocalDateTime
-  ): Future[List[TaskExecutionResult]] =
-    Future.sequence(
-      extractUnreadWithAccessReports(onGoingReportsWithAdmins, reportEventsMap, startingPoint)
-        .map(reportWithAdmins => closeUnreadReport(reportWithAdmins._1))
-    )
-
-  /** Extracts all unread report ( especially those with no pro access) within noAccessReadingDelay var
-    * @param reportsWithAdmins
-    *   List of all unread reports with eventual associated users
-    * @param startingPoint
-    *   starting point to compute range
-    * @return
-    *   Unread reports
-    */
-  private def extractAllUnreadReports(reportsWithAdmins: List[(Report, List[User])], startingPoint: LocalDateTime) =
-    reportsWithAdmins
-      .filterNot(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
-      .filter(reportWithAdmins =>
-        reportWithAdmins._1.creationDate.toLocalDateTime.isBefore(startingPoint.minus(noAccessReadingDelay))
-      )
-
-  /** Extracts unread report that have MaxReminderCount reminder sent to associated pro user
-    * @param reportsWithAdmins
-    *   List of all unread reports with eventual associated users
-    * @param reportEventsMap
-    *   List of all reports events associated to reportsWithAdmins
-    * @param now
-    *   starting point to compute range
-    * @return
-    */
-  private def extractUnreadWithAccessReports(
+  def closeUnreadWithAdminAndRemindedSeveralTimes(
       reportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
-      now: LocalDateTime
-  ): List[(Report, List[User])] =
-    reportsWithAdmins
-      .filter(reportWithAdmins => reportWithAdmins._2.exists(_.email.nonEmpty))
-      .filter(reportWithAdmins =>
-        extractEventsWithAction(reportWithAdmins._1.id, reportEventsMap, EMAIL_PRO_REMIND_NO_READING)
-          .count(_.creationDate.toLocalDateTime.isBefore(now.minus(mailReminderDelay))) == MaxReminderCount
-      )
+      todayAtStartOfDay: LocalDateTime
+  ): Future[List[TaskExecutionResult]] =
+    Future.sequence(
+      reportsWithAdmins
+        // Keep the reports with at least an admin with an email
+        .filter { case (_, admins) => admins.exists(_.email.nonEmpty) }
+        // Keep the reports for which we sent exactly 2 emails de rappel "Signalement non consulté"
+        // (looking only at the emails sent at least 7 days ago)
+        .filter { case (report, _) =>
+          extractEventsWithAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_READING)
+            .count(
+              _.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(mailReminderDelay))
+            ) == MaxReminderCount
+        }
+        .map(_._1)
+        .map(closeUnreadReport)
+    )
 
   private def closeUnreadReport(report: Report) = {
     val taskExecution: Future[Unit] = for {

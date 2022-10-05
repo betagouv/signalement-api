@@ -27,7 +27,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
 
   def getReportResponseReviews(companyId: Option[UUID]): Future[Seq[Event]]
 
-  def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]]
+  def fetchEventsOfReports(reports: List[Report]): Future[Map[UUID, List[Event]]]
 
   def fetchEvents(companyIds: List[UUID]): Future[Map[UUID, List[Event]]]
 

@@ -323,7 +323,7 @@ class ReportsExtractActor(
         )
         .map(_.entities.map(_.report))
       reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
-      reportEventsMap <- eventRepository.prefetchReportsEvents(paginatedReports)
+      reportEventsMap <- eventRepository.fetchEventsOfReports(paginatedReports)
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)

@@ -395,7 +395,7 @@ class AdminController(
         results =>
           for {
             reports <- reportRepository.getReportsByIds(results.reportIds)
-            eventsMap <- eventRepository.prefetchReportsEvents(reports)
+            eventsMap <- eventRepository.fetchEventsOfReports(reports)
             filteredEvents = reports.flatMap { report =>
               eventsMap
                 .get(report.id)

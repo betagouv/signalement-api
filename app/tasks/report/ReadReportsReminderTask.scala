@@ -58,7 +58,7 @@ class ReadReportsReminderTask(
     val reportsWithNoRemindSent: List[(Report, List[User])] = readReportsWithAdmins
       .filter { case (report, _) =>
         // Filter reports with no "NO_ACTION" reminder events
-        extractEventsWithAction(report.id, reportIdEventsMap, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
+        extractEventsWithAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).isEmpty
       }
       .filter { case (_, users) =>
         // Filter reports with activated accounts
@@ -66,7 +66,7 @@ class ReadReportsReminderTask(
       }
       .filter { case (report, _) =>
         // Filter reports read by pro before 7 days ago
-        extractEventsWithAction(report.id, reportIdEventsMap, REPORT_READING_BY_PRO).headOption
+        extractEventsWithAction(reportIdEventsMap, report.id, REPORT_READING_BY_PRO).headOption
           .map(_.creationDate)
           .getOrElse(report.creationDate)
           .toLocalDateTime
@@ -75,7 +75,7 @@ class ReadReportsReminderTask(
 
     val reportsWithUniqueRemindSent: List[(Report, List[User])] = readReportsWithAdmins
       .filter { case (report, _) =>
-        extractEventsWithAction(report.id, reportIdEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length == 1
+        extractEventsWithAction(reportIdEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length == 1
       }
       .filter { case (_, users) =>
         // Filter reports with activated accounts
@@ -84,8 +84,8 @@ class ReadReportsReminderTask(
       .filter { case (report, _) =>
         // Filter reports with one EMAIL_PRO_REMIND_NO_ACTION remind before 7 days ago
         extractEventsWithAction(
-          report.id,
           reportIdEventsMap,
+          report.id,
           EMAIL_PRO_REMIND_NO_ACTION
         ).head.creationDate.toLocalDateTime.isBefore(startingDate.minusDays(7))
       }
@@ -116,7 +116,7 @@ class ReadReportsReminderTask(
       // Delay given to a pro to reply depending on how much remind he had before ( maxMaxReminderCount )
       reportExpirationDate = OffsetDateTime.now.plus(
         mailReminderDelay.multipliedBy(
-          MaxReminderCount - extractEventsWithAction(report.id, reportEventsMap, EMAIL_PRO_REMIND_NO_ACTION).length
+          MaxReminderCount - extractEventsWithAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_ACTION).length
         )
       )
       _ <-

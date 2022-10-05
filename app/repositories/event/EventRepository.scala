@@ -100,7 +100,7 @@ class EventRepository(
         .result
     )
 
-  override def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
+  override def fetchEventsOfReports(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(
       table

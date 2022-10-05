@@ -52,41 +52,45 @@ class ReportTask(
     ()
   }
 
-  def runTask(now: LocalDateTime) = {
+  def runTask(todayAtStartOfDay: LocalDateTime) = {
 
     logger.info("Traitement de relance automatique")
-    logger.info(s"taskDate - ${now}")
+    logger.info(s"taskDate - ${todayAtStartOfDay}")
 
     val executedTasksOrError = for {
 
       unreadReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.TraitementEnCours)
       readReportsWithAdmins <- getReportsWithAdminsByStatus(ReportStatus.Transmis)
 
-      reportEventsMap <- eventRepository.prefetchReportsEvents(
-        (unreadReportsWithAdmins ::: readReportsWithAdmins).map(_._1)
+      reportEventsMap <- eventRepository.fetchEventsOfReports(
+        (unreadReportsWithAdmins ++ readReportsWithAdmins).map(_._1)
       )
       _ = logger.info("Processing unread events")
       closedUnreadNoAccessReports <-
-        unreadReportsCloseTask.closeUnread(unreadReportsWithAdmins, now)
+        unreadReportsCloseTask.closeUnreadWithNoAdmin(unreadReportsWithAdmins, todayAtStartOfDay)
 
       unreadReportsMailReminders <- unreadReportsReminderTask.sendReminder(
         unreadReportsWithAdmins,
         reportEventsMap,
-        now
+        todayAtStartOfDay
       )
 
-      closedUnreadWithAccessReports <- unreadReportsCloseTask.closeUnreadWithMaxReminderEventsSent(
+      closedUnreadWithAccessReports <- unreadReportsCloseTask.closeUnreadWithAdminAndRemindedSeveralTimes(
         unreadReportsWithAdmins,
         reportEventsMap,
-        now
+        todayAtStartOfDay
       )
 
       transmittedReportsMailReminders <- readReportsReminderTask.sendReminder(
         readReportsWithAdmins,
         reportEventsMap,
-        now
+        todayAtStartOfDay
       )
-      closedByNoAction <- noActionReportsCloseTask.closeNoAction(readReportsWithAdmins, reportEventsMap, now)
+      closedByNoAction <- noActionReportsCloseTask.closeNoAction(
+        readReportsWithAdmins,
+        reportEventsMap,
+        todayAtStartOfDay
+      )
 
       reminders = closedUnreadNoAccessReports.sequence combine
         closedUnreadWithAccessReports.sequence combine
@@ -106,7 +110,7 @@ class ReportTask(
 
     executedTasksOrError.recoverWith { case err =>
       logger.error(
-        s"Unexpected failure, cannot run report task ( task date : $now, initialDelay : $initialDelay )",
+        s"Unexpected failure, cannot run report task ( task date : $todayAtStartOfDay, initialDelay : $initialDelay )",
         err
       )
       Future.failed(err)
@@ -153,23 +157,23 @@ object ReportTask {
   ): OffsetDateTime =
     OffsetDateTime.now.plus(
       mailReminderDelay.multipliedBy(
-        MaxReminderCount - extractEventsWithAction(reportId, reportEventsMap, action).length
+        MaxReminderCount - extractEventsWithAction(reportEventsMap, reportId, action).length
       )
     )
 
   /** Extracts event from reportEventsMap depending on provided action & report ID
-    * @param reportId
-    *   Report ID
     * @param reportEventsMap
     *   List of report events linked to provided report ID
+    * @param reportId
+    *   Report ID
     * @param action
     *   Event action
     * @return
     *   Filtered events
     */
   def extractEventsWithAction(
-      reportId: UUID,
       reportEventsMap: Map[UUID, List[Event]],
+      reportId: UUID,
       action: ActionEventValue
   ): List[Event] =
     reportEventsMap.getOrElse(reportId, List.empty).filter(_.action == action)
