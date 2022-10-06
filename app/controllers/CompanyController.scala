@@ -171,20 +171,23 @@ class CompanyController(
     val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
     val reportExpirationLocalDate = report.map(_.creationDate.plus(noAccessReadingDelay).toLocalDate)
 
-    if (lastContactLocalDate.isDefined)
-      views.html.pdfs.accountActivationReminder(
-        company,
-        lastContactLocalDate,
-        reportExpirationLocalDate,
-        activationKey
-      )(frontRoute = frontRoute, contactAddress = contactAddress)
-    else
-      views.html.pdfs.accountActivation(
-        company,
-        reportCreationLocalDate,
-        reportExpirationLocalDate,
-        activationKey
-      )(frontRoute = frontRoute, contactAddress = contactAddress)
+    lastContactLocalDate
+      .map { lastContact =>
+        views.html.pdfs.accountActivationReminder(
+          company,
+          lastContact,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
+      .getOrElse {
+        views.html.pdfs.accountActivation(
+          company,
+          reportCreationLocalDate,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
   }
 
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {

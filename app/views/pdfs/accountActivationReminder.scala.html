@@ -3,7 +3,7 @@
 
 @(
     company: Company,
-    lastContactDate: Option[java.time.LocalDate],
+    lastContactDate: java.time.LocalDate,
     reportExpirationDate: Option[java.time.LocalDate],
     code: String
 )(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
@@ -66,13 +66,8 @@
                 </p>
 
                 <p>
-                    <strong>
-                        @lastContactDate.map{ date =>
-                            Nous vous avons adressé un courrier le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                        }.getOrElse {
-                            Nous vous avons adressé un courrier
-                        }
-                    </strong> vous indiquant que nous avions reçu un signalement sur votre entreprise
+                    <strong>Nous vous avons adressé un courrier le @lastContactDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+                    vous indiquant que nous avions reçu un signalement sur votre entreprise
                 </p>
 
                 <p class="text-center text-bold">
