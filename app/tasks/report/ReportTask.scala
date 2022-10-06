@@ -156,12 +156,13 @@ object ReportTask {
       reportId: UUID,
       reportEventsMap: Map[UUID, List[Event]],
       action: ActionEventValue
-  ): OffsetDateTime =
+  ): OffsetDateTime = {
+    val nbRemindersLeft =
+      MaxReminderCount - extractEventsWithReportIdAndAction(reportEventsMap, reportId, action).length
     OffsetDateTime.now.plus(
-      mailReminderDelay.multipliedBy(
-        MaxReminderCount - extractEventsWithReportIdAndAction(reportEventsMap, reportId, action).length
-      )
+      mailReminderDelay.multipliedBy(nbRemindersLeft)
     )
+  }
 
   /** Extracts event from reportEventsMap depending on provided action & report ID
     * @param reportEventsMap

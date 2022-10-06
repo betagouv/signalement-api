@@ -63,6 +63,8 @@ class UnreadReportsCloseTask(
       .map(closeUnreadReport)
   )
 
+  // Close reports for which we sent the reminder "Signalement consulté" exactly twice
+  // (so when the report is created, if the Pro has an admin account, he has roughly 3 * 7 days to read it)
   def closeUnreadAndRemindedEnough(
       unreadReportsWithAdmins: List[(Report, List[User])],
       reportEventsMap: Map[UUID, List[Event]],
@@ -72,7 +74,7 @@ class UnreadReportsCloseTask(
       unreadReportsWithAdmins
         // Keep the reports with at least an admin with an email
         .filter { case (_, admins) => admins.exists(_.email.nonEmpty) }
-        // Keep the reports for which we sent exactly 2 emails de rappel "Signalement non consulté"
+        // Keep the reports for which we sent exactly 2 reminder emails "Signalement non consulté"
         // (looking only at the emails sent at least 7 days ago)
         .filter { case (report, _) =>
           extractEventsWithReportIdAndAction(reportEventsMap, report.id, EMAIL_PRO_REMIND_NO_READING)

@@ -111,14 +111,13 @@ class ReadReportsReminderTask(
           )
         )
       // Delay given to a pro to reply depending on how much remind he had before ( maxMaxReminderCount )
+      nbRemindersLeft = MaxReminderCount - extractEventsWithReportIdAndAction(
+        reportEventsMap,
+        report.id,
+        EMAIL_PRO_REMIND_NO_ACTION
+      ).length
       reportExpirationDate = OffsetDateTime.now.plus(
-        mailReminderDelay.multipliedBy(
-          MaxReminderCount - extractEventsWithReportIdAndAction(
-            reportEventsMap,
-            report.id,
-            EMAIL_PRO_REMIND_NO_ACTION
-          ).length
-        )
+        mailReminderDelay.multipliedBy(nbRemindersLeft)
       )
       _ <-
         emailService.send(
