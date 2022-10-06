@@ -9,7 +9,9 @@ import config.TaskConfiguration
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanyTable
+import tasks.computeStartingTime
 
+import java.time.LocalTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
@@ -34,8 +36,10 @@ class CompanyUpdateTask(
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = 10.minutes, interval = 1.hour) { () =>
-    logger.debug("Starting CompanyUpdateTask")
+  val initialDelay = computeStartingTime(LocalTime.of(2, 0))
+
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
+    logger.warn("Starting CompanyUpdateTask")
     if (taskConfiguration.active) {
       runTask()
     }
