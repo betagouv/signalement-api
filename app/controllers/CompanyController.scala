@@ -157,7 +157,7 @@ class CompanyController(
       events: List[Event],
       activationKey: String
   ) = {
-    val lastContact = events
+    val lastContactLocalDate = events
       .filter(e =>
         e.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay))
           && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action)
@@ -165,21 +165,29 @@ class CompanyController(
       .sortBy(_.creationDate)
       .reverse
       .headOption
+      .map(_.creationDate.toLocalDate)
+
     val report = reports.sortBy(_.creationDate).reverse.headOption
-    if (lastContact.isDefined)
-      views.html.pdfs.accountActivationReminder(
-        company,
-        lastContact.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
-        report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
-        activationKey
-      )(frontRoute = frontRoute, contactAddress = contactAddress)
-    else
-      views.html.pdfs.accountActivation(
-        company,
-        report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate,
-        report.map(_.creationDate).getOrElse(company.creationDate).toLocalDate.plus(noAccessReadingDelay),
-        activationKey
-      )(frontRoute = frontRoute, contactAddress = contactAddress)
+    val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
+    val reportExpirationLocalDate = report.map(_.creationDate.plus(noAccessReadingDelay).toLocalDate)
+
+    lastContactLocalDate
+      .map { lastContact =>
+        views.html.pdfs.accountActivationReminder(
+          company,
+          lastContact,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
+      .getOrElse {
+        views.html.pdfs.accountActivation(
+          company,
+          reportCreationLocalDate,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
   }
 
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {

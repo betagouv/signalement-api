@@ -1,8 +1,12 @@
 @import utils.EmailAddress
 @import utils.FrontRoute
 
-@(company: Company, creationDate: java.time.LocalDate, expirationDate: java.time.LocalDate, code: String)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
-
+@(
+    company: Company,
+    lastContactDate: java.time.LocalDate,
+    reportExpirationDate: Option[java.time.LocalDate],
+    code: String
+)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -43,7 +47,11 @@
             <div class="content mt-3">
 
                 <p>
-                    Objet : réception d’un signalement à propos de votre entreprise par le biais de SignalConso
+                    @reportExpirationDate.map{ date =>
+                        Objet : réception d’un signalement à propos de votre entreprise par le biais de SignalConso
+                    }.getOrElse {
+                        Objet : réception de signalements à propos de votre entreprise par le biais de SignalConso
+                    }
                 </p>
 
                 <p class="mt-3">
@@ -58,7 +66,7 @@
                 </p>
 
                 <p>
-                    <strong>Nous vous avons adressé un courrier le @creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
+                    <strong>Nous vous avons adressé un courrier le @lastContactDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</strong>
                     vous indiquant que nous avions reçu un signalement sur votre entreprise
                 </p>
 
@@ -71,8 +79,11 @@
                 </p>
 
                 <p>
-                    Vous avez jusqu’au @expirationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour activer votre espace professionnel
-                    et consulter le signalement.
+                    Vous avez @reportExpirationDate.map { date =>
+                        jusqu’au @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    }.getOrElse {
+                        un temps limité
+                    } pour activer votre espace professionnel et consulter le signalement.
                     Passé ce délai, vous pourrez toujours le lire mais vous ne pourrez plus y répondre.
                     Les enquêteurs de la <b>DGCCRF</b> et le consommateur seront informés que vous n’avez pas souhaité prendre connaissance du signalement.
                 </p>
