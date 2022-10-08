@@ -1,6 +1,6 @@
 package services
 
-import models.Company
+import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile

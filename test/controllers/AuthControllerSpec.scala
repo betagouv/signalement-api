@@ -16,6 +16,7 @@ import controllers.error.ErrorPayload.AuthenticationErrorPayload
 import loader.SignalConsoComponents
 import models._
 import models.auth.AuthToken
+import models.company.AccessLevel
 import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

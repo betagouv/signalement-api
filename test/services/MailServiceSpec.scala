@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
+import models.company.AccessLevel
 import models.report.Report
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

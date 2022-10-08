@@ -3,10 +3,10 @@ package models.report
 import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import com.github.tminglei.slickpg.composite.Struct
-import models.Address
-import models.Company
 import models.PaginatedResult
 import models.UserRole
+import models.company.Address
+import models.company.Company
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId

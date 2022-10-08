@@ -2,7 +2,7 @@ package tasks.company
 
 import company.CompanySearchResult
 import config.CompanyUpdateTaskConfiguration
-import models.Company
+import models.company.Company
 import play.api.Logger
 import sttp.capabilities
 import sttp.client3.HttpClientFutureBackend
@@ -13,11 +13,12 @@ import sttp.client3.playJson.asJson
 import sttp.client3.playJson.playJsonBodySerializer
 import sttp.model.Header
 
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 trait CompanySyncServiceInterface {
-  def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]]
+  def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
 }
 
 class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfiguration)(implicit
@@ -27,7 +28,10 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
-  override def syncCompanies(companies: Seq[Company]): Future[List[CompanySearchResult]] = {
+  override def syncCompanies(
+      companies: Seq[Company],
+      lastUpdated: OffsetDateTime
+  ): Future[List[CompanySearchResult]] = {
 
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))

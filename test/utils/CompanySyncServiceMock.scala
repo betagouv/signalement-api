@@ -1,7 +1,7 @@
 package utils
 
 import company.CompanySearchResult
-import models.Company
+import models.company.Company
 import tasks.company.CompanySyncServiceInterface
 
 import scala.concurrent.Future

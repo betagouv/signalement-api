@@ -1,6 +1,10 @@
 package repositories.companyaccess
 
 import models._
+import models.company.AccessLevel
+import models.company.Company
+import models.company.CompanyWithAccess
+import models.company.UserAccess
 import repositories.PostgresProfile.api._
 import repositories.company.CompanyTable
 import repositories.companyaccess.CompanyAccessColumnType._

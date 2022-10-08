@@ -1,8 +1,8 @@
 package models.access
 
 import io.scalaland.chimney.dsl.TransformerOps
-import models.AccessLevel
 import models.User
+import models.company.AccessLevel
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import utils.EmailAddress

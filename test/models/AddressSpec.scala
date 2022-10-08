@@ -1,5 +1,6 @@
 package models
 
+import models.company.Address
 import org.specs2.mutable.Specification
 
 class AddressSpec extends Specification {

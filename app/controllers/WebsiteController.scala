@@ -7,6 +7,7 @@ import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.company.CompanyCreation
 import models.investigation.DepartmentDivision
 import models.investigation.InvestigationStatus
 import models.investigation.Practice

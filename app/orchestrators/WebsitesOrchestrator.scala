@@ -7,10 +7,10 @@ import controllers.error.AppError.MalformedHost
 import controllers.error.AppError.WebsiteHostIsAlreadyIdentified
 import controllers.error.AppError.WebsiteNotFound
 import controllers.error.AppError.WebsiteNotIdentified
-import models.Company
-import models.CompanyCreation
 import models.PaginatedResult
 import models.User
+import models.company.Company
+import models.company.CompanyCreation
 import models.investigation.InvestigationStatus.NotProcessed
 import models.investigation.DepartmentDivision
 import models.investigation.DepartmentDivisionOptionValue

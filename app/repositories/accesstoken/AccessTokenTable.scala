@@ -1,6 +1,7 @@
 package repositories.accesstoken
 
 import models._
+import models.company.AccessLevel
 import models.token.TokenKind
 import repositories.DatabaseTable
 import repositories.companyaccess.CompanyAccessColumnType._

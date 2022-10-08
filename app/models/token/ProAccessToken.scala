@@ -1,7 +1,7 @@
 package models.token
 
-import models.AccessLevel
 import models.UserRole
+import models.company.AccessLevel
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.EmailAddress

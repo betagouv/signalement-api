@@ -3,6 +3,8 @@ package utils
 import company.CompanyData
 import models.event.Event._
 import models._
+import models.company.Address
+import models.company.Company
 import models.event.Event
 import models.report.Gender
 import models.report.Report

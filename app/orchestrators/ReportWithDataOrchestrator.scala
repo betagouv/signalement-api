@@ -1,8 +1,8 @@
 package orchestrators
 
 import cats.implicits.toTraverseOps
-import models.Company
 import models.User
+import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile

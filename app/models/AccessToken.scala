@@ -1,5 +1,6 @@
 package models
 
+import models.company.AccessLevel
 import models.token.TokenKind
 import play.api.libs.json._
 import utils.EmailAddress

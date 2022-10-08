@@ -5,6 +5,8 @@ import config.TokenConfiguration
 import controllers.error.AppError._
 import io.scalaland.chimney.dsl.TransformerOps
 import models._
+import models.company.AccessLevel
+import models.company.Company
 import models.event.Event
 import models.event.Event.stringToDetailsJsValue
 import models.token._
