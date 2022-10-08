@@ -113,7 +113,7 @@ class ReportOrchestrator(
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
     for {
       maybeCompanyUsers <- companiesVisibilityOrchestrator
-        .fetchAdminsWithHeadOffice(company.siret)
+        .fetchUsersWithHeadOffices(company.siret)
         .map(NonEmptyList.fromList)
 
       updatedReport <- maybeCompanyUsers match {

@@ -26,7 +26,8 @@ case class CompanyUpdateTaskConfiguration(
 case class ReportTaskConfiguration(
     startTime: LocalTime, // 04:00
     intervalInHours: FiniteDuration, // 24Hours
-    noAccessReadingDelay: Period, // 60days
-    mailReminderDelay: Period, // 7days
-    reportReminderByPostDelay: Period // 28days
+    reportReminderByPostDelay: Period, // 28days
+    noAccessClosureDelay: Period, // 60days
+    withAccessClosureDelay: Period, // 25days
+    mailReminderDelay: Period // 7days.
 )

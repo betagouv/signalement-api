@@ -115,7 +115,7 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         .map(_.toList)
     )
 
-  def findHeadOffice(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] =
+  def findHeadOffices(siren: List[SIREN], openOnly: Boolean): Future[List[Company]] =
     db.run(
       table
         .filter(x => SubstrSQLFunction(x.siret.asColumnOf[String], 0.bind, 10.bind) inSetBind siren.map(_.value))

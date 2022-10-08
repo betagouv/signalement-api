@@ -122,7 +122,7 @@ class ReportTask(
   private[this] def getReportsWithAdminsByStatus(status: ReportStatus): Future[List[(Report, List[User])]] =
     for {
       reports <- reportRepository.getByStatus(status)
-      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(
+      mapAdminsByCompanyId <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(
         reports.flatMap(c =>
           for {
             siret <- c.companySiret

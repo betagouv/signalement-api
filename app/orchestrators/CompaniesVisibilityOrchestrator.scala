@@ -23,31 +23,41 @@ class CompaniesVisibilityOrchestrator(
     companyAccessRepository: CompanyAccessRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
 
-  def fetchAdminsWithHeadOffice(siret: SIRET): Future[List[User]] =
+  // Fetch all users of this company, and of its head office
+  def fetchUsersWithHeadOffices(siret: SIRET): Future[List[User]] =
     for {
       companies <- companyRepo.findCompanyAndHeadOffice(siret)
-      admins <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
-    } yield admins
+      users <- companyAccessRepository.fetchUsersByCompanies(companies.map(_.id))
+    } yield users
 
-  def fetchAdminsWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
+  // Fetch all users of these companies, and of their head offices
+  // convoluted, could be simplified
+  // Why do we bother with company id + siret ? could a report company_id + company_siret point at different companies ?
+  // seems useless, especially since we're returning results with just the company_id
+  def fetchUsersWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
-      adminsByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyId(companies.map(_._2))
+      usersByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(companies.map(_._2))
       sirens = companies.map(c => SIREN(c._1))
       headOfficesCompany <-
-        companyRepo.findHeadOffice(sirens, openOnly = false)
-      headOfficeAdminsMap <- companyAccessRepository.fetchUsersByCompanyId(headOfficesCompany.map(_.id))
+        companyRepo.findHeadOffices(sirens, openOnly = false)
+      headOfficeUsersByHeadOfficesCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(
+        headOfficesCompany.map(_.id)
+      )
       headOfficeIdByCompanyIdMap: Map[UUID, Option[UUID]] = companies
+        // there seems no reason to worry about uniqueness, both SIRET and id are unique
         .groupBy(_._2)
         .view
         .mapValues { uniqueSiretCompanyIdTuple =>
+          // here we are computing SIREN again, but we did that above already
           val siren = uniqueSiretCompanyIdTuple.headOption.map(x => SIREN(x._1))
           headOfficesCompany.find(c => siren.contains(SIREN(c.siret))).map(_.id)
         }
         .toMap
-    } yield adminsByCompanyIdMap.map { x =>
-      val headOfficeId = headOfficeIdByCompanyIdMap.get(x._1).flatten
-      val headOfficeAdmins = headOfficeId.flatMap(headOfficeAdminsMap.get).getOrElse(List())
-      (x._1, (x._2 ++ headOfficeAdmins).distinctBy(_.id))
+    } yield usersByCompanyIdMap.map { case (companyId, usersOfCompany) =>
+      // we could just find the head office here based on the SIREN, no need to bother with constructing the "headOfficeIdByCompanyIdMap" earlier
+      val headOfficeId = headOfficeIdByCompanyIdMap.get(companyId).flatten
+      val headOfficeUsers = headOfficeId.flatMap(headOfficeUsersByHeadOfficesCompanyIdMap.get).getOrElse(List())
+      (companyId, (usersOfCompany ++ headOfficeUsers).distinctBy(_.id))
     }
 
   def fetchVisibleCompanies(pro: User): Future[List[CompanyWithAccess]] =

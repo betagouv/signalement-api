@@ -14,7 +14,7 @@ import play.api.libs.mailer.Attachment
 import repositories.event.EventFilter
 import tasks.Task
 import tasks.TaskExecutionResults
-import tasks.model.TaskType.CloseUnreadReport
+import tasks.model.TaskType.CloseExpiredReport
 import tasks.model.TaskType.RemindUnreadReportsByEmail
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
@@ -207,7 +207,7 @@ class CloseUnreadWithAccessReport(implicit ee: ExecutionEnv) extends UnreadWithA
       )}
     And outcome is successful CloseUnreadReport                                    ${result mustEqual Valid(
         List(
-          (report.id, CloseUnreadReport)
+          (report.id, CloseExpiredReport)
         )
       )}
    """

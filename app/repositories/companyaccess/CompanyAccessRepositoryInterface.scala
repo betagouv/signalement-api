@@ -24,7 +24,7 @@ trait CompanyAccessRepositoryInterface {
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[List[User]]
 
-  def fetchUsersByCompanyId(
+  def fetchUsersByCompanyIds(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]]

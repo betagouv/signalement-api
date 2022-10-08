@@ -12,7 +12,7 @@ import play.api.libs.mailer.Attachment
 import repositories.event.EventFilter
 import tasks.Task
 import tasks.TaskExecutionResults
-import tasks.model.TaskType.CloseUnreadReport
+import tasks.model.TaskType.CloseExpiredReport
 import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
@@ -57,7 +57,7 @@ class CloseUnreadNoAccessReport(implicit ee: ExecutionEnv) extends UnreadNoAcces
         views.html.mails.consumer.reportClosedByNoReading(report, Some(company)).toString,
         attachementService.attachmentSeqForWorkflowStepN(3)
       )}
-    And outcome is empty ${result mustEqual Valid(List((report.id, CloseUnreadReport)))}
+    And outcome is empty ${result mustEqual Valid(List((report.id, CloseExpiredReport)))}
     """
   }
 }
@@ -108,7 +108,7 @@ abstract class UnreadNoAccessReportClosingTaskSpec(implicit ee: ExecutionEnv)
 
   val noTaskProcessed = Valid(List.empty[Task])
   val runningDateTime = LocalDateTime.now
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessClosureDelay
 
   val company = Fixtures.genCompany.sample.get
   val onGoingReport = Fixtures

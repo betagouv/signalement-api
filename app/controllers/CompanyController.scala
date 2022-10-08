@@ -55,7 +55,7 @@ class CompanyController(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
+  val noAccessReadingDelay = taskConfiguration.report.noAccessClosureDelay
   val contactAddress = emailConfiguration.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {

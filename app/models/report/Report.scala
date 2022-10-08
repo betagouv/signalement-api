@@ -34,6 +34,7 @@ case class Report(
     websiteURL: WebsiteURL,
     phone: Option[String],
     creationDate: OffsetDateTime = OffsetDateTime.now(),
+    expirationDate: OffsetDateTime = OffsetDateTime.now(),
     firstName: String,
     lastName: String,
     email: EmailAddress,

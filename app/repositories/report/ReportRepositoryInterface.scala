@@ -54,7 +54,7 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getReportsByIds(ids: List[UUID]): Future[List[Report]]
 
-  def getByStatus(status: ReportStatus): Future[List[Report]]
+  def getByStatus(status: List[ReportStatus]): Future[List[Report]]
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]]
 

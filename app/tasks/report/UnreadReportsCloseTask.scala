@@ -42,7 +42,7 @@ class UnreadReportsCloseTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  import taskConfiguration.report.noAccessReadingDelay
+  import taskConfiguration.report.noAccessClosureDelay
   import taskConfiguration.report.mailReminderDelay
 
   // Close reports created at least 60 days ago
@@ -57,7 +57,7 @@ class UnreadReportsCloseTask(
       .filterNot { case (_, admins) => admins.exists(_.email.nonEmpty) }
       // Keep only reports created 60 days ago or more
       .filter { case (report, _) =>
-        report.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(noAccessReadingDelay))
+        report.creationDate.toLocalDateTime.isBefore(todayAtStartOfDay.minus(noAccessClosureDelay))
       }
       .map(_._1)
       .map(closeUnreadReport)
@@ -116,6 +116,6 @@ class UnreadReportsCloseTask(
       )
     } yield ()
 
-    toValidated(taskExecution, report.id, TaskType.CloseUnreadReport)
+    toValidated(taskExecution, report.id, TaskType.CloseExpiredReport)
   }
 }

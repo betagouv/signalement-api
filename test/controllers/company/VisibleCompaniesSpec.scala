@@ -157,11 +157,11 @@ The get visible companies endpoint should
 
   def e3 = {
     val headOfficeViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(List((headOfficeCompany.siret, headOfficeCompany.id))),
+      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((headOfficeCompany.siret, headOfficeCompany.id))),
       Duration.Inf
     )
     Await.result(
-      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(headOfficeCompany.siret),
+      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(headOfficeCompany.siret),
       Duration.Inf
     )
     headOfficeViewersList(headOfficeCompany.id).map(_.id).sorted must beEqualTo(
@@ -174,11 +174,11 @@ The get visible companies endpoint should
 
   def e4 = {
     val subsidiaryViewersList = Await.result(
-      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffices(List((subsidiaryCompany.siret, subsidiaryCompany.id))),
+      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(List((subsidiaryCompany.siret, subsidiaryCompany.id))),
       Duration.Inf
     )
     val subsidiaryViewers = Await.result(
-      companiesVisibilityOrchestrator.fetchAdminsWithHeadOffice(subsidiaryCompany.siret),
+      companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(subsidiaryCompany.siret),
       Duration.Inf
     )
     subsidiaryViewersList(subsidiaryCompany.id).map(_.id).sorted must beEqualTo(subsidiaryViewers.map(_.id).sorted)
