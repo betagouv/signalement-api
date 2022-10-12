@@ -46,6 +46,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def tags = column[List[ReportTag]]("tags")
   def reponseconsoCode = column[List[String]]("reponseconso_code")
   def ccrfCode = column[List[String]]("ccrf_code")
+  def expirationDate = column[OffsetDateTime]("expiration_date")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,

@@ -9,7 +9,6 @@ import models.event.Event
 import models.event.Event.stringToDetailsJsValue
 import models.report.Report
 import models.report.ReportStatus
-import models.report.ReportStatus.TraitementEnCours
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
@@ -23,26 +22,17 @@ import services.MailService
 import tasks.model.TaskType
 import tasks.computeStartingTime
 import tasks.toValidated
-import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
-import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
-import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
-import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
+import utils.Constants.ActionEvent._
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-import utils.EmailAddress
 
 import java.time._
-import java.time.temporal.TemporalAdjuster
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class MyNewReportClosureAndRemindersTask(
+class MyNewReportRemindersTask(
     // TODO cleaner truc inutiles
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,

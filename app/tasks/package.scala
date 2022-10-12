@@ -1,5 +1,6 @@
-import play.api.Logger
+import akka.actor.ActorSystem
 
+import play.api.Logger
 import tasks.model.TaskType
 
 import java.time.LocalDate
@@ -13,6 +14,7 @@ import scala.concurrent.duration.FiniteDuration
 import cats.data.Validated._
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+import config.TaskConfiguration
 import controllers.error.AppError
 
 import java.util.UUID
@@ -45,6 +47,25 @@ package object tasks {
       else LocalDate.now.atTime(startTime)
 
     (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
+  }
+
+  def scheduleTask(
+      actorSystem: ActorSystem,
+      taskConfiguration: TaskConfiguration,
+      startTime: LocalTime,
+      interval: FiniteDuration
+  )(runTask: => Unit)(implicit e: ExecutionContext) {
+    val initialDelay = computeStartingTime(startTime)
+    actorSystem.scheduler.scheduleAtFixedRate(
+      initialDelay,
+      interval
+    ) { () =>
+      logger.debug(s"initialDelay - ${initialDelay}");
+      if (taskConfiguration.active) {
+        runTask
+      }
+      ()
+    }
   }
 
 }
