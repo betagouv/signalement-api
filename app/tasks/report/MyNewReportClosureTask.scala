@@ -14,6 +14,7 @@ import repositories.report.ReportRepositoryInterface
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.MailService
+import tasks.getTodayAtStartOfDayParis
 import tasks.scheduleTask
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.EMAIL_CONSUMER_REPORT_CLOSED_BY_NO_READING
@@ -49,15 +50,9 @@ class MyNewReportClosureTask(
     interval = 1.day
   )(runTask())
 
-  def runTask() = {
-
-    val zoneParis = ZoneId.of("Europe/Paris")
-    val todayAtStartOfDay =
-      OffsetDateTime.now.atZoneSameInstant(zoneParis).`with`(LocalTime.MIN).toOffsetDateTime
-
-    logger.info("Traitement de fermeture des signalement expirés")
-    logger.info(s"taskDate - ${todayAtStartOfDay}")
-
+  def runTask(): Unit = {
+    val todayAtStartOfDay = getTodayAtStartOfDayParis()
+    logger.info(s"Traitement de fermeture des signalement expirés (using time ${todayAtStartOfDay})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = todayAtStartOfDay)

@@ -38,5 +38,7 @@ case class ReportClosureTaskConfiguration(
 
 case class ReportRemindersTaskConfiguration(
     startTime: LocalTime,
-    intervalInHours: FiniteDuration
+    intervalInHours: FiniteDuration,
+    mailReminderDelay: Period // 7days.
+
 )

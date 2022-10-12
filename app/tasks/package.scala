@@ -6,6 +6,8 @@ import tasks.model.TaskType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -67,5 +69,8 @@ package object tasks {
       ()
     }
   }
+
+  def getTodayAtStartOfDayParis() =
+    OffsetDateTime.now.atZoneSameInstant(ZoneId.of("Europe/Paris")).`with`(LocalTime.MIN).toOffsetDateTime
 
 }
