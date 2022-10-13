@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
+import cats.implicits.toTraverseOps
 import company.CompanySearchResult
 import config.TaskConfiguration
 import models.company.CompanySync
@@ -14,7 +15,9 @@ import repositories.company.CompanyTable
 import tasks.computeStartingTime
 
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class CompanyUpdateTask(
@@ -42,49 +45,72 @@ class CompanyUpdateTask(
 
   val initialDelay = computeStartingTime(LocalTime.of(2, 0))
 
-  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = 1.second, interval = 1.days) { () =>
     logger.warn("Starting CompanyUpdateTask")
-    if (taskConfiguration.active) {
-      runTask()
-    }
+//    if (taskConfiguration.active) {
+    runTask()
+//    }
     ()
   }
 
+  // Be carefull on how much stress you can put to the database, database task are queued into 1000 slot queue.
+  // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database
   def runTask() = for {
-    maybeCompanySync <- companySyncRepository.list().map(_.maxByOption(_.lastUpdated))
-
-    companySync = maybeCompanySync.getOrElse(CompanySync.default)
+    companySync <- getCompanySync()
     res <- Slick
       .source(CompanyTable.table.result)
-      .grouped(500)
+      .grouped(300)
+      .throttle(1, 1.second)
       .mapAsync(1) { companies =>
+        // TODO Local sync to be removed
         if (taskConfiguration.companyUpdate.localSync) {
           localCompanySyncService.syncCompanies(companies)
         } else {
           companySyncService.syncCompanies(companies, companySync.lastUpdated)
         }
       }
-      .map((companies: Seq[CompanySearchResult]) =>
-        companies
-          .map(c =>
-            companyRepository.updateBySiret(
-              c.siret,
-              c.isOpen,
-              c.isHeadOffice,
-              c.isPublic,
-              c.address.number,
-              c.address.street,
-              c.address.addressSupplement
-            )
-          )
-          .map(_ => companies.flatMap(_.lastUpdated))
-      )
-      .map(_.flatten.maxOption)
-      .map { maybeNewLastUpdated =>
-        maybeNewLastUpdated.map(u => companySyncRepository.createOrUpdate(companySync.copy(lastUpdated = u)))
-      }
+      .mapAsync(1)(updateSignalConsoCompaniesBySiret)
+      .map(_.flatMap(_.lastUpdated).maxOption)
+      // TODO refresh last update can fail when job is stopped before ending
+      .map(refreshLastUpdate(companySync, _))
       .log("company update")
       .run()
       .map(_ => logger.info("Company update done"))
+      .recoverWith { case e =>
+        logger.error("Failed company update execution", e)
+        refreshLastUpdate(companySync, Some(companySync.lastUpdated))
+        throw e
+      }
   } yield res
+
+  private def getCompanySync(): Future[CompanySync] = companySyncRepository
+    .list()
+    .map(_.maxByOption(_.lastUpdated).getOrElse(CompanySync.default))
+
+  private def refreshLastUpdate(companySync: CompanySync, maybeNewLastUpdated: Option[OffsetDateTime]) = for {
+    lastUpdated <- getCompanySync().map(_.lastUpdated)
+    _ <- maybeNewLastUpdated match {
+      case Some(newLastUpdated) if newLastUpdated.isAfter(lastUpdated) =>
+        logger.debug(s"New lastupdated company $newLastUpdated")
+        companySyncRepository.createOrUpdate(companySync.copy(lastUpdated = newLastUpdated))
+      case None => Future.successful(())
+    }
+  } yield ()
+
+  private def updateSignalConsoCompaniesBySiret(companies: Seq[CompanySearchResult]) = {
+    logger.debug(s"Syncing ${companies.size} companies")
+    companies.map { c =>
+      companyRepository
+        .updateBySiret(
+          c.siret,
+          c.isOpen,
+          c.isHeadOffice,
+          c.isPublic,
+          c.address.number,
+          c.address.street,
+          c.address.addressSupplement
+        )
+        .map(_ => c)
+    }.sequence
+  }
 }

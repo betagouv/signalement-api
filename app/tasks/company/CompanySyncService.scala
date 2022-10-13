@@ -14,6 +14,7 @@ import sttp.client3.playJson.playJsonBodySerializer
 import sttp.model.Header
 
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -35,11 +36,14 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
 
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
-      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .post(
+        uri"${companyUpdateConfiguration.etablissementApiUrl}"
+          .addParam("lastUpdated", Some(lastUpdated.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)))
+      )
       .body(companies.map(_.siret))
       .response(asJson[List[CompanySearchResult]])
 
-    logger.debug(request.toCurl)
+    // logger.trace(request.toCurl)
 
     val response =
       request.send(backend)
