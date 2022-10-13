@@ -26,8 +26,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-// TODO renommer
-class MyNewReportRemindersTask(
+class ReportRemindersTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
@@ -48,6 +47,7 @@ class MyNewReportRemindersTask(
   // At J+16 during the night, the pro receives the second reminder email
   // At J+25 the report is closed
   val delayBetweenReminderEmails = Period.ofDays(7)
+  val maxReminderCount = 2
 
   scheduleTask(
     actorSystem,
@@ -76,7 +76,6 @@ class MyNewReportRemindersTask(
       todayAtStartOfDay: OffsetDateTime,
       eventsByReportId: Map[UUID, List[Event]]
   ): Boolean = {
-    val maxReminderCount = 2 // TODO reprendre la constante, si elle est existe ailleurs et est utilisée ailleurs
     val reminderEmailsActions = List(EMAIL_PRO_REMIND_NO_READING, EMAIL_PRO_REMIND_NO_ACTION)
     val allEmailsToProActions = reminderEmailsActions :+ EMAIL_PRO_NEW_REPORT
     val previousEmailsEvents =

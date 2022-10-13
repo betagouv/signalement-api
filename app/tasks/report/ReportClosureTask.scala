@@ -31,8 +31,7 @@ import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 
-// TODO renommer
-class MyNewReportClosureTask(
+class ReportClosureTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
