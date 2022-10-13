@@ -29,6 +29,7 @@ import models.report.ReportFile
 import models.report.ReportFilter
 import models.report.ReportResponse
 import models.report.ReportStatus
+import models.report.ReportStatus.isFinal
 import models.report.ReportTag
 import models.report.ReportWithFiles
 import models.report.ReportWordOccurrence
@@ -60,6 +61,7 @@ import utils.URL
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.Period
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
@@ -247,10 +249,17 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeCompany <- extractOptionnalCompany(draftReport)
+      maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id))
+      maybeCompanyWithUsers <- maybeCompany.map { company =>
+        for {
+          users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+        } yield (company, users)
+      }.sequence
+      reportCreationDate = OffsetDateTime.now()
+      expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
+      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id), reportCreationDate, expirationDate)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
@@ -259,6 +268,18 @@ class ReportOrchestrator(
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
+
+  private def chooseExpirationDate(
+      baseDate: OffsetDateTime,
+      maybeCompanyWithUsers: Option[(Company, List[User])]
+  ): OffsetDateTime = {
+    val delayIfCompanyHasNoUsers = Period.ofDays(60)
+    val delayIfCompanyHasUsers = Period.ofDays(25)
+    val delay =
+      if (maybeCompanyWithUsers.exists(_._2.nonEmpty)) delayIfCompanyHasUsers
+      else delayIfCompanyHasNoUsers
+    baseDate.plus(delay)
+  }
 
   private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
     ddEmails <-
@@ -314,7 +335,7 @@ class ReportOrchestrator(
       country.name
     })
 
-  private def extractOptionnalCompany(draftReport: ReportDraft): Future[Option[Company]] =
+  private def extractOptionalCompany(draftReport: ReportDraft): Future[Option[Company]] =
     draftReport.companySiret match {
       case Some(siret) =>
         val company = Company(
@@ -355,6 +376,10 @@ class ReportOrchestrator(
           isPublic = reportCompany.isPublic
         )
       )
+      users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+      companyWithUsers = (company, users)
+      updateCompanyDate = OffsetDateTime.now()
+      // Update the company
       reportWithNewData <- existingReport match {
         case Some(report) =>
           reportRepository
@@ -370,8 +395,10 @@ class ReportOrchestrator(
             .map(Some(_))
         case _ => Future(None)
       }
+      // Update the status if needed
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        // not sure why we require this condition ?
         .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7)))
         .map(report =>
           reportRepository
@@ -384,12 +411,28 @@ class ReportOrchestrator(
             .map(Some(_))
         )
         .getOrElse(Future(reportWithNewData))
-      updatedReport <- reportWithNewStatus
+      // Update the expiration date if needed
+      reportWithNewStatusAndExpirationDate <- reportWithNewStatus
+        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        .filterNot(_.isInFinalStatus)
+        .map(report =>
+          reportRepository
+            .update(
+              report.id,
+              report.copy(
+                expirationDate = chooseExpirationDate(baseDate = updateCompanyDate, Some(companyWithUsers))
+              )
+            )
+            .map(Some(_))
+        )
+        .getOrElse(Future(reportWithNewStatus))
+      // Notify the pro if needed
+      updatedReport <- reportWithNewStatusAndExpirationDate
         .filter(_.status == ReportStatus.TraitementEnCours)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
-        .getOrElse(Future(reportWithNewStatus))
+        .getOrElse(Future(reportWithNewStatusAndExpirationDate))
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
@@ -399,7 +442,7 @@ class ReportOrchestrator(
                 Some(report.id),
                 Some(company.id),
                 Some(userUUID),
-                OffsetDateTime.now(),
+                updateCompanyDate,
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(

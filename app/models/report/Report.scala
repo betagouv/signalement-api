@@ -72,6 +72,7 @@ case class Report(
 
   def isReadByPro = ReportStatus.statusReadByPro.contains(status)
 
+  def isInFinalStatus = ReportStatus.isFinal(status)
 }
 
 object Report {
