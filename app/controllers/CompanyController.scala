@@ -31,7 +31,6 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -55,7 +54,6 @@ class CompanyController(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessClosureDelay
   val contactAddress = emailConfiguration.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {

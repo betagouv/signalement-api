@@ -36,7 +36,7 @@ class ReportClosureTask(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
-    emailService: MailService,
+    mailService: MailService,
     taskConfiguration: TaskConfiguration
 )(implicit val executionContext: ExecutionContext) {
 
@@ -111,7 +111,7 @@ class ReportClosureTask(
         )
       )
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      _ <- emailService.send(email(report, maybeCompany))
+      _ <- mailService.send(email(report, maybeCompany))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

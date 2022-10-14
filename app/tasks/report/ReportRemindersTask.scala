@@ -30,7 +30,7 @@ class ReportRemindersTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
-    emailService: MailService,
+    mailService: MailService,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     taskConfiguration: TaskConfiguration
 )(implicit val executionContext: ExecutionContext) {
@@ -118,7 +118,7 @@ class ReportRemindersTask(
       else (ProReportReadReminder, EMAIL_PRO_REMIND_NO_ACTION)
     logger.debug(s"Sending reminder email")
     for {
-      _ <- emailService.send(email(emailAddresses, report, report.expirationDate))
+      _ <- mailService.send(email(emailAddresses, report, report.expirationDate))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

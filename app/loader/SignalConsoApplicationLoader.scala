@@ -26,12 +26,7 @@ import company.EnterpriseImportOrchestrator
 import company.companydata.CompanyDataRepository
 import company.companydata.CompanyDataRepositoryInterface
 import company.entrepriseimportinfo.EnterpriseImportInfoRepository
-import config.ApplicationConfiguration
-import config.BucketConfiguration
-import config.SignalConsoConfiguration
-import config.TaskConfiguration
-import config.UploadConfiguration
-import orchestrators.ProAccessTokenOrchestrator
+import config._
 import orchestrators._
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
@@ -93,17 +88,10 @@ import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
-import tasks.company.CompanySyncService
-import tasks.company.CompanySyncServiceInterface
-import tasks.company.CompanyUpdateTask
-import tasks.company.LocalCompanySyncService
-import tasks.company.LocalCompanySyncServiceInterface
-import tasks.report.NoActionReportsCloseTask
-import tasks.report.ReadReportsReminderTask
+import tasks.company._
+import tasks.report.ReportClosureTask
 import tasks.report.ReportNotificationTask
-import tasks.report.ReportTask
-import tasks.report.UnreadReportsCloseTask
-import tasks.report.UnreadReportsReminderTask
+import tasks.report.ReportRemindersTask
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.silhouette.api.APIKeyEnv
@@ -384,18 +372,22 @@ class SignalConsoComponents(
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository)
 
-  val unreadReportsReminderTask =
-    new UnreadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
-  val unreadReportsCloseTask =
-    new UnreadReportsCloseTask(
-      applicationConfiguration.task,
-      eventRepository,
-      reportRepository,
-      companyRepository,
-      mailService
-    )
-
-  val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
+  val reportClosureTask = new ReportClosureTask(
+    actorSystem,
+    reportRepository,
+    eventRepository,
+    companyRepository,
+    mailService,
+    taskConfiguration
+  )
+  val reportReminderTask = new ReportRemindersTask(
+    actorSystem,
+    reportRepository,
+    eventRepository,
+    mailService,
+    companiesVisibilityOrchestrator,
+    taskConfiguration
+  )
 
   val localCompanySyncService: LocalCompanySyncServiceInterface =
     new LocalCompanySyncService(companyDataRepository)
@@ -416,21 +408,6 @@ class SignalConsoComponents(
 
   logger.trace("Starting App and sending sentry alert")
 
-  val noActionReportsCloseTask =
-    new NoActionReportsCloseTask(eventRepository, reportRepository, companyRepository, mailService, taskConfiguration)
-
-  val reportTask = new ReportTask(
-    actorSystem,
-    reportRepository,
-    eventRepository,
-    companiesVisibilityOrchestrator,
-    signalConsoConfiguration,
-    unreadReportsReminderTask,
-    unreadReportsCloseTask,
-    readReportsReminderTask,
-    noActionReportsCloseTask,
-    taskConfiguration
-  )
   val reportNotificationTask =
     new ReportNotificationTask(actorSystem, reportRepository, subscriptionRepository, mailService, taskConfiguration)
 
