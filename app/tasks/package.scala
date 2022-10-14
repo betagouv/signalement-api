@@ -56,7 +56,7 @@ package object tasks {
       taskConfiguration: TaskConfiguration,
       startTime: LocalTime,
       interval: FiniteDuration
-  )(runTask: => Unit)(implicit e: ExecutionContext) {
+  )(block: => Unit)(implicit e: ExecutionContext): Unit = {
     val initialDelay = computeStartingTime(startTime)
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
@@ -64,10 +64,10 @@ package object tasks {
     ) { () =>
       logger.debug(s"initialDelay - ${initialDelay}");
       if (taskConfiguration.active) {
-        runTask
+        block
       }
-      ()
     }
+    ()
   }
 
   def getTodayAtStartOfDayParis() =

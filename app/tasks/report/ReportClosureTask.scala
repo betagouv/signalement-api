@@ -57,6 +57,7 @@ class ReportClosureTask(
       reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = todayAtStartOfDay)
       _ <- closeExpiredReportsWithErrorHandling(reportsToClose)
     } yield ()
+    ()
   }
 
   private def closeExpiredReportsWithErrorHandling(reports: List[Report]): Future[Unit] = {

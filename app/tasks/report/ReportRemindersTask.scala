@@ -69,6 +69,7 @@ class ReportRemindersTask(
       }
       _ <- sendReminderEmailsWithErrorHandling(finalReportsWithUsers)
     } yield ()
+    ()
   }
 
   private def shouldSendReminderEmail(
