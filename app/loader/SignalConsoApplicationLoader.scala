@@ -412,7 +412,7 @@ class SignalConsoComponents(
     new ReportNotificationTask(actorSystem, reportRepository, subscriptionRepository, mailService, taskConfiguration)
 
   val inactiveDgccrfAccountRemoveTask =
-    new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, eventRepository, asyncFileRepository)
+    new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
   val inactiveAccountTask = new InactiveAccountTask(
     actorSystem,
     inactiveDgccrfAccountRemoveTask,

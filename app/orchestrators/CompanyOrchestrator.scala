@@ -32,6 +32,7 @@ import utils.Constants.EventType
 import utils.SIRET
 
 import java.time.OffsetDateTime
+import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -48,6 +49,8 @@ class CompanyOrchestrator(
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
+
+  val reportReminderByPostDelay = Period.ofDays(28)
 
   def create(companyCreation: CompanyCreation): Future[Company] =
     companyRepository
@@ -180,7 +183,7 @@ class CompanyOrchestrator(
           _.isAfter(
             lastRequirement.getOrElse(
               OffsetDateTime.now.minus(
-                taskConfiguration.report.reportReminderByPostDelay
+                reportReminderByPostDelay
                   .multipliedBy(Math.min(noticeCount, 3))
               )
             )
