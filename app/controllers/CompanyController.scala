@@ -163,12 +163,8 @@ class CompanyController(
       events: List[Event],
       activationKey: String
   ) = {
-    // TODO vérifier cette liste
-    val contactEventActions = List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING)
     val lastContactLocalDate = events
-      // TODO comprendre ce filter ???
-      .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay)))
-      .filter(e => contactEventActions.contains(e.action))
+      .filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
       .sortBy(_.creationDate)
       .reverse
       .headOption

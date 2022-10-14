@@ -590,6 +590,7 @@ class ReportOrchestrator(
     _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany))
   } yield ()
 
+  // dead code ?
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
       report <- reportRepository.get(reportId)
