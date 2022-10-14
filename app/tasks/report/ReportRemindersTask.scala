@@ -37,7 +37,7 @@ class ReportRemindersTask(
 
   val logger: Logger = Logger(this.getClass)
 
-  val conf = taskConfiguration.reportReminder
+  val conf = taskConfiguration.reportReminders
 
   // In practice, since we require 7 full days between the previous email and the next one,
   // the email will fire at J+8
@@ -54,18 +54,17 @@ class ReportRemindersTask(
     taskConfiguration,
     startTime = conf.startTime,
     interval = conf.intervalInHours
-  )(runTask())
+  )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
-  def runTask(): Unit = {
-    val todayAtStartOfDay = getTodayAtStartOfDayParis()
-    logger.info(s"Traitement de mails de relance aux pros (using time ${todayAtStartOfDay})")
+  def runTask(taskRunDate: OffsetDateTime): Unit = {
+    logger.info(s"Traitement de mails de relance aux pros (using time ${taskRunDate})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       ongoingReportsWithUsers <- getReportsByStatusWithUsers(ongoingReportsStatus)
       ongoingReportsWithAtLeastOneUser = ongoingReportsWithUsers.filter(_._2.nonEmpty)
       eventsByReportId <- eventRepository.fetchEventsOfReports(ongoingReportsWithAtLeastOneUser.map(_._1))
       finalReportsWithUsers = ongoingReportsWithAtLeastOneUser.filter { case (report, _) =>
-        shouldSendReminderEmail(report, todayAtStartOfDay, eventsByReportId)
+        shouldSendReminderEmail(report, taskRunDate, eventsByReportId)
       }
       _ <- sendReminderEmailsWithErrorHandling(finalReportsWithUsers)
     } yield ()
@@ -74,7 +73,7 @@ class ReportRemindersTask(
 
   private def shouldSendReminderEmail(
       report: Report,
-      todayAtStartOfDay: OffsetDateTime,
+      taskRunDate: OffsetDateTime,
       eventsByReportId: Map[UUID, List[Event]]
   ): Boolean = {
     val reminderEmailsActions = List(EMAIL_PRO_REMIND_NO_READING, EMAIL_PRO_REMIND_NO_ACTION)
@@ -87,7 +86,7 @@ class ReportRemindersTask(
       previousEmailsEvents.count(e => reminderEmailsActions.contains(e.action)) > maxReminderCount
     val latestEmailDate = previousEmailsEvents.map(_.creationDate).sorted.lastOption
     val latestEmailIsNotTooRecent =
-      latestEmailDate.exists(_.isAfter(todayAtStartOfDay.minus(delayBetweenReminderEmails)))
+      latestEmailDate.exists(_.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
     val shouldSendEmail = !hadMaxReminderEmails && latestEmailIsNotTooRecent
     shouldSendEmail
   }

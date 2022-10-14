@@ -61,7 +61,9 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getReportsByIds(ids: List[UUID]): Future[List[Report]] = ???
 
-  override def getByStatus(status: ReportStatus): Future[List[Report]] = ???
+  override def getByStatus(status: List[ReportStatus]): Future[List[Report]] = ???
+
+  override def getByStatusAndExpired(status: List[ReportStatus], now: OffsetDateTime): Future[List[Report]] = ???
 
   override def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = ???
 

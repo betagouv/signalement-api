@@ -9,7 +9,7 @@ case class TaskConfiguration(
     active: Boolean,
     subscription: SubscriptionTaskConfiguration,
     reportClosure: ReportClosureTaskConfiguration,
-    reportReminder: ReportRemindersTaskConfiguration,
+    reportReminders: ReportRemindersTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration,
     companyUpdate: CompanyUpdateTaskConfiguration
 )

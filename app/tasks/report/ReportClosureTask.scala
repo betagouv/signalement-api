@@ -47,17 +47,15 @@ class ReportClosureTask(
     taskConfiguration,
     startTime = taskConfiguration.reportClosure.startTime,
     interval = 1.day
-  )(runTask())
+  )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
-  def runTask(): Unit = {
-    val todayAtStartOfDay = getTodayAtStartOfDayParis()
-    logger.info(s"Traitement de fermeture des signalement expirés (using time ${todayAtStartOfDay})")
+  def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
+    logger.info(s"Traitement de fermeture des signalement expirés (using time ${taskRunDate})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
-      reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = todayAtStartOfDay)
+      reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = taskRunDate)
       _ <- closeExpiredReportsWithErrorHandling(reportsToClose)
     } yield ()
-    ()
   }
 
   private def closeExpiredReportsWithErrorHandling(reports: List[Report]): Future[Unit] = {

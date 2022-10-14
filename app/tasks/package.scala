@@ -56,7 +56,7 @@ package object tasks {
       taskConfiguration: TaskConfiguration,
       startTime: LocalTime,
       interval: FiniteDuration
-  )(block: => Unit)(implicit e: ExecutionContext): Unit = {
+  )(block: => Any)(implicit e: ExecutionContext): Unit = {
     val initialDelay = computeStartingTime(startTime)
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
@@ -66,6 +66,7 @@ package object tasks {
       if (taskConfiguration.active) {
         block
       }
+      ()
     }
     ()
   }
