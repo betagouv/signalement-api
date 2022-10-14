@@ -163,6 +163,12 @@ object Fixtures {
     fileIds = List.empty
   )
 
+  def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None) = {
+    val now = OffsetDateTime.now()
+    val later = now.plusDays(50)
+    reportDraft.generateReport(maybeCompanyId, creationDate = now, expirationDate = later)
+  }
+
   def genReportForCompany(company: Company) = for {
     id <- arbitrary[UUID]
     gender <- genGender

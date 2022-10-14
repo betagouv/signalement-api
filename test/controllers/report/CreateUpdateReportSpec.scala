@@ -250,7 +250,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
-  var report = draftReport.generateReport(None)
+  var report = Fixtures.genReportFromDraft(draftReport)
   val proUser = Fixtures.genProUser.sample.get
 
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
@@ -350,8 +350,8 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
-    val expectedReport = draftReport
-      .generateReport(reports.head.companyId)
+    val expectedReport = Fixtures
+      .genReportFromDraft(draftReport, reports.head.companyId)
       .copy(
         id = reports.head.id,
         creationDate = reports.head.creationDate,

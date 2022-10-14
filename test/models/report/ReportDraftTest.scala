@@ -30,9 +30,14 @@ class ReportDraftTest extends Specification {
       val companyId = None
       val reportId = UUID.randomUUID()
       val creationDate: OffsetDateTime = OffsetDateTime.now()
-
+      val expirationDate = creationDate.plusDays(100)
       val res =
-        aDraftReport.generateReport(maybeCompanyId = companyId, creationDate = creationDate, reportId = reportId)
+        aDraftReport.generateReport(
+          maybeCompanyId = companyId,
+          creationDate = creationDate,
+          expirationDate = expirationDate,
+          reportId = reportId
+        )
 
       val expectedReport = aDraftReport
         .into[Report]
