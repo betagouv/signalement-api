@@ -90,14 +90,13 @@ class CompanyUpdateTask(
       if (previousLastUpdate.isAfter(newLastUpdate)) previousLastUpdate else newLastUpdate
     }
 
-  private def refreshLastUpdate(companySync: CompanySync, maybeNewLastUpdated: Option[OffsetDateTime]) = for {
+  private def refreshLastUpdate(companySync: CompanySync, newLastUpdated: OffsetDateTime) = for {
     lastUpdated <- getCompanySync().map(_.lastUpdated)
-    _ <- maybeNewLastUpdated match {
-      case Some(newLastUpdated) if newLastUpdated.isAfter(lastUpdated) =>
+    _ <-
+      if (newLastUpdated.isAfter(lastUpdated)) {
         logger.debug(s"New lastupdated company $newLastUpdated")
         companySyncRepository.createOrUpdate(companySync.copy(lastUpdated = newLastUpdated))
-      case None => Future.successful(())
-    }
+      } else Future.successful(())
   } yield ()
 
   private def updateSignalConsoCompaniesBySiret(companies: Seq[CompanySearchResult]) = {
