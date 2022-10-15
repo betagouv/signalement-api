@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
+import akka.stream.scaladsl.Sink
 import cats.implicits.toTraverseOps
 import company.CompanySearchResult
 import config.TaskConfiguration
@@ -45,11 +46,9 @@ class CompanyUpdateTask(
 
   val initialDelay = computeStartingTime(LocalTime.of(2, 0))
 
-  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = 1.second, interval = 1.days) { () =>
+  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
     logger.warn("Starting CompanyUpdateTask")
-//    if (taskConfiguration.active) {
     runTask()
-//    }
     ()
   }
 
@@ -70,22 +69,26 @@ class CompanyUpdateTask(
         }
       }
       .mapAsync(1)(updateSignalConsoCompaniesBySiret)
-      .map(_.flatMap(_.lastUpdated).maxOption)
-      // TODO refresh last update can fail when job is stopped before ending
-      .map(refreshLastUpdate(companySync, _))
-      .log("company update")
+      .map(_.flatMap(_.lastUpdated).maxOption.getOrElse(companySync.lastUpdated))
+      .toMat(computeLastUpdated(companySync.lastUpdated))((_, rightJediValue) => rightJediValue)
       .run()
+      .map(value => refreshLastUpdate(companySync, Some(value)))
       .map(_ => logger.info("Company update done"))
       .recoverWith { case e =>
         logger.error("Failed company update execution", e)
-        refreshLastUpdate(companySync, Some(companySync.lastUpdated))
         throw e
+
       }
   } yield res
 
   private def getCompanySync(): Future[CompanySync] = companySyncRepository
     .list()
     .map(_.maxByOption(_.lastUpdated).getOrElse(CompanySync.default))
+
+  def computeLastUpdated(originalLastUpdate: OffsetDateTime) =
+    Sink.fold[OffsetDateTime, OffsetDateTime](originalLastUpdate) { (previousLastUpdate, newLastUpdate) =>
+      if (previousLastUpdate.isAfter(newLastUpdate)) previousLastUpdate else newLastUpdate
+    }
 
   private def refreshLastUpdate(companySync: CompanySync, maybeNewLastUpdated: Option[OffsetDateTime]) = for {
     lastUpdated <- getCompanySync().map(_.lastUpdated)
