@@ -72,7 +72,7 @@ class CompanyUpdateTask(
       .map(_.flatMap(_.lastUpdated).maxOption.getOrElse(companySync.lastUpdated))
       .toMat(computeLastUpdated(companySync.lastUpdated))((_, rightJediValue) => rightJediValue)
       .run()
-      .map(value => refreshLastUpdate(companySync, Some(value)))
+      .map(newLastUpdated => refreshLastUpdate(companySync, newLastUpdated))
       .map(_ => logger.info("Company update done"))
       .recoverWith { case e =>
         logger.error("Failed company update execution", e)
