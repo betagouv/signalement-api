@@ -6,9 +6,15 @@ import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
-import models.SearchCompanyIdentity.SearchCompanyIdentityId
+import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
+import models.company.Company
+import models.company.CompanyAddressUpdate
+import models.company.CompanyCreation
+import models.company.CompanyRegisteredSearch
+import models.company.CompanyWithNbReports
+import models.company.UndeliveredDocument
 import models.event.Event
 import models.report.ReportFilter
 import models.report.ReportStatus

@@ -1,11 +1,11 @@
 package services
 
 import cats.data.NonEmptyList
-import models.Company
 import models.EmailValidation
 import models.Subscription
 import models.User
 import models.auth.AuthToken
+import models.company.Company
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile

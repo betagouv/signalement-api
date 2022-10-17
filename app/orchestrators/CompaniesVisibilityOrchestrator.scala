@@ -1,10 +1,10 @@
 package orchestrators
 
-import models.AccessLevel
-import models.Company
-import models.CompanyWithAccess
 import models.User
 import models.UserRole
+import models.company.AccessLevel
+import models.company.Company
+import models.company.CompanyWithAccess
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import utils.SIREN

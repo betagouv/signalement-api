@@ -1,8 +1,8 @@
 package repositories.companyaccess
-import models.AccessLevel
-import models.Company
-import models.CompanyWithAccess
 import models.User
+import models.company.AccessLevel
+import models.company.Company
+import models.company.CompanyWithAccess
 import repositories.PostgresProfile
 import slick.dbio.Effect
 import slick.sql.FixedSqlAction

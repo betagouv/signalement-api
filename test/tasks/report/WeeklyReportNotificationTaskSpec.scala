@@ -1,6 +1,7 @@
 package tasks.report
 
 import models._
+import models.company.Address
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers

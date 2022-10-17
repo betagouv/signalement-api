@@ -17,6 +17,9 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import models._
+import models.company.AccessLevel
+import models.company.Company
+import models.company.CompanyWithAccess
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 

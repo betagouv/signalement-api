@@ -8,6 +8,8 @@ import models.report.DetailInputValue.toDetailInputValue
 import models._
 import models.admin.ReportInputList
 import models.auth.AuthToken
+import models.company.Address
+import models.company.Company
 import models.event.Event
 import models.report.ReportFileOrigin.CONSUMER
 import models.report.reportfile.ReportFileId

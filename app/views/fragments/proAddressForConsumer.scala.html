@@ -1,3 +1,4 @@
+@import models.company.Company
 @(company: Option[Company])
 
 @company.map { c => <b>@c.name</b> <br/> }

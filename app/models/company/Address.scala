@@ -1,4 +1,4 @@
-package models
+package models.company
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat

@@ -1,11 +1,13 @@
 package repositories.company
 
-import models.SearchCompanyIdentity.SearchCompanyIdentityId
-import models.SearchCompanyIdentity.SearchCompanyIdentityName
-import models.SearchCompanyIdentity.SearchCompanyIdentityRCS
-import models.SearchCompanyIdentity.SearchCompanyIdentitySiren
-import models.SearchCompanyIdentity.SearchCompanyIdentitySiret
+import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
+import models.company.SearchCompanyIdentity.SearchCompanyIdentityName
+import models.company.SearchCompanyIdentity.SearchCompanyIdentityRCS
+import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiren
+import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
+import models.company.Company
+import models.company.CompanyRegisteredSearch
 import models.report.ReportStatus.statusWithProResponse
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable

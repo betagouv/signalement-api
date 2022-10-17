@@ -1,5 +1,6 @@
 @import models.report.Report
 
+@import models.company.Company
 @(report: Report, maybeCompany: Option[Company])
 
     @views.html.mails.layout("L'entreprise a pris connaissance de votre signalement") {

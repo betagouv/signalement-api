@@ -6,6 +6,8 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.actions.UserAwareRequest
 import controllers.error.AppErrorTransformer.handleError
 import models._
+import models.company.AccessLevel
+import models.company.Company
 import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.mvc._
 import repositories.company.CompanyRepositoryInterface

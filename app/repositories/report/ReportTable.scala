@@ -9,6 +9,7 @@ import utils._
 import java.time._
 import java.util.UUID
 import ReportColumnType._
+import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter

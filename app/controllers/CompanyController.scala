@@ -5,6 +5,12 @@ import config.EmailConfiguration
 import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
+import models.company.Company
+import models.company.CompanyAddressUpdate
+import models.company.CompanyCreation
+import models.company.CompanyRegisteredSearch
+import models.company.CompanyWithNbReports
+import models.company.UndeliveredDocument
 import models.event.Event
 import models.report.Report
 import orchestrators.CompaniesVisibilityOrchestrator

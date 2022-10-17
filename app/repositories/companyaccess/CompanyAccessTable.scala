@@ -1,10 +1,10 @@
 package repositories.companyaccess
 
-import models.AccessLevel
-import models.UserAccess
 import repositories.company.CompanyTable
 import repositories.PostgresProfile.api._
 import CompanyAccessColumnType._
+import models.company.AccessLevel
+import models.company.UserAccess
 import repositories.user.UserTable
 import slick.lifted.TableQuery
 

@@ -1,9 +1,9 @@
 package repositories.accesstoken
 
-import models.AccessLevel
 import models.AccessToken
-import models.Company
 import models.User
+import models.company.AccessLevel
+import models.company.Company
 import repositories.CRUDRepositoryInterface
 import utils.EmailAddress
 

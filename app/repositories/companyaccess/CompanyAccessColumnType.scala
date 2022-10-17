@@ -1,6 +1,6 @@
 package repositories.companyaccess
 
-import models.AccessLevel
+import models.company.AccessLevel
 import repositories.PostgresProfile.api._
 
 object CompanyAccessColumnType {
