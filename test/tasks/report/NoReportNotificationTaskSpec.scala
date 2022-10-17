@@ -1,6 +1,7 @@
 package tasks.report
 
 import models._
+import models.company.Address
 import models.report.ReportCategory
 import models.report.ReportTag
 import org.specs2.Specification

@@ -1,6 +1,7 @@
 @import models.report.Report
 @import utils.FrontRoute
 @import models.report.Report
+@import models.company.Company
 @(report: Report, company: Option[Company])(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {

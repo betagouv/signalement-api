@@ -1,6 +1,8 @@
 package repositories.accesstoken
 
 import models._
+import models.company.AccessLevel
+import models.company.Company
 import repositories.PostgresProfile.api._
 import models.token.TokenKind
 import models.token.TokenKind.CompanyInit

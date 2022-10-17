@@ -12,6 +12,7 @@ import spoiwo.natures.xlsx.Model2XlsxConversions._
 import config.SignalConsoConfiguration
 import controllers.routes
 import models._
+import models.company.AccessLevel
 import models.event.Event
 import models.report.Report
 import models.report.ReportFile
@@ -30,6 +31,7 @@ import utils.Constants
 import utils.Constants.Departments
 import utils.DateUtils.frenchFormatDate
 import utils.DateUtils.frenchFormatDateAndTime
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID

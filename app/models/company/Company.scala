@@ -1,4 +1,4 @@
-package models
+package models.company
 
 import play.api.libs.json._
 import utils.QueryStringMapper

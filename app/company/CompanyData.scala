@@ -2,13 +2,14 @@ package company
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.website.Website
-import models.Address
-import models.Company
+import models.company.Address
+import models.company.Company
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.SIREN
 import utils.SIRET
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 case class CompanyData(
@@ -80,7 +81,8 @@ case class CompanySearchResult(
     activityLabel: Option[String],
     isMarketPlace: Boolean = false,
     isOpen: Boolean,
-    isPublic: Boolean
+    isPublic: Boolean,
+    lastUpdated: Option[OffsetDateTime] = None
 )
 
 object CompanySearchResult {

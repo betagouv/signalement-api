@@ -1,6 +1,7 @@
 package repositories.website
 
 import models._
+import models.company.Company
 import models.investigation.DepartmentDivision
 import models.investigation.InvestigationStatus
 import models.investigation.Practice

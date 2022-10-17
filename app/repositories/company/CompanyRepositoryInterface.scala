@@ -1,10 +1,10 @@
 package repositories.company
 
-import models.Company
-import models.CompanyRegisteredSearch
 import models.PaginatedResult
 import models.PaginatedSearch
 import models.UserRole
+import models.company.Company
+import models.company.CompanyRegisteredSearch
 import repositories.CRUDRepositoryInterface
 import utils.SIREN
 import utils.SIRET

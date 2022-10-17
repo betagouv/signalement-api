@@ -1,7 +1,7 @@
 package models.report
 
 import io.scalaland.chimney.dsl.TransformerOps
-import models.Address
+import models.company.Address
 import org.specs2.mutable.Specification
 import utils.Country
 import utils.Fixtures

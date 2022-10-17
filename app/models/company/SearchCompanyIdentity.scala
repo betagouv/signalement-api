@@ -1,4 +1,4 @@
-package models
+package models.company
 
 import java.util.UUID
 import scala.util.Failure

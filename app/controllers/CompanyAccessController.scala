@@ -1,8 +1,8 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import models._
 import models.access.ActivationLinkRequest
+import models.company.AccessLevel
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyAccessOrchestrator
 import orchestrators.ProAccessTokenOrchestrator

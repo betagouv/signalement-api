@@ -4,9 +4,7 @@ import controllers.error.AppError.ActivationCodeAlreadyUsed
 import controllers.error.AppError.CompanyActivationCodeExpired
 import controllers.error.AppError.CompanyActivationSiretOrCodeInvalid
 import controllers.error.AppError.ServerError
-import models.AccessLevel
 import models.AccessToken
-import models.Company
 import models.User
 import models.access.ActivationLinkRequest
 
@@ -18,6 +16,8 @@ import models.UserRole.DGCCRF
 import models.UserRole.Professionnel
 import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
+import models.company.AccessLevel
+import models.company.Company
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface

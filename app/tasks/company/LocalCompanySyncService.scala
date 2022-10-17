@@ -1,10 +1,8 @@
 package tasks.company
 
-import akka.actor.ActorSystem
 import company.CompanySearchResult
 import company.companydata.CompanyDataRepositoryInterface
-import config.CompanyUpdateTaskConfiguration
-import models.Company
+import models.company.Company
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext
@@ -16,8 +14,6 @@ trait LocalCompanySyncServiceInterface {
 
 @Deprecated(since = "use CompanySyncService.syncCompanies, call should be done using asynchronous call")
 class LocalCompanySyncService(
-    actorSystem: ActorSystem,
-    companyUpdateConfiguration: CompanyUpdateTaskConfiguration,
     companyDataRepository: CompanyDataRepositoryInterface
 )(implicit
     executionContext: ExecutionContext

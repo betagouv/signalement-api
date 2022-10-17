@@ -1,5 +1,6 @@
 @import utils.FrontRoute
 @import java.net.URI
+@import models.company.Company
 @(websiteUrl: URI, company: Company, invitedBy: Option[User])(implicit frontRoute: FrontRoute)
 
 @views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise ${company.name} sur SignalConso") {

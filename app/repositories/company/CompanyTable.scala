@@ -1,7 +1,7 @@
 package repositories.company
 
-import models.Address
-import models.Company
+import models.company.Address
+import models.company.Company
 import repositories.DatabaseTable
 import slick.lifted.TableQuery
 import utils.Constants.Departments

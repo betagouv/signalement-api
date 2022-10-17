@@ -10,6 +10,8 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import loader.SignalConsoComponents
 import models._
+import models.company.AccessLevel
+import models.company.CompanyWithAccess
 import models.event.Event
 import models.report.Gender
 import models.report.Report

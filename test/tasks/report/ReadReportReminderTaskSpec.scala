@@ -2,6 +2,7 @@ package tasks.report
 
 import cats.data.Validated.Valid
 import models._
+import models.company.AccessLevel
 import models.event.Event
 import models.report.Report
 import models.report.ReportStatus

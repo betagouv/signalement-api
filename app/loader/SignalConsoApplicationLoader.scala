@@ -60,6 +60,8 @@ import repositories.authtoken.AuthTokenRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
+import repositories.company.CompanySyncRepository
+import repositories.company.CompanySyncRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.consumer.ConsumerRepository
@@ -396,18 +398,20 @@ class SignalConsoComponents(
   val readReportsReminderTask = new ReadReportsReminderTask(applicationConfiguration.task, eventRepository, mailService)
 
   val localCompanySyncService: LocalCompanySyncServiceInterface =
-    new LocalCompanySyncService(actorSystem, applicationConfiguration.task.companyUpdate, companyDataRepository)
+    new LocalCompanySyncService(companyDataRepository)
 
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
   )
 
+  val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
   val companyTask = new CompanyUpdateTask(
     actorSystem,
     companyRepository,
     applicationConfiguration.task,
     companySyncService,
-    localCompanySyncService
+    localCompanySyncService,
+    companySyncRepository
   )
 
   logger.trace("Starting App and sending sentry alert")

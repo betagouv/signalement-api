@@ -7,6 +7,8 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import controllers.routes
 import models._
+import models.company.AccessLevel
+import models.company.Company
 import models.token.TokenKind.CompanyInit
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
