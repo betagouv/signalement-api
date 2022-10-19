@@ -12,7 +12,7 @@ trait SubscriptionRepositoryInterface extends CRUDRepositoryInterface[Subscripti
 
   def list(userId: UUID): Future[List[Subscription]]
 
-  def listForFrequency(frequency: Period): Future[List[(Subscription, EmailAddress)]]
+  def listForFrequency(frequency: Period): Future[List[(Subscription, Option[EmailAddress])]]
 
   def getDirectionDepartementaleEmail(department: String): Future[Seq[EmailAddress]]
 }
