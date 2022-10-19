@@ -24,14 +24,6 @@ case class CompanyUpdateTaskConfiguration(
     etablissementApiKey: String
 )
 
-// TODO check toutes les usages de ces trucs là ailleurs que dans la task
-//case class ReportTaskConfiguration(
-//    reportReminderByPostDelay: Period, // 28days
-//    noAccessClosureDelay: Period, // 60days
-//    withAccessClosureDelay: Period, // 25days
-//    mailReminderDelay: Period // 7days.
-//)
-
 case class ReportClosureTaskConfiguration(
     startTime: LocalTime
 )
