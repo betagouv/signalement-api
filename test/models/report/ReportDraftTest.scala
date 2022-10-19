@@ -50,6 +50,7 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.companyId, companyId)
         .withFieldConst(_.id, reportId)
         .withFieldConst(_.creationDate, creationDate)
+        .withFieldConst(_.expirationDate, expirationDate)
         .withFieldConst(_.status, ReportStatus.LanceurAlerte)
         .transform
 
