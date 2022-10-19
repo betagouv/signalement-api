@@ -35,32 +35,34 @@ class ReportNotificationTask(
 
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
-
     val now = OffsetDateTime.now
-
-    if (LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay) {
-      runPeriodicNotificationTask(now, Period.ofDays(7))
-    }
-
-    runPeriodicNotificationTask(now, Period.ofDays(1))
+    val isWeeklySubscriptionsDay = LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay
+    for {
+      _ <-
+        if (isWeeklySubscriptionsDay)
+          runPeriodicNotificationTask(now, Period.ofDays(7))
+        else Future.successful(())
+      _ <- runPeriodicNotificationTask(now, Period.ofDays(1))
+    } yield ()
     ()
   })
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
-
     val end = now
     val start = end.minus(period)
-
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
-    for {
-      subscriptions <- subscriptionRepository.listForFrequency(period)
+    val executionFuture = for {
+      subscriptionsWithMaybeEmails <- subscriptionRepository.listForFrequency(period)
+      subscriptionsWithEmails = subscriptionsWithMaybeEmails.collect { case (s, Some(ea)) => (s, ea) }
+      _ = logger.debug(s"Found ${subscriptionsWithEmails.size} subscriptions to handle (period $period)")
       reportsWithFiles <- reportRepository.getReportsWithFiles(
         ReportFilter(
           start = Some(start),
           end = Some(end)
         )
       )
-      subscriptionsEmailAndReports = subscriptions.map { case (subscription, emailAddress) =>
+      _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
+      subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
         val filteredReport = reportsWithFiles
           .filter { case (report, _) =>
             subscription.departments.isEmpty || subscription.departments
@@ -87,16 +89,29 @@ class ReportNotificationTask(
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
+      _ = logger.debug(
+        s"We have ${subscriptionEmailAndNonEmptyReports.size} emails of notifications to send (period $period)"
+      )
       _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),
             subscription,
             filteredReport.toList,
-            start.toLocalDate()
+            start.toLocalDate
           )
         )
       }.sequence
     } yield ()
+    executionFuture
+      .andThen { _ =>
+        logger.info(s"Notifications task ran successfully for period $period")
+      }
+      .recover { err =>
+        logger.error(
+          s"Failure when running reports notification task for period $period at $now",
+          err
+        )
+      }
   }
 }
