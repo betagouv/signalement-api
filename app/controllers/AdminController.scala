@@ -96,7 +96,8 @@ class AdminController(
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus.TraitementEnCours
+    status = ReportStatus.TraitementEnCours,
+    expirationDate = OffsetDateTime.now.plusDays(50)
   )
 
   private def genReportFile = ReportFile(

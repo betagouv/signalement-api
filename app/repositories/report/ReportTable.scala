@@ -74,7 +74,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ),
       (Option[URL], Option[String]),
       Option[String],
-      OffsetDateTime,
+      (OffsetDateTime, OffsetDateTime),
       String,
       String,
       EmailAddress,
@@ -111,7 +111,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
           ),
           (websiteURL, host),
           phone,
-          creationDate,
+          (creationDate, expirationDate),
           firstName,
           lastName,
           email,
@@ -159,7 +159,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         vendor = vendor,
         tags = tags,
         reponseconsoCode = reponseconsoCode,
-        ccrfCode = ccrfCode
+        ccrfCode = ccrfCode,
+        expirationDate = expirationDate
       )
   }
 
@@ -184,7 +185,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ),
       (r.websiteURL.websiteURL, r.websiteURL.host),
       r.phone,
-      r.creationDate,
+      (r.creationDate, r.expirationDate),
       r.firstName,
       r.lastName,
       r.email,
@@ -221,7 +222,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
     ),
     (websiteURL, host),
     phone,
-    creationDate,
+    (creationDate, expirationDate),
     firstName,
     lastName,
     email,

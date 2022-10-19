@@ -47,7 +47,7 @@ case class Report(
     tags: List[ReportTag] = Nil,
     reponseconsoCode: List[String] = Nil,
     ccrfCode: List[String] = Nil,
-    expirationDate: OffsetDateTime = OffsetDateTime.now()
+    expirationDate: OffsetDateTime
 ) {
 
   def initialStatus() =
