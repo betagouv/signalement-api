@@ -33,13 +33,17 @@ class SubscriptionRepository(override val dbConfig: DatabaseConfig[JdbcProfile])
         .result
     )
 
-  override def listForFrequency(frequency: Period): Future[List[(Subscription, EmailAddress)]] = db
+  override def listForFrequency(frequency: Period): Future[List[(Subscription, Option[EmailAddress])]] = db
     .run(
       SubscriptionTable.table
         .filter(_.frequency === frequency)
         .joinLeft(UserTable.table)
         .on(_.userId === _.id)
-        .map(s => (s._1, s._1.email.ifNull(s._2.map(_.email)).get))
+        .map { case (subscription, maybeUser) =>
+          // it is possible to not find the user : it may have been soft-deleted
+          val maybeEmail = subscription.email.ifNull(maybeUser.map(_.email))
+          (subscription, maybeEmail)
+        }
         .to[List]
         .result
     )
