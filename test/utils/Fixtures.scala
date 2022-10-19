@@ -200,7 +200,7 @@ object Fixtures {
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status,
-    expirationDate = OffsetDateTime.now.plusDays(100)
+    expirationDate = OffsetDateTime.now()
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
