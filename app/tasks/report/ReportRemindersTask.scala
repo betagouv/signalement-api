@@ -84,7 +84,7 @@ class ReportRemindersTask(
         .getOrElse(report.id, Nil)
         .filter(e => allEmailsToProActions.contains(e.action))
     val hadMaxReminderEmails =
-      previousEmailsEvents.count(e => reminderEmailsActions.contains(e.action)) > maxReminderCount
+      previousEmailsEvents.count(e => reminderEmailsActions.contains(e.action)) >= maxReminderCount
     val hadARecentEmail =
       previousEmailsEvents.exists(_.creationDate.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
     val shouldSendEmail = !hadMaxReminderEmails && !hadARecentEmail

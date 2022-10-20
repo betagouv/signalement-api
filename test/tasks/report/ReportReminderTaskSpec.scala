@@ -8,10 +8,10 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 import play.api.mvc.Results
 import play.api.test.WithApplication
-import repositories.event.EventFilter
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.AppSpec
+import utils.Constants.EventType
 import utils.Fixtures
 import utils.TestApp
 
@@ -37,35 +37,54 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
 
   val creationDate = OffsetDateTime.parse("2020-01-01T00:00:00Z")
   val taskRunDate = OffsetDateTime.parse("2020-06-01T00:00:00Z")
-  val dateInThePast = taskRunDate.minusDays(5)
-  val dateInTheFuture = taskRunDate.plusDays(5)
+  val date20DaysBefore = taskRunDate.minusDays(20)
+  val date10DaysBefore = taskRunDate.minusDays(10)
 
-  def buildReportWithCompanyAndUsers(status: ReportStatus = ReportStatus.TraitementEnCours): Future[Report] = {
+  def buildReportWithCompanyAndUserAndPastEvents(
+      status: ReportStatus = ReportStatus.TraitementEnCours,
+      withUser: Boolean = true,
+      events: List[(ActionEventValue, OffsetDateTime)] = Nil
+  ): Future[Report] = {
     val company = Fixtures.genCompany.sample.get
     val proUser = Fixtures.genProUser.sample.get
     val report = Fixtures.genReportForCompany(company).sample.get.copy(status = status)
     for {
       finalCompany <- companyRepository.create(company)
-      finalProUser <- userRepository.create(proUser)
-      _ <- companyAccessRepository.createUserAccess(
-        finalCompany.id,
-        finalProUser.id,
-        AccessLevel.MEMBER
-      )
+      _ <-
+        if (withUser) {
+          for {
+            finalProUser <- userRepository.create(proUser)
+            _ <- companyAccessRepository.createUserAccess(
+              finalCompany.id,
+              finalProUser.id,
+              AccessLevel.MEMBER
+            )
+          } yield ()
+        } else Future.successful(())
       finalReport <- reportRepository.create(report)
+      _ <- Future.sequence(events.map { case (eventAction, creationDate) =>
+        val event = Fixtures
+          .genEventForReport(finalReport.id, eventType = EventType.SYSTEM, eventAction)
+          .sample
+          .get
+          .copy(creationDate = creationDate)
+        eventRepository.create(event)
+      })
     } yield finalReport
   }
 
-  def hasNewEvent(newEventsCutoffDate: OffsetDateTime, report: Report, action: ActionEventValue): Future[Boolean] =
+  def getNewEvents(newEventsCutoffDate: OffsetDateTime, report: Report) =
     eventRepository
-      .getEvents(report.id, EventFilter(action = Some(action)))
+      .getEvents(report.id)
       .map(_.filter(_.creationDate.isAfter(newEventsCutoffDate)))
+
+  def hasNewEvent(newEventsCutoffDate: OffsetDateTime, report: Report, action: ActionEventValue): Future[Boolean] =
+    getNewEvents(newEventsCutoffDate, report)
+      .map(_.filter(_.action == action))
       .map(_.nonEmpty)
 
-  def hasZeroEvents(newEventsCutoffDate: OffsetDateTime, report: Report): Future[Boolean] =
-    eventRepository
-      .getEvents(report.id, EventFilter())
-      .map(_.filter(_.creationDate.isAfter(newEventsCutoffDate)))
+  def hasZeroNewEvents(newEventsCutoffDate: OffsetDateTime, report: Report): Future[Boolean] =
+    getNewEvents(newEventsCutoffDate, report)
       .map(_.isEmpty)
 
   "ReportReminderTask should send reminders for the emails that need it" >> {
@@ -79,16 +98,29 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
       Await.result(
         for {
           // Setup
-          ongoingReport <- buildReportWithCompanyAndUsers()
+          ongoingReport <- buildReportWithCompanyAndUserAndPastEvents()
+          ongoingReportWithMaxRemindersAlready <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_REMIND_NO_READING, date20DaysBefore),
+              (EMAIL_PRO_REMIND_NO_READING, date20DaysBefore)
+            )
+          )
+          ongoingReportWithNoUser <- buildReportWithCompanyAndUserAndPastEvents(withUser = false)
+
           // Run
           newEventsCutoffDate = OffsetDateTime.now()
+
           _ <- reportReminderTask.runTask(taskRunDate)
-          // Check
+//           Check
 //          allEventsForReport <- eventRepository
-//            .getEvents(ongoingReport.id)
+//            .getEvents(ongoingReportWithNoUser.id)
 //          _ = println("EVENTS")
 //          _ = println(allEventsForReport.sortBy(_.creationDate).map(e => e.creationDate -> e.action))
+
           _ <- hasNewEvent(newEventsCutoffDate, ongoingReport, EMAIL_PRO_REMIND_NO_READING) map (_ must beTrue)
+          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithMaxRemindersAlready) map (_ must beTrue)
+          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithNoUser) map (_ must beTrue)
+
         } yield (),
         Duration.Inf
       )
