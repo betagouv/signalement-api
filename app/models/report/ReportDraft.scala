@@ -45,8 +45,9 @@ case class ReportDraft(
 
   def generateReport(
       maybeCompanyId: Option[UUID],
-      reportId: UUID = UUID.randomUUID(),
-      creationDate: OffsetDateTime = OffsetDateTime.now()
+      creationDate: OffsetDateTime,
+      expirationDate: OffsetDateTime,
+      reportId: UUID = UUID.randomUUID()
   ): Report = {
     val report = Report(
       reportId,
@@ -75,7 +76,8 @@ case class ReportDraft(
       tags = tags.distinct
         .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
-      ccrfCode = ccrfCode.getOrElse(Nil)
+      ccrfCode = ccrfCode.getOrElse(Nil),
+      expirationDate = expirationDate
     )
     report.copy(status = report.initialStatus())
   }

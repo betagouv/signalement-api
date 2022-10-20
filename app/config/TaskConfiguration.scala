@@ -8,7 +8,8 @@ import scala.concurrent.duration.FiniteDuration
 case class TaskConfiguration(
     active: Boolean,
     subscription: SubscriptionTaskConfiguration,
-    report: ReportTaskConfiguration,
+    reportClosure: ReportClosureTaskConfiguration,
+    reportReminders: ReportRemindersTaskConfiguration,
     inactiveAccounts: InactiveAccountsTaskConfiguration,
     companyUpdate: CompanyUpdateTaskConfiguration
 )
@@ -23,10 +24,13 @@ case class CompanyUpdateTaskConfiguration(
     etablissementApiKey: String
 )
 
-case class ReportTaskConfiguration(
+case class ReportClosureTaskConfiguration(
+    startTime: LocalTime
+)
+
+case class ReportRemindersTaskConfiguration(
     startTime: LocalTime,
     intervalInHours: FiniteDuration,
-    noAccessReadingDelay: Period,
-    mailReminderDelay: Period,
-    reportReminderByPostDelay: Period
+    mailReminderDelay: Period // 7days.
+
 )

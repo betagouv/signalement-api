@@ -55,7 +55,7 @@ class EventRepository(
         table.action === action.value
       }
 
-  override def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]] = db.run {
+  override def getEvents(reportId: UUID, filter: EventFilter = EventFilter()): Future[List[Event]] = db.run {
     getRawEvents(filter)
       .filter(_.reportId === reportId)
       .sortBy(_.creationDate.desc)
@@ -100,7 +100,7 @@ class EventRepository(
         .result
     )
 
-  override def prefetchReportsEvents(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
+  override def fetchEventsOfReports(reports: List[Report]): Future[Map[UUID, List[Event]]] = {
     val reportsIds = reports.map(_.id)
     db.run(
       table

@@ -219,8 +219,22 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .result
   )
 
-  def getByStatus(status: ReportStatus): Future[List[Report]] =
-    db.run(table.filter(_.status === status.entryName).to[List].result)
+  def getByStatus(status: List[ReportStatus]): Future[List[Report]] =
+    db.run(
+      table
+        .filter(_.status inSet status.map(_.entryName))
+        .to[List]
+        .result
+    )
+
+  override def getByStatusAndExpired(status: List[ReportStatus], now: OffsetDateTime): Future[List[Report]] =
+    db.run(
+      table
+        .filter(_.status inSet status.map(_.entryName))
+        .filter(_.expirationDate <= now)
+        .to[List]
+        .result
+    )
 
   def getPendingReports(companiesIds: List[UUID]): Future[List[Report]] = db
     .run(

@@ -41,7 +41,7 @@ class BaseReportedPhoneControllerSpec(implicit ee: ExecutionEnv)
         c <- companyRepository.getOrCreate(company.siret, company)
         _ <-
           reportRepository.create(
-            Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)).generateReport(None)
+            Fixtures.genReportFromDraft(Fixtures.genDraftReport.sample.get.copy(phone = Some(reportedPhone)))
           )
         report2 <- reportRepository.create(Fixtures.genReportForCompany(c).sample.get.copy(phone = Some(reportedPhone)))
         _ <-

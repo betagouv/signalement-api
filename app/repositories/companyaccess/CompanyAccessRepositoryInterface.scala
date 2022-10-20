@@ -24,7 +24,7 @@ trait CompanyAccessRepositoryInterface {
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[List[User]]
 
-  def fetchUsersByCompanyId(
+  def fetchUsersByCompanyIds(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]]
@@ -39,9 +39,10 @@ trait CompanyAccessRepositoryInterface {
       ticks: Int = 12
   ): Future[Vector[(Timestamp, Int)]]
 
-  def createCompanyUserAccess(
+  def createCompanyUserAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
+
 }

@@ -46,7 +46,8 @@ case class Report(
     vendor: Option[String] = None,
     tags: List[ReportTag] = Nil,
     reponseconsoCode: List[String] = Nil,
-    ccrfCode: List[String] = Nil
+    ccrfCode: List[String] = Nil,
+    expirationDate: OffsetDateTime
 ) {
 
   def initialStatus() =
@@ -68,6 +69,10 @@ case class Report(
     tags.intersect(Seq(ReportTag.ProduitDangereux, ReportTag.ReponseConso)).isEmpty
 
   def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
+
+  def isReadByPro = ReportStatus.statusReadByPro.contains(status)
+
+  def isInFinalStatus = ReportStatus.isFinal(status)
 }
 
 object Report {
@@ -94,7 +99,8 @@ object Report {
         "host" -> report.websiteURL.host,
         "vendor" -> report.vendor,
         "tags" -> report.tags,
-        "activityCode" -> report.companyActivityCode
+        "activityCode" -> report.companyActivityCode,
+        "expirationDate" -> report.expirationDate
       ) ++ ((userRole, report.contactAgreement) match {
         case (Some(UserRole.Professionnel), false) => Json.obj()
         case (_, _) =>

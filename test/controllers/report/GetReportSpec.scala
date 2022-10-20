@@ -282,7 +282,8 @@ trait GetReportContext extends AppSpec {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus.TraitementEnCours
+    status = ReportStatus.TraitementEnCours,
+    expirationDate = OffsetDateTime.now.plusDays(20)
   )
 
   val neverRequestedFinalReport = Report(
@@ -302,7 +303,8 @@ trait GetReportContext extends AppSpec {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus.ConsulteIgnore
+    status = ReportStatus.ConsulteIgnore,
+    expirationDate = OffsetDateTime.now.plusDays(20)
   )
 
   val alreadyRequestedReport = Report(
@@ -322,7 +324,8 @@ trait GetReportContext extends AppSpec {
     email = EmailAddress("email"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus.Transmis
+    status = ReportStatus.Transmis,
+    expirationDate = OffsetDateTime.now.plusDays(20)
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

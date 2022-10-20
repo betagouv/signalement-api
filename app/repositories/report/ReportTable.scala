@@ -46,6 +46,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def tags = column[List[ReportTag]]("tags")
   def reponseconsoCode = column[List[String]]("reponseconso_code")
   def ccrfCode = column[List[String]]("ccrf_code")
+  def expirationDate = column[OffsetDateTime]("expiration_date")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -73,7 +74,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ),
       (Option[URL], Option[String]),
       Option[String],
-      OffsetDateTime,
+      (OffsetDateTime, OffsetDateTime),
       String,
       String,
       EmailAddress,
@@ -110,7 +111,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
           ),
           (websiteURL, host),
           phone,
-          creationDate,
+          (creationDate, expirationDate),
           firstName,
           lastName,
           email,
@@ -158,7 +159,8 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         vendor = vendor,
         tags = tags,
         reponseconsoCode = reponseconsoCode,
-        ccrfCode = ccrfCode
+        ccrfCode = ccrfCode,
+        expirationDate = expirationDate
       )
   }
 
@@ -183,7 +185,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ),
       (r.websiteURL.websiteURL, r.websiteURL.host),
       r.phone,
-      r.creationDate,
+      (r.creationDate, r.expirationDate),
       r.firstName,
       r.lastName,
       r.email,
@@ -220,7 +222,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
     ),
     (websiteURL, host),
     phone,
-    creationDate,
+    (creationDate, expirationDate),
     firstName,
     lastName,
     email,

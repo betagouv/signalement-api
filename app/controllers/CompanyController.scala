@@ -31,7 +31,6 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -55,7 +54,6 @@ class CompanyController(
 
   val logger: Logger = Logger(this.getClass)
 
-  val noAccessReadingDelay = taskConfiguration.report.noAccessReadingDelay
   val contactAddress = emailConfiguration.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
@@ -133,16 +131,16 @@ class CompanyController(
               companies <- companyRepository.fetchCompanies(results.companyIds)
               activationCodesMap <- accessTokenRepository.prefetchActivationCodes(results.companyIds)
               eventsMap <- eventRepository.fetchEvents(results.companyIds)
-              reports <- reportRepository.getPendingReports(results.companyIds)
+              pendingReports <- reportRepository.getPendingReports(results.companyIds)
             } yield {
-              val reportsMap = reports.filter(_.companyId.isDefined).groupBy(_.companyId.get)
+              val pendingReportsMap = pendingReports.filter(_.companyId.isDefined).groupBy(_.companyId.get)
               val htmlDocuments = companies.flatMap(c =>
                 activationCodesMap
                   .get(c.id)
                   .map(
                     getHtmlDocumentForCompany(
                       c,
-                      reportsMap.getOrElse(c.id, Nil),
+                      pendingReportsMap.getOrElse(c.id, Nil),
                       eventsMap.getOrElse(c.id, Nil),
                       _
                     )
@@ -159,23 +157,24 @@ class CompanyController(
 
   private def getHtmlDocumentForCompany(
       company: Company,
-      reports: List[Report],
+      pendingReports: List[Report],
       events: List[Event],
       activationKey: String
   ) = {
     val lastContactLocalDate = events
-      .filter(e =>
-        e.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minus(noAccessReadingDelay))
-          && List(ActionEvent.POST_ACCOUNT_ACTIVATION_DOC, ActionEvent.EMAIL_PRO_REMIND_NO_READING).contains(e.action)
-      )
+      .filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
       .sortBy(_.creationDate)
       .reverse
       .headOption
       .map(_.creationDate.toLocalDate)
 
-    val report = reports.sortBy(_.creationDate).reverse.headOption
+    val report = pendingReports
+      // just in case. Avoid communicating on past dates
+      .filter(_.expirationDate.isAfter(OffsetDateTime.now()))
+      .sortBy(_.expirationDate)
+      .headOption
     val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
-    val reportExpirationLocalDate = report.map(_.creationDate.plus(noAccessReadingDelay).toLocalDate)
+    val reportExpirationLocalDate = report.map(_.expirationDate.toLocalDate)
 
     lastContactLocalDate
       .map { lastContact =>

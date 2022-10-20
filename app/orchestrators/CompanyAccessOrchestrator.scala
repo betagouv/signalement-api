@@ -109,7 +109,7 @@ class CompanyAccessOrchestrator(
 
   private def getHeadOffice(company: Company): Future[Option[Company]] =
     companyRepository
-      .findHeadOffice(List(SIREN(company.siret)), openOnly = false)
+      .findHeadOffices(List(SIREN(company.siret)), openOnly = false)
       .flatMap {
         case Nil =>
           logger.warn(s"No head office for siret ${company.siret}")

@@ -13,7 +13,6 @@ object TaskType extends Enum[TaskType] {
   case object InactiveAccountClean extends TaskType
   case object RemindUnreadReportsByEmail extends ReportTaskType
   case object RemindReadReportByMail extends ReportTaskType
-  case object CloseReadReportWithNoAction extends ReportTaskType
-  case object CloseUnreadReport extends ReportTaskType
+  case object CloseExpiredReport extends ReportTaskType
 
 }
