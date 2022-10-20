@@ -20,6 +20,8 @@ import config.TaskConfiguration
 import controllers.error.AppError
 
 import java.util.UUID
+import scala.util.Failure
+import scala.util.Success
 
 package object tasks {
 
@@ -55,19 +57,26 @@ package object tasks {
       actorSystem: ActorSystem,
       taskConfiguration: TaskConfiguration,
       startTime: LocalTime,
-      interval: FiniteDuration
-  )(block: => Any)(implicit e: ExecutionContext): Unit = {
+      interval: FiniteDuration,
+      taskName: String
+  )(execution: => Future[Unit])(implicit e: ExecutionContext): Unit = {
     val initialDelay = computeStartingTime(startTime)
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
       interval
     ) { () =>
-      logger.debug(s"initialDelay - ${initialDelay}");
       if (taskConfiguration.active) {
-        block
-      }
+        logger.info(s"$taskName launched")
+        execution.onComplete {
+          case Success(_) =>
+            logger.info(s"$taskName finished")
+          case Failure(err) =>
+            logger.error(s"$taskName failed", err)
+        }
+      } else logger.info(s"$taskName not launched, tasks are disabled")
       ()
     }
+    logger.info(s"$taskName scheduled for $startTime (in $initialDelay)")
     ()
   }
 

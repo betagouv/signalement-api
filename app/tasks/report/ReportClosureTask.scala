@@ -46,11 +46,11 @@ class ReportClosureTask(
     actorSystem,
     taskConfiguration,
     startTime = taskConfiguration.reportClosure.startTime,
-    interval = 1.day
+    interval = 1.day,
+    taskName = "ReportClosureTask"
   )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
-    logger.info(s"Traitement de fermeture des signalement expirés (using time ${taskRunDate})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       reportsToClose <- reportRepository.getByStatusAndExpired(ongoingReportsStatus, now = taskRunDate)

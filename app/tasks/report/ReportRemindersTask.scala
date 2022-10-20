@@ -53,11 +53,11 @@ class ReportRemindersTask(
     actorSystem,
     taskConfiguration,
     startTime = conf.startTime,
-    interval = conf.intervalInHours
+    interval = conf.intervalInHours,
+    taskName = "ReportRemindersTask"
   )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
-    logger.info(s"Traitement de mails de relance aux pros (using time ${taskRunDate})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       ongoingReportsWithUsers <- getReportsByStatusWithUsers(ongoingReportsStatus)
@@ -69,6 +69,23 @@ class ReportRemindersTask(
       }
       _ = logger.info(s"Found ${finalReportsWithUsers.size} reports for which we should send a reminder")
       _ <- sendReminderEmailsWithErrorHandling(finalReportsWithUsers)
+    } yield ()
+  }
+
+  private def sendReminderEmailsWithErrorHandling(reportsWithUsers: List[(Report, List[User])]): Future[Unit] = {
+    logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
+    for {
+      successesOrFailuresList <- Future.sequence(reportsWithUsers.map { case (report, users) =>
+        sendReminderEmail(report, users).transform {
+          case Success(_) => Success(Right(report.id))
+          case Failure(err) =>
+            logger.error(s"Error sending reminder email for report ${report.id} to ${users.length} users", err)
+            Success(Left(report.id))
+        }
+      })
+      (failures, successes) = successesOrFailuresList.partitionMap(identity)
+      _ = logger.info(s"Successful reminder emails sent for ${successes.length} reports")
+      _ = if (failures.nonEmpty) logger.error(s"Failed to send reminder emails for ${failures.length} reports")
     } yield ()
   }
 
@@ -89,23 +106,6 @@ class ReportRemindersTask(
       previousEmailsEvents.exists(_.creationDate.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
     val shouldSendEmail = !hadMaxReminderEmails && !hadARecentEmail
     shouldSendEmail
-  }
-
-  private def sendReminderEmailsWithErrorHandling(reportsWithUsers: List[(Report, List[User])]): Future[Unit] = {
-    logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
-    for {
-      successesOrFailuresList <- Future.sequence(reportsWithUsers.map { case (report, users) =>
-        sendReminderEmail(report, users).transform {
-          case Success(_) => Success(Right(report.id))
-          case Failure(err) =>
-            logger.error(s"Error sending reminder email for report ${report.id} to ${users.length} users", err)
-            Success(Left(report.id))
-        }
-      })
-      (failures, successes) = successesOrFailuresList.partitionMap(identity)
-      _ = logger.info(s"Successful reminder emails sent for ${successes.length} reports")
-      _ = if (failures.nonEmpty) logger.error(s"Failed to send reminder emails for ${failures.length} reports")
-    } yield ()
   }
 
   private def sendReminderEmail(
