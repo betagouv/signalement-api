@@ -6,6 +6,5 @@ CREATE TABLE IF NOT EXISTS company_sync
     last_updated TIMESTAMP not null default '1970-01-01'::timestamp
 );
 
-
 -- !Downs
 

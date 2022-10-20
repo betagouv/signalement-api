@@ -16,6 +16,8 @@ import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
 
 class ReportNotificationTask(
     actorSystem: ActorSystem,
@@ -104,14 +106,15 @@ class ReportNotificationTask(
       }.sequence
     } yield ()
     executionFuture
-      .andThen { _ =>
-        logger.info(s"Notifications task ran successfully for period $period")
+      .onComplete {
+        case Success(_) =>
+          logger.info(s"Notifications task ran successfully for period $period")
+        case Failure(err) =>
+          logger.error(
+            s"Failure when running reports notification task for period $period at $now",
+            err
+          )
       }
-      .recover { err =>
-        logger.error(
-          s"Failure when running reports notification task for period $period at $now",
-          err
-        )
-      }
+    executionFuture
   }
 }

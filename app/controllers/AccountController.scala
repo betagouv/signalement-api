@@ -34,7 +34,6 @@ class AccountController(
 
   implicit val contactAddress = emailConfiguration.contactAddress
 
-  // TODO should also be secure ?
   def fetchUser = SecuredAction.async { implicit request =>
     for {
       userOpt <- userRepository.get(request.identity.id)

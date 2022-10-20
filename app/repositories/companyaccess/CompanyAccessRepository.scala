@@ -81,7 +81,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
   ): Future[List[User]] =
     fetchUsersAndAccessesByCompanies(companyIds, levels).map(_.map(_._2))
 
-  override def fetchUsersByCompanyId(
+  override def fetchUsersByCompanyIds(
       companyIds: List[UUID],
       levels: Seq[AccessLevel] = Seq(AccessLevel.ADMIN, AccessLevel.MEMBER)
   ): Future[Map[UUID, List[User]]] =
@@ -101,7 +101,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .result
     )
 
-  override def createCompanyUserAccess(
+  override def createCompanyUserAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel
@@ -117,7 +117,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
     )
 
   override def createUserAccess(companyId: UUID, userId: UUID, level: AccessLevel): Future[Int] =
-    db.run(createCompanyUserAccess(companyId, userId, level))
+    db.run(createCompanyUserAccessWithoutRun(companyId, userId, level))
 
   override def setUserLevel(company: Company, user: User, level: AccessLevel): Future[Unit] =
     db.run(

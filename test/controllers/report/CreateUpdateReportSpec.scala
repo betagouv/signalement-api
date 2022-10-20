@@ -1,6 +1,7 @@
 package controllers.report
 
 import java.time.OffsetDateTime
+import java.time.Period
 import java.util.UUID
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -31,6 +32,7 @@ import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
+import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -215,7 +217,8 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
           companyName = Some(reportCompanyAnotherSiret.name),
           companyAddress = reportCompanyAnotherSiret.address,
           companySiret = Some(reportCompanyAnotherSiret.siret),
-          status = ReportStatus.TraitementEnCours
+          status = ReportStatus.TraitementEnCours,
+          expirationDate = report.creationDate.plus(Period.ofDays(60))
         )
       )}
     """
@@ -250,7 +253,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 
   var draftReport = Fixtures.genDraftReport.sample.get
-  var report = draftReport.generateReport(None)
+  var report = Fixtures.genReportFromDraft(draftReport)
   val proUser = Fixtures.genProUser.sample.get
 
   val concernedAdminUser = Fixtures.genAdminUser.sample.get
@@ -328,8 +331,14 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
     )
 
   def checkReport(reportData: Report) = {
-    val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf)
-    dbReport.get must beEqualTo(reportData)
+    val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf).get
+    // The expected dates may differ slightly with what's calculated in the code, if the code uses .now()
+    // We use a rough approximation
+    (dbReport.creationDate must beCloseInTimeTo(reportData.creationDate)) and
+      (dbReport.expirationDate must beCloseInTimeTo(reportData.expirationDate)) and
+      (dbReport must beEqualTo(
+        reportData.copy(creationDate = dbReport.creationDate, expirationDate = dbReport.expirationDate)
+      ))
   }
 
   def mailMustHaveBeenSent(
@@ -350,11 +359,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
-    val expectedReport = draftReport
-      .generateReport(reports.head.companyId)
+    val expectedReport = Fixtures
+      .genReportFromDraft(draftReport, reports.head.companyId)
       .copy(
         id = reports.head.id,
         creationDate = reports.head.creationDate,
+        expirationDate = reports.head.expirationDate,
         status = status
       )
     report = reports.head
@@ -371,5 +381,16 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   def eventMustNotHaveBeenCreated(reportUUID: UUID, existingEvents: List[Event]) = {
     val events = Await.result(eventRepository.getEvents(reportUUID, EventFilter()), Duration.Inf)
     events.length must beEqualTo(existingEvents.length)
+  }
+
+  def beCloseInTimeTo(date: OffsetDateTime) = new Matcher[OffsetDateTime] {
+    def apply[D <: OffsetDateTime](e: Expectable[D]) =
+      result(
+        ChronoUnit.HOURS.between(e.value, date) == 0,
+        "Dates are nearly at the same time",
+        "Dates are too different",
+        e
+      )
+
   }
 }

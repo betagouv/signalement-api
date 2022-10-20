@@ -45,7 +45,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
         c <- companyRepository.getOrCreate(company.siret, company)
         _ <-
           reportRepository.create(
-            Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website1)).generateReport(None)
+            Fixtures.genReportFromDraft(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website1)))
           )
         _ <-
           websiteRepository.create(
@@ -57,7 +57,7 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
           )
         _ <-
           reportRepository.create(
-            Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)).generateReport(None)
+            Fixtures.genReportFromDraft(Fixtures.genDraftReport.sample.get.copy(websiteURL = Some(website2)))
           )
         _ <-
           websiteRepository.create(
@@ -68,9 +68,10 @@ class BaseWebsiteControllerSpec(implicit ee: ExecutionEnv)
               .copy(host = website2.getHost.getOrElse(""), companyId = None, companyCountry = None)
           )
         _ <- reportRepository.create(
-          Fixtures.genDraftReport.sample.get
-            .copy(websiteURL = Some(URL(s"${website2}/test?query")))
-            .generateReport(None)
+          Fixtures.genReportFromDraft(
+            Fixtures.genDraftReport.sample.get
+              .copy(websiteURL = Some(URL(s"${website2}/test?query")))
+          )
         )
         _ <- reportRepository.create(
           Fixtures

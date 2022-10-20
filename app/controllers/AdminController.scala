@@ -96,7 +96,8 @@ class AdminController(
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
-    status = ReportStatus.TraitementEnCours
+    status = ReportStatus.TraitementEnCours,
+    expirationDate = OffsetDateTime.now.plusDays(50)
   )
 
   private def genReportFile = ReportFile(
@@ -395,7 +396,7 @@ class AdminController(
         results =>
           for {
             reports <- reportRepository.getReportsByIds(results.reportIds)
-            eventsMap <- eventRepository.prefetchReportsEvents(reports)
+            eventsMap <- eventRepository.fetchEventsOfReports(reports)
             filteredEvents = reports.flatMap { report =>
               eventsMap
                 .get(report.id)

@@ -9,34 +9,19 @@ import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import controllers.error.AppError
-import controllers.error.AppError.DuplicateReportCreation
-import controllers.error.AppError.ExternalReportsMaxPageSizeExceeded
-import controllers.error.AppError.InvalidEmail
-import controllers.error.AppError.ReportCreationInvalidBody
-import controllers.error.AppError.SpammerEmailBlocked
-import models.event.Event._
+import controllers.error.AppError._
 import models._
 import models.company.AccessLevel
 import models.company.Address
 import models.company.Company
 import models.event.Event
-import models.report.Report
-import models.report.ReportAction
-import models.report.ReportCompany
-import models.report.ReportConsumerUpdate
-import models.report.ReportDraft
-import models.report.ReportFile
-import models.report.ReportFilter
-import models.report.ReportResponse
-import models.report.ReportStatus
-import models.report.ReportTag
-import models.report.ReportWithFiles
-import models.report.ReportWordOccurrence
+import models.event.Event._
+import models.report._
 import models.report.ReportWordOccurrence.StopWords
 import models.token.TokenKind.CompanyInit
 import models.website.Website
-import play.api.libs.json.Json
 import play.api.Logger
+import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
@@ -44,12 +29,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
-import services.Email.ConsumerProResponseNotification
-import services.Email.ConsumerReportAcknowledgment
-import services.Email.ConsumerReportReadByProNotification
-import services.Email.DgccrfDangerousProductReportNotification
-import services.Email.ProNewReportNotification
-import services.Email.ProResponseAcknowledgment
+import services.Email._
 import services.MailService
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
@@ -60,13 +40,14 @@ import utils.URL
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.Period
 import java.time.ZoneOffset
 import java.time.temporal.TemporalAmount
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.util.Random
 
 class ReportOrchestrator(
@@ -113,7 +94,7 @@ class ReportOrchestrator(
   private def notifyProfessionalOfNewReport(report: Report, company: Company): Future[Report] =
     for {
       maybeCompanyUsers <- companiesVisibilityOrchestrator
-        .fetchAdminsWithHeadOffice(company.siret)
+        .fetchUsersWithHeadOffices(company.siret)
         .map(NonEmptyList.fromList)
 
       updatedReport <- maybeCompanyUsers match {
@@ -247,10 +228,17 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeCompany <- extractOptionnalCompany(draftReport)
+      maybeCompany <- extractOptionalCompany(draftReport)
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
-      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id))
+      maybeCompanyWithUsers <- maybeCompany.map { company =>
+        for {
+          users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+        } yield (company, users)
+      }.sequence
+      reportCreationDate = OffsetDateTime.now()
+      expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
+      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id), reportCreationDate, expirationDate)
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
@@ -259,6 +247,18 @@ class ReportOrchestrator(
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
+
+  private def chooseExpirationDate(
+      baseDate: OffsetDateTime,
+      maybeCompanyWithUsers: Option[(Company, List[User])]
+  ): OffsetDateTime = {
+    val delayIfCompanyHasNoUsers = Period.ofDays(60)
+    val delayIfCompanyHasUsers = Period.ofDays(25)
+    val delay =
+      if (maybeCompanyWithUsers.exists(_._2.nonEmpty)) delayIfCompanyHasUsers
+      else delayIfCompanyHasNoUsers
+    baseDate.plus(delay)
+  }
 
   private def notifyDgccrfIfNeeded(report: Report): Future[Unit] = for {
     ddEmails <-
@@ -314,7 +314,7 @@ class ReportOrchestrator(
       country.name
     })
 
-  private def extractOptionnalCompany(draftReport: ReportDraft): Future[Option[Company]] =
+  private def extractOptionalCompany(draftReport: ReportDraft): Future[Option[Company]] =
     draftReport.companySiret match {
       case Some(siret) =>
         val company = Company(
@@ -355,6 +355,10 @@ class ReportOrchestrator(
           isPublic = reportCompany.isPublic
         )
       )
+      users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
+      companyWithUsers = (company, users)
+      updateCompanyDate = OffsetDateTime.now()
+      // Update the company
       reportWithNewData <- existingReport match {
         case Some(report) =>
           reportRepository
@@ -370,8 +374,10 @@ class ReportOrchestrator(
             .map(Some(_))
         case _ => Future(None)
       }
+      // Update the status if needed
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        // not sure why we require this condition ?
         .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7)))
         .map(report =>
           reportRepository
@@ -384,12 +390,28 @@ class ReportOrchestrator(
             .map(Some(_))
         )
         .getOrElse(Future(reportWithNewData))
-      updatedReport <- reportWithNewStatus
+      // Update the expiration date if needed
+      reportWithNewStatusAndExpirationDate <- reportWithNewStatus
+        .filter(_.companySiret != existingReport.flatMap(_.companySiret))
+        .filterNot(_.isInFinalStatus)
+        .map(report =>
+          reportRepository
+            .update(
+              report.id,
+              report.copy(
+                expirationDate = chooseExpirationDate(baseDate = updateCompanyDate, Some(companyWithUsers))
+              )
+            )
+            .map(Some(_))
+        )
+        .getOrElse(Future(reportWithNewStatus))
+      // Notify the pro if needed
+      updatedReport <- reportWithNewStatusAndExpirationDate
         .filter(_.status == ReportStatus.TraitementEnCours)
         .filter(_.companySiret.isDefined)
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         .map(r => notifyProfessionalOfNewReport(r, company).map(Some(_)))
-        .getOrElse(Future(reportWithNewStatus))
+        .getOrElse(Future(reportWithNewStatusAndExpirationDate))
       _ <- existingReport match {
         case Some(report) =>
           eventRepository
@@ -399,7 +421,7 @@ class ReportOrchestrator(
                 Some(report.id),
                 Some(company.id),
                 Some(userUUID),
-                OffsetDateTime.now(),
+                updateCompanyDate,
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_COMPANY_CHANGE,
                 stringToDetailsJsValue(
@@ -547,6 +569,7 @@ class ReportOrchestrator(
     _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany))
   } yield ()
 
+  // dead code ?
   def newEvent(reportId: UUID, draftEvent: Event, user: User): Future[Option[Event]] =
     for {
       report <- reportRepository.get(reportId)

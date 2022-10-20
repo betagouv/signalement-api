@@ -4,7 +4,6 @@ import cats.implicits.toTraverseOps
 import models.User
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
-import repositories.event.EventRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import tasks.model.TaskType
@@ -19,7 +18,6 @@ import scala.concurrent.Future
 class InactiveDgccrfAccountRemoveTask(
     userRepository: UserRepositoryInterface,
     subscriptionRepository: SubscriptionRepositoryInterface,
-    eventRepository: EventRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface
 )(implicit executionContext: ExecutionContext) {
 
