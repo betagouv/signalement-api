@@ -56,19 +56,20 @@ class ReportRemindersTask(
     interval = conf.intervalInHours
   )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
-  def runTask(taskRunDate: OffsetDateTime): Unit = {
+  def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
     logger.info(s"Traitement de mails de relance aux pros (using time ${taskRunDate})")
     val ongoingReportsStatus = List(ReportStatus.TraitementEnCours, ReportStatus.Transmis)
     for {
       ongoingReportsWithUsers <- getReportsByStatusWithUsers(ongoingReportsStatus)
       ongoingReportsWithAtLeastOneUser = ongoingReportsWithUsers.filter(_._2.nonEmpty)
+      _ = logger.info(s"Found ${ongoingReportsWithAtLeastOneUser.size} potential reports")
       eventsByReportId <- eventRepository.fetchEventsOfReports(ongoingReportsWithAtLeastOneUser.map(_._1))
       finalReportsWithUsers = ongoingReportsWithAtLeastOneUser.filter { case (report, _) =>
         shouldSendReminderEmail(report, taskRunDate, eventsByReportId)
       }
+      _ = logger.info(s"Found ${finalReportsWithUsers.size} reports for which we should send a reminder")
       _ <- sendReminderEmailsWithErrorHandling(finalReportsWithUsers)
     } yield ()
-    ()
   }
 
   private def shouldSendReminderEmail(
@@ -84,15 +85,14 @@ class ReportRemindersTask(
         .filter(e => allEmailsToProActions.contains(e.action))
     val hadMaxReminderEmails =
       previousEmailsEvents.count(e => reminderEmailsActions.contains(e.action)) > maxReminderCount
-    val latestEmailDate = previousEmailsEvents.map(_.creationDate).sorted.lastOption
-    val latestEmailIsNotTooRecent =
-      latestEmailDate.exists(_.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
-    val shouldSendEmail = !hadMaxReminderEmails && latestEmailIsNotTooRecent
+    val hadARecentEmail =
+      previousEmailsEvents.exists(_.creationDate.isAfter(taskRunDate.minus(delayBetweenReminderEmails)))
+    val shouldSendEmail = !hadMaxReminderEmails && !hadARecentEmail
     shouldSendEmail
   }
 
   private def sendReminderEmailsWithErrorHandling(reportsWithUsers: List[(Report, List[User])]): Future[Unit] = {
-    logger.info(s"Closing ${reportsWithUsers.length} reports")
+    logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
     for {
       successesOrFailuresList <- Future.sequence(reportsWithUsers.map { case (report, users) =>
         sendReminderEmail(report, users).transform {
@@ -114,8 +114,8 @@ class ReportRemindersTask(
   ): Future[Unit] = {
     val emailAddresses = users.map(_.email)
     val (email, emailEventAction) =
-      if (report.isReadByPro) (ProReportUnreadReminder, EMAIL_PRO_REMIND_NO_READING)
-      else (ProReportReadReminder, EMAIL_PRO_REMIND_NO_ACTION)
+      if (report.isReadByPro) (ProReportReadReminder, EMAIL_PRO_REMIND_NO_ACTION)
+      else (ProReportUnreadReminder, EMAIL_PRO_REMIND_NO_READING)
     logger.debug(s"Sending reminder email")
     for {
       _ <- mailService.send(email(emailAddresses, report, report.expirationDate))

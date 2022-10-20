@@ -39,9 +39,10 @@ trait CompanyAccessRepositoryInterface {
       ticks: Int = 12
   ): Future[Vector[(Timestamp, Int)]]
 
-  def createCompanyUserAccess(
+  def createCompanyUserAccessWithoutRun(
       companyId: UUID,
       userId: UUID,
       level: AccessLevel
   ): FixedSqlAction[Int, PostgresProfile.api.NoStream, Effect.Write]
+
 }

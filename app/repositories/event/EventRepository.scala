@@ -55,7 +55,7 @@ class EventRepository(
         table.action === action.value
       }
 
-  override def getEvents(reportId: UUID, filter: EventFilter): Future[List[Event]] = db.run {
+  override def getEvents(reportId: UUID, filter: EventFilter = EventFilter()): Future[List[Event]] = db.run {
     getRawEvents(filter)
       .filter(_.reportId === reportId)
       .sortBy(_.creationDate.desc)
