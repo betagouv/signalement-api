@@ -9,6 +9,8 @@ import org.specs2.mutable.Specification
 import play.api.mvc.Results
 import play.api.test.WithApplication
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.EMAIL_PRO_NEW_REPORT
+import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_ACTION
 import utils.Constants.ActionEvent.EMAIL_PRO_REMIND_NO_READING
 import utils.AppSpec
 import utils.Constants.EventType
@@ -39,6 +41,7 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
   val taskRunDate = OffsetDateTime.parse("2020-06-01T00:00:00Z")
   val date20DaysBefore = taskRunDate.minusDays(20)
   val date10DaysBefore = taskRunDate.minusDays(10)
+  val date2DaysBefore = taskRunDate.minusDays(2)
 
   def buildReportWithCompanyAndUserAndPastEvents(
       status: ReportStatus = ReportStatus.TraitementEnCours,
@@ -89,37 +92,71 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
 
   "ReportReminderTask should send reminders for the emails that need it" >> {
 
-    // signalement en cours
-    // signalement qui a eu 2 reminders déjà
-    // signalement qui a eu un reminder très récent
-    // signalement qui a eu un reminder assez ancien
-
     new WithApplication(app) {
       Await.result(
         for {
           // Setup
           ongoingReport <- buildReportWithCompanyAndUserAndPastEvents()
+          ongoingReportWasRead <- buildReportWithCompanyAndUserAndPastEvents(status = ReportStatus.Transmis)
+          ongoingReportWithNoUser <- buildReportWithCompanyAndUserAndPastEvents(withUser = false)
           ongoingReportWithMaxRemindersAlready <- buildReportWithCompanyAndUserAndPastEvents(events =
             List(
               (EMAIL_PRO_REMIND_NO_READING, date20DaysBefore),
               (EMAIL_PRO_REMIND_NO_READING, date20DaysBefore)
             )
           )
-          ongoingReportWithNoUser <- buildReportWithCompanyAndUserAndPastEvents(withUser = false)
+          ongoingReportWithOneRecentReminder <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_REMIND_NO_READING, date2DaysBefore)
+            )
+          )
+          ongoingReportWithOneOldReminder <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_REMIND_NO_READING, date10DaysBefore)
+            )
+          )
+          ongoingReportWithRecentNewReportEmail <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_NEW_REPORT, date2DaysBefore)
+            )
+          )
+          ongoingReportWithOldNewReportEmail <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_NEW_REPORT, date10DaysBefore)
+            )
+          )
+          ongoingReportWithNewReportEmailAndOneReminder <- buildReportWithCompanyAndUserAndPastEvents(events =
+            List(
+              (EMAIL_PRO_NEW_REPORT, date20DaysBefore),
+              (EMAIL_PRO_REMIND_NO_READING, date10DaysBefore)
+            )
+          )
 
           // Run
           newEventsCutoffDate = OffsetDateTime.now()
-
           _ <- reportReminderTask.runTask(taskRunDate)
-//           Check
-//          allEventsForReport <- eventRepository
-//            .getEvents(ongoingReportWithNoUser.id)
-//          _ = println("EVENTS")
-//          _ = println(allEventsForReport.sortBy(_.creationDate).map(e => e.creationDate -> e.action))
 
           _ <- hasNewEvent(newEventsCutoffDate, ongoingReport, EMAIL_PRO_REMIND_NO_READING) map (_ must beTrue)
-          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithMaxRemindersAlready) map (_ must beTrue)
+          _ <- hasNewEvent(newEventsCutoffDate, ongoingReportWasRead, EMAIL_PRO_REMIND_NO_ACTION) map (_ must beTrue)
           _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithNoUser) map (_ must beTrue)
+          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithMaxRemindersAlready) map (_ must beTrue)
+          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithOneRecentReminder) map (_ must beTrue)
+          _ <- hasNewEvent(
+            newEventsCutoffDate,
+            ongoingReportWithOneOldReminder,
+            EMAIL_PRO_REMIND_NO_READING
+          ) map (_ must beTrue)
+          _ <- hasZeroNewEvents(newEventsCutoffDate, ongoingReportWithRecentNewReportEmail) map (_ must beTrue)
+          _ <- hasNewEvent(
+            newEventsCutoffDate,
+            ongoingReportWithOldNewReportEmail,
+            EMAIL_PRO_REMIND_NO_READING
+          ) map (_ must beTrue)
+          _ <- hasNewEvent(
+            newEventsCutoffDate,
+            ongoingReportWithNewReportEmailAndOneReminder,
+            EMAIL_PRO_REMIND_NO_READING
+          ) map (_ must beTrue)
 
         } yield (),
         Duration.Inf
