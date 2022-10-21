@@ -2,6 +2,7 @@ package config
 
 import java.net.URI
 import java.time.Period
+import scala.concurrent.duration.FiniteDuration
 
 case class SignalConsoConfiguration(
     tmpDirectory: String,
@@ -19,8 +20,8 @@ case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Bo
 case class TokenConfiguration(
     companyInitDuration: Option[Period],
     companyJoinDuration: Option[Period],
-    adminJoinDuration: Option[Period],
-    dgccrfJoinDuration: Option[Period],
+    adminJoinDuration: FiniteDuration,
+    dgccrfJoinDuration: Period,
     dgccrfDelayBeforeRevalidation: Period,
     dgccrfRevalidationTokenDuration: Option[Period]
 )

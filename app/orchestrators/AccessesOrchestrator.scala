@@ -28,6 +28,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.DurationConverters._
 
 class AccessesOrchestrator(
     userOrchestrator: UserOrchestratorInterface,
@@ -98,7 +99,7 @@ class AccessesOrchestrator(
       case AdminAccount =>
         (
           EmailAddressService.isEmailAcceptableForAdminAccount _,
-          tokenConfiguration.adminJoinDuration,
+          tokenConfiguration.adminJoinDuration.toJava,
           AdminAccessLink,
           frontRoute.dashboard.Admin.register _
         )
@@ -127,7 +128,7 @@ class AccessesOrchestrator(
               AccessToken.build(
                 kind = kind,
                 token = UUID.randomUUID.toString,
-                validity = joinDuration,
+                validity = Some(joinDuration),
                 companyId = None,
                 level = None,
                 emailedTo = Some(email)

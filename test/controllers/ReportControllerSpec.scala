@@ -47,6 +47,7 @@ import java.time.OffsetDateTime
 import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 
 class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with Results with Mockito {
 
@@ -205,7 +206,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             )
 
             override def s3Service: S3ServiceInterface = mockS3Service
-            override def tokenConfiguration = TokenConfiguration(None, None, None, None, Period.ZERO, None)
+            override def tokenConfiguration =
+              TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
             override def signalConsoConfiguration: SignalConsoConfiguration =
               SignalConsoConfiguration(
