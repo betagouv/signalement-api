@@ -43,8 +43,8 @@ object AccessToken {
     expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))
   )
 
-  def resetExpirationDate(accessToken: AccessToken, validity: Option[java.time.temporal.TemporalAmount]) =
-    accessToken.copy(expirationDate = validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_)))
+  def resetExpirationDate(accessToken: AccessToken, validity: java.time.temporal.TemporalAmount) =
+    accessToken.copy(expirationDate = Some(OffsetDateTime.now(ZoneOffset.UTC).plus(validity)))
 
 }
 
