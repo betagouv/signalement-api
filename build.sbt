@@ -46,6 +46,7 @@ routesImport ++= Seq(
   "controllers.PublicStatQueryStringBindable"
 )
 
+semanticdbVersion := scalafixSemanticdb.revision
 scalafixOnCompile := true
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"

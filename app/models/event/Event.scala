@@ -20,7 +20,7 @@ case class Event(
 
   def formattedDate = this.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))
   def getDescription =
-    this.details.as[JsObject].value.get("description").getOrElse("").toString.replaceAll("^\"|\"$", "");
+    this.details.as[JsObject].value.getOrElse("description", JsString("")).toString.replaceAll("^\"|\"$", "");
 }
 
 object Event {
