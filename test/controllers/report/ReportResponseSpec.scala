@@ -341,7 +341,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
     )
 
   def resultStatusMustBe(status: Int) =
-    someResult must beSome and someResult.get.header.status === status
+    someResult.isDefined mustEqual true and someResult.get.header.status === status
 
   def mailMustHaveBeenSent(
       recipient: EmailAddress,

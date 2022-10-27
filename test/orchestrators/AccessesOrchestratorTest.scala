@@ -72,7 +72,7 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
         } yield (user, updatedToken)
 
         result.map { case (user, _) => user.lastEmailValidation.isDefined } must beTrue.await
-        result.map { case (_, maybeToken) => maybeToken.map(_.valid) } must beSome(false).await
+        result.map { case (_, maybeToken) => maybeToken.map(_.valid).isDefined } must beTrue.await
       }
 
       "it should extends user validity when not validation email token has been created" >> {

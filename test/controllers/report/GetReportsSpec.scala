@@ -232,7 +232,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   }
 
   def userMustBeUnauthorized() =
-    someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
+    someResult.isDefined mustEqual true and someResult.get.header.status === Status.UNAUTHORIZED
 
   def aReport(report: Report): Matcher[String] =
     /("report") / "id" andHave (report.id.toString)
@@ -267,7 +267,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
             )
           )
       case _ =>
-        someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
+        someResult.isDefined mustEqual true and someResult.get.header.status === Status.UNAUTHORIZED
     }
 
   def noReportsMustBeRendered() =
@@ -276,5 +276,5 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
       not(haveReports(allReports.map(report => aReport(report)): _*))
 
   def mustBeBadRequest() =
-    someResult must beSome and someResult.get.header.status === Status.BAD_REQUEST
+    someResult.isDefined mustEqual true and someResult.get.header.status === Status.BAD_REQUEST
 }

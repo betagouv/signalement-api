@@ -176,7 +176,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
     )
 
   def resultStatusMustBe(status: Int) =
-    someResult must beSome and someResult.get.header.status === status
+    someResult.isDefined mustEqual true and someResult.get.header.status === status
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
     val events =
