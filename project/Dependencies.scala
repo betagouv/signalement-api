@@ -6,28 +6,29 @@ object Dependencies {
   object Versions {
 
     lazy val playSlickVersion = "5.0.2"
-    lazy val slickPgVersion = "0.20.3"
+    lazy val slickPgVersion = "0.20.4"
     lazy val playMailerVersion = "8.0.1"
-    lazy val AkkaHttpVersion = "10.2.9"
-    lazy val alpakkaVersion = "2.0.2"
+    lazy val akkaHttpVersion = "10.2.10"
+    lazy val alpakkaVersion = "4.0.0"
     lazy val enumeratumVersion = "1.7.0"
-    lazy val sentryVersion = "5.7.4"
+    lazy val sentryVersion = "6.4.1"
     lazy val playSilhouetteVersion = "7.0.0"
     lazy val specs2MatcherExtraVersion = "4.10.5"
     lazy val scalaCheckVersion = "1.16.0"
     lazy val catsCoreVersion = "2.8.0"
     lazy val pureConfigVersion = "0.17.1"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version = "1.12.259"
+    lazy val awsJavaSdkS3Version = "1.12.297"
     lazy val jacksonModuleScalaVersion = "2.13.3"
-    lazy val postgresqlVersion = "42.3.6"
-    lazy val refinedVersion = "0.9.29"
+    lazy val postgresqlVersion = "42.3.7"
+    lazy val refinedVersion = "0.10.1"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "7.2.3"
     lazy val html2pdfVersion = "4.0.3"
-    lazy val chimneyVersion = "0.6.1"
+    lazy val chimneyVersion = "0.6.2"
     lazy val sttp = "3.7.2"
+    lazy val sttpPlayJson = "3.7.6"
 
   }
 
@@ -43,7 +44,7 @@ object Dependencies {
     val janino = "org.codehaus.janino" % "janino" % "3.1.9" // Needed for the <if> in logback conf
     val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % "3.1.9" // Needed for janino
     val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
-    val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json" % "3.7.2"
+    val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json" % Versions.sttpPlayJson
     val sttp = "com.softwaremill.sttp.client3" %% "core" % Versions.sttp
     val sentry = "io.sentry" % "sentry-logback" % Versions.sentryVersion
     val catsCore = "org.typelevel" %% "cats-core" % Versions.catsCoreVersion
@@ -58,8 +59,8 @@ object Dependencies {
     val alpakkaS3 = "com.lightbend.akka" %% "akka-stream-alpakka-s3" % Versions.alpakkaVersion
     val alpakkaCSV = "com.lightbend.akka" %% "akka-stream-alpakka-csv" % Versions.alpakkaVersion
     val alpakkaFile = "com.lightbend.akka" %% "akka-stream-alpakka-file" % Versions.alpakkaVersion
-    val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.AkkaHttpVersion
-    val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % Versions.AkkaHttpVersion
+    val akkaHttp = "com.typesafe.akka" %% "akka-http" % Versions.akkaHttpVersion
+    val akkaHttpXml = "com.typesafe.akka" %% "akka-http-xml" % Versions.akkaHttpVersion
     val playSilhouette = "com.mohiva" %% "play-silhouette" % Versions.playSilhouetteVersion
     val playSilhouettePasswordBcrypt =
       "com.mohiva" %% "play-silhouette-password-bcrypt" % Versions.playSilhouetteVersion
