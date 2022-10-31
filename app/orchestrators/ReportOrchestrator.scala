@@ -787,6 +787,6 @@ class ReportOrchestrator(
         wordOccurrence.value.contains(company.name.toLowerCase)
       }
       .sortWith(_.count > _.count)
-      .slice(0, 10
+      .slice(0, 10)
 
 }
