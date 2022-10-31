@@ -130,23 +130,51 @@ L'API de production de l'application est accessible à l'adresse https://signal-
 
 ## Variables d'environnement
 
-|Nom| Description                                                                                         |Valeur par défaut|
-|:---|:----------------------------------------------------------------------------------------------------|:---|
-|APPLICATION_HOST| Hôte du serveur hébergeant l'application                                                            ||
-|APPLICATION_SECRET| Clé secrète de l'application                                                                        ||
-|EVOLUTIONS_AUTO_APPLY| Exécution automatique des scripts `upgrade` de la base de données                                   |false|
-|EVOLUTIONS_AUTO_APPLY_DOWNS| Exécution automatique des scripts `downgrade` de la base de données                                 |false|
-|MAX_CONNECTIONS| Nombre maximum de connexions ouvertes vers la base de données                                       ||
-|MAIL_FROM| Expéditeur des mails                                                                                |dev-noreply@signal.conso.gouv.fr|
-|MAIL_CONTACT_RECIPIENT| Boite mail destinataire des mails génériques                                                        |support@signal.conso.gouv.fr|
-|MAILER_HOST| Hôte du serveur de mails                                                                            ||
-|MAILER_PORT| Port du serveur de mails                                                                            ||
-|MAILER_USER| Nom d'utilisateur du serveur de mails                                                               ||
-|MAILER_PASSWORD| Mot de passe du serveur de mails                                                                    ||
-|SENTRY_DSN| Identifiant pour intégration avec [Sentry](https://sentry.io)                                       ||
-|TMP_DIR| Répertoire temporaire pour création des fichiers xlsx                                               ||
-|ETABLISSEMENT_API_URL| Url de synchronisation des entreprises                                                              ||
-|ETABLISSEMENT_API_KEY| token machine pour communiquer avec l'api entreprise pour la mise à jour des entrepise signal conso ||
+|Nom| Description                                                                                                                     | Valeur par défaut                |
+|:---|:--------------------------------------------------------------------------------------------------------------------------------|:---------------------------------|
+|APPLICATION_HOST| Hôte du serveur hébergeant l'application                                                                                        ||
+|APPLICATION_SECRET| Clé secrète de l'application                                                                                                    ||
+|EVOLUTIONS_ENABLED| Active la fonctionnalité d'"évolution" pour l'exécution des scripts de base de données                                          | false                            |
+|EVOLUTIONS_AUTO_APPLY| Exécution automatique des scripts `upgrade` de la base de données                                                               | false                            |
+|EVOLUTIONS_AUTO_APPLY_DOWNS| Exécution automatique des scripts `downgrade` de la base de données                                                             | false                            |
+|MAIL_FROM| Expéditeur des mails                                                                                                            | dev-noreply@signal.conso.gouv.fr |
+|MAIL_CONTACT_ADDRESS| Boite mail destinataire des mails génériques                                                                                    | support@signal.conso.gouv.fr     |
+|MAILER_HOST| Hôte du serveur de mails                                                                                                        ||
+|MAILER_PORT| Port du serveur de mails                                                                                                        ||
+|MAILER_USER| Nom d'utilisateur du serveur de mails                                                                                           ||
+|MAILER_MOCK| Will only log all the email properties instead of sending an email                                                              | no                               |
+|MAILER_SSL| use SSL                                                                                                                         | no                               |
+|MAILER_TLS| use TLS                                                                                                                         | no                               |
+|MAILER_TLS_REQUIRED| force TLS use                                                                                                                   | no                               |
+|MAILER_PASSWORD| Mot de passe du serveur de mails                                                                                                ||
+|SENTRY_DSN| Identifiant pour intégration avec [Sentry](https://sentry.io)                                                                   ||
+|ETABLISSEMENT_API_URL| Url de synchronisation des entreprises                                                                                          ||
+|ETABLISSEMENT_API_KEY| token machine pour communiquer avec l'api entreprise pour la mise à jour des entrepise signal conso                             ||
+|WEBSITE_URL| Url complète du site web consommateur                                                                                           ||
+|APPLICATION_PROTOCOL| Protocole de l'url de l'api signal conso                                                                                        ||
+|DASHBOARD_URL| Url complète du site web pro/dgccrf/admin                                                                                       ||
+|TMP_DIR| Dossier temporaire qui sert de tampon pour la génération des fichiers / import de fichiers                                      ||
+|AV_SCAN_ENABLED| Active l'antivirus pour le scan des pièces jointe                                                                               | true                             |
+|REPORT_EMAILS_BLACKLIST| Liste d'email pour lesquels les signalements seront ignorés                                                                     |                                  |
+|SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE| Active/Désactive les jobs signal conso  (utile pour ne pas les lancer en local)                                                 | true                             |
+|REPORT_NOTIF_TASK_START_TIME| Heure de lancement du job des mail d'abonnements                                                                                | "05:00:00"                       |
+|REPORT_TASK_WEEKLY_NOTIF_DAY_OF_WEEK| Jour de lancement du job des mail d'abonnements                                                                                 | MONDAY                           |
+|REMINDER_TASK_START_TIME| Heure de lancement du job de relance pro                                                                                        | "04:00:00"                       |
+|REMINDER_TASK_INTERVAL| Intervalle de lancement du job de relance pro (ie "24 hours" , toutes les 24 heures)                                            | 24 hours                         |
+|ARCHIVE_TASK_START_TIME| Heure de lancement du job suppression des comptes inactifs                                                                      | "06:00:00"                       |
+|LOCAL_SYNC| Should be set to false in prod - to sync signal conso company with insee etablissement database                                 | true                             |
+|DATABASE_URL| Full database url                                                                                                               |                                  |
+|MAX_CONNECTIONS| Max connection (hikari property)                                                                                                |                                  |
+|NUM_THREADS| Thread count used to process db connections (hikari property)                                                                   |                                  |
+|SKIP_REPORT_EMAIL_VALIDATION| Ignorer la validation d'email consommateur lors d'un dépôt de signalement, à utiliser en cas de problème avec le provider email | false                            |
+|EMAIL_PROVIDERS_BLOCKLIST| Ne valide pas les emails avec les providers listés dans cette variable                                                          |                             |
+|OUTBOUND_EMAIL_FILTER_REGEX| Filter l'envoi d'email sortant (utilisé sur demo / local )                                                                      |    ".*"                         |
+|S3_ACCESS_KEY_ID| ID du compte S3 utilisé                                                                                                         |                            |
+|S3_SECRET_ACCESS_KEY| SECRET du compte S3 utilisé                                                                                                     |                            |
+|S3_ENDPOINT_URL| host du bucket                                                                                                                  |                            |
+|BUCKETS_REPORT| nom du bucket                                                                                                                   |                            |
+|AUTHENTICATOR_SECRET| Secret utlisé pour forger un token JWT, une modification invalidera les tokens jwt courants                                     |                            |
+|CRYPTER_KEY| clé utlisée pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                                            |                            |
 ---
 
 ## Liste des API
