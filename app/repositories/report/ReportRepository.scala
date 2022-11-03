@@ -378,7 +378,7 @@ object ReportRepository {
         ) regexLike s"${details}"
       }
       .filterOpt(filter.description) { case (table, description) =>
-        //unique separator use to match the string between  "Description :" et and separator
+        // unique separator use to match the string between  "Description :" et and separator
         val uniqueSeparator = UUID.randomUUID().toString
         ArrayToStringSQLFunction(
           table.details,
