@@ -304,7 +304,9 @@ object ReportRepository {
     }
   }
 
-  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
+  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] = {
+
+    logger.info(s"------------------ filter = ${filter} ------------------")
     ReportTable.table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -408,5 +410,6 @@ object ReportRepository {
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
       }
+  }
 
 }
