@@ -377,6 +377,14 @@ object ReportRepository {
           ""
         ) regexLike s"${details}"
       }
+      .filterOpt(filter.description) { case (table, description) =>
+        val uniqueSeparator = UUID.randomUUID().toString
+        ArrayToStringSQLFunction(
+          table.details,
+          uniqueSeparator,
+          ""
+        ) regexLike s".*Description :.*$description.*$uniqueSeparator"
+      }
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
