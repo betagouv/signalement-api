@@ -378,6 +378,7 @@ object ReportRepository {
         ) regexLike s"${details}"
       }
       .filterOpt(filter.description) { case (table, description) =>
+        logger.info(s"!!!!!!!!!!!!!!!!!!!!!!!!!! ${description}")
         val uniqueSeparator = UUID.randomUUID().toString
         ArrayToStringSQLFunction(
           table.details,
