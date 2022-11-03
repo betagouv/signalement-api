@@ -60,8 +60,8 @@ object ReportFilter {
         mapper.seq("status").map(ReportStatus.withName),
         userRole
       ),
-      details = mapper.string("description"),
-      description = mapper.string("details"),
+      details = mapper.string("details"),
+      description = mapper.string("description"),
       employeeConsumer = userRole match {
         case Admin  => None
         case DGCCRF => None

@@ -305,8 +305,6 @@ object ReportRepository {
   }
 
   def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] = {
-
-    logger.info(s"------------------ filter = ${filter} ------------------")
     ReportTable.table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -380,7 +378,7 @@ object ReportRepository {
         ) regexLike s"${details}"
       }
       .filterOpt(filter.description) { case (table, description) =>
-        logger.info(s"!!!!!!!!!!!!!!!!!!!!!!!!!! ${description}")
+        //unique separator use to match the string between  "Description :" et and separator
         val uniqueSeparator = UUID.randomUUID().toString
         ArrayToStringSQLFunction(
           table.details,
