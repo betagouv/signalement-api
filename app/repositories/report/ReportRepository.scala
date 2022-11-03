@@ -304,7 +304,7 @@ object ReportRepository {
     }
   }
 
-  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] =
+  def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] = {
     ReportTable.table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -377,6 +377,15 @@ object ReportRepository {
           ""
         ) regexLike s"${details}"
       }
+      .filterOpt(filter.description) { case (table, description) =>
+        // unique separator use to match the string between  "Description :" et and separator
+        val uniqueSeparator = UUID.randomUUID().toString
+        ArrayToStringSQLFunction(
+          table.details,
+          uniqueSeparator,
+          ""
+        ) regexLike s".*Description :.*$description.*$uniqueSeparator"
+      }
       .filterOpt(filter.employeeConsumer) { case (table, employeeConsumer) =>
         table.employeeConsumer === employeeConsumer
       }
@@ -399,5 +408,6 @@ object ReportRepository {
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
       }
+  }
 
 }

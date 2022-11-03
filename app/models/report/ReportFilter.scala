@@ -26,6 +26,7 @@ case class ReportFilter(
     category: Option[String] = None,
     status: Seq[ReportStatus] = Seq.empty,
     details: Option[String] = None,
+    description: Option[String] = None,
     employeeConsumer: Option[Boolean] = None,
     contactAgreement: Option[Boolean] = None,
     hasForeignCountry: Option[Boolean] = None,
@@ -60,6 +61,7 @@ object ReportFilter {
         userRole
       ),
       details = mapper.string("details"),
+      description = mapper.string("description"),
       employeeConsumer = userRole match {
         case Admin  => None
         case DGCCRF => None
