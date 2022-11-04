@@ -123,7 +123,7 @@ class AuthOrchestrator(
           _ <- mailService.send(ResetPassword(user, authToken))
         } yield ()
       case _ =>
-        logger.warn("Unable to reset password for user")
+        logger.warn("User not found, cannot reset password")
         Future.successful(())
     }
 
