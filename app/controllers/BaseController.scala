@@ -18,6 +18,9 @@ import utils.silhouette.auth.AuthEnv
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class ErrorHandlerActionFunction[R[_] <: play.api.mvc.Request[_]](
     getIdentity: R[_] => Option[UUID] = (_: R[_]) => None
@@ -28,7 +31,18 @@ class ErrorHandlerActionFunction[R[_] <: play.api.mvc.Request[_]](
   def invokeBlock[A](
       request: R[A],
       block: R[A] => Future[Result]
-  ): Future[Result] = block(request).recover { case err => handleError(request, err, getIdentity(request)) }
+  ): Future[Result] =
+    // An error may happen either in the result of the future,
+    // or when building the future itself
+    Try {
+      block(request).recover { case err =>
+        handleError(request, err, getIdentity(request))
+      }
+    } match {
+      case Success(res) => res
+      case Failure(err) =>
+        Future.successful(handleError(request, err, getIdentity(request)))
+    }
 
   override protected def executionContext: ExecutionContext = ec
 }
