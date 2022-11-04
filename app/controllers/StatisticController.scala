@@ -67,7 +67,7 @@ class StatisticController(
       )
   }
 
-  def getPublicStatCount(publicStat: PublicStat) = Action.async {
+  def getPublicStatCount(publicStat: PublicStat) = UnsecuredAction.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
         statsOrchestrator.getReportCountPercentageWithinReliableDates(filter, percentageBaseFilter)
@@ -76,7 +76,7 @@ class StatisticController(
     }).map(curve => Ok(Json.toJson(curve)))
   }
 
-  def getPublicStatCurve(publicStat: PublicStat) = Action.async {
+  def getPublicStatCurve(publicStat: PublicStat) = UnsecuredAction.async {
     ((publicStat.filter, publicStat.percentageBaseFilter) match {
       case (filter, Some(percentageBaseFilter)) =>
         statsOrchestrator.getReportsCountPercentageCurve(filter, percentageBaseFilter)
@@ -112,7 +112,7 @@ class StatisticController(
   }
 
   def getProReportToTransmitStat() =
-    Action.async { _ =>
+    UnsecuredAction.async { _ =>
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(

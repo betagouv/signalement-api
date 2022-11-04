@@ -82,6 +82,9 @@ abstract class BaseController(override val controllerComponents: ControllerCompo
       Some(request.identity.id)
     )
 
+  // We should always use our wrappers, to get our error handling
+  override val Action = UnsecuredAction
+
   def UnsecuredAction: ActionBuilder[Request, AnyContent] =
     silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]()
 
