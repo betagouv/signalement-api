@@ -128,6 +128,21 @@ La version de démo de l'API est accessible à l'adresse http://demo-signalement
 
 L'API de production de l'application est accessible à l'adresse https://signal-api.conso.gouv.fr/api.
 
+### Gestion des logs
+
+Procédure pour pousser les logs sur new relic :
+
+```
+clever login
+clever link --org orga_ID app_ID
+#  You should see application alias displayed
+clever applications
+#To drain log to new relic
+clever drain create --alias "ALIAS_PROD" NewRelicHTTP "https://log-api.eu.newrelic.com/log/v1" --api-key NEW_RELIC_API_KEY
+clever applications
+```
+
+
 ## Variables d'environnement
 
 |Nom| Description                                                                                                                     | Valeur par défaut                |

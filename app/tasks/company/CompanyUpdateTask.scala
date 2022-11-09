@@ -47,7 +47,7 @@ class CompanyUpdateTask(
   val initialDelay = computeStartingTime(LocalTime.of(2, 0))
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
-    logger.warn("Starting CompanyUpdateTask")
+    logger.info("Starting CompanyUpdateTask")
     runTask()
     ()
   }

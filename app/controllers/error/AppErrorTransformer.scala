@@ -15,12 +15,10 @@ object AppErrorTransformer {
   val logger: Logger = Logger(this.getClass())
 
   private def formatMessage[R <: Request[_]](request: R, maybeUser: Option[UUID], appError: AppError): String =
-    formatMessage(request, maybeUser, appError.details)
+    formatMessage(request, maybeUser, appError.messageInLogs)
 
-  private def formatMessage[R <: Request[_]](request: R, maybeUser: Option[UUID], details: String): String =
-    s"""[ user = ${maybeUser.getOrElse("not_connected")}, uri = ${request.uri}]
-       | ${details}
-       | """.stripMargin
+  private def formatMessage[R <: Request[_]](request: R, maybeUser: Option[UUID], message: String): String =
+    s"$message (User ${maybeUser.getOrElse("not connected")}, uri ${request.uri})"
 
   def handleError[R <: Request[_]](request: R, err: Throwable, maybeUserId: Option[UUID] = None): Result =
     err match {
