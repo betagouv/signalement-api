@@ -13,7 +13,7 @@ sealed trait AppError extends Throwable with Product with Serializable with NoSt
   val `type`: String
   val title: String
   val details: String
-  val messageInLogs = details
+  lazy val messageInLogs = details
 }
 
 sealed trait UnauthorizedError extends AppError
@@ -241,7 +241,7 @@ object AppError {
     override val title: String = "Attachement not available"
     override val details: String =
       s"Le fichier n'est pas encore disponible au téléchargement, veuillez réessayer plus tard."
-    override val messageInLogs = s"Attachement not ready for download (${reportFileId.value})"
+    override lazy val messageInLogs = s"Attachement not ready for download (${reportFileId.value})"
   }
 
   final case class AttachmentNotFound(reportFileId: ReportFileId, reportFileName: String) extends NotFoundError {
