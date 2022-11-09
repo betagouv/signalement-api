@@ -63,8 +63,8 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
             ()
           } else {
-            logger.warn(
-              s"Email has exceeding max delivery attempts. Abording delivery or email [recipients : ${req.recipients}, subject : ${req.subject} ]"
+            logger.error(
+              s"Email has exceeding max delivery attempts. Aborting delivery of email [recipients : ${req.recipients}, subject : ${req.subject} ]"
             )
           }
       }

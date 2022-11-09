@@ -50,7 +50,7 @@ object AntivirusScanActor {
 
       Behaviors.receiveMessage[ScanCommand] {
         case ScanFromBucket(reportFile: ReportFile) =>
-          logger.warn(s"Rescanning file ${reportFile.id} : ${reportFile.storageFilename}")
+          logger.warn(s"Rescanning file ${reportFile.id.value} : ${reportFile.storageFilename}")
           val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
           for {
             _ <- s3Service.downloadOnCurrentHost(
