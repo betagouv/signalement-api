@@ -36,7 +36,7 @@ import java.util.UUID
 import java.util.zip.ZipInputStream
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+import utils.Logs.RichLogger
 object EnterpriseSyncActor {
   def props = Props[EnterpriseSyncActor]()
 
@@ -212,7 +212,7 @@ class EnterpriseSyncActor(
     stream
       .flatMap(_ => enterpriseSyncInfoRepo.updateEndedAt(jobId))
       .recoverWith { case err =>
-        logger.error(s"Error occurred while importing ${companyFile.url}", err)
+        logger.errorWithTitle("entreprise_sync_import_error", s"Error occurred while importing ${companyFile.url}", err)
         enterpriseSyncInfoRepo.updateError(jobId, err.toString)
       }
 

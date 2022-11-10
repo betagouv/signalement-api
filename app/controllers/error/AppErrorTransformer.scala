@@ -9,7 +9,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results
 
 import java.util.UUID
-
+import utils.Logs.RichLogger
 object AppErrorTransformer {
 
   val logger: Logger = Logger(this.getClass())
@@ -25,42 +25,46 @@ object AppErrorTransformer {
       case appError: AppError =>
         handleAppError(request, appError, maybeUserId)
       case err =>
-        logger.error(formatMessage(request, maybeUserId, "Unexpected error occured"), err)
+        logger.errorWithTitle(
+          "global_handler_unexpected_error",
+          formatMessage(request, maybeUserId, "Unexpected error occured"),
+          err
+        )
         Results.InternalServerError(Json.toJson(ErrorPayload(ServerError("Encountered unexpected error", Some(err)))))
     }
 
   private def handleAppError[R <: Request[_]](request: R, error: AppError, maybeUserId: Option[UUID]): Result =
     error match {
       case error: NotFoundError =>
-        logger.warn(formatMessage(request, maybeUserId, error))
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.NotFound(Json.toJson(ErrorPayload(error)))
 
       case error: PreconditionError =>
-        logger.warn(formatMessage(request, maybeUserId, error))
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.PreconditionFailed(Json.toJson(ErrorPayload(error)))
 
       case error: ConflictError =>
-        logger.warn(formatMessage(request, maybeUserId, error))
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.Conflict(Json.toJson(ErrorPayload(error)))
 
       case error: BadRequestError =>
-        logger.warn(formatMessage(request, maybeUserId, error))
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.BadRequest(Json.toJson(ErrorPayload(error)))
 
       case error: MalformedApiBadRequestError =>
-        logger.error(formatMessage(request, maybeUserId, error))
+        logger.errorWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.BadRequest(Json.toJson(ErrorPayload(error)))
 
       case error: ForbiddenError =>
-        logger.warn(formatMessage(request, maybeUserId, error))
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error))
         Results.Forbidden(Json.toJson(ErrorPayload(error)))
 
       case error: InternalAppError =>
-        logger.error(formatMessage(request, maybeUserId, error), error)
+        logger.errorWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
         Results.InternalServerError(Json.toJson(ErrorPayload(error)))
 
       case error: UnauthorizedError =>
-        logger.warn(formatMessage(request, maybeUserId, error), error)
+        logger.warnWithTitle(error.titleForLogs, formatMessage(request, maybeUserId, error), error)
         Results.Unauthorized(Json.toJson(AuthenticationErrorPayload))
     }
 }

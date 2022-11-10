@@ -27,7 +27,7 @@ import utils.SIRET
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+import utils.Logs.RichLogger
 class CompanyAccessOrchestrator(
     companyAccessRepository: CompanyAccessRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
@@ -117,7 +117,10 @@ class CompanyAccessOrchestrator(
         case c :: Nil =>
           Future.successful(Some(c))
         case companies =>
-          logger.error(s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} ")
+          logger.errorWithTitle(
+            "multiple_head_offices",
+            s"Multiple head offices for siret ${company.siret} company data ids ${companies.map(_.id)} "
+          )
           Future.failed(
             ServerError(s"Unexpected error when fetching head office for company with siret ${company.siret}")
           )
