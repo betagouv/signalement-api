@@ -94,6 +94,7 @@ import tasks.report.ReportNotificationTask
 import tasks.report.ReportRemindersTask
 import utils.EmailAddress
 import utils.FrontRoute
+import utils.LoggingFilter
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.api.APIKeyRequestProvider
 import utils.silhouette.api.ApiKeyService
@@ -596,6 +597,6 @@ class SignalConsoComponents(
   override def config: Config = ConfigFactory.load()
 
   override def httpFilters: Seq[EssentialFilter] =
-    Seq(csrfFilter, securityHeadersFilter, allowedHostsFilter, corsFilter)
+    Seq(new LoggingFilter(), csrfFilter, securityHeadersFilter, allowedHostsFilter, corsFilter)
 
 }
