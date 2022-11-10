@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
-
+import utils.Logs.RichLogger
 class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
@@ -42,7 +42,8 @@ class InactiveAccountTask(
     val expirationDateThreshold: OffsetDateTime = now.minus(taskConfiguration.inactiveAccounts.inactivePeriod)
 
     inactiveDgccrfAccountRemoveTask.removeInactiveAccounts(expirationDateThreshold).recoverWith { case err =>
-      logger.error(
+      logger.errorWithTitle(
+        "task_remove_inactive_accounts_failed",
         s"Unexpected failure, cannot run inactive accounts task ( task date : $now, initialDelay : $initialDelay )",
         err
       )

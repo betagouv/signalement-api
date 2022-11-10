@@ -12,7 +12,7 @@ import javax.mail.internet.AddressException
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.postfixOps
-
+import utils.Logs.RichLogger
 object EmailActor {
   def props = Props[EmailActor]()
 
@@ -51,11 +51,13 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
       } catch {
 
         case _: AddressException =>
-          logger.warn(
+          logger.warnWithTitle(
+            "email_malformed_address",
             s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
           )
         case e: Exception =>
-          logger.error(
+          logger.errorWithTitle(
+            "email_sending_failed",
             s"Unexpected error when sending email [ number of attempt :${req.times + 1}, from :${req.from}, recipients: ${req.recipients}, subject : ${req.subject}]",
             e
           )
@@ -63,7 +65,8 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
             context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
             ()
           } else {
-            logger.error(
+            logger.errorWithTitle(
+              "email_max_delivery_attempts",
               s"Email has exceeding max delivery attempts. Aborting delivery of email [recipients : ${req.recipients}, subject : ${req.subject} ]"
             )
           }
