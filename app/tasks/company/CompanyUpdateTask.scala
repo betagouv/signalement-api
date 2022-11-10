@@ -20,7 +20,7 @@ import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-
+import utils.Logs.RichLogger
 class CompanyUpdateTask(
     actorSystem: ActorSystem,
     companyRepository: CompanyRepositoryInterface,
@@ -75,7 +75,7 @@ class CompanyUpdateTask(
       .map(newLastUpdated => refreshLastUpdate(companySync, newLastUpdated))
       .map(_ => logger.info("Company update done"))
       .recoverWith { case e =>
-        logger.error("Failed company update execution", e)
+        logger.errorWithTitle("company_update_failed", "Failed company update execution", e)
         throw e
 
       }

@@ -22,6 +22,7 @@ import controllers.error.AppError
 import java.util.UUID
 import scala.util.Failure
 import scala.util.Success
+import utils.Logs.RichLogger
 
 package object tasks {
 
@@ -71,7 +72,7 @@ package object tasks {
           case Success(_) =>
             logger.info(s"$taskName finished")
           case Failure(err) =>
-            logger.error(s"$taskName failed", err)
+            logger.errorWithTitle("task_failed", s"$taskName failed", err)
         }
       } else logger.info(s"$taskName not launched, tasks are disabled")
       ()

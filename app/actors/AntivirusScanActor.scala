@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.sys.process._
-
+import utils.Logs.RichLogger
 object AntivirusScanActor {
   type Message = ScanCommand
   sealed trait ScanCommand
@@ -50,7 +50,10 @@ object AntivirusScanActor {
 
       Behaviors.receiveMessage[ScanCommand] {
         case ScanFromBucket(reportFile: ReportFile) =>
-          logger.warn(s"Rescanning file ${reportFile.id.value} : ${reportFile.storageFilename}")
+          logger.warnWithTitle(
+            "scan_rescanning_file",
+            s"Rescanning file ${reportFile.id.value} : ${reportFile.storageFilename}"
+          )
           val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
           for {
             _ <- s3Service.downloadOnCurrentHost(
@@ -90,13 +93,17 @@ object AntivirusScanActor {
                 logger.debug("Deleting file.")
                 Future.successful(existingFile.delete())
               case Some(VirusFound) =>
-                logger.warn(s"Antivirus scan found virus, scan output : ${antivirusScanResult.output}")
+                logger.warnWithTitle(
+                  "scan_found_virus",
+                  s"Antivirus scan found virus, scan output : ${antivirusScanResult.output}"
+                )
                 logger.debug(s"File has been deleted by Antivirus, removing file from S3")
                 s3Service
                   .delete(reportFile.storageFilename)
                   .map(_ => reportFileRepository.removeStorageFileName(reportFile.id))
               case Some(ErrorOccured) =>
-                logger.error(
+                logger.errorWithTitle(
+                  "scan_unexpected_error",
                   s"Unexpected error occured when running scan on file $filePath : ${antivirusScanResult.output}"
                 )
                 Future.successful(Done)

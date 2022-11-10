@@ -1,5 +1,5 @@
 package orchestrators
-
+import utils.Logs.RichLogger
 import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -123,7 +123,7 @@ class AuthOrchestrator(
           _ <- mailService.send(ResetPassword(user, authToken))
         } yield ()
       case _ =>
-        logger.warn("User not found, cannot reset password")
+        logger.warnWithTitle("reset_pwd_user_not_found", "User not found, cannot reset password")
         Future.successful(())
     }
 
@@ -173,7 +173,7 @@ class AuthOrchestrator(
       .authenticate(Credentials(login, password))
       .recoverWith {
         case e: InvalidPasswordException =>
-          logger.warn("Invalid password ", e)
+          logger.warnWithTitle("invalid_password", "Invalid password ", e)
           Future.failed(InvalidPassword(login))
         case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
         case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
