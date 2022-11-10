@@ -61,6 +61,10 @@ class CompanyUpdateTask(
       .grouped(300)
       .throttle(1, 1.second)
       .mapAsync(1) { companies =>
+        logger.infoWithTitle(
+          "company_update_task_item",
+          s"Syncing ${companies.size} companies"
+        )
         // TODO Local sync to be removed
         if (taskConfiguration.companyUpdate.localSync) {
           localCompanySyncService.syncCompanies(companies)

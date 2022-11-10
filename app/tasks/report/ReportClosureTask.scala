@@ -30,6 +30,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
+import utils.Logs.RichLogger
 
 class ReportClosureTask(
     actorSystem: ActorSystem,
@@ -47,7 +48,7 @@ class ReportClosureTask(
     taskConfiguration,
     startTime = taskConfiguration.reportClosure.startTime,
     interval = 1.day,
-    taskName = "ReportClosureTask"
+    taskName = "report_closure_task"
   )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
@@ -62,10 +63,12 @@ class ReportClosureTask(
     logger.info(s"Closing ${reports.length} reports")
     for {
       successesOrFailuresList <- Future.sequence(reports.map { report =>
+        logger.infoWithTitle("report_closure_task_item", s"Closing report ${report.id}")
         closeExpiredReport(report).transform {
-          case Success(_) => Success(Right(report.id))
+          case Success(_) =>
+            Success(Right(report.id))
           case Failure(err) =>
-            logger.error(s"Error closing report ${report.id}", err)
+            logger.errorWithTitle("report_closure_task_item_error", s"Error closing report ${report.id}", err)
             Success(Left(report.id))
         }
       })

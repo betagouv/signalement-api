@@ -18,6 +18,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
+import utils.Logs.RichLogger
 
 class ReportNotificationTask(
     actorSystem: ActorSystem,
@@ -95,6 +96,10 @@ class ReportNotificationTask(
         s"We have ${subscriptionEmailAndNonEmptyReports.size} emails of notifications to send (period $period)"
       )
       _ <- subscriptionEmailAndNonEmptyReports.map { case (subscription, emailAddress, filteredReport) =>
+        logger.infoWithTitle(
+          "report_notification_task_item",
+          s"Sending a subscription notification email to ${emailAddress}"
+        )
         mailService.send(
           DgccrfReportNotification(
             List(emailAddress),

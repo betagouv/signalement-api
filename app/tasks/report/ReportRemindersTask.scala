@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
-
+import utils.Logs.RichLogger
 class ReportRemindersTask(
     actorSystem: ActorSystem,
     reportRepository: ReportRepositoryInterface,
@@ -46,7 +46,7 @@ class ReportRemindersTask(
   // At J+8 during the night, the pro receives a reminder email
   // At J+16 during the night, the pro receives the second reminder email
   // At J+25 the report is closed
-  val delayBetweenReminderEmails = Period.ofDays(7)
+  val delayBetweenReminderEmails: Period = Period.ofDays(7)
   val maxReminderCount = 2
 
   scheduleTask(
@@ -54,7 +54,7 @@ class ReportRemindersTask(
     taskConfiguration,
     startTime = conf.startTime,
     interval = conf.intervalInHours,
-    taskName = "ReportRemindersTask"
+    taskName = "report_reminders_task"
   )(runTask(taskRunDate = getTodayAtStartOfDayParis()))
 
   def runTask(taskRunDate: OffsetDateTime): Future[Unit] = {
@@ -76,10 +76,15 @@ class ReportRemindersTask(
     logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
     for {
       successesOrFailuresList <- Future.sequence(reportsWithUsers.map { case (report, users) =>
+        logger.infoWithTitle("report_reminders_task_item", s"Closed report ${report.id}")
         sendReminderEmail(report, users).transform {
           case Success(_) => Success(Right(report.id))
           case Failure(err) =>
-            logger.error(s"Error sending reminder email for report ${report.id} to ${users.length} users", err)
+            logger.errorWithTitle(
+              "report_reminders_task_item_error",
+              s"Error sending reminder email for report ${report.id} to ${users.length} users",
+              err
+            )
             Success(Left(report.id))
         }
       })
