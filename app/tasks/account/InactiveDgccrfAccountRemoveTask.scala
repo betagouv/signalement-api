@@ -14,6 +14,7 @@ import tasks.toValidated
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import utils.Logs.RichLogger
 
 class InactiveDgccrfAccountRemoveTask(
     userRepository: UserRepositoryInterface,
@@ -41,7 +42,7 @@ class InactiveDgccrfAccountRemoveTask(
       _ <- subscriptionToDelete.map(subscription => subscriptionRepository.delete(subscription.id)).sequence
       _ = logger.debug(s"Deleting files of user ${user.id}")
       _ <- asyncFileRepository.deleteByUserId(user.id)
-      _ = logger.debug(s"Soft deleting user ${user.id}")
+      _ = logger.infoWithTitle("inactive_dgccrf_account_task_item", s"Soft deleting user ${user.id}")
       _ <- userRepository.softDelete(user.id)
       _ = logger.debug(s"Inactive DGCCRF account user ${user.id} successfully deleted")
     } yield ()

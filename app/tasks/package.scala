@@ -67,7 +67,7 @@ package object tasks {
       interval
     ) { () =>
       if (taskConfiguration.active) {
-        logger.info(s"$taskName launched")
+        logger.infoWithTitle("task_launch", s"$taskName launched")
         execution.onComplete {
           case Success(_) =>
             logger.info(s"$taskName finished")
