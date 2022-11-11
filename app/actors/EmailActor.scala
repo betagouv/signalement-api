@@ -61,7 +61,7 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
         )
         logger.infoWithTitle("email_sent", s"Sent email to ${req.recipients}")
       } catch {
-        case _: AddressException =>
+        case e: Exception if isCausedByAddressException(e) =>
           logger.warnWithTitle(
             "email_malformed_address",
             s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
@@ -90,4 +90,11 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
       logger.error("Unknown message received by EmailActor")
 
   }
+
+  private def isCausedByAddressException(e: Exception): Boolean =
+    e.getCause match {
+      case null                => false
+      case _: AddressException => true
+      case _                   => false
+    }
 }
