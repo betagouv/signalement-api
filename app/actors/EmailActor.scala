@@ -7,12 +7,12 @@ import play.api.Logger
 import play.api.libs.mailer._
 import services.MailerService
 import utils.EmailAddress
+import utils.Logs.RichLogger
 
 import javax.mail.internet.AddressException
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.language.postfixOps
-import utils.Logs.RichLogger
+import scala.util.Random
 object EmailActor {
   def props = Props[EmailActor]()
 
@@ -23,8 +23,20 @@ object EmailActor {
       bodyHtml: String,
       blindRecipients: Seq[EmailAddress] = Seq.empty,
       attachments: Seq[Attachment] = Seq.empty,
-      times: Int = 0
+      nbPastAttempts: Int = 0
   )
+
+  def getDelayBeforeNextRetry(nbPastAttempts: Int, withRandomJitter: Boolean = false): Option[FiniteDuration] =
+    if (nbPastAttempts >= 7) None
+    else {
+      // 2s, then 16s, etc. See unit test for details
+      val nbSeconds = 2 * Math.pow(nbPastAttempts.toDouble, 3)
+      // Random jitter https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+      val finalNbSeconds = if (withRandomJitter) Random.between(0.8, 1.2) * nbSeconds else nbSeconds
+      Some(
+        finalNbSeconds.seconds
+      )
+    }
 }
 
 class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) extends Actor {
@@ -47,33 +59,35 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
           req.bodyHtml,
           req.attachments
         )
-        logger.debug(s"Sent email to ${req.recipients}")
+        logger.infoWithTitle("email_sent", s"Sent email to ${req.recipients}")
       } catch {
-
         case _: AddressException =>
           logger.warnWithTitle(
             "email_malformed_address",
             s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
           )
         case e: Exception =>
+          val nbPastAttempts = req.nbPastAttempts + 1
           logger.errorWithTitle(
             "email_sending_failed",
-            s"Unexpected error when sending email [ number of attempt :${req.times + 1}, from :${req.from}, recipients: ${req.recipients}, subject : ${req.subject}]",
+            s"Unexpected error when sending email [ attempts: $nbPastAttempts, from: ${req.from}, recipients: ${req.recipients}, subject: ${req.subject}]",
             e
           )
-          if (req.times < 2) {
-            context.system.scheduler.scheduleOnce(req.times * 9 + 1 minute, self, req.copy(times = req.times + 1))
-            ()
-          } else {
-            logger.errorWithTitle(
-              "email_max_delivery_attempts",
-              s"Email has exceeding max delivery attempts. Aborting delivery of email [recipients : ${req.recipients}, subject : ${req.subject} ]"
-            )
+          getDelayBeforeNextRetry(nbPastAttempts, withRandomJitter = true) match {
+            case Some(delay) =>
+              context.system.scheduler.scheduleOnce(delay, self, req.copy(nbPastAttempts = nbPastAttempts))
+              ()
+            case None =>
+              logger.errorWithTitle(
+                "email_max_delivery_attempts",
+                s"Email has exceeding max delivery attempts. Aborting delivery of email [recipients : ${req.recipients}, subject : ${req.subject} ]"
+              )
           }
+
       }
 
     case _ =>
-      logger.debug("Could not handle request, ignoring message")
+      logger.error("Unknown message received by EmailActor")
 
   }
 }
