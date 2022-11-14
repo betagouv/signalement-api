@@ -6,8 +6,6 @@ import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
 import akka.stream.scaladsl.Sink
 import cats.implicits.toTraverseOps
-import company.CompanySearchResult
-import config.TaskConfiguration
 import models.company.CompanySync
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
@@ -24,9 +22,7 @@ import utils.Logs.RichLogger
 class CompanyUpdateTask(
     actorSystem: ActorSystem,
     companyRepository: CompanyRepositoryInterface,
-    taskConfiguration: TaskConfiguration,
     companySyncService: CompanySyncServiceInterface,
-    localCompanySyncService: LocalCompanySyncServiceInterface,
     companySyncRepository: CompanySyncRepositoryInterface
 )(implicit
     executionContext: ExecutionContext,
@@ -65,12 +61,7 @@ class CompanyUpdateTask(
           "company_update_task_item",
           s"Syncing ${companies.size} companies"
         )
-        // TODO Local sync to be removed
-        if (taskConfiguration.companyUpdate.localSync) {
-          localCompanySyncService.syncCompanies(companies)
-        } else {
-          companySyncService.syncCompanies(companies, companySync.lastUpdated)
-        }
+        companySyncService.syncCompanies(companies, companySync.lastUpdated)
       }
       .mapAsync(1)(updateSignalConsoCompaniesBySiret)
       .map(_.flatMap(_.lastUpdated).maxOption.getOrElse(companySync.lastUpdated))
