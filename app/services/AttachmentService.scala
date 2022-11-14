@@ -19,8 +19,8 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
       contentId = Some("logo-signalconso")
     ),
     AttachmentFile(
-      "logo-marianne.png",
-      environment.getFile("/appfiles/logo-marianne.png"),
+      "logo-marianne.jpg",
+      environment.getFile("/appfiles/logo-marianne.jpg"),
       contentId = Some("logo-marianne")
     )
   )
