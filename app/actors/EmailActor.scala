@@ -3,6 +3,7 @@ package actors
 import akka.actor._
 import akka.stream.Materializer
 import cats.data.NonEmptyList
+import com.sun.mail.smtp.SMTPSendFailedException
 import play.api.Logger
 import play.api.libs.mailer._
 import services.MailerService
@@ -66,6 +67,12 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
             "email_malformed_address",
             s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
           )
+        case e: Exception if isCausedByUnexceptedRecipients(e) =>
+          logger.warnWithTitle(
+            "email_unexpected_recipients",
+            s"Received unexpected recipients error from sendinblue [recipients : ${req.recipients.toList
+                .mkString(",")}, subject : ${req.subject} ]"
+          )
         case e: Exception =>
           val nbPastAttempts = req.nbPastAttempts + 1
           logger.errorWithTitle(
@@ -96,5 +103,17 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
       case null                => false
       case _: AddressException => true
       case _                   => false
+    }
+
+  // This case happens when trying to send through Sendinblue to the email "......@gmail.com"
+  // (with the dots exactly like that)
+  // It seems we don't get an AddressException, but it's Sendinblue that answers in a weird way
+  private def isCausedByUnexceptedRecipients(e: Exception): Boolean =
+    e.getCause match {
+      case null                           => false
+      case cause: SMTPSendFailedException =>
+        // The full message with "......@gmail.com" was "400 unexpected recipients: want atleast 1, got 0"
+        cause.getMessage.contains("unexpected recipients")
+      case _ => false
     }
 }
