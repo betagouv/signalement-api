@@ -24,7 +24,7 @@ object EmailActor {
       bodyHtml: String,
       blindRecipients: Seq[EmailAddress] = Seq.empty,
       attachments: Seq[Attachment] = Seq.empty,
-      nbPastAttempts: Int = 0
+      numAttempt: Int = 1
   )
 
   def getDelayBeforeNextRetry(nbPastAttempts: Int, withRandomJitter: Boolean = false): Option[FiniteDuration] =
@@ -51,7 +51,11 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
     logger.error(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
     case req: EmailRequest =>
+      val numAttempt = req.numAttempt
+      val logDetails =
+        s"""(attempt #$numAttempt, to ${req.recipients.toList.mkString(", ")}, subject "${req.subject}")"""
       try {
+        logger.infoWithTitle("email_sending_attempt", s"Sending email $logDetails")
         mailerService.sendEmail(
           req.from,
           req.recipients.toList,
@@ -60,34 +64,32 @@ class EmailActor(mailerService: MailerService)(implicit val mat: Materializer) e
           req.bodyHtml,
           req.attachments
         )
-        logger.infoWithTitle("email_sent", s"Sent email to ${req.recipients}")
+        logger.infoWithTitle("email_sent", s"Sent email $logDetails")
       } catch {
         case e: Exception if isCausedByAddressException(e) =>
           logger.warnWithTitle(
             "email_malformed_address",
-            s"Malformed email address [recipients : ${req.recipients.toList.mkString(",")}, subject : ${req.subject} ]"
+            s"Malformed email address $logDetails"
           )
         case e: Exception if isCausedByUnexceptedRecipients(e) =>
           logger.warnWithTitle(
             "email_unexpected_recipients",
-            s"Received unexpected recipients error from sendinblue [recipients : ${req.recipients.toList
-                .mkString(",")}, subject : ${req.subject} ]"
+            s"Received unexpected recipients error $logDetails"
           )
         case e: Exception =>
-          val nbPastAttempts = req.nbPastAttempts + 1
           logger.errorWithTitle(
             "email_sending_failed",
-            s"Unexpected error when sending email [ attempts: $nbPastAttempts, from: ${req.from}, recipients: ${req.recipients}, subject: ${req.subject}]",
+            s"Unexpected error when sending email $logDetails",
             e
           )
-          getDelayBeforeNextRetry(nbPastAttempts, withRandomJitter = true) match {
+          getDelayBeforeNextRetry(numAttempt, withRandomJitter = true) match {
             case Some(delay) =>
-              context.system.scheduler.scheduleOnce(delay, self, req.copy(nbPastAttempts = nbPastAttempts))
+              context.system.scheduler.scheduleOnce(delay, self, req.copy(numAttempt = numAttempt + 1))
               ()
             case None =>
               logger.errorWithTitle(
                 "email_max_delivery_attempts",
-                s"Email has exceeding max delivery attempts. Aborting delivery of email [recipients : ${req.recipients}, subject : ${req.subject} ]"
+                s"Email has reached max delivery attempts, aborting delivery $logDetails"
               )
           }
 
