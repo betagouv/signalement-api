@@ -24,7 +24,7 @@ import pureconfig.ConfigConvert
 import pureconfig.ConfigReader
 import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
-import services.MailerService
+import services.MailRetriesService
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
 import tasks.company.CompanySyncServiceInterface
@@ -103,7 +103,7 @@ class DefaultApplicationLoader(
     with Mockito {
   var components: SignalConsoComponents = _
 
-  val mailerServiceMock = mock[MailerService]
+  val mailerServiceMock = mock[MailRetriesService]
 
   mailerServiceMock.sendEmail(
     any[EmailAddress],
@@ -119,7 +119,7 @@ class DefaultApplicationLoader(
 
       override def authEnv: Environment[AuthEnv] =
         maybeAuthEnv.getOrElse(super.authEnv)
-      override def mailer: MailerService = mailerServiceMock
+      override def mailer: MailRetriesService = mailerServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
       override def authApiEnv: Environment[APIKeyEnv] =

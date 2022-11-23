@@ -32,7 +32,7 @@ import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
 import play.api.Logger
-import services.MailerService
+import services.MailRetriesService
 import services.S3ServiceInterface
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.EventType
@@ -182,7 +182,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     implicit val env: Environment[AuthEnv] =
       new FakeEnvironment[AuthEnv](Seq(adminLoginInfo -> adminIdentity, proLoginInfo -> proIdentity))
 
-    val mockMailerService = mock[MailerService]
+    val mockMailerService = mock[MailRetriesService]
     val mockS3Service = new S3ServiceMock()
 
     def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {

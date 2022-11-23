@@ -35,7 +35,7 @@ import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
-import services.MailerService
+import services.MailRetriesService
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -356,7 +356,7 @@ trait GetReportContext extends AppSpec {
 
   val mockReportFileRepository = mock[ReportFileRepositoryInterface]
   val mockEventRepository = mock[EventRepositoryInterface]
-  val mockMailerService = mock[MailerService]
+  val mockMailerService = mock[MailRetriesService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
@@ -395,7 +395,7 @@ trait GetReportContext extends AppSpec {
         override def reportRepository: ReportRepositoryInterface = mockReportRepository
         override def companyRepository: CompanyRepositoryInterface = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
-        override def mailer: MailerService = mockMailerService
+        override def mailer: MailRetriesService = mockMailerService
         override def eventRepository: EventRepositoryInterface = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator

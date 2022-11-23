@@ -1,6 +1,5 @@
 package services
 
-import actors.EmailActor.EmailRequest
 import cats.data.NonEmptyList
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -44,7 +43,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
 //  implicit lazy val frontRoute = components.frontRoute
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val mailService = components.mailService
 
   val proWithAccessToHeadOffice = Fixtures.genProUser.sample.get
@@ -114,7 +113,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
-      there was no(mailerService).sendEmail(
+      there was no(mailRetriesService).sendEmailWithRetries(
         any[EmailAddress],
         any[Seq[EmailAddress]],
         any[Seq[EmailAddress]],
@@ -123,7 +122,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
         any[Seq[Attachment]]
       )
     } else {
-      there was one(mailerService).sendEmail(
+      there was one(mailRetriesService).sendEmailWithRetries(
         any[EmailAddress],
         argThat((list: Seq[EmailAddress]) => list.sortBy(_.value) == expectedRecipients.sortBy(_.value)),
         any[Seq[EmailAddress]],
