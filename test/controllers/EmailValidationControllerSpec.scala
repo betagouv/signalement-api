@@ -20,6 +20,7 @@ import play.api.test.Helpers._
 import play.api.test._
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.Email.ConsumerValidateEmail
+import services.MailRetriesService.EmailRequest
 
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -53,7 +54,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
   lazy val emailValidationRepository: EmailValidationRepositoryInterface =
     components.emailValidationRepository
 
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
   lazy val frontRoute = components.frontRoute
@@ -300,14 +301,10 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
   }
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
-    there was one(mailerService)
-      .sendEmail(
-        emailConfiguration.from,
-        recipients,
-        Nil,
-        subject,
-        bodyHtml,
-        attachementService.defaultAttachments
+    there was one(mailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.sortBy(_.value).toList == recipients.sortBy(_.value) &&
+          emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml
       )
-
+    )
 }

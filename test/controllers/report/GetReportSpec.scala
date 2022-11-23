@@ -36,6 +36,7 @@ import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.MailRetriesService
+import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -206,25 +207,17 @@ trait GetReportSpec extends Spec with GetReportContext {
       bodyHtml: String,
       attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
-    there was one(mailerService)
-      .sendEmail(
-        emailConfiguration.from,
-        Seq(recipient),
-        Nil,
-        subject,
-        bodyHtml,
-        attachments
+    there was one(mailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.sortBy(_.value).toList == List(recipient) &&
+          emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml && emailRequest.attachments == attachments
       )
+    )
 
   def mailMustNotHaveBeenSent() =
-    there was no(components.mailer)
-      .sendEmail(
-        any[EmailAddress],
-        any[Seq[EmailAddress]],
-        any[Seq[EmailAddress]],
-        anyString,
-        anyString,
-        any[Seq[Attachment]]
+    there was no(components.mailRetriesService)
+      .sendEmailWithRetries(
+        any[EmailRequest]
       )
 
   def reportStatusMustMatch(id: UUID, status: ReportStatus) = {
@@ -356,7 +349,7 @@ trait GetReportContext extends AppSpec {
 
   val mockReportFileRepository = mock[ReportFileRepositoryInterface]
   val mockEventRepository = mock[EventRepositoryInterface]
-  val mockMailerService = mock[MailRetriesService]
+  val mockMailRetriesService = mock[MailRetriesService]
   val mockCompaniesVisibilityOrchestrator = mock[CompaniesVisibilityOrchestrator]
 
   mockCompaniesVisibilityOrchestrator.fetchVisibleCompanies(any[User]) answers { (pro: Any) =>
@@ -395,7 +388,7 @@ trait GetReportContext extends AppSpec {
         override def reportRepository: ReportRepositoryInterface = mockReportRepository
         override def companyRepository: CompanyRepositoryInterface = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
-        override def mailer: MailRetriesService = mockMailerService
+        override val mailRetriesService: MailRetriesService = mockMailRetriesService
         override def eventRepository: EventRepositoryInterface = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
@@ -418,7 +411,7 @@ trait GetReportContext extends AppSpec {
   val app: Application = TestApp.buildApp(appLoader)
   val components: SignalConsoComponents = appLoader.components
 
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
   lazy val mailService = components.mailService
 

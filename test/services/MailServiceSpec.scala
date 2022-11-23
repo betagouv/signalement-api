@@ -12,17 +12,12 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
-import play.api.libs.mailer.Attachment
 import services.Email.ProNewReportNotification
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
-import utils.SIREN
-import utils.TestApp
+import services.MailRetriesService.EmailRequest
+import utils._
 import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
-import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -43,7 +38,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
 //  implicit lazy val frontRoute = components.frontRoute
-  lazy val mailRetriesService = components.mailRetriesService
+  lazy val mailRetriesService = mock[MailRetriesService]
   lazy val mailService = components.mailService
 
   val proWithAccessToHeadOffice = Fixtures.genProUser.sample.get
@@ -114,21 +109,13 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
       there was no(mailRetriesService).sendEmailWithRetries(
-        any[EmailAddress],
-        any[Seq[EmailAddress]],
-        any[Seq[EmailAddress]],
-        anyString,
-        anyString,
-        any[Seq[Attachment]]
+        any[EmailRequest]
       )
     } else {
       there was one(mailRetriesService).sendEmailWithRetries(
-        any[EmailAddress],
-        argThat((list: Seq[EmailAddress]) => list.sortBy(_.value) == expectedRecipients.sortBy(_.value)),
-        any[Seq[EmailAddress]],
-        anyString,
-        anyString,
-        any[Seq[Attachment]]
+        argThat((emailRequest: EmailRequest) =>
+          emailRequest.recipients.sortBy(_.value).toList == expectedRecipients.sortBy(_.value)
+        )
       )
     }
 }
@@ -183,8 +170,6 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
 
   def e1 = {
 
-    val emailQueue = mutable.Queue.empty[EmailRequest]
-
     val nonFilteredEmails = List(
       EmailAddress(s"${UUID.randomUUID().toString}@betagouv.fr"),
       EmailAddress(s"${UUID.randomUUID().toString}@beta.gouv.fr"),
@@ -199,10 +184,7 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
     )
 
     val mailService = new MailService(
-      (emailRequest: EmailRequest) => {
-        emailQueue.appendAll(List(emailRequest))
-        ()
-      },
+      mailRetriesService,
       emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = ".*".r),
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
@@ -218,7 +200,8 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
       ),
       Duration.Inf
     )
-    emailQueue.dequeue().recipients.mustEqual(NonEmptyList.fromListUnsafe(nonFilteredEmails ++ filteredEmail))
+
+    checkRecipients(nonFilteredEmails ++ filteredEmail)
   }
 }
 
@@ -227,8 +210,6 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
   override def is = s2"""email must be filtered $e1"""
 
   def e1 = {
-
-    val emailQueue = mutable.Queue.empty[EmailRequest]
 
     val nonFilteredEmails = List(
       EmailAddress(s"${UUID.randomUUID().toString}@betagouv.fr"),
@@ -244,10 +225,7 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
     )
 
     val mailService = new MailService(
-      (emailRequest: EmailRequest) => {
-        emailQueue.appendAll(List(emailRequest))
-        ()
-      },
+      mailRetriesService,
       emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = """beta?.gouv|@.*gouv.fr""".r),
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
@@ -263,7 +241,8 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
       ),
       Duration.Inf
     )
-    emailQueue.dequeue().recipients.mustEqual(NonEmptyList.fromListUnsafe(nonFilteredEmails))
+    checkRecipients(nonFilteredEmails)
+
   }
 }
 

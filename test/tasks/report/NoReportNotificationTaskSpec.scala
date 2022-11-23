@@ -7,13 +7,13 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
+import services.MailRetriesService.EmailRequest
 import utils._
-import play.api.libs.mailer.Attachment
 
+import java.time.OffsetDateTime
 import java.time.Period
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import java.time.OffsetDateTime
 
 class NoReportNotification(implicit ee: ExecutionEnv) extends NoReportNotificationTaskSpec {
   override def is =
@@ -38,7 +38,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportRepository = components.reportRepository
   lazy val companyRepository = components.companyRepository
   lazy val reportNotificationTask = components.reportNotificationTask
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
   implicit lazy val frontRoute = components.frontRoute
@@ -107,13 +107,8 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     )
 
   def mailMustNotHaveBeenSent() =
-    there was no(mailerService)
-      .sendEmail(
-        any[EmailAddress],
-        any[Seq[EmailAddress]],
-        any[Seq[EmailAddress]],
-        anyString,
-        anyString,
-        any[Seq[Attachment]]
+    there was no(mailRetriesService)
+      .sendEmailWithRetries(
+        any[EmailRequest]
       )
 }
