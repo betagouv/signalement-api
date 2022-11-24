@@ -207,7 +207,7 @@ trait GetReportSpec extends Spec with GetReportContext {
       bodyHtml: String,
       attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
-    there was one(mailRetriesService).sendEmailWithRetries(
+    there was one(mockMailRetriesService).sendEmailWithRetries(
       argThat((emailRequest: EmailRequest) =>
         emailRequest.recipients.sortBy(_.value).toList == List(recipient) &&
           emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml && emailRequest.attachments == attachments
@@ -215,7 +215,7 @@ trait GetReportSpec extends Spec with GetReportContext {
     )
 
   def mailMustNotHaveBeenSent() =
-    there was no(components.mailRetriesService)
+    there was no(mockMailRetriesService)
       .sendEmailWithRetries(
         any[EmailRequest]
       )
@@ -388,7 +388,7 @@ trait GetReportContext extends AppSpec {
         override def reportRepository: ReportRepositoryInterface = mockReportRepository
         override def companyRepository: CompanyRepositoryInterface = mockCompanyRepository
         override def reportFileRepository: ReportFileRepositoryInterface = mockReportFileRepository
-        override val mailRetriesService: MailRetriesService = mockMailRetriesService
+        override lazy val mailRetriesService: MailRetriesService = mockMailRetriesService
         override def eventRepository: EventRepositoryInterface = mockEventRepository
         override def companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator =
           mockCompaniesVisibilityOrchestrator
@@ -411,7 +411,6 @@ trait GetReportContext extends AppSpec {
   val app: Application = TestApp.buildApp(appLoader)
   val components: SignalConsoComponents = appLoader.components
 
-  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
   lazy val mailService = components.mailService
 

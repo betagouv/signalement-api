@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
-import models.report.Report
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
@@ -38,8 +37,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   lazy val reportNotificationBlocklistRepository = components.reportNotificationBlockedRepository
 
 //  implicit lazy val frontRoute = components.frontRoute
-  lazy val mailRetriesService = mock[MailRetriesService]
-  lazy val mailService = components.mailService
+  lazy val mockMailRetriesService = mock[MailRetriesService]
 
   val proWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proWithAccessToSubsidiary = Fixtures.genProUser.sample.get
@@ -95,24 +93,13 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
     )
   )
 
-  protected def sendEmail(emails: NonEmptyList[EmailAddress], report: Report) =
-    Await.result(
-      mailService.send(
-        ProNewReportNotification(
-          emails,
-          report
-        )
-      ),
-      Duration.Inf
-    )
-
   protected def checkRecipients(expectedRecipients: Seq[EmailAddress]) =
     if (expectedRecipients.isEmpty) {
-      there was no(mailRetriesService).sendEmailWithRetries(
+      there was no(mockMailRetriesService).sendEmailWithRetries(
         any[EmailRequest]
       )
     } else {
-      there was one(mailRetriesService).sendEmailWithRetries(
+      there was one(mockMailRetriesService).sendEmailWithRetries(
         argThat((emailRequest: EmailRequest) =>
           emailRequest.recipients.sortBy(_.value).toList == expectedRecipients.sortBy(_.value)
         )
@@ -123,9 +110,27 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
   override def is = s2"""Email must be sent to admin and admin of head office $e1"""
   def e1 = {
-    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+
+    val mailService = new MailService(
+      mockMailRetriesService,
+      emailConfiguration = emailConfiguration,
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(components.frontRoute, executionContext)
+
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
     Thread.sleep(100)
     checkRecipients(Seq(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email))
+
   }
 }
 
@@ -133,13 +138,33 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
   override def is = s2"""Email must be sent only to the user that didn't block the notifications $e1"""
 
   def e1 = {
+
+    val mailService = new MailService(
+      mockMailRetriesService,
+      emailConfiguration = emailConfiguration,
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(components.frontRoute, executionContext)
+
     Await.result(
       reportNotificationBlocklistRepository
         .create(proWithAccessToSubsidiary.id, Seq(reportForSubsidiary.companyId.get)),
       Duration.Inf
     )
-    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
+
     checkRecipients(Seq(proWithAccessToHeadOffice.email))
+
   }
 }
 
@@ -147,6 +172,15 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
   override def is = s2"""No email must be sent since all users blocked the notifications $e1"""
 
   def e1 = {
+
+    val mailService = new MailService(
+      mockMailRetriesService,
+      emailConfiguration = emailConfiguration,
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(components.frontRoute, executionContext)
+
     Await.result(
       Future.sequence(
         Seq(
@@ -159,7 +193,16 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       Duration.Inf
     )
 
-    sendEmail(NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email), reportForSubsidiary)
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.of(proWithAccessToHeadOffice.email, proWithAccessToSubsidiary.email),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
+
     checkRecipients(Seq())
   }
 }
@@ -184,7 +227,7 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
     )
 
     val mailService = new MailService(
-      mailRetriesService,
+      mockMailRetriesService,
       emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = ".*".r),
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
@@ -225,7 +268,7 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
     )
 
     val mailService = new MailService(
-      mailRetriesService,
+      mockMailRetriesService,
       emailConfiguration = emailConfiguration.copy(outboundEmailFilterRegex = """beta?.gouv|@.*gouv.fr""".r),
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,

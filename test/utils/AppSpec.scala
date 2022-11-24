@@ -105,14 +105,14 @@ class DefaultApplicationLoader(
 
   val mailRetriesServiceMock = mock[MailRetriesService]
 
-  mailRetriesServiceMock.sendEmailWithRetries(any[EmailRequest]) returns (())
+  doNothing.when(mailRetriesServiceMock).sendEmailWithRetries(any[EmailRequest])
 
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
       override def authEnv: Environment[AuthEnv] =
         maybeAuthEnv.getOrElse(super.authEnv)
-      override val mailRetriesService: MailRetriesService = mailRetriesServiceMock
+      override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
       override def authApiEnv: Environment[APIKeyEnv] =

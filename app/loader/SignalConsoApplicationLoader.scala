@@ -236,7 +236,7 @@ class SignalConsoComponents(
   val pdfService = new PDFService(signalConsoConfiguration)
   implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
-  val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
+  lazy val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
   val mailService = new MailService(
     mailRetriesService,
     emailConfiguration,

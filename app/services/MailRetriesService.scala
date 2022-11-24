@@ -68,7 +68,10 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
     ()
   }
 
-  def sendEmailWithRetries(emailRequest: EmailRequest, numAttempt: Int = 1): Unit = {
+  def sendEmailWithRetries(emailRequest: EmailRequest): Unit =
+    sendEmailWithRetries(emailRequest, numAttempt = 1)
+
+  private def sendEmailWithRetries(emailRequest: EmailRequest, numAttempt: Int): Unit = {
     val logDetails =
       s"""(attempt #$numAttempt, to ${emailRequest.recipients.toList.mkString(
           ", "
