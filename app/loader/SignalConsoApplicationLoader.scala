@@ -20,12 +20,6 @@ import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import company.CompanyDataController
-import company.EnterpriseImportController
-import company.EnterpriseImportOrchestrator
-import company.companydata.CompanyDataRepository
-import company.companydata.CompanyDataRepositoryInterface
-import company.entrepriseimportinfo.EnterpriseImportInfoRepository
 import config._
 import orchestrators._
 import play.api._
@@ -156,7 +150,6 @@ class SignalConsoComponents(
   //  Repositories
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
-  val dbConfigCompanyDb: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("company_db"))
 
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
@@ -165,13 +158,10 @@ class SignalConsoComponents(
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface = new AuthTokenRepository(dbConfig)
   def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
-  val companyDataRepository: CompanyDataRepositoryInterface = new CompanyDataRepository(dbConfigCompanyDb)
   val consumerRepository: ConsumerRepositoryInterface = new ConsumerRepository(dbConfig)
   val dataEconomieRepository: DataEconomieRepositoryInterface = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
-  val enterpriseImportInfoRepository: EnterpriseImportInfoRepository = new EnterpriseImportInfoRepository(
-    dbConfigCompanyDb
-  )
+
   def eventRepository: EventRepositoryInterface = new EventRepository(dbConfig)
   val ratingRepository: RatingRepositoryInterface = new RatingRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
@@ -224,10 +214,6 @@ class SignalConsoComponents(
 
   //  Actor
   val emailActor: ActorRef = actorSystem.actorOf(Props(new EmailActor(mailer)), "email-actor")
-  val enterpriseSyncActor: ActorRef = actorSystem.actorOf(
-    Props(new EnterpriseSyncActor(enterpriseImportInfoRepository, companyDataRepository)),
-    "enterprise-sync-actor"
-  )
 
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
@@ -320,9 +306,6 @@ class SignalConsoComponents(
   val emailValidationOrchestrator =
     new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration)
 
-  val enterpriseImportOrchestrator =
-    new EnterpriseImportOrchestrator(enterpriseImportInfoRepository, enterpriseSyncActor)
-
   val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
 
   val reportBlockedNotificationOrchestrator = new ReportBlockedNotificationOrchestrator(
@@ -390,9 +373,6 @@ class SignalConsoComponents(
     taskConfiguration
   )
 
-  val localCompanySyncService: LocalCompanySyncServiceInterface =
-    new LocalCompanySyncService(companyDataRepository)
-
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
   )
@@ -401,9 +381,7 @@ class SignalConsoComponents(
   val companyTask = new CompanyUpdateTask(
     actorSystem,
     companyRepository,
-    applicationConfiguration.task,
     companySyncService,
-    localCompanySyncService,
     companySyncRepository
   )
 
@@ -459,9 +437,6 @@ class SignalConsoComponents(
       controllerComponents
     )
 
-  val companyDataController =
-    new CompanyDataController(companyDataRepository, silhouette, frontRoute, controllerComponents)
-
   val companyController = new CompanyController(
     companyOrchestrator,
     companiesVisibilityOrchestrator,
@@ -482,8 +457,7 @@ class SignalConsoComponents(
   val dataEconomieController = new DataEconomieController(dataEconomieOrchestrator, silhouetteApi, controllerComponents)
   val emailValidationController =
     new EmailValidationController(silhouette, emailValidationOrchestrator, controllerComponents)
-  val enterpriseImportController =
-    new EnterpriseImportController(enterpriseImportOrchestrator, silhouette, controllerComponents)
+
   val eventsController = new EventsController(eventsOrchestrator, silhouette, controllerComponents)
   val ratingController = new RatingController(ratingRepository, silhouette, controllerComponents)
   val reportBlockedNotificationController =
@@ -575,10 +549,8 @@ class SignalConsoComponents(
       asyncFileController,
       constantController,
       authController,
-      enterpriseImportController,
       accountController,
       emailValidationController,
-      companyDataController,
       companyController,
       ratingController,
       subscriptionController,

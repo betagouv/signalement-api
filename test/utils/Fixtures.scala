@@ -1,6 +1,5 @@
 package utils
 
-import company.CompanyData
 import models.event.Event._
 import models._
 import models.company.Address
@@ -91,34 +90,6 @@ object Fixtures {
     isOpen = true,
     isHeadOffice = false,
     isPublic = true
-  )
-
-  def genCompanyData(company: Option[Company] = None) = for {
-    id <- arbitrary[UUID]
-    siret <- genSiret()
-    denom <- arbString.arbitrary
-  } yield CompanyData(
-    id,
-    company.map(_.siret).getOrElse(siret),
-    SIREN(company.map(_.siret).getOrElse(siret)),
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    Some(denom),
-    None,
-    None,
-    None
   )
 
   val genWebsiteURL = for {

@@ -1,7 +1,7 @@
 package utils
 
-import company.CompanySearchResult
 import models.company.Company
+import tasks.company.CompanySearchResult
 import tasks.company.CompanySyncServiceInterface
 
 import java.time.OffsetDateTime

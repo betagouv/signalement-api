@@ -1,7 +1,5 @@
 package orchestrators
 
-import company.CompanySearchResult
-import company.CompanySearchResult.fromCompany
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
@@ -27,6 +25,8 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
+import tasks.company.CompanySearchResult
+import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIRET
