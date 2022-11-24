@@ -50,21 +50,12 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
   val proWithAccessToHeadOffice = Fixtures.genProUser.sample.get
   val proWithAccessToSubsidiary = Fixtures.genProUser.sample.get
 
-  val headOfficeCompany = Fixtures.genCompany.sample.get
+  val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany = Fixtures.genCompany.sample.get.copy(
     siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get
   )
   val unrelatedCompany = Fixtures.genCompany.sample.get
 
-  val headOfficeCompanyData = Fixtures
-    .genCompanyData(Some(headOfficeCompany))
-    .sample
-    .get
-    .copy(
-      etablissementSiege = Some("true")
-    )
-  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
-  val unrelatedCompanyData = Fixtures.genCompanyData(Some(unrelatedCompany)).sample.get
   val reportForSubsidiary = Fixtures.genReportForCompany(subsidiaryCompany).sample.get
   val reportForUnrelated = Fixtures.genReportForCompany(unrelatedCompany).sample.get
 
@@ -94,21 +85,9 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
           AccessLevel.MEMBER
         )
 
-//        _ <- companyDataRepository.create(headOfficeCompanyData)
-//        _ <- companyDataRepository.create(subsidiaryCompanyData)
-//        _ <- companyDataRepository.create(unrelatedCompanyData)
       } yield (),
       Duration.Inf
     )
-
-//  override def cleanupData() =
-//    Await.result(
-//      for {
-//        _ <- companyDataRepository.delete(headOfficeCompanyData.id)
-//        _ <- companyDataRepository.delete(subsidiaryCompanyData.id)
-//      } yield (),
-//      Duration.Inf
-//    )
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 

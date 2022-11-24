@@ -242,13 +242,8 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 
-  val existingCompany = Fixtures.genCompany.sample.get
-  val anotherCompany = Fixtures.genCompany.sample.get
-
-  val existingCompanyData =
-    Fixtures.genCompanyData(Some(existingCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val anotherCompanyData =
-    Fixtures.genCompanyData(Some(anotherCompany)).sample.get.copy(etablissementSiege = Some("true"))
+  val existingCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
+  val anotherCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
 
   val existingReport = Fixtures.genReportForCompany(existingCompany).sample.get.copy(status = ReportStatus.NA)
 

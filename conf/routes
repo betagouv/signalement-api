@@ -79,14 +79,6 @@ POST          /api/authenticate/password/forgot                 controllers.Auth
 POST          /api/authenticate/password/reset                  controllers.AuthController.resetPassword(token: java.util.UUID)
 POST          /api/account/password                             controllers.AuthController.changePassword()
 
-# Enterprises sync
-POST          /api/enterprises-sync/start-etablissement         company.EnterpriseImportController.startEtablissementFile()
-POST          /api/enterprises-sync/start-unitelegale           company.EnterpriseImportController.startUniteLegaleFile()
-POST          /api/enterprises-sync/cancel                      company.EnterpriseImportController.cancelAllFiles()
-POST          /api/enterprises-sync/cancel-etablissement        company.EnterpriseImportController.cancelEtablissementFile()
-POST          /api/enterprises-sync/cancel-unitelegale          company.EnterpriseImportController.cancelUniteLegaleFile()
-GET           /api/enterprises-sync/info                        company.EnterpriseImportController.getSyncInfo()
-
 # Accesses API
 GET           /api/accesses/connected-user                      controllers.CompanyAccessController.myCompanies()
 GET           /api/accesses/:siret                              controllers.CompanyAccessController.listAccesses(siret: String)
@@ -120,9 +112,7 @@ POST          /api/email-validation/validate                    controllers.Emai
 POST          /api/email-validation/check-and-validate          controllers.EmailValidationController.checkAndValidate()
 GET           /api/email-validation/search                      controllers.EmailValidationController.search()
 
-# Company data API
-GET           /api/companies/search/:identity                   company.CompanyDataController.searchCompanyByIdentity(identity: String)
-GET           /api/companies/search                             company.CompanyDataController.searchCompany(q: String, postalCode: String)
+
 
 # Company details API
 POST          /api/companies                                    controllers.CompanyController.create()

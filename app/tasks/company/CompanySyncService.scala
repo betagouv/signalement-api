@@ -1,6 +1,5 @@
 package tasks.company
 
-import company.CompanySearchResult
 import config.CompanyUpdateTaskConfiguration
 import models.company.Company
 import play.api.Logger

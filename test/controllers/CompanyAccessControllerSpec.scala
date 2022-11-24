@@ -51,7 +51,6 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   lazy val accessTokenRepository = components.accessTokenRepository
 
   val company = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
-  val companyData = Fixtures.genCompanyData(Some(company)).sample.get.copy(etablissementSiege = Some("true"))
 
   override def setupData() =
     Await.result(

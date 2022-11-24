@@ -177,7 +177,6 @@ clever applications
 |REMINDER_TASK_START_TIME| Heure de lancement du job de relance pro                                                                                        | "04:00:00"                       |
 |REMINDER_TASK_INTERVAL| Intervalle de lancement du job de relance pro (ie "24 hours" , toutes les 24 heures)                                            | 24 hours                         |
 |ARCHIVE_TASK_START_TIME| Heure de lancement du job suppression des comptes inactifs                                                                      | "06:00:00"                       |
-|LOCAL_SYNC| Should be set to false in prod - to sync signal conso company with insee etablissement database                                 | true                             |
 |DATABASE_URL| Full database url                                                                                                               |                                  |
 |MAX_CONNECTIONS| Max connection (hikari property)                                                                                                |                                  |
 |NUM_THREADS| Thread count used to process db connections (hikari property)                                                                   |                                  |

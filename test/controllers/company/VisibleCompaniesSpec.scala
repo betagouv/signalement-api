@@ -55,22 +55,7 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
       isOpen = false
     )
 
-  val headOfficeCompanyData =
-    Fixtures.genCompanyData(Some(headOfficeCompany)).sample.get.copy(etablissementSiege = Some("true"))
-  val subsidiaryCompanyData = Fixtures.genCompanyData(Some(subsidiaryCompany)).sample.get
-
-  val subsidiaryClosedCompanyData = Fixtures
-    .genCompanyData()
-    .sample
-    .get
-    .copy(
-      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
-      siren = SIREN(headOfficeCompany.siret),
-      etatAdministratifEtablissement = Some("F")
-    )
-
   val companyWithoutAccess = Fixtures.genCompany.sample.get
-  val companyWithoutAccessData = Fixtures.genCompanyData(Some(companyWithoutAccess)).sample.get
 
   override def setupData() =
     Await.result(
@@ -140,7 +125,7 @@ The get visible companies endpoint should
     val content = contentAsJson(result).toString
     content must haveVisibleCompanies(
       aVisibleCompany(headOfficeCompany.siret),
-      aVisibleCompany(subsidiaryCompanyData.siret)
+      aVisibleCompany(subsidiaryCompany.siret)
     )
   }
 
@@ -151,7 +136,7 @@ The get visible companies endpoint should
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
     content must haveVisibleCompanies(
-      aVisibleCompany(subsidiaryCompanyData.siret)
+      aVisibleCompany(subsidiaryCompany.siret)
     )
   }
 
