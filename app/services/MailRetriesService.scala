@@ -49,7 +49,7 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
   val logger: Logger = Logger(this.getClass)
 
   // Dedicated thread pool
-  val executionContextForBlockingSmtpCalls = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+  val executionContextForBlockingSmtpCalls = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
 
   private def sendEmail(
       req: EmailRequest
@@ -75,6 +75,7 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
         )}, subject "${emailRequest.subject}")"""
 
     val future = Future {
+      logger.infoWithTitle("email_sending_attempt", s"Sending email $logDetails")
       // /!\ synchronous, blocks the thread
       sendEmail(emailRequest)
     }(executionContextForBlockingSmtpCalls)
