@@ -211,10 +211,6 @@ class SignalConsoComponents(
   def s3Service: S3ServiceInterface = new S3Service()
 
   //  Actor
-  val enterpriseSyncActor: ActorRef = actorSystem.actorOf(
-    Props(new EnterpriseSyncActor(enterpriseImportInfoRepository, companyDataRepository)),
-    "enterprise-sync-actor"
-  )
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
     "antivirus-scan-actor"
