@@ -22,6 +22,9 @@
                 -->
                 <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                     <fieldNames>
+                        <!-- name retro compatible with what we did earlier -->
+                        <level>logLevel</level>
+                        <logger>loggerName</logger>
                         <!-- remove these useless fields -->
                         <thread>[ignore]</thread>
                         <levelValue>[ignore]</levelValue>
