@@ -112,7 +112,7 @@ class StatisticController(
   }
 
   def getProReportToTransmitStat() =
-    UnsecuredAction.async { _ =>
+    SecuredAction.async { _ =>
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(
