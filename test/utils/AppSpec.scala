@@ -19,14 +19,14 @@ import play.api.db.slick.SlickApi
 import play.api.db.slick.evolutions.SlickDBApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.libs.concurrent.ActorSystemProvider
-import play.api.libs.mailer.Attachment
 import pureconfig.ConfigConvert
 import pureconfig.ConfigReader
 import pureconfig.ConfigSource
 import pureconfig.configurable.localTimeConfigConvert
-import services.MailerService
 import pureconfig.generic.auto._
 import pureconfig.generic.semiauto.deriveReader
+import services.MailRetriesService
+import services.MailRetriesService.EmailRequest
 import tasks.company.CompanySyncServiceInterface
 import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.auth.AuthEnv
@@ -103,23 +103,16 @@ class DefaultApplicationLoader(
     with Mockito {
   var components: SignalConsoComponents = _
 
-  val mailerServiceMock = mock[MailerService]
+  val mailRetriesServiceMock = mock[MailRetriesService]
 
-  mailerServiceMock.sendEmail(
-    any[EmailAddress],
-    anyListOf[EmailAddress],
-    anyListOf[EmailAddress],
-    anyString,
-    anyString,
-    anyListOf[Attachment]
-  ) returns ""
+  doNothing.when(mailRetriesServiceMock).sendEmailWithRetries(any[EmailRequest])
 
   override def load(context: ApplicationLoader.Context): Application = {
     components = new SignalConsoComponents(context) {
 
       override def authEnv: Environment[AuthEnv] =
         maybeAuthEnv.getOrElse(super.authEnv)
-      override def mailer: MailerService = mailerServiceMock
+      override lazy val mailRetriesService: MailRetriesService = mailRetriesServiceMock
 
       override def companySyncService: CompanySyncServiceInterface = new CompanySyncServiceMock()
       override def authApiEnv: Environment[APIKeyEnv] =

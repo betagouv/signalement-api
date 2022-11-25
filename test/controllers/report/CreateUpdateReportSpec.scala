@@ -23,6 +23,7 @@ import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
 import repositories.event.EventFilter
+import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
@@ -233,7 +234,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachmentService = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
 
@@ -342,15 +343,12 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       bodyHtml: String,
       attachments: Seq[Attachment] = attachmentService.defaultAttachments
   ) =
-    there was one(mailerService)
-      .sendEmail(
-        emailConfiguration.from,
-        Seq(recipient),
-        Nil,
-        subject,
-        bodyHtml,
-        attachments
+    there was one(mailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.sortBy(_.value).toList == List(recipient) &&
+          emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml && emailRequest.attachments == attachments
       )
+    )
 
   def reportMustHaveBeenCreatedWithStatus(status: ReportStatus) = {
     val reports = Await.result(reportRepository.list(), Duration.Inf).filter(_.id != existingReport.id)
