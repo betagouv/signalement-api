@@ -1,7 +1,4 @@
-<!-- https://www.playframework.com/documentation/latest/SettingsLogger -->
 <configuration>
-
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>${application.home:-.}/logs/application.log</file>
@@ -11,9 +8,32 @@
     </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
-        </encoder>
+        <!-- allows to switch in dev between text or json logs -->
+        <if condition='property("textlogs").contains("true")'>
+            <then>
+                <encoder>
+                    <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
+                </encoder>
+            </then>
+            <else>
+                <!--
+                 JSON logs
+                 Easiest way to get the stacktraces in New Relic (because otherwise they are on multiple lines)
+                -->
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                    <fieldNames>
+                        <!-- name retro compatible with what we did earlier -->
+                        <level>logLevel</level>
+                        <logger>loggerName</logger>
+                        <!-- remove these useless fields -->
+                        <thread>[ignore]</thread>
+                        <levelValue>[ignore]</levelValue>
+                    </fieldNames>
+                    <!-- remove application.home passed by Play -->
+                    <includeContext>false</includeContext>
+                </encoder>
+            </else>
+        </if>
     </appender>
 
     <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
@@ -29,8 +49,6 @@
         <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
     </appender>
 
-
-
     <logger name="play" level="INFO"/>
     <logger name="application" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="loader" level="${LOG_LEVEL:-DEBUG}"/>
@@ -42,10 +60,7 @@
     <logger name="tasks" level="${LOG_LEVEL:-DEBUG}"/>
     <logger name="utils" level="${LOG_LEVEL:-DEBUG}"/>
 
-<!--      <logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG"/>-->
-<!--      <logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG"/>-->
-
-    <root level="TRACE">
+    <root level="DEBUG">
         <appender-ref ref="ASYNCSTDOUT"/>
     </root>
     <root level="INFO">
