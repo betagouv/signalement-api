@@ -24,6 +24,7 @@ import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
+import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.silhouette.auth.AuthEnv
@@ -242,7 +243,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
   lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
   implicit lazy val frontRoute = components.frontRoute
 
@@ -357,15 +358,12 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
       bodyHtml: String,
       attachments: Seq[Attachment] = attachementService.defaultAttachments
   ) =
-    there was one(mailerService)
-      .sendEmail(
-        emailConfiguration.from,
-        Seq(recipient),
-        Nil,
-        subject,
-        bodyHtml,
-        attachments
+    there was one(mailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.sortBy(_.value).toList == List(recipient) &&
+          emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml && emailRequest.attachments == attachments
       )
+    )
 
   def eventMustHaveBeenCreatedWithAction(action: ActionEventValue) = {
     val events = Await.result(eventRepository.list(), Duration.Inf).toList

@@ -1,7 +1,6 @@
 package loader
 
 import _root_.controllers._
-import actors.EmailActor.EmailRequest
 import actors._
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -210,11 +209,8 @@ class SignalConsoComponents(
   )
 
   def s3Service: S3ServiceInterface = new S3Service()
-  def mailer = new MailerService(mailerClient)
 
   //  Actor
-  val emailActor: ActorRef = actorSystem.actorOf(Props(new EmailActor(mailer)), "email-actor")
-
   val antivirusScanActor: typed.ActorRef[AntivirusScanActor.ScanCommand] = actorSystem.spawn(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
     "antivirus-scan-actor"
@@ -236,8 +232,9 @@ class SignalConsoComponents(
   val pdfService = new PDFService(signalConsoConfiguration)
   implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
+  lazy val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
   val mailService = new MailService(
-    (emailRequest: EmailRequest) => emailActor ! emailRequest,
+    mailRetriesService,
     emailConfiguration,
     reportNotificationBlockedRepository,
     pdfService,

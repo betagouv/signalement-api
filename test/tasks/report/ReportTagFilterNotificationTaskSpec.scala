@@ -6,6 +6,7 @@ import models.report.ReportTag
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
+import services.MailRetriesService.EmailRequest
 import utils._
 
 import scala.concurrent.Await
@@ -60,7 +61,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val reportRepository = components.reportRepository
   lazy val companyRepository = components.companyRepository
   lazy val reportNotificationTask = components.reportNotificationTask
-  lazy val mailerService = components.mailer
+  lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
   implicit lazy val frontRoute = components.frontRoute
@@ -118,13 +119,10 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
     )
 
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
-    there was one(mailerService)
-      .sendEmail(
-        emailConfiguration.from,
-        recipients,
-        Nil,
-        subject,
-        bodyHtml,
-        attachementService.defaultAttachments
+    there was one(mailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.sortBy(_.value).toList == recipients.sortBy(_.value) &&
+          emailRequest.subject === subject && emailRequest.bodyHtml === bodyHtml && emailRequest.attachments == attachementService.defaultAttachments
       )
+    )
 }

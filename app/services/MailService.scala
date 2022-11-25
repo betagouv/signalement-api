@@ -1,11 +1,11 @@
 package services
 
-import actors.EmailActor.EmailRequest
 import cats.data.NonEmptyList
 import config.EmailConfiguration
 import play.api.Logger
 import play.api.libs.mailer.Attachment
 import repositories.reportblockednotification.ReportNotificationBlockedRepositoryInterface
+import services.MailRetriesService.EmailRequest
 import utils.EmailAddress
 import utils.FrontRoute
 
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class MailService(
-    sendEmail: EmailRequest => Unit,
+    mailRetriesService: MailRetriesService,
     emailConfiguration: EmailConfiguration,
     reportNotificationBlocklistRepo: ReportNotificationBlockedRepositoryInterface,
     val pdfService: PDFService,
@@ -83,7 +83,6 @@ class MailService(
     val filteredEmptyEmail: Seq[EmailAddress] = filterEmail(recipients)
     NonEmptyList.fromList(filteredEmptyEmail.toList) match {
       case None =>
-        Future.successful(())
       case Some(filteredRecipients) =>
         val emailRequest = EmailRequest(
           from = mailFrom,
@@ -92,8 +91,10 @@ class MailService(
           bodyHtml = bodyHtml,
           attachments = attachments
         )
-        Future.successful(sendEmail(emailRequest))
+        // we launch this but don't wait for its completion
+        mailRetriesService.sendEmailWithRetries(emailRequest)
     }
+    Future.unit
   }
 
 }
