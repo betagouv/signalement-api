@@ -9,6 +9,8 @@ import controllers.routes
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.report.Report
+import models.report.ReportStatus
 import models.token.TokenKind.CompanyInit
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -27,6 +29,7 @@ import utils.Fixtures
 import utils.TestApp
 
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
 
@@ -43,6 +46,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val eventRepository = components.eventRepository
+  lazy val reportRepository = components.reportRepository
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
@@ -71,14 +75,36 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     } yield (company, token)
   }
 
+  def createPendingReport(company: Company): Future[Report] = reportRepository.create(
+    Fixtures
+      .genReportForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
+      .sample
+      .get
+  )
+
+  def setupCaseWithoutPendingReport =
+    for {
+      (c, _) <- createCompanyAndToken
+    } yield ()
+
   def setupCaseNewCompany =
     for {
       (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
+    } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
+
+  def setupCaseNewCompanyWithMultiplePendingReports =
+    for {
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
+      _ <- createPendingReport(c)
+      _ <- createPendingReport(c)
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedOnce =
     for {
       (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -93,6 +119,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
       (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -107,6 +134,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwice =
     for {
       (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -130,6 +158,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
       (c, a) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -153,6 +182,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   def setupCaseCompanyNoticeRequired =
     for {
       (c, a) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
