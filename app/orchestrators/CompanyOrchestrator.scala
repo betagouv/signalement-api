@@ -157,28 +157,31 @@ class CompanyOrchestrator(
 
   def companiesToActivate(): Future[List[JsObject]] =
     for {
-      accesses <- accessTokenRepository.companiesToActivate()
-      eventsMap <- eventRepository.fetchEvents(accesses.map { case (_, c) => c.id })
-    } yield accesses
-      .map { case (t, c) =>
+      tokensAndCompanies <- accessTokenRepository.companiesToActivate()
+      pendingReports <- reportRepository.getPendingReports(tokensAndCompanies.map(_._2.id))
+      eventsMap <- eventRepository.fetchEvents(tokensAndCompanies.map { case (_, c) => c.id })
+    } yield tokensAndCompanies
+      .map { case (accessToken, company) =>
+        val companyEvents = eventsMap.getOrElse(company.id, Nil)
+        val nbPreviousNotices = companyEvents.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
+        val lastNoticeDate = companyEvents
+          .find(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
+          .map(_.creationDate)
+        val lastRequirementOfNewNoticeDate = companyEvents
+          .find(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED)
+          .map(_.creationDate)
+        val nbCompanyPendingReports = pendingReports.count(_.companyId.exists(_ == company.id))
         (
-          c,
-          t,
-          eventsMap
-            .get(c.id)
-            .map(_.count(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
-            .getOrElse(0),
-          eventsMap
-            .get(c.id)
-            .flatMap(_.find(e => e.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC))
-            .map(_.creationDate),
-          eventsMap
-            .get(c.id)
-            .flatMap(_.find(e => e.action == ActionEvent.ACTIVATION_DOC_REQUIRED))
-            .map(_.creationDate)
+          company,
+          accessToken,
+          nbPreviousNotices,
+          lastNoticeDate,
+          lastRequirementOfNewNoticeDate,
+          nbCompanyPendingReports
         )
       }
-      .filter { case (_, _, noticeCount, lastNotice, lastRequirement) =>
+      .filter { case (_, _, _, _, _, nbCompanyPendingReports) => nbCompanyPendingReports > 0 }
+      .filter { case (_, _, noticeCount, lastNotice, lastRequirement, _) =>
         !lastNotice.exists(
           _.isAfter(
             lastRequirement.getOrElse(
@@ -190,11 +193,11 @@ class CompanyOrchestrator(
           )
         )
       }
-      .map { case (c, t, _, lastNotice, _) =>
+      .map { case (company, token, _, lastNotice, _, _) =>
         Json.obj(
-          "company" -> Json.toJson(c),
+          "company" -> Json.toJson(company),
           "lastNotice" -> lastNotice,
-          "tokenCreation" -> t.creationDate
+          "tokenCreation" -> token.creationDate
         )
       }
 
