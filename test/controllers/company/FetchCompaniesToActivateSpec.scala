@@ -9,6 +9,8 @@ import controllers.routes
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.report.Report
+import models.report.ReportStatus
 import models.token.TokenKind.CompanyInit
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -27,6 +29,7 @@ import utils.Fixtures
 import utils.TestApp
 
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
 
@@ -43,6 +46,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
   lazy val companyRepository = components.companyRepository
   lazy val accessTokenRepository = components.accessTokenRepository
   lazy val eventRepository = components.eventRepository
+  lazy val reportRepository = components.reportRepository
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
@@ -50,13 +54,14 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
-  var companyCases: Seq[(Company, Option[OffsetDateTime], OffsetDateTime)] = Seq()
+  // (company, last notice date, token creation date)
+  var expectedCompaniesToActivate: Seq[(Company, Option[OffsetDateTime], OffsetDateTime)] = Seq()
 
-  def initCase = {
+  def createCompanyAndToken = {
     val company = Fixtures.genCompany.sample.get
     for {
-      c <- companyRepository.getOrCreate(company.siret, company)
-      a <- accessTokenRepository.create(
+      company <- companyRepository.getOrCreate(company.siret, company)
+      token <- accessTokenRepository.create(
         AccessToken.build(
           CompanyInit,
           f"${Random.nextInt(1000000)}%06d",
@@ -67,17 +72,39 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           defaultTokenCreationDate
         )
       )
-    } yield (c, a)
+    } yield (company, token)
   }
+
+  def createPendingReport(company: Company): Future[Report] = reportRepository.create(
+    Fixtures
+      .genReportForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
+      .sample
+      .get
+  )
+
+  def setupCaseWithoutPendingReport =
+    for {
+      (c, _) <- createCompanyAndToken
+    } yield ()
 
   def setupCaseNewCompany =
     for {
-      (c, _) <- initCase
-    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
+    } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
+
+  def setupCaseNewCompanyWithMultiplePendingReports =
+    for {
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
+      _ <- createPendingReport(c)
+      _ <- createPendingReport(c)
+    } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedOnce =
     for {
-      (c, a) <- initCase
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -91,7 +118,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseCompanyNotifiedOnceLongerThanDelay =
     for {
-      (c, a) <- initCase
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -101,11 +129,12 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
             creationDate = OffsetDateTime.now.minus(reportReminderByPostDelay).minusDays(1)
           )
       )
-    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
+    } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   def setupCaseCompanyNotifiedTwice =
     for {
-      (c, a) <- initCase
+      (c, _) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -128,7 +157,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseCompanyNotifiedTwiceLongerThanDelay =
     for {
-      (c, a) <- initCase
+      (c, a) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -151,7 +181,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def setupCaseCompanyNoticeRequired =
     for {
-      (c, a) <- initCase
+      (c, a) <- createCompanyAndToken
+      _ <- createPendingReport(c)
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
@@ -166,7 +197,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .get
           .copy(creationDate = OffsetDateTime.now.minusDays(1))
       )
-    } yield companyCases = companyCases :+ ((c, None, defaultTokenCreationDate))
+    } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 
   override def setupData() =
     Await.result(
@@ -207,10 +238,11 @@ The companies to activate endpoint should
     val result = route(app, request).get
     status(result) must beEqualTo(OK)
     val content = contentAsJson(result).toString
-    content must haveCompaniesToActivate(companyCases.map(c => aCompanyToActivate(c._1, c._2, c._3)): _*)
+    val matchers = expectedCompaniesToActivate.map(c => buildMatcherForCase(c._1, c._2, c._3))
+    content must haveCompaniesToActivate(matchers)
   }
 
-  def aCompanyToActivate(
+  def buildMatcherForCase(
       company: Company,
       lastNotice: Option[OffsetDateTime],
       tokenCreation: OffsetDateTime
@@ -225,7 +257,7 @@ The companies to activate endpoint should
           /("tokenCreation" -> startWith(tokenCreation.format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
 
-  def haveCompaniesToActivate(companiesToActivate: Matcher[String]*): Matcher[String] =
+  def haveCompaniesToActivate(companiesToActivate: Seq[Matcher[String]]): Matcher[String] =
     have(TraversableMatchers.exactly(companiesToActivate: _*))
 
 }

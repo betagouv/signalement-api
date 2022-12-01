@@ -197,13 +197,14 @@ class AccessTokenRepository(
         .result
     ).map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
 
-  override def companiesToActivate(): Future[List[(AccessToken, Company)]] =
+  override def companiesToActivate(): Future[List[(AccessToken, Company)]] = {
+    val startOfToday = OffsetDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0)
     db.run(
       table
         .join(CompanyTable.table)
         .on(_.companyId === _.id)
         .filter(
-          _._1.creationDate < OffsetDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0)
+          _._1.creationDate < startOfToday
         )
         .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
         .filter(_._1.valid)
@@ -211,6 +212,7 @@ class AccessTokenRepository(
         .to[List]
         .result
     )
+  }
 
   override def fetchActivationCode(company: Company): Future[Option[String]] =
     fetchValidActivationToken(company.id).map(_.map(_.token))
