@@ -80,12 +80,28 @@ class WebsiteRepository(
   private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table
-        .filter(_.host === host)
+        .filter { result =>
+          (result.host <-> host).<(0.68d)
+        }
         .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)
-        .on(_.companyId === _.id)
+        .on { (websiteTable, companyTable) =>
+          websiteTable.companyId === companyTable.id && companyTable.isOpen
+        }
         .result
     )
+
+  def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
+    URL(host).getHost.map { h =>
+      db.run(
+        table
+          .filter(_.host === h)
+          .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
+          .join(CompanyTable.table)
+          .on(_.companyId === _.id)
+          .result
+      )
+    } getOrElse (Future(Nil))
 
   override def removeOtherNonIdentifiedWebsitesWithSameHost(website: Website): Future[Int] =
     db.run(

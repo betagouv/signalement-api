@@ -101,6 +101,12 @@ class CompanyController(
       .map(results => Ok(Json.toJson(results)))
   }
 
+  def searchCompanyOrSimilarWebsite(url: String) = UnsecuredAction.async { _ =>
+    companyOrchestrator
+      .searchSimilarCompanyByWebsite(url)
+      .map(results => Ok(Json.toJson(results)))
+  }
+
   def getResponseRate(companyId: UUID) = SecuredAction.async { request =>
     companyOrchestrator
       .getCompanyResponseRate(companyId, request.identity.userRole)
