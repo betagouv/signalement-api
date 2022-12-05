@@ -11,4 +11,4 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: "trust"
       POSTGRES_USER: ${USER}
-      POSTGRES_MULTIPLE_DATABASES: signalconso,company,test_signalconso,test_company
+      POSTGRES_MULTIPLE_DATABASES: test_signalconso
