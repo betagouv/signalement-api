@@ -16,19 +16,16 @@ jobs:
         TEST_COMPANY_PGUSER: signalconso
         TEST_COMPANY_PGHOST: localhost
         TEST_COMPANY_PGDATABASE: test_company
-
         # Customize the JVM maximum heap limit
         JVM_OPTS: -Xmx3200m
         TERM: dumb
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: postgres:12
+    - image: cimg/postgres:12.12-postgis
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
-        POSTGRES_HOST_AUTH_METHOD: "trust"
-#        POSTGRES_USER: ${USER}
-        POSTGRES_MULTIPLE_DATABASES: signalconso,company,test_signalconso,test_company
+
     working_directory: ~/repo
 
     steps:
