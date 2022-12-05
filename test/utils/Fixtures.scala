@@ -94,7 +94,7 @@ object Fixtures {
 
   val genWebsiteURL = for {
     randInt <- Gen.choose(0, 1000000)
-  } yield URL(s"https://www.example${randInt}.com")
+  } yield URL(s"https://${UUID.randomUUID().toString}${randInt}.com")
 
   val genReportedPhone = for {
     randInt <- Gen.choose(0, 999999999)

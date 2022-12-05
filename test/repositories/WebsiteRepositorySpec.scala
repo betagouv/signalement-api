@@ -34,6 +34,20 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       companyId = Some(defaultCompany.id),
       identificationStatus = IdentificationStatus.Identified
     )
+
+  val (similarHost1, similarHost2) = ("similar1.com", "similar2.com")
+
+  val similarWebsite = Fixtures
+    .genWebsite()
+    .sample
+    .get
+    .copy(
+      host = similarHost1,
+      companyCountry = None,
+      companyId = Some(defaultCompany.id),
+      identificationStatus = IdentificationStatus.Identified
+    )
+
   val marketplaceWebsite =
     Fixtures
       .genWebsite()
@@ -55,7 +69,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       companyId = Some(pendingCompany.id),
       identificationStatus = IdentificationStatus.NotIdentified
     )
-
+  
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
   override def setupData() =
@@ -67,6 +81,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
         _ <- websiteRepository.validateAndCreate(defaultWebsite)
         _ <- websiteRepository.validateAndCreate(marketplaceWebsite)
         _ <- websiteRepository.validateAndCreate(pendingWebsite)
+        _ <- websiteRepository.validateAndCreate(similarWebsite)
       } yield (),
       Duration.Inf
     )
@@ -77,8 +92,9 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
 
  Searching by URL should
     retrieve default website                                            $e1
-    retrieve marketplace website                                        $e3
     not retrieve pending website                                        $e2
+    retrieve marketplace website                                        $e3
+    retrieve similar website                                            $e4
 
  Adding new website on company should
     if the website is already define for the company, return existing website       $e5
@@ -94,6 +110,10 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
 
   def e3 = websiteRepository.searchCompaniesByUrl(s"http://${marketplaceWebsite.host}") must beEqualTo(
     Seq((marketplaceWebsite, marketplaceCompany))
+  ).await
+
+  def e4 = websiteRepository.searchCompaniesByUrl(s"http://${similarHost2}") must beEqualTo(
+    Seq((similarWebsite, defaultCompany))
   ).await
 
   def e5 = websiteRepository.validateAndCreate(
