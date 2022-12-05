@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   postgres:
-    image: "postgres:12"
+    image: "postgis/postgis:12-3.3"
     ports:
       # exposed on 5432 by default, but you can override with the env variable
       - "${TEST_PGPORT:-5432}:5432"

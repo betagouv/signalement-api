@@ -21,7 +21,7 @@ jobs:
         TERM: dumb
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: cimg/postgres:12.12-postgis
+    - image: cimg/postgres:12.12
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
@@ -42,6 +42,7 @@ jobs:
     - run: sudo apt-get install postgresql-client
     - run: whoami
     - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "create database test_company;"
+    - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
 
     - save_cache:
         paths:
