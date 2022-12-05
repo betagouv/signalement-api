@@ -16,9 +16,7 @@ jobs:
         TEST_COMPANY_PGUSER: signalconso
         TEST_COMPANY_PGHOST: localhost
         TEST_COMPANY_PGDATABASE: test_company
-        POSTGRES_HOST_AUTH_METHOD: "trust"
-        POSTGRES_USER: ${USER}
-        POSTGRES_MULTIPLE_DATABASES: signalconso,company,test_signalconso,test_company
+
         # Customize the JVM maximum heap limit
         JVM_OPTS: -Xmx3200m
         TERM: dumb
@@ -28,7 +26,9 @@ jobs:
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
-
+        POSTGRES_HOST_AUTH_METHOD: "trust"
+#        POSTGRES_USER: ${USER}
+        POSTGRES_MULTIPLE_DATABASES: signalconso,company,test_signalconso,test_company
     working_directory: ~/repo
 
     steps:
