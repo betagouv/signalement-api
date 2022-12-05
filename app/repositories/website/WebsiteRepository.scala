@@ -83,15 +83,9 @@ class WebsiteRepository(
     println(s"------------------ host = ${host} ------------------")
     db.run(
       table
-//        .filter { result =>
-//          (result.host <-> (host: String)).<(0.55d)
-//        }
-        .filter(result =>
-          least(
-            result.host <-> host,
-            result.host <-> host
-          ).map(dist => dist < 0.55d).getOrElse(false)
-        )
+        .filter { result =>
+          (result.host <-> (host: String)).<(0.55d)
+        }
         .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)
         .on { (websiteTable, companyTable) =>
