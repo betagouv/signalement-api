@@ -77,7 +77,8 @@ class WebsiteRepository(
         .result
     )
 
-  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
+  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] = {
+    println(s"------------------ host = ${host} ------------------")
     db.run(
       table
         .filter { result =>
@@ -90,6 +91,7 @@ class WebsiteRepository(
         }
         .result
     )
+  }
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     URL(host).getHost.map { h =>
