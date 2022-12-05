@@ -69,7 +69,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
       companyId = Some(pendingCompany.id),
       identificationStatus = IdentificationStatus.NotIdentified
     )
-  
+
   val newHost = Fixtures.genWebsiteURL.sample.get.getHost.get
 
   override def setupData() =
