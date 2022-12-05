@@ -13,11 +13,22 @@ function create_user_and_database() {
 EOSQL
 }
 
+
+function create_extension() {
+  		local database=$1
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$database" <<-EOSQL
+          CREATE EXTENSION pg_trgm;
+EOSQL
+}
+
+
 if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
 		echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
 			for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
 						create_user_and_database $db
+						create_extension $db
 							done
 								echo "Multiple databases created"
 fi
+
 
