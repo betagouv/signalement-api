@@ -77,14 +77,14 @@ class WebsiteRepository(
         .result
     )
 
-  private val least = SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
+  SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
   private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] = {
     println(s"------------------ host = ${host} ------------------")
     db.run(
       table
         .filter { result =>
-          (result.host <-> (host: String)).<(0.55d)
+          (result.host <-> (host: String)).<(0.55)
         }
         .filter(_.identificationStatus inSet List(IdentificationStatus.Identified))
         .join(CompanyTable.table)

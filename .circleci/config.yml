@@ -21,7 +21,7 @@ jobs:
         TERM: dumb
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: cimg/postgres:12.12
+    - image: postgres:12
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
