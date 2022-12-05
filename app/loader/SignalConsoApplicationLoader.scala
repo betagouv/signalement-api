@@ -382,7 +382,7 @@ class SignalConsoComponents(
     companySyncRepository
   )
 
-  logger.trace("Starting App and sending sentry alert")
+  logger.debug("Starting App and sending sentry alert")
 
   val reportNotificationTask =
     new ReportNotificationTask(actorSystem, reportRepository, subscriptionRepository, mailService, taskConfiguration)

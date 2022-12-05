@@ -17,6 +17,8 @@ import models.event.Event
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
+import models.website.WebsiteCompanySearchResult
+import models.website.WebsiteHost
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
@@ -30,6 +32,7 @@ import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIRET
+import utils.URL
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -136,23 +139,34 @@ class CompanyOrchestrator(
     } yield (responses.toFloat / total * 100).round
   }
 
+  // TODO remove when front end will be updated
   def searchCompanyByWebsite(url: String): Future[Seq[CompanySearchResult]] = {
     logger.debug(s"searchCompaniesByHost $url")
     for {
-      companiesByUrl <-
-        websiteRepository.searchCompaniesByUrl(
-          url
-        )
+      companiesByUrl <- websiteRepository.deprecatedSearchCompaniesByHost(url)
       _ = logger.debug(s"Found ${companiesByUrl.map(t => (t._1.host, t._2.siret, t._2.name))}")
-      results <- Future.sequence(companiesByUrl.map { case (website, company) =>
-        companyRepository
-          .findBySiret(company.siret)
-          .map(_.filter(_.isOpen))
-          .map { companies =>
-            companies.map(fromCompany(_, website))
-          }
-      })
-    } yield results.flatten
+      results = companiesByUrl.map { case (website, company) =>
+        fromCompany(company, website)
+      }
+    } yield results
+  }
+
+  def searchSimilarCompanyByWebsite(url: String): Future[WebsiteCompanySearchResult] = {
+    logger.debug(s"searchCompaniesByHost $url")
+    for {
+      companiesByUrl <- websiteRepository.searchCompaniesByUrl(url)
+      similarHosts = companiesByUrl
+        .filterNot(x => URL(url).getHost.contains(x._1.host))
+        .map(w => WebsiteHost(w._1.host))
+        .distinct
+        .take(3)
+      exactMatch = companiesByUrl
+        .filter(x => URL(url).getHost.contains(x._1.host))
+        .map { case (website, company) =>
+          fromCompany(company, website)
+        }
+      _ = logger.debug(s"Found exactMatch: $exactMatch, similarHosts: ${similarHosts}")
+    } yield WebsiteCompanySearchResult(exactMatch, similarHosts)
   }
 
   def companiesToActivate(): Future[List[JsObject]] =
