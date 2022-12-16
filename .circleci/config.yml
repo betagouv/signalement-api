@@ -25,6 +25,7 @@ jobs:
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
+        POSTGRES_HOST_AUTH_METHOD: trust
 
     working_directory: ~/repo
 
