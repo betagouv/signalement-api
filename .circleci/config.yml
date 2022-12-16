@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
     # specify the version you desire here
-    - image: circleci/openjdk:11-jdk
+    - image: cimg/openjdk:17.0.5
       environment:
         # PG client params (test conf fetch them from env)
         TEST_PGUSER: signalconso
@@ -21,7 +21,7 @@ jobs:
         TERM: dumb
 
     # See https://circleci.com/docs/2.0/postgres-config/
-    - image: cimg/postgres:12.12
+    - image: cimg/postgres:14.5
       environment:
         POSTGRES_USER: signalconso
         POSTGRES_DB: test_signalconso
