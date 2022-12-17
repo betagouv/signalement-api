@@ -34,12 +34,10 @@ jobs:
           java-version: 17
           cache: 'sbt'
 
-      - name: prerequisites
-      - run: |
-          sudo apt-get update
-          sudo apt-get install postgresql-client
-          whoami
-          psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "create database test_company;"
-          psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
+      - run: sudo apt-get update
+      - run: sudo apt-get install postgresql-client
+      - run: whoami
+      - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "create database test_company;"
+      - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
       - name: Build and Test
         run: sbt -v +test
