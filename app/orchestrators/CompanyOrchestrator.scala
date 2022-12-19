@@ -33,6 +33,7 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.SIRET
 import utils.URL
+import java.time.temporal.ChronoUnit
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -199,10 +200,13 @@ class CompanyOrchestrator(
         !lastNotice.exists(
           _.isAfter(
             lastRequirement.getOrElse(
-              OffsetDateTime.now.minus(
-                reportReminderByPostDelay
-                  .multipliedBy(Math.min(noticeCount, 3))
-              )
+              OffsetDateTime
+                .now()
+                .truncatedTo(ChronoUnit.MILLIS)
+                .minus(
+                  reportReminderByPostDelay
+                    .multipliedBy(Math.min(noticeCount, 3))
+                )
             )
           )
         )
@@ -224,7 +228,7 @@ class CompanyOrchestrator(
             None,
             Some(companyId),
             Some(identity),
-            OffsetDateTime.now(),
+            OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
             EventType.PRO,
             ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
           )
@@ -251,7 +255,7 @@ class CompanyOrchestrator(
               None,
               Some(c.id),
               Some(identity),
-              OffsetDateTime.now(),
+              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
               EventType.PRO,
               ActionEvent.COMPANY_ADDRESS_CHANGE,
               stringToDetailsJsValue(s"Addresse précédente : ${company.map(_.address).getOrElse("")}")
@@ -268,7 +272,7 @@ class CompanyOrchestrator(
               None,
               Some(c.id),
               Some(identity),
-              OffsetDateTime.now(),
+              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
               EventType.PRO,
               ActionEvent.ACTIVATION_DOC_REQUIRED
             )
@@ -293,7 +297,7 @@ class CompanyOrchestrator(
                 None,
                 Some(c.id),
                 Some(identity),
-                OffsetDateTime.now(),
+                OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
                 EventType.ADMIN,
                 ActionEvent.ACTIVATION_DOC_RETURNED,
                 stringToDetailsJsValue(s"Date de retour : ${undeliveredDocument.returnedDate

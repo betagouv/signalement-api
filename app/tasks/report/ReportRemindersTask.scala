@@ -18,7 +18,7 @@ import tasks.getTodayAtStartOfDayParis
 import tasks.scheduleTask
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.SYSTEM
-
+import java.time.temporal.ChronoUnit
 import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -130,7 +130,7 @@ class ReportRemindersTask(
           Some(report.id),
           report.companyId,
           None,
-          OffsetDateTime.now(),
+          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           SYSTEM,
           emailEventAction,
           stringToDetailsJsValue(s"Relance envoyée à ${emailAddresses.mkString(", ")}")

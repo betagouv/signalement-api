@@ -6,8 +6,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
-
+import java.time.temporal.ChronoUnit
 case class WebsiteInvestigationApi(
     id: WebsiteId,
     practice: Option[Practice],
@@ -21,7 +20,7 @@ case class WebsiteInvestigationApi(
       practice = this.practice,
       investigationStatus = this.investigationStatus.getOrElse(InvestigationStatus.NotProcessed),
       attribution = this.attribution,
-      lastUpdated = OffsetDateTime.now(ZoneOffset.UTC)
+      lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     )
 
 }

@@ -1,8 +1,8 @@
 package models
 
 import models.report.DetailInputValue
-import org.specs2.mutable.Specification
 import models.report.DetailInputValue._
+import org.specs2.mutable.Specification
 
 class DetailInputValueTest extends Specification {
 

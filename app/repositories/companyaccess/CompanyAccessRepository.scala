@@ -14,7 +14,7 @@ import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
-
+import java.time.temporal.ChronoUnit
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -111,8 +111,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         companyId = companyId,
         userId = userId,
         level = level,
-        updateDate = OffsetDateTime.now,
-        creationDate = OffsetDateTime.now
+        updateDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+        creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       )
     )
 
@@ -125,7 +125,7 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         .filter(_.companyId === company.id)
         .filter(_.userId === user.id)
         .map(companyAccess => (companyAccess.level, companyAccess.updateDate))
-        .update((level, OffsetDateTime.now()))
+        .update((level, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
     ).map(_ => ())
 
   override def proFirstActivationCount(

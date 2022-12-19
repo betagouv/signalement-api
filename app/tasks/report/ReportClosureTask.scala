@@ -22,7 +22,7 @@ import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
-
+import java.time.temporal.ChronoUnit
 import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -106,7 +106,7 @@ class ReportClosureTask(
           Some(report.id),
           report.companyId,
           None,
-          OffsetDateTime.now(),
+          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           SYSTEM,
           closureEventAction,
           stringToDetailsJsValue(closureEventDetails)
@@ -120,7 +120,7 @@ class ReportClosureTask(
           Some(report.id),
           report.companyId,
           None,
-          OffsetDateTime.now(),
+          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           CONSO,
           emailEventAction
         )

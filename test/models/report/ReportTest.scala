@@ -3,8 +3,7 @@ package models.report
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import org.specs2.mutable.Specification
 import org.specs2.specification.core.Fragments
-import utils.Fixtures
-import utils.SIRET
+import utils.{Fixtures, SIRET}
 
 class ReportTest extends Specification {
   "ReportTest" should {

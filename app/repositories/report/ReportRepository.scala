@@ -10,7 +10,7 @@ import repositories.report.ReportRepository.ReportFileOrdering
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
-
+import java.time.temporal.ChronoUnit
 import java.time._
 import java.util.UUID
 import scala.collection.SortedMap
@@ -73,7 +73,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .run(
         queryFilter(filter)
           .filter(report =>
-            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong).withDayOfMonth(1)
+            report.creationDate > OffsetDateTime
+              .now()
+              .truncatedTo(ChronoUnit.MILLIS)
+              .minusMonths(ticks.toLong)
+              .withDayOfMonth(1)
           )
           .groupBy(report =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
@@ -90,7 +94,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(filter)
-        .filter(report => report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusDays(11))
+        .filter(report => report.creationDate > OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(11))
         .groupBy(report =>
           (
             DatePartSQLFunction("day", report.creationDate),

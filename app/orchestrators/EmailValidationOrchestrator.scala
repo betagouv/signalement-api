@@ -16,7 +16,7 @@ import models.email.ValidateEmailCode
 import play.api.Logger
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.Email.ConsumerValidateEmail
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -69,7 +69,7 @@ class EmailValidationOrchestrator(
         .update(
           emailValidation.copy(
             attempts = emailValidation.attempts + 1,
-            lastAttempt = Some(OffsetDateTime.now)
+            lastAttempt = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
           )
         )
         .map { _ =>

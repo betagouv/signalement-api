@@ -17,6 +17,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.Period
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -40,11 +41,18 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
     "remove inactive DGCCRF and subscriptions accounts only" in {
 
       val conf = components.applicationConfiguration.task.copy(inactiveAccounts =
-        InactiveAccountsTaskConfiguration(startTime = LocalTime.now(), inactivePeriod = Period.ofYears(1))
+        InactiveAccountsTaskConfiguration(
+          startTime = LocalTime.now().truncatedTo(ChronoUnit.MILLIS),
+          inactivePeriod = Period.ofYears(1)
+        )
       )
-      val now: LocalDateTime = LocalDateTime.now()
+      val now: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       val expirationDateTime: LocalDateTime =
-        LocalDateTime.now().minusYears(conf.inactiveAccounts.inactivePeriod.getYears.toLong).minusDays(1L)
+        LocalDateTime
+          .now()
+          .truncatedTo(ChronoUnit.MILLIS)
+          .minusYears(conf.inactiveAccounts.inactivePeriod.getYears.toLong)
+          .minusDays(1L)
       new WithApplication(app) {
 
         // Inactive account to be removed

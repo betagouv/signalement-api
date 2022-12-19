@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -25,7 +26,8 @@ class PDFService(
   val tmpDirectory = signalConsoConfiguration.tmpDirectory
 
   def Ok(htmlDocuments: Seq[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
-    val tmpFileName = s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now.toString}.pdf";
+    val tmpFileName =
+      s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).toString}.pdf";
     val pdf = new PdfDocument(new PdfWriter(tmpFileName))
 
     val converterProperties = new ConverterProperties

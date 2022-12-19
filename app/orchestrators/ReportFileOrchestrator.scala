@@ -14,7 +14,7 @@ import models.report.reportfile.ReportFileId
 import play.api.Logger
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -41,7 +41,7 @@ class ReportFileOrchestrator(
         ReportFile(
           ReportFileId.generateId(),
           reportId = None,
-          creationDate = OffsetDateTime.now(),
+          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           filename = filename,
           storageFilename = file.getName(),
           origin = origin,

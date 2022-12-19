@@ -1,7 +1,5 @@
 package controllers.report
 
-import java.net.URI
-import java.time.OffsetDateTime
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -9,12 +7,7 @@ import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test._
 import models.company.AccessLevel
 import models.event.Event
-import models.report.Report
-import models.report.ReportFile
-import models.report.ReportFileOrigin
-import models.report.ReportResponse
-import models.report.ReportResponseType
-import models.report.ReportStatus
+import models.report._
 import models.report.reportfile.ReportFileId
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
@@ -25,15 +18,13 @@ import play.api.mvc.Result
 import play.api.test._
 import play.mvc.Http.Status
 import services.MailRetriesService.EmailRequest
-import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
+import utils.Constants.ActionEvent.ActionEventValue
+import utils._
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.EmailAddress
-import utils.Fixtures
-import utils.SIREN
-import utils.TestApp
-
+import java.time.temporal.ChronoUnit
+import java.net.URI
+import java.time.OffsetDateTime
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -277,7 +268,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseFile = ReportFile(
     ReportFileId.generateId(),
     None,
-    OffsetDateTime.now,
+    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     "fichier.jpg",
     "123_fichier.jpg",
     ReportFileOrigin.PROFESSIONAL,

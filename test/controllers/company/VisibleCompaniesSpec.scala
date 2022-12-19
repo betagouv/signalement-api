@@ -15,12 +15,8 @@ import org.specs2.mutable.Specification
 import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test._
+import utils._
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.Fixtures
-import utils.SIREN
-import utils.SIRET
-import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

@@ -2,16 +2,15 @@ package tasks.report
 
 import models._
 import models.company.Address
-import models.report.ReportCategory
-import models.report.ReportTag
+import models.report.{ReportCategory, ReportTag}
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import services.MailRetriesService.EmailRequest
 import utils._
 
-import java.time.OffsetDateTime
-import java.time.Period
+import java.time.{OffsetDateTime, Period}
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -46,7 +45,7 @@ abstract class NoReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningTime = OffsetDateTime.now.plusDays(1)
+  val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   val runningDate = runningTime.toLocalDate()
   val covidDept = "01"
   val tagDept = "02"

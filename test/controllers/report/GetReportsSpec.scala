@@ -3,32 +3,22 @@ package controllers.report
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
+import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import models._
 import models.company.AccessLevel
-import models.report.Report
-import models.report.ReportStatus
+import models.report.{Report, ReportStatus}
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.matcher.FutureMatchers
-import org.specs2.matcher.JsonMatchers
-import org.specs2.matcher.Matcher
+import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher}
 import org.specs2.mutable.Specification
-import play.api.test.Helpers._
 import play.api.mvc.Result
-import play.api.test.FakeRequest
-import play.api.test.Helpers
+import play.api.test.{FakeRequest, Helpers}
+import play.api.test.Helpers._
 import play.mvc.Http.Status
+import utils.{AppSpec, Fixtures, SIREN, TestApp}
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.Fixtures
-import utils.SIREN
-import utils.TestApp
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
-import scala.concurrent.Await
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.{Duration, _}
 
 class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =

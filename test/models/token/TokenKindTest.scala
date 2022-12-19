@@ -1,12 +1,8 @@
 package models.token
 
-import models.token.TokenKind.CompanyInit
-import models.token.TokenKind.CompanyJoin
-import models.token.TokenKind.DGCCRFAccount
-import models.token.TokenKind.ValidateEmail
+import models.token.TokenKind.{CompanyInit, CompanyJoin, DGCCRFAccount, ValidateEmail}
 import org.specs2.mutable.Specification
-import play.api.libs.json.JsString
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, Json}
 
 class TokenKindTest extends Specification {
 

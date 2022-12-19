@@ -11,7 +11,7 @@ import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.computeStartingTime
 import utils.Constants.Departments
-
+import java.time.temporal.ChronoUnit
 import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -38,8 +38,8 @@ class ReportNotificationTask(
 
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
-    val now = OffsetDateTime.now
-    val isWeeklySubscriptionsDay = LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay
+    val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
       _ <-
         if (isWeeklySubscriptionsDay)
@@ -51,6 +51,7 @@ class ReportNotificationTask(
   })
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
+    println(s"------------------ now = ${now} ------------------")
     val end = now
     val start = end.minus(period)
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
@@ -58,12 +59,14 @@ class ReportNotificationTask(
       subscriptionsWithMaybeEmails <- subscriptionRepository.listForFrequency(period)
       subscriptionsWithEmails = subscriptionsWithMaybeEmails.collect { case (s, Some(ea)) => (s, ea) }
       _ = logger.debug(s"Found ${subscriptionsWithEmails.size} subscriptions to handle (period $period)")
-      reportsWithFiles <- reportRepository.getReportsWithFiles(
+      reportsWithFiles <- reportRepository.getReportsWithFiles {
         ReportFilter(
           start = Some(start),
           end = Some(end)
         )
-      )
+      }
+      _ = println(s"------------------ reportsWithFiles.map(_._1) = ${reportsWithFiles.keys
+          .map(x => (x.id, x.companyAddress.postalCode, x.creationDate))} ------------------")
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
       subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
         val filteredReport = reportsWithFiles
@@ -100,14 +103,22 @@ class ReportNotificationTask(
           "report_notification_task_item",
           s"Sending a subscription notification email to ${emailAddress}"
         )
-        mailService.send(
-          DgccrfReportNotification(
+        mailService.send {
+          val x = DgccrfReportNotification(
             List(emailAddress),
             subscription,
             filteredReport.toList,
             start.toLocalDate
           )
-        )
+          println(s"------------------ x.subscription.id = ${x.subscription.id} ------------------")
+          println(s"------------------ x.subscription = ${x.subscription} ------------------")
+          println(s"------------------ x.recipients = ${x.recipients} ------------------")
+          println(
+            s"------------------ x.reports = ${x.reports.map(x => (x._1.companyAddress.postalCode, x._1.creationDate))} ------------------"
+          )
+          println(s"------------------ x.startDate = ${x.startDate} ------------------")
+          x
+        }
       }.sequence
     } yield ()
     executionFuture

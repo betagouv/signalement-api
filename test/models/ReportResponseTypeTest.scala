@@ -2,8 +2,7 @@ package models
 
 import models.report.ReportResponseType
 import org.specs2.mutable.Specification
-import play.api.libs.json.JsString
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, Json}
 
 import scala.util.Try
 

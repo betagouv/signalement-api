@@ -14,7 +14,7 @@ import models.User
 import models.UserRole
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
-
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -194,7 +194,9 @@ class AuthOrchestrator(
     user.lastEmailValidation
       .exists(
         _.isBefore(
-          OffsetDateTime.now
+          OffsetDateTime
+            .now()
+            .truncatedTo(ChronoUnit.MILLIS)
             .minus(dgccrfDelayBeforeRevalidation)
         )
       )
@@ -211,6 +213,6 @@ class AuthOrchestrator(
 object AuthOrchestrator {
   val AuthAttemptPeriod: Duration = 30 minutes
   val MaxAllowedAuthAttempts: Int = 5
-  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now.plusDays(1)
+  def authTokenExpiration: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
 }

@@ -3,29 +3,28 @@ package controllers
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mutable.Specification
-import org.specs2.matcher.FutureMatchers
-import play.api.libs.json.Json
-import play.api.test._
-import play.api.test.Helpers._
-import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.Fixtures
-import utils.TestApp
 import models._
 import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyWithAccess
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
-
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.matcher.FutureMatchers
+import org.specs2.mutable.Specification
+import play.api.libs.json.Json
+import play.api.test.Helpers._
+import play.api.test._
+import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
+import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 
@@ -339,7 +338,9 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
     userCreationTokenList.headOption.map(_.valid) shouldEqual (Some(true))
     userCreationTokenList.headOption.map(_.id) shouldEqual (Some(initialUserCreationToken.id))
     userCreationTokenList.headOption.flatMap(
-      _.expirationDate.map(_.isAfter(OffsetDateTime.now().plus(initialUserTokenValidity)))
+      _.expirationDate.map(
+        _.isAfter(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plus(initialUserTokenValidity))
+      )
     ) shouldEqual Some(true)
   }
 

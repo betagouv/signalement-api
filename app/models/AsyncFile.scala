@@ -3,6 +3,7 @@ package models
 import enumeratum._
 
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 case class AsyncFile(
@@ -18,7 +19,7 @@ object AsyncFile {
   def build(owner: User, kind: AsyncFileKind): AsyncFile = AsyncFile(
     id = UUID.randomUUID(),
     userId = owner.id,
-    creationDate = OffsetDateTime.now,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     kind = kind,
     filename = None,
     storageFilename = None

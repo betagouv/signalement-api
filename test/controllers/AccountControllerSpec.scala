@@ -2,10 +2,8 @@ package controllers
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import com.mohiva.play.silhouette.test._
-import controllers.error.AppError.CompanySiretNotFound
-import controllers.error.AppError.EmailAlreadyExist
+import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
+import controllers.error.AppError.{CompanySiretNotFound, EmailAlreadyExist}
 import controllers.error.ErrorPayload
 import models._
 import models.company.AccessLevel
@@ -17,11 +15,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import utils.AppSpec
-import utils.EmailAddress
-import utils.TestApp
-import utils.Fixtures
-import utils.SIRET
+import utils._
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Await

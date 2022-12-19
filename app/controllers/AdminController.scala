@@ -54,6 +54,7 @@ import utils.silhouette.auth.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -90,20 +91,20 @@ class AdminController(
     companyActivityCode = None,
     websiteURL = WebsiteURL(None, None),
     phone = None,
-    creationDate = OffsetDateTime.now,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     firstName = "John",
     lastName = "Doe",
     email = EmailAddress("john.doe@example.com"),
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now.plusDays(50)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(50)
   )
 
   private def genReportFile = ReportFile(
     id = ReportFileId.generateId(),
     reportId = Some(UUID.fromString("c1cbadb3-04d8-4765-9500-796e7c1f2a6c")),
-    creationDate = OffsetDateTime.now,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     filename = s"${UUID.randomUUID.toString}.png",
     storageFilename = "String",
     origin = CONSUMER,
@@ -120,7 +121,7 @@ class AdminController(
   private def genCompany = Company(
     id = UUID.randomUUID,
     siret = SIRET.fromUnsafe("123456789"),
-    creationDate = OffsetDateTime.now,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     name = "Test Entreprise",
     address = Address(
       number = Some("3"),
@@ -145,9 +146,18 @@ class AdminController(
   )
 
   private def genEvent =
-    Event(UUID.randomUUID(), None, None, None, OffsetDateTime.now(), EventType.CONSO, POST_ACCOUNT_ACTIVATION_DOC)
+    Event(
+      UUID.randomUUID(),
+      None,
+      None,
+      None,
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+      EventType.CONSO,
+      POST_ACCOUNT_ACTIVATION_DOC
+    )
 
-  private def genAuthToken = AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now.plusDays(10))
+  private def genAuthToken =
+    AuthToken(UUID.randomUUID, UUID.randomUUID, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(10))
 
   private def genSubscription = Subscription(
     id = UUID.randomUUID,
@@ -173,10 +183,18 @@ class AdminController(
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
     "pro.report_transmitted_reminder" -> (recipient =>
-      ProReportReadReminder(List(recipient), genReport, OffsetDateTime.now.plusDays(10))
+      ProReportReadReminder(
+        List(recipient),
+        genReport,
+        OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(10)
+      )
     ),
     "pro.report_unread_reminder" -> (recipient =>
-      ProReportUnreadReminder(List(recipient), genReport, OffsetDateTime.now.plusDays(10))
+      ProReportUnreadReminder(
+        List(recipient),
+        genReport,
+        OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(10)
+      )
     ),
     "dgccrf.access_link" ->
       (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
@@ -191,7 +209,7 @@ class AdminController(
           (genReport, List(genReportFile)),
           (genReport.copy(tags = List(ReportTag.ReponseConso)), List(genReportFile))
         ),
-        LocalDate.now.minusDays(10)
+        LocalDate.now().minusDays(10)
       )
     ),
     "consumer.report_ack" -> (recipient =>

@@ -15,7 +15,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.annotation.nowarn
@@ -33,7 +33,7 @@ case class Report(
     companyActivityCode: Option[String],
     websiteURL: WebsiteURL,
     phone: Option[String],
-    creationDate: OffsetDateTime = OffsetDateTime.now(),
+    creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     firstName: String,
     lastName: String,
     email: EmailAddress,

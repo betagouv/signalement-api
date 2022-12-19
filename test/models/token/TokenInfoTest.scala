@@ -2,10 +2,8 @@ package models.token
 
 import models.token.TokenKind.DGCCRFAccount
 import org.specs2.mutable.Specification
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import utils.EmailAddress
-import utils.SIRET
+import play.api.libs.json.{JsObject, Json}
+import utils.{EmailAddress, SIRET}
 
 import java.util.UUID
 

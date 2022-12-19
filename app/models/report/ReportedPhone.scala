@@ -5,7 +5,7 @@ import models.company.Company
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import utils.SIRET
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 
@@ -71,7 +71,7 @@ object ReportedPhoneUpdate {
 
 case class ReportedPhone(
     id: UUID = UUID.randomUUID(),
-    creationDate: OffsetDateTime = OffsetDateTime.now,
+    creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     phone: String,
     companyId: UUID,
     status: ReportedPhoneStatus = ReportedPhoneStatus.PENDING

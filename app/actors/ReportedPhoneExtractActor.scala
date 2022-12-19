@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.Random
-
+import java.time.temporal.ChronoUnit
 object ReportedPhonesExtractActor {
   def props = Props[ReportedPhonesExtractActor]()
 
@@ -118,7 +118,10 @@ class ReportedPhonesExtractActor(
             Some(
               Row().withCellValues(
                 "Date de l'export",
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
+                LocalDateTime
+                  .now()
+                  .truncatedTo(ChronoUnit.MILLIS)
+                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
               )
             ),
             filters.query.map(q => Row().withCellValues("Numéro de téléphone", q)),

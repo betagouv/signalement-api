@@ -10,7 +10,7 @@ import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -94,6 +94,6 @@ class UserRepository(
   override def delete(id: UUID): Future[Int] = softDelete(id)
 
   override def softDelete(id: UUID): Future[Int] = db.run(
-    table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now()))
+    table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
   )
 }

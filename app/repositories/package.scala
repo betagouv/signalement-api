@@ -7,7 +7,7 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+import java.time.temporal.ChronoUnit
 package object repositories {
 
   implicit class PaginateOps[A, B](query: slick.lifted.Query[A, B, Seq])(implicit executionContext: ExecutionContext) {
@@ -37,7 +37,10 @@ package object repositories {
   }
 
   def computeTickValues(ticks: Int) = Seq
-    .iterate(OffsetDateTime.now().minusMonths(ticks.toLong - 1L).withDayOfMonth(1), ticks)(_.plusMonths(1))
+    .iterate(
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(ticks.toLong - 1L).withDayOfMonth(1),
+      ticks
+    )(_.plusMonths(1))
     .map(_.toLocalDate)
     .map(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(_))
     .map(t => s"('$t'::timestamp)")

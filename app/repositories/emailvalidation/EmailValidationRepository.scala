@@ -9,7 +9,7 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -34,7 +34,7 @@ class EmailValidationRepository(
       _ <- table
         .filter(_.email === email)
         .map(_.lastValidationDate)
-        .update(Some(OffsetDateTime.now()))
+        .update(Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
       updated <- table.filter(_.email === email).result.headOption
     } yield updated).transactionally
     db.run(action)

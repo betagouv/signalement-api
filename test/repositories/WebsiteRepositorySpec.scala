@@ -1,13 +1,10 @@
 package repositories
 
-import models.website.Website
-import models.website.IdentificationStatus
+import models.website.{IdentificationStatus, Website}
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import utils.AppSpec
-import utils.Fixtures
-import utils.TestApp
+import utils.{AppSpec, Fixtures, TestApp}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

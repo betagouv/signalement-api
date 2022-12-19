@@ -17,7 +17,7 @@ import models.event.Event
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -72,7 +72,7 @@ class ReportConsumerReviewOrchestrator(
       responseConsumerReview = responseConsumerReviewApi
         .into[ResponseConsumerReview]
         .withFieldConst(_.reportId, reportId)
-        .withFieldConst(_.creationDate, OffsetDateTime.now())
+        .withFieldConst(_.creationDate, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
         .withFieldConst(_.id, ResponseConsumerReviewId.generateId())
         .transform
       _ = logger.debug(s"Checking if review already exists")
@@ -91,7 +91,7 @@ class ReportConsumerReviewOrchestrator(
           reportId = Some(reportId),
           companyId = None,
           userId = None,
-          creationDate = OffsetDateTime.now(),
+          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           eventType = EventType.CONSO,
           action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
         )
