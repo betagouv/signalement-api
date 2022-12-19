@@ -3,7 +3,7 @@ name: Build, format & test workflow
 on: [push]
 env:
   TEST_PGUSER: signalconso
-  TEST_PGHOST: postgres
+  TEST_PGHOST: localhost
   TEST_PGDATABASE: test_signalconso
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install postgresql-client
       - run: whoami
-      - run: psql -d postgresql://signalconso@postgres/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
+      - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
       - name: Build and Test
         run: sbt -v +test
 
