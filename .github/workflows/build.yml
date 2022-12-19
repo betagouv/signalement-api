@@ -1,12 +1,12 @@
 name: Build, format & test workflow
 
 on: [push]
+env:
+  TEST_PGUSER: signalconso
+  TEST_PGHOST: postgres
+  TEST_PGDATABASE: test_signalconso
 
 jobs:
-  env:
-    TEST_PGUSER: signalconso
-    TEST_PGHOST: postgres
-    TEST_PGDATABASE: test_signalconso
   # This workflow contains a single job called "greet"
   build:
     # The type of runner that the job will run on
