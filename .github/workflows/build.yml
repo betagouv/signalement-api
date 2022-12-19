@@ -1,10 +1,6 @@
 name: Build, format & test workflow
 
 on: [push]
-env:
-  TEST_PGUSER: signalconso
-  TEST_PGHOST: postgres
-  TEST_PGDATABASE: test_signalconso
 
 jobs:
   # This workflow contains a single job called "greet"
@@ -15,14 +11,14 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: $TEST_PGUSER
-          POSTGRES_DB: $TEST_PGDATABASE
+          POSTGRES_USER: signalconso
+          POSTGRES_DB: test_signalconso
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         # Set health checks to wait until postgres has started
         options:
-          --health-cmd pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          --health-cmd "pg_isready -U signalconso -d test_signalconso"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
