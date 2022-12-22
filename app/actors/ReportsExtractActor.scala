@@ -39,7 +39,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 import java.time.ZoneId
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
@@ -357,7 +356,7 @@ class ReportsExtractActor(
             Some(
               Row().withCellValues(
                 "Date de l'export",
-                frenchFormatDateAndTime(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS), zone)
+                frenchFormatDateAndTime(OffsetDateTime.now(), zone)
               )
             ),
             Some(filters.departments)

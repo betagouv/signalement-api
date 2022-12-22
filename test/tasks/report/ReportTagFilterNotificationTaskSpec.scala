@@ -11,7 +11,6 @@ import utils._
 
 import java.time.OffsetDateTime
 import java.time.Period
-import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -70,7 +69,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
+  val runningTime = OffsetDateTime.now().plusDays(1)
   val runningDate = runningTime.toLocalDate()
   val tagDept = "02"
 

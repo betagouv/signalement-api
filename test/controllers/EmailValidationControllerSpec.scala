@@ -27,7 +27,6 @@ import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
-import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -209,7 +208,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val result = for {
           _ <- emailValidationRepository.create(
             EmailValidation(email = existingEmail)
-              .copy(lastValidationDate = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
+              .copy(lastValidationDate = Some(OffsetDateTime.now()))
           )
           res <- route(app, request).get
         } yield res

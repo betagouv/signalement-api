@@ -2,7 +2,6 @@ package models.auth
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import java.time.temporal.ChronoUnit
 case class AuthAttempt(
     id: UUID,
     login: String,
@@ -15,7 +14,7 @@ object AuthAttempt {
     AuthAttempt(
       UUID.randomUUID,
       login,
-      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+      OffsetDateTime.now(),
       Some(isSuccess),
       failureCause
     )

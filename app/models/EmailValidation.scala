@@ -6,13 +6,12 @@ import utils.EmailAddress
 import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.util.Try
 
 final case class EmailValidation(
     id: UUID = UUID.randomUUID(),
-    creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     confirmationCode: String = f"${scala.util.Random.nextInt(1000000)}%06d",
     email: EmailAddress,
     attempts: Int = 0,

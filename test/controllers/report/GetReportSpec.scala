@@ -44,7 +44,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
-import java.time.temporal.ChronoUnit
 object GetReportByUnauthenticatedUser extends GetReportSpec {
   override def is =
     s2"""
@@ -268,7 +267,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().plusDays(20)
   )
 
   val neverRequestedFinalReport = Report(
@@ -289,7 +288,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.ConsulteIgnore,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().plusDays(20)
   )
 
   val alreadyRequestedReport = Report(
@@ -310,7 +309,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.Transmis,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().plusDays(20)
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -363,7 +362,7 @@ trait GetReportContext extends AppSpec {
         Some(alreadyRequestedReport.id),
         Some(company.id),
         Some(concernedProUser.id),
-        OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+        OffsetDateTime.now(),
         EventType.PRO,
         ActionEvent.REPORT_READING_BY_PRO
       )

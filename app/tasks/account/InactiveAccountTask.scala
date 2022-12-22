@@ -12,7 +12,6 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import utils.Logs.RichLogger
 
-import java.time.temporal.ChronoUnit
 class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
@@ -31,7 +30,7 @@ class InactiveAccountTask(
     logger.debug(s"initialDelay - ${initialDelay}");
     if (taskConfiguration.active) {
       runTask(
-        OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+        OffsetDateTime.now()
       )
     }
     ()

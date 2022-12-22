@@ -39,7 +39,6 @@ import utils.Fixtures
 import utils.S3ServiceMock
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
-import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.Period
@@ -123,7 +122,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val reportFile = ReportFile(
           ReportFileId.generateId(),
           Some(report.id),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           "fileName",
           "storageName",
           ReportFileOrigin(""),
@@ -134,7 +133,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             ResponseConsumerReviewId.generateId(),
             report.id,
             Positive,
-            OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+            OffsetDateTime.now(),
             None
           )
 

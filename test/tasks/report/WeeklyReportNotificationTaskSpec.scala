@@ -10,7 +10,6 @@ import utils._
 
 import java.time.OffsetDateTime
 import java.time.Period
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -76,7 +75,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
+  val runningTime = OffsetDateTime.now().plusDays(1)
   val runningDate = runningTime.toLocalDate()
 
   val department1 = "87"
@@ -143,7 +142,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department1 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1)
+      creationDate = OffsetDateTime.now().minusDays(1)
     )
   val report12 = Fixtures
     .genReportForCompany(company)
@@ -151,7 +150,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department1 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(2)
+      creationDate = OffsetDateTime.now().minusDays(2)
     )
   val report2 = Fixtures
     .genReportForCompany(company)
@@ -159,7 +158,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(postalCode = Some(department2 + "000")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(3)
+      creationDate = OffsetDateTime.now().minusDays(3)
     )
   val reportGuadeloupe = Fixtures
     .genReportForCompany(company)
@@ -168,7 +167,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .copy(
       id = UUID.randomUUID(),
       companyAddress = Address(postalCode = Some(guadeloupe + "00")),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
+      creationDate = OffsetDateTime.now().minusDays(4)
     )
   val reportArgentine = Fixtures
     .genReportForCompany(company)
@@ -176,7 +175,7 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     .get
     .copy(
       companyAddress = Address(country = Some(Country.Argentine)),
-      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
+      creationDate = OffsetDateTime.now().minusDays(4)
     )
 
   override def setupData() =

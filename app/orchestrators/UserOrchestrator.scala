@@ -11,7 +11,6 @@ import models.UserUpdate
 import play.api.Logger
 import repositories.user.UserRepositoryInterface
 import utils.EmailAddress
-import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import cats.syntax.option._
 import models.event.Event
@@ -58,7 +57,7 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       firstName = draftUser.firstName,
       lastName = draftUser.lastName,
       userRole = role,
-      lastEmailValidation = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+      lastEmailValidation = Some(OffsetDateTime.now())
     )
     for {
       _ <- userRepository.findByEmail(draftUser.email.value).ensure(EmailAlreadyExist)(user => user.isEmpty)
@@ -83,7 +82,7 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
           reportId = None,
           companyId = None,
           userId = Some(targetUserId),
-          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          creationDate = OffsetDateTime.now(),
           eventType = ADMIN,
           action = USER_DELETION,
           details = stringToDetailsJsValue(

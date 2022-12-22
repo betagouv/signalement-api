@@ -11,7 +11,6 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import java.time.temporal.ChronoUnit
 
 /** A repository for authToken.
   */
@@ -28,7 +27,7 @@ class AuthTokenRepository(
     .run(
       table
         .filter(_.id === id)
-        .filter(_.expiry > OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+        .filter(_.expiry > OffsetDateTime.now())
         .to[List]
         .result
         .headOption

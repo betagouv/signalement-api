@@ -7,7 +7,6 @@ import utils.EmailAddress
 import utils.SIRET
 
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 case class AccessToken(
@@ -31,7 +30,7 @@ object AccessToken {
       companyId: Option[UUID],
       level: Option[AccessLevel],
       emailedTo: Option[EmailAddress] = None,
-      creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      creationDate: OffsetDateTime = OffsetDateTime.now()
   ): AccessToken = AccessToken(
     creationDate = creationDate,
     kind = kind,
@@ -40,11 +39,11 @@ object AccessToken {
     companyId = companyId,
     companyLevel = level,
     emailedTo = emailedTo,
-    expirationDate = validity.map(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plus(_))
+    expirationDate = validity.map(OffsetDateTime.now().plus(_))
   )
 
   def resetExpirationDate(accessToken: AccessToken, validity: java.time.temporal.TemporalAmount) =
-    accessToken.copy(expirationDate = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plus(validity)))
+    accessToken.copy(expirationDate = Some(OffsetDateTime.now().plus(validity)))
 
 }
 

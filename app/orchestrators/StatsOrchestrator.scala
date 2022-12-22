@@ -20,7 +20,6 @@ import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterfa
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-import java.time.temporal.ChronoUnit
 import java.sql.Timestamp
 import java.time._
 import java.util.UUID
@@ -174,7 +173,7 @@ object StatsOrchestrator {
     // Percentages would be messed up if we look at really old data or really fresh one
     reportFilter.copy(
       start = Some(reliableStatsStartDate),
-      end = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(30))
+      end = Some(OffsetDateTime.now().minusDays(30))
     )
 
   private[orchestrators] def toPercentage(numerator: Int, denominator: Int): Int =
@@ -182,7 +181,7 @@ object StatsOrchestrator {
     else Math.max(0, Math.min(100, numerator * 100 / denominator))
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
-    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
+    OffsetDateTime.now().minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
 
   /** Fill data with default value when there missing data in database
     */

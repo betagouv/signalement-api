@@ -22,7 +22,6 @@ import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils._
 import utils.silhouette.auth.AuthEnv
-import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -268,7 +267,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val reportResponseFile = ReportFile(
     ReportFileId.generateId(),
     None,
-    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    OffsetDateTime.now(),
     "fichier.jpg",
     "123_fichier.jpg",
     ReportFileOrigin.PROFESSIONAL,

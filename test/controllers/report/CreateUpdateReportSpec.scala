@@ -273,7 +273,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             emailValidationRepository.create(
               EmailValidation(
                 email = email,
-                lastValidationDate = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+                lastValidationDate = Some(OffsetDateTime.now())
               )
             )
           )
@@ -327,7 +327,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def checkReport(reportData: Report) = {
     val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf).get
-    // The expected dates may differ slightly with what's calculated in the code, if the code uses .now().truncatedTo(ChronoUnit.MILLIS)
+    // The expected dates may differ slightly with what's calculated in the code, if the code uses .now()
     // We use a rough approximation
     (dbReport.creationDate must beCloseInTimeTo(reportData.creationDate)) and
       (dbReport.expirationDate must beCloseInTimeTo(reportData.expirationDate)) and

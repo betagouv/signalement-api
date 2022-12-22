@@ -16,7 +16,6 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.S3ServiceInterface
 import utils.DateUtils
-import java.time.temporal.ChronoUnit
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
@@ -115,7 +114,6 @@ class WebsitesExtractActor(
                 "Date de l'export",
                 LocalDateTime
                   .now()
-                  .truncatedTo(ChronoUnit.MILLIS)
                   .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
               )
             ),

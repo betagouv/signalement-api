@@ -5,11 +5,10 @@ import play.api.libs.json.OFormat
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import java.time.temporal.ChronoUnit
 case class ReportBlockedNotification(
     userId: UUID,
     companyId: UUID,
-    dateCreation: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    dateCreation: OffsetDateTime = OffsetDateTime.now()
 )
 
 object ReportBlockedNotification {

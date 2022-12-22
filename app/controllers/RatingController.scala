@@ -10,7 +10,6 @@ import repositories.rating.RatingRepositoryInterface
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -35,7 +34,7 @@ class RatingController(
             .create(
               rating.copy(
                 id = Some(UUID.randomUUID()),
-                creationDate = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+                creationDate = Some(OffsetDateTime.now())
               )
             )
             .map(rating => Ok(Json.toJson(rating)))

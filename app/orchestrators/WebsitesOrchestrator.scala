@@ -9,7 +9,6 @@ import controllers.error.AppError.WebsiteNotFound
 import controllers.error.AppError.WebsiteNotIdentified
 import models.PaginatedResult
 import models.User
-import java.time.temporal.ChronoUnit
 import models.company.Company
 import models.company.CompanyCreation
 import models.investigation.InvestigationStatus.NotProcessed
@@ -190,7 +189,7 @@ class WebsitesOrchestrator(
   } yield website
 
   private def update(website: Website) =
-    repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
+    repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
 
   def fetchUnregisteredHost(
       host: Option[String],

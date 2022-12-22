@@ -8,7 +8,6 @@ import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.util.Try
-import java.time.temporal.ChronoUnit
 sealed case class AccessLevel(value: String)
 
 object AccessLevel {
@@ -37,7 +36,7 @@ case class UserAccess(
 case class Company(
     id: UUID = UUID.randomUUID(),
     siret: SIRET,
-    creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     name: String,
     address: Address,
     activityCode: Option[String],
@@ -112,7 +111,7 @@ object CompanyCreation {
 case class CompanyWithNbReports(
     id: UUID = UUID.randomUUID(),
     siret: SIRET,
-    creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     name: String,
     address: Address,
     activityCode: Option[String],

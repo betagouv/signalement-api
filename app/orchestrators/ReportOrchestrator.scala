@@ -37,7 +37,6 @@ import utils.Constants.EventType
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
-import java.time.temporal.ChronoUnit
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
@@ -123,7 +122,7 @@ class ReportOrchestrator(
           Some(report.id),
           Some(company.id),
           Some(companyUsers.head.id),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_NEW_REPORT,
           stringToDetailsJsValue(
@@ -236,7 +235,7 @@ class ReportOrchestrator(
           users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
         } yield (company, users)
       }.sequence
-      reportCreationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      reportCreationDate = OffsetDateTime.now()
       expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
       reportToCreate = draftReport.generateReport(maybeCompany.map(_.id), reportCreationDate, expirationDate)
       report <- reportRepository.create(reportToCreate)
@@ -281,7 +280,7 @@ class ReportOrchestrator(
       Some(report.id),
       maybeCompany.map(_.id),
       None,
-      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+      OffsetDateTime.now(),
       Constants.EventType.CONSO,
       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
     )
@@ -293,7 +292,7 @@ class ReportOrchestrator(
           Some(report.id),
           maybeCompany.map(_.id),
           None,
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
         )
@@ -357,7 +356,7 @@ class ReportOrchestrator(
       )
       users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
       companyWithUsers = (company, users)
-      updateCompanyDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      updateCompanyDate = OffsetDateTime.now()
       // Update the company
       reportWithNewData <- existingReport match {
         case Some(report) =>
@@ -378,7 +377,7 @@ class ReportOrchestrator(
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         // not sure why we require this condition ?
-        .filter(_.creationDate.isAfter(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(7)))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now().minusDays(7)))
         .map(report =>
           reportRepository
             .update(
@@ -468,7 +467,7 @@ class ReportOrchestrator(
                 Some(report.id),
                 report.companyId,
                 Some(userUUID),
-                OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+                OffsetDateTime.now(),
                 Constants.EventType.ADMIN,
                 Constants.ActionEvent.REPORT_CONSUMER_CHANGE,
                 stringToDetailsJsValue(
@@ -528,7 +527,7 @@ class ReportOrchestrator(
           Some(report.id),
           report.companyId,
           Some(userUUID),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.REPORT_READING_BY_PRO
         )
@@ -552,7 +551,7 @@ class ReportOrchestrator(
           reportId = Some(report.id),
           companyId = report.companyId,
           userId = None,
-          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          creationDate = OffsetDateTime.now(),
           eventType = Constants.EventType.CONSO,
           action = Constants.ActionEvent.EMAIL_CONSUMER_REPORT_READING
         )
@@ -579,7 +578,7 @@ class ReportOrchestrator(
             .create(
               draftEvent.copy(
                 id = UUID.randomUUID(),
-                creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+                creationDate = OffsetDateTime.now(),
                 reportId = Some(r.id),
                 companyId = r.companyId,
                 userId = Some(user.id)
@@ -628,7 +627,7 @@ class ReportOrchestrator(
           Some(report.id),
           report.companyId,
           Some(user.id),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           EventType.PRO,
           ActionEvent.REPORT_PRO_RESPONSE,
           Json.toJson(reportResponse)
@@ -641,7 +640,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           None,
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           Constants.EventType.CONSO,
           Constants.ActionEvent.EMAIL_CONSUMER_REPORT_RESPONSE
         )
@@ -652,7 +651,7 @@ class ReportOrchestrator(
           Some(report.id),
           updatedReport.companyId,
           Some(user.id),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           Constants.EventType.PRO,
           Constants.ActionEvent.EMAIL_PRO_RESPONSE_ACKNOWLEDGMENT
         )
@@ -669,7 +668,7 @@ class ReportOrchestrator(
           Some(report.id),
           report.companyId,
           Some(user.id),
-          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          OffsetDateTime.now(),
           EventType.fromUserRole(user.userRole),
           reportAction.actionType,
           reportAction.details

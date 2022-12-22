@@ -24,7 +24,6 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.Random
-import java.time.temporal.ChronoUnit
 object ReportedPhonesExtractActor {
   def props = Props[ReportedPhonesExtractActor]()
 
@@ -120,7 +119,6 @@ class ReportedPhonesExtractActor(
                 "Date de l'export",
                 LocalDateTime
                   .now()
-                  .truncatedTo(ChronoUnit.MILLIS)
                   .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
               )
             ),

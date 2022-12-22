@@ -11,7 +11,6 @@ import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.computeStartingTime
 import utils.Constants.Departments
-import java.time.temporal.ChronoUnit
 import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -38,7 +37,7 @@ class ReportNotificationTask(
 
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
-    val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    val now = OffsetDateTime.now()
     val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
       _ <-

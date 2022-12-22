@@ -31,7 +31,6 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -177,7 +176,7 @@ class CompanyController(
 
     val report = pendingReports
       // just in case. Avoid communicating on past dates
-      .filter(_.expirationDate.isAfter(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)))
+      .filter(_.expirationDate.isAfter(OffsetDateTime.now()))
       .sortBy(_.expirationDate)
       .headOption
     val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)

@@ -9,7 +9,6 @@ import utils.SIRET
 import utils.URL
 
 import java.time.OffsetDateTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 class ReportDraftTest extends Specification {
@@ -30,7 +29,7 @@ class ReportDraftTest extends Specification {
 
       val companyId = None
       val reportId = UUID.randomUUID()
-      val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+      val creationDate: OffsetDateTime = OffsetDateTime.now()
       val expirationDate = creationDate.plusDays(100)
       val res =
         aDraftReport.generateReport(
