@@ -33,7 +33,7 @@ object Fixtures {
     lastName <- genLastName
     userRole <- Gen.oneOf(UserRole.values)
     email <- genEmailAddress(firstName, lastName)
-  } yield User(id, password, email, firstName, lastName, userRole, None)
+  } yield User(id = id, password = password, email = email, firstName = firstName, lastName = lastName, userRole = userRole, lastEmailValidation = None)
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
   val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -80,6 +80,7 @@ object Fixtures {
     siret = siret,
     name = name,
     address = address,
+    creationDate= OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS) ,
     activityCode = None,
     isOpen = true,
     isHeadOffice = false,
@@ -151,6 +152,7 @@ object Fixtures {
     subcategories = List(subcategory),
     details = List(),
     companyId = Some(company.id),
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     companyName = Some(company.name),
     companyAddress = company.address,
     companySiret = Some(company.siret),
@@ -193,28 +195,28 @@ object Fixtures {
     companyId <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    id,
-    Some(reportId),
-    Some(companyId),
-    None,
-    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-    eventType,
-    actionEvent,
-    stringToDetailsJsValue(details)
+    id = id,
+    reportId = Some(reportId),
+    companyId = Some(companyId),
+    userId = None,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    eventType = eventType,
+    action = actionEvent,
+    details = stringToDetailsJsValue(details)
   )
 
   def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    id,
-    None,
-    Some(companyId),
-    None,
-    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-    eventType,
-    actionEvent,
-    stringToDetailsJsValue(details)
+    id = id,
+    reportId = None,
+    companyId = Some(companyId),
+    userId = None,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    eventType = eventType,
+    action = actionEvent,
+    details = stringToDetailsJsValue(details)
   )
 
   def genWebsite() = for {
