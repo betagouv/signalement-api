@@ -27,7 +27,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val marketplaceCompany = Fixtures.genCompany.sample.get
   val pendingCompany = Fixtures.genCompany.sample.get
 
-  val wdefaultWebsite = Fixtures
+  val defaultWebsite = Fixtures
     .genWebsite()
     .sample
     .get
