@@ -11,6 +11,7 @@ import utils._
 
 import java.time.OffsetDateTime
 import java.time.Period
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -69,7 +70,7 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
 
   implicit val ec = ee.executionContext
 
-  val runningTime = OffsetDateTime.now().plusDays(1)
+  val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   val runningDate = runningTime.toLocalDate()
   val tagDept = "02"
 
@@ -103,6 +104,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       tags = List(ReportTag.ProduitDangereux)
     )
 
+  println(s"------------------ reportProduitDangereux.id = ${reportProduitDangereux.id} ------------------")
+
   val reportNoTag = Fixtures
     .genReportForCompany(company)
     .sample
@@ -112,6 +115,9 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       companyAddress = Address(postalCode = Some(tagDept + "000")),
       tags = List()
     )
+
+  println(s"------------------ reportNoTag.id = ${reportNoTag.id} ------------------")
+  println(s"------------------ reportNoTag.creationDate = ${reportNoTag.creationDate} ------------------")
 
   override def setupData() =
     Await.result(

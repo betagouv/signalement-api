@@ -28,6 +28,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Await
@@ -131,7 +132,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       ResponseConsumerReviewId.generateId(),
       reportWithExistingReview.id,
       ResponseEvaluation.Positive,
-      OffsetDateTime.now(),
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
       Some("Response Details...")
     )
 
@@ -140,7 +141,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       ResponseConsumerReviewId.generateId(),
       reportWithReview.id,
       ResponseEvaluation.Positive,
-      OffsetDateTime.now(),
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
       Some("Response Details...")
     )
 

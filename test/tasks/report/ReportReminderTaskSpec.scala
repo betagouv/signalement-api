@@ -18,6 +18,7 @@ import utils.Fixtures
 import utils.TestApp
 
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -133,7 +134,7 @@ class ReportReminderTaskSpec(implicit ee: ExecutionEnv)
           )
 
           // Run
-          newEventsCutoffDate = OffsetDateTime.now()
+          newEventsCutoffDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
           _ <- reportReminderTask.runTask(taskRunDate)
 
           _ <- hasNewEvent(newEventsCutoffDate, ongoingReport, EMAIL_PRO_REMIND_NO_READING) map (_ must beTrue)

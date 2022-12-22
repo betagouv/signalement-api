@@ -16,6 +16,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -110,37 +111,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
   val lastYearReportsAccepted = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
   val lastYearReportsRejected = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.Infonde)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
   val lastYearReportsNotConcerned = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
   val lastYearReportsClosedByNoAction = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
   val lastYearReportsNotForwarded = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.NA)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1))) :::
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1))) :::
     Fixtures
       .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
-      .map(_.copy(creationDate = OffsetDateTime.now().minusYears(1)))
+      .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusYears(1)))
 
   val lastYearReportsWithResponse = lastYearReportsAccepted ::: lastYearReportsRejected ::: lastYearReportsNotConcerned
   val lastYearReportsReadByPro = lastYearReportsWithResponse ::: lastYearReportsClosedByNoAction
@@ -151,37 +152,37 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
     .genReportsForCompanyWithStatus(company, ReportStatus.TraitementEnCours)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
   val lastMonthReportsAccepted = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.PromesseAction)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
   val lastMonthReportsRejected = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.Infonde)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
   val lastMonthReportsNotConcerned = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.MalAttribue)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
   val lastMonthReportsClosedByNoAction = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.ConsulteIgnore)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
   val lastMonthReportsNotForwarded = Fixtures
     .genReportsForCompanyWithStatus(company, ReportStatus.NA)
     .sample
     .get
-    .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L))) :::
+    .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L))) :::
     Fixtures
       .genReportsForCompanyWithStatus(company, ReportStatus.LanceurAlerte)
       .sample
       .get
-      .map(_.copy(creationDate = OffsetDateTime.now().minusMonths(1L)))
+      .map(_.copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1L)))
 
   val lastMonthReportsWithResponse =
     lastMonthReportsAccepted ::: lastMonthReportsRejected ::: lastMonthReportsNotConcerned

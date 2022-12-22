@@ -19,6 +19,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
@@ -338,7 +339,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
     userCreationTokenList.headOption.map(_.id) shouldEqual (Some(initialUserCreationToken.id))
     userCreationTokenList.headOption.flatMap(
       _.expirationDate.map(
-        _.isAfter(OffsetDateTime.now().plus(initialUserTokenValidity))
+        _.isAfter(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plus(initialUserTokenValidity))
       )
     ) shouldEqual Some(true)
   }

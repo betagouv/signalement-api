@@ -25,6 +25,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.Await
@@ -49,7 +50,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   val tokenDuration = java.time.Period.parse("P60D")
   val reportReminderByPostDelay = java.time.Period.parse("P28D")
-  val defaultTokenCreationDate = OffsetDateTime.now().minusMonths(1)
+  val defaultTokenCreationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1)
 
   val adminUser = Fixtures.genAdminUser.sample.get
 
@@ -110,7 +111,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = OffsetDateTime.now().minusDays(1)
+            creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1)
           )
       )
     } yield ()
@@ -125,7 +126,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = OffsetDateTime.now().minus(reportReminderByPostDelay).minusDays(1)
+            creationDate =
+              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minus(reportReminderByPostDelay).minusDays(1)
           )
       )
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
@@ -142,6 +144,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .copy(
             creationDate = OffsetDateTime
               .now()
+              .truncatedTo(ChronoUnit.MILLIS)
               .minus(reportReminderByPostDelay.multipliedBy(2))
               .minusDays(1)
           )
@@ -152,7 +155,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .sample
           .get
           .copy(
-            creationDate = OffsetDateTime.now().minus(reportReminderByPostDelay).minusDays(1)
+            creationDate =
+              OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minus(reportReminderByPostDelay).minusDays(1)
           )
       )
     } yield ()
@@ -169,6 +173,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .copy(
             creationDate = OffsetDateTime
               .now()
+              .truncatedTo(ChronoUnit.MILLIS)
               .minus(reportReminderByPostDelay.multipliedBy(2))
               .minusDays(2)
           )
@@ -181,6 +186,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .copy(
             creationDate = OffsetDateTime
               .now()
+              .truncatedTo(ChronoUnit.MILLIS)
               .minus(reportReminderByPostDelay.multipliedBy(2))
               .minusDays(1)
           )
@@ -196,14 +202,14 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
           .genEventForCompany(c.id, ADMIN, POST_ACCOUNT_ACTIVATION_DOC)
           .sample
           .get
-          .copy(creationDate = OffsetDateTime.now().minusDays(2))
+          .copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(2))
       )
       _ <- eventRepository.create(
         Fixtures
           .genEventForCompany(c.id, ADMIN, ACTIVATION_DOC_REQUIRED)
           .sample
           .get
-          .copy(creationDate = OffsetDateTime.now().minusDays(1))
+          .copy(creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1))
       )
     } yield expectedCompaniesToActivate = expectedCompaniesToActivate :+ ((c, None, defaultTokenCreationDate))
 

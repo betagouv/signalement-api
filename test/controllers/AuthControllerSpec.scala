@@ -28,6 +28,7 @@ import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.Credentials.toLoginInfo
 import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Await
@@ -295,7 +296,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
 
       val tokenId = UUID.randomUUID()
       val expiredToken =
-        AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().minusMonths(10L))
+        AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(10L))
       val jsonBody = Json.obj("password" -> "test")
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
@@ -339,7 +340,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
           password = passwordHasherRegistry.current.hash(validPassword).password
         )
       val tokenId = UUID.randomUUID()
-      val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().plusMonths(10))
+      val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusMonths(10))
       val jsonBody = Json.obj("password" -> newPassword)
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)

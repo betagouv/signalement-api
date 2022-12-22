@@ -15,6 +15,7 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.util.Random
 object Fixtures {
@@ -128,7 +129,7 @@ object Fixtures {
   )
 
   def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
-    val now = OffsetDateTime.now()
+    val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
     reportDraft.generateReport(maybeCompanyId, creationDate = now, expirationDate = later)
   }
@@ -164,7 +165,7 @@ object Fixtures {
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status,
-    expirationDate = OffsetDateTime.now()
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
@@ -196,7 +197,7 @@ object Fixtures {
     Some(reportId),
     Some(companyId),
     None,
-    OffsetDateTime.now(),
+    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     eventType,
     actionEvent,
     stringToDetailsJsValue(details)
@@ -210,7 +211,7 @@ object Fixtures {
     None,
     Some(companyId),
     None,
-    OffsetDateTime.now(),
+    OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     eventType,
     actionEvent,
     stringToDetailsJsValue(details)
@@ -222,7 +223,7 @@ object Fixtures {
     kind <- Gen.oneOf(IdentificationStatus.values)
   } yield Website(
     id = WebsiteId.generateId(),
-    creationDate = OffsetDateTime.now(),
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     host = websiteUrl.getHost.get,
     companyCountry = None,
     companyId = Some(companyId),
