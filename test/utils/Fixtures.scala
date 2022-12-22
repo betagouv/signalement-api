@@ -229,6 +229,7 @@ object Fixtures {
     host = websiteUrl.getHost.get,
     companyCountry = None,
     companyId = Some(companyId),
+    lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     identificationStatus = kind
   )
 
