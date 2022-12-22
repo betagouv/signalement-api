@@ -1,7 +1,10 @@
 package utils
 
-import models.{PaginatedResult, PaginatedSearch, UserRole}
-import models.company.{Company, CompanyRegisteredSearch}
+import models.PaginatedResult
+import models.PaginatedSearch
+import models.UserRole
+import models.company.Company
+import models.company.CompanyRegisteredSearch
 import repositories.company.CompanyRepositoryInterface
 
 import java.util.UUID

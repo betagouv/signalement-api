@@ -1,11 +1,16 @@
 package orchestrators
 
 import controllers.error.AppError._
-import models.{AccessToken, User}
-import models.token.TokenKind.{DGCCRFAccount, ValidateEmail}
+import models.AccessToken
+import models.User
+import models.token.TokenKind.DGCCRFAccount
+import models.token.TokenKind.ValidateEmail
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mutable.Specification
-import utils.{AppSpec, EmailAddress, Fixtures, TestApp}
+import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.TestApp
 
 import java.time.Period
 import java.util.UUID

@@ -11,6 +11,7 @@ import utils._
 import java.time.OffsetDateTime
 import java.time.Period
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -32,26 +33,25 @@ class WeeklyReportNotification(implicit ee: ExecutionEnv) extends WeeklyReportNo
           )
           .toString
       )}
-        """
-//    A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
-//        Seq(user.email),
-//        s"[SignalConso] Un nouveau signalement",
-//        views.html.mails.dgccrf
-//          .reportNotification(userSubscriptionCountries, Seq((reportArgentine, List.empty)), runningDate.minusDays(7))
-//          .toString
-//      )}
-//        And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
-//        Seq(officeEmail),
-//        s"[SignalConso] 3 nouveaux signalements",
-//        views.html.mails.dgccrf
-//          .reportNotification(
-//            officeSubscription,
-//            Seq((report11, List.empty), (report12, List.empty), (report2, List.empty)),
-//            runningDate.minusDays(7)
-//          )
-//          .toString
-//      )}
-//      """
+    A mail with reportCountry is sent to the subscribed user  ${mailMustHaveBeenSent(
+        Seq(user.email),
+        s"[SignalConso] Un nouveau signalement",
+        views.html.mails.dgccrf
+          .reportNotification(userSubscriptionCountries, Seq((reportArgentine, List.empty)), runningDate.minusDays(7))
+          .toString
+      )}
+        And a mail is sent to the subscribed office               ${mailMustHaveBeenSent(
+        Seq(officeEmail),
+        s"[SignalConso] 3 nouveaux signalements",
+        views.html.mails.dgccrf
+          .reportNotification(
+            officeSubscription,
+            Seq((report11, List.empty), (report12, List.empty), (report2, List.empty)),
+            runningDate.minusDays(7)
+          )
+          .toString
+      )}
+      """
 
 }
 
@@ -77,7 +77,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   implicit val ec = ee.executionContext
 
   val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
-  println(s"------------------ runningTime = ${runningTime} ------------------")
   val runningDate = runningTime.toLocalDate()
 
   val department1 = "87"
@@ -113,8 +112,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
     frequency = Period.ofDays(7)
   )
 
-  println(s"------------------ userSubscription.id = ${userSubscription.id} ------------------")
-
   val userSubscriptionCountries = Subscription(
     userId = Some(user.id),
     email = None,
@@ -148,10 +145,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       companyAddress = Address(postalCode = Some(department1 + "000")),
       creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(1)
     )
-
-  println(
-    s"------------------ (report11.id, report11.creationDate) = ${(report11.id, report11.creationDate)} ------------------"
-  )
   val report12 = Fixtures
     .genReportForCompany(company)
     .sample
@@ -160,10 +153,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       companyAddress = Address(postalCode = Some(department1 + "000")),
       creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(2)
     )
-  println(
-    s"------------------ (report12.id, report12.creationDate) = ${(report12.id, report12.creationDate)} ------------------"
-  )
-
   val report2 = Fixtures
     .genReportForCompany(company)
     .sample
@@ -172,20 +161,15 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       companyAddress = Address(postalCode = Some(department2 + "000")),
       creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(3)
     )
-
   val reportGuadeloupe = Fixtures
     .genReportForCompany(company)
     .sample
     .get
     .copy(
+      id = UUID.randomUUID(),
       companyAddress = Address(postalCode = Some(guadeloupe + "00")),
       creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
     )
-
-  println(
-    s"------------------ (reportGuadeloupe.id, reportGuadeloupe.creationDate) = ${(reportGuadeloupe.id, reportGuadeloupe.creationDate)} ------------------"
-  )
-
   val reportArgentine = Fixtures
     .genReportForCompany(company)
     .sample
@@ -195,15 +179,15 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(4)
     )
 
-  override def setupData() = {
+  override def setupData() =
     Await.result(
       for {
         _ <- userRepository.create(user)
         _ <- companyRepository.getOrCreate(company.siret, company)
-        _ <- reportRepository.create(reportGuadeloupe)
         _ <- reportRepository.create(report11)
         _ <- reportRepository.create(report12)
         _ <- reportRepository.create(report2)
+        _ <- reportRepository.create(reportGuadeloupe)
         _ <- reportRepository.create(reportArgentine)
         _ <- subscriptionRepository.create(userSubscription)
         _ <- subscriptionRepository.create(userSubscriptionCountries)
@@ -212,8 +196,6 @@ abstract class WeeklyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
       } yield (),
       Duration.Inf
     )
-    Thread.sleep(10000)
-  }
 
   def mailMustHaveBeenSent(recipients: Seq[EmailAddress], subject: String, bodyHtml: String) =
     there was one(mailRetriesService).sendEmailWithRetries(

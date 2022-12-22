@@ -40,7 +40,7 @@
             <div class="references">
                 <small>
                     Identifiant unique : @report.id<br>
-                    Ce document a été extrait le : @LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
+                    Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
             <div class="content">

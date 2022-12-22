@@ -1,11 +1,17 @@
 package models
 
-import models.UserRole.{Admin, DGCCRF, Professionnel}
-import models.report.{ReportFilter, ReportStatus, ReportTag}
+import models.UserRole.Admin
+import models.UserRole.DGCCRF
+import models.UserRole.Professionnel
+import models.report.ReportFilter
+import models.report.ReportStatus
+import models.report.ReportTag
 import org.specs2.mutable.Specification
 import utils.DateUtils
 
-import java.time.{LocalDateTime, OffsetDateTime, ZoneOffset}
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import scala.util.Success
 

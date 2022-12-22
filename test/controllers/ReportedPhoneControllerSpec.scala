@@ -5,11 +5,16 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
 import models._
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.matcher.{FutureMatchers, JsonMatchers, Matcher}
+import org.specs2.matcher.FutureMatchers
+import org.specs2.matcher.JsonMatchers
+import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import play.api.test.Helpers._
 import play.api.test._
-import utils.{AppSpec, Fixtures, SIRET, TestApp}
+import utils.AppSpec
+import utils.Fixtures
+import utils.SIRET
+import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Await

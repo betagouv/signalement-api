@@ -3,7 +3,9 @@ package repositories
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
-import utils.{AppSpec, Fixtures, TestApp}
+import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

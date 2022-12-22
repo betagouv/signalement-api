@@ -1,12 +1,14 @@
 package models.report
 
 import controllers.error.AppError.InvalidReportTagBody
-import models.report.ReportTag.{ReportTagTranslationOps, jsonFormat}
+import models.report.ReportTag.ReportTagTranslationOps
+import models.report.ReportTag.jsonFormat
 import org.specs2.mutable.Specification
 import org.specs2.specification.core.Fragments
 import play.api.libs.json.Json
 
-import scala.util.{Failure, Try}
+import scala.util.Failure
+import scala.util.Try
 
 class ReportTagTest extends Specification {
 

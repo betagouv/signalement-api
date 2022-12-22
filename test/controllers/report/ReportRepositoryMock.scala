@@ -1,13 +1,18 @@
 package controllers.report
 
-import models.{CountByDate, PaginatedResult, UserRole}
+import models.CountByDate
+import models.PaginatedResult
+import models.UserRole
 import models.report._
 import repositories.report.ReportRepositoryInterface
-import utils.{CRUDRepositoryMock, EmailAddress}
+import utils.CRUDRepositoryMock
+import utils.EmailAddress
 
-import java.time.{LocalDate, OffsetDateTime}
+import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
-import scala.collection.{SortedMap, mutable}
+import scala.collection.SortedMap
+import scala.collection.mutable
 import scala.concurrent.Future
 
 class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.empty[UUID, Report])

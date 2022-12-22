@@ -6,17 +6,18 @@ import models.report._
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.reportfile.ReportFileTable
-import repositories.report.ReportRepository.ReportFileOrdering
+import repositories.report.ReportRepository.ReportOrdering
+import repositories.report.ReportRepository.queryFilter
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
+
 import java.time.temporal.ChronoUnit
 import java.time._
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.report.ReportRepository.queryFilter
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
@@ -195,14 +196,16 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
         .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
-      filesGroupedByReports =
-        SortedMap(
-          queryResult.entities
-            .groupBy(a => a._1)
-            .view
-            .mapValues(_.flatMap(_._2))
-            .toSeq: _*
-        )(ReportFileOrdering)
+      res = queryResult.entities
+        .groupBy(a => a._1)
+        .view
+        .mapValues { value =>
+          value.flatMap(tuple => tuple._2)
+        }
+        .toSeq
+      _ = println(s"------------------ res = ${res} ------------------")
+      filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
+      _ = println(s"------------------ filesGroupedByReports = ${filesGroupedByReports} ------------------")
 
     } yield filesGroupedByReports
 
@@ -295,6 +298,14 @@ object ReportRepository {
   object ReportFileOrdering extends Ordering[Report] {
     def compare(a: Report, b: Report) =
       b.creationDate compareTo (a.creationDate)
+  }
+
+  object ReportOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      (b.creationDate compareTo (a.creationDate)) match {
+        case 0 => b.id compareTo (a.id)
+        case c => c
+      }
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {

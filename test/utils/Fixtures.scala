@@ -1,11 +1,14 @@
 package utils
 
 import models._
-import models.company.{Address, Company}
+import models.company.Address
+import models.company.Company
 import models.event.Event
 import models.event.Event._
 import models.report._
-import models.website.{IdentificationStatus, Website, WebsiteId}
+import models.website.IdentificationStatus
+import models.website.Website
+import models.website.WebsiteId
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue

@@ -1,17 +1,23 @@
 package tasks.report
 
-import models.report.{Report, ReportStatus}
+import models.report.Report
+import models.report.ReportStatus
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
 import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.event.EventFilter
-import utils.Constants.ActionEvent.{ActionEventValue, REPORT_CLOSED_BY_NO_ACTION, REPORT_CLOSED_BY_NO_READING}
-import utils.{AppSpec, Fixtures, TestApp}
+import utils.Constants.ActionEvent.ActionEventValue
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
+import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
 
 import java.time.OffsetDateTime
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class ReportClosureTaskSpec(implicit ee: ExecutionEnv)

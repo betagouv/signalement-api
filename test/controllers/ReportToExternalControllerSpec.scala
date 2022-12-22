@@ -1,23 +1,33 @@
 package controllers
 
 import loader.SignalConsoComponents
-import models.{Consumer, PaginatedResult}
-import models.report.{Report, ReportFile, ReportFilter}
+import models.Consumer
+import models.PaginatedResult
+import models.report.Report
+import models.report.ReportFile
+import models.report.ReportFilter
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.{Application, ApplicationLoader, Configuration, Logger}
+import play.api.Application
+import play.api.ApplicationLoader
+import play.api.Configuration
+import play.api.Logger
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import repositories.report.{ReportRepository, ReportRepositoryInterface}
+import repositories.report.ReportRepository
+import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
-import utils.{AppSpec, Fixtures, TestApp}
+import utils.AppSpec
+import utils.Fixtures
+import utils.TestApp
 
 import java.util.UUID
 import scala.collection.SortedMap
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)

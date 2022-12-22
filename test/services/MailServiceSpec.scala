@@ -7,7 +7,8 @@ import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.matcher.{FutureMatchers, JsonMatchers}
+import org.specs2.matcher.FutureMatchers
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable.Specification
 import play.api.Logger
 import services.Email.ProNewReportNotification
@@ -16,7 +17,8 @@ import utils._
 import utils.silhouette.auth.AuthEnv
 
 import java.util.UUID
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class BaseMailServiceSpec(implicit ee: ExecutionEnv)

@@ -1,10 +1,13 @@
 package controllers.report
 
-import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
+import com.mohiva.play.silhouette.test.FakeEnvironment
+import com.mohiva.play.silhouette.test._
 import models._
-import models.company.{AccessLevel, Address}
+import models.company.AccessLevel
+import models.company.Address
 import models.event.Event
 import models.report._
 import org.specs2.Specification
@@ -15,14 +18,21 @@ import play.api.test._
 import repositories.event.EventFilter
 import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
-import utils.Constants.{ActionEvent, Departments}
-import utils.{AppSpec, EmailAddress, Fixtures, TestApp}
+import utils.Constants.ActionEvent
+import utils.Constants.Departments
+import utils.AppSpec
+import utils.EmailAddress
+import utils.Fixtures
+import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
-import java.time.{OffsetDateTime, Period}
+import java.time.OffsetDateTime
+import java.time.Period
 import java.time.temporal.ChronoUnit
 import java.util.UUID
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 object CreateReportFromDomTom extends CreateUpdateReportSpec {
