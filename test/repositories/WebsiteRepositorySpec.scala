@@ -27,7 +27,7 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   val marketplaceCompany = Fixtures.genCompany.sample.get
   val pendingCompany = Fixtures.genCompany.sample.get
 
-  val defaultWebsite = Fixtures
+  val wdefaultWebsite = Fixtures
     .genWebsite()
     .sample
     .get
@@ -119,14 +119,26 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   ).await
 
   def e5 = websiteRepository.validateAndCreate(
-    Website(host = defaultWebsite.host,creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS), companyCountry = None, companyId = Some(defaultCompany.id))
+    Website(
+      host = defaultWebsite.host,
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+      companyCountry = None,
+      companyId = Some(defaultCompany.id),
+      lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    )
   ) must beEqualTo(
     defaultWebsite
   ).await
   def e7 = {
     val newWebsite =
       websiteRepository.validateAndCreate(
-        Website(host = newHost,creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS), companyCountry = None, companyId = Some(defaultCompany.id))
+        Website(
+          host = newHost,
+          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          companyCountry = None,
+          companyId = Some(defaultCompany.id),
+          lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+        )
       )
     newWebsite
       .map(w => (w.host, w.companyId, w.identificationStatus)) must beEqualTo(
