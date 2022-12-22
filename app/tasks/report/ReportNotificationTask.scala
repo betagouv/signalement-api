@@ -50,7 +50,6 @@ class ReportNotificationTask(
   })
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
-    println(s"------------------ now = ${now} ------------------")
     val end = now
     val start = end.minus(period)
     logger.debug(s"Traitement de notification des signalements - period $period - $start to $end")
@@ -64,8 +63,6 @@ class ReportNotificationTask(
           end = Some(end)
         )
       }
-      _ = println(s"------------------ reportsWithFiles.map(_._1) = ${reportsWithFiles.keys
-          .map(x => (x.id, x.companyAddress.postalCode, x.creationDate))} ------------------")
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
       subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
         val filteredReport = reportsWithFiles
@@ -103,20 +100,12 @@ class ReportNotificationTask(
           s"Sending a subscription notification email to ${emailAddress}"
         )
         mailService.send {
-          val x = DgccrfReportNotification(
+          DgccrfReportNotification(
             List(emailAddress),
             subscription,
             filteredReport.toList,
             start.toLocalDate
           )
-          println(s"------------------ x.subscription.id = ${x.subscription.id} ------------------")
-          println(s"------------------ x.subscription = ${x.subscription} ------------------")
-          println(s"------------------ x.recipients = ${x.recipients} ------------------")
-          println(
-            s"------------------ x.reports = ${x.reports.map(x => (x._1.companyAddress.postalCode, x._1.creationDate))} ------------------"
-          )
-          println(s"------------------ x.startDate = ${x.startDate} ------------------")
-          x
         }
       }.sequence
     } yield ()

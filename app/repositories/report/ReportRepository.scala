@@ -201,9 +201,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
           value.flatMap(tuple => tuple._2)
         }
         .toSeq
-      _ = println(s"------------------ res = ${res} ------------------")
       filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
-      _ = println(s"------------------ filesGroupedByReports = ${filesGroupedByReports} ------------------")
 
     } yield filesGroupedByReports
 
