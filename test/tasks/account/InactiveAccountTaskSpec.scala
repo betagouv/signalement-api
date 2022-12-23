@@ -13,7 +13,11 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 
-import java.time.{LocalDateTime, LocalTime, OffsetDateTime, Period, ZoneOffset}
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.Period
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -72,11 +76,21 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
 
         // Inactive subscriptions that should be deleted
         val inactiveUserSubscriptionUserId: Subscription =
-          Subscription(email = None,creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS), userId = Some(inactiveDGCCRFUser.id), frequency = Period.ofDays(1))
+          Subscription(
+            email = None,
+            creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+            userId = Some(inactiveDGCCRFUser.id),
+            frequency = Period.ofDays(1)
+          )
 
         // Subscriptions that should be kept
         val activeUserSubscriptionUserId: Subscription =
-          Subscription(email = None,creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS), userId = Some(activeDGCCRFUser.id), frequency = Period.ofDays(1))
+          Subscription(
+            email = None,
+            creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+            userId = Some(activeDGCCRFUser.id),
+            frequency = Period.ofDays(1)
+          )
 
         val (userList, deletedUsersList, activeSubscriptionList, inactiveSubscriptionList, inactivefiles, activefiles) =
           Await.result(

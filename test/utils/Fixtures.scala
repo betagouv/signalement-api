@@ -33,7 +33,15 @@ object Fixtures {
     lastName <- genLastName
     userRole <- Gen.oneOf(UserRole.values)
     email <- genEmailAddress(firstName, lastName)
-  } yield User(id = id, password = password, email = email, firstName = firstName, lastName = lastName, userRole = userRole, lastEmailValidation = None)
+  } yield User(
+    id = id,
+    password = password,
+    email = email,
+    firstName = firstName,
+    lastName = lastName,
+    userRole = userRole,
+    lastEmailValidation = None
+  )
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
   val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -80,7 +88,7 @@ object Fixtures {
     siret = siret,
     name = name,
     address = address,
-    creationDate= OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS) ,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     activityCode = None,
     isOpen = true,
     isHeadOffice = false,
