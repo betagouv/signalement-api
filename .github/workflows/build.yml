@@ -2,9 +2,9 @@ name: Build, format & test workflow
 
 on: [push]
 env:
-  TEST_PGUSER: signalconso
   TEST_PGHOST: localhost
-  TEST_PGDATABASE: test_signalconso
+  POSTGRES_USER: signalconso
+  POSTGRES_DB: test_signalconso
 
 jobs:
   # This workflow contains a single job called "greet"
@@ -15,8 +15,6 @@ jobs:
       postgres:
         image: postgres:14
         env:
-          POSTGRES_USER: signalconso
-          POSTGRES_DB: test_signalconso
           POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
@@ -41,7 +39,7 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install postgresql-client
       - run: whoami
-      - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
+      - run: psql -d postgresql://$TEST_PGUSER@$TEST_PGHOST/$TEST_PGDATABASE -p 5432 -c "CREATE EXTENSION pg_trgm;"
       - name: Build and Test
-        run: sbt -v +test
+        run: sbt scalafmtCheck scalafmtSbtCheck -v +test
 
