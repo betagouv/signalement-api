@@ -5,6 +5,7 @@ env:
   TEST_PGUSER: signalconso
   TEST_PGHOST: localhost
   TEST_PGDATABASE: test_signalconso
+  USE_TEXT_LOGS: true
 
 jobs:
   # This workflow contains a single job called "greet"
