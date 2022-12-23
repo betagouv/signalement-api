@@ -45,4 +45,3 @@ jobs:
       - run: psql -d postgresql://signalconso@localhost/test_signalconso -p 5432 -c "CREATE EXTENSION pg_trgm;"
       - name: Build and Test
         run: sbt -v "scalafmtCheckAll; +test;"
-
