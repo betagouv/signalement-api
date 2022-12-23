@@ -39,7 +39,7 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install postgresql-client
       - run: whoami
-      - run: psql -d postgresql://$TEST_PGUSER@$TEST_PGHOST/$TEST_PGDATABASE -p 5432 -c "CREATE EXTENSION pg_trgm;"
+      - run: psql -d postgresql://$POSTGRES_USER@$TEST_PGHOST/$POSTGRES_DB -p 5432 -c "CREATE EXTENSION pg_trgm;"
       - name: Build and Test
         run: sbt scalafmtCheck scalafmtSbtCheck -v +test
 
