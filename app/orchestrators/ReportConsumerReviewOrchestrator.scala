@@ -17,7 +17,6 @@ import models.event.Event
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext

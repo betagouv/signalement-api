@@ -20,7 +20,6 @@ import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterfa
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
-
 import java.sql.Timestamp
 import java.time._
 import java.util.UUID
@@ -172,14 +171,17 @@ object StatsOrchestrator {
 
   private[orchestrators] def restrictToReliableDates(reportFilter: ReportFilter): ReportFilter =
     // Percentages would be messed up if we look at really old data or really fresh one
-    reportFilter.copy(start = Some(reliableStatsStartDate), end = Some(OffsetDateTime.now.minusDays(30)))
+    reportFilter.copy(
+      start = Some(reliableStatsStartDate),
+      end = Some(OffsetDateTime.now().minusDays(30))
+    )
 
   private[orchestrators] def toPercentage(numerator: Int, denominator: Int): Int =
     if (denominator == 0) 0
     else Math.max(0, Math.min(100, numerator * 100 / denominator))
 
   private[orchestrators] def computeStartingDate(ticks: Int): OffsetDateTime =
-    OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
+    OffsetDateTime.now().minusMonths(ticks.toLong - 1L).withDayOfMonth(1)
 
   /** Fill data with default value when there missing data in database
     */

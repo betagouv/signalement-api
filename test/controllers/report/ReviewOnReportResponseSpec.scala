@@ -4,8 +4,6 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
-
-import java.util.UUID
 import controllers.routes
 import models.User
 import models.report.Report
@@ -19,19 +17,20 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import play.api.libs.json.Json
 import play.api.mvc.Result
+import play.api.test.Helpers._
+import play.api.test._
 import play.mvc.Http.Status
+import repositories.event.EventFilter
+import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import utils.Constants.ActionEvent.ActionEventValue
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
-import play.api.test.Helpers._
-import play.api.test._
-import repositories.event.EventFilter
 import utils.silhouette.auth.AuthEnv
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -133,7 +132,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       ResponseConsumerReviewId.generateId(),
       reportWithExistingReview.id,
       ResponseEvaluation.Positive,
-      OffsetDateTime.now(),
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
       Some("Response Details...")
     )
 
@@ -142,7 +141,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       ResponseConsumerReviewId.generateId(),
       reportWithReview.id,
       ResponseEvaluation.Positive,
-      OffsetDateTime.now(),
+      OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
       Some("Response Details...")
     )
 

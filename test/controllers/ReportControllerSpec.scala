@@ -1,50 +1,49 @@
 package controllers
 
-import play.api.mvc.Results
-
-import java.util.UUID
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TokenConfiguration
 import config.UploadConfiguration
 import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
-import models.report.review.ResponseEvaluation.Positive
-import models.report.review.ResponseConsumerReview
-import models.report.review.ResponseConsumerReviewId
-import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
 import loader.SignalConsoComponents
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.reportfile.ReportFileId
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation.Positive
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import play.api.libs.json.Json
-import play.api.test.Helpers._
-import play.api.test._
 import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
 import play.api.Logger
+import play.api.libs.json.Json
+import play.api.mvc.Results
+import play.api.test.Helpers._
+import play.api.test._
 import services.MailRetriesService
 import services.S3ServiceInterface
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.EventType
-import utils.silhouette.auth.AuthEnv
 import utils.EmailAddress
 import utils.Fixtures
 import utils.S3ServiceMock
 import utils.TestApp
-
+import utils.silhouette.auth.AuthEnv
+import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
 import java.time.Period
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.DurationInt
@@ -124,14 +123,20 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
         val reportFile = ReportFile(
           ReportFileId.generateId(),
           Some(report.id),
-          OffsetDateTime.now(),
+          OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
           "fileName",
           "storageName",
           ReportFileOrigin(""),
           None
         )
         val review =
-          ResponseConsumerReview(ResponseConsumerReviewId.generateId(), report.id, Positive, OffsetDateTime.now(), None)
+          ResponseConsumerReview(
+            ResponseConsumerReviewId.generateId(),
+            report.id,
+            Positive,
+            OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+            None
+          )
 
         Await.result(
           for {

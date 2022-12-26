@@ -10,7 +10,6 @@ import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext

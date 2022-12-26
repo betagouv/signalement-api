@@ -15,7 +15,6 @@ import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.annotation.nowarn

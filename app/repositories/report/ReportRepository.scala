@@ -6,7 +6,8 @@ import models.report._
 import repositories.PostgresProfile.api._
 import repositories.report.ReportColumnType._
 import repositories.reportfile.ReportFileTable
-import repositories.report.ReportRepository.ReportFileOrdering
+import repositories.report.ReportRepository.ReportOrdering
+import repositories.report.ReportRepository.queryFilter
 import slick.jdbc.JdbcProfile
 import utils.Constants.Departments.toPostalCode
 import utils._
@@ -16,7 +17,6 @@ import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import repositories.report.ReportRepository.queryFilter
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
@@ -73,7 +73,10 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       .run(
         queryFilter(filter)
           .filter(report =>
-            report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusMonths(ticks.toLong).withDayOfMonth(1)
+            report.creationDate > OffsetDateTime
+              .now()
+              .minusMonths(ticks.toLong)
+              .withDayOfMonth(1)
           )
           .groupBy(report =>
             (DatePartSQLFunction("month", report.creationDate), DatePartSQLFunction("year", report.creationDate))
@@ -90,7 +93,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   ): Future[Seq[CountByDate]] = db
     .run(
       queryFilter(filter)
-        .filter(report => report.creationDate > OffsetDateTime.now(ZoneOffset.UTC).minusDays(11))
+        .filter(report => report.creationDate > OffsetDateTime.now().minusDays(11))
         .groupBy(report =>
           (
             DatePartSQLFunction("day", report.creationDate),
@@ -191,14 +194,14 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         .on(_.id === _.reportId)
         .sortBy(_._1.creationDate.desc)
         .withPagination(db)(maybeOffset = Some(0), maybeLimit = Some(50000))
-      filesGroupedByReports =
-        SortedMap(
-          queryResult.entities
-            .groupBy(a => a._1)
-            .view
-            .mapValues(_.flatMap(_._2))
-            .toSeq: _*
-        )(ReportFileOrdering)
+      res = queryResult.entities
+        .groupBy(a => a._1)
+        .view
+        .mapValues { value =>
+          value.flatMap(tuple => tuple._2)
+        }
+        .toSeq
+      filesGroupedByReports = SortedMap(res: _*)(ReportOrdering)
 
     } yield filesGroupedByReports
 
@@ -291,6 +294,14 @@ object ReportRepository {
   object ReportFileOrdering extends Ordering[Report] {
     def compare(a: Report, b: Report) =
       b.creationDate compareTo (a.creationDate)
+  }
+
+  object ReportOrdering extends Ordering[Report] {
+    def compare(a: Report, b: Report) =
+      (b.creationDate compareTo (a.creationDate)) match {
+        case 0 => b.id compareTo (a.id)
+        case c => c
+      }
   }
 
   implicit class RegexLikeOps(s: Rep[String]) {

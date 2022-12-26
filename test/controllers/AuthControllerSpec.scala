@@ -6,11 +6,7 @@ import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.mohiva.play.silhouette.test.FakeRequestWithAuthenticator
-import controllers.error.AppError.InvalidPassword
-import controllers.error.AppError.MalformedBody
-import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
-import controllers.error.AppError.SamePasswordError
-import controllers.error.AppError.UserNotFound
+import controllers.error.AppError._
 import controllers.error.ErrorPayload
 import controllers.error.ErrorPayload.AuthenticationErrorPayload
 import loader.SignalConsoComponents
@@ -32,7 +28,7 @@ import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.Credentials.toLoginInfo
 import utils.silhouette.auth.AuthEnv
-
+import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.Await
@@ -299,7 +295,8 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     "fail on token expired" in {
 
       val tokenId = UUID.randomUUID()
-      val expiredToken = AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().minusMonths(10L))
+      val expiredToken =
+        AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(10L))
       val jsonBody = Json.obj("password" -> "test")
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
@@ -343,7 +340,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
           password = passwordHasherRegistry.current.hash(validPassword).password
         )
       val tokenId = UUID.randomUUID()
-      val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().plusMonths(10))
+      val expiredToken = AuthToken(tokenId, user.id, OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusMonths(10))
       val jsonBody = Json.obj("password" -> newPassword)
 
       val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)

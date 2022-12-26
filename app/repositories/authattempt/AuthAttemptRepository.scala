@@ -6,9 +6,7 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -27,7 +25,7 @@ class AuthAttemptRepository(
     .run(
       table
         .filter(_.login === login)
-        .filter(_.timestamp >= OffsetDateTime.now(ZoneOffset.UTC).minusMinutes(delay.toMinutes))
+        .filter(_.timestamp >= OffsetDateTime.now().minusMinutes(delay.toMinutes))
         .length
         .result
     )

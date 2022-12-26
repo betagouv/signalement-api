@@ -37,7 +37,6 @@ import utils.Constants.EventType
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
-
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
@@ -378,7 +377,7 @@ class ReportOrchestrator(
       reportWithNewStatus <- reportWithNewData
         .filter(_.companySiret != existingReport.flatMap(_.companySiret))
         // not sure why we require this condition ?
-        .filter(_.creationDate.isAfter(OffsetDateTime.now(ZoneOffset.UTC).minusDays(7)))
+        .filter(_.creationDate.isAfter(OffsetDateTime.now().minusDays(7)))
         .map(report =>
           reportRepository
             .update(

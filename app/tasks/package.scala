@@ -48,10 +48,11 @@ package object tasks {
   def computeStartingTime(startTime: LocalTime): FiniteDuration = {
 
     val startDate: LocalDateTime =
-      if (LocalTime.now.isAfter(startTime)) LocalDate.now.plusDays(1).atTime(startTime)
-      else LocalDate.now.atTime(startTime)
+      if (LocalTime.now().isAfter(startTime))
+        LocalDate.now().plusDays(1).atTime(startTime)
+      else LocalDate.now().atTime(startTime)
 
-    (LocalDateTime.now.until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
+    (LocalDateTime.now().until(startDate, ChronoUnit.SECONDS) % (24 * 7 * 3600)).seconds
   }
 
   def scheduleTask(
@@ -82,6 +83,10 @@ package object tasks {
   }
 
   def getTodayAtStartOfDayParis() =
-    OffsetDateTime.now.atZoneSameInstant(ZoneId.of("Europe/Paris")).`with`(LocalTime.MIN).toOffsetDateTime
+    OffsetDateTime
+      .now()
+      .atZoneSameInstant(ZoneId.of("Europe/Paris"))
+      .`with`(LocalTime.MIN)
+      .toOffsetDateTime
 
 }

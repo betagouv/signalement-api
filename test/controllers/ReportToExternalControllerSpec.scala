@@ -26,9 +26,9 @@ import utils.TestApp
 
 import java.util.UUID
 import scala.collection.SortedMap
-import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class ReportToExternalControllerSpec(implicit ee: ExecutionEnv)
     extends Specification

@@ -24,7 +24,6 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.Random
-
 object ReportedPhonesExtractActor {
   def props = Props[ReportedPhonesExtractActor]()
 
@@ -118,7 +117,9 @@ class ReportedPhonesExtractActor(
             Some(
               Row().withCellValues(
                 "Date de l'export",
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
+                LocalDateTime
+                  .now()
+                  .format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"))
               )
             ),
             filters.query.map(q => Row().withCellValues("Numéro de téléphone", q)),

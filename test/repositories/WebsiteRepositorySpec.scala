@@ -1,7 +1,7 @@
 package repositories
 
-import models.website.Website
 import models.website.IdentificationStatus
+import models.website.Website
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -9,6 +9,8 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -117,14 +119,26 @@ class WebsiteRepositorySpec(implicit ee: ExecutionEnv) extends Specification wit
   ).await
 
   def e5 = websiteRepository.validateAndCreate(
-    Website(host = defaultWebsite.host, companyCountry = None, companyId = Some(defaultCompany.id))
+    Website(
+      host = defaultWebsite.host,
+      creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+      companyCountry = None,
+      companyId = Some(defaultCompany.id),
+      lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    )
   ) must beEqualTo(
     defaultWebsite
   ).await
   def e7 = {
     val newWebsite =
       websiteRepository.validateAndCreate(
-        Website(host = newHost, companyCountry = None, companyId = Some(defaultCompany.id))
+        Website(
+          host = newHost,
+          creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+          companyCountry = None,
+          companyId = Some(defaultCompany.id),
+          lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+        )
       )
     newWebsite
       .map(w => (w.host, w.companyId, w.identificationStatus)) must beEqualTo(

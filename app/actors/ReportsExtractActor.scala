@@ -356,7 +356,7 @@ class ReportsExtractActor(
             Some(
               Row().withCellValues(
                 "Date de l'export",
-                frenchFormatDateAndTime(OffsetDateTime.now, zone)
+                frenchFormatDateAndTime(OffsetDateTime.now(), zone)
               )
             ),
             Some(filters.departments)

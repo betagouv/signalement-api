@@ -7,7 +7,6 @@ import play.api.libs.json.OFormat
 import utils.Country
 import utils.EmailAddress
 import utils.SIRET
-
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
@@ -43,7 +42,7 @@ object SubscriptionUpdate {
 
 case class Subscription(
     id: UUID = UUID.randomUUID,
-    creationDate: OffsetDateTime = OffsetDateTime.now,
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     userId: Option[UUID],
     email: Option[EmailAddress],
     departments: List[String] = List.empty,

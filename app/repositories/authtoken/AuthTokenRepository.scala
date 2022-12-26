@@ -8,7 +8,6 @@ import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -28,7 +27,7 @@ class AuthTokenRepository(
     .run(
       table
         .filter(_.id === id)
-        .filter(_.expiry > OffsetDateTime.now(ZoneOffset.UTC))
+        .filter(_.expiry > OffsetDateTime.now())
         .to[List]
         .result
         .headOption

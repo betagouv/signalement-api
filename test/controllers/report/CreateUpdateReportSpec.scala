@@ -1,8 +1,5 @@
 package controllers.report
 
-import java.time.OffsetDateTime
-import java.time.Period
-import java.util.UUID
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -12,11 +9,7 @@ import models._
 import models.company.AccessLevel
 import models.company.Address
 import models.event.Event
-import models.report.Report
-import models.report.ReportCompany
-import models.report.ReportConsumerUpdate
-import models.report.ReportStatus
-import models.report.ReportTag
+import models.report._
 import org.specs2.Specification
 import org.specs2.matcher._
 import play.api.libs.json.Json
@@ -33,11 +26,14 @@ import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
 
+import java.time.OffsetDateTime
+import java.time.Period
 import java.time.temporal.ChronoUnit
-import scala.concurrent.duration.Duration
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 object CreateReportFromDomTom extends CreateUpdateReportSpec {
 
@@ -275,7 +271,10 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
             report.email
           ).distinct.map(email =>
             emailValidationRepository.create(
-              EmailValidation(email = email, lastValidationDate = Some(OffsetDateTime.now()))
+              EmailValidation(
+                email = email,
+                lastValidationDate = Some(OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS))
+              )
             )
           )
         )
@@ -328,7 +327,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
 
   def checkReport(reportData: Report) = {
     val dbReport = Await.result(reportRepository.get(reportData.id), Duration.Inf).get
-    // The expected dates may differ slightly with what's calculated in the code, if the code uses .now()
+    // The expected dates may differ slightly with what's calculated in the code, if the code uses .now().truncatedTo(ChronoUnit.MILLIS)
     // We use a rough approximation
     (dbReport.creationDate must beCloseInTimeTo(reportData.creationDate)) and
       (dbReport.expirationDate must beCloseInTimeTo(reportData.expirationDate)) and
