@@ -12,3 +12,5 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN_GITHUB }}
           branches: master
+          author-email: dev@signalconso.gouv.fr
+          author-name: scala_setward
