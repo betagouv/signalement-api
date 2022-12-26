@@ -64,6 +64,10 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 
 # Développement
 
+### Java
+
+Le projet nécessite la version 17 de java
+
 ### PostgreSQL
 
 L'application requiert une connexion à un serveur PostgreSQL (sur macOS, vous pouvez
