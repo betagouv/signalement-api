@@ -104,7 +104,6 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       tags = List(ReportTag.ProduitDangereux)
     )
 
-  println(s"------------------ reportProduitDangereux.id = ${reportProduitDangereux.id} ------------------")
 
   val reportNoTag = Fixtures
     .genReportForCompany(company)
@@ -116,8 +115,6 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
       tags = List()
     )
 
-  println(s"------------------ reportNoTag.id = ${reportNoTag.id} ------------------")
-  println(s"------------------ reportNoTag.creationDate = ${reportNoTag.creationDate} ------------------")
 
   override def setupData() =
     Await.result(
