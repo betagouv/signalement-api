@@ -10,25 +10,25 @@ object Dependencies {
     lazy val playMailerVersion = "8.0.1"
     lazy val akkaHttpVersion = "10.2.10"
     lazy val alpakkaVersion = "4.0.0"
-    lazy val enumeratumVersion = "1.7.0"
-    lazy val sentryVersion = "6.4.1"
+    lazy val enumeratumVersion = "1.7.2"
+    lazy val sentryVersion = "6.10.0"
     lazy val playSilhouetteVersion = "7.0.0"
-    lazy val specs2MatcherExtraVersion = "4.10.5"
-    lazy val scalaCheckVersion = "1.16.0"
-    lazy val catsCoreVersion = "2.8.0"
-    lazy val pureConfigVersion = "0.17.1"
+    lazy val specs2MatcherExtraVersion = "4.8.3"
+    lazy val scalaCheckVersion = "1.17.0"
+    lazy val catsCoreVersion = "2.9.0"
+    lazy val pureConfigVersion = "0.17.2"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version = "1.12.297"
-    lazy val jacksonModuleScalaVersion = "2.13.3"
-    lazy val postgresqlVersion = "42.3.7"
+    lazy val awsJavaSdkS3Version = "1.12.372"
+    lazy val jacksonModuleScalaVersion = "2.14.1"
+    lazy val postgresqlVersion = "42.5.1"
     lazy val refinedVersion = "0.10.1"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
-    lazy val itext7CoreVersion = "7.2.3"
-    lazy val html2pdfVersion = "4.0.3"
+    lazy val itext7CoreVersion = "7.2.4"
+    lazy val html2pdfVersion = "4.0.4"
     lazy val chimneyVersion = "0.6.2"
-    lazy val sttp = "3.7.2"
-    lazy val sttpPlayJson = "3.7.6"
+    lazy val sttp = "3.8.5"
+    lazy val sttpPlayJson = "3.8.5"
 
   }
 
@@ -68,7 +68,6 @@ object Dependencies {
     val playSilhouetteCryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % Versions.playSilhouetteVersion
     val enumeratum = "com.beachape" %% "enumeratum" % Versions.enumeratumVersion
     val enumeratumPlay = "com.beachape" %% "enumeratum-play" % Versions.enumeratumVersion
-    val enumeratumSlick = "com.beachape" %% "enumeratum-slick" % Versions.enumeratumVersion
     val awsJavaSdkS3 = "com.amazonaws" % "aws-java-sdk-s3" % Versions.awsJavaSdkS3Version
     val jacksonModuleScala =
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jacksonModuleScalaVersion
@@ -109,7 +108,6 @@ object Dependencies {
     Compile.playSilhouetteCryptoJca,
     Compile.enumeratum,
     Compile.enumeratumPlay,
-    Compile.enumeratumSlick,
     Compile.awsJavaSdkS3,
     Compile.jacksonModuleScala,
     Compile.postgresql,
