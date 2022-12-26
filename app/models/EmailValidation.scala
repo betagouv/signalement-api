@@ -11,7 +11,7 @@ import scala.util.Try
 
 final case class EmailValidation(
     id: UUID = UUID.randomUUID(),
-    creationDate: OffsetDateTime = OffsetDateTime.now,
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     confirmationCode: String = f"${scala.util.Random.nextInt(1000000)}%06d",
     email: EmailAddress,
     attempts: Int = 0,

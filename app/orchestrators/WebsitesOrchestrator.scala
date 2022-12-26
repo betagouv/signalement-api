@@ -188,7 +188,8 @@ class WebsitesOrchestrator(
     _ = logger.debug(s"Found website")
   } yield website
 
-  private def update(website: Website) = repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
+  private def update(website: Website) =
+    repository.update(website.id, website.copy(lastUpdated = OffsetDateTime.now()))
 
   def fetchUnregisteredHost(
       host: Option[String],

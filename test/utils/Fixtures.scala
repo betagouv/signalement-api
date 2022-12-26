@@ -1,29 +1,23 @@
 package utils
 
-import models.event.Event._
 import models._
 import models.company.Address
 import models.company.Company
 import models.event.Event
-import models.report.Gender
-import models.report.Report
-import models.report.ReportCompany
-import models.report.ReportConsumerUpdate
-import models.report.ReportDraft
-import models.report.ReportStatus
-import models.report.WebsiteURL
+import models.event.Event._
+import models.report._
+import models.website.IdentificationStatus
 import models.website.Website
 import models.website.WebsiteId
-import models.website.IdentificationStatus
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
 import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import scala.util.Random
-
 object Fixtures {
   // Avoids creating strings with null chars because Postgres text fields don't support it.
   // see http://stackoverflow.com/questions/1347646/postgres-error-on-insert-error-invalid-byte-sequence-for-encoding-utf8-0x0
@@ -39,7 +33,15 @@ object Fixtures {
     lastName <- genLastName
     userRole <- Gen.oneOf(UserRole.values)
     email <- genEmailAddress(firstName, lastName)
-  } yield User(id, password, email, firstName, lastName, userRole, None)
+  } yield User(
+    id = id,
+    password = password,
+    email = email,
+    firstName = firstName,
+    lastName = lastName,
+    userRole = userRole,
+    lastEmailValidation = None
+  )
 
   val genFirstName = Gen.oneOf("Alice", "Bob", "Charles", "Danièle", "Émilien", "Fanny", "Gérard")
   val genLastName = Gen.oneOf("Doe", "Durand", "Dupont")
@@ -86,6 +88,7 @@ object Fixtures {
     siret = siret,
     name = name,
     address = address,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     activityCode = None,
     isOpen = true,
     isHeadOffice = false,
@@ -135,7 +138,7 @@ object Fixtures {
   )
 
   def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
-    val now = OffsetDateTime.now()
+    val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
     reportDraft.generateReport(maybeCompanyId, creationDate = now, expirationDate = later)
   }
@@ -157,6 +160,7 @@ object Fixtures {
     subcategories = List(subcategory),
     details = List(),
     companyId = Some(company.id),
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     companyName = Some(company.name),
     companyAddress = company.address,
     companySiret = Some(company.siret),
@@ -171,7 +175,7 @@ object Fixtures {
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status,
-    expirationDate = OffsetDateTime.now()
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
@@ -199,28 +203,28 @@ object Fixtures {
     companyId <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    id,
-    Some(reportId),
-    Some(companyId),
-    None,
-    OffsetDateTime.now(),
-    eventType,
-    actionEvent,
-    stringToDetailsJsValue(details)
+    id = id,
+    reportId = Some(reportId),
+    companyId = Some(companyId),
+    userId = None,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    eventType = eventType,
+    action = actionEvent,
+    details = stringToDetailsJsValue(details)
   )
 
   def genEventForCompany(companyId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]
     details <- arbString.arbitrary
   } yield Event(
-    id,
-    None,
-    Some(companyId),
-    None,
-    OffsetDateTime.now(),
-    eventType,
-    actionEvent,
-    stringToDetailsJsValue(details)
+    id = id,
+    reportId = None,
+    companyId = Some(companyId),
+    userId = None,
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    eventType = eventType,
+    action = actionEvent,
+    details = stringToDetailsJsValue(details)
   )
 
   def genWebsite() = for {
@@ -229,10 +233,11 @@ object Fixtures {
     kind <- Gen.oneOf(IdentificationStatus.values)
   } yield Website(
     id = WebsiteId.generateId(),
-    creationDate = OffsetDateTime.now(),
+    creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     host = websiteUrl.getHost.get,
     companyCountry = None,
     companyId = Some(companyId),
+    lastUpdated = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     identificationStatus = kind
   )
 

@@ -18,6 +18,7 @@ scalafmtOnCompile := true
 scalacOptions ++= Seq(
   "-explaintypes",
   "-Ywarn-macros:after",
+  "-target:17",
   "-Wconf:cat=unused-imports&src=views/.*:s",
   "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",

@@ -11,7 +11,7 @@ import java.util.UUID
 
 case class Website(
     id: WebsiteId = WebsiteId.generateId(),
-    creationDate: OffsetDateTime = OffsetDateTime.now,
+    creationDate: OffsetDateTime = OffsetDateTime.now(),
     host: String,
     isMarketplace: Boolean = false,
     companyCountry: Option[String],
@@ -20,7 +20,7 @@ case class Website(
     practice: Option[Practice] = None,
     investigationStatus: InvestigationStatus = NotProcessed,
     attribution: Option[DepartmentDivision] = None,
-    lastUpdated: OffsetDateTime = OffsetDateTime.now
+    lastUpdated: OffsetDateTime = OffsetDateTime.now()
 )
 
 object Website {

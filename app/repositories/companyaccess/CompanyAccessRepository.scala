@@ -14,7 +14,6 @@ import slick.basic.DatabaseConfig
 import slick.dbio.Effect
 import slick.jdbc.JdbcProfile
 import slick.sql.FixedSqlAction
-
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -111,8 +110,8 @@ class CompanyAccessRepository(val dbConfig: DatabaseConfig[JdbcProfile])(implici
         companyId = companyId,
         userId = userId,
         level = level,
-        updateDate = OffsetDateTime.now,
-        creationDate = OffsetDateTime.now
+        updateDate = OffsetDateTime.now(),
+        creationDate = OffsetDateTime.now()
       )
     )
 

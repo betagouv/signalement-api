@@ -11,7 +11,58 @@ L'API nécessite une base PostgreSQL pour la persistence des données (versions 
 
 Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt])
 
-## Développement
+### Variables d'environnement
+
+| Nom                                  | Description                                                                                                                                                     | Valeur par défaut                |
+|:-------------------------------------| :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------- |
+| APPLICATION_HOST                     | Hôte du serveur hébergeant l'application                                                                                                                        |                                  |
+| APPLICATION_SECRET                   | Clé secrète de l'application                                                                                                                                    |                                  |
+| EVOLUTIONS_ENABLED                   | Active la fonctionnalité d'"évolution" pour l'exécution des scripts de base de données                                                                          | false                            |
+| EVOLUTIONS_AUTO_APPLY                | Exécution automatique des scripts `upgrade` de la base de données                                                                                               | false                            |
+| EVOLUTIONS_AUTO_APPLY_DOWNS          | Exécution automatique des scripts `downgrade` de la base de données                                                                                             | false                            |
+| MAIL_FROM                            | Expéditeur des mails                                                                                                                                            | dev-noreply@signal.conso.gouv.fr |
+| MAIL_CONTACT_ADDRESS                 | Boite mail destinataire des mails génériques                                                                                                                    | support@signal.conso.gouv.fr     |
+| MAILER_HOST                          | Hôte du serveur de mails                                                                                                                                        |                                  |
+| MAILER_PORT                          | Port du serveur de mails                                                                                                                                        |                                  |
+| MAILER_USER                          | Nom d'utilisateur du serveur de mails                                                                                                                           |                                  |
+| MAILER_MOCK                          | Will only log all the email properties instead of sending an email                                                                                              | no                               |
+| MAILER_SSL                           | use SSL                                                                                                                                                         | no                               |
+| MAILER_TLS                           | use TLS                                                                                                                                                         | no                               |
+| MAILER_TLS_REQUIRED                  | force TLS use                                                                                                                                                   | no                               |
+| MAILER_PASSWORD                      | Mot de passe du serveur de mails                                                                                                                                |                                  |
+| SENTRY_DSN                           | Identifiant pour intégration avec [Sentry](https://sentry.io)                                                                                                   |                                  |
+| ETABLISSEMENT_API_URL                | Url de synchronisation des entreprises                                                                                                                          |                                  |
+| ETABLISSEMENT_API_KEY                | token machine pour communiquer avec l'api entreprise pour la mise à jour des entrepise signal conso                                                             |                                  |
+| WEBSITE_URL                          | Url complète du site web consommateur                                                                                                                           |                                  |
+| APPLICATION_PROTOCOL                 | Protocole de l'url de l'api signal conso                                                                                                                        |                                  |
+| DASHBOARD_URL                        | Url complète du site web pro/dgccrf/admin                                                                                                                       |                                  |
+| TMP_DIR                              | Dossier temporaire qui sert de tampon pour la génération des fichiers / import de fichiers                                                                      |                                  |
+| AV_SCAN_ENABLED                      | Active l'antivirus pour le scan des pièces jointe                                                                                                               | true                             |
+| REPORT_EMAILS_BLACKLIST              | Liste d'email pour lesquels les signalements seront ignorés                                                                                                     |                                  |
+| SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE    | Active/Désactive les jobs signal conso (utile pour ne pas les lancer en local)                                                                                  | true                             |
+| REPORT_NOTIF_TASK_START_TIME         | Heure de lancement du job des mail d'abonnements                                                                                                                | "05:00:00"                       |
+| REPORT_TASK_WEEKLY_NOTIF_DAY_OF_WEEK | Jour de lancement du job des mail d'abonnements                                                                                                                 | MONDAY                           |
+| REMINDER_TASK_START_TIME             | Heure de lancement du job de relance pro                                                                                                                        | "04:00:00"                       |
+| REMINDER_TASK_INTERVAL               | Intervalle de lancement du job de relance pro (ie "24 hours" , toutes les 24 heures)                                                                            | 24 hours                         |
+| ARCHIVE_TASK_START_TIME              | Heure de lancement du job suppression des comptes inactifs                                                                                                      | "06:00:00"                       |
+| POSTGRESQL_ADDON_URI                 | Full database url                                                                                                                                               |                                  |
+| MAX_CONNECTIONS                      | Max connection (hikari property)                                                                                                                                |                                  |
+| NUM_THREADS                          | Thread count used to process db connections (hikari property)                                                                                                   |                                  |
+| SKIP_REPORT_EMAIL_VALIDATION         | Ignorer la validation d'email consommateur lors d'un dépôt de signalement, à utiliser en cas de problème avec le provider email                                 | false                            |
+| EMAIL_PROVIDERS_BLOCKLIST            | Ne valide pas les emails avec les providers listés dans cette variable                                                                                          |                                  |
+| OUTBOUND_EMAIL_FILTER_REGEX          | Filter l'envoi d'email sortant (utilisé sur demo / local )                                                                                                      | ".\*"                            |
+| S3_ACCESS_KEY_ID                     | ID du compte S3 utilisé                                                                                                                                         |                                  |
+| S3_SECRET_ACCESS_KEY                 | SECRET du compte S3 utilisé                                                                                                                                     |                                  |
+| S3_ENDPOINT_URL                      | host du bucket                                                                                                                                                  |                                  |
+| BUCKETS_REPORT                       | nom du bucket                                                                                                                                                   |                                  |
+| AUTHENTICATOR_SECRET                 | Secret utlisé pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                     |                                  |
+| CRYPTER_KEY                          | clé utlisée pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                       |                                  |
+| USE_TEXT_LOGS                        | Si true, les logs seront au format texte (plus lisible pour travailler en local) plutôt que JSON (qui est le format en prod, pour que New Relic les parse bien) |                                  |
+
+
+
+
+# Développement
 
 ### PostgreSQL
 
@@ -74,8 +125,7 @@ function scsbt {
   TMP_DIR="/tmp/" \
   S3_ACCESS_KEY_ID="XXX" \
   S3_SECRET_ACCESS_KEY="XXX" \
-  COMPANY_DATABASE_URL="XXX" \
-  DATABASE_URL="XXX" \
+  POSTGRESQL_ADDON_URI="XXX" \
   ETABLISSEMENT_API_URL="http://localhost:9002/api/companies/search" \
   ETABLISSEMENT_API_KEY="XXX" \
   USE_TEXT_LOGS="true" \
@@ -121,11 +171,13 @@ Pour éxecuter uniquement un test (donné par son nom de classe):
 scsbt "testOnly *SomeTestSpec"
 ```
 
-## Démo
+
+# Démo
 
 La version de démo de l'API est accessible à l'adresse http://demo-signalement-api.beta.gouv.fr/api.
 
-## Production
+
+# Production
 
 L'API de production de l'application est accessible à l'adresse https://signal-api.conso.gouv.fr/api.
 
@@ -143,257 +195,19 @@ clever drain create --alias "ALIAS_PROD" NewRelicHTTP "https://log-api.eu.newrel
 clever applications
 ```
 
-## Variables d'environnement
+### Restauration de de base de données
 
-| Nom                                  | Description                                                                                                                                                     | Valeur par défaut                |
-| :----------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------- |
-| APPLICATION_HOST                     | Hôte du serveur hébergeant l'application                                                                                                                        |                                  |
-| APPLICATION_SECRET                   | Clé secrète de l'application                                                                                                                                    |                                  |
-| EVOLUTIONS_ENABLED                   | Active la fonctionnalité d'"évolution" pour l'exécution des scripts de base de données                                                                          | false                            |
-| EVOLUTIONS_AUTO_APPLY                | Exécution automatique des scripts `upgrade` de la base de données                                                                                               | false                            |
-| EVOLUTIONS_AUTO_APPLY_DOWNS          | Exécution automatique des scripts `downgrade` de la base de données                                                                                             | false                            |
-| MAIL_FROM                            | Expéditeur des mails                                                                                                                                            | dev-noreply@signal.conso.gouv.fr |
-| MAIL_CONTACT_ADDRESS                 | Boite mail destinataire des mails génériques                                                                                                                    | support@signal.conso.gouv.fr     |
-| MAILER_HOST                          | Hôte du serveur de mails                                                                                                                                        |                                  |
-| MAILER_PORT                          | Port du serveur de mails                                                                                                                                        |                                  |
-| MAILER_USER                          | Nom d'utilisateur du serveur de mails                                                                                                                           |                                  |
-| MAILER_MOCK                          | Will only log all the email properties instead of sending an email                                                                                              | no                               |
-| MAILER_SSL                           | use SSL                                                                                                                                                         | no                               |
-| MAILER_TLS                           | use TLS                                                                                                                                                         | no                               |
-| MAILER_TLS_REQUIRED                  | force TLS use                                                                                                                                                   | no                               |
-| MAILER_PASSWORD                      | Mot de passe du serveur de mails                                                                                                                                |                                  |
-| SENTRY_DSN                           | Identifiant pour intégration avec [Sentry](https://sentry.io)                                                                                                   |                                  |
-| ETABLISSEMENT_API_URL                | Url de synchronisation des entreprises                                                                                                                          |                                  |
-| ETABLISSEMENT_API_KEY                | token machine pour communiquer avec l'api entreprise pour la mise à jour des entrepise signal conso                                                             |                                  |
-| WEBSITE_URL                          | Url complète du site web consommateur                                                                                                                           |                                  |
-| APPLICATION_PROTOCOL                 | Protocole de l'url de l'api signal conso                                                                                                                        |                                  |
-| DASHBOARD_URL                        | Url complète du site web pro/dgccrf/admin                                                                                                                       |                                  |
-| TMP_DIR                              | Dossier temporaire qui sert de tampon pour la génération des fichiers / import de fichiers                                                                      |                                  |
-| AV_SCAN_ENABLED                      | Active l'antivirus pour le scan des pièces jointe                                                                                                               | true                             |
-| REPORT_EMAILS_BLACKLIST              | Liste d'email pour lesquels les signalements seront ignorés                                                                                                     |                                  |
-| SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE    | Active/Désactive les jobs signal conso (utile pour ne pas les lancer en local)                                                                                  | true                             |
-| REPORT_NOTIF_TASK_START_TIME         | Heure de lancement du job des mail d'abonnements                                                                                                                | "05:00:00"                       |
-| REPORT_TASK_WEEKLY_NOTIF_DAY_OF_WEEK | Jour de lancement du job des mail d'abonnements                                                                                                                 | MONDAY                           |
-| REMINDER_TASK_START_TIME             | Heure de lancement du job de relance pro                                                                                                                        | "04:00:00"                       |
-| REMINDER_TASK_INTERVAL               | Intervalle de lancement du job de relance pro (ie "24 hours" , toutes les 24 heures)                                                                            | 24 hours                         |
-| ARCHIVE_TASK_START_TIME              | Heure de lancement du job suppression des comptes inactifs                                                                                                      | "06:00:00"                       |
-| DATABASE_URL                         | Full database url                                                                                                                                               |                                  |
-| MAX_CONNECTIONS                      | Max connection (hikari property)                                                                                                                                |                                  |
-| NUM_THREADS                          | Thread count used to process db connections (hikari property)                                                                                                   |                                  |
-| SKIP_REPORT_EMAIL_VALIDATION         | Ignorer la validation d'email consommateur lors d'un dépôt de signalement, à utiliser en cas de problème avec le provider email                                 | false                            |
-| EMAIL_PROVIDERS_BLOCKLIST            | Ne valide pas les emails avec les providers listés dans cette variable                                                                                          |                                  |
-| OUTBOUND_EMAIL_FILTER_REGEX          | Filter l'envoi d'email sortant (utilisé sur demo / local )                                                                                                      | ".\*"                            |
-| S3_ACCESS_KEY_ID                     | ID du compte S3 utilisé                                                                                                                                         |                                  |
-| S3_SECRET_ACCESS_KEY                 | SECRET du compte S3 utilisé                                                                                                                                     |                                  |
-| S3_ENDPOINT_URL                      | host du bucket                                                                                                                                                  |                                  |
-| BUCKETS_REPORT                       | nom du bucket                                                                                                                                                   |                                  |
-| AUTHENTICATOR_SECRET                 | Secret utlisé pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                     |                                  |
-| CRYPTER_KEY                          | clé utlisée pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                       |                                  |
-| USE_TEXT_LOGS                        | Si true, les logs seront au format texte (plus lisible pour travailler en local) plutôt que JSON (qui est le format en prod, pour que New Relic les parse bien) |                                  |
 
----
-
-## Liste des API
-
-Le retour de tous les WS (web services) est au format JSON.
-Sauf mention contraire, les appels se font en GET.
-
-Pour la plupart des WS, une authentification est nécessaire.
-Il faut donc que l'appel contienne le header HTTP `X-Auth-Token`, qui doit contenir un token délivré lors de l'appel au
-WS authenticate (cf. infra).
-
-### 1. API d'authentification
-
-http://localhost:9000/api/authenticate (POST)
-
-Headers :
-
-- Content-Type:application/json
-
-Exemple body de la request (JSON):
-
-```json
-{
-  "email": "prenom.nom@ovh.fr",
-  "password": "mon-mot-de-passe"
-}
-```
-
-### 2. API Signalement
-
-_Récupération de tous les signalements_
-
-http://localhost:9000/api/reports
-
-Les signalements sont rendus par page. Le retour JSON est de la forme :
-
-```json
-{
-  "totalCount": 2,
-  "hasNextPage": false,
-  "entities": [
-    ...
-  ]
-}
-```
-
-- totalCount rend le nombre de résultats trouvés au total pour la requête GET envoyé à l'API, en dehors du système de
-  pagination
-- hasNextPage indique s'il existe une page suivante de résultat. L'appelant doit calculer le nouvel offset pour avoir la
-  page suivante
-- entities contient les données de signalement de la page courrante
-- 250 signalements par défaut sont renvoyés
-
-_Exemple : Récupération des 10 signalements à partir du 30ème_
+Des backups sont disponibles pour récupérer la base données en cas de problème.
+2. Récupérer le fichier de backup
+3. Créer une nouvelle base de données vierge
+4. Lancer la commande suivante :
 
 ```
-http://localhost:9000/api/reports?offset=0&limit=10
+#Pour restaurer sur une nouvelle base de données
+pg_restore -h $HOST -p $PORT -U $USER -d $DATABASE_NAME --format=c ./path/backup.dump --no-owner --role=$USER --verbose --no-acl --schema=$SIGNAL_CONSO_SCHEMA
 ```
 
-- offset est ignoré s'il est négatif ou s'il dépasse le nombre de signalement
-- limit est ignoré s'il est négatif. Sa valeur maximum est 250
+4. Rattacher la base de données à l'application.
 
-_Exemple : Récupération des 10 signalements à partir du 30ème pour le département 49_
 
-```
-http://localhost:9000/api/reports?offset=0&limit=10&departments=49
-```
-
-Le champ departments peut contenir une liste de département séparé par `,`.
-
-_Exemple : récupèration de tous les signalements du département 49 et 94_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&departments=49,94
-```
-
-_Exemple : Récupération par email_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&email=john@gmail.com
-```
-
-_Exemple : Récupération par siret_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&siret=40305211101436
-```
-
-_Exemple : Récupération de toutes les entreprises commençant par Géant_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&companyName=Géant
-```
-
-_Exemple : Récupération par catégorie_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&category=Nourriture / Boissons
-```
-
-_Exemple : Récupération par statusPro_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&statusPro=À traiter
-```
-
-_Exemple : Récupération par détails (recherche plein texte sur les colonnes sous-categories et details)_
-
-```
-http://localhost:9000/api/reports?offset=0&limit=10&details=Huwavei
-```
-
-_Suppression d'un signalement_
-
-http://localhost:9000/api/reports/:uuid (DELETE)
-
-Statuts :
-
-- 204 No Content : dans le cas où la suppression fonctionne
-- 404 Not Found : dans le cas où le signalement n'existe pas
-- 412 Precondition Failed : statut renvoyé si des fichiers sont liés à ce signalement. Si l'on souhaite malgré cela
-  supprimer le signalement, il faudra préalablement supprimer ces fichiers
-
-_Modification d'un signalement_
-
-http://localhost:9000/api/reports (PUT)
-
-Le body envoyé doit correspondre à un signalement (de la forme renvoyée par le WS getReport.
-
-Seul les champs suivants sont modifiables :
-
-- firstName
-- lastName
-- email
-- contactAgreement
-- companyName
-- companyAddress
-- companyPostalCode
-- companySiret
-- statusPro
-
-Statuts :
-
-- 204 No Content : dans le cas où la modification fonctionne
-- 404 Not Found : dans le cas où le signalement n'existe pas
-
-### 3. API Files
-
-_Suppression d'un fichier_
-
-http://localhost:9000/api/reports/files/:uuid/:filename (DELETE)
-
-```
-Ex: http://localhost:9000/api/reports/files/38702d6a-907f-4ade-8e93-c4b00e668e8a/logo.png
-```
-
-Les champs `uuid` et `filename` sont obligatoires.
-
-Statuts :
-
-- 204 No Content : dans le cas où la suppression fonctionne
-- 404 Not Found : dans le cas où le fichier n'existe pas
-
-### 4. API Events
-
-_Récupère la liste des évènements d'un signalement_
-
-http://localhost:9000/api/reports/:uuidReport/events
-
-- uuidReport: identifiant du signalement
-- eventType: (optionnel) Type de l'évènement parmi : PRO, CONSO, DGCCRF
-
-_Création d'un évènement (i. e. une action à une date)_
-
-http://localhost:9000/api/reports/:uuidReport/events (POST)
-
-Exemple body de la request (JSON):
-
-```json
-{
-  "userId": "e6de6b48-1c53-4d3e-a7ff-dd9b643073cf",
-  "creationDate": "2019-04-14T00:00:00",
-  "eventType": "PRO",
-  "action": "Envoi du signalement"
-}
-```
-
-- action: ce champ doit contenir le libellé d'une action pro disponible via le ws actionPros (cf. infra)
-
-### 5. API Constantes
-
-_La liste des actions professionnels possibles_
-
-http://localhost:9000/api/constants/actionPros
-
-_La liste des actions consommateurs possibles_
-
-http://localhost:9000/api/constants/actionConsos
-
-_La liste des statuts professionnels possibles_
-
-http://localhost:9000/api/constants/statusPros
-
-_La liste des statuts consommateurs possibles_
-
-http://localhost:9000/api/constants/statusConsos

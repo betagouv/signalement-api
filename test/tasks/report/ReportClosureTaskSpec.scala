@@ -8,12 +8,12 @@ import org.specs2.mutable.Specification
 import play.api.mvc.Results
 import play.api.test.WithApplication
 import repositories.event.EventFilter
-import utils.AppSpec
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
-import utils.TestApp
+import utils.AppSpec
 import utils.Fixtures
+import utils.TestApp
 
 import java.time.OffsetDateTime
 import scala.concurrent.Await

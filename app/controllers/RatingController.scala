@@ -32,7 +32,10 @@ class RatingController(
         rating =>
           ratingRepository
             .create(
-              rating.copy(id = Some(UUID.randomUUID()), creationDate = Some(OffsetDateTime.now()))
+              rating.copy(
+                id = Some(UUID.randomUUID()),
+                creationDate = Some(OffsetDateTime.now())
+              )
             )
             .map(rating => Ok(Json.toJson(rating)))
       )

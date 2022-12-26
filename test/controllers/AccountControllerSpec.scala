@@ -17,11 +17,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
-import utils.AppSpec
-import utils.EmailAddress
-import utils.TestApp
-import utils.Fixtures
-import utils.SIRET
+import utils._
 import utils.silhouette.auth.AuthEnv
 
 import scala.concurrent.Await

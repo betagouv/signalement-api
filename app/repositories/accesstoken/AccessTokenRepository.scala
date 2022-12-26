@@ -17,10 +17,8 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
 import java.sql.Timestamp
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -37,7 +35,7 @@ class AccessTokenRepository(
 
   private def fetchValidTokens =
     table
-      .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
+      .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
       .filter(_.valid)
 
   private def fetchCompanyValidTokens(companyId: UUID): Query[AccessTokenTable, AccessToken, Seq] =
@@ -114,7 +112,7 @@ class AccessTokenRepository(
   override def fetchPendingTokens(emailedTo: EmailAddress): Future[List[AccessToken]] =
     db.run(
       table
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
         .filter(_.emailedTo === emailedTo)
         .to[List]
@@ -124,7 +122,7 @@ class AccessTokenRepository(
   override def fetchPendingTokensDGCCRF: Future[List[AccessToken]] =
     db.run(
       table
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (DGCCRFAccount: TokenKind))
         .to[List]
@@ -183,14 +181,14 @@ class AccessTokenRepository(
       table
         .filter(_.id === token.id)
         .map(a => (a.level, a.expirationDate))
-        .update((Some(level), validity.map(OffsetDateTime.now(ZoneOffset.UTC).plus(_))))
+        .update((Some(level), validity.map(OffsetDateTime.now().plus(_))))
     )
 
   override def prefetchActivationCodes(companyIds: List[UUID]): Future[Map[UUID, String]] =
     db.run(
       table
         .filter(_.companyId inSetBind companyIds.distinct)
-        .filter(_.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
+        .filter(_.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_.valid)
         .filter(_.kind === (CompanyInit: TokenKind))
         .to[List]
@@ -198,7 +196,8 @@ class AccessTokenRepository(
     ).map(f => f.map(accessToken => accessToken.companyId.get -> accessToken.token).toMap)
 
   override def companiesToActivate(): Future[List[(AccessToken, Company)]] = {
-    val startOfToday = OffsetDateTime.now(ZoneOffset.UTC).withHour(0).withMinute(0).withSecond(0).withNano(0)
+    val startOfToday =
+      OffsetDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0)
     db.run(
       table
         .join(CompanyTable.table)
@@ -206,7 +205,7 @@ class AccessTokenRepository(
         .filter(
           _._1.creationDate < startOfToday
         )
-        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now(ZoneOffset.UTC)).isEmpty)
+        .filter(_._1.expirationDate.filter(_ < OffsetDateTime.now()).isEmpty)
         .filter(_._1.valid)
         .filter(_._1.kind === (CompanyInit: TokenKind))
         .to[List]
@@ -233,7 +232,7 @@ class AccessTokenRepository(
   private def resetLastEmailValidation(user: User) = UserTable.table
     .filter(_.id === user.id)
     .map(_.lastEmailValidation)
-    .update(Some(OffsetDateTime.now(ZoneOffset.UTC)))
+    .update(Some(OffsetDateTime.now()))
 
   override def dgccrfAccountsCurve(ticks: Int): Future[Vector[(Timestamp, Int)]] =
     db.run(sql"""

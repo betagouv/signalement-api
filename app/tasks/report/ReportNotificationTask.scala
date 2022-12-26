@@ -11,7 +11,6 @@ import services.Email.DgccrfReportNotification
 import services.MailService
 import tasks.computeStartingTime
 import utils.Constants.Departments
-
 import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -38,8 +37,8 @@ class ReportNotificationTask(
 
   actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
     logger.debug(s"initialDelay - ${initialDelay}");
-    val now = OffsetDateTime.now
-    val isWeeklySubscriptionsDay = LocalDate.now.getDayOfWeek == taskConfiguration.subscription.startDay
+    val now = OffsetDateTime.now()
+    val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
       _ <-
         if (isWeeklySubscriptionsDay)
@@ -58,12 +57,12 @@ class ReportNotificationTask(
       subscriptionsWithMaybeEmails <- subscriptionRepository.listForFrequency(period)
       subscriptionsWithEmails = subscriptionsWithMaybeEmails.collect { case (s, Some(ea)) => (s, ea) }
       _ = logger.debug(s"Found ${subscriptionsWithEmails.size} subscriptions to handle (period $period)")
-      reportsWithFiles <- reportRepository.getReportsWithFiles(
+      reportsWithFiles <- reportRepository.getReportsWithFiles {
         ReportFilter(
           start = Some(start),
           end = Some(end)
         )
-      )
+      }
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
       subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
         val filteredReport = reportsWithFiles
@@ -100,14 +99,14 @@ class ReportNotificationTask(
           "report_notification_task_item",
           s"Sending a subscription notification email to ${emailAddress}"
         )
-        mailService.send(
+        mailService.send {
           DgccrfReportNotification(
             List(emailAddress),
             subscription,
             filteredReport.toList,
             start.toLocalDate
           )
-        )
+        }
       }.sequence
     } yield ()
     executionFuture

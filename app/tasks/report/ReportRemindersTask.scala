@@ -18,7 +18,6 @@ import tasks.getTodayAtStartOfDayParis
 import tasks.scheduleTask
 import utils.Constants.ActionEvent._
 import utils.Constants.EventType.SYSTEM
-
 import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext

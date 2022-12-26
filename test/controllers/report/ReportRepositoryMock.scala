@@ -3,13 +3,7 @@ package controllers.report
 import models.CountByDate
 import models.PaginatedResult
 import models.UserRole
-import models.report.Report
-import models.report.ReportDraft
-import models.report.ReportFile
-import models.report.ReportFilter
-import models.report.ReportStatus
-import models.report.ReportTag
-import models.report.ReportWordOccurrence
+import models.report._
 import repositories.report.ReportRepositoryInterface
 import utils.CRUDRepositoryMock
 import utils.EmailAddress

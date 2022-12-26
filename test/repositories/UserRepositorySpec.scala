@@ -1,13 +1,14 @@
 package repositories
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
 

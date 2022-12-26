@@ -79,8 +79,7 @@ class WebsiteRepository(
 
   SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
-  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] = {
-    println(s"------------------ host = ${host} ------------------")
+  private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table
         .filter { result =>
@@ -93,7 +92,6 @@ class WebsiteRepository(
         }
         .result
     )
-  }
 
   def deprecatedSearchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     URL(host).getHost.map { h =>

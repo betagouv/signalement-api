@@ -1,7 +1,5 @@
 package controllers.report
 
-import java.time.OffsetDateTime
-import java.util.UUID
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -13,11 +11,7 @@ import models._
 import models.company.AccessLevel
 import models.company.CompanyWithAccess
 import models.event.Event
-import models.report.Gender
-import models.report.Report
-import models.report.ReportStatus
-import models.report.ReportWithFiles
-import models.report.WebsiteURL
+import models.report._
 import orchestrators.CompaniesVisibilityOrchestrator
 import org.specs2.Spec
 import org.specs2.concurrent.ExecutionEnv
@@ -40,19 +34,17 @@ import services.MailRetriesService.EmailRequest
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils._
 import utils.silhouette.auth.AuthEnv
-import utils.AppSpec
-import utils.CompanyRepositoryMock
-import utils.EmailAddress
-import utils.Fixtures
-import utils.TestApp
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
+import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+import java.time.temporal.ChronoUnit
 object GetReportByUnauthenticatedUser extends GetReportSpec {
   override def is =
     s2"""
@@ -276,7 +268,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now.plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
   )
 
   val neverRequestedFinalReport = Report(
@@ -297,7 +289,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.ConsulteIgnore,
-    expirationDate = OffsetDateTime.now.plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
   )
 
   val alreadyRequestedReport = Report(
@@ -318,7 +310,7 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.Transmis,
-    expirationDate = OffsetDateTime.now.plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
@@ -371,7 +363,7 @@ trait GetReportContext extends AppSpec {
         Some(alreadyRequestedReport.id),
         Some(company.id),
         Some(concernedProUser.id),
-        OffsetDateTime.now(),
+        OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
         EventType.PRO,
         ActionEvent.REPORT_READING_BY_PRO
       )

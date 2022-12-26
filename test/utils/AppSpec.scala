@@ -13,7 +13,7 @@ import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
 import play.api.db.Database
-import play.api.db.evolutions._
+import play.api.db.evolutions.Evolutions
 import play.api.db.slick.DefaultSlickApi
 import play.api.db.slick.SlickApi
 import play.api.db.slick.evolutions.SlickDBApi

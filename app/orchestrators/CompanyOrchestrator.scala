@@ -199,10 +199,12 @@ class CompanyOrchestrator(
         !lastNotice.exists(
           _.isAfter(
             lastRequirement.getOrElse(
-              OffsetDateTime.now.minus(
-                reportReminderByPostDelay
-                  .multipliedBy(Math.min(noticeCount, 3))
-              )
+              OffsetDateTime
+                .now()
+                .minus(
+                  reportReminderByPostDelay
+                    .multipliedBy(Math.min(noticeCount, 3))
+                )
             )
           )
         )

@@ -18,7 +18,7 @@ object AsyncFile {
   def build(owner: User, kind: AsyncFileKind): AsyncFile = AsyncFile(
     id = UUID.randomUUID(),
     userId = owner.id,
-    creationDate = OffsetDateTime.now,
+    creationDate = OffsetDateTime.now(),
     kind = kind,
     filename = None,
     storageFilename = None

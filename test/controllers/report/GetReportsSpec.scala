@@ -14,21 +14,21 @@ import org.specs2.matcher.FutureMatchers
 import org.specs2.matcher.JsonMatchers
 import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
-import play.api.test.Helpers._
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers
+import play.api.test.Helpers._
 import play.mvc.Http.Status
-import utils.silhouette.auth.AuthEnv
 import utils.AppSpec
 import utils.Fixtures
 import utils.SIREN
 import utils.TestApp
+import utils.silhouette.auth.AuthEnv
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 class GetReportsByUnauthenticatedUser(implicit ee: ExecutionEnv) extends GetReportsSpec {
   override def is =

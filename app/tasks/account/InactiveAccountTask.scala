@@ -6,12 +6,12 @@ import play.api.Logger
 import tasks.computeStartingTime
 
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import utils.Logs.RichLogger
+
 class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
@@ -30,8 +30,7 @@ class InactiveAccountTask(
     logger.debug(s"initialDelay - ${initialDelay}");
     if (taskConfiguration.active) {
       runTask(
-        OffsetDateTime
-          .now(ZoneOffset.UTC)
+        OffsetDateTime.now()
       )
     }
     ()

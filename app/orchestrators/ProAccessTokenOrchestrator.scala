@@ -25,7 +25,6 @@ import utils.Constants.EventType
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.SIRET
-
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -70,7 +69,7 @@ class ProAccessTokenOrchestrator(
         None,
         token.companyId,
         Some(user.id),
-        OffsetDateTime.now,
+        OffsetDateTime.now(),
         EventType.PRO,
         ActionEvent.ACCOUNT_ACTIVATION,
         stringToDetailsJsValue(s"Email du compte : ${token.emailedTo.getOrElse("")}")

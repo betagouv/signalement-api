@@ -9,7 +9,6 @@ import repositories.CRUDRepository
 import repositories.PostgresProfile
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
-
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
