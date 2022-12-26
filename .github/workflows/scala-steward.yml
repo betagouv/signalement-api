@@ -9,8 +9,6 @@ jobs:
     steps:
       - name: Launch Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
-        with:
-          github-token: ${{ secrets.TOKEN_GITHUB }}
-          branches: master
-          author-email: dev@signalconso.gouv.fr
-          author-name: scala_setwardgca
+#        with:
+#          github-token: ${{ secrets.TOKEN_GITHUB }}
+#          branches: master
