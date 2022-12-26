@@ -9,6 +9,6 @@ jobs:
     steps:
       - name: Launch Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
-#        with:
-#          github-token: ${{ secrets.TOKEN_GITHUB }}
-#          branches: master
+        with:
+          github-token: ${{ secrets.TOKEN_GITHUB }}
+          branches: master
