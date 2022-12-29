@@ -117,7 +117,10 @@ class MailServiceSpecNoBlock(implicit ee: ExecutionEnv) extends BaseMailServiceS
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
       attachmentService = components.attachmentService
-    )(components.frontRoute, executionContext)
+    )(
+      components.frontRoute,
+      executionContext
+    )
 
     Await.result(
       mailService.send(
@@ -145,7 +148,10 @@ class MailServiceSpecSomeBlock(implicit ee: ExecutionEnv) extends BaseMailServic
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
       attachmentService = components.attachmentService
-    )(components.frontRoute, executionContext)
+    )(
+      components.frontRoute,
+      executionContext
+    )
 
     Await.result(
       reportNotificationBlocklistRepository
@@ -179,7 +185,10 @@ class MailServiceSpecAllBlock(implicit ee: ExecutionEnv) extends BaseMailService
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
       attachmentService = components.attachmentService
-    )(components.frontRoute, executionContext)
+    )(
+      components.frontRoute,
+      executionContext
+    )
 
     Await.result(
       Future.sequence(
@@ -232,7 +241,10 @@ class MailServiceSpecNotFilteredEmail(implicit ee: ExecutionEnv) extends BaseMai
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
       attachmentService = components.attachmentService
-    )(components.frontRoute, executionContext)
+    )(
+      components.frontRoute,
+      executionContext
+    )
 
     Await.result(
       mailService.send(
@@ -273,7 +285,10 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
       reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
       pdfService = components.pdfService,
       attachmentService = components.attachmentService
-    )(components.frontRoute, executionContext)
+    )(
+      components.frontRoute,
+      executionContext
+    )
 
     Await.result(
       mailService.send(

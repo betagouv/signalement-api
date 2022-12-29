@@ -181,14 +181,14 @@ trait GetReportSpec extends Spec with GetReportContext {
     )
 
   def userMustBeUnauthorized() =
-    someResult must beSome and someResult.get.header.status === Status.UNAUTHORIZED
+    someResult.isDefined mustEqual true and someResult.get.header.status === Status.UNAUTHORIZED
 
   def reportMustBeNotFound() =
-    someResult must beSome and someResult.get.header.status === Status.NOT_FOUND
+    someResult.isDefined mustEqual true and someResult.get.header.status === Status.NOT_FOUND
 
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
     implicit val someUserRole = Some(userRole)
-    someResult must beSome and contentAsJson(Future.successful(someResult.get)) === Json.toJson(
+    someResult.isDefined mustEqual true and contentAsJson(Future.successful(someResult.get)) === Json.toJson(
       ReportWithFiles(report, List.empty)
     )
   }
