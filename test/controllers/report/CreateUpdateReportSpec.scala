@@ -361,7 +361,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
       )
     report = reports.head
     reports.length must beEqualTo(1) and
-      (report.companyId must beSome) and
+      (report.companyId.isDefined mustEqual true) and
       (report must beEqualTo(expectedReport))
   }
 

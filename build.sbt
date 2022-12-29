@@ -3,7 +3,7 @@ organization := "fr.gouv.beta"
 
 version := "1.3.13"
 
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.10"
 
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
@@ -18,7 +18,7 @@ scalafmtOnCompile := true
 scalacOptions ++= Seq(
   "-explaintypes",
   "-Ywarn-macros:after",
-  "-target:17",
+  "-release:17",
   "-Wconf:cat=unused-imports&src=views/.*:s",
   "-Wconf:cat=unused:info",
   s"-Wconf:src=${target.value}/.*:s",
@@ -46,6 +46,7 @@ routesImport ++= Seq(
   "controllers.PublicStatQueryStringBindable"
 )
 
+semanticdbVersion := scalafixSemanticdb.revision
 scalafixOnCompile := true
 
 resolvers += "Atlassian Releases" at "https://packages.atlassian.com/maven-public/"
