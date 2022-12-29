@@ -48,6 +48,7 @@ object ReportTag extends PlayEnum[ReportTag] {
   case object DemarchageADomicile extends ReportTag
   case object Ehpad extends ReportTag
   case object DemarchageTelephonique extends ReportTag
+  case object DemarchageInternet extends ReportTag
   case object AbsenceDeMediateur extends ReportTag
   case object Bloctel extends ReportTag
   case object Influenceur extends ReportTag
@@ -66,6 +67,7 @@ object ReportTag extends PlayEnum[ReportTag] {
       case DemarchageADomicile    => "Démarchage à domicile"
       case Ehpad                  => "Ehpad"
       case DemarchageTelephonique => "Démarchage téléphonique"
+      case DemarchageInternet     => "Démarchage internet"
       case AbsenceDeMediateur     => "Absence de médiateur"
       case Bloctel                => "Bloctel"
       case Influenceur            => "Influenceur"
