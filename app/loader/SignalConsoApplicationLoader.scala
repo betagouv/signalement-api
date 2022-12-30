@@ -94,7 +94,7 @@ import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.PasswordInfoDAO
 import utils.silhouette.auth.UserService
-
+import org.flywaydb.play.FlywayPlayComponents
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -118,6 +118,7 @@ class SignalConsoComponents(
     with AssetsComponents
     with AhcWSComponents
     with SlickComponents
+    with FlywayPlayComponents
     with SlickEvolutionsComponents
     with EvolutionsComponents
     with SecuredActionComponents
@@ -129,7 +130,8 @@ class SignalConsoComponents(
 
   val logger: Logger = Logger(this.getClass)
 
-  applicationEvolutions
+//  applicationEvolutions
+  flywayPlayInitializer
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
@@ -149,6 +151,13 @@ class SignalConsoComponents(
   //  Repositories
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
+
+//
+//  Flyway
+//    .configure()
+//    .dataSource(dbConfig.db.)
+//    .load()
+//    .migrate()
 
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =

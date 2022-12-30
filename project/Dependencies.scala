@@ -34,6 +34,7 @@ object Dependencies {
     lazy val chimneyVersion = "0.6.2"
     lazy val sttp = "3.8.5"
     lazy val sttpPlayJson = "3.8.5"
+    lazy val flyWayVersion       = "9.10.2"
 
   }
 
@@ -46,6 +47,8 @@ object Dependencies {
   }
 
   object Compile {
+    val flyWayVersion = "org.flywaydb" % "flyway-core" % Versions.flyWayVersion
+    val flyWayPlayVersion = "org.flywaydb" %% "flyway-play" % "7.25.0"
     val janino = "org.codehaus.janino" % "janino" % "3.1.9" // Needed for the <if> in logback conf
     val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % "3.1.9" // Needed for janino
     val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
@@ -122,6 +125,8 @@ object Dependencies {
     Compile.itext7Core,
     Compile.html2pdf,
     Compile.chimney,
+    Compile.flyWayVersion,
+    Compile.flyWayPlayVersion,
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,
