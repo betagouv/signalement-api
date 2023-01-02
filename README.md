@@ -202,9 +202,9 @@ clever applications
 
 Des backups sont disponibles pour récupérer la base données en cas de problème.
 
-2. Récupérer le fichier de backup
-3. Créer une nouvelle base de données vierge
-4. Lancer la commande suivante :
+1. Récupérer le fichier de backup
+2. Créer une nouvelle base de données vierge
+3. Lancer la commande suivante :
 
 ```
 #Pour restaurer sur une nouvelle base de données
