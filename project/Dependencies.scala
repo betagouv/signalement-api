@@ -48,7 +48,6 @@ object Dependencies {
 
   object Compile {
     val flyWayVersion = "org.flywaydb" % "flyway-core" % Versions.flyWayVersion
-    val flyWayPlayVersion = "org.flywaydb" %% "flyway-play" % "7.25.0"
     val janino = "org.codehaus.janino" % "janino" % "3.1.9" // Needed for the <if> in logback conf
     val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % "3.1.9" // Needed for janino
     val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.2"
@@ -59,7 +58,6 @@ object Dependencies {
     val pureConfig = "com.github.pureconfig" %% "pureconfig" % Versions.pureConfigVersion
     val playJsonExtensions = "ai.x" %% "play-json-extensions" % Versions.playJsonExtensionsVersion
     val playSlick = "com.typesafe.play" %% "play-slick" % Versions.playSlickVersion
-    val playSlickEvolutions = "com.typesafe.play" %% "play-slick-evolutions" % Versions.playSlickVersion
     val slickPg = "com.github.tminglei" %% "slick-pg" % Versions.slickPgVersion
     val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % Versions.slickPgVersion
     val alpakkaSlick = "com.lightbend.akka" %% "akka-stream-alpakka-slick" % Versions.alpakkaVersion
@@ -100,7 +98,6 @@ object Dependencies {
     Compile.pureConfig,
     Compile.playJsonExtensions,
     Compile.playSlick,
-    Compile.playSlickEvolutions,
     Compile.slickPg,
     Compile.slickPgPlayJson,
     Compile.alpakkaSlick,
@@ -126,7 +123,6 @@ object Dependencies {
     Compile.html2pdf,
     Compile.chimney,
     Compile.flyWayVersion,
-    Compile.flyWayPlayVersion,
     Test.specs2Import,
     Test.specs2MatcherExtra,
     Test.scalaCheck,

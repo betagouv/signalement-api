@@ -386,7 +386,6 @@ trait GetReportContext extends AppSpec {
           mockCompaniesVisibilityOrchestrator
 
         override def configuration: Configuration = Configuration(
-          "play.evolutions.enabled" -> false,
           "slick.dbs.default.db.connectionPool" -> "disabled",
           "play.mailer.mock" -> true
         ).withFallback(

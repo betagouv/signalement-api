@@ -200,7 +200,6 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
             override def authEnv: Environment[AuthEnv] = env
             override def configuration: Configuration = Configuration(
-              "play.evolutions.enabled" -> false,
               "slick.dbs.default.db.connectionPool" -> "disabled",
               "play.mailer.mock" -> true,
               "skip-report-email-validation" -> true,

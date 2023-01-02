@@ -13,10 +13,8 @@ import org.specs2.specification._
 import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
-import play.api.db.Database
 import play.api.db.slick.DefaultSlickApi
 import play.api.db.slick.SlickApi
-import play.api.db.slick.evolutions.SlickDBApi
 import play.api.inject.DefaultApplicationLifecycle
 import play.api.libs.concurrent.ActorSystemProvider
 import pureconfig.ConfigConvert
@@ -57,7 +55,7 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   val slickApi: SlickApi = new DefaultSlickApi(appEnv, context.initialConfiguration, new DefaultApplicationLifecycle())(
     executionContext
   )
-  val database: Database = SlickDBApi(slickApi).database("default")
+//  val database: Database = SlickDBApi(slickApi).database("default")
 
   def setupData() = {}
   def cleanupData() = {}
