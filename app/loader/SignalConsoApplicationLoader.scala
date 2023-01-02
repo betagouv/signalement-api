@@ -21,6 +21,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
 import orchestrators._
+import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.slick.DbName
@@ -94,7 +95,7 @@ import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.PasswordInfoDAO
 import utils.silhouette.auth.UserService
-import org.flywaydb.play.FlywayPlayComponents
+
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -118,7 +119,6 @@ class SignalConsoComponents(
     with AssetsComponents
     with AhcWSComponents
     with SlickComponents
-    with FlywayPlayComponents
     with SlickEvolutionsComponents
     with EvolutionsComponents
     with SecuredActionComponents
@@ -131,7 +131,6 @@ class SignalConsoComponents(
   val logger: Logger = Logger(this.getClass)
 
 //  applicationEvolutions
-  flywayPlayInitializer
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
@@ -139,6 +138,17 @@ class SignalConsoComponents(
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
+
+  Flyway
+    .configure()
+    .dataSource(
+      applicationConfiguration.flyway.jdbcUrl,
+      applicationConfiguration.flyway.user,
+      applicationConfiguration.flyway.password
+    )
+    .load()
+    .migrate()
+
   def emailConfiguration = applicationConfiguration.mail
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
   def tokenConfiguration = signalConsoConfiguration.token
@@ -151,13 +161,6 @@ class SignalConsoComponents(
   //  Repositories
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
-
-//
-//  Flyway
-//    .configure()
-//    .dataSource(dbConfig.db.)
-//    .load()
-//    .migrate()
 
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =

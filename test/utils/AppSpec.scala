@@ -7,13 +7,13 @@ import config.EmailConfiguration
 import config.SignalConsoConfiguration
 import config.TaskConfiguration
 import loader.SignalConsoComponents
+import org.flywaydb.core.Flyway
 import org.specs2.mock.Mockito
 import org.specs2.specification._
 import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
 import play.api.db.Database
-import play.api.db.evolutions.Evolutions
 import play.api.db.slick.DefaultSlickApi
 import play.api.db.slick.SlickApi
 import play.api.db.slick.evolutions.SlickDBApi
@@ -63,12 +63,23 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   def cleanupData() = {}
 
   def beforeAll(): Unit = {
-    Evolutions.cleanupEvolutions(database)
+    databaseScript().clean()
     cleanupData()
-    Evolutions.applyEvolutions(database)
+    databaseScript().migrate()
     setupData()
   }
   def afterAll(): Unit = {}
+
+  def databaseScript() = Flyway
+    .configure()
+    .dataSource(
+      applicationConfiguration.flyway.jdbcUrl,
+      applicationConfiguration.flyway.user,
+      applicationConfiguration.flyway.password
+    )
+    .cleanDisabled(false)
+    .load()
+
 }
 
 object TestApp {
