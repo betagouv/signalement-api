@@ -133,6 +133,7 @@ class SignalConsoComponents(
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
+  // Run database migration scripts
   Flyway
     .configure()
     .dataSource(
@@ -140,6 +141,11 @@ class SignalConsoComponents(
       applicationConfiguration.flyway.user,
       applicationConfiguration.flyway.password
     )
+    // DATA_LOSS / DESTRUCTIVE / BE AWARE ---- Keep to "false"
+    // Be careful when enabling this as it removes the safety net that ensures Flyway does not migrate the wrong database in case of a configuration mistake!
+    // This is useful for initial Flyway production deployments on projects with an existing DB.
+    // See https://flywaydb.org/documentation/configuration/parameters/baselineOnMigrate for more information
+    .baselineOnMigrate(applicationConfiguration.flyway.baselineOnMigrate)
     .load()
     .migrate()
 

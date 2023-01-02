@@ -14,12 +14,9 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 ### Variables d'environnement
 
 | Nom                                  | Description                                                                                                                                                     | Valeur par défaut                |
-|:-------------------------------------| :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------- |
+|:-------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------|
 | APPLICATION_HOST                     | Hôte du serveur hébergeant l'application                                                                                                                        |                                  |
 | APPLICATION_SECRET                   | Clé secrète de l'application                                                                                                                                    |                                  |
-| EVOLUTIONS_ENABLED                   | Active la fonctionnalité d'"évolution" pour l'exécution des scripts de base de données                                                                          | false                            |
-| EVOLUTIONS_AUTO_APPLY                | Exécution automatique des scripts `upgrade` de la base de données                                                                                               | false                            |
-| EVOLUTIONS_AUTO_APPLY_DOWNS          | Exécution automatique des scripts `downgrade` de la base de données                                                                                             | false                            |
 | MAIL_FROM                            | Expéditeur des mails                                                                                                                                            | dev-noreply@signal.conso.gouv.fr |
 | MAIL_CONTACT_ADDRESS                 | Boite mail destinataire des mails génériques                                                                                                                    | support@signal.conso.gouv.fr     |
 | MAILER_HOST                          | Hôte du serveur de mails                                                                                                                                        |                                  |
@@ -46,6 +43,11 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 | REMINDER_TASK_INTERVAL               | Intervalle de lancement du job de relance pro (ie "24 hours" , toutes les 24 heures)                                                                            | 24 hours                         |
 | ARCHIVE_TASK_START_TIME              | Heure de lancement du job suppression des comptes inactifs                                                                                                      | "06:00:00"                       |
 | POSTGRESQL_ADDON_URI                 | Full database url                                                                                                                                               |                                  |
+| POSTGRESQL_ADDON_DIRECT_HOST         | Database host                                                                                                                                                   |                                  |
+| POSTGRESQL_ADDON_DIRECT_PORT         | Database port                                                                                                                                                   |                                  |
+| POSTGRESQL_ADDON_DB                  | Database name                                                                                                                                                   |                                  |
+| POSTGRESQL_ADDON_USER                | Database user                                                                                                                                                   |                                  |
+| POSTGRESQL_ADDON_PASSWORD            | Database password                                                                                                                                               |                                  |
 | MAX_CONNECTIONS                      | Max connection (hikari property)                                                                                                                                |                                  |
 | NUM_THREADS                          | Thread count used to process db connections (hikari property)                                                                                                   |                                  |
 | SKIP_REPORT_EMAIL_VALIDATION         | Ignorer la validation d'email consommateur lors d'un dépôt de signalement, à utiliser en cas de problème avec le provider email                                 | false                            |
@@ -58,9 +60,6 @@ Le build se fait à l'aide de [SBT](https://www.scala-sbt.org/) (voir [build.sbt
 | AUTHENTICATOR_SECRET                 | Secret utlisé pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                     |                                  |
 | CRYPTER_KEY                          | clé utlisée pour forger un token JWT, une modification invalidera les tokens jwt courants                                                                       |                                  |
 | USE_TEXT_LOGS                        | Si true, les logs seront au format texte (plus lisible pour travailler en local) plutôt que JSON (qui est le format en prod, pour que New Relic les parse bien) |                                  |
-
-
-
 
 # Développement
 
@@ -81,16 +80,24 @@ docker-compose -f scripts/local/docker-compose.yml up
 
 ```
 
-Au lancement du programme, les tables seront automatiquement créées si elles n'existent pas (
-voir [https://www.playframework.com/documentation/2.7.x/Evolutions] **et s'assurer que les properties play.evolutions
-sont a true**).
+#### Script de migration
 
-Il est possible d'injecter des données de test dans la base signal conso, pour cela il faut jouer les scripts suivants :
+Le projet utilise l'outil flyway (https://flywaydb.org/) pour la gestion des scripts de migration.
 
-- /test/scripts/insert_users.sql
-- /test/scripts/insert_companies.sql
-- /test/scripts/insert_company_accesses.sql
-- /test/scripts/insert_reports.sql
+Les scripts de migration sont lancés au run de l'application, ils sont disponibles dans le repertoire conf/db/migration/default.
+
+**Warning** Important 
+
+Un script doit impérativement être écrit de manière à ce que l'application fonctionne toujours en cas de rollback de l'application.
+
+Ceci afin de ne pas avoir gérer de procédure de rollback complexe :
+Avoir l'ancienne la structure de données et la nouvelle qui fonctionnent en parralèle puis un certain temps après supprimer l'ancienne structure.
+
+Cette méthode est recommandée par flyway et est décrite sur le lien suivant : https://documentation.red-gate.com/fd/rollback-guidance-138347143.html
+
+
+
+
 
 ### Configuration locale
 
@@ -120,8 +127,6 @@ function scsbt {
   SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE="false" \
   MAIL_FROM="XXX" \
   MAIL_CONTACT_ADDRESS="XXX" \
-  EVOLUTIONS_ENABLED=true \
-  EVOLUTIONS_AUTO_APPLY=false \
   TMP_DIR="/tmp/" \
   S3_ACCESS_KEY_ID="XXX" \
   S3_SECRET_ACCESS_KEY="XXX" \
@@ -171,11 +176,9 @@ Pour éxecuter uniquement un test (donné par son nom de classe):
 scsbt "testOnly *SomeTestSpec"
 ```
 
-
 # Démo
 
 La version de démo de l'API est accessible à l'adresse http://demo-signalement-api.beta.gouv.fr/api.
-
 
 # Production
 
@@ -197,8 +200,8 @@ clever applications
 
 ### Restauration de de base de données
 
-
 Des backups sont disponibles pour récupérer la base données en cas de problème.
+
 2. Récupérer le fichier de backup
 3. Créer une nouvelle base de données vierge
 4. Lancer la commande suivante :
