@@ -177,7 +177,6 @@ object UpdateReportConsumer extends CreateUpdateReportSpec {
           firstName = reportConsumerUpdate.firstName,
           lastName = reportConsumerUpdate.lastName,
           email = reportConsumerUpdate.email,
-          contactAgreement = reportConsumerUpdate.contactAgreement,
           consumerReferenceNumber = reportConsumerUpdate.consumerReferenceNumber
         )
       )}
