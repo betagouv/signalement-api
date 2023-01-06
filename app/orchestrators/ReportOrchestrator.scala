@@ -451,7 +451,6 @@ class ReportOrchestrator(
                 firstName = reportConsumer.firstName,
                 lastName = reportConsumer.lastName,
                 email = reportConsumer.email,
-                contactAgreement = reportConsumer.contactAgreement,
                 consumerReferenceNumber = reportConsumer.consumerReferenceNumber
               )
             )

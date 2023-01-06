@@ -200,7 +200,6 @@ case class ReportConsumerUpdate(
     firstName: String,
     lastName: String,
     email: EmailAddress,
-    contactAgreement: Boolean,
     consumerReferenceNumber: Option[String]
 )
 
