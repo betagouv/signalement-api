@@ -21,11 +21,10 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
 import orchestrators._
+import org.flywaydb.core.Flyway
 import play.api._
-import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.slick.DbName
 import play.api.db.slick.SlickComponents
-import play.api.db.slick.evolutions.SlickEvolutionsComponents
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.BodyParsers
@@ -118,8 +117,6 @@ class SignalConsoComponents(
     with AssetsComponents
     with AhcWSComponents
     with SlickComponents
-    with SlickEvolutionsComponents
-    with EvolutionsComponents
     with SecuredActionComponents
     with SecuredErrorHandlerComponents
     with UnsecuredActionComponents
@@ -129,14 +126,29 @@ class SignalConsoComponents(
 
   val logger: Logger = Logger(this.getClass)
 
-  applicationEvolutions
-
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
+
+  // Run database migration scripts
+  Flyway
+    .configure()
+    .dataSource(
+      applicationConfiguration.flyway.jdbcUrl,
+      applicationConfiguration.flyway.user,
+      applicationConfiguration.flyway.password
+    )
+    // DATA_LOSS / DESTRUCTIVE / BE AWARE ---- Keep to "false"
+    // Be careful when enabling this as it removes the safety net that ensures Flyway does not migrate the wrong database in case of a configuration mistake!
+    // This is useful for initial Flyway production deployments on projects with an existing DB.
+    // See https://flywaydb.org/documentation/configuration/parameters/baselineOnMigrate for more information
+    .baselineOnMigrate(applicationConfiguration.flyway.baselineOnMigrate)
+    .load()
+    .migrate()
+
   def emailConfiguration = applicationConfiguration.mail
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
   def tokenConfiguration = signalConsoConfiguration.token

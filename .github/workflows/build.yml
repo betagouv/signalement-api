@@ -2,9 +2,11 @@ name: Build, format & test workflow
 
 on: [push]
 env:
-  TEST_PGUSER: signalconso
-  TEST_PGHOST: localhost
-  TEST_PGDATABASE: test_signalconso
+  POSTGRESQL_ADDON_USER: signalconso
+  POSTGRESQL_ADDON_HOST: localhost
+  POSTGRESQL_ADDON_PORT: 5432
+  POSTGRESQL_ADDON_DB: test_signalconso
+  POSTGRESQL_ADDON_PASSWORD :
   USE_TEXT_LOGS: true
 
 jobs:
