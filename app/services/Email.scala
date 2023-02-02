@@ -46,8 +46,8 @@ object Email {
       views.html.mails.resetPassword(user, authToken)(frontRoute, contactAddress).toString
   }
 
-  final case class ValidateEmail(user: User, daysBeforeExpiry: Int, validationUrl: URI) extends ConsumerEmail {
-    override val recipients: List[EmailAddress] = List(user.email)
+  final case class ValidateEmail(email: EmailAddress, daysBeforeExpiry: Int, validationUrl: URI) extends ConsumerEmail {
+    override val recipients: List[EmailAddress] = List(email)
     override val subject: String = EmailSubjects.VALIDATE_EMAIL
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>

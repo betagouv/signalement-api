@@ -43,6 +43,7 @@ import services.Email.ProReportReadReminder
 import services.Email.ProReportUnreadReminder
 import services.Email.ProResponseAcknowledgment
 import services.Email.ResetPassword
+import services.Email.ValidateEmail
 import services.Email
 import services.MailService
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
@@ -174,7 +175,7 @@ class AdminController(
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
   val availableEmails = Map[String, EmailAddress => Email](
-    "common.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
+    "dgccrf.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
     "pro.report_ack_pro" -> (recipient =>
@@ -197,6 +198,8 @@ class AdminController(
     ),
     "dgccrf.access_link" ->
       (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
+    "dgccrf.validate_email" ->
+      (ValidateEmail(_, 7, frontRoute.dashboard.validateEmail(""))),
     "dgccrf.report_dangerous_product_notification" -> (recipient =>
       DgccrfDangerousProductReportNotification(Seq(recipient), genReport)
     ),
