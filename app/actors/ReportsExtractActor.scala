@@ -39,6 +39,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 import java.time.ZoneId
 import java.time.OffsetDateTime
+import scala.collection.immutable.List
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
@@ -98,6 +99,7 @@ class ReportsExtractActor(
   )
   val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
   val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+  val MaxCharInSingleCell = 10000
 
   // Columns definition
   case class ReportColumn(
@@ -105,7 +107,14 @@ class ReportsExtractActor(
       column: Column,
       extract: (Report, List[ReportFile], List[Event], List[User]) => String,
       available: Boolean = true
-  )
+  ) {
+    def extractStringValue(
+        report: Report,
+        reportFiles: List[ReportFile],
+        events: List[Event],
+        users: List[User]
+    ): String = extract(report, reportFiles, events, users).take(MaxCharInSingleCell)
+  }
   def buildColumns(requestedBy: User, zone: ZoneId) = {
     List(
       ReportColumn(
@@ -337,7 +346,7 @@ class ReportsExtractActor(
               Row().withCells(
                 reportColumns
                   .map(
-                    _.extract(
+                    _.extractStringValue(
                       report,
                       reportFilesMap.getOrElse(report.id, Nil),
                       reportEventsMap.getOrElse(report.id, Nil),
