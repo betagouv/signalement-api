@@ -20,7 +20,6 @@ import services.Email.ConsumerValidateEmail
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import cats.syntax.apply._
 
 class EmailValidationOrchestrator(
     mailService: MailServiceInterface,
@@ -54,7 +53,7 @@ class EmailValidationOrchestrator(
       if (emailConfiguration.skipReportEmailValidation)
         validateFormat(email)
       else
-        validateFormat(email) *> sendValidationEmailIfNeeded(email)
+        validateFormat(email).flatMap(_ => sendValidationEmailIfNeeded(email))
   } yield result
 
   def validateEmail(email: EmailAddress): Future[EmailValidationResult] =
