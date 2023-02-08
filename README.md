@@ -125,8 +125,6 @@ function scsbt {
   MAILER_MOCK="yes" \
   OUTBOUND_EMAIL_FILTER_REGEX="beta?.gouv|@.*gouv.fr" \
   SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE="false" \
-  MAIL_FROM="XXX" \
-  MAIL_CONTACT_ADDRESS="XXX" \
   TMP_DIR="/tmp/" \
   S3_ACCESS_KEY_ID="XXX" \
   S3_SECRET_ACCESS_KEY="XXX" \
@@ -134,10 +132,65 @@ function scsbt {
   ETABLISSEMENT_API_URL="http://localhost:9002/api/companies/search" \
   ETABLISSEMENT_API_KEY="XXX" \
   USE_TEXT_LOGS="true" \
+  POSTGRESQL_ADDON_HOST="XXX" \
+  POSTGRESQL_ADDON_PORT="XXX" \
+  POSTGRESQL_ADDON_DB="XXX" \
+  POSTGRESQL_ADDON_USER="XXX" \
+  POSTGRESQL_ADDON_PASSWORD= \
+  LOCAL_SYNC="false" \
   sbt "$@"
 }
 
 ```
+
+Ou si vous utilisez fish shell :
+
+```fish
+# à ajouter dans votre fish.config
+# pour toutes les valeurs avec XXX, vous devez renseigner des vraies valeurs.
+# Vous pouvez par exemple reprendre les valeurs de l'environnement de démo dans Clever Cloud
+
+function scsbt
+  # Set all environnements variables for the api then launch sbt
+  # It forwards arguments, so you can do "scsbt", "scscbt compile", etc.
+  echo "Launching sbt with extra environnement variables"
+  set -x MAILER_HOST "XXX"
+  set -x MAILER_PORT "XXX"
+  set -x MAILER_SSL "yes"
+  set -x MAILER_TLS "no"
+  set -x MAILER_TLS_REQUIRED "no"
+  set -x MAILER_USER "XXX"
+  set -x MAILER_PASSWORD "XXX"
+  set -x MAILER_MOCK "yes"
+  set -x OUTBOUND_EMAIL_FILTER_REGEX "beta?.gouv|@.*gouv.fr"
+  set -x SIGNAL_CONSO_SCHEDULED_JOB_ACTIVE "false"
+  set -x TMP_DIR "/tmp/"
+  set -x S3_ACCESS_KEY_ID "XXX"
+  set -x S3_SECRET_ACCESS_KEY "XXX"
+  set -x POSTGRESQL_ADDON_URI "XXX"
+  set -x ETABLISSEMENT_API_URL "http://localhost:9002/api/companies/search"
+  set -x ETABLISSEMENT_API_KEY "XXX"
+  set -x USE_TEXT_LOGS "true"
+  set -x POSTGRESQL_ADDON_HOST "XXX"
+  set -x POSTGRESQL_ADDON_PORT "XXX"
+  set -x POSTGRESQL_ADDON_DB "XXX"
+  set -x POSTGRESQL_ADDON_USER "XXX"
+  set -x POSTGRESQL_ADDON_PASSWORD
+  set -x LOCAL_SYNC false
+  sbt $argv
+end
+```
+
+Pour lancer les tests uniquement, renseigner simplement les valeurs suivantes :
+
+ | Variable                  | Valeur           |
+|:--------------------------|:-----------------|
+ | POSTGRESQL_ADDON_HOST     | localhost        |
+ | POSTGRESQL_ADDON_PORT     | 5432             |
+ | POSTGRESQL_ADDON_DB       | test_signalconso |
+ | POSTGRESQL_ADDON_USER     | $USER            |
+ | POSTGRESQL_ADDON_PASSWORD |                  |
+
 
 Ceci définit une commande `scsbt`, à utiliser à la place de `sbt`
 
