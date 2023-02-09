@@ -53,7 +53,7 @@ class EmailValidationOrchestrator(
       if (emailConfiguration.skipReportEmailValidation)
         validateFormat(email)
       else
-        validateFormat(email).flatMap(_ => sendValidationEmailIfNeeded(email))
+        sendValidationEmailIfNeeded(email)
   } yield result
 
   def validateEmail(email: EmailAddress): Future[EmailValidationResult] =

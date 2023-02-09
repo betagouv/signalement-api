@@ -119,9 +119,10 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
 
   private def isCausedByAddressException(e: Exception): Boolean =
     e.getCause match {
-      case null                => false
-      case _: AddressException => true
-      case _                   => false
+      case null                            => false
+      case _: AddressException             => true
+      case cause: IllegalArgumentException => cause.getMessage.contains("Empty label is not a legal name")
+      case _                               => false
     }
 
   // This case happens when trying to send through Sendinblue to the email "......@gmail.com"

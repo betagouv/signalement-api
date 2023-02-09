@@ -151,17 +151,6 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
     "check email when skipping validation flag is OFF" should {
 
-      "not validate malformed email" in {
-        val malformedEmail = "user@dgccrf"
-        val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
-          .withJsonBody(Json.obj("email" -> malformedEmail))
-        val result = route(app, request).get
-        Helpers.status(result) must beEqualTo(400)
-        Helpers.contentAsJson(result) must beEqualTo(
-          Json.toJson(ErrorPayload(InvalidEmail(malformedEmail)))
-        )
-      }
-
       "create email validation entry and send email when email is new" in {
         val unknownEmail = Fixtures.genEmailAddress.sample.get
 
