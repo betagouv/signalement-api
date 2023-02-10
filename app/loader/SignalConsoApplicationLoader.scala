@@ -45,6 +45,8 @@ import repositories.authattempt.AuthAttemptRepository
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepository
 import repositories.authtoken.AuthTokenRepositoryInterface
+import repositories.blacklistedemails.BlacklistedEmailsRepository
+import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepository
 import repositories.company.CompanyRepositoryInterface
 import repositories.company.CompanySyncRepository
@@ -162,6 +164,7 @@ class SignalConsoComponents(
 
   val dbConfig: DatabaseConfig[JdbcProfile] = slickApi.dbConfig[JdbcProfile](DbName("default"))
 
+  val blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface = new BlacklistedEmailsRepository(dbConfig)
   val companyAccessRepository: CompanyAccessRepositoryInterface = new CompanyAccessRepository(dbConfig)
   val accessTokenRepository: AccessTokenRepositoryInterface =
     new AccessTokenRepository(dbConfig, companyAccessRepository)
@@ -408,6 +411,10 @@ class SignalConsoComponents(
   )
 
   // Controller
+
+  val blacklistedEmailsController =
+    new BlacklistedEmailsController(blacklistedEmailsRepository, silhouette, controllerComponents)
+
   val accountController = new AccountController(
     silhouette,
     userOrchestrator,
@@ -566,6 +573,7 @@ class SignalConsoComponents(
       websiteController,
       reportedPhoneController,
       reportBlockedNotificationController,
+      blacklistedEmailsController,
       assets
     )
 
