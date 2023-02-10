@@ -340,6 +340,7 @@ class SignalConsoComponents(
     websiteRepository,
     companiesVisibilityOrchestrator,
     subscriptionRepository,
+    blacklistedEmailsRepository,
     emailValidationOrchestrator,
     emailConfiguration,
     tokenConfiguration,
