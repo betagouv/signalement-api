@@ -2,6 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import models.BlacklistedEmail
+import models.BlacklistedEmailInput
 import models.UserPermission
 import play.api.Logger
 import play.api.libs.json.JsError
@@ -33,17 +34,17 @@ class BlacklistedEmailsController(
   def add() = SecuredAction(WithPermission(UserPermission.manageBlacklistedEmails)).async(parse.json) {
     implicit request =>
       request.body
-        .validate[BlacklistedEmail]
+        .validate[BlacklistedEmailInput]
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
-          blacklistedEmail =>
+          input =>
             for {
-              alreadyBlacklisted <- blacklistedEmailsRepository.isBlacklisted(blacklistedEmail.email)
+              alreadyBlacklisted <- blacklistedEmailsRepository.isBlacklisted(input.email)
               result <- {
                 if (alreadyBlacklisted) Future.successful(BadRequest("Email already blacklisted"))
                 else
                   for {
-                    _ <- blacklistedEmailsRepository.create(blacklistedEmail)
+                    _ <- blacklistedEmailsRepository.create(BlacklistedEmail.fromInput(input))
                   } yield Ok
               }
             } yield result
