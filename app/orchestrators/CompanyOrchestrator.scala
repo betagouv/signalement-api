@@ -1,5 +1,8 @@
 package orchestrators
 
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import config.EmailConfiguration
 import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
@@ -14,6 +17,7 @@ import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
 import models.company.UndeliveredDocument
 import models.event.Event
+import models.report.Report
 import models.report.ReportFilter
 import models.report.ReportStatus
 import models.report.ReportTag
@@ -22,15 +26,18 @@ import models.website.WebsiteHost
 import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
+import play.twirl.api.Html
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
+import services.PDFService
 import tasks.company.CompanySearchResult
 import tasks.company.CompanySearchResult.fromCompany
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
+import utils.FrontRoute
 import utils.SIRET
 import utils.URL
 
@@ -48,12 +55,17 @@ class CompanyOrchestrator(
     val websiteRepository: WebsiteRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val eventRepository: EventRepositoryInterface,
-    val taskConfiguration: TaskConfiguration
+    val pdfService: PDFService,
+    val taskConfiguration: TaskConfiguration,
+    val frontRoute: FrontRoute,
+    val emailConfiguration: EmailConfiguration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
 
   val reportReminderByPostDelay = Period.ofDays(28)
+
+  val contactAddress = emailConfiguration.contactAddress
 
   def create(companyCreation: CompanyCreation): Future[Company] =
     companyRepository
@@ -216,6 +228,69 @@ class CompanyOrchestrator(
           "tokenCreation" -> token.creationDate
         )
       }
+
+  def getActivationDocument(companyIds: List[UUID]): Future[Option[Source[ByteString, Unit]]] =
+    for {
+      companies <- companyRepository.fetchCompanies(companyIds)
+      activationCodesMap <- accessTokenRepository.prefetchActivationCodes(companyIds)
+      eventsMap <- eventRepository.fetchEvents(companyIds)
+      pendingReports <- reportRepository.getPendingReports(companyIds)
+    } yield {
+      val pendingReportsMap = pendingReports.filter(_.companyId.isDefined).groupBy(_.companyId.get)
+      val htmlDocuments = companies.flatMap(company =>
+        activationCodesMap
+          .get(company.id)
+          .map(
+            getHtmlDocumentForCompany(
+              company,
+              pendingReportsMap.getOrElse(company.id, Nil),
+              eventsMap.getOrElse(company.id, Nil)
+            )
+          )
+      )
+      if (htmlDocuments.nonEmpty) {
+        Some(pdfService.createPdfSource(htmlDocuments))
+      } else {
+        None
+      }
+    }
+
+  private def getHtmlDocumentForCompany(company: Company, pendingReports: List[Report], events: List[Event])(
+      activationKey: String
+  ): Html = {
+    val lastContactLocalDate = events
+      .filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
+      .sortBy(_.creationDate)
+      .reverse
+      .headOption
+      .map(_.creationDate.toLocalDate)
+
+    val report = pendingReports
+      // just in case. Avoid communicating on past dates
+      .filter(_.expirationDate.isAfter(OffsetDateTime.now()))
+      .sortBy(_.expirationDate)
+      .headOption
+    val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
+    val reportExpirationLocalDate = report.map(_.expirationDate.toLocalDate)
+
+    lastContactLocalDate
+      .map { lastContact =>
+        views.html.pdfs.accountActivationReminder(
+          company,
+          lastContact,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
+      .getOrElse {
+        views.html.pdfs.accountActivation(
+          company,
+          reportCreationLocalDate,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      }
+  }
 
   def confirmContactByPostOnCompanyList(companyList: CompanyList, identity: UUID): Future[List[Event]] =
     Future
