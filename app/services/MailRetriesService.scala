@@ -86,12 +86,17 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
     future.onComplete {
       case Success(_) =>
         logger.infoWithTitle("email_sent", s"Sent email $logDetails")
-      case Failure(e: Exception) if isCausedByAddressException(e) =>
+      case Failure(e) if isCausedByAddressException(e) =>
         logger.warnWithTitle(
           "email_malformed_address",
           s"Malformed email address $logDetails"
         )
-      case Failure(e: Exception) if isCausedByUnexceptedRecipients(e) =>
+      case Failure(e) if isCausedByEmptyDomainName(e) =>
+        logger.warnWithTitle(
+          "email_malformed_address",
+          s"Malformed email address $logDetails"
+        )
+      case Failure(e) if isCausedByUnexceptedRecipients(e) =>
         logger.warnWithTitle(
           "email_unexpected_recipients",
           s"Received unexpected recipients error $logDetails"
@@ -117,23 +122,28 @@ class MailRetriesService(mailerClient: MailerClient, executionContext: Execution
     ()
   }
 
-  private def isCausedByAddressException(e: Exception): Boolean =
+  private def isCausedByAddressException(e: Throwable): Boolean =
     e.getCause match {
-      case null                            => false
-      case _: AddressException             => true
-      case cause: IllegalArgumentException => cause.getMessage.contains("Empty label is not a legal name")
-      case _                               => false
+      case null                => false
+      case _: AddressException => true
+      case _                   => false
     }
 
   // This case happens when trying to send through Sendinblue to the email "......@gmail.com"
   // (with the dots exactly like that)
   // It seems we don't get an AddressException, but it's Sendinblue that answers in a weird way
-  private def isCausedByUnexceptedRecipients(e: Exception): Boolean =
+  private def isCausedByUnexceptedRecipients(e: Throwable): Boolean =
     e.getCause match {
       case null                           => false
       case cause: SMTPSendFailedException =>
         // The full message with "......@gmail.com" was "400 unexpected recipients: want atleast 1, got 0"
         cause.getMessage.contains("unexpected recipients")
       case _ => false
+    }
+
+  private def isCausedByEmptyDomainName(e: Throwable): Boolean =
+    e match {
+      case _: IllegalArgumentException => e.getMessage.contains("Empty label is not a legal name")
+      case _                           => false
     }
 }
