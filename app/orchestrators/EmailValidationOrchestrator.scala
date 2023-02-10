@@ -9,19 +9,20 @@ import models.EmailValidation
 import models.EmailValidationFilter
 import models.PaginatedResult
 import models.PaginatedSearch
-import services.MailService
+import services.MailServiceInterface
 import utils.EmailAddress
 import models.email.EmailValidationResult
 import models.email.ValidateEmailCode
 import play.api.Logger
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.Email.ConsumerValidateEmail
+
 import java.time.OffsetDateTime
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class EmailValidationOrchestrator(
-    mailService: MailService,
+    mailService: MailServiceInterface,
     emailValidationRepository: EmailValidationRepositoryInterface,
     emailConfiguration: EmailConfiguration
 )(implicit
@@ -35,7 +36,7 @@ class EmailValidationOrchestrator(
       emailValidation <- emailValidationRepository.findByEmail(email)
     } yield emailValidation.exists(_.lastValidationDate.isDefined)
 
-  def checkCodeAndValidateEmail(emailValidationBody: ValidateEmailCode) =
+  def checkCodeAndValidateEmail(emailValidationBody: ValidateEmailCode): Future[EmailValidationResult] =
     for {
       maybeEmailValidation <- emailValidationRepository.findByEmail(emailValidationBody.email)
       emailValidation <- maybeEmailValidation.liftTo[Future] {
@@ -49,9 +50,10 @@ class EmailValidationOrchestrator(
   def checkEmail(email: EmailAddress): Future[EmailValidationResult] = for {
     _ <- validateProvider(email)
     result <-
-      if (emailConfiguration.skipReportEmailValidation) {
+      if (emailConfiguration.skipReportEmailValidation)
         validateFormat(email)
-      } else sendValidationEmailIfNeeded(email)
+      else
+        sendValidationEmailIfNeeded(email)
   } yield result
 
   def validateEmail(email: EmailAddress): Future[EmailValidationResult] =
