@@ -1,55 +1,55 @@
 package services
 
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
+import actors.HtmlConverterActor
+import akka.actor.typed.ActorRef
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.StreamConverters
+import akka.util.ByteString
 import com.itextpdf.html2pdf.ConverterProperties
 import com.itextpdf.html2pdf.HtmlConverter
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider
 import config.SignalConsoConfiguration
 import play.api.Logger
-import play.api.http.FileMimeTypes
 import play.twirl.api.HtmlFormat
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.time.OffsetDateTime
-import java.util.UUID
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import scala.concurrent.ExecutionContext
 
 class PDFService(
-    signalConsoConfiguration: SignalConsoConfiguration
+    signalConsoConfiguration: SignalConsoConfiguration,
+    actor: ActorRef[HtmlConverterActor.ConvertCommand]
 ) {
 
   val logger: Logger = Logger(this.getClass)
-  val tmpDirectory = signalConsoConfiguration.tmpDirectory
+  val tmpDirectory: String = signalConsoConfiguration.tmpDirectory
 
-  def Ok(htmlDocuments: Seq[HtmlFormat.Appendable])(implicit ec: ExecutionContext, fmt: FileMimeTypes) = {
-    val tmpFileName =
-      s"${tmpDirectory}/${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf";
-    val pdf = new PdfDocument(new PdfWriter(tmpFileName))
-
+  def createPdfSource(
+      htmlDocuments: Seq[HtmlFormat.Appendable]
+  )(implicit ec: ExecutionContext): Source[ByteString, Unit] = {
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(false, true, true)
     converterProperties.setFontProvider(dfp)
     converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
-    HtmlConverter.convertToPdf(
-      new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes()),
-      pdf,
-      converterProperties
-    )
-    logger.debug(f"Generated ${tmpFileName}")
-    play.api.mvc.Results.Ok.sendFile(
-      new File(tmpFileName),
-      onClose = () => {
-        new File(tmpFileName).delete
-        ()
-      }
-    )
+    val htmlStream = new ByteArrayInputStream(htmlDocuments.map(_.body).mkString.getBytes())
+
+    val pipedOutputStream = new PipedOutputStream()
+    val pipeSize = 8192 // To match the akka stream chunk size
+    val pipedInputStream = new PipedInputStream(pipedOutputStream, pipeSize)
+
+    actor ! HtmlConverterActor.ConvertCommand(htmlStream, pipedOutputStream, converterProperties)
+
+    val pdfSource = StreamConverters
+      .fromInputStream(() => pipedInputStream)
+      .mapMaterializedValue(_.onComplete(_ => pipedInputStream.close()))
+
+    pdfSource
   }
 
-  def getPdfData(htmlDocument: HtmlFormat.Appendable) = {
+  def getPdfData(htmlDocument: HtmlFormat.Appendable): Array[Byte] = {
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
