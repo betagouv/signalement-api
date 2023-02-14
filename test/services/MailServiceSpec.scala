@@ -44,7 +44,7 @@ class BaseMailServiceSpec(implicit ee: ExecutionEnv)
 
   val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany = Fixtures.genCompany.sample.get.copy(
-    siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get
+    siret = Fixtures.genSiret(Some(SIREN.fromSIRET(headOfficeCompany.siret))).sample.get
   )
   val unrelatedCompany = Fixtures.genCompany.sample.get
 

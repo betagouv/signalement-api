@@ -7,7 +7,6 @@ import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
 import slick.lifted.TableQuery
 import utils.EmailAddress
-import utils.EmailAddress.EmailColumnType
 
 import java.time.Period
 import java.util.UUID

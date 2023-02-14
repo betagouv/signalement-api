@@ -126,7 +126,7 @@ abstract class GetReportsSpec(implicit ee: ExecutionEnv)
   val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true, isOpen = true)
   val subsidiaryCompany =
     Fixtures.genCompany.sample.get
-      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get)
+      .copy(siret = Fixtures.genSiret(Some(SIREN.fromSIRET(headOfficeCompany.siret))).sample.get)
       .copy(isHeadOffice = false, isOpen = true)
 
   val reportToStandaloneCompany = Fixtures

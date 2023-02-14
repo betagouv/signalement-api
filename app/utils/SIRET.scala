@@ -4,7 +4,7 @@ import controllers.error.AppError.MalformedSIRET
 import play.api.libs.json._
 import repositories.PostgresProfile.api._
 
-case class SIRET(value: String) {
+case class SIRET private (value: String) extends AnyVal {
   override def toString = value
 }
 
@@ -24,21 +24,16 @@ object SIRET {
 
   def pattern = s"[0-9]{$length}"
 
-  def isValid(siret: String) = siret.matches(SIRET.pattern)
+  def isValid(siret: String): Boolean = siret.matches(SIRET.pattern)
 
   implicit val siretColumnType = MappedColumnType.base[SIRET, String](
     _.value,
-    SIRET.fromUnsafe(_)
+    SIRET.fromUnsafe
   )
   implicit val siretListColumnType = MappedColumnType.base[List[SIRET], List[String]](
     _.map(_.value),
-    _.map(SIRET.fromUnsafe(_))
+    _.map(SIRET.fromUnsafe)
   )
-  implicit val siretWrites = new Writes[SIRET] {
-    def writes(o: SIRET): JsValue =
-      JsString(o.value)
-  }
-  implicit val siretReads = new Reads[SIRET] {
-    def reads(json: JsValue): JsResult[SIRET] = json.validate[String].map(SIRET.fromUnsafe(_))
-  }
+  implicit val siretWrites: Writes[SIRET] = Json.valueWrites[SIRET]
+  implicit val siretReads: Reads[SIRET] = Reads.StringReads.map(SIRET.fromUnsafe) // To use the apply method
 }
