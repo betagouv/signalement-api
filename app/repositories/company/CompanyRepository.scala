@@ -146,14 +146,15 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       isPublic: Boolean,
       number: Option[String],
       street: Option[String],
-      addressSupplement: Option[String]
+      addressSupplement: Option[String],
+      name: String
   ): Future[SIRET] =
     db
       .run(
         table
           .filter(_.siret === siret)
-          .map(c => (c.isHeadOffice, c.isOpen, c.isPublic, c.streetNumber, c.street, c.addressSupplement))
-          .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement))
+          .map(c => (c.isHeadOffice, c.isOpen, c.isPublic, c.streetNumber, c.street, c.addressSupplement, c.name))
+          .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement, name))
       )
       .map(_ => siret)
 

@@ -1,6 +1,7 @@
 package tasks.company
 
 import akka.actor.ActorSystem
+import akka.actor.Cancellable
 import akka.stream.Materializer
 import akka.stream.alpakka.slick.scaladsl.Slick
 import akka.stream.alpakka.slick.scaladsl.SlickSession
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import utils.Logs.RichLogger
+
 class CompanyUpdateTask(
     actorSystem: ActorSystem,
     companyRepository: CompanyRepositoryInterface,
@@ -30,7 +32,6 @@ class CompanyUpdateTask(
 ) {
 
   implicit val session = SlickSession.forConfig("slick.dbs.default")
-  val batchSize = 5000
 
   actorSystem.registerOnTermination(() => session.close())
 
@@ -40,12 +41,14 @@ class CompanyUpdateTask(
 
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val initialDelay = computeStartingTime(LocalTime.of(2, 0))
+  def schedule(): Cancellable = {
+    val initialDelay = computeStartingTime(LocalTime.of(2, 0))
 
-  actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
-    logger.info("Starting CompanyUpdateTask")
-    runTask()
-    ()
+    actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
+      logger.info("Starting CompanyUpdateTask")
+      runTask()
+      ()
+    }
   }
 
   // Be carefull on how much stress you can put to the database, database task are queued into 1000 slot queue.
@@ -67,7 +70,7 @@ class CompanyUpdateTask(
       .map(_.flatMap(_.lastUpdated).maxOption.getOrElse(companySync.lastUpdated))
       .toMat(computeLastUpdated(companySync.lastUpdated))((_, rightJediValue) => rightJediValue)
       .run()
-      .map(newLastUpdated => refreshLastUpdate(companySync, newLastUpdated))
+      .flatMap(newLastUpdated => refreshLastUpdate(companySync, newLastUpdated))
       .map(_ => logger.info("Company update done"))
       .recoverWith { case e =>
         logger.errorWithTitle("company_update_failed", "Failed company update execution", e)
@@ -105,7 +108,8 @@ class CompanyUpdateTask(
           c.isPublic,
           c.address.number,
           c.address.street,
-          c.address.addressSupplement
+          c.address.addressSupplement,
+          c.name.getOrElse("")
         )
         .map(_ => c)
     }.sequence

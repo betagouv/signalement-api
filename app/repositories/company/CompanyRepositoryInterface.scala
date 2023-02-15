@@ -42,6 +42,7 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
       isPublic: Boolean,
       number: Option[String],
       street: Option[String],
-      addressSupplement: Option[String]
+      addressSupplement: Option[String],
+      name: String
   ): Future[SIRET]
 }

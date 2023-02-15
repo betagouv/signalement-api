@@ -45,6 +45,7 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
       isPublic: Boolean,
       number: Option[String],
       street: Option[String],
-      addressSupplement: Option[String]
+      addressSupplement: Option[String],
+      name: String
   ): Future[SIRET] = ???
 }
