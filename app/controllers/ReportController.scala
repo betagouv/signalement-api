@@ -47,17 +47,16 @@ class ReportController(
   val logger: Logger = Logger(this.getClass)
 
   def createReport: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
-    val errorOrReport = for {
+    for {
       draftReport <- request.parseBody[ReportDraft]()
-      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport)
+      createdReport <- reportOrchestrator.validateAndCreateReport(draftReport).recover {
+        case err: SpammerEmailBlocked =>
+          logger.warn(err.details)
+          reportOrchestrator.createFakeReportForBlacklistedUser(draftReport)
+        case err => throw err
+      }
     } yield Ok(Json.toJson(createdReport))
 
-    errorOrReport.recoverWith {
-      case err: SpammerEmailBlocked =>
-        logger.warn(err.details)
-        Future.successful(Ok)
-      case err => Future.failed(err)
-    }
   }
 
   def updateReportCompany(uuid: UUID): Action[JsValue] =

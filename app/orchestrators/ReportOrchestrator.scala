@@ -253,6 +253,13 @@ class ReportOrchestrator(
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
 
+  def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
+    val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())
+    val reportCreationDate = OffsetDateTime.now()
+    val expirationDate = chooseExpirationDate(baseDate = reportCreationDate, None)
+    draftReport.generateReport(maybeCompanyId, reportCreationDate, expirationDate)
+  }
+
   private def chooseExpirationDate(
       baseDate: OffsetDateTime,
       maybeCompanyWithUsers: Option[(Company, List[User])]
