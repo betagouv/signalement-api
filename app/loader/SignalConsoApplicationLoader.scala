@@ -393,12 +393,13 @@ class SignalConsoComponents(
   )
 
   val companySyncRepository: CompanySyncRepositoryInterface = new CompanySyncRepository(dbConfig)
-  val companyTask = new CompanyUpdateTask(
+  val companyUpdateTask = new CompanyUpdateTask(
     actorSystem,
     companyRepository,
     companySyncService,
     companySyncRepository
   )
+  companyUpdateTask.schedule()
 
   logger.debug("Starting App and sending sentry alert")
 
