@@ -23,6 +23,7 @@ import models.website.Website
 import play.api.Logger
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
+import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
@@ -37,6 +38,7 @@ import utils.Constants.EventType
 import utils.Constants
 import utils.EmailAddress
 import utils.URL
+
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.Period
@@ -60,6 +62,7 @@ class ReportOrchestrator(
     websiteRepository: WebsiteRepositoryInterface,
     companiesVisibilityOrchestrator: CompaniesVisibilityOrchestrator,
     subscriptionRepository: SubscriptionRepositoryInterface,
+    blacklistedEmailsRepository: BlacklistedEmailsRepositoryInterface,
     emailValidationOrchestrator: EmailValidationOrchestrator,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
@@ -212,10 +215,13 @@ class ReportOrchestrator(
   }
 
   private def validateReportSpammerBlockList(emailAddress: EmailAddress) =
-    if (signalConsoConfiguration.reportEmailsBlacklist.contains(emailAddress.value)) {
-      Future.failed(SpammerEmailBlocked(emailAddress))
-    } else {
-      Future.unit
+    for {
+      blacklistFromDb <- blacklistedEmailsRepository.list()
+    } yield {
+      val fullBlacklist = blacklistFromDb.map(_.email) ++ signalConsoConfiguration.reportEmailsBlacklist
+      if (fullBlacklist.contains(emailAddress.value))
+        throw SpammerEmailBlocked(emailAddress)
+      else ()
     }
 
   private[orchestrators] def validateCompany(reportDraft: ReportDraft): Future[Done.type] =
@@ -246,6 +252,13 @@ class ReportOrchestrator(
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
+
+  def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
+    val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())
+    val reportCreationDate = OffsetDateTime.now()
+    val expirationDate = chooseExpirationDate(baseDate = reportCreationDate, None)
+    draftReport.generateReport(maybeCompanyId, reportCreationDate, expirationDate)
+  }
 
   private def chooseExpirationDate(
       baseDate: OffsetDateTime,

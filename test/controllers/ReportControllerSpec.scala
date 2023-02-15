@@ -39,6 +39,7 @@ import utils.Fixtures
 import utils.S3ServiceMock
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
@@ -90,7 +91,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       }
     }
 
-    "block spammed email" in new Context {
+    "block spammed email but return normally" in new Context {
       val blockedEmail = "spammer@gmail.com"
       val testEnv = application(skipValidation = true, List(blockedEmail))
       import testEnv._
@@ -104,9 +105,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
         val result = route(app, request).get
         Helpers.status(result) must beEqualTo(OK)
-
-        Helpers.contentAsBytes(result).isEmpty mustEqual true
-
+        (Helpers.contentAsJson(result) \ "id").as[String] must not(beEmpty)
+        (Helpers.contentAsJson(result) \ "email").as[String] must beEqualTo(blockedEmail)
       }
     }
 
