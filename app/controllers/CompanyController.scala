@@ -1,18 +1,14 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import config.EmailConfiguration
 import config.TaskConfiguration
 import models.PaginatedResult.paginatedResultWrites
 import models._
-import models.company.Company
 import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
 import models.company.UndeliveredDocument
-import models.event.Event
-import models.report.Report
 import orchestrators.CompaniesVisibilityOrchestrator
 import orchestrators.CompanyOrchestrator
 import play.api.Logger
@@ -22,9 +18,6 @@ import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.PDFService
-import utils.Constants.ActionEvent
-import utils.FrontRoute
 import utils.SIRET
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
@@ -42,19 +35,14 @@ class CompanyController(
     val accessTokenRepository: AccessTokenRepositoryInterface,
     val eventRepository: EventRepositoryInterface,
     val reportRepository: ReportRepositoryInterface,
-    val pdfService: PDFService,
     val silhouette: Silhouette[AuthEnv],
     val companyVisibilityOrch: CompaniesVisibilityOrchestrator,
-    val frontRoute: FrontRoute,
     val taskConfiguration: TaskConfiguration,
-    val emailConfiguration: EmailConfiguration,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
     extends BaseCompanyController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
-
-  val contactAddress = emailConfiguration.contactAddress
 
   def fetchHosts(companyId: UUID) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
     companyOrchestrator.fetchHosts(companyId).map(x => Ok(Json.toJson(x)))
@@ -133,72 +121,19 @@ class CompanyController(
         .fold(
           errors => Future.successful(BadRequest(JsError.toJson(errors))),
           results =>
-            for {
-              companies <- companyRepository.fetchCompanies(results.companyIds)
-              activationCodesMap <- accessTokenRepository.prefetchActivationCodes(results.companyIds)
-              eventsMap <- eventRepository.fetchEvents(results.companyIds)
-              pendingReports <- reportRepository.getPendingReports(results.companyIds)
-            } yield {
-              val pendingReportsMap = pendingReports.filter(_.companyId.isDefined).groupBy(_.companyId.get)
-              val htmlDocuments = companies.flatMap(c =>
-                activationCodesMap
-                  .get(c.id)
-                  .map(
-                    getHtmlDocumentForCompany(
-                      c,
-                      pendingReportsMap.getOrElse(c.id, Nil),
-                      eventsMap.getOrElse(c.id, Nil),
-                      _
-                    )
+            companyOrchestrator
+              .getActivationDocument(results.companyIds)
+              .map {
+                case Some(pdfSource) =>
+                  Ok.chunked(
+                    content = pdfSource,
+                    inline = true,
+                    fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
                   )
-              )
-              if (!htmlDocuments.isEmpty) {
-                pdfService.Ok(htmlDocuments)
-              } else {
-                NotFound
+                case None =>
+                  NotFound
               }
-            }
         )
-  }
-
-  private def getHtmlDocumentForCompany(
-      company: Company,
-      pendingReports: List[Report],
-      events: List[Event],
-      activationKey: String
-  ) = {
-    val lastContactLocalDate = events
-      .filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
-      .sortBy(_.creationDate)
-      .reverse
-      .headOption
-      .map(_.creationDate.toLocalDate)
-
-    val report = pendingReports
-      // just in case. Avoid communicating on past dates
-      .filter(_.expirationDate.isAfter(OffsetDateTime.now()))
-      .sortBy(_.expirationDate)
-      .headOption
-    val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
-    val reportExpirationLocalDate = report.map(_.expirationDate.toLocalDate)
-
-    lastContactLocalDate
-      .map { lastContact =>
-        views.html.pdfs.accountActivationReminder(
-          company,
-          lastContact,
-          reportExpirationLocalDate,
-          activationKey
-        )(frontRoute = frontRoute, contactAddress = contactAddress)
-      }
-      .getOrElse {
-        views.html.pdfs.accountActivation(
-          company,
-          reportCreationLocalDate,
-          reportExpirationLocalDate,
-          activationKey
-        )(frontRoute = frontRoute, contactAddress = contactAddress)
-      }
   }
 
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {

@@ -28,6 +28,7 @@ import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
+import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -146,7 +147,14 @@ class ReportController(
             )
         )
       )
-      .map(pdfService.Ok)
+      .map(pdfService.createPdfSource)
+      .map(pdfSource =>
+        Ok.chunked(
+          content = pdfSource,
+          inline = true,
+          fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+        )
+      )
   }
 
   def cloudWord(companyId: UUID) = UserAwareAction.async(parse.empty) { _ =>
