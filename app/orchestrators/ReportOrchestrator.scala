@@ -218,7 +218,7 @@ class ReportOrchestrator(
     for {
       blacklistFromDb <- blacklistedEmailsRepository.list()
     } yield {
-      val fullBlacklist = blacklistFromDb.map(_.email) ++ signalConsoConfiguration.reportEmailsBlacklist
+      val fullBlacklist = blacklistFromDb.map(_.email)
       if (fullBlacklist.contains(emailAddress.value))
         throw SpammerEmailBlocked(emailAddress)
       else ()
