@@ -11,7 +11,6 @@ case class SignalConsoConfiguration(
     dashboardURL: URI,
     token: TokenConfiguration,
     upload: UploadConfiguration,
-    reportEmailsBlacklist: List[String],
     reportsExportLimitMax: Int = 300000
 )
 

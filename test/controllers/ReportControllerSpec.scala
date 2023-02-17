@@ -12,6 +12,7 @@ import config.UploadConfiguration
 import controllers.error.AppError.InvalidEmail
 import controllers.error.ErrorPayload
 import loader.SignalConsoComponents
+import models.BlacklistedEmail
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.reportfile.ReportFileId
@@ -93,10 +94,22 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
 
     "block spammed email but return normally" in new Context {
       val blockedEmail = "spammer@gmail.com"
-      val testEnv = application(skipValidation = true, List(blockedEmail))
+      val testEnv = application(skipValidation = true)
       import testEnv._
 
       new WithApplication(app) {
+
+        Await.result(
+          for {
+            _ <- blacklistedEmailsRepository.create(
+              BlacklistedEmail(
+                email = blockedEmail,
+                comments = ""
+              )
+            )
+          } yield (),
+          Duration.Inf
+        )
 
         val draftReport = Fixtures.genDraftReport.sample.get.copy(email = EmailAddress(blockedEmail))
         val jsonBody = Json.toJson(draftReport)
@@ -190,7 +203,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
     val mailRetriesService = mock[MailRetriesService]
     val mockS3Service = new S3ServiceMock()
 
-    def application(skipValidation: Boolean = false, spammerBlacklist: List[String] = List.empty) = new {
+    def application(skipValidation: Boolean = false) = new {
 
       class FakeApplicationLoader(skipValidation: Boolean = false) extends ApplicationLoader {
         var components: SignalConsoComponents = _
@@ -220,8 +233,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 new URI("http://test.com"),
                 new URI("http://test.com"),
                 tokenConfiguration,
-                uploadConfiguration,
-                spammerBlacklist
+                uploadConfiguration
               )
 
             override def emailConfiguration: EmailConfiguration =
@@ -248,7 +260,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
       lazy val eventRepository = loader.components.eventRepository
       lazy val responseConsumerReviewRepository = loader.components.responseConsumerReviewRepository
       lazy val companyRepository = loader.components.companyRepository
-
+      lazy val blacklistedEmailsRepository = loader.components.blacklistedEmailsRepository
     }
 
   }
