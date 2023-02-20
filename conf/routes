@@ -168,6 +168,9 @@ POST          /api/report-blocked-notification/delete           controllers.Repo
 # Blacklist of some emails
 GET           /api/blacklisted-emails                           controllers.BlacklistedEmailsController.list()
 POST          /api/blacklisted-emails                           controllers.BlacklistedEmailsController.add()
-DELETE        /api/blacklisted-emails/:uuid                        controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
+DELETE        /api/blacklisted-emails/:uuid                     controllers.BlacklistedEmailsController.delete(uuid: java.util.UUID)
+
+POST          /api/user-settings/reports/filters                controllers.UserSettingsController.saveReportsFilters()
+GET           /api/user-settings/reports/filters                controllers.UserSettingsController.getReportsFilters()
 
 GET           /assets/*file                                     controllers.Assets.versioned(path="/public", file: Asset)

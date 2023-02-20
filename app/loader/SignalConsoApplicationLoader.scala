@@ -75,6 +75,8 @@ import repositories.subscription.SubscriptionRepository
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.user.UserRepository
 import repositories.user.UserRepositoryInterface
+import repositories.usersettings.UserSettingsRepository
+import repositories.usersettings.UserSettingsRepositoryInterface
 import repositories.website.WebsiteRepository
 import repositories.website.WebsiteRepositoryInterface
 import services._
@@ -567,6 +569,14 @@ class SignalConsoComponents(
     controllerComponents
   )
 
+  val userSettingsRepository: UserSettingsRepositoryInterface = new UserSettingsRepository(dbConfig)
+  val userSettingsOrchestrator = new UserSettingsOrchestrator(userSettingsRepository)
+  val userSettingsController = new UserSettingsController(
+    userSettingsOrchestrator,
+    silhouette,
+    controllerComponents
+  )
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -598,6 +608,7 @@ class SignalConsoComponents(
       reportedPhoneController,
       reportBlockedNotificationController,
       blacklistedEmailsController,
+      userSettingsController,
       assets
     )
 
