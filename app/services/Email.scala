@@ -155,6 +155,17 @@ object Email {
     override val recipients: List[EmailAddress] = List(recipient)
   }
 
+  final case class InactiveDgccrfAccount(
+      user: User,
+      expirationDate: Option[LocalDate]
+  ) extends DgccrfEmail {
+    override val recipients: Seq[EmailAddress] = List(user.email)
+    override val subject: String = EmailSubjects.INACTIVE_DGCCRF_ACCOUNT_REMINDER
+
+    override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
+      views.html.mails.dgccrf.inactiveAccount(user.fullName, expirationDate)(frontRoute).toString
+  }
+
   final case class AdminAccessLink(recipient: EmailAddress, invitationUrl: URI) extends AdminEmail {
     override val subject: String = EmailSubjects.ADMIN_ACCESS_LINK
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>

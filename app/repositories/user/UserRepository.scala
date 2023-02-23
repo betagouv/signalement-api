@@ -7,9 +7,13 @@ import models._
 import play.api.Logger
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
+import repositories.event.EventTable
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
+import utils.Constants.ActionEvent
+import utils.Constants.EventType
 import utils.EmailAddress
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -41,6 +45,29 @@ class UserRepository(
           .to[List]
           .result
       )
+
+  override def listInactiveDGCCRFWithSentEmailCount(
+      reminderDate: OffsetDateTime,
+      expirationDate: OffsetDateTime
+  ): Future[List[(User, Option[Int])]] =
+    db.run(
+      UserTable.table
+        .filter(_.role === DGCCRF.entryName)
+        .filter(_.lastEmailValidation <= reminderDate)
+        .filter(_.lastEmailValidation > expirationDate)
+        .joinLeft(
+          EventTable.table
+            .filter(_.action === ActionEvent.EMAIL_INACTIVE_DGCCRF_ACCOUNT.value)
+            .filter(_.eventType === EventType.DGCCRF.value)
+            .filter(_.userId.isDefined)
+            .groupBy(_.userId)
+            .map { case (userId, results) => userId -> results.length }
+        )
+        .on(_.id === _._1)
+        .map { case (user, event) => user -> event.map(_._2) }
+        .to[List]
+        .result
+    )
 
   override def listForRoles(roles: Seq[UserRole]): Future[Seq[User]] =
     db
@@ -84,6 +111,14 @@ class UserRepository(
   override def findByEmail(email: String): Future[Option[User]] =
     db.run(
       table
+        .filter(_.email === EmailAddress(email))
+        .result
+        .headOption
+    )
+
+  override def findByEmailIncludingDeleted(email: String): Future[Option[User]] =
+    db.run(
+      fullTableIncludingDeleted
         .filter(_.email === EmailAddress(email))
         .result
         .headOption

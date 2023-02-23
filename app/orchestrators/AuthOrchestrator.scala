@@ -4,6 +4,7 @@ import cats.implicits.catsSyntaxEq
 import cats.implicits.catsSyntaxMonadError
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import controllers.error.AppError.DGCCRFUserEmailValidationExpired
+import controllers.error.AppError.DeletedAccount
 import controllers.error.AppError.InvalidPassword
 import controllers.error.AppError.PasswordTokenNotFoundOrInvalid
 import controllers.error.AppError.SamePasswordError
@@ -14,6 +15,7 @@ import models.User
 import models.UserRole
 import utils.silhouette.auth.AuthEnv
 import utils.silhouette.auth.UserService
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -52,6 +54,8 @@ import services.MailService
 import java.time.OffsetDateTime
 import java.time.Period
 import java.util.UUID
+import scala.util.Failure
+import scala.util.Success
 
 class AuthOrchestrator(
     userService: UserService,
@@ -61,6 +65,7 @@ class AuthOrchestrator(
     authTokenRepository: AuthTokenRepositoryInterface,
     tokenConfiguration: TokenConfiguration,
     credentialsProvider: CredentialsProvider,
+    credentialsProviderForDeletedUsers: CredentialsProvider,
     mailService: MailService,
     val silhouette: Silhouette[AuthEnv]
 )(implicit
@@ -70,11 +75,29 @@ class AuthOrchestrator(
   private val logger: Logger = Logger(this.getClass)
   private val dgccrfDelayBeforeRevalidation: Period = tokenConfiguration.dgccrfDelayBeforeRevalidation
 
+  private def handleDeletedUser(user: User, userLogin: UserCredentials): Future[Unit] =
+    if (user.deletionDate.isDefined)
+      credentialsProviderForDeletedUsers
+        .authenticate(Credentials(userLogin.login, userLogin.password))
+        .transformWith {
+          case Success(_) =>
+            logger.debug(s"Found a deleted user with right credentials, returning 'deleted account'")
+            Future.failed(DeletedAccount(userLogin.login))
+          case Failure(_) =>
+            logger.debug(s"Found a deleted user with bad credentials, returning 'user not found'")
+            Future.failed(UserNotFound(userLogin.login))
+        }
+    else {
+      logger.debug(s"User is not deleted")
+      Future.successful(())
+    }
+
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
     val eventualUserSession: Future[UserSession] = for {
-      maybeUser <- userService.retrieve(toLoginInfo(userLogin.login))
+      maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
-      _ = logger.debug(s"Found user")
+      _ = logger.debug(s"Found user (maybe deleted)")
+      _ <- handleDeletedUser(user, userLogin)
       _ = logger.debug(s"Validate auth attempts count")
       _ <- validateAuthenticationAttempts(user)
       _ = logger.debug(s"Check last validation email for DGCCRF users")

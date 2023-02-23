@@ -20,4 +20,5 @@ object EmailSubjects {
   val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: Option[String]) =>
     s"[SignalConso] ${additional.getOrElse("")}${if (cnt > 1) s"${cnt} nouveaux signalements"
       else "Un nouveau signalement"}"
+  val INACTIVE_DGCCRF_ACCOUNT_REMINDER = "Votre compte SignalConso est inactif"
 }
