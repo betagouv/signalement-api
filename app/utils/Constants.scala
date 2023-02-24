@@ -106,6 +106,8 @@ object Constants {
 
     object USER_DELETION extends ActionEventValue("Suppression d'un utilisateur")
 
+    object EMAIL_INACTIVE_DGCCRF_ACCOUNT extends ActionEventValue("Email «compte inactif» envoyé à l'agent")
+
     val actionEvents = Seq(
       A_CONTACTER,
       HORS_PERIMETRE,

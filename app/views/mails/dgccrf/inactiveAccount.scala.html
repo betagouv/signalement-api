@@ -1,0 +1,23 @@
+@import utils.FrontRoute
+@import java.time.LocalDate
+@(fullName: String, expirationDate: Option[LocalDate])(implicit frontRoute: FrontRoute)
+
+@views.html.mails.layout("Accédez à SignalConso") {
+    <p>
+        Bonjour @fullName,
+    </p>
+
+    <p>
+        Votre compte SignalConso est actuellement inactif.
+    </p>
+    <p>
+        Connectez-vous sur <a href="@frontRoute.dashboard.login">@frontRoute.dashboard.login</a> pour le réactiver.
+        Sans action de votre part, votre compte sera automatiquement <b>supprimé le @expirationDate.map(_.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))).getOrElse("")</b>.
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

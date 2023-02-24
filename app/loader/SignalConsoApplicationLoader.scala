@@ -81,6 +81,7 @@ import services._
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import tasks.account.InactiveAccountTask
+import tasks.account.InactiveDgccrfAccountReminderTask
 import tasks.account.InactiveDgccrfAccountRemoveTask
 import tasks.company._
 import tasks.report.ReportClosureTask
@@ -93,6 +94,7 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.api.APIKeyRequestProvider
 import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
+import utils.silhouette.auth.PasswordInfoIncludingDeletedDAO
 import utils.silhouette.auth.PasswordInfoDAO
 import utils.silhouette.auth.UserService
 
@@ -215,7 +217,15 @@ class SignalConsoComponents(
     )
   )
 
+  val authInfoIncludingDeletedUsersRepository = new DelegableAuthInfoRepository(
+    new PasswordInfoIncludingDeletedDAO(
+      userRepository
+    )
+  )
+
   val credentialsProvider = new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
+  val credentialsProviderIncludingDeletedUsers =
+    new CredentialsProvider(authInfoIncludingDeletedUsersRepository, passwordHasherRegistry)
 
   implicit val bucketConfiguration: BucketConfiguration = BucketConfiguration(
     keyId = configuration.get[String]("alpakka.s3.aws.credentials.access-key-id"),
@@ -291,6 +301,7 @@ class SignalConsoComponents(
     authTokenRepository,
     tokenConfiguration,
     credentialsProvider,
+    credentialsProviderIncludingDeletedUsers,
     mailService,
     silhouette
   )
@@ -412,9 +423,17 @@ class SignalConsoComponents(
 
   val inactiveDgccrfAccountRemoveTask =
     new InactiveDgccrfAccountRemoveTask(userRepository, subscriptionRepository, asyncFileRepository)
+
+  val inactiveDgccrfAccountReminderTask =
+    new InactiveDgccrfAccountReminderTask(
+      userRepository,
+      eventRepository,
+      mailService
+    )
   val inactiveAccountTask = new InactiveAccountTask(
     actorSystem,
     inactiveDgccrfAccountRemoveTask,
+    inactiveDgccrfAccountReminderTask,
     applicationConfiguration.task
   )
 

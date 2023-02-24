@@ -15,6 +15,7 @@ import utils.Logs.RichLogger
 class InactiveAccountTask(
     actorSystem: ActorSystem,
     inactiveDgccrfAccountRemoveTask: InactiveDgccrfAccountRemoveTask,
+    inactiveDgccrfAccountSendReminderTask: InactiveDgccrfAccountReminderTask,
     taskConfiguration: TaskConfiguration
 )(implicit
     executionContext: ExecutionContext
@@ -36,17 +37,33 @@ class InactiveAccountTask(
     ()
   }
 
-  def runTask(now: OffsetDateTime) = {
+  def runTask(now: OffsetDateTime): Future[Unit] = {
     logger.info(s"taskDate - ${now}")
     val expirationDateThreshold: OffsetDateTime = now.minus(taskConfiguration.inactiveAccounts.inactivePeriod)
+    val first = now.minus(taskConfiguration.inactiveAccounts.firstReminder)
+    val second = now.minus(taskConfiguration.inactiveAccounts.secondReminder)
 
-    inactiveDgccrfAccountRemoveTask.removeInactiveAccounts(expirationDateThreshold).recoverWith { case err =>
-      logger.errorWithTitle(
-        "task_remove_inactive_accounts_failed",
-        s"Unexpected failure, cannot run inactive accounts task ( task date : $now, initialDelay : $initialDelay )",
-        err
-      )
-      Future.failed(err)
-    }
+    val sendReminderEmailsTask = inactiveDgccrfAccountSendReminderTask.sendReminderEmail(
+      first,
+      second,
+      expirationDateThreshold,
+      taskConfiguration.inactiveAccounts.inactivePeriod
+    )
+    val removeInactiveAccountsTask = inactiveDgccrfAccountRemoveTask
+      .removeInactiveAccounts(expirationDateThreshold)
+      .recoverWith { case err =>
+        logger.errorWithTitle(
+          "task_remove_inactive_accounts_failed",
+          s"Unexpected failure, cannot run inactive accounts task ( task date : $now, initialDelay : $initialDelay )",
+          err
+        )
+        Future.failed(err)
+      }
+
+    for {
+      _ <- sendReminderEmailsTask
+      _ <- removeInactiveAccountsTask
+    } yield ()
+
   }
 }

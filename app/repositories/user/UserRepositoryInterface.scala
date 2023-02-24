@@ -12,6 +12,11 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
 
   def listExpiredDGCCRF(expirationDate: OffsetDateTime): Future[List[User]]
 
+  def listInactiveDGCCRFWithSentEmailCount(
+      reminderDate: OffsetDateTime,
+      expirationDate: OffsetDateTime
+  ): Future[List[(User, Option[Int])]]
+
   def listForRoles(roles: Seq[UserRole]): Future[Seq[User]]
 
   def listDeleted(): Future[Seq[User]]
@@ -21,6 +26,8 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
   def updatePassword(userId: UUID, password: String): Future[Int]
 
   def findByEmail(email: String): Future[Option[User]]
+
+  def findByEmailIncludingDeleted(email: String): Future[Option[User]]
 
   def softDelete(id: UUID): Future[Int]
 }

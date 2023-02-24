@@ -14,5 +14,8 @@ class UserService(userRepository: UserRepositoryInterface)(implicit val executio
 
   def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userRepository.findByEmail(loginInfo.providerKey)
 
+  def retrieveIncludingDeleted(loginInfo: LoginInfo): Future[Option[User]] =
+    userRepository.findByEmailIncludingDeleted(loginInfo.providerKey)
+
   def save(user: User): Future[User] = userRepository.update(user.id, user)
 }

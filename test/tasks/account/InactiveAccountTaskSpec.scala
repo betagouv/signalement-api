@@ -35,6 +35,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
   lazy val asyncFileRepository = components.asyncFileRepository
   lazy val subscriptionRepository = components.subscriptionRepository
   lazy val inactiveDgccrfAccountRemoveTask = components.inactiveDgccrfAccountRemoveTask
+  lazy val inactiveDgccrfAccountReminderTask = components.inactiveDgccrfAccountReminderTask
 //  lazy val actorSystem = components.actorSystem
 
   "InactiveAccountTask" should {
@@ -44,7 +45,9 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
       val conf = components.applicationConfiguration.task.copy(inactiveAccounts =
         InactiveAccountsTaskConfiguration(
           startTime = LocalTime.now().truncatedTo(ChronoUnit.MILLIS),
-          inactivePeriod = Period.ofYears(1)
+          inactivePeriod = Period.ofYears(1),
+          firstReminder = Period.ofMonths(9),
+          secondReminder = Period.ofMonths(11)
         )
       )
       val now: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
@@ -107,7 +110,12 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
               _ <- subscriptionRepository.create(activeUserSubscriptionUserId)
               _ <- asyncFileRepository.create(AsyncFile.build(activeDGCCRFUser, AsyncFileKind.Reports))
 
-              _ <- new InactiveAccountTask(app.actorSystem, inactiveDgccrfAccountRemoveTask, conf)
+              _ <- new InactiveAccountTask(
+                app.actorSystem,
+                inactiveDgccrfAccountRemoveTask,
+                inactiveDgccrfAccountReminderTask,
+                conf
+              )
                 .runTask(now.atOffset(ZoneOffset.UTC))
               userList <- userRepository.list()
               deletedUsersList <- userRepository.listDeleted()
