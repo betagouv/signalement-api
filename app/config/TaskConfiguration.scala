@@ -16,7 +16,12 @@ case class TaskConfiguration(
 
 case class SubscriptionTaskConfiguration(startTime: LocalTime, startDay: DayOfWeek)
 
-case class InactiveAccountsTaskConfiguration(startTime: LocalTime, inactivePeriod: Period)
+case class InactiveAccountsTaskConfiguration(
+    startTime: LocalTime,
+    inactivePeriod: Period,
+    firstReminder: Period,
+    secondReminder: Period
+)
 
 case class CompanyUpdateTaskConfiguration(
     etablissementApiUrl: String,

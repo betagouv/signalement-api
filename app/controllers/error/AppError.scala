@@ -409,4 +409,12 @@ object AppError {
 
   }
 
+  final case class DeletedAccount(login: String) extends BadRequestError {
+    override val `type`: String = "SC-0043"
+    override val title: String = "Deleted account"
+    override val details: String =
+      "Votre compte a été supprimé, veuillez envoyer un mail à support@signal.conso.gouv.fr"
+    override val titleForLogs: String = "deleted_account"
+  }
+
 }
