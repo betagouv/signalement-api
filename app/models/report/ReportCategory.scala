@@ -8,7 +8,7 @@ sealed abstract class ReportCategory(override val entryName: String, val legacy:
 
 object ReportCategory extends PlayEnum[ReportCategory] {
 
-  case object RetraitRappelSpecifique extends ReportCategory("Retrait-Rappel pécifique")
+  case object RetraitRappelSpecifique extends ReportCategory("Retrait-Rappel spécifique")
   case object Coronavirus extends ReportCategory("COVID-19 (coronavirus)")
   case object CafeRestaurant extends ReportCategory("Café / Restaurant")
   case object AchatMagasin extends ReportCategory("Achat / Magasin", legacy = true)
