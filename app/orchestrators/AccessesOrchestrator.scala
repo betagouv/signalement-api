@@ -113,7 +113,7 @@ class AccessesOrchestrator(
         }
       _ <- userOrchestrator.find(email).ensure(UserAccountEmailAlreadyExist)(_.isEmpty)
       existingTokens <- accessTokenRepository.fetchPendingTokens(email)
-      existingToken = existingTokens.find(_.emailedTo.contains(email))
+      existingToken = existingTokens.find(_.kind == kind)
       token <-
         existingToken match {
           case Some(token) =>
