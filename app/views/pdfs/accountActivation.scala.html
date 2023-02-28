@@ -23,8 +23,8 @@
     </head>
     <body>
         <div style="display: block; page-break-after: always">
-            <div class="logo-marianne">
-                <img src='@routes.Assets.versioned("images/logo-marianne.jpg")'/>
+            <div class="logo-gouv">
+                <img src='@routes.Assets.versioned("images/gouv.png")'/>
             </div>
 
             <div class="code">
@@ -48,12 +48,8 @@
 
             <div class="content mt-3">
 
-                <p>
-                    @reportCreationDate.map{ date =>
-                        Objet : réception d’un signalement à propos de votre entreprise par le biais de SignalConso
-                    }.getOrElse {
-                        Objet : réception de signalements à propos de votre entreprise par le biais de SignalConso
-                    }
+                <p class="text-bold">
+                    Objet : signalement reçu sur Signal.conso.gouv.fr à propos de votre entreprise
                 </p>
 
                 <p class="mt-3">
@@ -61,21 +57,20 @@
                 </p>
 
                 <p>
-                    La Direction Générale de la Concurrence, de la Consommation et de la Répression des Fraudes (DGCCRF) lance un nouveau service public en ligne : <i>SignalConso</i> (@frontRoute.website.url).
+                    La Direction générale de la Concurrence, de la Consommation et de la Répression des fraudes (DGCCRF) gère la plateforme Signal.conso.gouv.fr.
+                    Cette plateforme en ligne permet aux consommateurs de signaler des manquements relatifs au Code de la Consommation et vous permet en tant que professionnel de consulter les signalements vous concernant pour y répondre.
+                    Vous pouvez ainsi remédier au problème sans attendre mais aussi faire part de vos observations si vous estimez ce signalement infondé.
                 </p>
 
                 <p>
-                    Contrairement au système actuel de plainte, ce nouveau service vous propose de consulter les signalements
-                    concernant votre entreprise. Vous avez ainsi la possibilité de remédier directement aux anomalies en amont
-                    d’un éventuel contrôle ou de faire part d’éventuelles observations à l’intention du consommateur et des
-                    enquêteurs.
+                    Ce service public est facultatif et gratuit. Il repose sur la transparence et la confiance entre les consommateurs, les professionnels et les services de la DGCCRF.
                 </p>
 
-                <p class="text-bold">
+                <p>
                 @reportCreationDate.map{date =>
-                    Nous avons reçu un signalement le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour l’entreprise :
+                    Nous vous écrivons car un signalement a été reçu le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) sur signal.conso.gouv.fr concernant votre société :
                 }.getOrElse {
-                    Un compte a été créé sur SignalConso pour l’entreprise :
+                    Nous vous écrivons car un signalement a été reçu sur signal.conso.gouv.fr concernant votre société :
                 }
                 </p>
 
@@ -84,46 +79,36 @@
                 </p>
 
                 <p class="mt-3">
-                    Pour le consulter, rendez-vous sur @frontRoute.dashboard.activation avec :
+                @reportExpirationDate.map{date =>
+                    Pour en prendre connaissance et y répondre, <strong>activez avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) votre espace professionnel sur <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a></strong> avec votre code de 6 chiffres :
+                }.getOrElse {
+                    Pour en prendre connaissance et y répondre, <strong>activez votre espace professionnel sur <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a></strong> avec votre code de 6 chiffres :
+                }
                 </p>
 
                 <p class="text-center text-bold">
-                    Votre SIRET : @company.siret
-                    <br />
                     Votre Code d’activation : @code
                 </p>
 
-                @reportExpirationDate.map{date =>
-                    <p class="mt-3">
-                        Vous avez jusqu'au @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) pour activer votre espace professionnel et consulter le signalement. Passé ce délai, vous pourrez toujours le lire mais ne pourrez plus y répondre. Les enquêteurs de la DGCCRF et le consommateur seront informés que vous n'avez pas souhaité prendre connaissance du signalement.
-                    </p>
-                }
-
                 <p>
-                    Ce nouveau service public est facultatif et gratuit. À travers SignalConso, notre objectif est d’établir un rapport de confiance
-                    et de transparence entre les consommateurs, les professionnels et les services de la DGCCRF.
-                </p>
-
-                <p class="standout">
-                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer un email
-                    à l’adresse <strong>@contactAddress</strong> en précisant votre SIRET.
+                    Passé cette date, la DGCCRF et le consommateur seront informés de votre absence de réaction. Vous pourrez toujours consulter le signalement mais vous ne pourrez plus y répondre.
                 </p>
 
                 <p>
-                    Nous restons à votre disposition pour tout renseignement complémentaire,
+                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer, un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a> en précisant le numéro SIRET de l’entreprise concernée : @company.siret.
+                </p>
+
+                <p>
+                    Nous restons à votre disposition pour tout renseignement complémentaire et vous prions d’agréer nos salutations distinguées.
                 </p>
 
                 <p class="text-right mr-5">
-                    L’équipe SignalConso
+                    Le service SignalConso
                 </p>
             </div>
 
             <div class="page-end">
                 ###
-            </div>
-
-            <div class="footer text-center">
-                <img src='@routes.Assets.versioned("images/logo-ministere.png")'/>
             </div>
         </div>
     </body>

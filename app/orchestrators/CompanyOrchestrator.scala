@@ -258,12 +258,8 @@ class CompanyOrchestrator(
   private def getHtmlDocumentForCompany(company: Company, pendingReports: List[Report], events: List[Event])(
       activationKey: String
   ): Html = {
-    val lastContactLocalDate = events
+    val mailSentEvents = events
       .filter(_.action == ActionEvent.POST_ACCOUNT_ACTIVATION_DOC)
-      .sortBy(_.creationDate)
-      .reverse
-      .headOption
-      .map(_.creationDate.toLocalDate)
 
     val report = pendingReports
       // just in case. Avoid communicating on past dates
@@ -273,23 +269,30 @@ class CompanyOrchestrator(
     val reportCreationLocalDate = report.map(_.creationDate.toLocalDate)
     val reportExpirationLocalDate = report.map(_.expirationDate.toLocalDate)
 
-    lastContactLocalDate
-      .map { lastContact =>
-        views.html.pdfs.accountActivationReminder(
-          company,
-          lastContact,
-          reportExpirationLocalDate,
-          activationKey
-        )(frontRoute = frontRoute, contactAddress = contactAddress)
-      }
-      .getOrElse {
+    mailSentEvents match {
+      case Nil =>
         views.html.pdfs.accountActivation(
           company,
           reportCreationLocalDate,
           reportExpirationLocalDate,
           activationKey
         )(frontRoute = frontRoute, contactAddress = contactAddress)
-      }
+      case _ :: Nil =>
+        views.html.pdfs.accountActivationReminder(
+          company,
+          reportCreationLocalDate,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+      case _ =>
+        views.html.pdfs.accountActivationLastReminder(
+          company,
+          mailSentEvents.length,
+          reportCreationLocalDate,
+          reportExpirationLocalDate,
+          activationKey
+        )(frontRoute = frontRoute, contactAddress = contactAddress)
+    }
   }
 
   def confirmContactByPostOnCompanyList(companyList: CompanyList, identity: UUID): Future[List[Event]] =

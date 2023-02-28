@@ -41,17 +41,17 @@ body, div {
 }
 
 .mr-5 {
-    margin-right: 24px;
+    margin-right: 34px;
 }
 
-.logo-marianne {
+.logo-gouv {
     position: absolute;
     left: 0.5cm;
     top: 0.7cm;
     width: 100%;
 }
 
-.logo-marianne > img {
+.logo-gouv > img {
     height: 3.2cm;
 }
 
@@ -71,6 +71,8 @@ body, div {
     position: absolute;
     top: 2.3cm;
     left: 9.6cm;
+    right: 0.5cm;
+    text-align: right;
 }
 
 .code {
@@ -87,7 +89,8 @@ body, div {
     position: absolute;
     top: 5.5cm;
     left: 9.6cm;
-    width: 8cm;
+    right: 0.5cm;
+    text-align: right;
 }
 
 .content {
@@ -118,4 +121,8 @@ body, div {
 
 p.standout {
     background: #ccc;
+}
+
+li.mb-3 {
+    margin-bottom: 16px;
 }
