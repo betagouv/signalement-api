@@ -36,6 +36,7 @@ import services.Email.ConsumerReportReadByProNotification
 import services.Email.DgccrfAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
+import services.Email.InactiveDgccrfAccount
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
@@ -175,6 +176,9 @@ class AdminController(
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
   val availableEmails = Map[String, EmailAddress => Email](
+    "dgccrf.inactive_account_reminder" -> (recipient =>
+      InactiveDgccrfAccount(genUser.copy(email = recipient), Some(LocalDate.now().plusDays(90)))
+    ),
     "dgccrf.reset_password" -> (recipient => ResetPassword(genUser.copy(email = recipient), genAuthToken)),
     "pro.access_invitation" -> (recipient => ProCompanyAccessInvitation(recipient, genCompany, dummyURL, None)),
     "pro.new_company_access" -> (recipient => ProNewCompanyAccess(recipient, genCompany, None)),
