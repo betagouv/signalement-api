@@ -120,6 +120,9 @@ class UserRepository(
     db.run(
       fullTableIncludingDeleted
         .filter(_.email === EmailAddress(email))
+        .sortBy(
+          _.deletionDate.desc.nullsFirst
+        ) // To ensure fetching an existing account first, to be consistent with findByEmail
         .result
         .headOption
     )
