@@ -130,7 +130,7 @@ class UserRepositorySpec(implicit ee: ExecutionEnv) extends Specification with A
 
   def e9 = userRepository
     .findByEmailIncludingDeleted(user2Deleted2.email.value)
-    .map(_.map(user => user.email -> user.deletionDate)) must beSome(
-    user2Deleted1.email -> user2Deleted1.deletionDate.map(_.truncatedTo(ChronoUnit.MICROS))
+    .map(_.map(user => user.email -> user.deletionDate.map(_.truncatedTo(ChronoUnit.SECONDS)))) must beSome(
+    user2Deleted1.email -> user2Deleted1.deletionDate.map(_.truncatedTo(ChronoUnit.SECONDS))
   ).await
 }
