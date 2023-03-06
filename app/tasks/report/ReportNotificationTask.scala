@@ -9,8 +9,9 @@ import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
-import tasks.computeStartingTime
+import tasks.scheduleTask
 import utils.Constants.Departments
+
 import java.time._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,13 +31,15 @@ class ReportNotificationTask(
   val logger: Logger = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
 
-  val startTime = taskConfiguration.subscription.startTime
-  val initialDelay: FiniteDuration = computeStartingTime(startTime)
-
   val departments = Departments.ALL
 
-  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay = initialDelay, 1.days)(runnable = () => {
-    logger.debug(s"initialDelay - ${initialDelay}");
+  scheduleTask(
+    actorSystem,
+    taskConfiguration,
+    startTime = taskConfiguration.subscription.startTime,
+    interval = 1.day,
+    taskName = "report_notification_task"
+  ) {
     val now = OffsetDateTime.now()
     val isWeeklySubscriptionsDay = LocalDate.now().getDayOfWeek == taskConfiguration.subscription.startDay
     for {
@@ -46,8 +49,8 @@ class ReportNotificationTask(
         else Future.successful(())
       _ <- runPeriodicNotificationTask(now, Period.ofDays(1))
     } yield ()
-    ()
-  })
+
+  }
 
   def runPeriodicNotificationTask(now: OffsetDateTime, period: Period): Future[Unit] = {
     val end = now
