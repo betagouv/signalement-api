@@ -63,7 +63,6 @@ package object tasks {
       taskName: String
   )(execution: => Future[Unit])(implicit e: ExecutionContext): Unit = {
     val initialDelay = computeStartingTime(startTime)
-    logger.debug(s"Scheduled $taskName job at $startTime")
     actorSystem.scheduler.scheduleAtFixedRate(
       initialDelay,
       interval
