@@ -62,7 +62,7 @@ object ReportStatus extends PlayEnum[ReportStatus] {
   def translate(status: ReportStatus, userRole: UserRole): String = {
     def isPro = userRole == UserRole.Professionnel
     status match {
-      case NA                => if (isPro) "" else "NA"
+      case NA                => if (isPro) "" else "Non transmis"
       case LanceurAlerte     => if (isPro) "" else "Lanceur d'alerte"
       case TraitementEnCours => if (isPro) "Non consulté" else "Traitement en cours"
       case Transmis          => if (isPro) "À répondre" else "Signalement transmis"
