@@ -69,9 +69,8 @@ body, div {
     font-size: 8pt;
     line-height: 10pt;
     position: absolute;
-    top: 3.9cm;
-    left: 0.6cm;
-    text-align: left;
+    top: 2.3cm;
+    left: 9.6cm;
 }
 
 .code {
@@ -86,9 +85,9 @@ body, div {
     font-size: 10pt;
     line-height: 10pt;
     position: absolute;
-    top: 6.9cm;
-    left: 0.6cm;
-    text-align: left;
+    top: 5.5cm;
+    left: 9.6cm;
+    width: 8cm;
 }
 
 .content {
