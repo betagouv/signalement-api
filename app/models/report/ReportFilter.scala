@@ -5,6 +5,7 @@ import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
+import play.api.libs.json.Reads
 import utils.QueryStringMapper
 
 import java.time.OffsetDateTime
@@ -86,4 +87,56 @@ object ReportFilter {
     withoutTags = ReportTagHiddenToProfessionnel,
     siretSirenDefined = Some(true)
   )
+
+  implicit val reportFilterReads: Reads[ReportFilter] = Reads { jsValue =>
+    for {
+      departments <- (jsValue \ "departments").validateOpt[Seq[String]]
+      email <- (jsValue \ "email").validateOpt[String]
+      websiteURL <- (jsValue \ "websiteURL").validateOpt[String]
+      phone <- (jsValue \ "phone").validateOpt[String]
+      siretSirenList <- (jsValue \ "siretSirenList").validateOpt[Seq[String]]
+      companyIds <- (jsValue \ "companyIds").validateOpt[Seq[UUID]]
+      companyName <- (jsValue \ "companyName").validateOpt[String]
+      companyCountries <- (jsValue \ "companyCountries").validateOpt[Seq[String]]
+      category <- (jsValue \ "category").validateOpt[String]
+      status <- (jsValue \ "status").validateOpt[Seq[String]]
+      details <- (jsValue \ "details").validateOpt[String]
+      description <- (jsValue \ "description").validateOpt[String]
+      contactAgreement <- (jsValue \ "contactAgreement").validateOpt[Boolean]
+      hasForeignCountry <- (jsValue \ "hasForeignCountry").validateOpt[Boolean]
+      hasWebsite <- (jsValue \ "hasWebsite").validateOpt[Boolean]
+      hasPhone <- (jsValue \ "hasPhone").validateOpt[Boolean]
+      hasCompany <- (jsValue \ "hasCompany").validateOpt[Boolean]
+      hasAttachment <- (jsValue \ "hasAttachment").validateOpt[Boolean]
+      withTags <- (jsValue \ "withTags").validateOpt[Seq[String]]
+      withoutTags <- (jsValue \ "withoutTags").validateOpt[Seq[String]]
+      activityCodes <- (jsValue \ "activityCodes").validateOpt[Seq[String]]
+    } yield ReportFilter(
+      departments = departments.getOrElse(Seq.empty),
+      email = email,
+      websiteURL = websiteURL,
+      phone = phone,
+      siretSirenList = siretSirenList.getOrElse(Seq.empty),
+      siretSirenDefined = None,
+      companyIds = companyIds.getOrElse(Seq.empty),
+      companyName = companyName,
+      companyCountries = companyCountries.getOrElse(Seq.empty),
+      start = None,
+      end = None,
+      category = category,
+      status = status.getOrElse(Seq.empty).map(ReportStatus.withName),
+      details = details,
+      description = description,
+      employeeConsumer = None,
+      contactAgreement = contactAgreement,
+      hasForeignCountry = hasForeignCountry,
+      hasWebsite = hasWebsite,
+      hasPhone = hasPhone,
+      hasCompany = hasCompany,
+      hasAttachment = hasAttachment,
+      withTags = withTags.getOrElse(Seq.empty).map(ReportTag.withName),
+      withoutTags = withoutTags.getOrElse(Seq.empty).map(ReportTag.withName),
+      activityCodes = activityCodes.getOrElse(Seq.empty)
+    )
+  }
 }
