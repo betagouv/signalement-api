@@ -28,8 +28,8 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val user = Fixtures.genProUser.sample.get
-  val user2 = Fixtures.genProUser.sample.get
+  val user = Fixtures.genDgccrfUser.sample.get
+  val user2 = Fixtures.genDgccrfUser.sample.get
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
