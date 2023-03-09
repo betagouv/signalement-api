@@ -16,7 +16,8 @@ object UserRole extends PlayEnum[UserRole] {
     override val permissions = Seq(
       UserPermission.listReports,
       UserPermission.createReportAction,
-      UserPermission.subscribeReports
+      UserPermission.subscribeReports,
+      UserPermission.crudUserReportsFilters
     )
   }
 
