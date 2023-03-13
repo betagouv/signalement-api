@@ -149,10 +149,13 @@ object Fixtures {
     reportDraft.generateReport(maybeCompanyId, None, creationDate = now, expirationDate = later)
   }
 
+  def genReportCategory: Gen[String] =
+    Gen.oneOf(Gen.oneOf(ReportCategory.values.map(_.entryName)), arbString.arbitrary)
+
   def genReportForCompany(company: Company): Gen[Report] = for {
     id <- arbitrary[UUID]
     gender <- genGender
-    category <- arbString.arbitrary
+    category <- genReportCategory
     subcategory <- arbString.arbitrary
     firstName <- genFirstName
     lastName <- genLastName

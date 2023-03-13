@@ -176,7 +176,7 @@
 
             <b>Problème</b>
             <br/>
-            @report.category
+            @ReportCategory.displayValue(report.category)
             <br />
             @report.subcategories.map { subcategory =>
                 @subcategory
