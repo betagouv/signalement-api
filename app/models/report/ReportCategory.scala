@@ -11,8 +11,13 @@ object ReportCategory extends PlayEnum[ReportCategory] {
   case object RetraitRappelSpecifique extends ReportCategory("Retrait-Rappel spécifique")
   case object Coronavirus extends ReportCategory("COVID-19 (coronavirus)")
   case object CafeRestaurant extends ReportCategory("Café / Restaurant")
-  case object AchatMagasin extends ReportCategory("Achat / Magasin", legacy = true)
-  case object AchatMagasinInternet extends ReportCategory("Achat (Magasin ou Internet)")
+  case object AchatMagasinLegacy extends ReportCategory("Achat / Magasin", legacy = true)
+  case object AchatMagasinInternet
+      extends ReportCategory(
+        "Achat (Magasin ou Internet)"
+      ) // legacy, but for now we still want it to appear in the filters
+  case object AchatMagasin extends ReportCategory("Achat en Magasin")
+  case object AchatInternet extends ReportCategory("Achat sur internet")
   case object Service extends ReportCategory("Services aux particuliers")
   case object TelEauGazElec extends ReportCategory("Téléphonie / Eau-Gaz-Electricité", legacy = true)
   case object EauGazElec extends ReportCategory("Eau / Gaz / Electricité")
