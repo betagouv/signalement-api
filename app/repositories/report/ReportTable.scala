@@ -13,12 +13,16 @@ import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter
+import slick.collection.heterogeneous.HNil
+import slick.collection.heterogeneous.syntax._
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def gender = column[Option[Gender]]("gender")
   def category = column[String]("category")
   def subcategories = column[List[String]]("subcategories")
   def details = column[List[String]]("details")
+  def socialNetwork = column[Option[SocialNetworkSlug]]("social_network")
+  def influencerName = column[Option[String]]("influencer_name")
   def companyId = column[Option[UUID]]("company_id")
   def companyName = column[Option[String]]("company_name")
   def companySiret = column[Option[SIRET]]("company_siret")
@@ -54,78 +58,43 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
     onDelete = ForeignKeyAction.Cascade
   )
 
-  type ReportData = (
-      UUID,
-      Option[Gender],
-      String,
-      List[String],
-      List[String],
-      (
-          Option[UUID],
-          Option[String],
-          Option[SIRET],
-          Option[String],
-          Option[String],
-          Option[String],
-          Option[String],
-          Option[String],
-          Option[Country],
-          Option[String]
-      ),
-      (Option[URL], Option[String]),
-      Option[String],
-      (OffsetDateTime, OffsetDateTime),
-      String,
-      String,
-      EmailAddress,
-      Option[String],
-      Option[String],
-      Boolean,
-      Boolean,
-      Boolean,
-      String,
-      Option[String],
-      List[ReportTag],
-      List[String],
-      List[String]
-  )
-
-  def constructReport: ReportData => Report = {
-    case (
-          id,
-          gender,
-          category,
-          subcategories,
-          details,
-          (
-            companyId,
-            companyName,
-            companySiret,
-            companyStreetNumber,
-            companyStreet,
-            companyAddressSupplement,
-            companyPostalCode,
-            companyCity,
-            companyCountry,
-            companyActivityCode
-          ),
-          (websiteURL, host),
-          phone,
-          (creationDate, expirationDate),
-          firstName,
-          lastName,
-          email,
-          consumerPhone,
-          consumerReferenceNumber,
-          contactAgreement,
-          employeeConsumer,
-          forwardToReponseConso,
-          status,
-          vendor,
-          tags,
-          reponseconsoCode,
-          ccrfCode
-        ) =>
+  def constructReport(reportData: ReportData): Report = reportData match {
+    case id ::
+        gender ::
+        category ::
+        subcategories ::
+        details ::
+        socialNetwork ::
+        influencerName ::
+        companyId ::
+        companyName ::
+        companySiret ::
+        companyStreetNumber ::
+        companyStreet ::
+        companyAddressSupplement ::
+        companyPostalCode ::
+        companyCity ::
+        companyCountry ::
+        companyActivityCode ::
+        websiteURL ::
+        host ::
+        phone ::
+        creationDate ::
+        firstName ::
+        lastName ::
+        email ::
+        consumerPhone ::
+        consumerReferenceNumber ::
+        contactAgreement ::
+        employeeConsumer ::
+        forwardToReponseConso ::
+        status ::
+        vendor ::
+        tags ::
+        reponseconsoCode ::
+        ccrfCode ::
+        expirationDate ::
+        HNil =>
       report.Report(
         id = id,
         gender = gender,
@@ -160,83 +129,129 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         tags = tags,
         reponseconsoCode = reponseconsoCode,
         ccrfCode = ccrfCode,
-        expirationDate = expirationDate
+        expirationDate = expirationDate,
+        influencer = for {
+          socialNetwork <- socialNetwork
+          influencerName <- influencerName
+        } yield Influencer(socialNetwork, influencerName)
       )
   }
 
-  def extractReport: PartialFunction[Report, ReportData] = { case r =>
-    (
-      r.id,
-      r.gender,
-      r.category,
-      r.subcategories,
-      r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}"),
-      (
-        r.companyId,
-        r.companyName,
-        r.companySiret,
-        r.companyAddress.number,
-        r.companyAddress.street,
-        r.companyAddress.addressSupplement,
-        r.companyAddress.postalCode,
-        r.companyAddress.city,
-        r.companyAddress.country,
-        r.companyActivityCode
-      ),
-      (r.websiteURL.websiteURL, r.websiteURL.host),
-      r.phone,
-      (r.creationDate, r.expirationDate),
-      r.firstName,
-      r.lastName,
-      r.email,
-      r.consumerPhone,
-      r.consumerReferenceNumber,
-      r.contactAgreement,
-      r.employeeConsumer,
-      r.forwardToReponseConso,
-      r.status.entryName,
-      r.vendor,
-      r.tags,
-      r.reponseconsoCode,
-      r.ccrfCode
-    )
-  }
+  def extractReport(r: Report): Option[ReportData] = Some(
+    r.id ::
+      r.gender ::
+      r.category ::
+      r.subcategories ::
+      r.details.map(detailInputValue => s"${detailInputValue.label} ${detailInputValue.value}") ::
+      r.influencer.map(_.socialNetwork) ::
+      r.influencer.map(_.name) ::
+      r.companyId ::
+      r.companyName ::
+      r.companySiret ::
+      r.companyAddress.number ::
+      r.companyAddress.street ::
+      r.companyAddress.addressSupplement ::
+      r.companyAddress.postalCode ::
+      r.companyAddress.city ::
+      r.companyAddress.country ::
+      r.companyActivityCode ::
+      r.websiteURL.websiteURL ::
+      r.websiteURL.host ::
+      r.phone ::
+      r.creationDate ::
+      r.firstName ::
+      r.lastName ::
+      r.email ::
+      r.consumerPhone ::
+      r.consumerReferenceNumber ::
+      r.contactAgreement ::
+      r.employeeConsumer ::
+      r.forwardToReponseConso ::
+      r.status.entryName ::
+      r.vendor ::
+      r.tags ::
+      r.reponseconsoCode ::
+      r.ccrfCode ::
+      r.expirationDate ::
+      HNil
+  )
+
+  type ReportData =
+    UUID ::
+      Option[Gender] ::
+      String ::
+      List[String] ::
+      List[String] ::
+      Option[SocialNetworkSlug] ::
+      Option[String] ::
+      Option[UUID] ::
+      Option[String] ::
+      Option[SIRET] ::
+      Option[String] ::
+      Option[String] ::
+      Option[String] ::
+      Option[String] ::
+      Option[String] ::
+      Option[Country] ::
+      Option[String] ::
+      Option[URL] ::
+      Option[String] ::
+      Option[String] ::
+      OffsetDateTime ::
+      String ::
+      String ::
+      EmailAddress ::
+      Option[String] ::
+      Option[String] ::
+      Boolean ::
+      Boolean ::
+      Boolean ::
+      String ::
+      Option[String] ::
+      List[ReportTag] ::
+      List[String] ::
+      List[String] ::
+      OffsetDateTime ::
+      HNil
 
   def * = (
-    id,
-    gender,
-    category,
-    subcategories,
-    details,
-    (
-      companyId,
-      companyName,
-      companySiret,
-      companyStreetNumber,
-      companyStreet,
-      companyAddressSupplement,
-      companyPostalCode,
-      companyCity,
-      companyCountry,
-      companyActivityCode
-    ),
-    (websiteURL, host),
-    phone,
-    (creationDate, expirationDate),
-    firstName,
-    lastName,
-    email,
-    consumerPhone,
-    consumerReferenceNumber,
-    contactAgreement,
-    employeeConsumer,
-    forwardToReponseConso,
-    status,
-    vendor,
-    tags,
-    reponseconsoCode,
-    ccrfCode
-  ) <> (constructReport, extractReport.lift)
+    id ::
+      gender ::
+      category ::
+      subcategories ::
+      details ::
+      socialNetwork ::
+      influencerName ::
+      companyId ::
+      companyName ::
+      companySiret ::
+      companyStreetNumber ::
+      companyStreet ::
+      companyAddressSupplement ::
+      companyPostalCode ::
+      companyCity ::
+      companyCountry ::
+      companyActivityCode ::
+      websiteURL ::
+      host ::
+      phone ::
+      creationDate ::
+      firstName ::
+      lastName ::
+      email ::
+      consumerPhone ::
+      consumerReferenceNumber ::
+      contactAgreement ::
+      employeeConsumer ::
+      forwardToReponseConso ::
+      status ::
+      vendor ::
+      tags ::
+      reponseconsoCode ::
+      ccrfCode ::
+      expirationDate ::
+      HNil
+  ) <> (constructReport, extractReport)
 }
 
 object ReportTable {

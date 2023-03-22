@@ -28,6 +28,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email._
@@ -57,6 +58,7 @@ class ReportOrchestrator(
     reportRepository: ReportRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
+    socialNetworkRepository: SocialNetworkRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
@@ -233,9 +235,11 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeCompany <- extractOptionalCompany(draftReport)
+      maybeReportedCompany <- extractOptionalCompany(draftReport)
+      maybeCompanyOfSocialNetwork <- extractCompanyOfSocialNetwork(draftReport)
+      maybeCompany = maybeReportedCompany.orElse(maybeCompanyOfSocialNetwork)
       maybeCountry = extractOptionnalCountry(draftReport)
-      _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
+      _ <- createReportedWebsite(maybeReportedCompany, maybeCountry, draftReport.websiteURL)
       maybeCompanyWithUsers <- maybeCompany.map { company =>
         for {
           users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
@@ -243,7 +247,12 @@ class ReportOrchestrator(
       }.sequence
       reportCreationDate = OffsetDateTime.now()
       expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
-      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id), reportCreationDate, expirationDate)
+      reportToCreate = draftReport.generateReport(
+        maybeCompany.map(_.id),
+        maybeCompanyOfSocialNetwork,
+        reportCreationDate,
+        expirationDate
+      )
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
@@ -257,7 +266,7 @@ class ReportOrchestrator(
     val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())
     val reportCreationDate = OffsetDateTime.now()
     val expirationDate = chooseExpirationDate(baseDate = reportCreationDate, None)
-    draftReport.generateReport(maybeCompanyId, reportCreationDate, expirationDate)
+    draftReport.generateReport(maybeCompanyId, None, reportCreationDate, expirationDate)
   }
 
   private def chooseExpirationDate(
@@ -351,6 +360,9 @@ class ReportOrchestrator(
         logger.debug("No company attached to report")
         Future(None)
     }
+
+  private def extractCompanyOfSocialNetwork(draftReport: ReportDraft): Future[Option[Company]] =
+    draftReport.influencer.map(_.socialNetwork).flatTraverse(socialNetworkRepository.findCompanyBySocialNetworkSlug)
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {

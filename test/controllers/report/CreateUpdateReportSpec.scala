@@ -46,7 +46,8 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport = draftReport.copy(
           companyName = Some(company.name),
           companySiret = Some(company.siret),
-          companyAddress = Some(address)
+          companyAddress = Some(address),
+          companyActivityCode = company.activityCode
         )
       }}
          When create the report                                             ${step(createReport())}

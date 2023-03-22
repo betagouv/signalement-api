@@ -95,6 +95,11 @@ object Fixtures {
     isPublic = true
   )
 
+  val genInfluencer = for {
+    socialNetwork <- Gen.oneOf(SocialNetworkSlug.values)
+    name <- arbString.arbitrary
+  } yield Influencer(socialNetwork, name)
+
   val genWebsiteURL = for {
     randInt <- Gen.choose(0, 1000000)
   } yield URL(s"https://${randInt}.com")
@@ -118,6 +123,7 @@ object Fixtures {
     category = category,
     subcategories = List(subcategory),
     details = List(),
+    influencer = None,
     companyName = Some(company.name),
     companyAddress = Some(company.address),
     companySiret = Some(company.siret),
@@ -140,7 +146,7 @@ object Fixtures {
   def genReportFromDraft(reportDraft: ReportDraft, maybeCompanyId: Option[UUID] = None): Report = {
     val now = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
     val later = now.plusDays(50)
-    reportDraft.generateReport(maybeCompanyId, creationDate = now, expirationDate = later)
+    reportDraft.generateReport(maybeCompanyId, None, creationDate = now, expirationDate = later)
   }
 
   def genReportForCompany(company: Company): Gen[Report] = for {
@@ -159,6 +165,7 @@ object Fixtures {
     category = category,
     subcategories = List(subcategory),
     details = List(),
+    influencer = None,
     companyId = Some(company.id),
     creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     companyName = Some(company.name),
