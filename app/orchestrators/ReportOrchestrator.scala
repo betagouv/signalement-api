@@ -2,6 +2,7 @@ package orchestrators
 
 import akka.Done
 import cats.data.NonEmptyList
+import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -33,6 +34,7 @@ import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email._
 import services.MailService
+import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -68,7 +70,8 @@ class ReportOrchestrator(
     emailValidationOrchestrator: EmailValidationOrchestrator,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
-    signalConsoConfiguration: SignalConsoConfiguration
+    signalConsoConfiguration: SignalConsoConfiguration,
+    companySyncService: CompanySyncServiceInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -236,10 +239,10 @@ class ReportOrchestrator(
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
       maybeReportedCompany <- extractOptionalCompany(draftReport)
-      maybeCompanyOfSocialNetwork <- extractCompanyOfSocialNetwork(draftReport)
+      maybeCompanyOfSocialNetwork <- draftReport.influencer.flatTraverse(extractCompanyOfSocialNetwork)
       maybeCompany = maybeReportedCompany.orElse(maybeCompanyOfSocialNetwork)
       maybeCountry = extractOptionnalCountry(draftReport)
-      _ <- createReportedWebsite(maybeReportedCompany, maybeCountry, draftReport.websiteURL)
+      _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       maybeCompanyWithUsers <- maybeCompany.map { company =>
         for {
           users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)
@@ -248,7 +251,7 @@ class ReportOrchestrator(
       reportCreationDate = OffsetDateTime.now()
       expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
       reportToCreate = draftReport.generateReport(
-        maybeCompany.map(_.id),
+        maybeReportedCompany.map(_.id),
         maybeCompanyOfSocialNetwork,
         reportCreationDate,
         expirationDate
@@ -361,8 +364,28 @@ class ReportOrchestrator(
         Future(None)
     }
 
-  private def extractCompanyOfSocialNetwork(draftReport: ReportDraft): Future[Option[Company]] =
-    draftReport.influencer.map(_.socialNetwork).flatTraverse(socialNetworkRepository.findCompanyBySocialNetworkSlug)
+  private def searchCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
+    (for {
+      socialNetwork <- OptionT(socialNetworkRepository.get(influencer.socialNetwork))
+      companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
+      c = Company(
+        siret = companyToCreate.siret,
+        name = companyToCreate.name.getOrElse(""),
+        address = companyToCreate.address,
+        activityCode = companyToCreate.activityCode,
+        isHeadOffice = companyToCreate.isHeadOffice,
+        isOpen = companyToCreate.isOpen,
+        isPublic = companyToCreate.isPublic
+      )
+      company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+    } yield company).value
+
+  private def extractCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
+    for {
+      maybeCompany <- socialNetworkRepository.findCompanyBySocialNetworkSlug(influencer.socialNetwork)
+      resultingCompany <-
+        if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(influencer)
+    } yield resultingCompany
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {

@@ -367,7 +367,8 @@ class SignalConsoComponents(
     emailValidationOrchestrator,
     emailConfiguration,
     tokenConfiguration,
-    signalConsoConfiguration
+    signalConsoConfiguration,
+    companySyncService
   )
 
   val reportsExtractActor: ActorRef =

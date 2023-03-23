@@ -1,6 +1,7 @@
 package repositories.socialnetwork
 import models.company.Company
 import models.report.SocialNetworkSlug
+import models.socialnetwork.SocialNetwork
 import repositories.company.CompanyTable
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -23,6 +24,13 @@ class SocialNetworkRepository(dbConfig: DatabaseConfig[JdbcProfile])(implicit ec
       .join(CompanyTable.table)
       .on(_.siret === _.siret)
       .map(_._2)
+      .result
+      .headOption
+  )
+
+  override def get(slug: SocialNetworkSlug): Future[Option[SocialNetwork]] = db.run(
+    table
+      .filter(_.slug === slug)
       .result
       .headOption
   )
