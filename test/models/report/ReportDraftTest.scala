@@ -28,13 +28,13 @@ class ReportDraftTest extends Specification {
         companyActivityCode = Some("40.7Z")
       )
 
-      val companyId = None
       val reportId = UUID.randomUUID()
       val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
       val expirationDate = creationDate.plusDays(100)
       val res =
         aDraftReport.generateReport(
-          maybeCompanyId = companyId,
+          maybeCompanyId = None,
+          socialNetworkCompany = None,
           creationDate = creationDate,
           expirationDate = expirationDate,
           reportId = reportId
@@ -48,11 +48,12 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.reponseconsoCode, Nil)
         .withFieldConst(_.tags, Nil)
         .withFieldConst(_.companyAddress, Address())
-        .withFieldConst(_.companyId, companyId)
+        .withFieldConst(_.companyId, None)
         .withFieldConst(_.id, reportId)
         .withFieldConst(_.creationDate, creationDate)
         .withFieldConst(_.expirationDate, expirationDate)
         .withFieldConst(_.status, ReportStatus.LanceurAlerte)
+        .withFieldConst(_.influencer, None)
         .transform
 
       res shouldEqual expectedReport

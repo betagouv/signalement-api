@@ -99,7 +99,8 @@ class AdminController(
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now().plusDays(50)
+    expirationDate = OffsetDateTime.now().plusDays(50),
+    influencer = None
   )
 
   private def genReportFile = ReportFile(

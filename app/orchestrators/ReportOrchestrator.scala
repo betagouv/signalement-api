@@ -2,6 +2,7 @@ package orchestrators
 
 import akka.Done
 import cats.data.NonEmptyList
+import cats.data.OptionT
 import cats.implicits.catsSyntaxMonadError
 import cats.implicits.catsSyntaxOption
 import cats.implicits.toTraverseOps
@@ -28,10 +29,12 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.Email._
 import services.MailService
+import tasks.company.CompanySyncServiceInterface
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -57,6 +60,7 @@ class ReportOrchestrator(
     reportRepository: ReportRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
+    socialNetworkRepository: SocialNetworkRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     websiteRepository: WebsiteRepositoryInterface,
@@ -66,7 +70,8 @@ class ReportOrchestrator(
     emailValidationOrchestrator: EmailValidationOrchestrator,
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
-    signalConsoConfiguration: SignalConsoConfiguration
+    signalConsoConfiguration: SignalConsoConfiguration,
+    companySyncService: CompanySyncServiceInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -233,7 +238,9 @@ class ReportOrchestrator(
 
   private def createReport(draftReport: ReportDraft): Future[Report] =
     for {
-      maybeCompany <- extractOptionalCompany(draftReport)
+      maybeReportedCompany <- extractOptionalCompany(draftReport)
+      maybeCompanyOfSocialNetwork <- draftReport.influencer.flatTraverse(extractCompanyOfSocialNetwork)
+      maybeCompany = maybeReportedCompany.orElse(maybeCompanyOfSocialNetwork)
       maybeCountry = extractOptionnalCountry(draftReport)
       _ <- createReportedWebsite(maybeCompany, maybeCountry, draftReport.websiteURL)
       maybeCompanyWithUsers <- maybeCompany.map { company =>
@@ -243,7 +250,12 @@ class ReportOrchestrator(
       }.sequence
       reportCreationDate = OffsetDateTime.now()
       expirationDate = chooseExpirationDate(baseDate = reportCreationDate, maybeCompanyWithUsers)
-      reportToCreate = draftReport.generateReport(maybeCompany.map(_.id), reportCreationDate, expirationDate)
+      reportToCreate = draftReport.generateReport(
+        maybeReportedCompany.map(_.id),
+        maybeCompanyOfSocialNetwork,
+        reportCreationDate,
+        expirationDate
+      )
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
@@ -257,7 +269,7 @@ class ReportOrchestrator(
     val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())
     val reportCreationDate = OffsetDateTime.now()
     val expirationDate = chooseExpirationDate(baseDate = reportCreationDate, None)
-    draftReport.generateReport(maybeCompanyId, reportCreationDate, expirationDate)
+    draftReport.generateReport(maybeCompanyId, None, reportCreationDate, expirationDate)
   }
 
   private def chooseExpirationDate(
@@ -351,6 +363,29 @@ class ReportOrchestrator(
         logger.debug("No company attached to report")
         Future(None)
     }
+
+  private def searchCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
+    (for {
+      socialNetwork <- OptionT(socialNetworkRepository.get(influencer.socialNetwork))
+      companyToCreate <- OptionT(companySyncService.companyBySiret(socialNetwork.siret))
+      c = Company(
+        siret = companyToCreate.siret,
+        name = companyToCreate.name.getOrElse(""),
+        address = companyToCreate.address,
+        activityCode = companyToCreate.activityCode,
+        isHeadOffice = companyToCreate.isHeadOffice,
+        isOpen = companyToCreate.isOpen,
+        isPublic = companyToCreate.isPublic
+      )
+      company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
+    } yield company).value
+
+  private def extractCompanyOfSocialNetwork(influencer: Influencer): Future[Option[Company]] =
+    for {
+      maybeCompany <- socialNetworkRepository.findCompanyBySocialNetworkSlug(influencer.socialNetwork)
+      resultingCompany <-
+        if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(influencer)
+    } yield resultingCompany
 
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {

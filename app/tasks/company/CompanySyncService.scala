@@ -11,6 +11,7 @@ import sttp.client3.basicRequest
 import sttp.client3.playJson.asJson
 import sttp.client3.playJson.playJsonBodySerializer
 import sttp.model.Header
+import utils.SIRET
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -19,6 +20,7 @@ import scala.concurrent.Future
 
 trait CompanySyncServiceInterface {
   def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
+  def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]]
 }
 
 class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfiguration)(implicit
@@ -59,4 +61,25 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
       }
   }
 
+  override def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]] = {
+    val request = basicRequest
+      .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .body(List(siret))
+      .response(asJson[List[CompanySearchResult]])
+
+    val response =
+      request.send(backend)
+    response
+      .map(_.body)
+      .map {
+        case Right(companyList) =>
+          companyList.headOption.map { companySearchResult =>
+            companySearchResult
+          }
+        case Left(value) =>
+          logger.warn("Error calling company update", value)
+          Option.empty
+      }
+  }
 }

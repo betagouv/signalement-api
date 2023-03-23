@@ -10,4 +10,6 @@ import scala.concurrent.Future
 class CompanySyncServiceMock extends CompanySyncServiceInterface {
   override def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]] =
     Future.successful(List.empty[CompanySearchResult])
+
+  override def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]] = Future.successful(Option.empty)
 }
