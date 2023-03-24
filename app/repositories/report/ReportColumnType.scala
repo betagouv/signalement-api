@@ -2,6 +2,7 @@ package repositories.report
 
 import models.report.Gender
 import models.report.ReportTag
+import models.report.SocialNetworkSlug
 import repositories.PostgresProfile.api._
 
 object ReportColumnType {
@@ -22,6 +23,12 @@ object ReportColumnType {
     MappedColumnType.base[Gender, String](
       _.entryName,
       Gender.namesToValuesMap
+    )
+
+  implicit val SocialNetworkColumnType =
+    MappedColumnType.base[SocialNetworkSlug, String](
+      _.entryName,
+      SocialNetworkSlug.namesToValuesMap
     )
 
 }

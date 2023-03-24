@@ -7,9 +7,10 @@ import models.report.ReportTag.TranslationReportTagReads
 import ai.x.play.json.Jsonx
 import ai.x.play.json.Encoders.encoder
 import models.company.Address
-import models.report.ReportTag
+import models.company.Company
 import models.report.reportfile.ReportFileId
 import play.api.libs.json.OFormat
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.annotation.nowarn
@@ -19,6 +20,7 @@ case class ReportDraft(
     category: String,
     subcategories: List[String],
     details: List[DetailInputValue],
+    influencer: Option[Influencer],
     companyName: Option[String],
     companyAddress: Option[Address],
     companySiret: Option[SIRET],
@@ -45,6 +47,7 @@ case class ReportDraft(
 
   def generateReport(
       maybeCompanyId: Option[UUID],
+      socialNetworkCompany: Option[Company],
       creationDate: OffsetDateTime,
       expirationDate: OffsetDateTime,
       reportId: UUID = UUID.randomUUID()
@@ -56,11 +59,12 @@ case class ReportDraft(
       category = category,
       subcategories = subcategories,
       details = details,
-      companyId = maybeCompanyId,
-      companyName = companyName,
-      companyAddress = companyAddress.getOrElse(Address()),
-      companySiret = companySiret,
-      companyActivityCode = companyActivityCode,
+      influencer = influencer,
+      companyId = maybeCompanyId.orElse(socialNetworkCompany.map(_.id)),
+      companyName = companyName.orElse(socialNetworkCompany.map(_.name)),
+      companyAddress = companyAddress.orElse(socialNetworkCompany.map(_.address)).getOrElse(Address()),
+      companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
+      companyActivityCode = companyActivityCode.orElse(socialNetworkCompany.flatMap(_.activityCode)),
       websiteURL = WebsiteURL(websiteURL, websiteURL.flatMap(_.getHost)),
       phone = phone,
       firstName = firstName,
@@ -90,7 +94,8 @@ object ReportDraft {
       || draft.tags.contains(ReportTag.Influenceur) && draft.companyAddress
         .exists(_.postalCode.isDefined)
       || (draft.companyAddress.exists(x => x.country.isDefined || x.postalCode.isDefined))
-      || draft.phone.isDefined)
+      || draft.phone.isDefined
+      || draft.influencer.isDefined)
 
   /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
     * entry name Make sure no translated values is passed as ReportTag to remove this reads
