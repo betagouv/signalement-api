@@ -3,12 +3,16 @@ package tasks.report
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import config.TaskConfiguration
+import models.Subscription
+import models.report.Report
+import models.report.ReportFile
 import models.report.ReportFilter
 import play.api.Logger
 import repositories.report.ReportRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import services.Email.DgccrfReportNotification
 import services.MailService
+import tasks.report.ReportNotificationTask.refineReportBasedOnSubscriptionFilters
 import tasks.scheduleTask
 import utils.Constants.Departments
 
@@ -19,6 +23,8 @@ import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
 import utils.Logs.RichLogger
+
+import scala.collection.SortedMap
 
 class ReportNotificationTask(
     actorSystem: ActorSystem,
@@ -68,29 +74,7 @@ class ReportNotificationTask(
       }
       _ = logger.debug(s"Found ${reportsWithFiles.size} reports for this period ($period)")
       subscriptionsEmailAndReports = subscriptionsWithEmails.map { case (subscription, emailAddress) =>
-        val filteredReport = reportsWithFiles
-          .filter { case (report, _) =>
-            subscription.departments.isEmpty || subscription.departments
-              .map(Some(_))
-              .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode))
-          }
-          .filter { case (report, _) =>
-            subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
-          }
-          .filter { case (report, _) =>
-            subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
-          }
-          .filter { case (report, _) =>
-            subscription.countries.isEmpty || subscription.countries
-              .map(Some(_))
-              .contains(report.companyAddress.country)
-          }
-          .filter { case (report, _) =>
-            subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty
-          }
-          .filter { case (report, _) =>
-            subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
-          }
+        val filteredReport = refineReportBasedOnSubscriptionFilters(reportsWithFiles, subscription)
         (subscription, emailAddress, filteredReport)
       }
       subscriptionEmailAndNonEmptyReports = subscriptionsEmailAndReports.filter(_._3.nonEmpty)
@@ -124,4 +108,35 @@ class ReportNotificationTask(
       }
     executionFuture
   }
+}
+
+object ReportNotificationTask {
+
+  def refineReportBasedOnSubscriptionFilters(
+      reportsWithFiles: SortedMap[Report, List[ReportFile]],
+      subscription: Subscription
+  ): SortedMap[Report, List[ReportFile]] = reportsWithFiles
+    .filter { case (report, _) =>
+      subscription.departments.isEmpty || (report.companyAddress.country.isEmpty && subscription.departments
+        .map(Some(_))
+        .contains(report.companyAddress.postalCode.flatMap(Departments.fromPostalCode)))
+    }
+    .filter { case (report, _) =>
+      subscription.categories.isEmpty || subscription.categories.map(_.entryName).contains(report.category)
+    }
+    .filter { case (report, _) =>
+      subscription.sirets.isEmpty || subscription.sirets.map(Some(_)).contains(report.companySiret)
+    }
+    .filter { case (report, _) =>
+      subscription.countries.isEmpty || subscription.countries
+        .map(Some(_))
+        .contains(report.companyAddress.country)
+    }
+    .filter { case (report, _) =>
+      subscription.withTags.isEmpty || subscription.withTags.intersect(report.tags).nonEmpty
+    }
+    .filter { case (report, _) =>
+      subscription.withoutTags.isEmpty || subscription.withoutTags.intersect(report.tags).isEmpty
+    }
+
 }
