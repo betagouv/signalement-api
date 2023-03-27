@@ -48,7 +48,7 @@
                     <h2>Type de signalement</h2>
                     <ul>
                         <li>
-                            @report.category
+                            @ReportCategory.displayValue(report.category)
                         </li>
                         @report.subcategories.map{subcat =>
                             <li>

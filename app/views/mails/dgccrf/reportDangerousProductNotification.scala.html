@@ -4,6 +4,7 @@
 @import utils.FrontRoute
 
 @import models.report.Report
+@import models.report.ReportCategory
 @(report: Report)(frontRoute: FrontRoute, contactAddress: EmailAddress)
 
 @views.html.mails.layout("Nouveaux signalements") {
@@ -24,7 +25,7 @@
         >
             <b>Problème</b>
             <br/>
-            @report.category
+            @ReportCategory.displayValue(report.category)
             <br />
             @report.subcategories.map { subcategory =>
                 @subcategory
