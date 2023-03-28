@@ -46,7 +46,7 @@ object ReportToExternal {
       id = r.id,
       gender = r.gender,
       creationDate = r.creationDate,
-      category = r.category,
+      category = ReportCategory.displayValue(r.category),
       subcategories = r.subcategories,
       details = r.details,
       description = r.details

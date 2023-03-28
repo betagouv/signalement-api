@@ -4,7 +4,7 @@ import controllers.error.AppError.MalformedValue
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 
-sealed abstract class ReportCategory(override val entryName: String, val legacy: Boolean = false) extends EnumEntry
+sealed abstract class ReportCategory(val label: String, val legacy: Boolean = false) extends EnumEntry
 
 object ReportCategory extends PlayEnum[ReportCategory] {
 
@@ -18,10 +18,10 @@ object ReportCategory extends PlayEnum[ReportCategory] {
       ) // legacy, but for now we still want it to appear in the filters
   case object AchatMagasin extends ReportCategory("Achat en Magasin")
   case object AchatInternet extends ReportCategory("Achat sur internet")
-  case object Service extends ReportCategory("Services aux particuliers")
+  case object ServicesAuxParticuliers extends ReportCategory("Services aux particuliers")
   case object TelEauGazElec extends ReportCategory("Téléphonie / Eau-Gaz-Electricité", legacy = true)
-  case object EauGazElec extends ReportCategory("Eau / Gaz / Electricité")
-  case object TelFaiMedias extends ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
+  case object EauGazElectricite extends ReportCategory("Eau / Gaz / Electricité")
+  case object TelephonieFaiMedias extends ReportCategory("Téléphonie / Fournisseur d'accès internet / médias")
   case object BanqueAssuranceMutuelle extends ReportCategory("Banque / Assurance / Mutuelle")
   case object IntoxicationAlimentaire extends ReportCategory("Intoxication alimentaire")
   case object ProduitsObjets extends ReportCategory("Produits / Objets", legacy = true)
@@ -39,4 +39,6 @@ object ReportCategory extends PlayEnum[ReportCategory] {
   def fromValue(v: String): ReportCategory = withNameOption(v).fold(throw MalformedValue(v, "ReportCategory"))(identity)
 
   override def values: IndexedSeq[ReportCategory] = findValues
+
+  def displayValue(v: String): String = withNameOption(v).fold(v)(_.label)
 }

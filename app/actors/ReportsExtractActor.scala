@@ -15,6 +15,7 @@ import models._
 import models.company.AccessLevel
 import models.event.Event
 import models.report.Report
+import models.report.ReportCategory
 import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
@@ -183,7 +184,7 @@ class ReportsExtractActor(
       ReportColumn(
         "Catégorie",
         leftAlignmentColumn,
-        (report, _, _, _) => report.category
+        (report, _, _, _) => ReportCategory.displayValue(report.category)
       ),
       ReportColumn(
         "Sous-catégories",
