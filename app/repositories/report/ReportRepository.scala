@@ -419,6 +419,15 @@ object ReportRepository {
       .filterIf(filter.activityCodes.nonEmpty) { case (table) =>
         table.companyActivityCode.inSetBind(filter.activityCodes).getOrElse(false)
       }
+      .filterOpt(filter.fullText) { case (table, fullText) =>
+        table.contactAgreement &&
+        toTsVector(
+          table.firstName ++ " " ++ table.lastName ++ " " ++ table.consumerReferenceNumber.asColumnOf[String]
+        ) @@ plainToTsQuery(fullText)
+//        || (toTsVector(
+//          table.companySiret.asColumnOf[String]
+//        ) @@ plainToTsQuery(fullText))
+      }
   }
 
 }
