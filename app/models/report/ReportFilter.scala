@@ -37,7 +37,8 @@ case class ReportFilter(
     hasAttachment: Option[Boolean] = None,
     withTags: Seq[ReportTag] = Seq.empty,
     withoutTags: Seq[ReportTag] = Seq.empty,
-    activityCodes: Seq[String] = Seq.empty
+    activityCodes: Seq[String] = Seq.empty,
+    fullText: Option[String] = None
 )
 
 object ReportFilter {
@@ -76,7 +77,8 @@ object ReportFilter {
       contactAgreement = mapper.boolean("contactAgreement"),
       withTags = mapper.seq("withTags").map(ReportTag.withName),
       withoutTags = mapper.seq("withoutTags").map(ReportTag.withName),
-      activityCodes = mapper.seq("activityCodes")
+      activityCodes = mapper.seq("activityCodes"),
+      fullText = mapper.string("fullText")
     )
   }
 

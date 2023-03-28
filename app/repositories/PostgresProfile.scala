@@ -26,7 +26,9 @@ trait PostgresProfile
       with JsonImplicits
       with DateTimeImplicits
       with PgTrgmImplicits
-      with SimpleSearchPlainImplicits {
+      with SimpleSearchPlainImplicits
+      with SearchImplicits
+      with SearchAssistants {
 
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
