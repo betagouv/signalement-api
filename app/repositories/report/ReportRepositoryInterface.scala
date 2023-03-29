@@ -27,6 +27,8 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getMonthlyCount(filter: ReportFilter, ticks: Int = 7): Future[Seq[CountByDate]]
 
+  def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]]
+
   def getDailyCount(
       filter: ReportFilter,
       ticks: Int
