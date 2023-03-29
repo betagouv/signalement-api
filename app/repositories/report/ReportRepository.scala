@@ -20,6 +20,8 @@ import scala.concurrent.Future
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
 
+import java.time.temporal.WeekFields
+
 class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(implicit
     override val ec: ExecutionContext
 ) extends CRUDRepository[ReportTable, Report]
@@ -86,6 +88,33 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
       )
       .map(_.map { case (month, year, length) => CountByDate(length, LocalDate.of(year, month, 1)) })
       .map(fillFullPeriod(ticks, (x, i) => x.minusMonths(i.toLong).withDayOfMonth(1)))
+
+  def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] =
+    db.run(
+      queryFilter(filter)
+        .filter(report => report.creationDate > OffsetDateTime.now().minusWeeks(ticks.toLong))
+        .groupBy(report =>
+          (DatePartSQLFunction("week", report.creationDate), DatePartSQLFunction("year", report.creationDate))
+        )
+        .map { case ((week, year), group) =>
+          (week, year, group.length)
+        }
+        .result
+    ).map(_.map { case (week, year, length) =>
+      CountByDate(
+        length,
+        LocalDate
+          .now()
+          .`with`(WeekFields.ISO.weekBasedYear(), year.toLong)
+          .`with`(WeekFields.ISO.weekOfWeekBasedYear(), week.toLong)
+          .`with`(WeekFields.ISO.dayOfWeek(), DayOfWeek.MONDAY.getValue.toLong)
+      )
+    }).map(
+      fillFullPeriod(
+        ticks,
+        (x, i) => x.minusWeeks(i.toLong).`with`(WeekFields.ISO.dayOfWeek(), DayOfWeek.MONDAY.getValue.toLong)
+      )
+    )
 
   def getDailyCount(
       filter: ReportFilter,

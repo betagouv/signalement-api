@@ -30,6 +30,8 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
 
   override def getMonthlyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
 
+  override def getWeeklyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
+
   override def getDailyCount(filter: ReportFilter, ticks: Int): Future[Seq[CountByDate]] = ???
 
   override def getReports(companyId: UUID): Future[List[Report]] = ???
