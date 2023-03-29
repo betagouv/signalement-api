@@ -79,6 +79,7 @@ class StatsOrchestrator(
   ): Future[Seq[CountByDate]] =
     tickDuration match {
       case CurveTickDuration.Month => reportRepository.getMonthlyCount(reportFilter, ticks)
+      case CurveTickDuration.Week  => reportRepository.getWeeklyCount(reportFilter, ticks)
       case CurveTickDuration.Day   => reportRepository.getDailyCount(reportFilter, ticks)
     }
 
