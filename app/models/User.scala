@@ -52,7 +52,7 @@ object User {
 object UserPermission extends Enumeration {
   val listReports, updateReport, deleteReport, deleteFile, createReportAction, activateAccount, updateCompany,
       editDocuments, subscribeReports, manageAdminOrDgccrfUsers, softDeleteUsers, viewDeletedUsers,
-      manageBlacklistedEmails, crudUserReportsFilters =
+      manageBlacklistedEmails, crudUserReportsFilters, notifyConsumer =
     Value
 
   implicit val enumReads: Reads[UserPermission.Value] = EnumUtils.enumReads(UserPermission)
