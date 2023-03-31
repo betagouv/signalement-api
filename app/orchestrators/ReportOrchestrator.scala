@@ -835,4 +835,14 @@ class ReportOrchestrator(
       .sortWith(_.count > _.count)
       .slice(0, 10)
 
+  def notifyConsumer(reportId: UUID): Future[Option[Unit]] =
+    for {
+      report <- reportRepository.get(reportId)
+      company <- report.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+      reportFiles <- report
+        .map(r => reportFileOrchestrator.retrieveReportFiles(r.id))
+        .getOrElse(Future(List.empty))
+      res <- report.traverse(notifyConsumer(_, company, reportFiles))
+    } yield res
+
 }

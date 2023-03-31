@@ -165,4 +165,11 @@ class ReportController(
   def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
   }
+
+  def notifyConsumer(uuid: UUID) = SecuredAction(WithPermission(UserPermission.notifyConsumer)).async { _ =>
+    reportOrchestrator.notifyConsumer(uuid).map {
+      case Some(_) => NoContent
+      case None    => NotFound
+    }
+  }
 }

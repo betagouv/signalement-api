@@ -26,6 +26,9 @@ class ReportFileOrchestrator(
 )(implicit val executionContext: ExecutionContext, mat: Materializer) {
   val logger = Logger(this.getClass)
 
+  def retrieveReportFiles(reportId: UUID): Future[List[ReportFile]] =
+    reportFileRepository.retrieveReportFiles(reportId)
+
   def prefetchReportsFiles(reportsIds: List[UUID]): Future[Map[UUID, List[ReportFile]]] =
     reportFileRepository.prefetchReportsFiles(reportsIds)
 
