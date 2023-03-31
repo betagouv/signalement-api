@@ -527,6 +527,7 @@ class SignalConsoComponents(
     reportOrchestrator,
     reportRepository,
     reportFileRepository,
+    companyRepository,
     pdfService,
     frontRoute,
     silhouette,
