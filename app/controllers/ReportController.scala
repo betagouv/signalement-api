@@ -18,6 +18,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import repositories.company.CompanyRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.PDFService
@@ -37,6 +38,7 @@ class ReportController(
     reportOrchestrator: ReportOrchestrator,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
+    companyRepository: CompanyRepositoryInterface,
     pdfService: PDFService,
     frontRoute: FrontRoute,
     val silhouette: Silhouette[AuthEnv],
@@ -165,4 +167,24 @@ class ReportController(
   def deleteReport(uuid: UUID): Action[AnyContent] = SecuredAction(WithPermission(UserPermission.deleteReport)).async {
     reportOrchestrator.deleteReport(uuid).map(if (_) NoContent else NotFound)
   }
+
+  def generateConsumerReportEmailAsPDF(uuid: UUID) =
+    SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { _ =>
+      for {
+        report <- reportRepository.get(uuid)
+        company <- report.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+        files <- reportFileRepository.retrieveReportFiles(uuid)
+        source = report
+          .map(views.html.mails.consumer.reportAcknowledgment(_, company, files, isPDF = true)(frontRoute))
+          .map(html => pdfService.createPdfSource(Seq(html)))
+      } yield source match {
+        case Some(pdfSource) =>
+          Ok.chunked(
+            content = pdfSource,
+            inline = true,
+            fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+          )
+        case None => NotFound
+      }
+    }
 }

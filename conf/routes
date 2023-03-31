@@ -47,6 +47,7 @@ GET           /api/reports/:uuid/response/review                        controll
 POST          /api/reports/:uuid/company                                controllers.ReportController.updateReportCompany(uuid: java.util.UUID)
 POST          /api/reports/:uuid/consumer                               controllers.ReportController.updateReportConsumer(uuid: java.util.UUID)
 POST          /api/reports/:uuid/action                                 controllers.ReportController.createReportAction(uuid: java.util.UUID)
+GET           /api/reports/:uuid/consumer-email-pdf                     controllers.ReportController.generateConsumerReportEmailAsPDF(uuid: java.util.UUID)
 GET           /api/reports/:uuid/events                                 controllers.EventsController.getReportEvents(uuid: java.util.UUID, eventType: Option[String])
 GET           /api/companies/:siret/events                              controllers.EventsController.getCompanyEvents(siret: SIRET, eventType: Option[String])
 
