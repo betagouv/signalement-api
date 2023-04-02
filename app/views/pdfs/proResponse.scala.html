@@ -1,0 +1,48 @@
+@import java.time.LocalDateTime
+@import java.time.format.DateTimeFormatter
+@import models.report._
+
+@import models.event.Event
+@import models.event.Event
+@import models.company.Company
+@import java.time.temporal.ChronoUnit
+@import play.api.libs.json._
+@(
+        event: Option[Event]
+)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="viewport" content="width=device-width" />
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Réponse du pro</title>
+
+        <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
+
+    </head>
+    <body>
+        <div style="page-break-before: always">
+            <h1>Réponse du professionnel</h1>
+            @if(event.isDefined) {
+                <h3>Status du signalement :</h3>
+                <p>
+                    @if((event.get.details \ "responseType").as[String] == "ACCEPTED") {
+                        Le professionnel a accepté le signalement
+                    } else if((event.get.details \ "responseType").as[String] == "REJECTED") {
+                Le professionnel a rejeté le signalement
+                } else {
+                Le professionnel a indiqué ne pas être concerné par le signalement
+                }
+                </p>
+                <h3>Commentaire :</h3>
+                <p>
+                @((event.get.details \ "consumerDetails").as[String])
+                </p>
+            } else {
+                <p>Le professionnel n'a pas encore répondu</p>
+            }
+        </div>
+    </body>
+</html>
