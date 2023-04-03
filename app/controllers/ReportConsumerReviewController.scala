@@ -44,7 +44,7 @@ class ReportConsumerReviewController(
 
   def reviewExists(reportUUID: UUID): Action[AnyContent] = UnsecuredAction.async { _ =>
     logger.debug(s"Check if review exists for report id : ${reportUUID}")
-    reportConsumerReviewOrchestrator.find(reportUUID).map(x => x.exists(_.details.nonEmpty)).map { exists =>
+    reportConsumerReviewOrchestrator.find(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
       Ok(Json.toJson(ConsumerReviewExistApi(exists)))
     }
 
