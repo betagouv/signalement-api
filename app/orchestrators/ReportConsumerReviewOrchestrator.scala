@@ -1,22 +1,21 @@
 package orchestrators
 
 import akka.Done
-import cats.implicits.catsSyntaxMonadError
 import controllers.error.AppError.CannotReviewReportResponse
-import controllers.error.AppError.ReviewAlreadyExists
 import controllers.error.AppError.ServerError
 import models.report.ReportStatus.hasResponse
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation
 import play.api.Logger
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
-import io.scalaland.chimney.dsl.TransformerOps
 import models.event.Event
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -49,8 +48,8 @@ class ReportConsumerReviewOrchestrator(
 
   def handleReviewOnReportResponse(
       reportId: UUID,
-      responseConsumerReviewApi: ResponseConsumerReviewApi
-  ): Future[Event] = {
+      reviewApi: ResponseConsumerReviewApi
+  ): Future[Unit] = {
 
     logger.info(s"Report ${reportId} - the consumer give a review on response")
 
@@ -68,34 +67,47 @@ class ReportConsumerReviewOrchestrator(
           Future.failed(CannotReviewReportResponse(reportId))
       }
       _ = logger.debug(s"Report validated")
-      responseConsumerReview = responseConsumerReviewApi
-        .into[ResponseConsumerReview]
-        .withFieldConst(_.reportId, reportId)
-        .withFieldConst(_.creationDate, OffsetDateTime.now())
-        .withFieldConst(_.id, ResponseConsumerReviewId.generateId())
-        .transform
-      _ = logger.debug(s"Checking if review already exists")
-      _ <- responseConsumerReviewRepository.findByReportId(reportId).ensure(ReviewAlreadyExists) {
-        case Nil => true
-        case _ =>
-          logger.warn(s"Review already exist for report with id $reportId")
-          false
+      reviews <- responseConsumerReviewRepository.findByReportId(reportId)
+      _ <- reviews.headOption match {
+        case Some(review) =>
+          updateReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
+        case None =>
+          createReview(reportId, reviewApi.evaluation)
       }
-      _ = logger.debug(s"Saving review")
-      _ <- responseConsumerReviewRepository.create(responseConsumerReview)
-      _ = logger.debug(s"Creating event")
-      event <- eventRepository.create(
-        Event(
-          id = UUID.randomUUID(),
-          reportId = Some(reportId),
-          companyId = None,
-          userId = None,
+    } yield ()
+  }
+
+  private def updateReview(review: ResponseConsumerReview) =
+    responseConsumerReviewRepository.update(
+      review.id,
+      review.copy(
+        evaluation = review.evaluation,
+        details = review.details
+      )
+    )
+  private def createReview(reportId: UUID, evaluation: ResponseEvaluation): Future[Event] =
+    responseConsumerReviewRepository
+      .createOrUpdate(
+        ResponseConsumerReview(
+          ResponseConsumerReviewId.generateId(),
+          reportId,
+          evaluation,
           creationDate = OffsetDateTime.now(),
-          eventType = EventType.CONSO,
-          action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
+          None
         )
       )
-    } yield event
-  }
+      .flatMap(_ =>
+        eventRepository.create(
+          Event(
+            id = UUID.randomUUID(),
+            reportId = Some(reportId),
+            companyId = None,
+            userId = None,
+            creationDate = OffsetDateTime.now(),
+            eventType = EventType.CONSO,
+            action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
+          )
+        )
+      )
 
 }

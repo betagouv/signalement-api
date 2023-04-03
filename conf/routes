@@ -44,6 +44,7 @@ POST          /api/reports                                              controll
 POST          /api/reports/:uuid/response                               controllers.ReportController.reportResponse(uuid: java.util.UUID)
 POST          /api/reports/:uuid/response/review                        controllers.ReportConsumerReviewController.reviewOnReportResponse(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review                        controllers.ReportConsumerReviewController.getReview(uuid: java.util.UUID)
+GET           /api/reports/:uuid/response/review/exists                 controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
 POST          /api/reports/:uuid/company                                controllers.ReportController.updateReportCompany(uuid: java.util.UUID)
 POST          /api/reports/:uuid/consumer                               controllers.ReportController.updateReportConsumer(uuid: java.util.UUID)
 POST          /api/reports/:uuid/action                                 controllers.ReportController.createReportAction(uuid: java.util.UUID)

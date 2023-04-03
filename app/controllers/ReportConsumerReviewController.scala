@@ -2,6 +2,7 @@ package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.scalaland.chimney.dsl.TransformerOps
+import models.report.review.ConsumerReviewExistApi
 import models.report.review.ResponseConsumerReviewApi
 import orchestrators.ReportConsumerReviewOrchestrator
 import play.api.Logger
@@ -38,6 +39,14 @@ class ReportConsumerReviewController(
       maybeResponseConsumerReview <- reportConsumerReviewOrchestrator.find(reportUUID)
       maybeResponseConsumerReviewApi = maybeResponseConsumerReview.map(_.into[ResponseConsumerReviewApi].transform)
     } yield Ok(Json.toJson(maybeResponseConsumerReviewApi))
+
+  }
+
+  def reviewExists(reportUUID: UUID): Action[AnyContent] = UnsecuredAction.async { _ =>
+    logger.debug(s"Check if review exists for report id : ${reportUUID}")
+    reportConsumerReviewOrchestrator.find(reportUUID).map(_.exists(_.details.nonEmpty)).map { exists =>
+      Ok(Json.toJson(ConsumerReviewExistApi(exists)))
+    }
 
   }
 

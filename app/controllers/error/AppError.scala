@@ -315,9 +315,9 @@ object AppError {
 
   }
 
-  final case object ReviewAlreadyExists extends ForbiddenError {
+  final case object ReviewDoesNotExists extends NotFoundError {
     override val `type`: String = "SC-0032"
-    override val title: String = "Review already exists for the report response."
+    override val title: String = "Review does not exist for the report response."
     override val details: String =
       s"Un avis existe déjà pour la réponse de l'entreprise."
     override val titleForLogs: String = "review_already_exists"
