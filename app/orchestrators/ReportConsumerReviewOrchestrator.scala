@@ -7,6 +7,7 @@ import models.report.ReportStatus.hasResponse
 import models.report.review.ResponseConsumerReview
 import models.report.review.ResponseConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
+import models.report.review.ResponseEvaluation
 import play.api.Logger
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
@@ -48,7 +49,7 @@ class ReportConsumerReviewOrchestrator(
   def handleReviewOnReportResponse(
       reportId: UUID,
       reviewApi: ResponseConsumerReviewApi
-  ): Future[Event] = {
+  ): Future[Unit] = {
 
     logger.info(s"Report ${reportId} - the consumer give a review on response")
 
@@ -67,36 +68,46 @@ class ReportConsumerReviewOrchestrator(
       }
       _ = logger.debug(s"Report validated")
       reviews <- responseConsumerReviewRepository.findByReportId(reportId)
-      responseConsumerReview = reviews.headOption match {
+      _ <- reviews.headOption match {
         case Some(review) =>
-          review.copy(
-            evaluation = reviewApi.evaluation,
-            details = reviewApi.details
-          )
+          updateReview(review.copy(evaluation = reviewApi.evaluation, details = reviewApi.details))
         case None =>
-          ResponseConsumerReview(
-            ResponseConsumerReviewId.generateId(),
-            reportId,
-            reviewApi.evaluation,
-            creationDate = OffsetDateTime.now(),
-            reviewApi.details
-          )
+          createReview(reportId, reviewApi.evaluation)
       }
-      _ = logger.debug(s"Saving review")
-      _ <- responseConsumerReviewRepository.createOrUpdate(responseConsumerReview)
-      _ = logger.debug(s"Creating event")
-      event <- eventRepository.create(
-        Event(
-          id = UUID.randomUUID(),
-          reportId = Some(reportId),
-          companyId = None,
-          userId = None,
+    } yield ()
+  }
+
+  private def updateReview(review: ResponseConsumerReview) =
+    responseConsumerReviewRepository.update(
+      review.id,
+      review.copy(
+        evaluation = review.evaluation,
+        details = review.details
+      )
+    )
+  private def createReview(reportId: UUID, evaluation: ResponseEvaluation): Future[Event] =
+    responseConsumerReviewRepository
+      .createOrUpdate(
+        ResponseConsumerReview(
+          ResponseConsumerReviewId.generateId(),
+          reportId,
+          evaluation,
           creationDate = OffsetDateTime.now(),
-          eventType = EventType.CONSO,
-          action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
+          None
         )
       )
-    } yield event
-  }
+      .flatMap(_ =>
+        eventRepository.create(
+          Event(
+            id = UUID.randomUUID(),
+            reportId = Some(reportId),
+            companyId = None,
+            userId = None,
+            creationDate = OffsetDateTime.now(),
+            eventType = EventType.CONSO,
+            action = ActionEvent.REPORT_REVIEW_ON_RESPONSE
+          )
+        )
+      )
 
 }

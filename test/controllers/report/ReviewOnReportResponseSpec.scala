@@ -9,7 +9,7 @@ import models.User
 import models.report.Report
 import models.report.ReportStatus
 import models.report.review.ResponseConsumerReview
-import models.report.review.ConsumerReviewExistApi
+import models.report.review.ResponseConsumerReviewApi
 import models.report.review.ResponseConsumerReviewId
 import models.report.review.ResponseEvaluation
 import org.specs2.Specification
@@ -66,7 +66,7 @@ class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResp
          When post a review                                          ${step {
         someResult = Some(postReview(review))
       }}
-         Then result status is CONFLICT                               ${resultStatusMustBe(Status.FORBIDDEN)}
+         Then result status is OK                               ${resultStatusMustBe(Status.OK)}
     """
 }
 
@@ -83,7 +83,7 @@ class GetReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportRespons
     ).get
 
     status(result) must beEqualTo(OK)
-    val responseConsumerReviewApi = Helpers.contentAsJson(result).as[ConsumerReviewExistApi]
+    val responseConsumerReviewApi = Helpers.contentAsJson(result).as[ResponseConsumerReviewApi]
     responseConsumerReviewApi.evaluation mustEqual consumerReview.evaluation
     responseConsumerReviewApi.details mustEqual consumerReview.details
   }
@@ -111,7 +111,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
   lazy val companyRepository = components.companyRepository
 
-  val review = ConsumerReviewExistApi(ResponseEvaluation.Positive, None)
+  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, Some("Response Details..."))
 
   val company = Fixtures.genCompany.sample.get
 
@@ -142,7 +142,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       reportWithReview.id,
       ResponseEvaluation.Positive,
       OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-      Some("Response Details...")
+      None
     )
 
   var reportId = UUID.randomUUID()
@@ -165,7 +165,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       Duration.Inf
     )
 
-  def postReview(reviewOnReportResponse: ConsumerReviewExistApi) =
+  def postReview(reviewOnReportResponse: ResponseConsumerReviewApi) =
     Await.result(
       components.reportConsumerReviewController
         .reviewOnReportResponse(reportId)
