@@ -525,6 +525,7 @@ class SignalConsoComponents(
 
   val reportController = new ReportController(
     reportOrchestrator,
+    eventsOrchestrator,
     reportRepository,
     reportFileRepository,
     companyRepository,

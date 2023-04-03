@@ -10,6 +10,7 @@ import models.report.ReportConsumerUpdate
 import models.report.ReportDraft
 import models.report.ReportResponse
 import models.report.ReportWithFiles
+import orchestrators.EventsOrchestratorInterface
 import orchestrators.ReportOrchestrator
 import orchestrators.ReportWithDataOrchestrator
 import play.api.Logger
@@ -36,6 +37,7 @@ import scala.concurrent.Future
 
 class ReportController(
     reportOrchestrator: ReportOrchestrator,
+    eventsOrchestrator: EventsOrchestratorInterface,
     reportRepository: ReportRepositoryInterface,
     reportFileRepository: ReportFileRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
@@ -169,14 +171,25 @@ class ReportController(
   }
 
   def generateConsumerReportEmailAsPDF(uuid: UUID) =
-    SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { _ =>
+    SecuredAction(WithPermission(UserPermission.generateConsumerReportEmailAsPDF)).async { implicit request =>
       for {
-        report <- reportRepository.get(uuid)
-        company <- report.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
+        maybeReport <- reportRepository.get(uuid)
+        company <- maybeReport.flatMap(_.companyId).flatTraverse(r => companyRepository.get(r))
         files <- reportFileRepository.retrieveReportFiles(uuid)
-        source = report
-          .map(views.html.mails.consumer.reportAcknowledgment(_, company, files, isPDF = true)(frontRoute))
-          .map(html => pdfService.createPdfSource(Seq(html)))
+        events <- eventsOrchestrator.getReportsEvents(
+          reportId = uuid,
+          eventType = None,
+          userRole = request.identity.userRole
+        )
+        proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
+        source = maybeReport
+          .map { report =>
+            val notificationHtml =
+              views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(frontRoute)
+            val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.data))
+            Seq(notificationHtml, proResponseHtml)
+          }
+          .map(pdfService.createPdfSource)
       } yield source match {
         case Some(pdfSource) =>
           Ok.chunked(

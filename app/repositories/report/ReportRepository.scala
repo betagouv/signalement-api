@@ -399,7 +399,25 @@ object ReportRepository {
         table.creationDate <= end
       }
       .filterOpt(filter.category) { case (table, category) =>
-        table.category === category
+        // Condition pour récupérer les achats en sur internet soit dans la nouvelle catégorie,
+        // soit dans l'ancienne catégorie à condition que le signalement ait un tag "Internet"
+        if (ReportCategory.withName(category) == ReportCategory.AchatInternet) {
+          table.category === category ||
+          (
+            table.category === ReportCategory.AchatMagasinInternet.entryName
+              && table.tags @> List[ReportTag](ReportTag.Internet).bind
+          )
+          // Condition pour récupérer les achats en magasin soit dans la nouvelle catégorie,
+          // soit dans l'ancienne catégorie à condition que le signalement n'ait pas de tag "Internet"
+        } else if (ReportCategory.withName(category) == ReportCategory.AchatMagasin) {
+          table.category === category ||
+          (
+            table.category === ReportCategory.AchatMagasinInternet.entryName
+              && !(table.tags @> List[ReportTag](ReportTag.Internet).bind)
+          )
+        } else {
+          table.category === category
+        }
       }
       .filterIf(filter.status.nonEmpty) { case table =>
         table.status.inSet(filter.status.map(_.entryName))
