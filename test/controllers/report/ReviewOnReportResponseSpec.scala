@@ -66,7 +66,7 @@ class SecondReviewOnReport(implicit ee: ExecutionEnv) extends ReviewOnReportResp
          When post a review                                          ${step {
         someResult = Some(postReview(review))
       }}
-         Then result status is CONFLICT                               ${resultStatusMustBe(Status.FORBIDDEN)}
+         Then result status is OK                               ${resultStatusMustBe(Status.OK)}
     """
 }
 
@@ -111,7 +111,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
   lazy val responseConsumerReviewRepository = components.responseConsumerReviewRepository
   lazy val companyRepository = components.companyRepository
 
-  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, None)
+  val review = ResponseConsumerReviewApi(ResponseEvaluation.Positive, Some("Response Details..."))
 
   val company = Fixtures.genCompany.sample.get
 
@@ -142,7 +142,7 @@ abstract class ReviewOnReportResponseSpec(implicit ee: ExecutionEnv)
       reportWithReview.id,
       ResponseEvaluation.Positive,
       OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-      Some("Response Details...")
+      None
     )
 
   var reportId = UUID.randomUUID()
