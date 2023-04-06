@@ -8,9 +8,9 @@ import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyCreation
-import models.investigation.DepartmentDivision
+
 import models.investigation.InvestigationStatus
-import models.investigation.Practice
+
 import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
@@ -47,13 +47,11 @@ class WebsiteController(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int],
       investigationStatus: Option[Seq[InvestigationStatus]],
-      practice: Option[Seq[Practice]],
-      attribution: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean]
   ) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
       for {
         result <-
           websitesOrchestrator.getWebsiteCompanyCount(
@@ -62,8 +60,6 @@ class WebsiteController(
             maybeOffset,
             maybeLimit,
             investigationStatus.filter(_.nonEmpty),
-            practice.filter(_.nonEmpty),
-            attribution.filter(_.nonEmpty),
             start,
             end,
             hasAssociation
@@ -96,13 +92,13 @@ class WebsiteController(
   }
 
   def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
       websitesOrchestrator
         .updateWebsiteIdentificationStatus(websiteId, identificationStatus)
         .map(website => Ok(Json.toJson(website)))
     }
 
-  def updateCompany(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
+  def updateCompany(websiteId: WebsiteId) = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
     implicit request =>
       request.body
         .validate[CompanyCreation]
@@ -116,7 +112,7 @@ class WebsiteController(
   }
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String) =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { request =>
+    SecuredAction(WithRole(UserRole.Admin)).async { request =>
       websitesOrchestrator
         .updateCompanyCountry(websiteId, companyCountry, request.identity)
         .map(websiteAndCompany => Ok(Json.toJson(websiteAndCompany)))
@@ -129,28 +125,17 @@ class WebsiteController(
       .map(_ => Ok)
   }
 
-  def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async(parse.json) {
-    implicit request =>
-      for {
-        websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
-        updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
-        _ = logger.debug(updated.toString)
-      } yield Ok(Json.toJson(updated))
+  def updateInvestigation() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    for {
+      websiteInvestigationApi <- request.parseBody[WebsiteInvestigationApi]()
+      updated <- websitesOrchestrator.updateInvestigation(websiteInvestigationApi)
+      _ = logger.debug(updated.toString)
+    } yield Ok(Json.toJson(updated))
   }
 
-  def listDepartmentDivision(): Action[AnyContent] =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
-      Ok(Json.toJson(websitesOrchestrator.listDepartmentDivision()))
-    }
-
   def listInvestigationStatus(): Action[AnyContent] =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
+    SecuredAction(WithRole(UserRole.Admin)) { _ =>
       Ok(Json.toJson(websitesOrchestrator.listInvestigationStatus()))
-    }
-
-  def listPractice(): Action[AnyContent] =
-    SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)) { _ =>
-      Ok(Json.toJson(websitesOrchestrator.listPractice()))
     }
 
 }

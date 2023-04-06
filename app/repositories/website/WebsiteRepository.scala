@@ -2,9 +2,9 @@ package repositories.website
 
 import models._
 import models.company.Company
-import models.investigation.DepartmentDivision
+
 import models.investigation.InvestigationStatus
-import models.investigation.Practice
+
 import models.website.IdentificationStatus.NotIdentified
 import models.website.IdentificationStatus
 import models.website.Website
@@ -125,8 +125,6 @@ class WebsiteRepository(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int],
       investigationStatusFilter: Option[Seq[InvestigationStatus]],
-      practiceFilter: Option[Seq[Practice]],
-      attributionFilter: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean]
@@ -140,12 +138,6 @@ class WebsiteRepository(
         }
         .filterOpt(investigationStatusFilter) { case (websiteTable, statusList) =>
           websiteTable.investigationStatus inSet statusList
-        }
-        .filterOpt(practiceFilter) { case (websiteTable, practice) =>
-          websiteTable.practice inSet practice
-        }
-        .filterOpt(attributionFilter) { case (websiteTable, attribution) =>
-          websiteTable.attribution inSet attribution
         }
         .filterOpt(start) { case (table, start) =>
           table.creationDate >= start
