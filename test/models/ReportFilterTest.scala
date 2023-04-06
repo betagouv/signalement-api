@@ -34,12 +34,34 @@ class ReportFilterTest extends Specification {
       ReportFilter.fromQueryString(Map.empty, Professionnel) shouldEqual Success(emptyFilter)
     }
 
+    "fromQueryString should parse website http://www.domain.com as domain.com" in {
+      val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
+      ReportFilter
+        .fromQueryString(Map("websiteURL" -> Seq("http://www.domain.com")), Admin)
+        .map(_.websiteURL) shouldEqual Success(expectedResult.websiteURL)
+    }
+
+    "fromQueryString should parse website domain.com as domain.com" in {
+      val expectedResult = ReportFilter(websiteURL = Some("domain.com"))
+      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain.com")), Admin).map(_.websiteURL) shouldEqual Success(
+        expectedResult.websiteURL
+      )
+    }
+
+    "fromQueryString should parse website domain as domain" in {
+      val expectedResult = ReportFilter(websiteURL = Some("domain"))
+      ReportFilter.fromQueryString(Map("websiteURL" -> Seq("domain")), Admin).map(_.websiteURL) shouldEqual Success(
+        expectedResult.websiteURL
+      )
+    }
+
     "fromQueryString should parse successfully" in {
 
+      val websiteURL = Some("http://signal.conso.gouv.fr")
       val expectedReportFilter = ReportFilter(
         departments = Seq("75016", "78210"),
         email = Some("sc@signal.conso.gouv.fr"),
-        websiteURL = Some("http://signal.conso.gouv.fr"),
+        websiteURL = Some("signal.conso.gouv.fr"),
         phone = Some("0100000000"),
         hasWebsite = Some(true),
         hasPhone = Some(true),
@@ -63,7 +85,7 @@ class ReportFilterTest extends Specification {
       val input = Map[String, Seq[String]](
         "departments" -> expectedReportFilter.departments,
         "email" -> expectedReportFilter.email.toSeq,
-        "websiteURL" -> expectedReportFilter.websiteURL.toSeq,
+        "websiteURL" -> websiteURL.toSeq,
         "phone" -> expectedReportFilter.phone.toSeq,
         "hasWebsite" -> expectedReportFilter.hasWebsite.toSeq.map(_.toString),
         "hasPhone" -> expectedReportFilter.hasPhone.toSeq.map(_.toString),
