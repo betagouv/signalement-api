@@ -7,6 +7,7 @@ import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import play.api.libs.json.Reads
 import utils.QueryStringMapper
+import utils.URL
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -43,12 +44,15 @@ case class ReportFilter(
 
 object ReportFilter {
 
+  private[models] def hostFromWebsiteFilter(websiteFilter: Option[String]) =
+    websiteFilter.flatMap(website => URL(website).getHost.orElse(websiteFilter))
+
   def fromQueryString(q: Map[String, Seq[String]], userRole: UserRole): Try[ReportFilter] = Try {
     val mapper = new QueryStringMapper(q)
     ReportFilter(
       departments = mapper.seq("departments"),
       email = mapper.string("email"),
-      websiteURL = mapper.string("websiteURL"),
+      websiteURL = hostFromWebsiteFilter(mapper.string("websiteURL")),
       phone = mapper.string("phone"),
       siretSirenList = mapper.seq("siretSirenList"),
       companyName = mapper.string("companyName"),

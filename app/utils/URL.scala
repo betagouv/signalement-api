@@ -7,7 +7,7 @@ import scala.util.Try
 
 case class URL(value: String) {
   override def toString = value
-  def getHost =
+  def getHost: Option[String] =
     Try(new java.net.URL(value)).toOption.map(url => url.getHost.toLowerCase().replaceFirst("www\\.", ""))
 }
 
