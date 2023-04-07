@@ -11,6 +11,4 @@ object InvestigationStatus extends PlayEnum[InvestigationStatus] {
   case object NotProcessed extends InvestigationStatus
   case object SignalConsoIdentificationFailed extends InvestigationStatus
   case object Processing extends InvestigationStatus
-  case object UnderInvestigation extends InvestigationStatus
-  case object InvestigationDone extends InvestigationStatus
 }

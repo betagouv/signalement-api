@@ -2,9 +2,9 @@ package models.website
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.company.Company
-import models.investigation.DepartmentDivision
+
 import models.investigation.InvestigationStatus
-import models.investigation.Practice
+
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import utils.Country
@@ -24,9 +24,7 @@ case class WebsiteCompanyReportCount(
     // For backward compatibility, to be removed
     kind: String,
     company: Option[Company],
-    practice: Option[Practice],
     investigationStatus: InvestigationStatus,
-    attribution: Option[DepartmentDivision],
     count: Int
 )
 

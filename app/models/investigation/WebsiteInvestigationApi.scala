@@ -8,17 +8,13 @@ import play.api.libs.json.OFormat
 import java.time.OffsetDateTime
 case class WebsiteInvestigationApi(
     id: WebsiteId,
-    practice: Option[Practice],
     investigationStatus: Option[InvestigationStatus],
-    attribution: Option[DepartmentDivision],
     lastUpdated: Option[OffsetDateTime]
 ) {
 
   def copyToDomain(website: Website): Website =
     website.copy(
-      practice = this.practice,
       investigationStatus = this.investigationStatus.getOrElse(InvestigationStatus.NotProcessed),
-      attribution = this.attribution,
       lastUpdated = OffsetDateTime.now()
     )
 
