@@ -26,10 +26,10 @@
         <div style="page-break-before: always">
             <h1>Réponse du professionnel</h1>
             @if(event.isDefined) {
-                <h3>Status du signalement :</h3>
+                <h3>Statut du signalement :</h3>
                 <p>
                     @if((event.get.details \ "responseType").as[String] == "ACCEPTED") {
-                        Le professionnel a accepté le signalement
+                        Le professionnel a pris en compte le signalement
                     } else if((event.get.details \ "responseType").as[String] == "REJECTED") {
                 Le professionnel a rejeté le signalement
                 } else {
