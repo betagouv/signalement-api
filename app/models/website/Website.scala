@@ -1,8 +1,6 @@
 package models.website
 
-import models.investigation.DepartmentDivision
 import models.investigation.InvestigationStatus
-import models.investigation.Practice
 import models.investigation.InvestigationStatus.NotProcessed
 import play.api.libs.json._
 
@@ -17,9 +15,7 @@ case class Website(
     companyCountry: Option[String],
     companyId: Option[UUID],
     identificationStatus: IdentificationStatus = IdentificationStatus.NotIdentified,
-    practice: Option[Practice] = None,
     investigationStatus: InvestigationStatus = NotProcessed,
-    attribution: Option[DepartmentDivision] = None,
     lastUpdated: OffsetDateTime = OffsetDateTime.now()
 )
 

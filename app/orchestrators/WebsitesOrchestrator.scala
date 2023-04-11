@@ -12,10 +12,9 @@ import models.User
 import models.company.Company
 import models.company.CompanyCreation
 import models.investigation.InvestigationStatus.NotProcessed
-import models.investigation.DepartmentDivision
-import models.investigation.DepartmentDivisionOptionValue
+
 import models.investigation.InvestigationStatus
-import models.investigation.Practice
+
 import models.investigation.WebsiteInvestigationApi
 import models.website.IdentificationStatus._
 import models.website.WebsiteCompanyReportCount.toApi
@@ -54,8 +53,6 @@ class WebsitesOrchestrator(
       maybeOffset: Option[Long],
       maybeLimit: Option[Int],
       investigationStatusFilter: Option[Seq[InvestigationStatus]],
-      practiceFilter: Option[Seq[Practice]],
-      attributionFilter: Option[Seq[DepartmentDivision]],
       start: Option[OffsetDateTime],
       end: Option[OffsetDateTime],
       hasAssociation: Option[Boolean]
@@ -67,8 +64,6 @@ class WebsitesOrchestrator(
         maybeOffset,
         maybeLimit,
         investigationStatusFilter,
-        practiceFilter,
-        attributionFilter,
         start,
         end,
         hasAssociation
@@ -146,7 +141,7 @@ class WebsitesOrchestrator(
     for {
       maybeWebsite <- repository.get(websiteId)
       website <- maybeWebsite.liftTo[Future](WebsiteNotFound(websiteId))
-      isWebsiteUnderInvestigation = website.attribution.isEmpty && website.investigationStatus != NotProcessed
+      isWebsiteUnderInvestigation = website.investigationStatus != NotProcessed
       isWebsiteIdentified = website.identificationStatus == Identified
       _ <-
         if (isWebsiteIdentified || isWebsiteUnderInvestigation) {
@@ -166,12 +161,7 @@ class WebsitesOrchestrator(
     website <- update(updatedWebsite)
   } yield website
 
-  def listDepartmentDivision(): Seq[DepartmentDivisionOptionValue] =
-    DepartmentDivision.values.map(d => DepartmentDivisionOptionValue(d.entryName, d.name))
-
   def listInvestigationStatus(): Seq[InvestigationStatus] = InvestigationStatus.values
-
-  def listPractice(): Seq[Practice] = Practice.values
 
   private[this] def getOrCreateCompay(companyCreate: CompanyCreation): Future[Company] = companyRepository
     .getOrCreate(

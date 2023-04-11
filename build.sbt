@@ -27,8 +27,6 @@ scalacOptions ++= Seq(
 routesImport ++= Seq(
   "models.website.IdentificationStatus",
   "java.time.OffsetDateTime",
-  "models.investigation.Practice",
-  "models.investigation.DepartmentDivision",
   "models.investigation.InvestigationStatus",
   "models.website.WebsiteId",
   "utils.SIRET",
