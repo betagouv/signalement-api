@@ -33,6 +33,7 @@ object CompanySearchResult {
       .withFieldConst(_.isMarketPlace, website.isMarketplace)
       .withFieldConst(_.activityLabel, None)
       .withFieldConst(_.brand, None)
-      .withFieldConst(_.address, company.address.toFilteredAddress(company.isPublic))
+      .withFieldComputed(_.address, c => c.address.toFilteredAddress(c.isPublic))
+      .enableDefaultValues
       .transform
 }

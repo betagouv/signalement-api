@@ -63,6 +63,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
           .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
+          .withFieldConst(_.reponseconsoCode, None)
+          .withFieldConst(_.ccrfCode, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -97,6 +99,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
           .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
+          .withFieldConst(_.reponseconsoCode, None)
+          .withFieldConst(_.ccrfCode, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -126,6 +130,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsHeadOffice, Some(company.isHeadOffice))
           .withFieldConst(_.companyIsOpen, Some(company.isOpen))
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
+          .withFieldConst(_.reponseconsoCode, None)
+          .withFieldConst(_.ccrfCode, None)
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result
@@ -170,6 +176,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
             _.details,
             List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
           )
+          .withFieldConst(_.reponseconsoCode, None)
+          .withFieldConst(_.ccrfCode, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -209,6 +217,8 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
             _.details,
             List(DetailInputValue(UUID.randomUUID().toString + ":", UUID.randomUUID().toString))
           )
+          .withFieldConst(_.reponseconsoCode, None)
+          .withFieldConst(_.ccrfCode, None)
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result
