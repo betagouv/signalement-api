@@ -2,7 +2,9 @@ package models
 
 import models.report.Report
 import models.report.ReportWithFiles
+import models.report.ReportWithFilesAndResponses
 import play.api.libs.json.Json
+import play.api.libs.json.OWrites
 import play.api.libs.json.Writes
 
 case class PaginatedResult[T](
@@ -20,4 +22,7 @@ object PaginatedResult {
 
   implicit def paginatedReportWithFilesWriter(implicit userRole: Option[UserRole]) =
     Json.writes[PaginatedResult[ReportWithFiles]]
+
+  implicit val paginatedReportWithFilesAndResponsesWriter: OWrites[PaginatedResult[ReportWithFilesAndResponses]] =
+    Json.writes[PaginatedResult[ReportWithFilesAndResponses]]
 }

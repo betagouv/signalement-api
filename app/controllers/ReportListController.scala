@@ -45,7 +45,7 @@ class ReportListController(
         },
         filters =>
           for {
-            paginatedReports <- reportOrchestrator.getReportsForUser(
+            paginatedReports <- reportOrchestrator.getReportsWithResponsesForUser(
               connectedUser = request.identity,
               filter = filters._1,
               offset = filters._2.offset,

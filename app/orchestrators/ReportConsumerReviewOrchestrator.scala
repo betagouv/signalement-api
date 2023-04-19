@@ -46,6 +46,9 @@ class ReportConsumerReviewOrchestrator(
       case _             => throw ServerError(s"More than one consumer review for report id $reportId")
     }
 
+  def find(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
+    responseConsumerReviewRepository.findByReportIds(reportIds)
+
   def handleReviewOnReportResponse(
       reportId: UUID,
       reviewApi: ResponseConsumerReviewApi

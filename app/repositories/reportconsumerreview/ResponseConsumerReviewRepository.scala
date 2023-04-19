@@ -28,6 +28,16 @@ class ResponseConsumerReviewRepository(
   override def findByReportId(reportId: UUID): Future[List[ResponseConsumerReview]] =
     db.run(table.filter(_.reportId === reportId).to[List].result)
 
+  override def findByReportIds(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]] =
+    db.run(
+      table
+        .filter(
+          _.reportId inSetBind reportIds
+        )
+        .to[List]
+        .result
+    ).map(reviews => reviews.groupBy(_.reportId).view.mapValues(_.headOption).toMap)
+
   override def findByCompany(companyId: Option[UUID]): Future[List[ResponseConsumerReview]] = db.run(
     table
       .join(ReportTable.table)
@@ -39,5 +49,4 @@ class ResponseConsumerReviewRepository(
       .to[List]
       .result
   )
-
 }
