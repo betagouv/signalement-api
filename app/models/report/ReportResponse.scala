@@ -27,4 +27,10 @@ object ReportResponseType extends PlayEnum[ReportResponseType] {
 
   override def values: IndexedSeq[ReportResponseType] = findValues
 
+  def translate(responseType: ReportResponseType): String =
+    responseType match {
+      case ACCEPTED      => "Pris en compte"
+      case REJECTED      => "Infondé"
+      case NOT_CONCERNED => "Mal attribué"
+    }
 }

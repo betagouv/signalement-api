@@ -375,6 +375,7 @@ class SignalConsoComponents(
     actorSystem.actorOf(
       Props(
         new ReportsExtractActor(
+          reportConsumerReviewOrchestrator,
           reportFileRepository,
           companyAccessRepository,
           reportOrchestrator,

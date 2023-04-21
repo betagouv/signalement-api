@@ -7,14 +7,17 @@ import models.PaginatedResult
 import models.UserRole
 import models.company.Address
 import models.company.Company
+import models.event.Event
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
+import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.annotation.nowarn
@@ -140,6 +143,17 @@ case class ReportWithFiles(
 
 object ReportWithFiles {
   implicit def writer(implicit userRole: Option[UserRole] = None) = Json.writes[ReportWithFiles]
+}
+
+case class ReportWithFilesAndResponses(
+    report: Report,
+    files: List[ReportFile],
+    consumerReview: Option[ResponseConsumerReview],
+    professionalResponse: Option[Event]
+)
+
+object ReportWithFilesAndResponses {
+  implicit val writer: OWrites[ReportWithFilesAndResponses] = Json.writes[ReportWithFilesAndResponses]
 }
 
 case class DetailInputValue(

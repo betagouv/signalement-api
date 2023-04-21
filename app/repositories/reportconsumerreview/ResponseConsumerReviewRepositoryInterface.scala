@@ -12,5 +12,7 @@ trait ResponseConsumerReviewRepositoryInterface
 
   def findByReportId(reportId: UUID): Future[List[ResponseConsumerReview]]
 
+  def findByReportIds(reportIds: List[UUID]): Future[Map[UUID, Option[ResponseConsumerReview]]]
+
   def findByCompany(companyId: Option[UUID]): Future[List[ResponseConsumerReview]]
 }
