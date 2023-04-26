@@ -5,6 +5,7 @@ import models.UserRole.Admin
 import models.UserRole.DGCCRF
 import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
+import models.report.review.ResponseEvaluation
 import play.api.libs.json.Reads
 import utils.QueryStringMapper
 import utils.URL
@@ -39,6 +40,8 @@ case class ReportFilter(
     withTags: Seq[ReportTag] = Seq.empty,
     withoutTags: Seq[ReportTag] = Seq.empty,
     activityCodes: Seq[String] = Seq.empty,
+    hasEvaluation: Option[Boolean] = None,
+    evaluation: Seq[ResponseEvaluation] = Seq.empty,
     fullText: Option[String] = None
 )
 
@@ -82,6 +85,8 @@ object ReportFilter {
       withTags = mapper.seq("withTags").map(ReportTag.withName),
       withoutTags = mapper.seq("withoutTags").map(ReportTag.withName),
       activityCodes = mapper.seq("activityCodes"),
+      hasEvaluation = mapper.boolean("hasEvaluation"),
+      evaluation = mapper.seq("evaluation").map(ResponseEvaluation.withName),
       fullText = mapper.string("fullText")
     )
   }
