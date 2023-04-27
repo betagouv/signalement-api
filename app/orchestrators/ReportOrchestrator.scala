@@ -757,6 +757,28 @@ class ReportOrchestrator(
         }
     } yield paginatedReportFiles
 
+  def getReportsWithResponsesForUser(
+      connectedUser: User,
+      filter: ReportFilter,
+      offset: Option[Long],
+      limit: Option[Int]
+  ): Future[PaginatedResult[ReportWithFilesAndResponses]] =
+    for {
+      reportsWithFiles <- getReportsForUser(connectedUser, filter, offset, limit)
+      reports = reportsWithFiles.entities.map(_.report)
+      reportEventsMap <- eventRepository.fetchEventsOfReports(reports)
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(reports.map(_.id))
+    } yield reportsWithFiles.copy(
+      entities = reportsWithFiles.entities.map(reportWithFiles =>
+        ReportWithFilesAndResponses(
+          reportWithFiles.report,
+          reportWithFiles.files,
+          consumerReviewsMap.getOrElse(reportWithFiles.report.id, None),
+          reportEventsMap.getOrElse(reportWithFiles.report.id, Nil).find(_.action == ActionEvent.REPORT_PRO_RESPONSE)
+        )
+      )
+    )
+
   def getReportsWithFile[T](
       filter: ReportFilter,
       offset: Option[Long],

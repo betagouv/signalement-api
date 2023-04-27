@@ -20,7 +20,11 @@ import models.report.ReportFile
 import models.report.ReportFileOrigin
 import models.report.ReportFilter
 import models.report.ReportResponse
+import models.report.ReportResponseType
 import models.report.ReportStatus
+import models.report.review.ResponseConsumerReview
+import models.report.review.ResponseEvaluation
+import orchestrators.ReportConsumerReviewOrchestrator
 import orchestrators.ReportOrchestrator
 import play.api.Logger
 import repositories.asyncfiles.AsyncFileRepositoryInterface
@@ -40,7 +44,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 import java.time.ZoneId
 import java.time.OffsetDateTime
-import scala.collection.immutable.List
 
 object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
@@ -49,6 +52,7 @@ object ReportsExtractActor {
 }
 
 class ReportsExtractActor(
+    reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportFileRepository: ReportFileRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     reportOrchestrator: ReportOrchestrator,
@@ -106,100 +110,101 @@ class ReportsExtractActor(
   case class ReportColumn(
       name: String,
       column: Column,
-      extract: (Report, List[ReportFile], List[Event], List[User]) => String,
+      extract: (Report, List[ReportFile], List[Event], Option[ResponseConsumerReview], List[User]) => String,
       available: Boolean = true
   ) {
     def extractStringValue(
         report: Report,
         reportFiles: List[ReportFile],
         events: List[Event],
+        consumerReview: Option[ResponseConsumerReview],
         users: List[User]
-    ): String = extract(report, reportFiles, events, users).take(MaxCharInSingleCell)
+    ): String = extract(report, reportFiles, events, consumerReview, users).take(MaxCharInSingleCell)
   }
   def buildColumns(requestedBy: User, zone: ZoneId) = {
     List(
       ReportColumn(
         "Date de création",
         centerAlignmentColumn,
-        (report, _, _, _) => frenchFormatDate(report.creationDate, zone)
+        (report, _, _, _, _) => frenchFormatDate(report.creationDate, zone)
       ),
       ReportColumn(
         "Département",
         centerAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.postalCode.flatMap(Departments.fromPostalCode).getOrElse("")
+        (report, _, _, _, _) => report.companyAddress.postalCode.flatMap(Departments.fromPostalCode).getOrElse("")
       ),
       ReportColumn(
         "Code postal",
         centerAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
+        (report, _, _, _, _) => report.companyAddress.postalCode.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Pays",
         centerAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
+        (report, _, _, _, _) => report.companyAddress.country.map(_.name).getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Siret",
         centerAlignmentColumn,
-        (report, _, _, _) => report.companySiret.map(_.value).getOrElse("")
+        (report, _, _, _, _) => report.companySiret.map(_.value).getOrElse("")
       ),
       ReportColumn(
         "Nom de l'entreprise",
         leftAlignmentColumn,
-        (report, _, _, _) => report.companyName.getOrElse(""),
+        (report, _, _, _, _) => report.companyName.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Adresse de l'entreprise",
         leftAlignmentColumn,
-        (report, _, _, _) => report.companyAddress.toString,
+        (report, _, _, _, _) => report.companyAddress.toString,
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email de l'entreprise",
         centerAlignmentColumn,
-        (_, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
+        (_, _, _, _, companyAdmins) => companyAdmins.map(_.email).mkString(","),
         available = requestedBy.userRole == UserRole.Admin
       ),
       ReportColumn(
         "Site web de l'entreprise",
         centerAlignmentColumn,
-        (report, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
+        (report, _, _, _, _) => report.websiteURL.websiteURL.map(_.value).getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone de l'entreprise",
         centerAlignmentColumn,
-        (report, _, _, _) => report.phone.getOrElse(""),
+        (report, _, _, _, _) => report.phone.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Vendeur (marketplace)",
         centerAlignmentColumn,
-        (report, _, _, _) => report.vendor.getOrElse(""),
+        (report, _, _, _, _) => report.vendor.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Catégorie",
         leftAlignmentColumn,
-        (report, _, _, _) => ReportCategory.displayValue(report.category)
+        (report, _, _, _, _) => ReportCategory.displayValue(report.category)
       ),
       ReportColumn(
         "Sous-catégories",
         leftAlignmentColumn,
-        (report, _, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
+        (report, _, _, _, _) => report.subcategories.filter(s => s != null).mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Détails",
         Column(width = new Width(100, WidthUnit.Character), style = leftAlignmentStyle),
-        (report, _, _, _) => report.details.map(d => s"${d.label} ${d.value}").mkString("\n").replace("&#160;", " ")
+        (report, _, _, _, _) => report.details.map(d => s"${d.label} ${d.value}").mkString("\n").replace("&#160;", " ")
       ),
       ReportColumn(
         "Pièces jointes",
         leftAlignmentColumn,
-        (_, files, _, _) =>
+        (_, files, _, _, _) =>
           files
             .filter(file => file.origin == ReportFileOrigin.CONSUMER)
             .map(file =>
@@ -213,13 +218,23 @@ class ReportsExtractActor(
       ReportColumn(
         "Statut",
         leftAlignmentColumn,
-        (report, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
+        (report, _, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Réponse du professionnel",
+        leftAlignmentColumn,
+        (_, _, events, _, _) =>
+          events
+            .find(event => event.action == Constants.ActionEvent.REPORT_PRO_RESPONSE)
+            .flatMap(e => e.details.validate[ReportResponse].asOpt)
+            .map(response => ReportResponseType.translate(response.responseType))
+            .getOrElse("")
       ),
       ReportColumn(
         "Réponse au consommateur",
         leftAlignmentColumn,
-        (report, _, events, _) =>
+        (report, _, events, _, _) =>
           Some(report.status)
             .filter(
               List(
@@ -238,7 +253,7 @@ class ReportsExtractActor(
       ReportColumn(
         "Réponse à la DGCCRF",
         leftAlignmentColumn,
-        (report, _, events, _) =>
+        (report, _, events, _, _) =>
           Some(report.status)
             .filter(
               List(
@@ -255,50 +270,68 @@ class ReportsExtractActor(
             .getOrElse("")
       ),
       ReportColumn(
+        "Évaluation du consommateur",
+        leftAlignmentColumn,
+        (_, _, _, review, _) => review.map(r => ResponseEvaluation.translate(r.evaluation)).getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Réponse du consommateur",
+        leftAlignmentColumn,
+        (_, _, _, review, _) => review.flatMap(_.details).getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Date de l'évaluation du consommateur",
+        leftAlignmentColumn,
+        (_, _, _, review, _) => review.map(r => frenchFormatDate(r.creationDate, zone)).getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Identifiant",
         centerAlignmentColumn,
-        (report, _, _, _) => report.id.toString,
+        (report, _, _, _, _) => report.id.toString,
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Prénom",
         leftAlignmentColumn,
-        (report, _, _, _) => report.firstName,
+        (report, _, _, _, _) => report.firstName,
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Nom",
         leftAlignmentColumn,
-        (report, _, _, _) => report.lastName,
+        (report, _, _, _, _) => report.lastName,
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Email",
         leftAlignmentColumn,
-        (report, _, _, _) => report.email.value,
+        (report, _, _, _, _) => report.email.value,
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Téléphone",
         leftAlignmentColumn,
-        (report, _, _, _) => report.consumerPhone.getOrElse(""),
+        (report, _, _, _, _) => report.consumerPhone.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Numéro de référence dossier",
         leftAlignmentColumn,
-        (report, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
+        (report, _, _, _, _) => report.consumerReferenceNumber.getOrElse(""),
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
         "Accord pour contact",
         centerAlignmentColumn,
-        (report, _, _, _) => if (report.contactAgreement) "Oui" else "Non"
+        (report, _, _, _, _) => if (report.contactAgreement) "Oui" else "Non"
       ),
       ReportColumn(
         "Actions DGCCRF",
         leftAlignmentColumn,
-        (_, _, events, _) =>
+        (_, _, events, _, _) =>
           events
             .filter(event => event.eventType == Constants.EventType.DGCCRF)
             .map(event =>
@@ -314,6 +347,7 @@ class ReportsExtractActor(
             _,
             _,
             events,
+            _,
             _
         ) => if (events.exists(event => event.action == Constants.ActionEvent.CONTROL)) "Oui" else "Non",
         available = requestedBy.userRole == UserRole.DGCCRF
@@ -334,6 +368,7 @@ class ReportsExtractActor(
         .map(_.entities.map(_.report))
       reportFilesMap <- reportFileRepository.prefetchReportsFiles(paginatedReports.map(_.id))
       reportEventsMap <- eventRepository.fetchEventsOfReports(paginatedReports)
+      consumerReviewsMap <- reportConsumerReviewOrchestrator.find(paginatedReports.map(_.id))
       companyAdminsMap <- companyAccessRepository.fetchUsersByCompanyIds(
         paginatedReports.flatMap(_.companyId),
         Seq(AccessLevel.ADMIN)
@@ -351,6 +386,7 @@ class ReportsExtractActor(
                       report,
                       reportFilesMap.getOrElse(report.id, Nil),
                       reportEventsMap.getOrElse(report.id, Nil),
+                      consumerReviewsMap.getOrElse(report.id, None),
                       report.companyId.flatMap(companyAdminsMap.get).getOrElse(Nil)
                     )
                   )

@@ -18,7 +18,9 @@ import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import repositories.CRUDRepository
+import repositories.reportconsumerreview.ResponseConsumerReviewTable
 import slick.basic.DatabaseConfig
+import repositories.reportconsumerreview.ResponseConsumerReviewColumnType._
 
 import java.time.temporal.WeekFields
 
@@ -457,6 +459,19 @@ object ReportRepository {
           .exists
         if (hasAttachment) exists else !exists
       }
+      .filterOpt(filter.hasEvaluation) { case (table, hasEvaluation) =>
+        val exists = ResponseConsumerReviewTable.table
+          .filter(x => x.reportId === table.id)
+          .map(_.reportId)
+          .exists
+        if (hasEvaluation) exists else !exists
+      }
+      .filterIf(filter.evaluation.nonEmpty) { table =>
+        ResponseConsumerReviewTable.table
+          .filter(_.reportId === table.id)
+          .filter(_.evaluation.inSet(filter.evaluation))
+          .exists
+      }
       .filterIf(filter.departments.nonEmpty) { case (table) =>
         filter.departments
           .flatMap(toPostalCode)
@@ -471,9 +486,6 @@ object ReportRepository {
         toTsVector(
           table.firstName ++ " " ++ table.lastName ++ " " ++ table.consumerReferenceNumber.asColumnOf[String]
         ) @@ plainToTsQuery(fullText)
-//        || (toTsVector(
-//          table.companySiret.asColumnOf[String]
-//        ) @@ plainToTsQuery(fullText))
       }
   }
 
