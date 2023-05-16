@@ -5,7 +5,10 @@ import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
 import models.UserRole
+import models.report.ArborescenceNode
+import models.report.NodeInfo
 import models.report.ReportFilter
+import models.report.ReportNode
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.review.ResponseEvaluation
@@ -20,9 +23,11 @@ import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterfa
 import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.Departments
+
 import java.sql.Timestamp
 import java.time._
 import java.util.UUID
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -30,8 +35,15 @@ class StatsOrchestrator(
     reportRepository: ReportRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
-    accessTokenRepository: AccessTokenRepositoryInterface
+    accessTokenRepository: AccessTokenRepositoryInterface,
+    arborescence: List[ArborescenceNode]
 )(implicit val executionContext: ExecutionContext) {
+
+  def reportsCountBySubcategories(start: Option[LocalDate], end: Option[LocalDate]): Future[List[ReportNode]] = for {
+    reportNodes <- reportRepository
+      .reportsCountBySubcategories(start, end)
+      .map(StatsOrchestrator.buildReportNodes(arborescence, _))
+  } yield reportNodes
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {
@@ -167,6 +179,36 @@ class StatsOrchestrator(
 }
 
 object StatsOrchestrator {
+
+  private[orchestrators] def buildReportNodes(
+      arbo: List[ArborescenceNode],
+      results: Seq[(String, List[String], Int)]
+  ): List[ReportNode] = {
+    val merged = results.map { case (cat, subcat, count) => (cat :: subcat, count) }
+    val tree = ReportNode("", 0, List.empty, List.empty, "")
+    arbo.foreach { arborescenceNode =>
+      val count = merged.find(_._1 == arborescenceNode.path.map(_._1).toList).map(_._2).getOrElse(0)
+      createOrUpdateReportNode(arborescenceNode.path, count, tree)
+    }
+    tree.children
+  }
+
+  @tailrec
+  private def createOrUpdateReportNode(subcats: Vector[(String, NodeInfo)], count: Int, tree: ReportNode): Unit = {
+    tree.count += count
+    subcats match {
+      case (path, nodeInfo) +: rest =>
+        tree.children.find(_.name == path) match {
+          case Some(child) => createOrUpdateReportNode(rest, count, child)
+          case None =>
+            val reportNode = ReportNode(path, 0, List.empty, nodeInfo.tags, nodeInfo.id)
+            tree.children = reportNode :: tree.children
+            createOrUpdateReportNode(rest, count, reportNode)
+
+        }
+      case _ => ()
+    }
+  }
 
   private[orchestrators] val reliableStatsStartDate = OffsetDateTime.parse("2019-01-01T00:00:00Z")
 

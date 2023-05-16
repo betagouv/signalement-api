@@ -20,11 +20,14 @@ import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepo
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import config._
+import models.report.ArborescenceNode
 import orchestrators._
 import org.flywaydb.core.Flyway
 import play.api._
 import play.api.db.slick.DbName
 import play.api.db.slick.SlickComponents
+import play.api.libs.json.JsArray
+import play.api.libs.json.Json
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.BodyParsers
@@ -388,8 +391,27 @@ class SignalConsoComponents(
       "reports-extract-actor"
     )
 
+  // This file can be generated in the website using 'yarn minimized-anomalies'.
+  // This is the first iteration of the story, using an copied generated file from the website
+  // The second version will be to expose the file in the website and fetch it in the API at runtime.
+  val arborescenceAsJson = context.environment
+    .resourceAsStream("minimized-anomalies.json")
+    .map(json =>
+      try Json.parse(json)
+      finally json.close()
+    )
+    .map(_.as[JsArray])
+    .map(ArborescenceNode.fromJson)
+    .get
+
   val statsOrchestrator =
-    new StatsOrchestrator(reportRepository, eventRepository, responseConsumerReviewRepository, accessTokenRepository)
+    new StatsOrchestrator(
+      reportRepository,
+      eventRepository,
+      responseConsumerReviewRepository,
+      accessTokenRepository,
+      arborescenceAsJson
+    )
 
   val websitesOrchestrator =
     new WebsitesOrchestrator(websiteRepository, companyRepository)
