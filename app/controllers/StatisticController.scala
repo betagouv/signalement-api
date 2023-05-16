@@ -159,4 +159,12 @@ class StatisticController(
     statsOrchestrator.countByDepartments(start, end).map(res => Ok(Json.toJson(res)))
   }
 
+  def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
+    implicit request =>
+      val mapper = new QueryStringMapper(request.queryString)
+      val start = mapper.localDate("start")
+      val end = mapper.localDate("end")
+      statsOrchestrator.reportsCountBySubcategories(start, end).map(res => Ok(Json.toJson(res)))
+  }
+
 }

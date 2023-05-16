@@ -1,13 +1,65 @@
 package orchestrators
 
 import models.CountByDate
+import models.report.ArborescenceNode
+import models.report.NodeInfo
+import models.report.ReportNode
 import orchestrators.StatsOrchestrator.formatStatData
+import orchestrators.StatsOrchestrator.buildReportNodes
 import org.specs2.mutable.Specification
 
 import java.sql.Timestamp
 import java.time.LocalDate
 
 class StatsOrchestratorTest extends Specification {
+
+  "Create stats tree" should {
+    "correctly convert data" in {
+      val arborescence = List(
+        ArborescenceNode(
+          None,
+          Vector("cat1" -> NodeInfo("1", List("tag1")), "subcat11" -> NodeInfo("1.1", List.empty))
+        ),
+        ArborescenceNode(
+          None,
+          Vector("cat2" -> NodeInfo("2", List.empty), "subcat21" -> NodeInfo("2.1", List("tag2")))
+        ),
+        ArborescenceNode(
+          None,
+          Vector("cat2" -> NodeInfo("2", List.empty), "subcat22" -> NodeInfo("2.2", List.empty))
+        ),
+        ArborescenceNode(
+          None,
+          Vector("cat3" -> NodeInfo("3", List.empty))
+        )
+      )
+
+      val expected =
+        List(
+          ReportNode("cat3", 0, List.empty, List.empty, "3"),
+          ReportNode(
+            "cat2",
+            2,
+            List(
+              ReportNode("subcat22", 1, List.empty, List.empty, "2.2"),
+              ReportNode("subcat21", 1, List.empty, List("tag2"), "2.1")
+            ),
+            List.empty,
+            "2"
+          ),
+          ReportNode("cat1", 1, List(ReportNode("subcat11", 1, List.empty, List.empty, "1.1")), List("tag1"), "1")
+        )
+      val inputs = Seq(
+        ("cat2", List("subcat22"), 1),
+        ("cat2", List("subcat21"), 1),
+        ("cat1", List("subcat11"), 1),
+        ("cat4", List.empty, 10)
+      )
+      val res = buildReportNodes(arborescence, inputs)
+
+      res shouldEqual expected
+    }
+  }
 
   "StatsOrchestratorTest" should {
 
