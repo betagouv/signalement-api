@@ -53,6 +53,22 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
     db.run(similarReportQuery.result).map(_.toList)
   }
 
+  def reportsCountBySubcategories(
+      start: Option[LocalDate],
+      end: Option[LocalDate]
+  ): Future[Seq[(String, List[String], Int)]] = db.run(
+    table
+      .filterOpt(start) { case (table, s) =>
+        table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .filterOpt(end) { case (table, e) =>
+        table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+      }
+      .groupBy(reportTable => (reportTable.category, reportTable.subcategories))
+      .map { case ((category, subCategories), group) => (category, subCategories, group.length) }
+      .result
+  )
+
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(table.filter(_.email === email).result)
 

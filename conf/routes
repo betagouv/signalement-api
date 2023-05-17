@@ -24,6 +24,7 @@ GET           /api/stats/dgccrf-active-account                          controll
 GET           /api/stats/dgccrf-subscriptions                           controllers.StatisticController.dgccrfSubscription(ticks: Option[Int])
 GET           /api/stats/dgccrf-controls                                controllers.StatisticController.dgccrfControlsCurve(ticks: Option[Int])
 GET           /api/reports/count-by-departments                         controllers.StatisticController.countByDepartments()
+GET           /api/reports/count-by-subcategories                       controllers.StatisticController.reportsCountBySubcategories()
 
 
 # Reports list API

@@ -66,4 +66,9 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def getPhoneReports(start: Option[LocalDate], end: Option[LocalDate]): Future[List[Report]] = ???
 
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
+
+  override def reportsCountBySubcategories(
+      start: Option[LocalDate],
+      end: Option[LocalDate]
+  ): Future[Seq[(String, List[String], Int)]] = ???
 }
