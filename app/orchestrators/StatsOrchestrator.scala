@@ -11,6 +11,7 @@ import models.report.ReportFilter
 import models.report.ReportNode
 import models.report.ReportStatus
 import models.report.ReportTag
+import models.report.ReportsCountBySubcategoriesFilter
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
@@ -39,9 +40,9 @@ class StatsOrchestrator(
     arborescence: List[ArborescenceNode]
 )(implicit val executionContext: ExecutionContext) {
 
-  def reportsCountBySubcategories(start: Option[LocalDate], end: Option[LocalDate]): Future[List[ReportNode]] = for {
+  def reportsCountBySubcategories(filters: ReportsCountBySubcategoriesFilter): Future[List[ReportNode]] = for {
     reportNodes <- reportRepository
-      .reportsCountBySubcategories(start, end)
+      .reportsCountBySubcategories(filters)
       .map(StatsOrchestrator.buildReportNodes(arborescence, _))
   } yield reportNodes
 
@@ -182,28 +183,66 @@ object StatsOrchestrator {
 
   private[orchestrators] def buildReportNodes(
       arbo: List[ArborescenceNode],
-      results: Seq[(String, List[String], Int)]
+      results: Seq[(String, List[String], Int, Int)]
   ): List[ReportNode] = {
-    val merged = results.map { case (cat, subcat, count) => (cat :: subcat, count) }
-    val tree = ReportNode("", 0, List.empty, List.empty, "")
+    val merged = results.map { case (cat, subcat, count, reclamations) => (cat :: subcat, count, reclamations) }
+    val tree = ReportNode("", 0, 0, List.empty, List.empty, None)
+
     arbo.foreach { arborescenceNode =>
-      val count = merged.find(_._1 == arborescenceNode.path.map(_._1).toList).map(_._2).getOrElse(0)
-      createOrUpdateReportNode(arborescenceNode.path, count, tree)
+      val test = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
+      val count = test.map(_._2).getOrElse(0)
+      val reclamations = test.map(_._3).getOrElse(0)
+      createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
     }
+
+    val arboPathes = arbo.map(_.path.map(_._1).toList)
+    merged.foreach { case (path, count, reclamations) =>
+      if (!arboPathes.contains(path)) createOrUpdateReportNodeOld(path, count, reclamations, tree)
+    }
+
     tree.children
   }
 
   @tailrec
-  private def createOrUpdateReportNode(subcats: Vector[(String, NodeInfo)], count: Int, tree: ReportNode): Unit = {
+  private def createOrUpdateReportNode(
+      subcats: Vector[(String, NodeInfo)],
+      count: Int,
+      reclamations: Int,
+      tree: ReportNode
+  ): Unit = {
     tree.count += count
+    tree.reclamations += reclamations
     subcats match {
       case (path, nodeInfo) +: rest =>
         tree.children.find(_.name == path) match {
-          case Some(child) => createOrUpdateReportNode(rest, count, child)
+          case Some(child) => createOrUpdateReportNode(rest, count, reclamations, child)
           case None =>
-            val reportNode = ReportNode(path, 0, List.empty, nodeInfo.tags, nodeInfo.id)
+            val reportNode = ReportNode(path, 0, 0, List.empty, nodeInfo.tags, Some(nodeInfo.id))
             tree.children = reportNode :: tree.children
-            createOrUpdateReportNode(rest, count, reportNode)
+            createOrUpdateReportNode(rest, count, reclamations, reportNode)
+
+        }
+      case _ => ()
+    }
+  }
+
+  @tailrec
+  private def createOrUpdateReportNodeOld(
+      subcats: List[String],
+      count: Int,
+      reclamations: Int,
+      tree: ReportNode
+  ): Unit = {
+    tree.count += count
+    tree.reclamations += reclamations
+    subcats match {
+      case path :: rest =>
+        tree.children.find(_.name == path) match {
+          case Some(child) => createOrUpdateReportNodeOld(rest, count, reclamations, child)
+          case None =>
+            val reportNode = ReportNode(path, 0, 0, List.empty, List.empty, None)
+            tree.children = reportNode :: tree.children
+            createOrUpdateReportNodeOld(rest, count, reclamations, reportNode)
 
         }
       case _ => ()
