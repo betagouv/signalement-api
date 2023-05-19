@@ -4,6 +4,9 @@ import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
 import models.report.ReportTag
+import slick.ast.Library.SqlAggregateFunction
+import slick.ast.TypedType
+import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods
 
 import java.time.OffsetDateTime
 
@@ -40,6 +43,15 @@ trait PostgresProfile
     SimpleFunction.binary[List[ReportTag], Int, Int]("array_length")
 
     SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
+
+    // Declare the name of an aggregate function:
+    val CountGroupBy = new SqlAggregateFunction("count")
+
+    // Implement the aggregate function as an extension method:
+    implicit class ArrayAggColumnQueryExtensionMethods[P, C[_]](val q: Query[Rep[P], _, C]) {
+      def countGroupBy[B](implicit tm: TypedType[B]) =
+        CountGroupBy.column[B](q.toNode)
+    }
 
   }
   override protected def computeCapabilities: Set[slick.basic.Capability] =

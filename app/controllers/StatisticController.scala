@@ -1,11 +1,13 @@
 package controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import controllers.error.AppError.MalformedQueryParams
 import models._
 import models.report.ReportFilter.transmittedReportsFilter
 import models.report.ReportFilter
 import models.report.ReportResponseType
 import models.report.ReportStatus
+import models.report.ReportsCountBySubcategoriesFilter
 import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportStatus.statusWithProResponse
 import models.report.ReportTag.ReportTagHiddenToProfessionnel
@@ -20,6 +22,8 @@ import utils.silhouette.auth.WithRole
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 class StatisticController(
     statsOrchestrator: StatsOrchestrator,
@@ -161,10 +165,13 @@ class StatisticController(
 
   def reportsCountBySubcategories() = SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async {
     implicit request =>
-      val mapper = new QueryStringMapper(request.queryString)
-      val start = mapper.localDate("start")
-      val end = mapper.localDate("end")
-      statsOrchestrator.reportsCountBySubcategories(start, end).map(res => Ok(Json.toJson(res)))
+      ReportsCountBySubcategoriesFilter.fromQueryString(request.queryString) match {
+        case Failure(error) =>
+          logger.error("Cannot parse querystring" + request.queryString, error)
+          Future.failed(MalformedQueryParams)
+        case Success(filters) =>
+          statsOrchestrator.reportsCountBySubcategories(filters).map(res => Ok(Json.toJson(res)))
+      }
   }
 
 }
