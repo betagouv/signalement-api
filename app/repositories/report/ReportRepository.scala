@@ -54,20 +54,40 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   }
 
   def reportsCountBySubcategories(
-      start: Option[LocalDate],
-      end: Option[LocalDate]
-  ): Future[Seq[(String, List[String], Int)]] = db.run(
-    table
-      .filterOpt(start) { case (table, s) =>
-        table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
-      }
-      .filterOpt(end) { case (table, e) =>
-        table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
-      }
-      .groupBy(reportTable => (reportTable.category, reportTable.subcategories))
-      .map { case ((category, subCategories), group) => (category, subCategories, group.length) }
-      .result
-  )
+      filters: ReportsCountBySubcategoriesFilter
+  ): Future[Seq[(String, List[String], Int, Int)]] =
+    db.run(
+      table
+        .filterOpt(filters.start) { case (table, s) =>
+          table.creationDate >= ZonedDateTime.of(s, LocalTime.MIN, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .filterOpt(filters.end) { case (table, e) =>
+          table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .filterIf(filters.departments.nonEmpty) { case (table) =>
+          filters.departments
+            .flatMap(toPostalCode)
+            .map(dep => table.companyPostalCode.asColumnOf[String] like s"${dep}%")
+            .reduceLeft(_ || _)
+        }
+        .groupBy(reportTable => (reportTable.category, reportTable.subcategories))
+        .map { case ((category, subCategories), group) =>
+          (
+            category,
+            subCategories,
+            group.length,
+            // Hack to be able to implement a filter clause with group by (possible with PG but not slick)
+            // https://stackoverflow.com/questions/57372823/filter-in-select-using-slick
+            // group.filter(reportTable => (ReportTag.ReponseConso: ReportTag).bind === reportTable.tags.any).length will not work (even if it should, an issue is open)
+            group
+              .map { reportTable =>
+                Case If (ReportTag.ReponseConso: ReportTag).bind === reportTable.tags.any Then 1
+              }
+              .countGroupBy[Int]
+          )
+        }
+        .result
+    )
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(table.filter(_.email === email).result)

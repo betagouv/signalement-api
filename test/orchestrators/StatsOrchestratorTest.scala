@@ -36,24 +36,33 @@ class StatsOrchestratorTest extends Specification {
 
       val expected =
         List(
-          ReportNode("cat3", 0, List.empty, List.empty, "3"),
+          ReportNode("cat4", 10, 5, List.empty, List.empty, None),
+          ReportNode("cat3", 0, 0, List.empty, List.empty, Some("3")),
           ReportNode(
             "cat2",
+            3,
             2,
             List(
-              ReportNode("subcat22", 1, List.empty, List.empty, "2.2"),
-              ReportNode("subcat21", 1, List.empty, List("tag2"), "2.1")
+              ReportNode("subcat22", 2, 1, List.empty, List.empty, Some("2.2")),
+              ReportNode("subcat21", 1, 1, List.empty, List("tag2"), Some("2.1"))
             ),
             List.empty,
-            "2"
+            Some("2")
           ),
-          ReportNode("cat1", 1, List(ReportNode("subcat11", 1, List.empty, List.empty, "1.1")), List("tag1"), "1")
+          ReportNode(
+            "cat1",
+            1,
+            0,
+            List(ReportNode("subcat11", 1, 0, List.empty, List.empty, Some("1.1"))),
+            List("tag1"),
+            Some("1")
+          )
         )
       val inputs = Seq(
-        ("cat2", List("subcat22"), 1),
-        ("cat2", List("subcat21"), 1),
-        ("cat1", List("subcat11"), 1),
-        ("cat4", List.empty, 10)
+        ("cat4", List.empty, 10, 5),
+        ("cat2", List("subcat22"), 2, 1),
+        ("cat2", List("subcat21"), 1, 1),
+        ("cat1", List("subcat11"), 1, 0)
       )
       val res = buildReportNodes(arborescence, inputs)
 

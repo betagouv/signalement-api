@@ -68,7 +68,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 
   override def reportsCountBySubcategories(
-      start: Option[LocalDate],
-      end: Option[LocalDate]
-  ): Future[Seq[(String, List[String], Int)]] = ???
+      filters: ReportsCountBySubcategoriesFilter
+  ): Future[Seq[(String, List[String], Int, Int)]] = ???
 }
