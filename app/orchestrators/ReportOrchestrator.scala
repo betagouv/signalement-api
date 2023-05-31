@@ -29,6 +29,7 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
+import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
@@ -58,6 +59,7 @@ class ReportOrchestrator(
     mailService: MailService,
     reportConsumerReviewOrchestrator: ReportConsumerReviewOrchestrator,
     reportRepository: ReportRepositoryInterface,
+    reportMetadataRepository: ReportMetadataRepositoryInterface,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     socialNetworkRepository: SocialNetworkRepositoryInterface,
@@ -258,12 +260,21 @@ class ReportOrchestrator(
       )
       report <- reportRepository.create(reportToCreate)
       _ = logger.debug(s"Created report with id ${report.id}")
+      _ <- createReportMetadata(draftReport, report)
       files <- reportFileOrchestrator.attachFilesToReport(draftReport.fileIds, report.id)
       updatedReport <- notifyProfessionalIfNeeded(maybeCompany, report)
       _ <- notifyDgccrfIfNeeded(updatedReport)
       _ <- notifyConsumer(updatedReport, maybeCompany, files)
       _ = logger.debug(s"Report ${updatedReport.id} created")
     } yield updatedReport
+
+  def createReportMetadata(draftReport: ReportDraft, createdReport: Report): Future[Any] =
+    draftReport.metadata
+      .map { metadataDraft =>
+        val metadata = metadataDraft.toReportMetadata(reportId = createdReport.id)
+        reportMetadataRepository.create(metadata)
+      }
+      .getOrElse(Future.successful(()))
 
   def createFakeReportForBlacklistedUser(draftReport: ReportDraft): Report = {
     val maybeCompanyId = draftReport.companySiret.map(_ => UUID.randomUUID())

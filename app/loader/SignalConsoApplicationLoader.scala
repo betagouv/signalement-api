@@ -74,6 +74,8 @@ import repositories.reportconsumerreview.ResponseConsumerReviewRepository
 import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
+import repositories.reportmetadata.ReportMetadataRepository
+import repositories.reportmetadata.ReportMetadataRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
@@ -188,6 +190,7 @@ class SignalConsoComponents(
   def eventRepository: EventRepositoryInterface = new EventRepository(dbConfig)
   val ratingRepository: RatingRepositoryInterface = new RatingRepository(dbConfig)
   def reportRepository: ReportRepositoryInterface = new ReportRepository(dbConfig)
+  val reportMetadataRepository: ReportMetadataRepositoryInterface = new ReportMetadataRepository(dbConfig)
   val reportNotificationBlockedRepository: ReportNotificationBlockedRepositoryInterface =
     new ReportNotificationBlockedRepository(dbConfig)
   val responseConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface =
@@ -358,6 +361,7 @@ class SignalConsoComponents(
     mailService,
     reportConsumerReviewOrchestrator,
     reportRepository,
+    reportMetadataRepository,
     reportFileOrchestrator,
     companyRepository,
     socialNetworkRepository,

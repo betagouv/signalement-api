@@ -65,6 +65,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
           .withFieldConst(_.reponseconsoCode, None)
           .withFieldConst(_.ccrfCode, None)
+          .withFieldConst(_.metadata, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -101,6 +102,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
           .withFieldConst(_.reponseconsoCode, None)
           .withFieldConst(_.ccrfCode, None)
+          .withFieldConst(_.metadata, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -132,6 +134,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           .withFieldConst(_.companyIsPublic, Some(company.isPublic))
           .withFieldConst(_.reponseconsoCode, None)
           .withFieldConst(_.ccrfCode, None)
+          .withFieldConst(_.metadata, None)
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result
@@ -178,6 +181,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           )
           .withFieldConst(_.reponseconsoCode, None)
           .withFieldConst(_.ccrfCode, None)
+          .withFieldConst(_.metadata, None)
           .transform
         _ <- components.reportOrchestrator.validateAndCreateReport(reportDraft)
       } yield ()
@@ -219,6 +223,7 @@ class ReportOrchestratorTest(implicit ee: ExecutionEnv) extends Specification wi
           )
           .withFieldConst(_.reponseconsoCode, None)
           .withFieldConst(_.ccrfCode, None)
+          .withFieldConst(_.metadata, None)
           .transform
         result <- components.reportOrchestrator.validateSpamSimilarReport(reportDraft)
       } yield result

@@ -5,19 +5,19 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    //Cannot be updated to "5.1.0" compatibility issues with current version of alpakka slick (need to update them first)
+    // Cannot be updated to "5.1.0" compatibility issues with current version of alpakka slick (need to update them first)
     lazy val playSlickVersion = "5.0.2"
-    //Cannot be updated to "0.21.1" compatibility issues with current version of alpakka slick (need to update them first)
+    // Cannot be updated to "0.21.1" compatibility issues with current version of alpakka slick (need to update them first)
     lazy val slickPgVersion = "0.20.4"
     lazy val playMailerVersion = "8.0.1"
-    //Cannot be updated to "10.4.0" compatibility issues with play  2.8.18 (still using akka 2.6.20)
+    // Cannot be updated to "10.4.0" compatibility issues with play  2.8.18 (still using akka 2.6.20)
     lazy val akkaHttpVersion = "10.2.10"
-    //Cannot be updated to "5.0.0" compatibility issues with play 2.8.18 (still using akka 2.6.20 )
+    // Cannot be updated to "5.0.0" compatibility issues with play 2.8.18 (still using akka 2.6.20 )
     lazy val alpakkaVersion = "4.0.0"
     lazy val enumeratumVersion = "1.7.2"
     lazy val sentryVersion = "6.10.0"
     lazy val playSilhouetteVersion = "7.0.0"
-    //Cannot be updated to "4.19.0" compatibility issues with play spec2 2.8.18 (still using 4.8.3)
+    // Cannot be updated to "4.19.0" compatibility issues with play spec2 2.8.18 (still using 4.8.3)
     lazy val specs2MatcherExtraVersion = "4.8.3"
     lazy val scalaCheckVersion = "1.17.0"
     lazy val catsCoreVersion = "2.9.0"
@@ -34,7 +34,7 @@ object Dependencies {
     lazy val chimneyVersion = "0.7.2"
     lazy val sttp = "3.8.5"
     lazy val sttpPlayJson = "3.8.15"
-    lazy val flyWayVersion       = "9.16.3"
+    lazy val flyWayVersion = "9.16.3"
 
   }
 

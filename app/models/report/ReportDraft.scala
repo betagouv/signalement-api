@@ -1,15 +1,16 @@
 package models.report
 
+import ai.x.play.json.Encoders.encoder
+import ai.x.play.json.Jsonx
+import models.company.Address
+import models.company.Company
+import models.report.ReportTag.TranslationReportTagReads
+import models.report.reportfile.ReportFileId
+import models.report.reportmetadata.ReportMetadataDraft
+import play.api.libs.json.OFormat
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
-import models.report.ReportTag.TranslationReportTagReads
-import ai.x.play.json.Jsonx
-import ai.x.play.json.Encoders.encoder
-import models.company.Address
-import models.company.Company
-import models.report.reportfile.ReportFileId
-import play.api.libs.json.OFormat
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -42,7 +43,8 @@ case class ReportDraft(
     vendor: Option[String] = None,
     tags: List[ReportTag] = Nil,
     reponseconsoCode: Option[List[String]] = None,
-    ccrfCode: Option[List[String]] = None
+    ccrfCode: Option[List[String]] = None,
+    metadata: Option[ReportMetadataDraft] = None
 ) {
 
   def generateReport(
