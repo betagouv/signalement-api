@@ -65,6 +65,7 @@ class AccessTokenRepository(
   override def fetchActivationToken(companyId: UUID): Future[Option[AccessToken]] =
     db.run(
       table
+        .sortBy(_.creationDate.desc)
         .filter(_.companyId === companyId)
         .filter(_.kind === (CompanyInit: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
