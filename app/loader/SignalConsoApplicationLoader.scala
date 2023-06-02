@@ -76,6 +76,8 @@ import repositories.reportfile.ReportFileRepository
 import repositories.reportfile.ReportFileRepositoryInterface
 import repositories.reportmetadata.ReportMetadataRepository
 import repositories.reportmetadata.ReportMetadataRepositoryInterface
+import repositories.signalconsoreview.SignalConsoReviewRepository
+import repositories.signalconsoreview.SignalConsoReviewRepositoryInterface
 import repositories.socialnetwork.SocialNetworkRepository
 import repositories.socialnetwork.SocialNetworkRepositoryInterface
 import repositories.subscription.SubscriptionRepository
@@ -200,6 +202,8 @@ class SignalConsoComponents(
   val userRepository: UserRepositoryInterface = new UserRepository(dbConfig, passwordHasherRegistry)
   val websiteRepository: WebsiteRepositoryInterface = new WebsiteRepository(dbConfig)
   val socialNetworkRepository: SocialNetworkRepositoryInterface = new SocialNetworkRepository(dbConfig)
+
+  val signalConsoReviewRepository: SignalConsoReviewRepositoryInterface = new SignalConsoReviewRepository(dbConfig)
 
   val userService = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
@@ -581,6 +585,9 @@ class SignalConsoComponents(
       controllerComponents
     )
 
+  val signalConsoReviewController =
+    new SignalConsoReviewController(signalConsoReviewRepository, silhouette, controllerComponents)
+
   val reportToExternalController =
     new ReportToExternalController(
       reportRepository,
@@ -643,6 +650,7 @@ class SignalConsoComponents(
       reportBlockedNotificationController,
       blacklistedEmailsController,
       userReportsFiltersController,
+      signalConsoReviewController,
       assets
     )
 
