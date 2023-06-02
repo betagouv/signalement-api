@@ -147,6 +147,7 @@ class UserReportsFiltersControllerSpec(implicit ee: ExecutionEnv)
       status(result.map(_._1)) must beEqualTo(NO_CONTENT)
       result.map(_._2) must beEqualTo(Json.parse(jsonString)).await
     }
+
     "reject when user is not authenticated" in {
       val jsonBody = Json.obj(
         "name" -> "",

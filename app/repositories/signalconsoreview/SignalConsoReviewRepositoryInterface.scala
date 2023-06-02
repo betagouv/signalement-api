@@ -1,0 +1,7 @@
+package repositories.signalconsoreview
+
+import models.report.signalconsoreview.SignalConsoReview
+import models.report.signalconsoreview.SignalConsoReviewId
+import repositories.TypedCRUDRepositoryInterface
+
+trait SignalConsoReviewRepositoryInterface extends TypedCRUDRepositoryInterface[SignalConsoReview, SignalConsoReviewId]
