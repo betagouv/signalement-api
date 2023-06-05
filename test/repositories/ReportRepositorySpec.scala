@@ -1,6 +1,8 @@
 package repositories
 
 import models.report.ReportFilter
+import models.report.reportmetadata.Os
+import models.report.reportmetadata.ReportMetadata
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable
@@ -40,10 +42,20 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
       lastName = "lastName"
     )
 
+  val report2 = Fixtures
+    .genReportForCompany(company)
+    .sample
+    .get
+
   override def beforeAll(): Unit = {
     Await.result(components.companyRepository.create(company), Duration.Inf)
     Await.result(components.reportRepository.create(report), Duration.Inf)
     Await.result(components.reportRepository.create(anonymousReport), Duration.Inf)
+    Await.result(components.reportRepository.create(report2), Duration.Inf)
+    Await.result(
+      components.reportMetadataRepository.create(ReportMetadata(report2.id, false, Some(Os.Ios))),
+      Duration.Inf
+    )
 
     ()
   }
@@ -52,6 +64,7 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
     Await.result(components.reportRepository.delete(report.id), Duration.Inf)
     Await.result(components.reportRepository.delete(anonymousReport.id), Duration.Inf)
     Await.result(components.companyRepository.delete(company.id), Duration.Inf)
+    Await.result(components.reportRepository.delete(report2.id), Duration.Inf)
 
     ()
   }
@@ -77,6 +90,11 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
           a <- components.reportRepository.getReports(ReportFilter(fullText = Some("LASTNAME")))
           b <- components.reportRepository.getReports(ReportFilter(fullText = Some("REFERENCE")))
         } yield (a.entities must haveLength(1)) && (b.entities must haveLength(1))
+      }
+    }
+    "deleteReport" should {
+      "work when metadata exist and delete cascade" in {
+        components.reportRepository.delete(report2.id).map(_ mustEqual 1)
       }
     }
   }
