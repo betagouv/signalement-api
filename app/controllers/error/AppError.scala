@@ -148,9 +148,18 @@ object AppError {
 
   final case class AccountActivationTokenNotFoundOrInvalid(token: String) extends NotFoundError {
     override val `type`: String = "SC-0015"
-    override val title: String = s"Account activation token not found / invalid ${token}"
+    override val title: String =
+      s"Account activation token not found / invalid for token ${token}"
     override val details: String =
-      s"Lien invalide ou expiré, merci de recommencer la procédure d'activation du compte."
+      s"Lien invalide ou expiré, merci de contacter le support en donnant votre adresse email."
+    override val titleForLogs: String = "account_activation_token_not_found_or_invalid"
+  }
+
+  final case class ProAccountActivationTokenNotFoundOrInvalid(token: String, SIRET: SIRET) extends NotFoundError {
+    override val `type`: String = "SC-0015B"
+    override val title: String = s"Account activation token not found / invalid ${token} and SIRET ${SIRET.value}"
+    override val details: String =
+      s"Lien invalide ou expiré, merci de contacter le support en donnant votre adresse email et numéro de SIRET."
     override val titleForLogs: String = "account_activation_token_not_found_or_invalid"
   }
 
@@ -192,7 +201,7 @@ object AppError {
     override val `type`: String = "SC-0019"
     override val title: String = s"Unable to activate company, code already used"
     override val details: String =
-      s"Compte déjà activé, merci de vous connecter avec l'adresse ${email.value} ( vous pouvez recréer un mot de passe en cliquant sur 'MOT DE PASSE OUBLIÉ' sur la page de connexion.)"
+      s"Code déjà utilisé, merci de compléter la création du compte grâce au lien envoyé à l'adresse ${email.value}."
     override val titleForLogs: String = "company_activation_code_already_used"
   }
 

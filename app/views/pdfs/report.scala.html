@@ -7,11 +7,14 @@
 @import models.event.Event
 @import models.company.Company
 @import java.time.temporal.ChronoUnit
+@import models.report.review.ResponseConsumerReview
+@import models.report.review.ResponseEvaluation
 @(
         report: Report,
         maybeCompany: Option[Company],
         events: Seq[(Event, Option[User])],
         responseOption: Option[ReportResponse],
+        consumerReviewOption: Option[ResponseConsumerReview],
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(
@@ -48,9 +51,9 @@
                     <h2>Type de signalement</h2>
                     <ul>
                         <li>
-                            @ReportCategory.displayValue(report.category)
+                        @ReportCategory.displayValue(report.category)
                         </li>
-                        @report.subcategories.map{subcat =>
+                        @report.subcategories.map { subcat =>
                             <li>
                                 @subcat
                             </li>
@@ -58,11 +61,11 @@
                     </ul>
                     <h2>Détail du signalement</h2>
                     <ul>
-                        @report.details.map{input =>
-                            <li>
-                                <b>@Html(input.label)</b> @input.value
-                            </li>
-                        }
+                    @report.details.map { input =>
+                        <li>
+                            <b>@Html(input.label)</b> @input.value
+                        </li>
+                    }
                     </ul>
                     @responseOption.map { response =>
                         <h2>Réponse du professionnel</h2>
@@ -81,14 +84,41 @@
                             }
                         </b>
                         <div>@response.consumerDetails</div>
-                        @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
-                            <br/>
-                            <b>Informations complémentaires pour la DGCCRF</b>
-                            <div>@details</div>
-                        }
+                    @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
+                        <br/>
+                        <b>Informations complémentaires pour la DGCCRF</b>
+                        <div>@details</div>
                     }
+                    }
+
+                    @consumerReviewOption.map { review =>
+                        <br/>
+                        <b>Évaluation de la réponse du professionnel par le consommateur:</b>
+
+                        @review.evaluation match {
+                            case ResponseEvaluation.Positive => {
+                                Positive
+                            }
+                            case ResponseEvaluation.Negative => {
+                                Négative
+                            }
+                            case ResponseEvaluation.Negative => {
+                                Neutre
+                            }
+                        }
+                        <br/>
+                        @review.details.filter(_.nonEmpty).map { details =>
+                            <br/>
+                            <b>Détail de l'évaluation :</b>
+                            <p>@details</p>
+                        }
+
+
+                    }
+
+
                     <h2>Entreprise</h2>
-                    @report.companySiret.map{siret =>
+                    @report.companySiret.map { siret =>
                         <div>
                             <b>@siret</b>
                         </div>
@@ -97,19 +127,19 @@
                         <div>@companyName</div>
                     }
                     <div>
-                        @views.html.fragments.proAddressForConsumer(maybeCompany)
+                    @views.html.fragments.proAddressForConsumer(maybeCompany)
                     </div>
-                    @report.websiteURL.websiteURL.map{url =>
+                    @report.websiteURL.websiteURL.map { url =>
                         <div>
                             @url
                         </div>
                     }
-                    @report.phone.map{phone =>
+                    @report.phone.map { phone =>
                         <div>
                             @phone
                         </div>
                     }
-                    @report.vendor.map {vendor =>
+                    @report.vendor.map { vendor =>
                         <div>
                             <h2>Vendeur</h2>
                             <div>@vendor</div>
@@ -123,7 +153,7 @@
                         <b>@report.firstName @report.lastName</b>
                     </div>
                     <div>
-                        @report.email
+                    @report.email
                     </div>
                     @report.consumerPhone.map { phone =>
                         <div>
@@ -131,9 +161,9 @@
                         </div>
                     }
                     @report.consumerReferenceNumber.map { consumerReferenceNumber =>
-                    <div>
-                        Numéro de référence dossier : @consumerReferenceNumber
-                    </div>
+                        <div>
+                            Numéro de référence dossier : @consumerReferenceNumber
+                        </div>
                     }
                 </div>
                 <div>
@@ -143,7 +173,7 @@
                     } else {
                         Pièces jointes :
                         <ul>
-                        @files.map{f =>
+                        @files.map { f =>
                             <li>@f.filename</li>
                         }
                         </ul>
