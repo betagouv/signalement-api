@@ -92,7 +92,7 @@ class ProAccessTokenOrchestrator(
       .flatMap(maybeCompany => maybeCompany.liftTo[Future](CompanySiretNotFound(siret)))
     accessToken <- accessTokenRepository
       .findValidToken(company, token)
-      .flatMap(maybeToken => maybeToken.liftTo[Future](AccountActivationTokenNotFoundOrInvalid(token)))
+      .flatMap(maybeToken => maybeToken.liftTo[Future](ProAccountActivationTokenNotFoundOrInvalid(token, siret)))
   } yield accessToken
 
   def fetchCompanyUserActivationToken(siret: SIRET, token: String): Future[CompanyUserActivationToken] =

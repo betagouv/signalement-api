@@ -143,11 +143,17 @@ class ReportController(
       .sequence(reportFutures)
       .map(_.flatten)
       .map(
-        _.map(x =>
+        _.map(reportData =>
           views.html.pdfs
-            .report(x.report, x.maybeCompany, x.events, x.responseOption, x.companyEvents, x.files)(frontRoute =
-              frontRoute
-            )
+            .report(
+              reportData.report,
+              reportData.maybeCompany,
+              reportData.events,
+              reportData.responseOption,
+              reportData.consumerReviewOption,
+              reportData.companyEvents,
+              reportData.files
+            )(frontRoute = frontRoute)
         )
       )
       .map(pdfService.createPdfSource)
