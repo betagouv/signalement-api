@@ -7,10 +7,12 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
+import models.report.review.ResponseConsumerReview
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventFilter
 import repositories.event.EventRepositoryInterface
+import repositories.reportconsumerreview.ResponseConsumerReviewRepositoryInterface
 import repositories.reportfile.ReportFileRepositoryInterface
 import utils.Constants
 
@@ -23,6 +25,7 @@ case class ReportWithData(
     maybeCompany: Option[Company],
     events: Seq[(Event, Option[User])],
     responseOption: Option[ReportResponse],
+    consumerReviewOption: Option[ResponseConsumerReview],
     companyEvents: Seq[(Event, Option[User])],
     files: Seq[ReportFile]
 )
@@ -31,7 +34,8 @@ class ReportWithDataOrchestrator(
     reportOrchestrator: ReportOrchestrator,
     companyRepository: CompanyRepositoryInterface,
     eventRepository: EventRepositoryInterface,
-    reportFileRepository: ReportFileRepositoryInterface
+    reportFileRepository: ReportFileRepositoryInterface,
+    reviewRepository: ResponseConsumerReviewRepositoryInterface
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -47,6 +51,7 @@ class ReportWithDataOrchestrator(
               .map(companyId => eventRepository.getCompanyEventsWithUsers(companyId, EventFilter()))
               .getOrElse(Future(List.empty))
             reportFiles <- reportFileRepository.retrieveReportFiles(uuid)
+            consumerReviewOption <- reviewRepository.findByReportId(uuid).map(_.headOption)
           } yield {
             val responseOption = events
               .map(_._1)
@@ -58,6 +63,7 @@ class ReportWithDataOrchestrator(
               maybeCompany,
               events,
               responseOption,
+              consumerReviewOption,
               companyEvents,
               reportFiles
             )
