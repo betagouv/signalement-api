@@ -497,6 +497,8 @@ class SignalConsoComponents(
     eventRepository,
     mailService,
     emailConfiguration,
+    reportFileOrchestrator,
+    companyRepository,
     frontRoute,
     controllerComponents
   )

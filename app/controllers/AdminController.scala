@@ -21,10 +21,12 @@ import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportTag
 import models.report.WebsiteURL
+import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
+import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -68,6 +70,8 @@ class AdminController(
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
     emailConfiguration: EmailConfiguration,
+    reportFileOrchestrator: ReportFileOrchestrator,
+    companyRepository: CompanyRepositoryInterface,
     implicit val frontRoute: FrontRoute,
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -457,6 +461,33 @@ class AdminController(
           logger.debug(s"Not sending email for report ${report.id}, no admin found")
           Future.unit
       }.sequence
+    } yield Ok
+
+  }
+
+  def sendReportAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    logger.debug(s"Calling sendNewReportAckToConsumer to send back report ack email to consumers")
+    for {
+      reportInputList <- request.parseBody[ReportInputList]()
+      reports <- reportRepository.getReportsByIds(reportInputList.reportIds)
+      reportFiles <- reportFileOrchestrator.prefetchReportsFiles(reportInputList.reportIds)
+      events <- eventRepository.fetchEventsOfReports(reports)
+      companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
+
+      emailsToSend = reports.flatMap { report =>
+        val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
+        val event =
+          events.get(report.id).flatMap(_.find(_.action == Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT))
+        val reportAttachements = reportFiles.getOrElse(report.id, List.empty)
+
+        event match {
+          case Some(evt) => Some(ConsumerReportAcknowledgment(report, maybeCompany, evt, reportAttachements))
+          case None =>
+            logger.debug(s"Not sending email for report ${report.id}, no event found")
+            None
+        }
+      }
+      _ <- emailsToSend.map(mailService.send).sequence
     } yield Ok
 
   }

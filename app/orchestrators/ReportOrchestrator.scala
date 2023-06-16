@@ -322,17 +322,7 @@ class ReportOrchestrator(
     )
     for {
       _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements))
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          Some(report.id),
-          maybeCompany.map(_.id),
-          None,
-          OffsetDateTime.now(),
-          Constants.EventType.CONSO,
-          Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
-        )
-      )
+      _ <- eventRepository.create(event)
     } yield ()
   }
 

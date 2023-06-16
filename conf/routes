@@ -64,6 +64,7 @@ GET           /api/ext/reports/:uuid                                    controll
 
 GET           /api/admin/test-email                                     controllers.AdminController.getEmailCodes()
 POST          /api/admin/test-email                                     controllers.AdminController.sendTestEmail(templateRef, to)
+POST          /api/admin/emails/reportAckToConsumer                     controllers.AdminController.sendReportAckToConsumer()
 POST          /api/admin/emails/proAckToConsumer                        controllers.AdminController.sendProAckToConsumer()
 POST          /api/admin/emails/newReportToPro                          controllers.AdminController.sendNewReportToPro()
 
