@@ -426,6 +426,7 @@ class AdminController(
           for {
             reports <- reportRepository.getReportsByIds(results.reportIds)
             eventsMap <- eventRepository.fetchEventsOfReports(reports)
+            companies <- companyRepository.fetchCompanies(reports.flatMap(_.companyId))
             filteredEvents = reports.flatMap { report =>
               eventsMap
                 .get(report.id)
@@ -433,8 +434,9 @@ class AdminController(
                 .map(evt => (report, evt))
             }
             _ <- filteredEvents.map { case (report, responseEvent) =>
+              val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
               mailService.send(
-                ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse], Some(genCompany))
+                ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse], maybeCompany)
               )
             }.sequence
           } yield Ok
