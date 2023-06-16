@@ -453,7 +453,6 @@ class AdminController(
           .fetchAdmins(companyId)
           .map(_.map(_.email).distinct)
           .map(emails => (report, NonEmptyList.fromList(emails)))
-          .filter(_._2.isDefined)
 
       }.sequence
       _ <- reportAndEmailList.map {
