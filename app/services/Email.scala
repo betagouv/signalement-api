@@ -203,7 +203,7 @@ object Email {
           report,
           maybeCompany,
           reportResponse,
-          frontRoute.dashboard.reportReview(report.id.toString)
+          frontRoute.website.reportReview(report.id.toString)
         )
         .toString
 

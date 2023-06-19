@@ -12,6 +12,10 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
   object website {
     val url = signalConsoConfiguration.websiteURL
     def litige = url.resolve(s"/litige")
+
+    def reportReview(id: String)(evaluation: ResponseEvaluation) = url.resolve(
+      s"/avis/$id?evaluation=${evaluation.entryName}"
+    )
   }
 
   object dashboard {
@@ -22,9 +26,6 @@ class FrontRoute(signalConsoConfiguration: SignalConsoConfiguration) {
     )
 
     def validateEmail(token: String) = url(s"/connexion/validation-email?token=${token}")
-    def reportReview(id: String)(evaluation: ResponseEvaluation) = url(
-      s"/suivi-des-signalements/$id/avis?evaluation=${evaluation.entryName}"
-    )
     def resetPassword(authToken: AuthToken) = url(s"/connexion/nouveau-mot-de-passe/${authToken.id}")
     def activation = url("/activation")
 

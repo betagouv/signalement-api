@@ -82,7 +82,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
             report,
             Some(company),
             reportResponseAccepted,
-            frontRoute.dashboard.reportReview(report.id.toString)
+            frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
         attachementService.ConsumerProResponseNotificationAttachement
@@ -126,7 +126,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
             report,
             Some(company),
             reportResponseAccepted,
-            frontRoute.dashboard.reportReview(report.id.toString)
+            frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
         attachementService.ConsumerProResponseNotificationAttachement
@@ -170,7 +170,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
             report,
             Some(company),
             reportResponseRejected,
-            frontRoute.dashboard.reportReview(report.id.toString)
+            frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
         attachementService.ConsumerProResponseNotificationAttachement
@@ -212,7 +212,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
             report,
             Some(company),
             reportResponseNotConcerned,
-            frontRoute.dashboard.reportReview(report.id.toString)
+            frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
         attachementService.ConsumerProResponseNotificationAttachement
