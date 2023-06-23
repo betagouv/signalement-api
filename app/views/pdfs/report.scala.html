@@ -92,8 +92,9 @@
                     }
 
                     @consumerReviewOption.map { review =>
-                        <br/>
-                        <b>Évaluation de la réponse du professionnel par le consommateur:</b>
+                        <h2>Réponse du consommateur</h2>
+
+                        <b>Évaluation de la réponse du professionnel par le consommateur :</b>
 
                         @review.evaluation match {
                             case ResponseEvaluation.Positive => {
