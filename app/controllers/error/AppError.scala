@@ -139,7 +139,7 @@ object AppError {
   }
 
   final case class PasswordTokenNotFoundOrInvalid(token: UUID) extends NotFoundError {
-    override val `type`: String = "SC-0015"
+    override val `type`: String = "SC-0015-01"
     override val title: String = s"Token not found / invalid ${token.toString}"
     override val details: String =
       s"Lien invalide ou expiré, merci de recommencer la demande de changement de mot de passe."
@@ -147,7 +147,7 @@ object AppError {
   }
 
   final case class AccountActivationTokenNotFoundOrInvalid(token: String) extends NotFoundError {
-    override val `type`: String = "SC-0015"
+    override val `type`: String = "SC-0015-02"
     override val title: String =
       s"Account activation token not found / invalid for token ${token}"
     override val details: String =
@@ -156,7 +156,7 @@ object AppError {
   }
 
   final case class ProAccountActivationTokenNotFoundOrInvalid(token: String, SIRET: SIRET) extends NotFoundError {
-    override val `type`: String = "SC-0015B"
+    override val `type`: String = "SC-0015-03"
     override val title: String = s"Account activation token not found / invalid ${token} and SIRET ${SIRET.value}"
     override val details: String =
       s"Lien invalide ou expiré, merci de contacter le support en donnant votre adresse email et numéro de SIRET."
@@ -164,7 +164,7 @@ object AppError {
   }
 
   final case object EmailAlreadyExist extends ConflictError {
-    override val `type`: String = "SC-0016"
+    override val `type`: String = "SC-0016-01"
     override val title: String = s"Email already exists"
     override val details: String =
       s"L'adresse email existe déjà."
@@ -172,7 +172,7 @@ object AppError {
   }
 
   final case object SamePasswordError extends BadRequestError {
-    override val `type`: String = "SC-0016"
+    override val `type`: String = "SC-0016-02"
     override val title: String = s"New password is equal to old password"
     override val details: String =
       s"Le nouveau mot de passe ne peut pas être le même que l'ancien mot de passe"
@@ -206,7 +206,7 @@ object AppError {
   }
 
   final case class InvalidEmail(email: String) extends BadRequestError {
-    override val `type`: String = "SC-0020"
+    override val `type`: String = "SC-0020-01"
     override val title: String = "Invalid email"
     override val details: String =
       s"Email ${email} est invalide."
@@ -214,7 +214,7 @@ object AppError {
   }
 
   final case object InvalidEmailProvider extends BadRequestError {
-    override val `type`: String = "SC-0021"
+    override val `type`: String = "SC-0020-02"
     override val title: String = "Invalid email provider"
     override val details: String =
       s"Les adresses email temporaires sont interdites."
@@ -224,7 +224,7 @@ object AppError {
   /** Error message is not precice on purpose to prevent third parties for sniffing emails
     */
   final case class EmailOrCodeIncorrect(email: EmailAddress) extends NotFoundError {
-    override val `type`: String = "SC-0020"
+    override val `type`: String = "SC-0020-03"
     override val title: String = s"Email or code incorrect"
     override val details: String =
       s"Impossible de valider l'email ${email}, code ou email incorrect."
@@ -232,7 +232,7 @@ object AppError {
   }
 
   final case class SpammerEmailBlocked(email: EmailAddress) extends NotFoundError {
-    override val `type`: String = "SC-0020"
+    override val `type`: String = "SC-0020-04"
     override val title: String = s"Email blocked, report submission ignored"
     override val details: String =
       s"L'email ${email.value} est bloquée car listée comme spam"
