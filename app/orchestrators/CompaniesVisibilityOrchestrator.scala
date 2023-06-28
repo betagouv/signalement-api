@@ -37,7 +37,7 @@ class CompaniesVisibilityOrchestrator(
   def fetchUsersWithHeadOffices(companies: List[(SIRET, UUID)]): Future[Map[UUID, List[User]]] =
     for {
       usersByCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(companies.map(_._2))
-      sirens = companies.map(c => SIREN(c._1))
+      sirens = companies.map(c => SIREN.fromSIRET(c._1))
       headOfficesCompany <-
         companyRepo.findHeadOffices(sirens, openOnly = false)
       headOfficeUsersByHeadOfficesCompanyIdMap <- companyAccessRepository.fetchUsersByCompanyIds(
@@ -49,8 +49,8 @@ class CompaniesVisibilityOrchestrator(
         .view
         .mapValues { uniqueSiretCompanyIdTuple =>
           // here we are computing SIREN again, but we did that above already
-          val siren = uniqueSiretCompanyIdTuple.headOption.map(x => SIREN(x._1))
-          headOfficesCompany.find(c => siren.contains(SIREN(c.siret))).map(_.id)
+          val siren = uniqueSiretCompanyIdTuple.headOption.map(x => SIREN.fromSIRET(x._1))
+          headOfficesCompany.find(c => siren.contains(SIREN.fromSIRET(c.siret))).map(_.id)
         }
         .toMap
     } yield usersByCompanyIdMap.map { case (companyId, usersOfCompany) =>
@@ -68,7 +68,7 @@ class CompaniesVisibilityOrchestrator(
         .findBySirets(authorizedCompaniesSiret)
         .map(_.filter(_.isHeadOffice))
         .map(_.map(_.siret))
-      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.apply))
+      companiesForHeadOffices <- companyRepo.findBySiren(headOfficeSirets.map(SIREN.fromSIRET))
       companiesForHeadOfficesWithAccesses = addAccessToSubsidiaries(authorizedCompanies, companiesForHeadOffices)
       accessiblesCompanies = (authorizedCompanies ++ companiesForHeadOfficesWithAccesses)
         .distinctBy(_.company.siret)
@@ -84,9 +84,11 @@ class CompaniesVisibilityOrchestrator(
       AccessLevel.MEMBER -> 0
     ).withDefaultValue(-1)
     val getLevelBySiren = authorizedCompaniesWithAccesses
-      .groupMapReduce(c => SIREN(c.company.siret))(_.level)((a, b) => if (levelPriority(a) > levelPriority(b)) a else b)
+      .groupMapReduce(c => SIREN.fromSIRET(c.company.siret))(_.level)((a, b) =>
+        if (levelPriority(a) > levelPriority(b)) a else b
+      )
       .withDefaultValue(AccessLevel.NONE)
-    accessibleSubsidiaries.map(c => CompanyWithAccess(c, getLevelBySiren(SIREN(c.siret))))
+    accessibleSubsidiaries.map(c => CompanyWithAccess(c, getLevelBySiren(SIREN.fromSIRET(c.siret))))
   }
 
   private[this] def fetchVisibleSiretsSirens(user: User): Future[SiretsSirens] =
@@ -99,7 +101,7 @@ class CompaniesVisibilityOrchestrator(
           .map(companies =>
             companies
               .filter(_.isHeadOffice)
-              .map(c => SIREN(c.siret))
+              .map(c => SIREN.fromSIRET(c.siret))
           )
     } yield removeRedundantSirets(SiretsSirens(authorizedHeadofficeSirens, authorizedSirets))
 
@@ -109,7 +111,7 @@ class CompaniesVisibilityOrchestrator(
       fetchVisibleSiretsSirens(user).map { allowed =>
         val filteredSiretsSirens = SiretsSirens(
           sirets = formattedSiretsSirens.sirets.filter(wanted =>
-            allowed.sirens.contains(SIREN(wanted)) || allowed.sirets.contains(wanted)
+            allowed.sirens.contains(SIREN.fromSIRET(wanted)) || allowed.sirets.contains(wanted)
           ),
           sirens = allowed.sirens.intersect(formattedSiretsSirens.sirens)
         ).toList()
@@ -126,12 +128,12 @@ class CompaniesVisibilityOrchestrator(
   private[this] def removeRedundantSirets(id: SiretsSirens): SiretsSirens =
     SiretsSirens(
       id.sirens,
-      id.sirets.filter(siret => !id.sirens.contains(SIREN(siret)))
+      id.sirets.filter(siret => !id.sirens.contains(SIREN.fromSIRET(siret)))
     )
 
   private[this] def formatSiretSirenList(siretSirenList: Seq[String]): SiretsSirens =
     SiretsSirens(
-      sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.apply),
+      sirens = siretSirenList.filter(SIREN.isValid).map(SIREN.fromUnsafe),
       sirets = siretSirenList.filter(SIRET.isValid).map(SIRET.apply)
     )
 }

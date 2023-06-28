@@ -59,7 +59,7 @@ object Fixtures {
 
   val genSiren = for {
     randInt <- Gen.choose(0, 999999999)
-  } yield SIREN("" + randInt takeRight 9)
+  } yield SIREN.fromUnsafe("" + randInt takeRight 9)
 
   def genSiret(siren: Option[SIREN] = None) = for {
     randInt <- Gen.choose(0, 99999)

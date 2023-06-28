@@ -246,7 +246,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   val company = Fixtures.genCompany.sample.get.copy(siret = siretForConcernedPro, isHeadOffice = false)
   val headOfficeCompany =
     Fixtures.genCompany.sample.get
-      .copy(siret = Fixtures.genSiret(Some(SIREN(siretForConcernedPro))).sample.get, isHeadOffice = true)
+      .copy(siret = Fixtures.genSiret(Some(SIREN.fromSIRET(siretForConcernedPro))).sample.get, isHeadOffice = true)
 
   val reportFixture = Fixtures.genReportForCompany(company).sample.get.copy(status = ReportStatus.Transmis)
 

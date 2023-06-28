@@ -5,7 +5,7 @@ import repositories.PostgresProfile.api._
 
 import scala.util.Try
 
-case class URL(value: String) {
+case class URL private (value: String) extends AnyVal {
   override def toString = value
   def getHost: Option[String] =
     Try(new java.net.URL(value)).toOption.map(url => url.getHost.toLowerCase().replaceFirst("www\\.", ""))
@@ -17,11 +17,6 @@ object URL {
     _.value,
     URL(_)
   )
-  implicit val urlWrites = new Writes[URL] {
-    def writes(o: URL): JsValue =
-      JsString(o.value)
-  }
-  implicit val urlReads = new Reads[URL] {
-    def reads(json: JsValue): JsResult[URL] = json.validate[String].map(URL(_))
-  }
+  implicit val urlWrites: Writes[URL] = Json.valueWrites[URL]
+  implicit val urlReads: Reads[URL] = Reads.StringReads.map(URL(_)) // To use the apply method
 }

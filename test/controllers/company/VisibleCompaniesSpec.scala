@@ -43,11 +43,11 @@ class BaseVisibleCompaniesSpec(implicit ee: ExecutionEnv)
   val headOfficeCompany = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
   val subsidiaryCompany =
     Fixtures.genCompany.sample.get
-      .copy(siret = Fixtures.genSiret(Some(SIREN(headOfficeCompany.siret))).sample.get, isHeadOffice = false)
+      .copy(siret = Fixtures.genSiret(Some(SIREN.fromSIRET(headOfficeCompany.siret))).sample.get, isHeadOffice = false)
 
   val subsidiaryClosedCompany = Fixtures.genCompany.sample.get
     .copy(
-      siret = SIRET.fromUnsafe(SIREN(headOfficeCompany.siret).value + "00020"),
+      siret = SIRET.fromUnsafe(SIREN.fromSIRET(headOfficeCompany.siret).value + "00020"),
       isOpen = false
     )
 
