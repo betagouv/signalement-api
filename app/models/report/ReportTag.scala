@@ -40,7 +40,7 @@ object ReportTag extends PlayEnum[ReportTag] {
     case _ => JsError("error.expected.enumstring")
   }
 
-  val ReportTagHiddenToProfessionnel = Seq(Bloctel, ReponseConso, ProduitDangereux)
+  val ReportTagHiddenToProfessionnel = Seq(Bloctel, ReponseConso)
 
   case object LitigeContractuel extends ReportTag
   case object Hygiene extends ReportTag
