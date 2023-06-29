@@ -269,7 +269,8 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
+    visibleToPro = true
   )
 
   val neverRequestedFinalReport = Report(
@@ -291,7 +292,8 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.ConsulteIgnore,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
+    visibleToPro = true
   )
 
   val alreadyRequestedReport = Report(
@@ -313,7 +315,8 @@ trait GetReportContext extends AppSpec {
     contactAgreement = true,
     employeeConsumer = false,
     status = ReportStatus.Transmis,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
+    visibleToPro = true
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get

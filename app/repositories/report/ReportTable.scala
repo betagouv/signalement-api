@@ -51,6 +51,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def reponseconsoCode = column[List[String]]("reponseconso_code")
   def ccrfCode = column[List[String]]("ccrf_code")
   def expirationDate = column[OffsetDateTime]("expiration_date")
+  def visibleToPro = column[Boolean]("visible_to_pro")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -94,6 +95,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         reponseconsoCode ::
         ccrfCode ::
         expirationDate ::
+        visibleToPro ::
         HNil =>
       report.Report(
         id = id,
@@ -130,6 +132,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         reponseconsoCode = reponseconsoCode,
         ccrfCode = ccrfCode,
         expirationDate = expirationDate,
+        visibleToPro = visibleToPro,
         influencer = for {
           socialNetwork <- socialNetwork
           influencerName <- influencerName
@@ -173,6 +176,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.reponseconsoCode ::
       r.ccrfCode ::
       r.expirationDate ::
+      r.visibleToPro ::
       HNil
   )
 
@@ -212,6 +216,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       List[String] ::
       List[String] ::
       OffsetDateTime ::
+      Boolean ::
       HNil
 
   def * = (
@@ -250,6 +255,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       reponseconsoCode ::
       ccrfCode ::
       expirationDate ::
+      visibleToPro ::
       HNil
   ) <> (constructReport, extractReport)
 }

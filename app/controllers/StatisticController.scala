@@ -8,9 +8,7 @@ import models.report.ReportFilter
 import models.report.ReportResponseType
 import models.report.ReportStatus
 import models.report.ReportsCountBySubcategoriesFilter
-import models.report.ReportStatus.LanceurAlerte
 import models.report.ReportStatus.statusWithProResponse
-import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import orchestrators.StatsOrchestrator
 import play.api.Logger
 import play.api.libs.json.Json
@@ -120,8 +118,7 @@ class StatisticController(
       // Includes the reports that we want to transmit to a pro
       // but we have not identified the company
       val filter = ReportFilter(
-        status = ReportStatus.values.filterNot(_ == LanceurAlerte),
-        withoutTags = ReportTagHiddenToProfessionnel
+        visibleToPro = Some(true)
       )
       statsOrchestrator.getReportsCountCurve(filter).map(curve => Ok(Json.toJson(curve)))
     }

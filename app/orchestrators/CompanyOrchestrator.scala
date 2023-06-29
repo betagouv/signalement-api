@@ -7,6 +7,7 @@ import config.TaskConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
+import models.UserRole.Professionnel
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
@@ -20,7 +21,6 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportFilter
 import models.report.ReportStatus
-import models.report.ReportTag
 import models.website.WebsiteCompanySearchResult
 import models.website.WebsiteHost
 import play.api.Logger
@@ -127,21 +127,14 @@ class CompanyOrchestrator(
       }
 
   def getCompanyResponseRate(companyId: UUID, userRole: UserRole): Future[Int] = {
-
-    val (tagFilter, statusFilter) = userRole match {
-      case UserRole.Professionnel =>
-        logger.debug("User is pro, filtering tag and status not visible by pro user")
-        (ReportTag.ReportTagHiddenToProfessionnel, ReportStatus.statusVisibleByPro)
-      case UserRole.Admin | UserRole.DGCCRF => (Seq.empty[ReportTag], Seq.empty[ReportStatus])
-    }
+    val baseReportFilter = ReportFilter(
+      companyIds = Seq(companyId),
+      visibleToPro = if (userRole == Professionnel) Some(true) else None
+    )
     val responseReportsFilter =
-      ReportFilter(
-        companyIds = Seq(companyId),
-        status = ReportStatus.statusWithProResponse,
-        withoutTags = tagFilter
-      )
+      baseReportFilter.copy(status = ReportStatus.statusWithProResponse)
     val totalReportsFilter =
-      ReportFilter(companyIds = Seq(companyId), status = statusFilter, withoutTags = tagFilter)
+      baseReportFilter
 
     val totalReportsCount = reportRepository.count(totalReportsFilter)
     val responseReportsCount = reportRepository.count(responseReportsFilter)

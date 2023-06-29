@@ -2,6 +2,13 @@ package models.report
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.company.Address
+import models.report.ReportStatus.NA
+import models.report.ReportStatus.TraitementEnCours
+import models.report.ReportTag.AbsenceDeMediateur
+import models.report.ReportTag.Bloctel
+import models.report.ReportTag.Ehpad
+import models.report.ReportTag.Hygiene
+import models.report.ReportTag.ReponseConso
 import org.specs2.mutable.Specification
 import utils.Country
 import utils.Fixtures
@@ -52,6 +59,7 @@ class ReportDraftTest extends Specification {
         .withFieldConst(_.id, reportId)
         .withFieldConst(_.creationDate, creationDate)
         .withFieldConst(_.expirationDate, expirationDate)
+        .withFieldConst(_.visibleToPro, false)
         .withFieldConst(_.status, ReportStatus.LanceurAlerte)
         .withFieldConst(_.influencer, None)
         .transform
@@ -119,6 +127,65 @@ class ReportDraftTest extends Specification {
         companyAddress = Some(Address(postalCode = Some("888888")))
       )
       ReportDraft.isValid(aPostalCodeDraftReport) shouldEqual true
+    }
+
+    "generateReport should pick the correct status" in {
+
+      val typicalDraftReport = Fixtures.genDraftReport.sample.get.copy(
+        tags = List(Hygiene, AbsenceDeMediateur, Ehpad),
+        employeeConsumer = false,
+        companySiret = Some(SIRET("11111111111111"))
+      )
+
+      def generateReportFromDraft(draft: ReportDraft) = {
+        val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+        val expirationDate = creationDate.plusDays(100)
+        draft.generateReport(
+          maybeCompanyId = None,
+          socialNetworkCompany = None,
+          creationDate = creationDate,
+          expirationDate = expirationDate,
+          reportId = UUID.randomUUID()
+        )
+      }
+
+      s"initialStatus should be TraitementEnCours when company is identified, and report tags are nothing special" in {
+        val report = generateReportFromDraft(typicalDraftReport)
+        report.status shouldEqual TraitementEnCours
+      }
+
+      s"initialStatus should be NA when company has not been identified" in {
+        val report = generateReportFromDraft(typicalDraftReport.copy(companySiret = None))
+        report.status shouldEqual NA
+      }
+
+      s"initialStatus should be LanceurAlerte if the draft had employeeCustomer set to true" in {
+        val report = generateReportFromDraft(
+          typicalDraftReport.copy(
+            employeeConsumer = true
+          )
+        )
+        report.status shouldEqual ReportStatus.LanceurAlerte
+      }
+
+      s"initialStatus should be NA when there is tag ReponseConso" in {
+        val report = generateReportFromDraft(
+          typicalDraftReport.copy(
+            tags = List(Hygiene, AbsenceDeMediateur, Ehpad, ReponseConso)
+          )
+        )
+        report.status shouldEqual NA
+      }
+
+      s"initialStatus should be NA when there is tag BlocTel" in {
+        val report = generateReportFromDraft(
+          typicalDraftReport.copy(
+            tags = List(Hygiene, AbsenceDeMediateur, Ehpad, Bloctel)
+          )
+        )
+        report.status shouldEqual NA
+      }
+
     }
 
   }
