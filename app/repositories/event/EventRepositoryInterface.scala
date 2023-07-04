@@ -4,8 +4,6 @@ import cats.data.NonEmptyList
 import models.User
 import models.event.Event
 import models.report.Report
-import models.report.ReportStatus
-import models.report.ReportTag
 import repositories.CRUDRepositoryInterface
 import utils.Constants.ActionEvent
 
@@ -34,8 +32,7 @@ trait EventRepositoryInterface extends CRUDRepositoryInterface[Event] {
   def getAvgTimeUntilEvent(
       action: ActionEvent.ActionEventValue,
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatus] = Seq.empty,
-      withoutTags: Seq[ReportTag] = Seq.empty
+      onlyProShareable: Boolean = false
   ): Future[Option[Duration]]
 
   def getReportCountHavingEvent(action: ActionEvent.ActionEventValue, companyId: Option[UUID] = None): Future[Int]

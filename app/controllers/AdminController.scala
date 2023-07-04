@@ -104,7 +104,8 @@ class AdminController(
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
     expirationDate = OffsetDateTime.now().plusDays(50),
-    influencer = None
+    influencer = None,
+    visibleToPro = true
   )
 
   private def genReportFile = ReportFile(

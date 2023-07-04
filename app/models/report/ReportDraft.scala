@@ -4,6 +4,7 @@ import ai.x.play.json.Encoders.encoder
 import ai.x.play.json.Jsonx
 import models.company.Address
 import models.company.Company
+import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.TranslationReportTagReads
 import models.report.reportfile.ReportFileId
 import models.report.reportmetadata.ReportMetadataDraft
@@ -53,8 +54,8 @@ case class ReportDraft(
       creationDate: OffsetDateTime,
       expirationDate: OffsetDateTime,
       reportId: UUID = UUID.randomUUID()
-  ): Report = {
-    val report = Report(
+  ): Report =
+    Report(
       reportId,
       gender = gender,
       creationDate = creationDate,
@@ -76,17 +77,27 @@ case class ReportDraft(
       consumerReferenceNumber = consumerReferenceNumber,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = ReportStatus.NA,
+      status = initialStatus(),
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct
         .filterNot(tag => tag == ReportTag.LitigeContractuel && employeeConsumer),
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil),
-      expirationDate = expirationDate
+      expirationDate = expirationDate,
+      visibleToPro = shouldBeVisibleToPro()
     )
-    report.copy(status = report.initialStatus())
-  }
+
+  def shouldBeVisibleToPro() =
+    !employeeConsumer && tags
+      .intersect(ReportTagHiddenToProfessionnel)
+      .isEmpty
+
+  def initialStatus(): ReportStatus =
+    if (employeeConsumer) ReportStatus.LanceurAlerte
+    else if (!shouldBeVisibleToPro()) ReportStatus.NA
+    else if (companySiret.isEmpty) ReportStatus.NA
+    else ReportStatus.TraitementEnCours
 }
 
 object ReportDraft {

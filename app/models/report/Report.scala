@@ -8,7 +8,6 @@ import models.UserRole
 import models.company.Address
 import models.company.Company
 import models.event.Event
-import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.ReportTag.jsonFormat
 import models.report.reportfile.ReportFileId
 import models.report.review.ResponseConsumerReview
@@ -50,28 +49,22 @@ case class Report(
     tags: List[ReportTag] = Nil,
     reponseconsoCode: List[String] = Nil,
     ccrfCode: List[String] = Nil,
-    expirationDate: OffsetDateTime
+    expirationDate: OffsetDateTime,
+    visibleToPro: Boolean
 ) {
 
   def initialStatus() =
     if (employeeConsumer) ReportStatus.LanceurAlerte
-    else if (
-      companySiret.isDefined && tags
-        .intersect(ReportTagHiddenToProfessionnel)
-        .isEmpty
-    ) {
-      ReportStatus.TraitementEnCours
-    } else { ReportStatus.NA }
+    else if (!visibleToPro) ReportStatus.NA
+    else if (companySiret.isEmpty) ReportStatus.NA
+    else ReportStatus.TraitementEnCours
 
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(ReportTag.LitigeContractuel)
 
-  def needWorkflowAttachment() = !employeeConsumer &&
-    !isContractualDispute() &&
-    tags.intersect(Seq(ReportTag.ProduitDangereux, ReportTag.ReponseConso)).isEmpty
-
-  def isTransmittableToPro() = !employeeConsumer && !forwardToReponseConso
+  def needWorkflowAttachment() = visibleToPro &&
+    !isContractualDispute()
 
   def isReadByPro = ReportStatus.statusReadByPro.contains(status)
 
@@ -123,7 +116,8 @@ object Report {
             "consumerPhone" -> report.consumerPhone,
             "employeeConsumer" -> report.employeeConsumer,
             "reponseconsoCode" -> report.reponseconsoCode,
-            "gender" -> report.gender
+            "gender" -> report.gender,
+            "visibleToPro" -> report.visibleToPro
           )
       })
 
