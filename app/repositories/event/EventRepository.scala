@@ -4,11 +4,8 @@ import cats.data.NonEmptyList
 import models._
 import models.event.Event
 import models.report.Report
-import models.report.ReportStatus
-import models.report.ReportTag
 import repositories.CRUDRepository
 import repositories.PostgresProfile.api._
-import repositories.report.ReportColumnType._
 import repositories.report.ReportTable
 import repositories.user.UserTable
 import slick.basic.DatabaseConfig
@@ -124,19 +121,15 @@ class EventRepository(
   override def getAvgTimeUntilEvent(
       action: ActionEventValue,
       companyId: Option[UUID] = None,
-      status: Seq[ReportStatus] = Seq.empty,
-      withoutTags: Seq[ReportTag] = Seq.empty
+      onlyProShareable: Boolean = false
   ): Future[Option[Duration]] =
     db.run(
       ReportTable.table
         .filterOpt(companyId) { case (table, companyId) =>
           table.companyId === companyId
         }
-        .filterIf(status.nonEmpty) { case table =>
-          table.status.inSet(status.map(_.entryName))
-        }
-        .filterNot { table =>
-          table.tags @& withoutTags.toList.bind
+        .filterIf(onlyProShareable) { table =>
+          table.visibleToPro
         }
         .join(table)
         .on(_.id === _.reportId)

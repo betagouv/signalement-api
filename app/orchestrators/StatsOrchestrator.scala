@@ -5,13 +5,7 @@ import models.CountByDate
 import models.CurveTickDuration
 import models.ReportReviewStats
 import models.UserRole
-import models.report.ArborescenceNode
-import models.report.NodeInfo
-import models.report.ReportFilter
-import models.report.ReportNode
-import models.report.ReportStatus
-import models.report.ReportTag
-import models.report.ReportsCountBySubcategoriesFilter
+import models.report._
 import models.report.review.ResponseEvaluation
 import orchestrators.StatsOrchestrator.computeStartingDate
 import orchestrators.StatsOrchestrator.formatStatData
@@ -131,15 +125,11 @@ class StatsOrchestrator(
     eventRepository.getAvgTimeUntilEvent(ActionEvent.REPORT_READING_BY_PRO, companyId)
 
   def getResponseAvgDelay(companyId: Option[UUID] = None, userRole: UserRole): Future[Option[Duration]] = {
-    val (statusFilter, tagFilterNot) = userRole match {
-      case UserRole.Admin | UserRole.DGCCRF => (Seq.empty[ReportStatus], Seq.empty[ReportTag])
-      case UserRole.Professionnel => (ReportStatus.statusVisibleByPro, ReportTag.ReportTagHiddenToProfessionnel)
-    }
+    val onlyProShareable = userRole == UserRole.Professionnel
     eventRepository.getAvgTimeUntilEvent(
       action = ActionEvent.REPORT_PRO_RESPONSE,
       companyId = companyId,
-      status = statusFilter,
-      withoutTags = tagFilterNot
+      onlyProShareable = onlyProShareable
     )
   }
 

@@ -3,8 +3,6 @@ package models.report
 import models.UserRole
 import models.UserRole.Admin
 import models.UserRole.DGCCRF
-import models.report.ReportStatus.LanceurAlerte
-import models.report.ReportTag.ReportTagHiddenToProfessionnel
 import models.report.review.ResponseEvaluation
 import play.api.libs.json.Reads
 import utils.QueryStringMapper
@@ -42,7 +40,8 @@ case class ReportFilter(
     activityCodes: Seq[String] = Seq.empty,
     hasEvaluation: Option[Boolean] = None,
     evaluation: Seq[ResponseEvaluation] = Seq.empty,
-    fullText: Option[String] = None
+    fullText: Option[String] = None,
+    visibleToPro: Option[Boolean] = None
 )
 
 object ReportFilter {
@@ -94,8 +93,7 @@ object ReportFilter {
   val allReportsFilter = ReportFilter()
 
   val transmittedReportsFilter = ReportFilter(
-    status = ReportStatus.values.filterNot(_ == LanceurAlerte),
-    withoutTags = ReportTagHiddenToProfessionnel,
+    visibleToPro = Some(true),
     siretSirenDefined = Some(true)
   )
 

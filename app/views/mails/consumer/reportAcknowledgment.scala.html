@@ -227,7 +227,7 @@
         <br />
         Email : @report.email
         <br/>
-        @if(report.isTransmittableToPro()) {
+        @if(report.visibleToPro) {
             Accord pour contact : @if(report.contactAgreement) {oui} else {non}
             <br/>
         }

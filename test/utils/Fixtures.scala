@@ -185,7 +185,8 @@ object Fixtures {
     contactAgreement = contactAgreement,
     employeeConsumer = false,
     status = status,
-    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+    expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+    visibleToPro = true
   )
 
   def genReportsForCompanyWithStatus(company: Company, status: ReportStatus) =
