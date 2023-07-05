@@ -1,0 +1,11 @@
+@import models.company.Address
+@import models.report.Report
+@(report: Report, includeSiret: Boolean = false)
+
+@report.companyName.map { name => <b>@name</b> <br/> }
+@report.companyAddress.toArray.map { ligne =>
+    <span>@ligne</span> <br/>
+}
+@if(includeSiret){
+    @report.companySiret.map { siret => <span>SIRET : @siret</span> <br/> }
+}

@@ -1,7 +1,10 @@
-@import models.company.Address
-@(companyName: Option[String], companyAddress: Address)
+@import models.company.Company
+@(company: Company, includeSiret: Boolean = false)
 
-@companyName.map { name => <b>@name</b> <br/> }
-@companyAddress.toArray.map { ligne =>
+<b>@company.name</b> <br/>
+@company.address.toArray.map { ligne =>
     <span>@ligne</span> <br/>
+}
+@if(includeSiret){
+    <span>SIRET : @company.siret</span> <br/>
 }

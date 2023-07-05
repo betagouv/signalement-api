@@ -45,7 +45,7 @@
                 Entreprise @report.companySiret.getOrElse("")
             </b>
             <p style="text-align: center;">
-                @views.html.fragments.address(report.companyName, report.companyAddress)
+                @views.html.fragments.addressFromReport(report)
             </p>
             @if(report.websiteURL.websiteURL.isDefined) {
                 <b>Site web</b>
