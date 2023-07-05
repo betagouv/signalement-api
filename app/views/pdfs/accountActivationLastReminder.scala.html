@@ -43,7 +43,7 @@
             </div>
 
             <div class="recipient">
-                @views.html.fragments.address(Some(company.name), company.address)
+                @views.html.fragments.address(company)
             </div>
 
             <div class="content mt-3">
@@ -77,7 +77,7 @@
                 </p>
 
                 <p class="text-center text-bold">
-                @views.html.fragments.address(Some(company.name), company.address)
+                @views.html.fragments.address(company, includeSiret = true)
                 </p>
 
                 <p>
