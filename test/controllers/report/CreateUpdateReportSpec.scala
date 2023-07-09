@@ -155,13 +155,14 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
           draftReport.copy(companySiret = Some(existingCompany.siret), tags = List(ReportTag.ProduitDangereux))
       }}
          When create the report                                         ${step(createReport())}
-         Then create the report with status "NA"                        ${reportMustHaveBeenCreatedWithStatus(
-        ReportStatus.NA
+         Then create the report with status "TraitementEnCours"         ${reportMustHaveBeenCreatedWithStatus(
+        ReportStatus.TraitementEnCours
       )}
          And send an acknowledgment mail to the consumer                ${mailMustHaveBeenSent(
         draftReport.email,
         "Votre signalement",
-        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString
+        views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
+        attachmentService.attachmentSeqForWorkflowStepN(2)
       )}
     """
 }
