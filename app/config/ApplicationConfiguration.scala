@@ -5,5 +5,6 @@ case class ApplicationConfiguration(
     mail: EmailConfiguration,
     task: TaskConfiguration,
     flyway: FlywayConfiguration,
+    siretExtractor: SiretExtractorConfiguration,
     amazonBucketName: String
 )
