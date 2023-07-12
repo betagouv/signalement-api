@@ -216,6 +216,18 @@ class ReportsExtractActor(
         available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
       ),
       ReportColumn(
+        "Influenceur ou influenceuse",
+        leftAlignmentColumn,
+        (report, _, _, _, _) => report.influencer.map(_.name).getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
+        "Plateforme (réseau social)",
+        leftAlignmentColumn,
+        (report, _, _, _, _) => report.influencer.map(_.socialNetwork.entryName).getOrElse(""),
+        available = List(UserRole.DGCCRF, UserRole.Admin) contains requestedBy.userRole
+      ),
+      ReportColumn(
         "Statut",
         leftAlignmentColumn,
         (report, _, _, _, _) => ReportStatus.translate(report.status, requestedBy.userRole),

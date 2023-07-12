@@ -11,6 +11,7 @@ case class SignalConsoConfiguration(
     dashboardURL: URI,
     token: TokenConfiguration,
     upload: UploadConfiguration,
+    mobileApp: MobileAppConfiguration,
     reportsExportLimitMax: Int = 300000
 )
 
@@ -23,4 +24,9 @@ case class TokenConfiguration(
     dgccrfJoinDuration: Period,
     dgccrfDelayBeforeRevalidation: Period,
     dgccrfRevalidationTokenDuration: Option[Period]
+)
+
+case class MobileAppConfiguration(
+    minimumAppVersionIos: String,
+    minimumAppVersionAndroid: String
 )
