@@ -67,6 +67,13 @@
                         </li>
                     }
                     </ul>
+                    @report.influencer.map { influencer =>
+                        <h3>Influenceur ou influenceuse identifié(e)</h3>
+                        <ul>
+                            <li><b>Nom ou pseudonyme :</b> @influencer.name</li>
+                            <li><b>Plateforme :</b> @influencer.socialNetwork</li>
+                        </ul>
+                    }
                     @responseOption.map { response =>
                         <h2>Réponse du professionnel</h2>
 
