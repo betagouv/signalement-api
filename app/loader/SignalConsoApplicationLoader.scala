@@ -105,8 +105,8 @@ import utils.silhouette.api.APIKeyEnv
 import utils.silhouette.api.APIKeyRequestProvider
 import utils.silhouette.api.ApiKeyService
 import utils.silhouette.auth.AuthEnv
-import utils.silhouette.auth.PasswordInfoIncludingDeletedDAO
 import utils.silhouette.auth.PasswordInfoDAO
+import utils.silhouette.auth.PasswordInfoIncludingDeletedDAO
 import utils.silhouette.auth.UserService
 
 import java.time.LocalTime
@@ -168,6 +168,8 @@ class SignalConsoComponents(
   def signalConsoConfiguration: SignalConsoConfiguration = applicationConfiguration.app
   def tokenConfiguration = signalConsoConfiguration.token
   def uploadConfiguration: UploadConfiguration = signalConsoConfiguration.upload
+
+  def mobileAppConfiguration = signalConsoConfiguration.mobileApp
 
   def passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
     new BCryptPasswordHasher()
@@ -534,6 +536,7 @@ class SignalConsoComponents(
   )
 
   val constantController = new ConstantController(silhouette, controllerComponents)
+  val mobileAppController = new MobileAppController(signalConsoConfiguration, silhouette, controllerComponents)
   val dataEconomieController = new DataEconomieController(dataEconomieOrchestrator, silhouetteApi, controllerComponents)
   val emailValidationController =
     new EmailValidationController(silhouette, emailValidationOrchestrator, controllerComponents)
@@ -650,6 +653,7 @@ class SignalConsoComponents(
       adminController,
       asyncFileController,
       constantController,
+      mobileAppController,
       authController,
       accountController,
       emailValidationController,

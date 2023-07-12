@@ -77,6 +77,9 @@ GET           /api/async-files                                          controll
 GET           /api/constants/countries                                  controllers.ConstantController.getCountries()
 GET           /api/constants/categories                                 controllers.ConstantController.getCategories()
 
+# Mobile app specific API
+GET           /api/mobileapp/requirements                               controllers.MobileAppController.getRequirements()
+
 # Authentication API
 POST          /api/authenticate                                         controllers.AuthController.authenticate()
 POST          /api/authenticate/password/forgot                         controllers.AuthController.forgotPassword()

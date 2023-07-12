@@ -226,6 +226,10 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
             override def tokenConfiguration =
               TokenConfiguration(None, None, 12.hours, Period.ofDays(60), Period.ZERO, None)
             override def uploadConfiguration = UploadConfiguration(Seq.empty, false, "/tmp")
+//            override def mobileAppConfiguration = MobileAppConfiguration(
+//              minimumAppVersionIos = "1.0.0",
+//              minimumAppVersionAndroid = "1.0.0"
+//            )
             override def signalConsoConfiguration: SignalConsoConfiguration =
               SignalConsoConfiguration(
                 "",
@@ -233,7 +237,8 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 new URI("http://test.com"),
                 new URI("http://test.com"),
                 tokenConfiguration,
-                uploadConfiguration
+                uploadConfiguration,
+                mobileAppConfiguration
               )
 
             override def emailConfiguration: EmailConfiguration =
