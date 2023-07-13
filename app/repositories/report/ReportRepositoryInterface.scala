@@ -38,6 +38,8 @@ trait ReportRepositoryInterface extends CRUDRepositoryInterface[Report] {
 
   def getWithWebsites(): Future[List[Report]]
 
+  def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]]
+
   def getWithPhones(): Future[List[Report]]
 
   def getReportsStatusDistribution(companyId: Option[UUID], userRole: UserRole): Future[Map[String, Int]]
