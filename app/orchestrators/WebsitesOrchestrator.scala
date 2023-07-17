@@ -12,27 +12,30 @@ import models.User
 import models.company.Company
 import models.company.CompanyCreation
 import models.investigation.InvestigationStatus.NotProcessed
-
 import models.investigation.InvestigationStatus
-
 import models.investigation.WebsiteInvestigationApi
+import models.report.ReportCompany
 import models.website.IdentificationStatus._
 import models.website.WebsiteCompanyReportCount.toApi
 import models.website._
 import play.api.Logger
 import repositories.company.CompanyRepositoryInterface
+import repositories.report.ReportRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import utils.Country
 import utils.DateUtils
 import utils.URL
 
 import java.time.OffsetDateTime
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class WebsitesOrchestrator(
     val repository: WebsiteRepositoryInterface,
-    val companyRepository: CompanyRepositoryInterface
+    val companyRepository: CompanyRepositoryInterface,
+    val reportRepository: ReportRepositoryInterface,
+    val reportOrchestrator: ReportOrchestrator
 )(implicit
     ec: ExecutionContext
 ) {
@@ -74,7 +77,8 @@ class WebsitesOrchestrator(
 
   def updateWebsiteIdentificationStatus(
       websiteId: WebsiteId,
-      newIdentificationStatus: IdentificationStatus
+      newIdentificationStatus: IdentificationStatus,
+      user: User
   ): Future[Website] = for {
     website <- findWebsite(websiteId)
     _ = if (website.companyCountry.isEmpty && website.companyId.isEmpty) {
@@ -85,6 +89,20 @@ class WebsitesOrchestrator(
       else Future.unit
     _ = logger.debug(s"Updating website kind to ${newIdentificationStatus}")
     updatedWebsite <- update(website.copy(identificationStatus = newIdentificationStatus))
+
+    _ <-
+      if (newIdentificationStatus == Identified) {
+        logger.debug(s"New status is $newIdentificationStatus, updating previous reports if company is defined")
+        for {
+          maybeCompany <- website.companyId
+            .map(companyId => companyRepository.get(companyId))
+            .getOrElse(Future.successful(None))
+          _ = logger.debug(s"Company Siret is ${maybeCompany.map(_.siret)}")
+          _ <- maybeCompany
+            .map(company => updatePreviousReportsAssociatedToWebsite(website.host, company, user.id))
+            .getOrElse(Future.successful(()))
+        } yield ()
+      } else Future.unit
   } yield updatedWebsite
 
   private def validateAndCleanAssociation(website: Website) = {
@@ -110,6 +128,7 @@ class WebsitesOrchestrator(
         companyId = Some(company.id)
       )
       updatedWebsite <- updateIdentification(websiteToUpdate, user)
+      _ <- updatePreviousReportsAssociatedToWebsite(website.host, company, user.id)
     } yield WebsiteAndCompany.toApi(updatedWebsite, Some(company))
 
   def updateCompanyCountry(websiteId: WebsiteId, companyCountry: String, user: User): Future[WebsiteAndCompany] = for {
@@ -189,5 +208,26 @@ class WebsitesOrchestrator(
     repository
       .getUnkonwnReportCountByHost(host, DateUtils.parseDate(start), DateUtils.parseDate(end))
       .map(_.map { case (host, count) => WebsiteHostCount(host, count) })
+
+  private def updatePreviousReportsAssociatedToWebsite(
+      websiteHost: String,
+      company: Company,
+      userId: UUID
+  ): Future[Unit] = {
+    val reportCompany = ReportCompany(
+      name = company.name,
+      address = company.address,
+      siret = company.siret,
+      activityCode = company.activityCode,
+      isHeadOffice = company.isHeadOffice,
+      isOpen = company.isOpen,
+      isPublic = company.isPublic
+    )
+    for {
+      reportIds <- reportRepository.getForWebsiteWithoutCompany(websiteHost)
+      updates = reportIds.map(reportId => reportOrchestrator.updateReportCompany(reportId, reportCompany, userId))
+      _ <- Future.sequence(updates)
+    } yield ()
+  }
 
 }
