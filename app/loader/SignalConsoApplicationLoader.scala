@@ -424,7 +424,7 @@ class SignalConsoComponents(
     )
 
   val websitesOrchestrator =
-    new WebsitesOrchestrator(websiteRepository, companyRepository)
+    new WebsitesOrchestrator(websiteRepository, companyRepository, reportRepository, reportOrchestrator)
 
   val reportClosureTask = new ReportClosureTask(
     actorSystem,

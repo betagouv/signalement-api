@@ -92,9 +92,9 @@ class WebsiteController(
   }
 
   def updateWebsiteIdentificationStatus(websiteId: WebsiteId, identificationStatus: IdentificationStatus) =
-    SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    SecuredAction(WithRole(UserRole.Admin)).async { implicit request =>
       websitesOrchestrator
-        .updateWebsiteIdentificationStatus(websiteId, identificationStatus)
+        .updateWebsiteIdentificationStatus(websiteId, identificationStatus, request.identity)
         .map(website => Ok(Json.toJson(website)))
     }
 

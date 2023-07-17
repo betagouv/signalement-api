@@ -70,4 +70,6 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def reportsCountBySubcategories(
       filters: ReportsCountBySubcategoriesFilter
   ): Future[Seq[(String, List[String], Int, Int)]] = ???
+
+  override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???
 }
