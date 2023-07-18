@@ -56,6 +56,8 @@ import repositories.company.CompanySyncRepository
 import repositories.company.CompanySyncRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepository
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companyactivationattempt.CompanyActivationAttemptRepository
+import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import repositories.consumer.ConsumerRepository
 import repositories.consumer.ConsumerRepositoryInterface
 import repositories.dataeconomie.DataEconomieRepository
@@ -187,6 +189,8 @@ class SignalConsoComponents(
   val authAttemptRepository: AuthAttemptRepositoryInterface = new AuthAttemptRepository(dbConfig)
   val authTokenRepository: AuthTokenRepositoryInterface = new AuthTokenRepository(dbConfig)
   def companyRepository: CompanyRepositoryInterface = new CompanyRepository(dbConfig)
+  val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface =
+    new CompanyActivationAttemptRepository(dbConfig)
   val consumerRepository: ConsumerRepositoryInterface = new ConsumerRepository(dbConfig)
   val dataEconomieRepository: DataEconomieRepositoryInterface = new DataEconomieRepository(actorSystem)
   val emailValidationRepository: EmailValidationRepositoryInterface = new EmailValidationRepository(dbConfig)
@@ -331,6 +335,7 @@ class SignalConsoComponents(
       companyAccessRepository,
       companyRepository,
       accessTokenRepository,
+      companyActivationAttemptRepository,
       proAccessTokenOrchestrator
     )
 

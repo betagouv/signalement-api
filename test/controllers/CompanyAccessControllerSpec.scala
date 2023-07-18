@@ -6,12 +6,14 @@ import com.mohiva.play.silhouette.test._
 import models._
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyActivationAttempt
 import models.company.CompanyWithAccess
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.CompanyJoin
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
 import org.specs2.mutable.Specification
+import play.api.http.Status.FORBIDDEN
 import play.api.libs.json.Json
 import play.api.test.Helpers._
 import play.api.test._
@@ -19,11 +21,13 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.{Duration => JavaDuration}
 import java.util.UUID
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification with AppSpec with FutureMatchers {
@@ -48,6 +52,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
   lazy val companyRepository = components.companyRepository
   lazy val companyAccessRepository = components.companyAccessRepository
   lazy val accessTokenRepository = components.accessTokenRepository
+  lazy val companyActivationAttemptRepository = components.companyActivationAttemptRepository
 
   val company = Fixtures.genCompany.sample.get.copy(isHeadOffice = true)
 
@@ -216,6 +221,7 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
   Then activation token should still be valid $e5
   Then access should not be created           $e6
   Then user creation account token should exist $e7
+  Then no activation attempt should be registered $e8
                                               """
 
   val newCompany = Fixtures.genCompany.sample.get
@@ -259,6 +265,11 @@ class NewCompanyActivationWithNoAdminSpec(implicit ee: ExecutionEnv) extends Bas
     userCreationToken.headOption.map(_.kind) shouldEqual (Some(CompanyJoin))
     userCreationToken.headOption.map(_.valid) shouldEqual (Some(true))
   }
+  def e8 = {
+    val nbAttempts =
+      Await.result(companyActivationAttemptRepository.countAttempts(newCompany.siret.value, 30.minutes), Duration.Inf)
+    nbAttempts shouldEqual 0
+  }
 
 }
 
@@ -273,6 +284,7 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
   Then activation token should still be valid $e5
   Then access should not be created           $e6
   Then user creation account token should exist $e7
+  Then no activation attempt should be registered $e9
                                               """
 
   val newCompany = Fixtures.genCompany.sample.get
@@ -344,6 +356,12 @@ class NewCompanyActivationOnUserWithExistingCreationAccountTokenSpec(implicit ee
     ) shouldEqual Some(true)
   }
 
+  def e9 = {
+    val nbAttempts =
+      Await.result(companyActivationAttemptRepository.countAttempts(newCompany.siret.value, 30.minutes), Duration.Inf)
+    nbAttempts shouldEqual 0
+  }
+
 }
 
 class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
@@ -356,6 +374,7 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   when user activate account                  $e4
   Then token should be not valid anymore      $e5
   Then access should be created               $e6
+  Then no activation attempt should be registered $e7
                                               """
 
   val newCompany = Fixtures.genCompany.sample.get
@@ -396,6 +415,147 @@ class NewCompanyActivationOnExistingUserSpec(implicit ee: ExecutionEnv) extends 
   def e6 = {
     val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
     admins.map(_.id) must beEqualTo(List(existingProUser.id))
+  }
+
+  def e7 = {
+    val nbAttempts =
+      Await.result(companyActivationAttemptRepository.countAttempts(newCompany.siret.value, 30.minutes), Duration.Inf)
+    nbAttempts shouldEqual 0
+  }
+}
+
+class NewCompanyActivationWithWrongTokenSpec(implicit ee: ExecutionEnv) extends BaseAccessControllerSpec {
+
+  override def is = s2"""
+  Given company not registered with activation code sent by postal mail $e1
+  And an initial token to join the company    $e2
+  when user activate account with a WRONG token $e4
+  Then activation token should still be valid $e5
+  Then access should not be created           $e6
+  Then user creation account token should NOT exist $e7
+  Then there should be ONE activation attempt $e8
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  val newProUser = Fixtures.genProUser.sample.get
+  var token: AccessToken = null
+
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass[Company]
+  }
+
+  def e2 = {
+    token = Await.result(
+      accessTokenRepository
+        .create(AccessToken.build(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
+      Duration.Inf
+    )
+    token must haveClass[AccessToken]
+  }
+
+  def e4 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendActivationLink(newCompany.siret.value).toString)
+      .withBody(Json.obj("token" -> "999999", "email" -> newProUser.email.value))
+    val result = route(app, request).get
+    status(result) must beEqualTo(NOT_FOUND)
+  }
+
+  def e5 = {
+    val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
+    invalidToken.map(_.valid) shouldEqual (Some(true))
+  }
+
+  def e6 = {
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List.empty)
+  }
+
+  def e7 = {
+    val userCreationToken = Await.result(accessTokenRepository.fetchPendingTokens(newProUser.email), Duration.Inf)
+    userCreationToken.length shouldEqual 0
+  }
+  def e8 = {
+    val nbAttempts =
+      Await.result(companyActivationAttemptRepository.countAttempts(newCompany.siret.value, 30.minutes), Duration.Inf)
+    nbAttempts shouldEqual 1
+  }
+
+}
+
+class NewCompanyActivationWithWrongTokenAndTooManyAttemptsSpec(implicit ee: ExecutionEnv)
+    extends BaseAccessControllerSpec {
+
+  override def is = s2"""
+  Given company not registered with activation code sent by postal mail $e1
+  And an initial token to join the company    $e2
+  And 20 past activation attempts in the last 30 minutes $e3
+  when user activate account with a WRONG token $e4
+  Then activation token should still be valid $e5
+  Then access should not be created           $e6
+  Then user creation account token should NOT exist $e7
+  Then there should be still 20 activation attempts $e8
+                                              """
+
+  val newCompany = Fixtures.genCompany.sample.get
+  val newProUser = Fixtures.genProUser.sample.get
+  var token: AccessToken = null
+
+  def e1 = {
+    val company = Await.result(companyRepository.getOrCreate(newCompany.siret, newCompany), Duration.Inf)
+    company must haveClass[Company]
+  }
+
+  def e2 = {
+    token = Await.result(
+      accessTokenRepository
+        .create(AccessToken.build(CompanyInit, "123456", None, Some(newCompany.id), Some(AccessLevel.ADMIN), None)),
+      Duration.Inf
+    )
+    token must haveClass[AccessToken]
+  }
+
+  def e3 = {
+    Await
+      .result(
+        Future.sequence(
+          for {
+            _ <- 0 until 20
+          } yield companyActivationAttemptRepository.create(
+            CompanyActivationAttempt(UUID.randomUUID, newCompany.siret.value, OffsetDateTime.now.minusMinutes(5))
+          )
+        ),
+        Duration.Inf
+      )
+      .toList
+    true must beTrue
+  }
+
+  def e4 = {
+    val request = FakeRequest(POST, routes.CompanyAccessController.sendActivationLink(newCompany.siret.value).toString)
+      .withBody(Json.obj("token" -> "999999", "email" -> newProUser.email.value))
+    val result = route(app, request).get
+    status(result) must beEqualTo(FORBIDDEN)
+  }
+
+  def e5 = {
+    val invalidToken = Await.result(accessTokenRepository.get(token.id), Duration.Inf)
+    invalidToken.map(_.valid) shouldEqual (Some(true))
+  }
+
+  def e6 = {
+    val admins = Await.result(companyAccessRepository.fetchAdmins(newCompany.id), Duration.Inf)
+    admins.map(_.id) must beEqualTo(List.empty)
+  }
+
+  def e7 = {
+    val userCreationToken = Await.result(accessTokenRepository.fetchPendingTokens(newProUser.email), Duration.Inf)
+    userCreationToken.length shouldEqual 0
+  }
+  def e8 = {
+    val nbAttempts =
+      Await.result(companyActivationAttemptRepository.countAttempts(newCompany.siret.value, 30.minutes), Duration.Inf)
+    nbAttempts shouldEqual 20
   }
 
 }

@@ -426,4 +426,12 @@ object AppError {
     override val titleForLogs: String = "deleted_account"
   }
 
+  final case class TooMuchCompanyActivationAttempts(siret: SIRET) extends ForbiddenError {
+    override val `type`: String = "SC-0044"
+    override val title: String = s"Max activation attempts reached for siret : ${siret.value}"
+    override val details: String =
+      "Le nombre maximum de tentatives a été dépassé, merci de rééssayer un peu plus tard."
+    override val titleForLogs: String = "max_activation_attempts_reached"
+  }
+
 }

@@ -4,6 +4,7 @@ import controllers.error.AppError.ActivationCodeAlreadyUsed
 import controllers.error.AppError.CompanyActivationCodeExpired
 import controllers.error.AppError.CompanyActivationSiretOrCodeInvalid
 import controllers.error.AppError.ServerError
+import controllers.error.AppError.TooMuchCompanyActivationAttempts
 import models.AccessToken
 import models.User
 import models.access.ActivationLinkRequest
@@ -18,27 +19,33 @@ import models.access.UserWithAccessLevel
 import models.access.UserWithAccessLevel.toApi
 import models.company.AccessLevel
 import models.company.Company
+import models.company.CompanyActivationAttempt
 import play.api.Logger
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
+import repositories.companyactivationattempt.CompanyActivationAttemptRepositoryInterface
 import utils.SIREN
 import utils.SIRET
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import utils.Logs.RichLogger
+
+import scala.concurrent.duration._
 class CompanyAccessOrchestrator(
     companyAccessRepository: CompanyAccessRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     val accessTokenRepository: AccessTokenRepositoryInterface,
+    val companyActivationAttemptRepository: CompanyActivationAttemptRepositoryInterface,
     val accessesOrchestrator: ProAccessTokenOrchestrator
 )(implicit val ec: ExecutionContext) {
 
   val logger = Logger(this.getClass)
 
-  def sendActivationLink(siret: SIRET, activationLinkRequest: ActivationLinkRequest): Future[Unit] =
-    for {
+  def sendActivationLink(siret: SIRET, activationLinkRequest: ActivationLinkRequest): Future[Unit] = {
+    val future = for {
+      _ <- checkActivationAttempts(siret)
       company <- companyRepository
         .findBySiret(siret)
         .flatMap(maybeCompany =>
@@ -60,6 +67,25 @@ class CompanyAccessOrchestrator(
       _ = logger.debug("Token validated")
       _ <- accessesOrchestrator.addUserOrInvite(company, activationLinkRequest.email, AccessLevel.ADMIN, None)
     } yield ()
+
+    future.recoverWith {
+      case error: TooMuchCompanyActivationAttempts => Future.failed(error)
+      case error =>
+        val attempt = CompanyActivationAttempt.build(siret)
+        companyActivationAttemptRepository
+          .create(attempt)
+          .flatMap(_ => Future.failed(error))
+    }
+  }
+  private def checkActivationAttempts(siret: SIRET): Future[Unit] =
+    for {
+      num <- companyActivationAttemptRepository
+        .countAttempts(siret.value, 30.minutes)
+      _ = logger.debug(s"Found ${num} activation attempts")
+      result <-
+        if (num >= 20) Future.failed(TooMuchCompanyActivationAttempts(siret))
+        else Future.successful(())
+    } yield result
 
   def validateToken(
       accessToken: AccessToken,
