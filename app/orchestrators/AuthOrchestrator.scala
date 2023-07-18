@@ -233,7 +233,7 @@ class AuthOrchestrator(
 
 object AuthOrchestrator {
   val AuthAttemptPeriod: Duration = 30 minutes
-  val MaxAllowedAuthAttempts: Int = 5
+  val MaxAllowedAuthAttempts: Int = 20
   def authTokenExpiration: OffsetDateTime = OffsetDateTime.now().plusDays(1)
   def toLoginInfo(login: String): LoginInfo = LoginInfo(CredentialsProvider.ID, login)
 }
