@@ -35,6 +35,7 @@ import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
+import services.Email.ConsumerValidateEmail
 import services.Email.DgccrfAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
@@ -402,7 +403,8 @@ class AdminController(
         genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
         Some(genCompany)
       )
-    )
+    ),
+    "consumer.validate_email" -> (recipient => ConsumerValidateEmail(EmailValidation(email = recipient)))
   )
 
   def getEmailCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
