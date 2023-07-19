@@ -2,24 +2,24 @@
 @import utils.FrontRoute
 @import java.util.UUID
 
-@(email: EmailAddress, confirmationCode: String)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
+@(email: EmailAddress, confirmationCode: String)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress, messageProvider: MessagesProvider)
 
-@views.html.mails.layout("Validation de l'adresse email") {
+@views.html.mails.layout(Messages("ConsumerValidateEmail.title")) {
     <p>
-        Bonjour,
+        @Messages("ConsumerValidateEmail.hello")
     </p>
     <p>
-        Votre code d'activation SignalConso est:
+        @Messages("ConsumerValidateEmail.activationCode")
         <b><span style="color: rgba(0, 0, 0, 54)">SC-</span>@confirmationCode</b>
     </p>
 
     <p>
-        <i>L'équipe SignalConso</i>
+        <i>@Messages("ConsumerValidateEmail.team")</i>
     </p>
 
     <hr />
-    Cet e-mail vous a été envoyé lors du dépot d'un signalement avec cette cette adresse e-mail sur le site @frontRoute.website.url
+    @Messages("ConsumerValidateEmail.emailInfo", frontRoute.website.url)
     <ul>
-        <li>Si vous n'avez pas effectué cette demande, merci de ne pas tenir compte de cet e-mail.</li>
+        <li>@Messages("ConsumerValidateEmail.notRequested")</li>
     </ul>
 }

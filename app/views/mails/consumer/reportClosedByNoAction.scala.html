@@ -2,62 +2,59 @@
 @import utils.FrontRoute
 @import models.report.Report
 @import models.company.Company
-@(report: Report, company: Option[Company])(implicit frontRoute: FrontRoute)
+@(report: Report, company: Option[Company])(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
 
-@views.html.mails.layout("L'entreprise n'a pas répondu au signalement") {
+@views.html.mails.layout(Messages("ReportNotAnswered.title")) {
     <p>
-        Bonjour @report.firstName @report.lastName,
+        @Messages("ReportNotAnswered.greeting", report.firstName, report.lastName)
     </p>
 
     <p>
-        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b>
-        concernant une entreprise :
+        @Html(Messages("ReportNotAnswered.reportDate", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))))
     </p>
     @if(report.companySiret.isDefined) {
         <p style="text-align: center;">
-            SIRET : <b>@report.companySiret.get</b>
+        @Html(Messages("ReportNotAnswered.companySiret", report.companySiret.get))
         </p>
     }
     <p style="text-align: center;">
         <b>
-        @views.html.fragments.proAddressForConsumer(company)
+            @views.html.fragments.proAddressForConsumer(company)
         </b>
     </p>
     <p>
-        L'entreprise n'a pas souhaité répondre à votre signalement.
+        @Messages("ReportNotAnswered.noResponse")
     </p>
 
     @if(!report.isContractualDispute()) {
         <p>
             <b>
-                Par contre, les enquêteurs de la répression des fraudes ont bien reçu votre signalement.
-                Ils peuvent décider de contrôler ou de surveiller l'entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
+            @Messages("ReportNotAnswered.enforcementConfirmation")
             </b>
         </p>
 
         <p>
-            Si vous retournez dans cette entreprise et constatez que le problème n'a pas été corrigé, faites un nouveau signalement.
-            Savoir que la situation perdure est un élément important pour les enquêteurs.
+            @Messages("ReportNotAnswered.enforcementAdvice")
         </p>
     } else {
         <p>
-            Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation
+            @Messages("ReportNotAnswered.disputeAdvice")
         </p>
         <p style="text-align: center;
             padding: 20px">
             <a href="@frontRoute.website.litige" class="btn">
-                Continuer mes démarches
+                @Messages("ReportNotAnswered.continueAction")
             </a>
         </p>
         <p>
-            <i>Si vous avez déjà obtenu répération concernant votre litige, vous pouvez ignorer ce message.</i>
+            <i>@Messages("ReportNotAnswered.ignoreMessage")</i>
         </p>
     }
 
-    <p>À bientôt sur SignalConso !</p>
+    <p>@Messages("ReportNotAnswered.goodbye")</p>
 
     <p>
-        <i>L'équipe SignalConso</i>
+        <i>@Messages("ReportNotAnswered.signalConsoTeam")</i>
     </p>
 
     @if(report.needWorkflowAttachment()) {
@@ -68,7 +65,7 @@
                 border-bottom: 1px solid #D3D3D3;
                 padding: 10px 0;
                 margin: 10px">
-                Comprendre SignalConso
+            @Messages("ReportNotAnswered.understandSignalConso")
             </div>
             <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
         </div>

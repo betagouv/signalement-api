@@ -18,6 +18,7 @@ import utils.SIRET
 import utils.URL
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.annotation.nowarn
 
@@ -50,7 +51,8 @@ case class Report(
     reponseconsoCode: List[String] = Nil,
     ccrfCode: List[String] = Nil,
     expirationDate: OffsetDateTime,
-    visibleToPro: Boolean
+    visibleToPro: Boolean,
+    lang: Option[Locale]
 ) {
 
   def initialStatus() =

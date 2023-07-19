@@ -14,6 +14,7 @@ import utils.SIRET
 import utils.URL
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.annotation.nowarn
 
@@ -45,6 +46,7 @@ case class ReportDraft(
     tags: List[ReportTag] = Nil,
     reponseconsoCode: Option[List[String]] = None,
     ccrfCode: Option[List[String]] = None,
+    lang: Option[Locale] = None,
     metadata: Option[ReportMetadataDraft] = None
 ) {
 
@@ -85,7 +87,8 @@ case class ReportDraft(
       reponseconsoCode = reponseconsoCode.getOrElse(Nil),
       ccrfCode = ccrfCode.getOrElse(Nil),
       expirationDate = expirationDate,
-      visibleToPro = shouldBeVisibleToPro()
+      visibleToPro = shouldBeVisibleToPro(),
+      lang = lang
     )
 
   def shouldBeVisibleToPro() =

@@ -14,6 +14,9 @@ import orchestrators.EventsOrchestratorInterface
 import orchestrators.ReportOrchestrator
 import orchestrators.ReportWithDataOrchestrator
 import play.api.Logger
+import play.api.i18n.Lang
+import play.api.i18n.MessagesImpl
+import play.api.i18n.MessagesProvider
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -31,6 +34,7 @@ import utils.silhouette.auth.WithPermission
 import utils.silhouette.auth.WithRole
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -190,8 +194,13 @@ class ReportController(
         proResponseEvent = events.find(_.data.action == REPORT_PRO_RESPONSE)
         source = maybeReport
           .map { report =>
+            val lang = Lang(report.lang.getOrElse(Locale.FRENCH))
+            val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
             val notificationHtml =
-              views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(frontRoute)
+              views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(
+                frontRoute,
+                messagesProvider
+              )
             val proResponseHtml = views.html.pdfs.proResponse(proResponseEvent.map(_.data))
             Seq(notificationHtml, proResponseHtml)
           }

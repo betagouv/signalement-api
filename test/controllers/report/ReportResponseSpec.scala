@@ -12,6 +12,9 @@ import models.report.reportfile.ReportFileId
 import org.specs2.Specification
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
+import play.api.i18n.Lang
+import play.api.i18n.MessagesImpl
+import play.api.i18n.MessagesProvider
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
@@ -22,9 +25,11 @@ import utils.Constants.ActionEvent
 import utils.Constants.ActionEvent.ActionEventValue
 import utils._
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.net.URI
 import java.time.OffsetDateTime
+import java.util.Locale
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -53,6 +58,9 @@ class ReportResponseByNotConcernedProUser(implicit ee: ExecutionEnv) extends Rep
 }
 
 class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
@@ -96,6 +104,9 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
 }
 
 class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
 
   override def is =
     s2"""
@@ -142,6 +153,9 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
 }
 
 class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
@@ -184,6 +198,9 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
 }
 
 class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends ReportResponseSpec {
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(report.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
         Given an authenticated pro user which is concerned by the report         ${step {
@@ -237,6 +254,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
   implicit lazy val frontRoute = components.frontRoute
+  lazy val messagesApi = components.messagesApi
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 

@@ -33,7 +33,10 @@ class EmailValidationController(
     logger.debug("Calling checking email API")
     for {
       validateEmail <- request.parseBody[ValidateEmail]()
-      validationResult <- emailValidationOrchestrator.checkEmail(validateEmail.email)
+      validationResult <- emailValidationOrchestrator.checkEmail(
+        validateEmail.email,
+        validateEmail.lang
+      )
     } yield Ok(Json.toJson(validationResult))
   }
 

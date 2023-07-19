@@ -14,17 +14,20 @@ import utils.EmailAddress
 import models.email.EmailValidationResult
 import models.email.ValidateEmailCode
 import play.api.Logger
+import play.api.i18n.MessagesApi
 import repositories.emailvalidation.EmailValidationRepositoryInterface
 import services.Email.ConsumerValidateEmail
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class EmailValidationOrchestrator(
     mailService: MailServiceInterface,
     emailValidationRepository: EmailValidationRepositoryInterface,
-    emailConfiguration: EmailConfiguration
+    emailConfiguration: EmailConfiguration,
+    messagesApi: MessagesApi
 )(implicit
     executionContext: ExecutionContext
 ) {
@@ -47,13 +50,13 @@ class EmailValidationOrchestrator(
       result <- checkCodeAndValidate(emailValidationBody, emailValidation)
     } yield result
 
-  def checkEmail(email: EmailAddress): Future[EmailValidationResult] = for {
+  def checkEmail(email: EmailAddress, locale: Option[Locale]): Future[EmailValidationResult] = for {
     _ <- validateProvider(email)
     result <-
       if (emailConfiguration.skipReportEmailValidation)
         validateFormat(email)
       else
-        sendValidationEmailIfNeeded(email)
+        sendValidationEmailIfNeeded(email, locale)
   } yield result
 
   def validateEmail(email: EmailAddress): Future[EmailValidationResult] =
@@ -78,17 +81,23 @@ class EmailValidationOrchestrator(
           EmailValidationResult.invalidCode
         }
 
-  private[this] def sendValidationEmailIfNeeded(email: EmailAddress): Future[EmailValidationResult] = for {
-    emailValidation <- findOrCreate(email)
-    res <-
-      if (emailValidation.lastValidationDate.isEmpty) {
-        logger.debug(s"Email ${emailValidation.email} not validated, sending email")
-        mailService.send(ConsumerValidateEmail(emailValidation)).map(_ => EmailValidationResult.failure)
-      } else {
-        logger.debug(s"Email validated")
-        Future.successful(EmailValidationResult.success)
-      }
-  } yield res
+  private[this] def sendValidationEmailIfNeeded(
+      email: EmailAddress,
+      locale: Option[Locale]
+  ): Future[EmailValidationResult] =
+    for {
+      emailValidation <- findOrCreate(email)
+      res <-
+        if (emailValidation.lastValidationDate.isEmpty) {
+          logger.debug(s"Email ${emailValidation.email} not validated, sending email")
+          mailService
+            .send(ConsumerValidateEmail(emailValidation, locale, messagesApi))
+            .map(_ => EmailValidationResult.failure)
+        } else {
+          logger.debug(s"Email validated")
+          Future.successful(EmailValidationResult.success)
+        }
+    } yield res
 
   private[this] def validateProvider(email: EmailAddress): Future[Unit] =
     if (emailConfiguration.emailProvidersBlocklist.exists(email.value.contains(_))) {

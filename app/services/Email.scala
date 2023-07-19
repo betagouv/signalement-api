@@ -11,6 +11,10 @@ import models.report.Report
 import models.report.ReportFile
 import models.report.ReportResponse
 import models.report.ReportTag
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
+import play.api.i18n.MessagesImpl
+import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
 import utils.EmailAddress
 import utils.EmailSubjects
@@ -19,6 +23,7 @@ import utils.FrontRoute
 import java.net.URI
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.util.Locale
 
 sealed trait Email {
   val recipients: Seq[EmailAddress]
@@ -177,13 +182,19 @@ object Email {
       report: Report,
       maybeCompany: Option[Company],
       event: Event,
-      files: Seq[ReportFile]
+      files: Seq[ReportFile],
+      messagesApi: MessagesApi
   ) extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = EmailSubjects.REPORT_ACK
+    override val subject: String = messagesApi("ReportAckEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportAcknowledgment(report, maybeCompany, files.toList)(frontRoute).toString
+      views.html.mails.consumer
+        .reportAcknowledgment(report, maybeCompany, files.toList)(frontRoute, messagesProvider)
+        .toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.reportAcknowledgmentAttachement(report, maybeCompany, event, files)
@@ -192,10 +203,14 @@ object Email {
   final case class ConsumerProResponseNotification(
       report: Report,
       reportResponse: ReportResponse,
-      maybeCompany: Option[Company]
+      maybeCompany: Option[Company],
+      messagesApi: MessagesApi
   ) extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = EmailSubjects.REPORT_ACK_PRO_CONSUMER
+    override val subject: String = messagesApi("ConsumerReportAckProEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
       views.html.mails.consumer
@@ -211,44 +226,72 @@ object Email {
       _.ConsumerProResponseNotificationAttachement
   }
 
-  final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company]) extends ConsumerEmail {
+  final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
+      extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = EmailSubjects.REPORT_CLOSED_NO_ACTION
+    override val subject: String = messagesApi("ReportNotAnswered.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportClosedByNoAction(report, maybeCompany)(frontRoute).toString
+      views.html.mails.consumer.reportClosedByNoAction(report, maybeCompany)(frontRoute, messagesProvider).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(4, report)
 
   }
 
-  final case class ConsumerReportClosedNoReading(report: Report, maybeCompany: Option[Company]) extends ConsumerEmail {
+  final case class ConsumerReportClosedNoReading(
+      report: Report,
+      maybeCompany: Option[Company],
+      messagesApi: MessagesApi
+  ) extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = EmailSubjects.REPORT_CLOSED_NO_READING
+    override val subject: String = messagesApi("ReportClosedByNoReadingEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, _) =>
-      views.html.mails.consumer.reportClosedByNoReading(report, maybeCompany)(frontRoute).toString
+      views.html.mails.consumer.reportClosedByNoReading(report, maybeCompany)(frontRoute, messagesProvider).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
       _.needWorkflowSeqForWorkflowStepN(3, report)
 
   }
 
-  final case class ConsumerValidateEmail(emailValidation: EmailValidation) extends ConsumerEmail {
+  final case class ConsumerValidateEmail(
+      emailValidation: EmailValidation,
+      locale: Option[Locale],
+      messagesApi: MessagesApi
+  ) extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(locale))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(emailValidation.email)
-    override val subject: String = EmailSubjects.VALIDATE_EMAIL
+    override val subject: String = messagesApi("ConsumerValidateEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (frontRoute, contactAddress) =>
       views.html.mails.consumer
-        .confirmEmail(emailValidation.email, emailValidation.confirmationCode)(frontRoute, contactAddress)
+        .confirmEmail(emailValidation.email, emailValidation.confirmationCode)(
+          frontRoute,
+          contactAddress,
+          messagesProvider
+        )
         .toString
   }
 
-  final case class ConsumerReportReadByProNotification(report: Report, maybeCompany: Option[Company])
-      extends ConsumerEmail {
+  final case class ConsumerReportReadByProNotification(
+      report: Report,
+      maybeCompany: Option[Company],
+      messagesApi: MessagesApi
+  ) extends ConsumerEmail {
+    private val lang = Lang(getLocaleOrDefault(report.lang))
+    implicit private val messagesProvider: MessagesProvider = MessagesImpl(lang, messagesApi)
+
     override val recipients: List[EmailAddress] = List(report.email)
-    override val subject: String = EmailSubjects.REPORT_TRANSMITTED
+    override val subject: String = messagesApi("ConsumerReportTransmittedEmail.subject")(lang)
 
     override def getBody: (FrontRoute, EmailAddress) => String = (_, _) =>
       views.html.mails.consumer.reportTransmission(report, maybeCompany).toString
@@ -257,4 +300,5 @@ object Email {
       _.attachmentSeqForWorkflowStepN(3)
   }
 
+  private def getLocaleOrDefault(locale: Option[Locale]): Locale = locale.getOrElse(Locale.FRENCH)
 }

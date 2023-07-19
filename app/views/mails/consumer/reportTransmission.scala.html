@@ -1,20 +1,19 @@
 @import models.report.Report
 
 @import models.company.Company
-@(report: Report, maybeCompany: Option[Company])
+@(report: Report, maybeCompany: Option[Company])(implicit messageProvider: MessagesProvider)
 
-    @views.html.mails.layout("L'entreprise a pris connaissance de votre signalement") {
+    @views.html.mails.layout(Messages("ConsumerReportTransmittedEmail.title")) {
         <p>
-            Bonjour @report.firstName @report.lastName,
+            @Messages("ConsumerReportTransmittedEmail.greeting", report.firstName, report.lastName)
         </p>
 
         <p>
-            Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b>
-            concernant une entreprise :
+            @Html(Messages("ConsumerReportTransmittedEmail.reportDate", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))))
         </p>
         @if(report.companySiret.isDefined) {
             <p style="text-align: center;">
-                SIRET : <b>@report.companySiret.get</b>
+                @Html(Messages("ConsumerReportTransmittedEmail.siret", report.companySiret.get))
             </p>
         }
         <p style="text-align: center;">
@@ -24,21 +23,21 @@
         </p>
 
         <p>
-            L'entreprise a pris connaissance de votre signalement aujourd'hui.
+        @Messages("ConsumerReportTransmittedEmail.companyAcknowledgement")
         </p>
 
         <p>
-            Si elle propose une solution ou corrige le problème, vous recevrez un email.
+        @Messages("ConsumerReportTransmittedEmail.solutionEmail")
         </p>
 
         <p>
-            Pour information, les enquêteurs de la répression des fraudes ont également bien reçu votre signalement.
+        @Messages("ConsumerReportTransmittedEmail.fraudReport")
         </p>
 
-        <p>À bientôt sur SignalConso !</p>
+        <p>@Messages("ConsumerReportTransmittedEmail.goodbye")</p>
 
         <p>
-            <i>L'équipe SignalConso</i>
+            <i>@Messages("ConsumerReportTransmittedEmail.team")</i>
         </p>
 
         <div style="padding-bottom: 0.5em">
@@ -47,7 +46,7 @@
                 border-top: 1px solid #D3D3D3;
                 border-bottom: 1px solid #D3D3D3;
                 padding: 10px 0;
-                margin: 10px">Comprendre SignalConso</div>
+                margin: 10px">@Messages("ConsumerReportTransmittedEmail.understandingSignalConso")</div>
             <img src="cid:schemaSignalConso-Etape3" style="max-width: 100%"/>
         </div>
     }
