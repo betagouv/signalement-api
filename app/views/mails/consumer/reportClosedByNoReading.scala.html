@@ -2,59 +2,58 @@
 @import utils.FrontRoute
 @import models.report.Report
 @import models.company.Company
-@(report: Report,maybeCompany: Option[Company])(implicit frontRoute: FrontRoute)
+@(report: Report,maybeCompany: Option[Company])(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
 
 
-@views.html.mails.layout("L'entreprise n'a pas souhaité consulter votre signalement") {
+@views.html.mails.layout(Messages("ReportClosedByNoReadingEmail.entrepriseNoConsultation")) {
     <p>
-        Bonjour @report.firstName @report.lastName,
+        @Messages("ReportClosedByNoReadingEmail.bonjourMessage", report.firstName, report.lastName)
     </p>
 
     <p>
-        Vous avez fait un signalement le <b>@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))</b> concernant une entreprise :
+        @Html(Messages("ReportClosedByNoReadingEmail.signalementMessage", report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))))
     </p>
     @report.companySiret.map{ siret =>
         <p style="text-align: center;">
-            SIRET : <b>@siret</b>
+            @Html(Messages("ReportClosedByNoReadingEmail.siretLabel", siret))
         </p>
     }
     <p style="text-align: center;">
-        @views.html.fragments.proAddressForConsumer(maybeCompany)
+    @views.html.fragments.proAddressForConsumer(maybeCompany)
     </p>
 
     <p>
-        Malgré nos relances, <b>l'entreprise n'a pas souhaité lire votre signalement.</b>
+    @Html(Messages("ReportClosedByNoReadingEmail.malgreRelancesMessage"))
     </p>
 
     @if(!report.isContractualDispute()) {
         <p>
-            Par contre, <b>les enquêteurs de la répression des fraudes ont bien reçu votre signalement.</b>
+            @Html(Messages("ReportClosedByNoReadingEmail.enqueteurReceivedMessage"))
             <br/>
-            Ils peuvent décider de contrôler ou de surveiller l'entreprise que vous avez signalée, en fonction des informations que vous avez transmises.
+            @Messages("ReportClosedByNoReadingEmail.enqueteurDecideMessage")
         </p>
 
         <p>
-            Si vous retournez dans cette entreprise et constatez que le problème n'a pas été corrigé, faites un nouveau signalement.
-            Savoir que la situation perdure est un élément important pour les enquêteurs.
+        @Messages("ReportClosedByNoReadingEmail.nouveauSignalementMessage")
         </p>
     } else {
         <p>
-            Par contre, vous pouvez continuer les démarches pour trouver une solution ou obtenir réparation.
+        @Messages("ReportClosedByNoReadingEmail.contractualDisputeMessage")
         </p>
         <p style="text-align: center; padding: 20px">
             <a href="@frontRoute.website.litige" class="btn">
-                Continuer mes démarches
+            @Messages("ReportClosedByNoReadingEmail.continuerDemarches")
             </a>
         </p>
         <p>
-            <i>Si vous avez déjà obtenu répération concernant votre litige, vous pouvez ignorer ce message.</i>
+            <i>@Messages("ReportClosedByNoReadingEmail.reparationLitigeMessage")</i>
         </p>
     }
 
-    <p>À bientôt sur SignalConso !</p>
+    <p>@Messages("ReportClosedByNoReadingEmail.aBientotMessage")</p>
 
     <p>
-        <i>L'équipe SignalConso</i>
+        <i>@Messages("ReportClosedByNoReadingEmail.equipeSignalConso")</i>
     </p>
 
     @if(report.needWorkflowAttachment()) {
@@ -65,7 +64,7 @@
                 border-bottom: 1px solid #D3D3D3;
                 padding: 10px 0;
                 margin: 10px">
-                Comprendre SignalConso
+            @Messages("ReportClosedByNoReadingEmail.comprendreSignalConso")
             </div>
             <img src="cid:schemaSignalConso-Etape3" style="max-width: 100%"/>
         </div>

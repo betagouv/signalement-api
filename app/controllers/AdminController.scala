@@ -35,6 +35,7 @@ import services.Email.ConsumerReportAcknowledgment
 import services.Email.ConsumerReportClosedNoAction
 import services.Email.ConsumerReportClosedNoReading
 import services.Email.ConsumerReportReadByProNotification
+import services.Email.ConsumerValidateEmail
 import services.Email.DgccrfAccessLink
 import services.Email.DgccrfDangerousProductReportNotification
 import services.Email.DgccrfReportNotification
@@ -58,6 +59,7 @@ import utils.silhouette.auth.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -105,7 +107,8 @@ class AdminController(
     status = ReportStatus.TraitementEnCours,
     expirationDate = OffsetDateTime.now().plusDays(50),
     influencer = None,
-    visibleToPro = true
+    visibleToPro = true,
+    lang = Some(Locale.FRENCH)
   )
 
   private def genReportFile = ReportFile(
@@ -225,7 +228,13 @@ class AdminController(
       )
     ),
     "consumer.report_ack" -> (recipient =>
-      ConsumerReportAcknowledgment(genReport.copy(email = recipient), Some(genCompany), genEvent, Nil)
+      ConsumerReportAcknowledgment(
+        genReport.copy(email = recipient),
+        Some(genCompany),
+        genEvent,
+        Nil,
+        controllerComponents.messagesApi
+      )
     ),
     "consumer.report_ack_case_reponseconso" ->
       (recipient =>
@@ -233,7 +242,8 @@ class AdminController(
           genReport.copy(status = ReportStatus.NA, tags = List(ReportTag.ReponseConso), email = recipient),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_dispute" ->
@@ -242,7 +252,8 @@ class AdminController(
           genReport.copy(tags = List(ReportTag.LitigeContractuel), email = recipient),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_dangerous_product" ->
@@ -255,7 +266,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_euro" ->
@@ -268,7 +280,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_euro_and_dispute" ->
@@ -282,7 +295,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_andorre" ->
@@ -295,7 +309,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_andorre_and_dispute" ->
@@ -309,7 +324,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_suisse" ->
@@ -323,7 +339,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_suisse_and_dispute" -> (recipient =>
@@ -336,7 +353,8 @@ class AdminController(
         ),
         Some(genCompany),
         genEvent,
-        Nil
+        Nil,
+        controllerComponents.messagesApi
       )
     ),
     "consumer.report_ack_case_compagnie_aerienne" ->
@@ -349,7 +367,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_abroad_default" ->
@@ -362,7 +381,8 @@ class AdminController(
           ),
           Some(genCompany),
           genEvent,
-          Nil
+          Nil,
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_ack_case_abroad_default_and_dispute" -> (recipient =>
@@ -375,33 +395,56 @@ class AdminController(
         ),
         Some(genCompany),
         genEvent,
-        Nil
+        Nil,
+        controllerComponents.messagesApi
       )
     ),
     "consumer.report_transmitted" -> (recipient =>
-      ConsumerReportReadByProNotification(genReport.copy(email = recipient), Some(genCompany))
+      ConsumerReportReadByProNotification(
+        genReport.copy(email = recipient),
+        Some(genCompany),
+        controllerComponents.messagesApi
+      )
     ),
     "consumer.report_ack_pro_consumer" -> (recipient =>
-      ConsumerProResponseNotification(genReport.copy(email = recipient), genReportResponse, Some(genCompany))
+      ConsumerProResponseNotification(
+        genReport.copy(email = recipient),
+        genReportResponse,
+        Some(genCompany),
+        controllerComponents.messagesApi
+      )
     ),
     "consumer.report_closed_no_reading" -> (recipient =>
-      ConsumerReportClosedNoReading(genReport.copy(email = recipient), Some(genCompany))
+      ConsumerReportClosedNoReading(
+        genReport.copy(email = recipient),
+        Some(genCompany),
+        controllerComponents.messagesApi
+      )
     ),
     "consumer.report_closed_no_reading_case_dispute" ->
       (recipient =>
         ConsumerReportClosedNoReading(
           genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
-          Some(genCompany)
+          Some(genCompany),
+          controllerComponents.messagesApi
         )
       ),
     "consumer.report_closed_no_action" -> (recipient =>
-      ConsumerReportClosedNoAction(genReport.copy(email = recipient), Some(genCompany))
+      ConsumerReportClosedNoAction(
+        genReport.copy(email = recipient),
+        Some(genCompany),
+        controllerComponents.messagesApi
+      )
     ),
     "consumer.report_closed_no_action_case_dispute" -> (recipient =>
       ConsumerReportClosedNoAction(
         genReport.copy(email = recipient, tags = List(ReportTag.LitigeContractuel)),
-        Some(genCompany)
+        Some(genCompany),
+        controllerComponents.messagesApi
       )
+    ),
+    "consumer.validate_email" -> (recipient =>
+      ConsumerValidateEmail(EmailValidation(email = recipient), None, controllerComponents.messagesApi)
     )
   )
 
@@ -437,7 +480,12 @@ class AdminController(
             _ <- filteredEvents.map { case (report, responseEvent) =>
               val maybeCompany = report.companyId.flatMap(companyId => companies.find(_.id == companyId))
               mailService.send(
-                ConsumerProResponseNotification(report, responseEvent.details.as[ReportResponse], maybeCompany)
+                ConsumerProResponseNotification(
+                  report,
+                  responseEvent.details.as[ReportResponse],
+                  maybeCompany,
+                  controllerComponents.messagesApi
+                )
               )
             }.sequence
           } yield Ok
@@ -483,7 +531,16 @@ class AdminController(
         val reportAttachements = reportFiles.getOrElse(report.id, List.empty)
 
         event match {
-          case Some(evt) => Some(ConsumerReportAcknowledgment(report, maybeCompany, evt, reportAttachements))
+          case Some(evt) =>
+            Some(
+              ConsumerReportAcknowledgment(
+                report,
+                maybeCompany,
+                evt,
+                reportAttachements,
+                controllerComponents.messagesApi
+              )
+            )
           case None =>
             logger.debug(s"Not sending email for report ${report.id}, no event found")
             None

@@ -355,7 +355,7 @@ class SignalConsoComponents(
 
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)
   val emailValidationOrchestrator =
-    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration)
+    new EmailValidationOrchestrator(mailService, emailValidationRepository, emailConfiguration, messagesApi)
 
   val eventsOrchestrator = new EventsOrchestrator(eventRepository, reportRepository, companyRepository)
 
@@ -386,7 +386,8 @@ class SignalConsoComponents(
     emailConfiguration,
     tokenConfiguration,
     signalConsoConfiguration,
-    companySyncService
+    companySyncService,
+    messagesApi
   )
 
   val reportsExtractActor: ActorRef =
@@ -437,7 +438,8 @@ class SignalConsoComponents(
     eventRepository,
     companyRepository,
     mailService,
-    taskConfiguration
+    taskConfiguration,
+    messagesApi
   )
   val reportReminderTask = new ReportRemindersTask(
     actorSystem,

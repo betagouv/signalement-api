@@ -22,6 +22,7 @@ import models.report.ReportWordOccurrence.StopWords
 import models.token.TokenKind.CompanyInit
 import models.website.Website
 import play.api.Logger
+import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import repositories.accesstoken.AccessTokenRepositoryInterface
 import repositories.blacklistedemails.BlacklistedEmailsRepositoryInterface
@@ -73,7 +74,8 @@ class ReportOrchestrator(
     emailConfiguration: EmailConfiguration,
     tokenConfiguration: TokenConfiguration,
     signalConsoConfiguration: SignalConsoConfiguration,
-    companySyncService: CompanySyncServiceInterface
+    companySyncService: CompanySyncServiceInterface,
+    messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -321,7 +323,7 @@ class ReportOrchestrator(
       Constants.ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
     )
     for {
-      _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements))
+      _ <- mailService.send(ConsumerReportAcknowledgment(report, maybeCompany, event, reportAttachements, messagesApi))
       _ <- eventRepository.create(event)
     } yield ()
   }
@@ -592,7 +594,7 @@ class ReportOrchestrator(
     for {
       newReport <- reportRepository.update(report.id, report.copy(status = ReportStatus.Transmis))
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret(_)).flatSequence
-      _ <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany))
+      _ <- mailService.send(ConsumerReportReadByProNotification(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(
           id = UUID.randomUUID(),
@@ -613,7 +615,7 @@ class ReportOrchestrator(
       maybeCompany: Option[Company]
   ) = for {
     _ <- mailService.send(ProResponseAcknowledgment(report, reportResponse, user))
-    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany))
+    _ <- mailService.send(ConsumerProResponseNotification(report, reportResponse, maybeCompany, messagesApi))
   } yield ()
 
   // dead code ?

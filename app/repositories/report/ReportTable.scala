@@ -7,6 +7,7 @@ import repositories.PostgresProfile.api._
 import utils._
 
 import java.time._
+import java.util.Locale
 import java.util.UUID
 import ReportColumnType._
 import models.company.Address
@@ -17,6 +18,8 @@ import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
+  implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+
   def gender = column[Option[Gender]]("gender")
   def category = column[String]("category")
   def subcategories = column[List[String]]("subcategories")
@@ -52,6 +55,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def ccrfCode = column[List[String]]("ccrf_code")
   def expirationDate = column[OffsetDateTime]("expiration_date")
   def visibleToPro = column[Boolean]("visible_to_pro")
+  def lang = column[Option[Locale]]("lang")
 
   def company = foreignKey("COMPANY_FK", companyId, CompanyTable.table)(
     _.id.?,
@@ -96,6 +100,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         ccrfCode ::
         expirationDate ::
         visibleToPro ::
+        lang ::
         HNil =>
       report.Report(
         id = id,
@@ -133,6 +138,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         ccrfCode = ccrfCode,
         expirationDate = expirationDate,
         visibleToPro = visibleToPro,
+        lang = lang,
         influencer = for {
           socialNetwork <- socialNetwork
           influencerName <- influencerName
@@ -177,6 +183,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.ccrfCode ::
       r.expirationDate ::
       r.visibleToPro ::
+      r.lang ::
       HNil
   )
 
@@ -217,6 +224,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       List[String] ::
       OffsetDateTime ::
       Boolean ::
+      Option[Locale] ::
       HNil
 
   def * = (
@@ -256,6 +264,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       ccrfCode ::
       expirationDate ::
       visibleToPro ::
+      lang ::
       HNil
   ) <> (constructReport, extractReport)
 }
