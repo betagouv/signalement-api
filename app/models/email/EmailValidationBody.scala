@@ -4,7 +4,9 @@ import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 import utils.EmailAddress
 
-case class ValidateEmail(email: EmailAddress)
+import java.util.Locale
+
+case class ValidateEmail(email: EmailAddress, lang: Option[Locale])
 
 object ValidateEmail {
   implicit val EmailBodyFormat: OFormat[ValidateEmail] = Json.format[ValidateEmail]

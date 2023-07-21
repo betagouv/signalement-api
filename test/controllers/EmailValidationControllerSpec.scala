@@ -50,6 +50,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
   implicit val authEnv = components.authEnv
 
+  lazy val messagesApi = components.messagesApi
+
   lazy val emailValidationRepository: EmailValidationRepositoryInterface =
     components.emailValidationRepository
 
@@ -169,7 +171,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true
         maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual None
-        val expectedEmail = maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation))
+        val expectedEmail =
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
         val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(unknownEmail), emailSubject, emailBody)
@@ -195,7 +198,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
         maybeEmailValidation.isDefined shouldEqual true
         maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual None
-        val expectedEmail = maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation))
+        val expectedEmail =
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
         val emailSubject = expectedEmail.map(_.subject).get
         val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)

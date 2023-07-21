@@ -12,6 +12,9 @@ import models.event.Event
 import models.report._
 import org.specs2.Specification
 import org.specs2.matcher._
+import play.api.i18n.Lang
+import play.api.i18n.MessagesImpl
+import play.api.i18n.MessagesProvider
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.test._
@@ -29,6 +32,7 @@ import utils.silhouette.auth.AuthEnv
 import java.time.OffsetDateTime
 import java.time.Period
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -39,6 +43,10 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
 
   val address = Address(postalCode = Some(Departments.CollectivitesOutreMer(0)))
   val company = Fixtures.genCompany.sample.get.copy(address = address)
+
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given a draft report which concerns
@@ -67,6 +75,9 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
   val address = Address(postalCode = Some(Departments.ALL(0)))
   val company = Fixtures.genCompany.sample.get.copy(address = address)
 
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given a draft report which concerns
@@ -93,6 +104,10 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
 }
 
 object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
+
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given a draft report which concerns
@@ -116,6 +131,10 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
 }
 
 object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
+
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given a draft report which concerns
@@ -147,6 +166,10 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
 }
 
 object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
+
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(draftReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given a draft report which concerns
@@ -234,6 +257,7 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachmentService = components.attachmentService
   lazy val emailValidationRepository = components.emailValidationRepository
+  lazy val messagesApi = components.messagesApi
 
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress

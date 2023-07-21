@@ -8,6 +8,7 @@ import models.event.Event.stringToDetailsJsValue
 import models.report.Report
 import models.report.ReportStatus
 import play.api.Logger
+import play.api.i18n.MessagesApi
 import repositories.company.CompanyRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
@@ -22,6 +23,7 @@ import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_ACTION
 import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 import utils.Constants.EventType.CONSO
 import utils.Constants.EventType.SYSTEM
+
 import java.time._
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -37,7 +39,8 @@ class ReportClosureTask(
     eventRepository: EventRepositoryInterface,
     companyRepository: CompanyRepositoryInterface,
     mailService: MailService,
-    taskConfiguration: TaskConfiguration
+    taskConfiguration: TaskConfiguration,
+    messagesApi: MessagesApi
 )(implicit val executionContext: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -112,7 +115,7 @@ class ReportClosureTask(
         )
       )
       maybeCompany <- report.companySiret.map(companyRepository.findBySiret).flatSequence
-      _ <- mailService.send(email(report, maybeCompany))
+      _ <- mailService.send(email(report, maybeCompany, messagesApi))
       _ <- eventRepository.create(
         Event(
           UUID.randomUUID(),

@@ -18,6 +18,9 @@ import org.specs2.concurrent.ExecutionEnv
 import play.api.Application
 import play.api.ApplicationLoader
 import play.api.Configuration
+import play.api.i18n.Lang
+import play.api.i18n.MessagesImpl
+import play.api.i18n.MessagesProvider
 import play.api.libs.json.Json
 import play.api.libs.mailer.Attachment
 import play.api.mvc.Result
@@ -38,6 +41,7 @@ import utils._
 import utils.silhouette.auth.AuthEnv
 
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
@@ -84,6 +88,9 @@ object GetReportByNotConcernedProUser extends GetReportSpec {
 }
 
 object GetReportByConcernedProUserFirstTime extends GetReportSpec {
+  implicit val messagesProvider: MessagesProvider =
+    MessagesImpl(Lang(neverRequestedReport.lang.getOrElse(Locale.FRENCH)), messagesApi)
+
   override def is =
     s2"""
          Given an authenticated pro user which is concerned by the report       ${step {
@@ -168,6 +175,8 @@ trait GetReportSpec extends Spec with GetReportContext {
   implicit val ee = ExecutionEnv.fromGlobalExecutionContext
 
   implicit val timeout: Timeout = 30.seconds
+
+  lazy val messagesApi = components.messagesApi
 
   var someLoginInfo: Option[LoginInfo] = None
   var someResult: Option[Result] = None
@@ -270,7 +279,8 @@ trait GetReportContext extends AppSpec {
     employeeConsumer = false,
     status = ReportStatus.TraitementEnCours,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
-    visibleToPro = true
+    visibleToPro = true,
+    lang = None
   )
 
   val neverRequestedFinalReport = Report(
@@ -293,7 +303,8 @@ trait GetReportContext extends AppSpec {
     employeeConsumer = false,
     status = ReportStatus.ConsulteIgnore,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
-    visibleToPro = true
+    visibleToPro = true,
+    lang = None
   )
 
   val alreadyRequestedReport = Report(
@@ -316,7 +327,8 @@ trait GetReportContext extends AppSpec {
     employeeConsumer = false,
     status = ReportStatus.Transmis,
     expirationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(20),
-    visibleToPro = true
+    visibleToPro = true,
+    lang = None
   )
 
   val adminUser = Fixtures.genAdminUser.sample.get
