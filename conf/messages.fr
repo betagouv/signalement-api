@@ -26,6 +26,7 @@ ConsumerReportAckProEmail.companySiret=SIRET : <b>{0}</b>
 ConsumerReportAckProEmail.responseHeader=L''entreprise a répondu à votre signalement.
 ConsumerReportAckProEmail.responseContent=Voici sa réponse :
 ConsumerReportAckProEmail.satisfactionQuestion=Êtes-vous satisfait de cette réponse ?
+ConsumerReportAckProEmail.clickYourChoice=Cliquez sur votre choix :
 ConsumerReportAckProEmail.situationImprovement=Sachez que, quelle que soit la réponse de l''entreprise, les enquêteurs de la répression des fraudes peuvent décider de faire un contrôle, en fonction des informations que vous avez transmises.
 ConsumerReportAckProEmail.waitingForImprovement=Vous souhaitez attendre de voir si la situation s''améliore ?
 ConsumerReportAckProEmail.newReportLink=N''hésitez pas à refaire un nouveau signalement si vous constatez que le problème n''a pas été corrigé. La répression des fraudes sera ainsi mieux au courant de la situation.
