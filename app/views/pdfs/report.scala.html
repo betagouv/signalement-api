@@ -18,7 +18,7 @@
         companyEvents: Seq[(Event, Option[User])],
         files: Seq[ReportFile]
 )(
-        implicit frontRoute: FrontRoute, userRoleOpt: Option[UserRole] = None
+        implicit frontRoute: FrontRoute, userRoleOpt: Option[UserRole] = None, messageProvider: MessagesProvider
 )
 
 <!doctype html>
@@ -27,10 +27,9 @@
         <meta name="viewport" content="width=device-width" />
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Détail du signalement @report.id</title>
+        <title>@Messages("reportPDF.page.title", report.id)</title>
 
         <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
-
     </head>
     <body>
         <div style="page-break-before: always;">
@@ -42,13 +41,13 @@
             </div>
             <div class="references">
                 <small>
-                    Identifiant unique : @report.id<br>
-                    Ce document a été extrait le : @LocalDateTime.now().format(DateTimeFormatter.ofPattern(("dd/MM/yyyy à HH:mm:ss")))
+                    @Messages("reportPDF.references.uniqueId", report.id)<br>
+                @Messages("reportPDF.references.documentExtractedOn", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss")))
                 </small>
             </div>
             <div class="content">
                 <div>
-                    <h2>Type de signalement</h2>
+                    <h2>@Messages("reportPDF.report.typeHeader")</h2>
                     <ul>
                         <li>
                         @ReportCategory.displayValue(report.category)
@@ -59,7 +58,7 @@
                             </li>
                         }
                     </ul>
-                    <h2>Détail du signalement</h2>
+                    <h2>@Messages("reportPDF.report.detailHeader")</h2>
                     <ul>
                     @report.details.map { input =>
                         <li>
@@ -68,64 +67,64 @@
                     }
                     </ul>
                     @report.influencer.map { influencer =>
-                        <h3>Influenceur ou influenceuse identifié(e)</h3>
+                        <h3>@Messages("reportPDF.report.influencerHeader")</h3>
                         <ul>
-                            <li><b>Nom ou pseudonyme :</b> @influencer.name</li>
-                            <li><b>Plateforme :</b> @influencer.socialNetwork</li>
+                            <li><b>@Messages("reportPDF.report.influencerName", influencer.name)</b></li>
+                            <li><b>@Messages("reportPDF.report.influencerPlatform", influencer.socialNetwork)</b></li>
                         </ul>
                     }
                     @responseOption.map { response =>
-                        <h2>Réponse du professionnel</h2>
+                        <h2>@Messages("reportPDF.report.responseHeader")</h2>
 
                         <b>
-                            @response.responseType match {
-                                case ReportResponseType.ACCEPTED => {
-                                    Signalement pris en compte
-                                }
-                                case ReportResponseType.REJECTED => {
-                                    Signalement infondé
-                                }
-                                case ReportResponseType.NOT_CONCERNED => {
-                                    Etablissement non concerné par le signalement
-                                }
+                        @response.responseType match {
+                            case ReportResponseType.ACCEPTED => {
+                                @Messages("reportPDF.report.responseAccepted")
                             }
+                            case ReportResponseType.REJECTED => {
+                                @Messages("reportPDF.report.responseRejected")
+                            }
+                            case ReportResponseType.NOT_CONCERNED => {
+                                @Messages("reportPDF.report.responseNotConcerned")
+                            }
+                        }
                         </b>
                         <div>@response.consumerDetails</div>
                     @response.dgccrfDetails.filter(_.trim.nonEmpty).map { details =>
                         <br/>
-                        <b>Informations complémentaires pour la DGCCRF</b>
+                        <b>@Messages("reportPDF.report.dgccrfDetailsHeader")</b>
                         <div>@details</div>
                     }
                     }
 
                     @consumerReviewOption.map { review =>
-                        <h2>Réponse du consommateur</h2>
+                        <h2>@Messages("reportPDF.report.consumerResponseHeader")</h2>
 
-                        <b>Évaluation de la réponse du professionnel par le consommateur :</b>
+                        <b>@Messages("reportPDF.report.consumerResponseDetailHeader")</b>
 
-                        @review.evaluation match {
-                            case ResponseEvaluation.Positive => {
-                                Positive
-                            }
-                            case ResponseEvaluation.Negative => {
-                                Négative
-                            }
-                            case ResponseEvaluation.Negative => {
-                                Neutre
-                            }
+                    @review.evaluation match {
+                        case ResponseEvaluation.Positive => {
+                            @Messages("reportPDF.report.consumerResponsePositive")
                         }
+                        case ResponseEvaluation.Negative => {
+                            @Messages("reportPDF.report.consumerResponseNegative")
+                        }
+                        case ResponseEvaluation.Neutral => {
+                            @Messages("reportPDF.report.consumerResponseNeutral")
+                        }
+                    }
                         <br/>
-                        @review.details.filter(_.nonEmpty).map { details =>
-                            <br/>
-                            <b>Détail de l'évaluation :</b>
-                            <p>@details</p>
-                        }
+                    @review.details.filter(_.nonEmpty).map { details =>
+                        <br/>
+                        <b>@Messages("reportPDF.report.consumerResponseDetail")</b>
+                        <p>@details</p>
+                    }
 
 
                     }
 
 
-                    <h2>Entreprise</h2>
+                    <h2>@Messages("reportPDF.report.companyHeader")</h2>
                     @report.companySiret.map { siret =>
                         <div>
                             <b>@siret</b>
@@ -149,13 +148,13 @@
                     }
                     @report.vendor.map { vendor =>
                         <div>
-                            <h2>Vendeur</h2>
+                            <h2>@Messages("reportPDF.report.vendorHeader")</h2>
                             <div>@vendor</div>
                         </div>
                     }
-                    <h2>Consommateur</h2>
+                    <h2>@Messages("reportPDF.report.consumerHeader")</h2>
                     @if(!report.contactAgreement) {
-                        <div class="note">Le consommateur souhaite rester anonyme</div>
+                        <div class="note">@Messages("reportPDF.report.consumerAnonymousNote")</div>
                     }
                     <div>
                         <b>@report.firstName @report.lastName</b>
@@ -170,16 +169,16 @@
                     }
                     @report.consumerReferenceNumber.map { consumerReferenceNumber =>
                         <div>
-                            Numéro de référence dossier : @consumerReferenceNumber
+                            @Messages("reportPDF.report.consumerReferenceNumber", consumerReferenceNumber)
                         </div>
                     }
                 </div>
                 <div>
-                    <h2>Pièces jointes</h2>
+                    <h2>@Messages("reportPDF.report.attachmentsHeader")</h2>
                     @if(files.isEmpty) {
-                        <span>Aucune pièce jointe n'est associée à ce signalement.</span>
+                        <span>@Messages("reportPDF.report.noAttachments")</span>
                     } else {
-                        Pièces jointes :
+                        @Messages("reportPDF.report.attachmentsHeader") :
                         <ul>
                         @files.map { f =>
                             <li>@f.filename</li>
@@ -189,11 +188,11 @@
                 </div>
                 @if(userRoleOpt.isDefined) {
                     <div>
-                        <h2>Historique du signalement</h2>
+                        <h2>@Messages("reportPDF.report.historyHeader")</h2>
                         <p>
                             <span class="note">@report.creationDate.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy à HH:mm:ss"))</span>
                             <br />
-                            <b>Création du signalement</b>
+                            <b>@Messages("reportPDF.report.historyEntryCreation")</b>
                         </p>
                         @events.sortBy(_._1.creationDate).map { case (e, u) =>
                         <p>
@@ -207,7 +206,7 @@
                     </div>
                     @if(report.companyId.isDefined) {
                         <div>
-                            <h2>Historique de l'entreprise</h2>
+                            <h2>@Messages("reportPDF.report.companyHistoryHeader")</h2>
                             @companyEvents.sortBy(_._1.creationDate).map { case (e, u) =>
                             <p>
                                 <span class="note">@e.formattedDate</span>

@@ -5,6 +5,7 @@ import models.event.Event
 import models.report.Report
 import models.report.ReportFile
 import play.api.Environment
+import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
 import play.api.libs.mailer.AttachmentFile
@@ -61,7 +62,8 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
       report: Report,
       maybeCompany: Option[Company],
       event: Event,
-      files: Seq[ReportFile]
+      files: Seq[ReportFile],
+      messagesProvider: MessagesProvider
   ): Seq[Attachment] =
     needWorkflowSeqForWorkflowStepN(2, report) ++
       Seq(
@@ -70,7 +72,8 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
           pdfService.getPdfData(
             views.html.pdfs.report(report, maybeCompany, Seq((event, None)), None, None, Seq.empty, files)(
               frontRoute,
-              None
+              None,
+              messagesProvider
             )
           ),
           "application/pdf"

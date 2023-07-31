@@ -147,7 +147,9 @@ class ReportController(
       .sequence(reportFutures)
       .map(_.flatten)
       .map(
-        _.map(reportData =>
+        _.map { reportData =>
+          val lang = Lang(reportData.report.lang.getOrElse(Locale.FRENCH))
+          val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
           views.html.pdfs
             .report(
               reportData.report,
@@ -157,8 +159,8 @@ class ReportController(
               reportData.consumerReviewOption,
               reportData.companyEvents,
               reportData.files
-            )(frontRoute = frontRoute)
-        )
+            )(frontRoute = frontRoute, None, messagesProvider)
+        }
       )
       .map(pdfService.createPdfSource)
       .map(pdfSource =>
