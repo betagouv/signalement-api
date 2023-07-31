@@ -197,7 +197,7 @@ object Email {
         .toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.reportAcknowledgmentAttachement(report, maybeCompany, event, files)
+      _.reportAcknowledgmentAttachement(report, maybeCompany, event, files, messagesProvider)
   }
 
   final case class ConsumerProResponseNotification(
