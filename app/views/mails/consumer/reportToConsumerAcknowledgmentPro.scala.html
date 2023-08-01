@@ -35,11 +35,20 @@
     </p>
 
     <p>
-        <b>@Messages("ConsumerReportAckProEmail.satisfactionQuestion")</b>
+        <b>@Messages("ConsumerReportAckProEmail.satisfactionQuestion")</b> @Messages("ConsumerReportAckProEmail.clickYourChoice")
     <div style="display: flex; margin: 50px ">
-        <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px"><img src='cid:happy' alt="positif" width="75" height="75"></a>
-        <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px"><img src='cid:neutral' alt="neutre" width="75" height="75"/></a>
-        <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px"><img src='cid:sad' alt="négatif" width="75" height="75" /></a>
+        <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px">
+            <img src='cid:happy' alt="positif" width="75" height="75">
+            <p style="text-align:center;">Satisfait</p>
+        </a>
+        <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px">
+            <img src='cid:neutral' alt="neutre" width="75" height="75"/>
+            <p style="text-align:center;">Neutre</p>
+        </a>
+        <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px">
+            <img src='cid:sad' alt="négatif" width="75" height="75" />
+            <p style="text-align:center;">Mécontent</p>
+        </a>
     </div>
     </p>
 
