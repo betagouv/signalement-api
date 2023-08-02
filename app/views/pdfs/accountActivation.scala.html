@@ -80,14 +80,14 @@
 
                 <p class="mt-3">
                 @reportExpirationDate.map{date =>
-                    Pour en prendre connaissance et y répondre, <strong>activez avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) votre espace professionnel sur <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a></strong> avec votre code de 6 chiffres :
+                    Pour en prendre connaissance et y répondre, <strong>créez votre compte avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a></strong> avec le code d'activation suivant :
                 }.getOrElse {
-                    Pour en prendre connaissance et y répondre, <strong>activez votre espace professionnel sur <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a></strong> avec votre code de 6 chiffres :
+                    Pour en prendre connaissance et y répondre, <strong>créez votre compte sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a></strong> avec le code d'activation suivant :
                 }
                 </p>
 
                 <p class="text-center text-bold">
-                    Votre Code d’activation : @code
+                    Code d’activation : @code
                 </p>
 
                 <p>
@@ -95,7 +95,7 @@
                 </p>
 
                 <p class="text-bold">
-                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer, un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a> en précisant <u>obligatoirement</u> le numéro SIRET de l’entreprise concernée : @company.siret.
+                    Si vous rencontrez des difficultés pour créer votre compte, vous pouvez nous envoyer un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a> en précisant <u>obligatoirement</u> le numéro SIRET de l’entreprise concernée : @company.siret.
                 </p>
 
                 <p>
