@@ -97,7 +97,7 @@ class CompanyAccessOrchestrator(
       Future.failed(CompanyActivationSiretOrCodeInvalid(siret))
     } else if (!accessToken.valid) {
       logger.warn(s"Unable to activate company $siret, code has already been used.")
-      Future.failed(ActivationCodeAlreadyUsed(activationLinkRequest.email))
+      Future.failed(ActivationCodeAlreadyUsed())
     } else if (accessToken.expirationDate.exists(expiration => now isAfter expiration)) {
       logger.warn(s"Unable to activate company $siret, code has expired.")
       Future.failed(CompanyActivationCodeExpired(siret))

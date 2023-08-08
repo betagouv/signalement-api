@@ -103,7 +103,7 @@ object AppError {
     override val `type`: String = "SC-0010"
     override val title: String = s"Max auth attempt reached for user id : $userId"
     override val details: String =
-      "Le nombre maximum de tentative d'authentification a été dépassé, merci de rééssayer un peu plus tard."
+      "Le nombre maximum de tentatives d'authentification a été dépassé, merci de rééssayer un peu plus tard."
     override val titleForLogs: String = "max_auth_attempts_reached"
   }
 
@@ -185,7 +185,7 @@ object AppError {
     override val `type`: String = "SC-0017"
     override val title: String = s"Unable to activate company"
     override val details: String =
-      s"Impossible d'activer l'entreprise (siret : ${siret.value}), merci de vérifier que le siret et le code d'activation correspondent bien à ceux indiqués sur le courrier."
+      s"Impossible de créer le compte. Merci de vérifier que le numéro SIRET et le code d'activation correspondent bien à ceux indiqués dans le courrier."
     override val titleForLogs: String = "company_activation_invalid_inputs"
   }
 
@@ -193,15 +193,15 @@ object AppError {
     override val `type`: String = "SC-0018"
     override val title: String = s"Unable to activate company, code expired"
     override val details: String =
-      s"Impossible d'activer l'entreprise (siret : ${siret.value}) car le code a expiré, merci de contacter le support."
+      s"Impossible de créer le compte car le code a expiré. Merci de contacter le support."
     override val titleForLogs: String = "company_activation_code_expired"
   }
 
-  final case class ActivationCodeAlreadyUsed(email: EmailAddress) extends ConflictError {
+  final case class ActivationCodeAlreadyUsed() extends ConflictError {
     override val `type`: String = "SC-0019"
     override val title: String = s"Unable to activate company, code already used"
     override val details: String =
-      s"Code déjà utilisé, merci de compléter la création du compte grâce au lien envoyé à l'adresse ${email.value}."
+      s"Ce code a déjà été utilisé et un compte a été créé. Merci de vous connecter directement."
     override val titleForLogs: String = "company_activation_code_already_used"
   }
 
