@@ -69,9 +69,9 @@
 
                 <p>
                 @reportExpirationDate.map{date =>
-                <strong>Nous vous invitons à en prendre connaissance et à y répondre.</strong> Pour ce faire, vous devez activer votre compte sur  <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a> avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), avec votre code :
+                <strong>Nous vous invitons à en prendre connaissance et à y répondre.</strong> Pour ce faire, vous devez créer votre compte sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a> avant le @date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), avec le code d'activation suivant :
                 }.getOrElse {
-                  <strong>Nous vous invitons à en prendre connaissance et à y répondre.</strong> Pour ce faire, vous devez activer votre compte sur  <a href="@frontRoute.dashboard.activation">@frontRoute.dashboard.activation</a> avec votre code :
+                  <strong>Nous vous invitons à en prendre connaissance et à y répondre.</strong> Pour ce faire, vous devez créer votre compte sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a>, avec le code d'activation suivant :
                 }
                 </p>
 
@@ -80,7 +80,7 @@
                 </p>
 
                 <p class="text-bold">
-                    Si vous rencontrez des difficultés pour activer votre compte, vous pouvez nous envoyer, un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a> en précisant <u>obligatoirement</u> le numéro SIRET de l’entreprise concernée : @company.siret.
+                    Si vous rencontrez des difficultés pour créer votre compte, vous pouvez nous envoyer, un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a> en précisant <u>obligatoirement</u> le numéro SIRET de l’entreprise concernée : @company.siret.
                 </p>
 
                 <p>

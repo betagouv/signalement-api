@@ -505,6 +505,7 @@ class SignalConsoComponents(
     companyAccessRepository,
     eventRepository,
     mailService,
+    pdfService,
     emailConfiguration,
     reportFileOrchestrator,
     companyRepository,

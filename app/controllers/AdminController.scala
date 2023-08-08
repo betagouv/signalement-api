@@ -23,9 +23,11 @@ import models.report.ReportTag
 import models.report.WebsiteURL
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
+import play.api.i18n.Lang
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
+import play.twirl.api.Html
 import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
@@ -50,8 +52,10 @@ import services.Email.ResetPassword
 import services.Email.ValidateEmail
 import services.Email
 import services.MailService
+import services.PDFService
 import utils.Constants.ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
 import utils.Constants.ActionEvent.REPORT_PRO_RESPONSE
+import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils._
 import utils.silhouette.auth.AuthEnv
@@ -64,13 +68,14 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
+import play.api.i18n.MessagesImpl
 class AdminController(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
     companyAccessRepository: CompanyAccessRepositoryInterface,
     eventRepository: EventRepositoryInterface,
     mailService: MailService,
+    pdfService: PDFService,
     emailConfiguration: EmailConfiguration,
     reportFileOrchestrator: ReportFileOrchestrator,
     companyRepository: CompanyRepositoryInterface,
@@ -130,7 +135,7 @@ class AdminController(
 
   private def genCompany = Company(
     id = UUID.randomUUID,
-    siret = SIRET.fromUnsafe("123456789"),
+    siret = SIRET.fromUnsafe("12345678901234"),
     creationDate = OffsetDateTime.now(),
     name = "Test Entreprise",
     address = Address(
@@ -183,6 +188,52 @@ class AdminController(
   )
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
+
+  val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
+  val availablePdfs = Seq[(String, Html)](
+    "accountActivation" -> views.html.pdfs.accountActivation(
+      genCompany,
+      Some(genReport.creationDate.toLocalDate),
+      Some(genReport.expirationDate.toLocalDate),
+      "123456"
+    )(frontRoute = frontRoute, contactAddress = contactAddress),
+    "accountActivationReminder" -> views.html.pdfs.accountActivationReminder(
+      genCompany,
+      Some(genReport.creationDate.toLocalDate),
+      Some(genReport.expirationDate.toLocalDate),
+      "123456"
+    )(frontRoute = frontRoute, contactAddress = contactAddress),
+    "accountActivationLastReminder" -> views.html.pdfs.accountActivationLastReminder(
+      genCompany,
+      reportNumber = 33,
+      Some(genReport.creationDate.toLocalDate),
+      Some(genReport.expirationDate.toLocalDate),
+      "123456"
+    )(frontRoute = frontRoute, contactAddress = contactAddress),
+    "report" -> views.html.pdfs.report(
+      genReport,
+      Some(genCompany),
+      Nil,
+      None,
+      None,
+      Nil,
+      Nil
+    )(frontRoute = frontRoute, None, messagesProvider),
+    "proResponse" -> views.html.pdfs.proResponse(
+      Some(
+        Event(
+          UUID.randomUUID(),
+          Some(genReport.id),
+          genReport.companyId,
+          Some(genUser.id),
+          OffsetDateTime.now(),
+          EventType.PRO,
+          ActionEvent.REPORT_PRO_RESPONSE,
+          Json.toJson(genReportResponse)
+        )
+      )
+    )
+  )
 
   val availableEmails = Map[String, EmailAddress => Email](
     "dgccrf.inactive_account_reminder" -> (recipient =>
@@ -459,6 +510,23 @@ class AdminController(
         .map(_ => Ok)
         .getOrElse(NotFound)
     )
+  }
+
+  def getPdfCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
+    Future(Ok(Json.toJson(availablePdfs.map(_._1))))
+  }
+  def sendTestPdf(templateRef: String) = SecuredAction(WithRole(UserRole.Admin)) { _ =>
+    availablePdfs.toMap
+      .get(templateRef)
+      .map { html =>
+        val pdfSource = pdfService.createPdfSource(Seq(html))
+        Ok.chunked(
+          content = pdfSource,
+          inline = true,
+          fileName = Some(s"${templateRef}_${OffsetDateTime.now().toString}.pdf")
+        )
+      }
+      .getOrElse(NotFound)
   }
 
   def sendProAckToConsumer = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
