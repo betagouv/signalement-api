@@ -193,7 +193,7 @@ object AppError {
     override val `type`: String = "SC-0018"
     override val title: String = s"Unable to activate company, code expired"
     override val details: String =
-      s"Impossible de créer le compte car le code a expiré. Merci de contacter le support."
+      s"Impossible de créer le compte car ce code d'activation a expiré. Si vous avez un courrier de SignalConso avec un code d'activation plus récent, essayez-le. Sinon, merci de contacter le support."
     override val titleForLogs: String = "company_activation_code_expired"
   }
 
