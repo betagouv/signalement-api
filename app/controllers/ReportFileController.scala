@@ -4,6 +4,7 @@ import akka.Done
 import cats.implicits.catsSyntaxOption
 import com.mohiva.play.silhouette.api.Silhouette
 import config.SignalConsoConfiguration
+import controllers.error.AppError.FileTooLarge
 import controllers.error.AppError.InvalidFileExtension
 import controllers.error.AppError.MalformedFileKey
 import models.report._
@@ -34,6 +35,8 @@ class ReportFileController(
 
   val logger: Logger = Logger(this.getClass)
 
+  val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
+
   def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UnsecuredAction.async { _ =>
     reportFileOrchestrator
       .downloadReportAttachment(uuid, filename)
@@ -59,6 +62,7 @@ class ReportFileController(
         fileExtension = filePart.filename.toLowerCase.split("\\.").last
         _ <- validateFileExtension(fileExtension)
         tmpFile = pathFromFilePart(filePart)
+        _ <- validateMaxSize(tmpFile)
         reportFile <- reportFileOrchestrator
           .saveReportFile(
             filePart.filename,
@@ -66,6 +70,13 @@ class ReportFileController(
             dataPart
           )
       } yield Ok(Json.toJson(reportFile))
+    }
+
+  private def validateMaxSize(file: File): Future[Unit] =
+    if (file.length() > reportFileMaxSizeInBytes) {
+      Future.failed(FileTooLarge(reportFileMaxSizeInBytes, file.getName))
+    } else {
+      Future.unit
     }
 
   private def pathFromFilePart(filePart: MultipartFormData.FilePart[Files.TemporaryFile]): File = {

@@ -434,4 +434,17 @@ object AppError {
     override val titleForLogs: String = "max_activation_attempts_reached"
   }
 
+  final case class FileTooLarge(maxSize: Int, filename: String) extends BadRequestError {
+    override val `type`: String = "SC-0045"
+    override val title: String = "File too large"
+    override val details: String = s"File $filename is too large, it must not exceed $maxSize MB"
+    override val titleForLogs: String = "file_too_large"
+  }
+
+  final case class TooManyAttachments(max: Int, current: Int) extends BadRequestError {
+    override val `type`: String = "SC-0046"
+    override val title: String = "Too many attachments"
+    override val details: String = s"Reports have $current attachments while the max allowed is $max"
+    override val titleForLogs: String = "too_many_attachments"
+  }
 }
