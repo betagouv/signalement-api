@@ -57,13 +57,13 @@ class CompanyAccessOrchestrator(
       _ = logger.debug("Company found")
       token <-
         accessTokenRepository
-          .fetchActivationToken(company.id)
+          .findActivationToken(company.id, activationLinkRequest.token)
           .flatMap(_.liftTo[Future] {
-            logger.warn(s"No activation token found for siret $siret")
+            logger.warn(s"Activation token not found for siret $siret, given code is not valid")
             CompanyActivationSiretOrCodeInvalid(siret)
           })
       _ = logger.debug("Token found")
-      _ <- validateToken(token, activationLinkRequest, siret)
+      _ <- validateToken(token, siret)
       _ = logger.debug("Token validated")
       _ <- accessesOrchestrator.addUserOrInvite(company, activationLinkRequest.email, AccessLevel.ADMIN, None)
     } yield ()
@@ -87,15 +87,11 @@ class CompanyAccessOrchestrator(
         else Future.successful(())
     } yield result
 
-  def validateToken(
+  private def validateToken(
       accessToken: AccessToken,
-      activationLinkRequest: ActivationLinkRequest,
       siret: SIRET
   ): Future[Unit] =
-    if (activationLinkRequest.token != accessToken.token) {
-      logger.warn(s"Unable to activate company $siret, code is not valid.")
-      Future.failed(CompanyActivationSiretOrCodeInvalid(siret))
-    } else if (!accessToken.valid) {
+    if (!accessToken.valid) {
       logger.warn(s"Unable to activate company $siret, code has already been used.")
       Future.failed(ActivationCodeAlreadyUsed())
     } else if (accessToken.expirationDate.exists(expiration => now isAfter expiration)) {
