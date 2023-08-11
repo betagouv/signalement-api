@@ -239,7 +239,9 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
                 new URI("http://test.com"),
                 tokenConfiguration,
                 uploadConfiguration,
-                mobileAppConfiguration
+                mobileAppConfiguration,
+                reportFileMaxSize = 5,
+                reportMaxNumberOfAttachments = 20
               )
 
             override def emailConfiguration: EmailConfiguration =

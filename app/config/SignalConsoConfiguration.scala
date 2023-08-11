@@ -12,7 +12,9 @@ case class SignalConsoConfiguration(
     token: TokenConfiguration,
     upload: UploadConfiguration,
     mobileApp: MobileAppConfiguration,
-    reportsExportLimitMax: Int = 300000
+    reportsExportLimitMax: Int = 300000,
+    reportFileMaxSize: Int,
+    reportMaxNumberOfAttachments: Int
 )
 
 case class UploadConfiguration(allowedExtensions: Seq[String], avScanEnabled: Boolean, downloadDirectory: String)

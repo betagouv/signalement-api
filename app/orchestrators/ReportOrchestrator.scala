@@ -165,6 +165,7 @@ class ReportOrchestrator(
       _ <- validateSpamSimilarReport(draftReport)
       _ <- validateReportIdentification(draftReport)
       _ <- validateConsumerEmail(draftReport)
+      _ <- validateNumberOfAttachments(draftReport)
       createdReport <- createReport(draftReport)
     } yield createdReport
 
@@ -173,6 +174,15 @@ class ReportOrchestrator(
       Future.unit
     } else {
       Future.failed(ReportCreationInvalidBody)
+    }
+
+  private def validateNumberOfAttachments(draftReport: ReportDraft) =
+    if (draftReport.fileIds.length <= signalConsoConfiguration.reportMaxNumberOfAttachments) {
+      Future.unit
+    } else {
+      Future.failed(
+        TooManyAttachments(signalConsoConfiguration.reportMaxNumberOfAttachments, draftReport.fileIds.length)
+      )
     }
 
   private def validateConsumerEmail(draftReport: ReportDraft) = for {
