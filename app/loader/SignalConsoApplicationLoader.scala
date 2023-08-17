@@ -12,8 +12,8 @@ import com.mohiva.play.silhouette.api.SilhouetteProvider
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
+import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.authenticators.DummyAuthenticatorService
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
@@ -214,8 +214,8 @@ class SignalConsoComponents(
   val userService = new UserService(userRepository)
   val apiUserService = new ApiKeyService(consumerRepository)
 
-  val authenticatorService: AuthenticatorService[JWTAuthenticator] =
-    SilhouetteEnv.getJWTAuthenticatorService(configuration)
+  val authenticatorService: AuthenticatorService[CookieAuthenticator] =
+    SilhouetteEnv.getCookieAuthenticatorService(configuration)
 
   def authEnv: Environment[AuthEnv] = SilhouetteEnv.getEnv[AuthEnv](userService, authenticatorService)
 
@@ -687,6 +687,6 @@ class SignalConsoComponents(
   override def config: Config = ConfigFactory.load()
 
   override def httpFilters: Seq[EssentialFilter] =
-    Seq(new LoggingFilter(), csrfFilter, securityHeadersFilter, allowedHostsFilter, corsFilter)
+    Seq(new LoggingFilter(), securityHeadersFilter, allowedHostsFilter, corsFilter)
 
 }

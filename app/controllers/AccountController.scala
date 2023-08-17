@@ -104,8 +104,9 @@ class AccountController(
       authenticator <- silhouette.env.authenticatorService
         .create(LoginInfo(CredentialsProvider.ID, user.email.toString))
       _ = silhouette.env.eventBus.publish(LoginEvent(user, request))
-      authToken <- silhouette.env.authenticatorService.init(authenticator)
-    } yield Ok(Json.obj("token" -> authToken, "user" -> user))
+      cookie <- silhouette.env.authenticatorService.init(authenticator)
+      result <- silhouette.env.authenticatorService.embed(cookie, Ok(Json.toJson(user)))
+    } yield result
   }
 
   def forceValidateEmail(email: String) =
