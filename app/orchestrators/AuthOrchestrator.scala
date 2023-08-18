@@ -44,6 +44,7 @@ import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
 import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
+import play.api.mvc.Cookie
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
@@ -103,9 +104,9 @@ class AuthOrchestrator(
       _ = logger.debug(s"Check last validation email for DGCCRF users")
       _ <- validateDGCCRFAccountLastEmailValidation(user)
       _ = logger.debug(s"Successful login for user")
-      token <- getToken(userLogin)(request)
+      cookie <- getCookie(userLogin)(request)
       _ = logger.debug(s"Successful generated token for user")
-    } yield UserSession(token, user)
+    } yield UserSession(cookie, user)
 
     eventualUserSession
       .flatMap { session =>
@@ -178,12 +179,12 @@ class AuthOrchestrator(
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
 
-  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] =
+  private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
       loginInfo <- authenticate(userLogin.login, userLogin.password)
       authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-      token <- silhouette.env.authenticatorService.init(authenticator)
-    } yield token
+      cookie <- silhouette.env.authenticatorService.init(authenticator)
+    } yield cookie
 
   private def authenticate(login: String, password: String) = {
     val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
