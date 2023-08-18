@@ -36,7 +36,7 @@ class AuthController(
       userSession <- authOrchestrator.login(userLogin, request)
       result <- silhouette.env.authenticatorService.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
     } yield result.withHeaders(
-      "Access-Control-Allow-Headers" -> "Accept, Content-Type, Origin"
+      "Access-Control-Allow-Headers" -> "Content-Type, *"
     )
   }
 
