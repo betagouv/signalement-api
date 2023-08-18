@@ -35,7 +35,9 @@ class AuthController(
       userLogin <- request.parseBody[UserCredentials]()
       userSession <- authOrchestrator.login(userLogin, request)
       result <- silhouette.env.authenticatorService.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
-    } yield result
+    } yield result.withHeaders(
+      "Access-Control-Allow-Headers" -> "Accept, Content-Type, Origin"
+    )
   }
 
   def logout(): Action[AnyContent] = SecuredAction.async { implicit request =>
