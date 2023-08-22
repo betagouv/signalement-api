@@ -99,7 +99,7 @@ object AppError {
     override val titleForLogs: String = "user_already_exists"
   }
 
-  final case class TooMuchAuthAttempts(userId: UUID) extends ForbiddenError {
+  final case class TooMuchAuthAttempts(userId: UUID) extends UnauthorizedError {
     override val `type`: String = "SC-0010"
     override val title: String = s"Max auth attempt reached for user id : $userId"
     override val details: String =
