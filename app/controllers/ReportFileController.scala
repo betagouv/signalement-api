@@ -37,7 +37,7 @@ class ReportFileController(
 
   val reportFileMaxSizeInBytes = signalConsoConfiguration.reportFileMaxSize * 1024 * 1024
 
-  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = UnsecuredAction.async { _ =>
+  def downloadReportFile(uuid: ReportFileId, filename: String): Action[AnyContent] = Action.async { _ =>
     reportFileOrchestrator
       .downloadReportAttachment(uuid, filename)
       .map(signedUrl => Redirect(signedUrl))
@@ -52,7 +52,7 @@ class ReportFileController(
   }
 
   def uploadReportFile: Action[MultipartFormData[Files.TemporaryFile]] =
-    UnsecuredAction.async(parse.multipartFormData) { request =>
+    Action.async(parse.multipartFormData) { request =>
       for {
         filePart <- request.body.file("reportFile").liftTo[Future](MalformedFileKey("reportFile"))
         dataPart = request.body.dataParts
