@@ -11,12 +11,10 @@ import models.auth.UserCredentials
 import models.auth.UserLogin
 import models.auth.UserPassword
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class AuthController(
@@ -34,16 +32,8 @@ class AuthController(
     for {
       userLogin <- request.parseBody[UserCredentials]()
       userSession <- authOrchestrator.login(userLogin, request)
-      result <- silhouette.env.authenticatorService.embed(userSession.cookie, Ok(Json.toJson(userSession.user)))
-    } yield result
-  }
+    } yield Ok(Json.toJson(userSession))
 
-  def logout(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    silhouette.env.authenticatorService.discard(request.authenticator, NoContent)
-  }
-
-  def getUser(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(request.identity)))
   }
 
   def forgotPassword: Action[JsValue] = UnsecuredAction.async(parse.json) { implicit request =>
