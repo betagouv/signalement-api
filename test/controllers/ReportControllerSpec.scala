@@ -217,6 +217,7 @@ class ReportControllerSpec(implicit ee: ExecutionEnv) extends Specification with
               "slick.dbs.default.db.connectionPool" -> "disabled",
               "play.mailer.mock" -> true,
               "skip-report-email-validation" -> true,
+              "silhouette.authenticator.sharedSecret" -> "sharedSecret",
               "play.tmpDirectory" -> "./target"
             ).withFallback(
               super.configuration
