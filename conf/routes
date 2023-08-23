@@ -84,6 +84,8 @@ GET           /api/mobileapp/requirements                               controll
 
 # Authentication API
 POST          /api/authenticate                                         controllers.AuthController.authenticate()
+POST          /api/logout                                               controllers.AuthController.logout()
+GET           /api/current-user                                         controllers.AuthController.getUser()
 POST          /api/authenticate/password/forgot                         controllers.AuthController.forgotPassword()
 POST          /api/authenticate/password/reset                          controllers.AuthController.resetPassword(token: java.util.UUID)
 POST          /api/account/password                                     controllers.AuthController.changePassword()
