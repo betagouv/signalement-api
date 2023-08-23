@@ -44,6 +44,7 @@ import orchestrators.AuthOrchestrator.MaxAllowedAuthAttempts
 import orchestrators.AuthOrchestrator.authTokenExpiration
 import orchestrators.AuthOrchestrator.toLoginInfo
 import play.api.Logger
+import play.api.mvc.Cookie
 import play.api.mvc.Request
 import repositories.authattempt.AuthAttemptRepositoryInterface
 import repositories.authtoken.AuthTokenRepositoryInterface
@@ -93,19 +94,19 @@ class AuthOrchestrator(
     }
 
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
+    logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
+      _ <- validateAuthenticationAttempts(userLogin.login)
       maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
-      _ = logger.debug(s"Validate auth attempts count")
-      _ <- validateAuthenticationAttempts(user)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
       _ <- validateDGCCRFAccountLastEmailValidation(user)
       _ = logger.debug(s"Successful login for user")
-      token <- getToken(userLogin)(request)
+      cookie <- getCookie(userLogin)(request)
       _ = logger.debug(s"Successful generated token for user")
-    } yield UserSession(token, user)
+    } yield UserSession(cookie, user)
 
     eventualUserSession
       .flatMap { session =>
@@ -178,12 +179,12 @@ class AuthOrchestrator(
     _ = logger.debug(s"Password updated for user id ${user.id}")
   } yield ()
 
-  private def getToken(userLogin: UserCredentials)(implicit req: Request[_]): Future[String] =
+  private def getCookie(userLogin: UserCredentials)(implicit req: Request[_]): Future[Cookie] =
     for {
       loginInfo <- authenticate(userLogin.login, userLogin.password)
       authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-      token <- silhouette.env.authenticatorService.init(authenticator)
-    } yield token
+      cookie <- silhouette.env.authenticatorService.init(authenticator)
+    } yield cookie
 
   private def authenticate(login: String, password: String) = {
     val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
@@ -222,12 +223,12 @@ class AuthOrchestrator(
         )
       )
 
-  private def validateAuthenticationAttempts(user: User): Future[User] = for {
+  private def validateAuthenticationAttempts(login: String): Future[Unit] = for {
     _ <- authAttemptRepository
-      .countAuthAttempts(user.email.value, AuthAttemptPeriod)
-      .ensure(TooMuchAuthAttempts(user.id))(attempts => attempts < MaxAllowedAuthAttempts)
+      .countAuthAttempts(login, AuthAttemptPeriod)
+      .ensure(TooMuchAuthAttempts(login))(attempts => attempts < MaxAllowedAuthAttempts)
     _ = logger.debug(s"Auth attempts count check successful")
-  } yield user
+  } yield ()
 
 }
 

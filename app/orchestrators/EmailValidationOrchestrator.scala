@@ -88,8 +88,8 @@ class EmailValidationOrchestrator(
     for {
       emailValidation <- findOrCreate(email)
       res <-
-        if (emailValidation.lastValidationDate.isEmpty) {
-          logger.debug(s"Email ${emailValidation.email} not validated, sending email")
+        if (isEmailNotValidatedOrOutdated(emailValidation.lastValidationDate)) {
+          logger.debug(s"Email ${emailValidation.email} not validated our outdated, sending email")
           mailService
             .send(ConsumerValidateEmail(emailValidation, locale, messagesApi))
             .map(_ => EmailValidationResult.failure)
@@ -98,6 +98,12 @@ class EmailValidationOrchestrator(
           Future.successful(EmailValidationResult.success)
         }
     } yield res
+
+  private def isEmailNotValidatedOrOutdated(maybeValidationDate: Option[OffsetDateTime]) =
+    maybeValidationDate match {
+      case Some(validationDate) => validationDate.isBefore(OffsetDateTime.now().minusYears(1L))
+      case None                 => true
+    }
 
   private[this] def validateProvider(email: EmailAddress): Future[Unit] =
     if (emailConfiguration.emailProvidersBlocklist.exists(email.value.contains(_))) {

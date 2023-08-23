@@ -83,7 +83,10 @@ abstract class BaseController(override val controllerComponents: ControllerCompo
     )
 
   // We should always use our wrappers, to get our error handling
-  override val Action = UnsecuredAction
+  // We must NOT bind Action to UnsecuredAction as it was before
+  // It has not the same bahaviour : UnsecuredAction REJECTS a valid user connected when we just want to allow everyone
+  override val Action: ActionBuilder[Request, AnyContent] =
+    super.Action andThen new ErrorHandlerActionFunction[Request]()
 
   def UnsecuredAction: ActionBuilder[Request, AnyContent] =
     silhouette.UnsecuredAction andThen new ErrorHandlerActionFunction[Request]()
