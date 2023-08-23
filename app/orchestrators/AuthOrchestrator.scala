@@ -93,13 +93,13 @@ class AuthOrchestrator(
     }
 
   def login(userLogin: UserCredentials, request: Request[_]): Future[UserSession] = {
+    logger.debug(s"Validate auth attempts count")
     val eventualUserSession: Future[UserSession] = for {
+      _ <- validateAuthenticationAttempts(userLogin.login)
       maybeUser <- userService.retrieveIncludingDeleted(toLoginInfo(userLogin.login))
       user <- maybeUser.liftTo[Future](UserNotFound(userLogin.login))
       _ = logger.debug(s"Found user (maybe deleted)")
       _ <- handleDeletedUser(user, userLogin)
-      _ = logger.debug(s"Validate auth attempts count")
-      _ <- validateAuthenticationAttempts(user)
       _ = logger.debug(s"Check last validation email for DGCCRF users")
       _ <- validateDGCCRFAccountLastEmailValidation(user)
       _ = logger.debug(s"Successful login for user")
@@ -222,12 +222,12 @@ class AuthOrchestrator(
         )
       )
 
-  private def validateAuthenticationAttempts(user: User): Future[User] = for {
+  private def validateAuthenticationAttempts(login: String): Future[Unit] = for {
     _ <- authAttemptRepository
-      .countAuthAttempts(user.email.value, AuthAttemptPeriod)
-      .ensure(TooMuchAuthAttempts(user.id))(attempts => attempts < MaxAllowedAuthAttempts)
+      .countAuthAttempts(login, AuthAttemptPeriod)
+      .ensure(TooMuchAuthAttempts(login))(attempts => attempts < MaxAllowedAuthAttempts)
     _ = logger.debug(s"Auth attempts count check successful")
-  } yield user
+  } yield ()
 
 }
 
