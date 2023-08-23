@@ -205,6 +205,35 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
       }
 
+      "not validate email when email exist but is outdated" in {
+        val existingEmail: EmailAddress = Fixtures.genEmailAddress.sample.get
+        val oldDate = OffsetDateTime.now().minusYears(2L).truncatedTo(ChronoUnit.MILLIS)
+        val emailValidation = EmailValidation(email = existingEmail)
+          .copy(lastValidationDate = Some(oldDate))
+
+        val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
+          .withJsonBody(Json.obj("email" -> existingEmail.value))
+
+        val result = for {
+          _ <- emailValidationRepository.create(emailValidation)
+          res <- route(app, request).get
+          emailValidation <- emailValidationRepository.findByEmail(existingEmail)
+        } yield (res, emailValidation)
+
+        Helpers.status(result.map(_._1)) must beEqualTo(200)
+        Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
+          Json.toJson(EmailValidationResult.failure)
+        )
+        val maybeEmailValidation = Await.result(result.map(_._2), Duration.Inf)
+        maybeEmailValidation.isDefined shouldEqual true
+        maybeEmailValidation.flatMap(_.lastValidationDate) shouldEqual Some(oldDate)
+        val expectedEmail =
+          maybeEmailValidation.map(emailValidation => ConsumerValidateEmail(emailValidation, None, messagesApi))
+        val emailSubject = expectedEmail.map(_.subject).get
+        val emailBody = expectedEmail.map(_.getBody(frontRoute, contactAddress)).get
+        mailMustHaveBeenSent(Seq(existingEmail), emailSubject, emailBody)
+      }
+
       "valid email if it has been already validated" in {
         val existingEmail = Fixtures.genEmailAddress.sample.get
         val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
