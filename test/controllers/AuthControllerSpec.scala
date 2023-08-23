@@ -40,7 +40,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     with Results
     with FutureMatchers {
 
-  val validPassword = "test"
+  val validPassword = "testtesttestA1!"
 
   private val hasher: PasswordHasherRegistry = PasswordHasherRegistry(
     new BCryptPasswordHasher()
@@ -292,6 +292,27 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
       )
     }
 
+    "fail on password not complex enough" in {
+
+      val tokenId = UUID.randomUUID()
+      val token =
+        AuthToken(tokenId, UUID.randomUUID(), OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusMonths(10L))
+      val jsonBody = Json.obj("password" -> "newPasswordWithoutSpecialChar123")
+
+      val request = FakeRequest(POST, routes.AuthController.resetPassword(tokenId).toString)
+        .withJsonBody(jsonBody)
+
+      val result = for {
+        authToken <- authTokenRepository.create(token)
+        res <- route(app, request).get
+      } yield (res, authToken)
+
+      Helpers.status(result.map(_._1)) must beEqualTo(BAD_REQUEST)
+      Helpers.contentAsJson(result.map(_._1)) must beEqualTo(
+        Json.toJson(ErrorPayload(PasswordNotComplexEnoughError))
+      )
+    }
+
     "fail on token expired" in {
 
       val tokenId = UUID.randomUUID()
@@ -332,7 +353,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     "reset password" in {
 
       val userId = UUID.randomUUID()
-      val newPassword = "new_pass"
+      val newPassword = "new_pasS_@#3"
 
       val user = Fixtures.genAdminUser.sample.get
         .copy(

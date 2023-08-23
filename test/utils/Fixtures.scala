@@ -35,7 +35,7 @@ object Fixtures {
     email <- genEmailAddress(firstName, lastName)
   } yield User(
     id = id,
-    password = password,
+    password = password + "testtesttestA1!",
     email = email,
     firstName = firstName,
     lastName = lastName,

@@ -447,4 +447,11 @@ object AppError {
     override val details: String = s"Reports have $current attachments while the max allowed is $max"
     override val titleForLogs: String = "too_many_attachments"
   }
+
+  final case object PasswordNotComplexEnoughError extends BadRequestError {
+    override val `type`: String = "SC-0047"
+    override val title: String = "Password not complex enough"
+    override val details: String = s"Le mot de passe choisi ne respecte pas les critères demandés"
+    override val titleForLogs: String = "pwd_not_complex_enough"
+  }
 }

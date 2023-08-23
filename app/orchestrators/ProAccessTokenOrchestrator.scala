@@ -24,7 +24,9 @@ import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.EmailAddress
 import utils.FrontRoute
+import utils.PasswordComplexityHelper
 import utils.SIRET
+
 import java.time.OffsetDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -60,6 +62,7 @@ class ProAccessTokenOrchestrator(
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
   def activateProUser(draftUser: DraftUser, token: String, siret: SIRET) = for {
+    _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     token <- fetchCompanyToken(token, siret)
     user <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
     _ <- bindPendingTokens(user)
