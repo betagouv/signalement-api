@@ -51,6 +51,7 @@ import repositories.authtoken.AuthTokenRepositoryInterface
 import repositories.user.UserRepositoryInterface
 import services.Email.ResetPassword
 import services.MailService
+import utils.PasswordComplexityHelper
 
 import java.time.OffsetDateTime
 import java.time.Period
@@ -155,6 +156,7 @@ class AuthOrchestrator(
       case Some(authToken) =>
         logger.debug(s"Found token for user id ${authToken.userID}")
         for {
+          _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(userPassword.password))
           _ <- userRepository.updatePassword(authToken.userID, userPassword.password)
           _ = logger.debug(s"Password updated successfully for user id ${authToken.userID}")
           _ <- authTokenRepository.deleteForUserId(authToken.userID)
@@ -174,6 +176,7 @@ class AuthOrchestrator(
         Future.unit
       }
     _ <- authenticate(user.email.value, passwordChange.oldPassword)
+    _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(passwordChange.newPassword))
     _ = logger.debug(s"Successfully checking old password  user id ${user.id}, updating password")
     _ <- userRepository.updatePassword(user.id, passwordChange.newPassword)
     _ = logger.debug(s"Password updated for user id ${user.id}")

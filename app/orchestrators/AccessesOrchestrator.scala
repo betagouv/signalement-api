@@ -23,6 +23,7 @@ import services.EmailAddressService
 import services.MailServiceInterface
 import utils.EmailAddress
 import utils.FrontRoute
+import utils.PasswordComplexityHelper
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -50,6 +51,7 @@ class AccessesOrchestrator(
       }
 
   def activateAdminOrDGCCRFUser(draftUser: DraftUser, token: String) = for {
+    _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     maybeAccessToken <- accessTokenRepository.findToken(token)
     (accessToken, userRole) <- maybeAccessToken
       .collect {
