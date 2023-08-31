@@ -150,3 +150,18 @@ reportPDF.report.noAttachments=Aucune pièce jointe n''est associée à ce signa
 reportPDF.report.historyHeader=Historique du signalement
 reportPDF.report.historyEntryCreation=Création du signalement
 reportPDF.report.companyHistoryHeader=Historique de l''entreprise
+
+proResponse.title=Réponse du pro
+proResponse.title2=Réponse du professionnel
+proResponse.statusLabel=Statut du signalement
+proResponse.responseAccepted=Le professionnel a pris en compte le signalement
+proResponse.responseRejected=Le professionnel a rejeté le signalement
+proResponse.responseNotResponsible=Le professionnel a indiqué ne pas être concerné par le signalement
+proResponse.commentTitle=Commentaire :
+proResponse.responseIgnored=Le professionnel n'a pas encore répondu
+
+attachment.report.step1=schemaSignalConso-Etape1
+attachment.report.step2=schemaSignalConso-Etape2
+attachment.report.step2.public.path=images/schemaSignalConso-Etape2.png
+attachment.report.step3=schemaSignalConso-Etape3
+attachment.report.step4=schemaSignalConso-Etape4
