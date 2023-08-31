@@ -66,7 +66,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
         draftReport.email,
         "Votre signalement",
         views.html.mails.consumer.reportAcknowledgment(report, Some(company), Nil).toString,
-        attachmentService.attachmentSeqForWorkflowStepN(2)
+        attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
 }
@@ -125,7 +125,7 @@ object CreateReportForProWithoutAccount extends CreateUpdateReportSpec {
         draftReport.email,
         "Votre signalement",
         views.html.mails.consumer.reportAcknowledgment(report, Some(anotherCompany), Nil).toString,
-        attachmentService.attachmentSeqForWorkflowStepN(2)
+        attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
 }
@@ -149,7 +149,7 @@ object CreateReportForProWithActivatedAccount extends CreateUpdateReportSpec {
         draftReport.email,
         "Votre signalement",
         views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
-        attachmentService.attachmentSeqForWorkflowStepN(2)
+        attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
          And create an event "EMAIL_CONSUMER_ACKNOWLEDGMENT"            ${eventMustHaveBeenCreatedWithAction(
         ActionEvent.EMAIL_CONSUMER_ACKNOWLEDGMENT
@@ -185,7 +185,7 @@ object CreateReportOnDangerousProduct extends CreateUpdateReportSpec {
         draftReport.email,
         "Votre signalement",
         views.html.mails.consumer.reportAcknowledgment(report, Some(existingCompany), Nil).toString,
-        attachmentService.attachmentSeqForWorkflowStepN(2)
+        attachmentService.attachmentSeqForWorkflowStepN(2, Locale.FRENCH)
       )}
     """
 }

@@ -93,7 +93,7 @@ class ReportResponseProAnswer(implicit ee: ExecutionEnv) extends ReportResponseS
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
-        attachementService.ConsumerProResponseNotificationAttachement
+        attachementService.ConsumerProResponseNotificationAttachement(Locale.FRENCH)
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
@@ -140,7 +140,7 @@ class ReportResponseHeadOfficeProAnswer(implicit ee: ExecutionEnv) extends Repor
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
-        attachementService.ConsumerProResponseNotificationAttachement
+        attachementService.ConsumerProResponseNotificationAttachement(Locale.FRENCH)
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedHeadOfficeProUser.email,
@@ -187,7 +187,7 @@ class ReportResponseProRejectedAnswer(implicit ee: ExecutionEnv) extends ReportR
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
-        attachementService.ConsumerProResponseNotificationAttachement
+        attachementService.ConsumerProResponseNotificationAttachement(Locale.FRENCH)
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
@@ -232,7 +232,7 @@ class ReportResponseProNotConcernedAnswer(implicit ee: ExecutionEnv) extends Rep
             frontRoute.website.reportReview(report.id.toString)
           )
           .toString,
-        attachementService.ConsumerProResponseNotificationAttachement
+        attachementService.ConsumerProResponseNotificationAttachement(Locale.FRENCH)
       )}
         And an acknowledgment email is sent to the professional                  ${mailMustHaveBeenSent(
         concernedProUser.email,
