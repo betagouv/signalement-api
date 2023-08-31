@@ -36,6 +36,9 @@ ConsumerReportAckProEmail.contributionThanks=Your feedback will be useful to oth
 ConsumerReportAckProEmail.spreadTheWord=Feel free to mention SignalConso to your friends and family and help spread the word! Thank you.
 ConsumerReportAckProEmail.teamSignature=The SignalConso Team
 ConsumerReportAckProEmail.signalConsoExplanationHeader=Understanding SignalConso
+ConsumerReportAckProEmail.positive=Positive
+ConsumerReportAckProEmail.neutral=Neutral
+ConsumerReportAckProEmail.negative=Negative
 
 ReportClosedByNoReadingEmail.subject=The company chose not to review your report
 ReportClosedByNoReadingEmail.entrepriseNoConsultation=The company chose not to review your report

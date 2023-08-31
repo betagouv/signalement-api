@@ -36,6 +36,9 @@ ConsumerReportAckProEmail.contributionThanks=Votre contribution aide d''autres c
 ConsumerReportAckProEmail.spreadTheWord=N''hésitez également pas à parler de SignalConso autour de vous et à encourager vos connaissances à en parler à leur tour autour d''elles ! Merci !
 ConsumerReportAckProEmail.teamSignature=L''équipe SignalConso
 ConsumerReportAckProEmail.signalConsoExplanationHeader=Comprendre SignalConso
+ConsumerReportAckProEmail.positive=Satisfait
+ConsumerReportAckProEmail.neutral=Neutre
+ConsumerReportAckProEmail.negative=Mécontent
 
 ReportClosedByNoReadingEmail.subject=L''entreprise n''a pas souhaité consulter votre signalement
 ReportClosedByNoReadingEmail.entrepriseNoConsultation=L''entreprise n''a pas souhaité consulter votre signalement
