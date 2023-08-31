@@ -5,12 +5,14 @@
 @import models.report._
 @import models.report.ReportTag
 @import models.company.Company
-@(report: Report,maybeCompany: Option[Company], files: List[ReportFile] = Nil, isPDF: Boolean = false)(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
+@import services.AttachmentService
+@import java.util.Locale
+@(report: Report, maybeCompany: Option[Company], files: List[ReportFile] = Nil, isPDF: Boolean = false)(implicit frontRoute: FrontRoute, messageProvider: MessagesProvider)
 
 
 @contentBlock() = {
     <p>
-        @Messages("ReportAckEmail.hello", report.firstName, report.lastName)
+    @Messages("ReportAckEmail.hello", report.firstName, report.lastName)
     </p>
 @report.status match {
     case ReportStatus.LanceurAlerte => {
@@ -92,7 +94,8 @@
         <p>
         @Messages("ReportAckEmail.pdfAttachmentUseful")
         </p>
-        <p style="text-align: center; padding: 20px">
+        <p style="text-align: center;
+            padding: 20px">
             <a href="@frontRoute.website.litige" class="btn">
             @Messages("ReportAckEmail.startIndividualActions")
             </a>
@@ -237,9 +240,9 @@
             padding: 10px 0;
             margin: 10px">@Messages("ReportAckEmail.understandSignalConso")</div>
         @if(isPDF) {
-            <img src=@routes.Assets.versioned("images/schemaSignalConso-Etape2.png") style="max-width: 100%"/>
+            <img src=@routes.Assets.versioned(Messages("attachment.report.step2.public.path")) style="max-width: 100%"/>
         } else {
-            <img src="cid:schemaSignalConso-Etape2" style="max-width: 100%"/>
+            <img src="cid:@Messages("attachment.report.step2")" style="max-width: 100%"/>
         }
     </div>
 }

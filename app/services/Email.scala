@@ -223,7 +223,7 @@ object Email {
         .toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.ConsumerProResponseNotificationAttachement
+      _.ConsumerProResponseNotificationAttachement(report.lang.getOrElse(Locale.FRENCH))
   }
 
   final case class ConsumerReportClosedNoAction(report: Report, maybeCompany: Option[Company], messagesApi: MessagesApi)
@@ -297,7 +297,7 @@ object Email {
       views.html.mails.consumer.reportTransmission(report, maybeCompany).toString
 
     override def getAttachements: AttachmentService => Seq[Attachment] =
-      _.attachmentSeqForWorkflowStepN(3)
+      _.attachmentSeqForWorkflowStepN(3, report.lang.getOrElse(Locale.FRENCH))
   }
 
   private def getLocaleOrDefault(locale: Option[Locale]): Locale = locale.getOrElse(Locale.FRENCH)

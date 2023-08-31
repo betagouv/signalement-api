@@ -9,7 +9,7 @@
 @import play.api.libs.json._
 @(
         event: Option[Event]
-)
+)(implicit messageProvider: MessagesProvider)
 
 <!doctype html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -17,31 +17,31 @@
         <meta name="viewport" content="width=device-width" />
 
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        <title>Réponse du pro</title>
+        <title>@Messages("proResponse.title")</title>
 
         <link rel="stylesheet" href='@routes.Assets.versioned("css/report.css")'>
 
     </head>
     <body>
         <div style="page-break-before: always">
-            <h1>Réponse du professionnel</h1>
+            <h1>@Messages("proResponse.title2")</h1>
             @if(event.isDefined) {
-                <h3>Statut du signalement :</h3>
+                <h3>@Messages("proResponse.statusLabel") :</h3>
                 <p>
                     @if((event.get.details \ "responseType").as[String] == "ACCEPTED") {
-                        Le professionnel a pris en compte le signalement
+                        @Messages("proResponse.responseAccepted")
                     } else if((event.get.details \ "responseType").as[String] == "REJECTED") {
-                Le professionnel a rejeté le signalement
+                        @Messages("proResponse.responseRejected")
                 } else {
-                Le professionnel a indiqué ne pas être concerné par le signalement
+                    @Messages("proResponse.responseNotResponsible")
                 }
                 </p>
-                <h3>Commentaire :</h3>
+                <h3>@Messages("proResponse.commentTitle")</h3>
                 <p>
                 @((event.get.details \ "consumerDetails").as[String])
                 </p>
             } else {
-                <p>Le professionnel n'a pas encore répondu</p>
+                <p>@Messages("proResponse.responseIgnored")</p>
             }
         </div>
     </body>
