@@ -113,7 +113,7 @@ class AdminController(
     expirationDate = OffsetDateTime.now().plusDays(50),
     influencer = None,
     visibleToPro = true,
-    lang = Some(Locale.ENGLISH)
+    lang = Some(Locale.FRENCH)
   )
 
   private def genReportFile = ReportFile(
@@ -189,7 +189,7 @@ class AdminController(
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  implicit val messagesProvider = MessagesImpl(Lang(Locale.ENGLISH), controllerComponents.messagesApi)
+  implicit val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   val availablePdfs = Seq[(String, Html)](
     "accountActivation" -> views.html.pdfs.accountActivation(
       genCompany,
