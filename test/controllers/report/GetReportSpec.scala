@@ -112,7 +112,7 @@ object GetReportByConcernedProUserFirstTime extends GetReportSpec {
         views.html.mails.consumer
           .reportTransmission(neverRequestedReport, Some(company))
           .toString,
-        attachementService.attachmentSeqForWorkflowStepN(3)
+        attachementService.attachmentSeqForWorkflowStepN(3, Locale.FRENCH)
       )}
          And the report is rendered to the user as a Professional               ${reportMustBeRenderedForUserRole(
         neverRequestedReport.copy(status = ReportStatus.Transmis),

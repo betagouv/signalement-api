@@ -197,7 +197,7 @@ class ReportController(
         source = maybeReport
           .map { report =>
             val lang = Lang(report.lang.getOrElse(Locale.FRENCH))
-            val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
+            implicit val messagesProvider: MessagesProvider = MessagesImpl(lang, controllerComponents.messagesApi)
             val notificationHtml =
               views.html.mails.consumer.reportAcknowledgment(report, company, files, isPDF = true)(
                 frontRoute,

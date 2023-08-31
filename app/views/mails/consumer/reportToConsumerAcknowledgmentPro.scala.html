@@ -39,15 +39,15 @@
     <div style="display: flex; margin: 50px ">
         <a href="@reviewUrl(ResponseEvaluation.Positive)" target="_blank" style="padding-right:20px">
             <img src='cid:happy' alt="positif" width="75" height="75">
-            <p style="text-align:center;">Satisfait</p>
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.positive")</p>
         </a>
         <a href="@reviewUrl(ResponseEvaluation.Neutral)" target="_blank" style="padding-right:20px; padding-left:20px">
             <img src='cid:neutral' alt="neutre" width="75" height="75"/>
-            <p style="text-align:center;">Neutre</p>
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.neutral")</p>
         </a>
         <a href="@reviewUrl(ResponseEvaluation.Negative)" target="_blank" style="padding-left:20px">
             <img src='cid:sad' alt="négatif" width="75" height="75" />
-            <p style="text-align:center;">Mécontent</p>
+            <p style="text-align:center;">@Messages("ConsumerReportAckProEmail.negative")</p>
         </a>
     </div>
     </p>
@@ -84,6 +84,6 @@
             margin: 10px">
         @Messages("ConsumerReportAckProEmail.signalConsoExplanationHeader")
         </div>
-        <img src="cid:schemaSignalConso-Etape4" style="max-width: 100%"/>
+        <img src="cid:@Messages("attachment.report.step4")" style="max-width: 100%"/>
     </div>
 }

@@ -9,7 +9,19 @@ import play.api.i18n.MessagesProvider
 import play.api.libs.mailer.Attachment
 import play.api.libs.mailer.AttachmentData
 import play.api.libs.mailer.AttachmentFile
+import services.AttachmentService.schemaSignalConsoStep
 import utils.FrontRoute
+
+import java.util.Locale
+
+object AttachmentService {
+  def schemaSignalConsoStep(lang: Locale, step: Int) =
+    if (lang == Locale.ENGLISH) {
+      s"schemaSignalConso-Step$step"
+    } else {
+      s"schemaSignalConso-Etape$step"
+    }
+}
 
 class AttachmentService(environment: Environment, pdfService: PDFService, frontRoute: FrontRoute) {
 
@@ -26,16 +38,16 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
     )
   )
 
-  def attachmentSeqForWorkflowStepN(n: Int): Seq[Attachment] = defaultAttachments ++ Seq(
+  def attachmentSeqForWorkflowStepN(n: Int, lang: Locale): Seq[Attachment] = defaultAttachments ++ Seq(
     AttachmentFile(
-      s"schemaSignalConso-Etape$n.png",
-      environment.getFile(s"/appfiles/schemaSignalConso-Etape$n.png"),
-      contentId = Some(s"schemaSignalConso-Etape$n")
+      s"${schemaSignalConsoStep(lang, n)}.png",
+      environment.getFile(s"/appfiles/${schemaSignalConsoStep(lang, n)}.png"),
+      contentId = Some(s"${schemaSignalConsoStep(lang, n)}")
     )
   )
 
-  val ConsumerProResponseNotificationAttachement: Seq[Attachment] =
-    defaultAttachments ++ attachmentSeqForWorkflowStepN(4) ++ Seq(
+  def ConsumerProResponseNotificationAttachement(lang: Locale): Seq[Attachment] =
+    defaultAttachments ++ attachmentSeqForWorkflowStepN(4, lang) ++ Seq(
       AttachmentFile(
         s"happy.png",
         environment.getFile(s"/appfiles/happy.png"),
@@ -55,7 +67,7 @@ class AttachmentService(environment: Environment, pdfService: PDFService, frontR
 
   def needWorkflowSeqForWorkflowStepN(n: Int, report: Report): Seq[Attachment] =
     if (report.needWorkflowAttachment()) {
-      attachmentSeqForWorkflowStepN(n)
+      attachmentSeqForWorkflowStepN(n, report.lang.getOrElse(Locale.FRENCH))
     } else defaultAttachments
 
   def reportAcknowledgmentAttachement(

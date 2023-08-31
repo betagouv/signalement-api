@@ -189,7 +189,7 @@ class AdminController(
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
+  implicit val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   val availablePdfs = Seq[(String, Html)](
     "accountActivation" -> views.html.pdfs.accountActivation(
       genCompany,
@@ -232,7 +232,7 @@ class AdminController(
           Json.toJson(genReportResponse)
         )
       )
-    )
+    )(messagesProvider)
   )
 
   val availableEmails = Map[String, EmailAddress => Email](
