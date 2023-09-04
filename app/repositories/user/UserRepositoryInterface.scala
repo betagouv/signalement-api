@@ -3,6 +3,7 @@ package repositories.user
 import models.User
 import models.UserRole
 import repositories.CRUDRepositoryInterface
+import utils.EmailAddress
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -30,4 +31,6 @@ trait UserRepositoryInterface extends CRUDRepositoryInterface[User] {
   def findByEmailIncludingDeleted(email: String): Future[Option[User]]
 
   def softDelete(id: UUID): Future[Int]
+
+  def findByEmails(emails: List[EmailAddress]): Future[Seq[User]]
 }

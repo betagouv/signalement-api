@@ -650,6 +650,15 @@ class SignalConsoComponents(
   val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
   val siretExtractorController = new SiretExtractorController(siretExtractorService, silhouette, controllerComponents)
 
+  val importController = new ImportController(
+    companyRepository,
+    companySyncService,
+    userOrchestrator,
+    proAccessTokenOrchestrator,
+    silhouette,
+    controllerComponents
+  )
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -685,6 +694,7 @@ class SignalConsoComponents(
       userReportsFiltersController,
       signalConsoReviewController,
       siretExtractorController,
+      importController,
       assets
     )
 

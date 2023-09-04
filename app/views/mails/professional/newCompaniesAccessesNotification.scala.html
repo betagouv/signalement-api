@@ -1,0 +1,30 @@
+@import utils.FrontRoute
+@import java.net.URI
+@import models.company.Company
+@(websiteUrl: URI, companies: List[Company], siren: String)(implicit frontRoute: FrontRoute)
+
+@views.html.mails.layout(s"Vous avez maintenant accès à l'entreprise ${siren} sur SignalConso") {
+    <p>
+        Bonjour,
+    </p>
+
+    <p>
+        Votre compte a été rattaché aux établissements suivants sur SignalConso :
+
+        <ul>
+            @companies.map{ company =>
+                <li>@company.name</li>
+            }
+        </ul>
+    </p>
+
+    <p>
+        Vous pouvez dès à présent <a href="@frontRoute.website.url">vous connecter</a> et accéder à ces établissements avec votre compte pré-existant.
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

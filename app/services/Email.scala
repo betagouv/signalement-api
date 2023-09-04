@@ -19,6 +19,7 @@ import play.api.libs.mailer.Attachment
 import utils.EmailAddress
 import utils.EmailSubjects
 import utils.FrontRoute
+import utils.SIREN
 
 import java.net.URI
 import java.time.LocalDate
@@ -76,6 +77,20 @@ object Email {
       (_, _) => views.html.mails.professional.companyAccessInvitation(invitationUrl, company, invitedBy).toString
   }
 
+  final case class ProCompaniesAccessesInvitations(
+      recipient: EmailAddress,
+      companies: List[Company],
+      siren: SIREN,
+      invitationUrl: URI
+  ) extends ProEmail {
+    override val recipients: List[EmailAddress] = List(recipient)
+    override val subject: String = s"Rejoignez l'entreprise ${siren} sur SignalConso"
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (_, _) =>
+        views.html.mails.professional.companiesAccessesInvitations(invitationUrl, companies, siren.value).toString
+  }
+
   final case class ProNewCompanyAccess(
       recipient: EmailAddress,
       company: Company,
@@ -88,6 +103,21 @@ object Email {
       (frontRoute, _) =>
         views.html.mails.professional
           .newCompanyAccessNotification(frontRoute.dashboard.login, company, invitedBy)(frontRoute)
+          .toString
+  }
+
+  final case class ProNewCompaniesAccesses(
+      recipient: EmailAddress,
+      companies: List[Company],
+      siren: SIREN
+  ) extends ProEmail {
+    override val recipients: List[EmailAddress] = List(recipient)
+    override val subject: String = s"Vous avez maintenant accès à l'entreprise ${siren} sur SignalConso"
+
+    override def getBody: (FrontRoute, EmailAddress) => String =
+      (frontRoute, _) =>
+        views.html.mails.professional
+          .newCompaniesAccessesNotification(frontRoute.dashboard.login, companies, siren.value)(frontRoute)
           .toString
   }
 

@@ -17,7 +17,9 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.Email.ProCompaniesAccessesInvitations
 import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompaniesAccesses
 import services.Email.ProNewCompanyAccess
 import services.MailServiceInterface
 import utils.Constants.ActionEvent
@@ -25,6 +27,7 @@ import utils.Constants.EventType
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.PasswordComplexityHelper
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -140,6 +143,16 @@ class ProAccessTokenOrchestrator(
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
     } yield ()
 
+  def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel) =
+    for {
+      _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
+      _ <- companies match {
+        case Nil    => Future.successful(())
+        case c :: _ => mailService.send(ProNewCompaniesAccesses(user.email, companies, SIREN.fromSIRET(c.siret)))
+      }
+      _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
+    } yield ()
+
   private def genInvitationToken(
       company: Company,
       level: AccessLevel,
@@ -183,6 +196,34 @@ class ProAccessTokenOrchestrator(
         )
       )
       _ = logger.debug(s"Token sent to ${email} for company ${company.id}")
+    } yield ()
+
+  def sendInvitations(
+      companies: List[Company],
+      email: EmailAddress,
+      level: AccessLevel
+  ): Future[Unit] =
+    for {
+      list <- Future.sequence(
+        companies.map(company =>
+          genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email).map(token =>
+            token -> company
+          )
+        )
+      )
+      _ <- list match {
+        case Nil => Future.successful(())
+        case (tokenCode, c) :: _ =>
+          mailService.send(
+            ProCompaniesAccessesInvitations(
+              recipient = email,
+              companies = list.map(_._2),
+              siren = SIREN.fromSIRET(c.siret),
+              invitationUrl = frontRoute.dashboard.Pro.register(c.siret, tokenCode)
+            )
+          )
+      }
+      _ = logger.debug(s"Token sent to ${email} for companies ${companies}")
     } yield ()
 
 }

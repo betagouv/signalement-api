@@ -21,6 +21,7 @@ import scala.concurrent.Future
 trait CompanySyncServiceInterface {
   def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
   def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]]
+  def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]]
 }
 
 class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfiguration)(implicit
@@ -51,12 +52,9 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
     response
       .map(_.body)
       .map {
-        case Right(companyList) =>
-          companyList.map { companySearchResult =>
-            companySearchResult
-          }
+        case Right(companyList) => companyList
         case Left(value) =>
-          logger.warn("Error calling company update", value)
+          logger.warn("Error calling syncCompanies", value)
           List.empty
       }
   }
@@ -78,8 +76,27 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
             companySearchResult
           }
         case Left(value) =>
-          logger.warn("Error calling company update", value)
+          logger.warn("Error calling companyBySiret", value)
           Option.empty
+      }
+  }
+
+  override def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]] = {
+    val request = basicRequest
+      .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .body(sirets)
+      .response(asJson[List[CompanySearchResult]])
+
+    val response =
+      request.send(backend)
+    response
+      .map(_.body)
+      .map {
+        case Right(companyList) => companyList
+        case Left(value) =>
+          logger.warn("Error calling companiesBySirets", value)
+          List.empty
       }
   }
 }
