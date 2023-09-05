@@ -13,6 +13,7 @@ import utils.Constants.Departments.toPostalCode
 import utils._
 
 import java.time._
+import java.util.Locale
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
@@ -393,6 +394,8 @@ object ReportRepository {
   }
 
   def queryFilter(filter: ReportFilter): Query[ReportTable, Report, Seq] = {
+    implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+
     ReportTable.table
       .filterOpt(filter.email) { case (table, email) =>
         table.email === EmailAddress(email)
@@ -529,6 +532,9 @@ object ReportRepository {
       }
       .filterOpt(filter.visibleToPro) { case (table, visibleToPro) =>
         table.visibleToPro === visibleToPro
+      }
+      .filterOpt(filter.isForeign) { case (table, isForeign) =>
+        if (isForeign) table.lang =!= Locale.FRENCH else table.lang === Locale.FRENCH || table.lang.isEmpty
       }
       .filterOpt(filter.fullText) { case (table, fullText) =>
         table.contactAgreement &&
