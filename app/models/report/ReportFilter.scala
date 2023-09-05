@@ -41,7 +41,8 @@ case class ReportFilter(
     hasEvaluation: Option[Boolean] = None,
     evaluation: Seq[ResponseEvaluation] = Seq.empty,
     fullText: Option[String] = None,
-    visibleToPro: Option[Boolean] = None
+    visibleToPro: Option[Boolean] = None,
+    isForeign: Option[Boolean] = None
 )
 
 object ReportFilter {
@@ -86,7 +87,8 @@ object ReportFilter {
       activityCodes = mapper.seq("activityCodes"),
       hasEvaluation = mapper.boolean("hasEvaluation"),
       evaluation = mapper.seq("evaluation").map(ResponseEvaluation.withName),
-      fullText = mapper.string("fullText")
+      fullText = mapper.string("fullText"),
+      isForeign = mapper.boolean("isForeign")
     )
   }
 
@@ -120,6 +122,7 @@ object ReportFilter {
       withTags <- (jsValue \ "withTags").validateOpt[Seq[String]]
       withoutTags <- (jsValue \ "withoutTags").validateOpt[Seq[String]]
       activityCodes <- (jsValue \ "activityCodes").validateOpt[Seq[String]]
+      isForeign <- (jsValue \ "isForeign").validateOpt[Boolean]
     } yield ReportFilter(
       departments = departments.getOrElse(Seq.empty),
       email = email,
@@ -145,7 +148,8 @@ object ReportFilter {
       hasAttachment = hasAttachment,
       withTags = withTags.getOrElse(Seq.empty).map(ReportTag.withName),
       withoutTags = withoutTags.getOrElse(Seq.empty).map(ReportTag.withName),
-      activityCodes = activityCodes.getOrElse(Seq.empty)
+      activityCodes = activityCodes.getOrElse(Seq.empty),
+      isForeign = isForeign
     )
   }
 }
