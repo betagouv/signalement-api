@@ -82,17 +82,19 @@ class MailService(
   ): Future[Unit] = {
     val filteredEmptyEmail: Seq[EmailAddress] = filterEmail(recipients)
     NonEmptyList.fromList(filteredEmptyEmail.toList) match {
-      case None =>
+      case None => ()
       case Some(filteredRecipients) =>
-        val emailRequest = EmailRequest(
-          from = mailFrom,
-          recipients = filteredRecipients,
-          subject = subject,
-          bodyHtml = bodyHtml,
-          attachments = attachments
-        )
-        // we launch this but don't wait for its completion
-        mailRetriesService.sendEmailWithRetries(emailRequest)
+        filteredRecipients.grouped(emailConfiguration.maxRecipientsPerEmail).foreach { groupedRecipients =>
+          val emailRequest = EmailRequest(
+            from = mailFrom,
+            recipients = groupedRecipients,
+            subject = subject,
+            bodyHtml = bodyHtml,
+            attachments = attachments
+          )
+          // we launch this but don't wait for its completion
+          mailRetriesService.sendEmailWithRetries(emailRequest)
+        }
     }
     Future.unit
   }

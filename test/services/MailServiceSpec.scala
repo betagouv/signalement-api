@@ -304,6 +304,61 @@ class MailServiceSpecFilteredEmail(implicit ee: ExecutionEnv) extends BaseMailSe
   }
 }
 
+class MailServiceSpecGroupForMaxRecipients(implicit ee: ExecutionEnv) extends BaseMailServiceSpec {
+
+  override def is = s2"""email must be grouped to prevent exceeding recipients limit $e1"""
+
+  def e1 = {
+
+    val recipients = List(
+      EmailAddress(s"1@email.fr"),
+      EmailAddress(s"2@email.fr"),
+      EmailAddress(s"3@email.fr")
+    )
+
+    val mailService = new MailService(
+      mockMailRetriesService,
+      emailConfiguration = emailConfiguration.copy(maxRecipientsPerEmail = 2),
+      reportNotificationBlocklistRepo = components.reportNotificationBlockedRepository,
+      pdfService = components.pdfService,
+      attachmentService = components.attachmentService
+    )(
+      components.frontRoute,
+      executionContext
+    )
+
+    ProNewReportNotification(
+      NonEmptyList.of(EmailAddress(s"1@email.fr"), EmailAddress(s"2@email.fr")),
+      reportForSubsidiary
+    )
+
+    Await.result(
+      mailService.send(
+        ProNewReportNotification(
+          NonEmptyList.fromListUnsafe(recipients),
+          reportForSubsidiary
+        )
+      ),
+      Duration.Inf
+    )
+
+    there was one(mockMailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.size == 2 && emailRequest.recipients.toList.containsSlice(
+          List(EmailAddress(s"1@email.fr"), EmailAddress(s"2@email.fr"))
+        )
+      )
+    )
+
+    there was one(mockMailRetriesService).sendEmailWithRetries(
+      argThat((emailRequest: EmailRequest) =>
+        emailRequest.recipients.size == 1 && emailRequest.recipients.head == EmailAddress(s"3@email.fr")
+      )
+    )
+
+  }
+}
+
 //MailServiceSpecNoBlock
 //MailServiceSpecSomeBlock
 //MailServiceSpecAllBlock

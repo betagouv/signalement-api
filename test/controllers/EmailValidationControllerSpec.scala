@@ -72,7 +72,8 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           contactAddress = EmptyEmailAddress,
           skipReportEmailValidation = skipValidation,
           emailProvidersBlocklist = emailProviderBlocklist,
-          outboundEmailFilterRegex = ".*".r
+          outboundEmailFilterRegex = ".*".r,
+          maxRecipientsPerEmail = 40
         )
 
       }
