@@ -100,6 +100,8 @@ case class ReportDraft(
     if (employeeConsumer) ReportStatus.LanceurAlerte
     else if (!shouldBeVisibleToPro()) ReportStatus.NA
     else if (companySiret.isEmpty) ReportStatus.NA
+    else if (companySiret.nonEmpty && companyAddress.flatMap(_.country).isDefined)
+      ReportStatus.NA // Company has a french SIRET but a foreign address, we can't send any letter to it
     else ReportStatus.TraitementEnCours
 }
 
