@@ -2,6 +2,7 @@ package models.report
 
 import io.scalaland.chimney.dsl.TransformerOps
 import models.company.Address
+import models.company.Company
 import models.report.ReportStatus.NA
 import models.report.ReportStatus.TraitementEnCours
 import models.report.ReportTag.AbsenceDeMediateur
@@ -137,12 +138,12 @@ class ReportDraftTest extends Specification {
         companySiret = Some(SIRET("11111111111111"))
       )
 
-      def generateReportFromDraft(draft: ReportDraft) = {
+      def generateReportFromDraft(draft: ReportDraft, socialNetworkCompany: Option[Company] = None) = {
         val creationDate: OffsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS)
         val expirationDate = creationDate.plusDays(100)
         draft.generateReport(
           maybeCompanyId = None,
-          socialNetworkCompany = None,
+          socialNetworkCompany = socialNetworkCompany,
           creationDate = creationDate,
           expirationDate = expirationDate,
           reportId = UUID.randomUUID()
@@ -184,6 +185,22 @@ class ReportDraftTest extends Specification {
           )
         )
         report.status shouldEqual NA
+      }
+
+      s"initialStatus should be NA when company is defined but it is a foreign company" in {
+        val country = Fixtures.genCountry().sample
+        val report = generateReportFromDraft(
+          typicalDraftReport.copy(
+            companyAddress = typicalDraftReport.companyAddress.map(_.copy(country = country))
+          )
+        )
+        report.status shouldEqual NA
+      }
+
+      s"initialStatus should be TraitementEnCours when social network company exist" in {
+        val socialNetworkCompany = Fixtures.genCompany.sample
+        val report = generateReportFromDraft(typicalDraftReport.copy(companySiret = None), socialNetworkCompany)
+        report.status shouldEqual TraitementEnCours
       }
 
     }

@@ -79,7 +79,12 @@ case class ReportDraft(
       consumerReferenceNumber = consumerReferenceNumber,
       contactAgreement = contactAgreement,
       employeeConsumer = employeeConsumer,
-      status = initialStatus(),
+      status = Report.initialStatus(
+        employeeConsumer = employeeConsumer,
+        visibleToPro = shouldBeVisibleToPro(),
+        companySiret = companySiret.orElse(socialNetworkCompany.map(_.siret)),
+        companyCountry = companyAddress.orElse(socialNetworkCompany.map(_.address)).flatMap(_.country)
+      ),
       forwardToReponseConso = forwardToReponseConso.getOrElse(false),
       vendor = vendor,
       tags = tags.distinct
@@ -91,18 +96,10 @@ case class ReportDraft(
       lang = lang
     )
 
-  def shouldBeVisibleToPro() =
+  def shouldBeVisibleToPro(): Boolean =
     !employeeConsumer && tags
       .intersect(ReportTagHiddenToProfessionnel)
       .isEmpty
-
-  def initialStatus(): ReportStatus =
-    if (employeeConsumer) ReportStatus.LanceurAlerte
-    else if (!shouldBeVisibleToPro()) ReportStatus.NA
-    else if (companySiret.isEmpty) ReportStatus.NA
-    else if (companySiret.nonEmpty && companyAddress.flatMap(_.country).isDefined)
-      ReportStatus.NA // Company has a french SIRET but a foreign address, we can't send any letter to it
-    else ReportStatus.TraitementEnCours
 }
 
 object ReportDraft {

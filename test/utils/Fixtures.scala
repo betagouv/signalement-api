@@ -252,4 +252,6 @@ object Fixtures {
     identificationStatus = kind
   )
 
+  def genCountry(): Gen[Country] = Gen.oneOf(Country.countries)
+
 }

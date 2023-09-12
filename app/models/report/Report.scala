@@ -13,6 +13,7 @@ import models.report.reportfile.ReportFileId
 import models.report.review.ResponseConsumerReview
 import play.api.libs.json._
 import utils.Constants.ActionEvent.ActionEventValue
+import utils.Country
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
@@ -55,12 +56,6 @@ case class Report(
     lang: Option[Locale]
 ) {
 
-  def initialStatus() =
-    if (employeeConsumer) ReportStatus.LanceurAlerte
-    else if (!visibleToPro) ReportStatus.NA
-    else if (companySiret.isEmpty) ReportStatus.NA
-    else ReportStatus.TraitementEnCours
-
   def shortURL() = websiteURL.websiteURL.map(_.value.replaceFirst("^(http[s]?://www\\.|http[s]?://|www\\.)", ""))
 
   def isContractualDispute() = tags.contains(ReportTag.LitigeContractuel)
@@ -74,6 +69,19 @@ case class Report(
 }
 
 object Report {
+
+  def initialStatus(
+      employeeConsumer: Boolean,
+      visibleToPro: Boolean,
+      companySiret: Option[SIRET],
+      companyCountry: Option[Country]
+  ): ReportStatus =
+    if (employeeConsumer) ReportStatus.LanceurAlerte
+    else if (!visibleToPro) ReportStatus.NA
+    else if (companySiret.isEmpty) ReportStatus.NA
+    else if (companySiret.nonEmpty && companyCountry.isDefined)
+      ReportStatus.NA // Company has a french SIRET but a foreign address, we can't send any letter to it
+    else ReportStatus.TraitementEnCours
 
   @nowarn
   private[this] val jsonFormatX = Jsonx.formatCaseClass[Report]
