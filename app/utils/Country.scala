@@ -179,7 +179,7 @@ object Country {
   val Seychelles = Country("SC", "Seychelles", "Seychelles")
   val SierraLeone = Country("SL", "Sierra Leone", "Sierra Leone")
   val Singapour = Country("SG", "Singapour", "Singapore")
-  val Slovaquie = Country("SL", "Slovaquie", "Slovakia", european = true)
+  val Slovaquie = Country("SK", "Slovaquie", "Slovakia", european = true)
   val Slovenie = Country("SI", "Slovénie", "Slovenia", european = true)
   val Somalie = Country("SO", "Somalie", "Somalia")
   val Soudan = Country("SD", "Soudan", "Sudan")
@@ -205,12 +205,54 @@ object Country {
   val Ukraine = Country("UA", "Ukraine", "Ukraine")
   val Uruguay = Country("UY", "Uruguay", "Uruguay")
   val Vanuatu = Country("VU", "Vanuatu", "Vanuatu")
-  val Vatican = Country("VAT", "Vatican", "Vatican City")
+  val Vatican = Country("VA", "Vatican", "Vatican City")
   val Venezuela = Country("VE", "Vénézuéla", "Venezuela")
   val Vietnam = Country("VN", "Vietnam", "Vietnam")
   val Yemen = Country("YE", "Yémen", "Yemen")
   val Zambie = Country("ZM", "Zambie", "Zambia")
   val Zimbabwe = Country("ZW", "Zimbabwé", "Zimbabwe")
+  val IlesFeroe = Country("FO", "Îles Féroé", "Faroe Islands")
+  val Svalbard = Country("SJ", "Svalbard et Île Jan Mayen", "Svalbard and Jan Mayen")
+  val IleBouvet = Country("BV", "Île Bouvet", "Bouvet Island")
+  val Jersey = Country("JE", "Jersey", "Jersey")
+  val IleMan = Country("IM", "Île Man", "Isle of Man")
+  val Guernsey = Country("GG", "Guernsey", "Bailiwick of Guernsey")
+  val Gibraltar = Country("GI", "Gibraltar", "Gibraltar")
+  val Aruba = Country("AW", "Aruba", "Aruba")
+  val HongKong = Country("HK", "Hong-Kong", "Hong Kong")
+  val Macao = Country("MO", "Macao", "Macau")
+  val Taiwan = Country("TW", "Taiwan", "Taiwan")
+  val Palestine = Country("PS", "État de Palestine", "State of Palestine")
+  val SainteHelene =
+    Country("SH", "Sainte-Hélène, Ascension et Tristan da Cunha", "Saint Helena, Ascension and Tristan da Cunha")
+  val TerritoireBritannique =
+    Country("IO", "Territoire britannique de l'océan Indien", "British Indian Ocean Territory")
+  val SaharaOccidental = Country("EH", "Sahara occidental", "Western Sahara")
+  val IlesViergesBritanniques = Country("VG", "Îles Vierges britanniques", "British Virgin Islands")
+  val IlesTurques = Country("TC", "Îles Turques-et-Caïques", "Turks and Caicos Islands")
+  val Montserrat = Country("MS", "Montserrat", "Montserrat")
+  val IlesCaimans = Country("KY", "Îles Caïmans", "Cayman Islands")
+  val Bermudes = Country("BM", "Bermudes", "Bermuda")
+  val Anguilla = Country("AI", "Anguilla", "Anguilla")
+  val GeorgieDuSud =
+    Country("GS", "Géorgie du Sud-et-les îles Sandwich du Sud", "South Georgia and the South Sandwich Islands")
+  val Falkland = Country("FK", "Îles Malouines ou Falkland", "Falkland Islands")
+  val Groenland = Country("GL", "Groenland", "Greenland")
+  val AntillesNeerlandaises = Country("AN", "Antilles néerlandaises", "Netherlands Antilles")
+  val IlesVierges = Country("VI", "Îles Vierges des États-Unis", "United States Virgin Islands")
+  val PortoRico = Country("PR", "Porto Rico", "Puerto Rico")
+  val Bonaire = Country("BQ", "Bonaire, Saint Eustache et Saba", "Bonaire, Sint Eustatius and Saba")
+  val Curacao = Country("CW", "Curaçao", "Curaçao")
+  val SaintMartinNL = Country("SX", "Saint-Martin (royaume des Pays-Bas)", "Sint Maarten (Dutch part)")
+  val Norfolk = Country("NF", "Île Norfolk", "Norfolk Island")
+  val MacDo = Country("HM", "Îles Heard-et-MacDonald", "Heard Island and McDonald Islands")
+  val Christmas = Country("CX", "Île Christmas", "Christmas Island")
+  val IlesCocos = Country("CC", "Îles Cocos", "Cocos (Keeling) Islands")
+  val Tokelau = Country("TK", "Tokelau", "Tokelau")
+  val Pitcairn = Country("PN", "Îles Pitcairn", "Pitcairn Islands")
+  val IlesMariannes = Country("MP", "Îles Mariannes du Nord", "Northern Mariana Islands")
+  val Guam = Country("GU", "Guam", "Guam")
+  val SamoaAmericaines = Country("AS", "Samoa américaines", "American Samoa")
 
   val countries = List(
     Afghanistan,
@@ -409,7 +451,46 @@ object Country {
     Vietnam,
     Yemen,
     Zambie,
-    Zimbabwe
+    Zimbabwe,
+    IlesFeroe,
+    Svalbard,
+    IleBouvet,
+    Jersey,
+    IleMan,
+    Guernsey,
+    Gibraltar,
+    Aruba,
+    HongKong,
+    Macao,
+    Taiwan,
+    Palestine,
+    SainteHelene,
+    TerritoireBritannique,
+    SaharaOccidental,
+    IlesViergesBritanniques,
+    IlesTurques,
+    Montserrat,
+    IlesCaimans,
+    Bermudes,
+    Anguilla,
+    GeorgieDuSud,
+    Falkland,
+    Groenland,
+    AntillesNeerlandaises,
+    IlesVierges,
+    PortoRico,
+    Bonaire,
+    Curacao,
+    SaintMartinNL,
+    Norfolk,
+    MacDo,
+    Christmas,
+    IlesCocos,
+    Tokelau,
+    Pitcairn,
+    IlesMariannes,
+    Guam,
+    SamoaAmericaines
   )
 
   def fromCode(code: String) =
@@ -419,7 +500,7 @@ object Country {
     countries.find(_.name == name).head
 
   implicit val reads = new Reads[Country] {
-    def reads(json: JsValue): JsResult[Country] = json.validate[String].map(fromName(_))
+    def reads(json: JsValue): JsResult[Country] = json.validate[String].map(fromCode)
   }
   implicit val writes = Json.writes[Country]
 
