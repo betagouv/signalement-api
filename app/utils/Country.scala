@@ -493,21 +493,17 @@ object Country {
     SamoaAmericaines
   )
 
-  def fromCode(code: String) =
-    countries.find(_.code == code).head
+  private val countriesMap: Map[String, Country] = countries.map(country => country.code -> country).toMap
 
-  def fromName(name: String) =
-    countries.find(_.name == name).head
+  def fromCode(code: String) = countriesMap(code)
 
-  implicit val reads = new Reads[Country] {
-    def reads(json: JsValue): JsResult[Country] = json.validate[String].map(fromCode)
-  }
+  implicit val reads = Reads.StringReads.map(fromCode)
   implicit val writes = Json.writes[Country]
 
-  implicit val CountryColumnType = MappedColumnType.base[Country, String](_.name, Country.fromName(_))
+  implicit val CountryColumnType = MappedColumnType.base[Country, String](_.code, Country.fromCode)
 
   implicit val countryListColumnType = MappedColumnType.base[List[Country], List[String]](
-    _.map(_.name),
-    _.map(Country.fromName)
+    _.map(_.code),
+    _.map(Country.fromCode)
   )
 }

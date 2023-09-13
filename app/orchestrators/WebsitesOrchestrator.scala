@@ -48,7 +48,7 @@ class WebsitesOrchestrator(
       websites <- repository.searchValidWebsiteCountryAssociationByHost(validHost)
     } yield websites
       .flatMap(_.companyCountry)
-      .map(Country.fromName)
+      .map(Country.fromCode)
 
   def getWebsiteCompanyCount(
       maybeHost: Option[String],
