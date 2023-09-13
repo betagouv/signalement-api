@@ -511,6 +511,7 @@ class AdminController(
         .getOrElse(NotFound)
     )
   }
+  
 
   def getPdfCodes = SecuredAction(WithRole(UserRole.Admin)).async { _ =>
     Future(Ok(Json.toJson(availablePdfs.map(_._1))))

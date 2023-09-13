@@ -444,7 +444,12 @@ class ReportOrchestrator(
             .update(
               report.id,
               report.copy(
-                status = report.initialStatus()
+                status = Report.initialStatus(
+                  employeeConsumer = report.employeeConsumer,
+                  visibleToPro = report.visibleToPro,
+                  companySiret = report.companySiret,
+                  companyCountry = report.companyAddress.country
+                )
               )
             )
             .map(Some(_))
