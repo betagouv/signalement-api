@@ -41,6 +41,7 @@ import utils.Constants.ActionEvent._
 import utils.Constants.ActionEvent
 import utils.Constants.EventType
 import utils.Constants
+import utils.Country
 import utils.EmailAddress
 import utils.URL
 
@@ -145,13 +146,13 @@ class ReportOrchestrator(
 
   private[this] def createReportedWebsite(
       companyOpt: Option[Company],
-      companyCountry: Option[String],
+      companyCountry: Option[Country],
       websiteURLOpt: Option[URL]
   ): Future[Option[Website]] = {
     val maybeWebsite: Option[Website] = for {
       websiteUrl <- websiteURLOpt
       host <- websiteUrl.getHost
-    } yield Website(host = host, companyCountry = companyCountry, companyId = companyOpt.map(_.id))
+    } yield Website(host = host, companyCountry = companyCountry.map(_.code), companyId = companyOpt.map(_.id))
 
     maybeWebsite.map { website =>
       logger.debug("Creating website entry")
@@ -348,7 +349,7 @@ class ReportOrchestrator(
   private def extractOptionnalCountry(draftReport: ReportDraft) =
     draftReport.companyAddress.flatMap(_.country.map { country =>
       logger.debug(s"Found country ${country} from draft report")
-      country.name
+      country
     })
 
   private def extractOptionalCompany(draftReport: ReportDraft): Future[Option[Company]] =

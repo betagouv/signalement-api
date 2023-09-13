@@ -38,7 +38,7 @@ object WebsiteCompanyReportCount {
       .into[WebsiteCompanyReportCount]
       .withFieldComputed(_.id, _.id)
       .withFieldConst(_.company, maybeCompany)
-      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromName))
+      .withFieldConst(_.companyCountry, website.companyCountry.map(Country.fromCode))
       .withFieldConst(_.count, count)
       .withFieldConst(_.kind, IdentificationStatus.toKind(website.identificationStatus))
       .transform
