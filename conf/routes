@@ -47,6 +47,7 @@ POST          /api/reports/:uuid/response/review                        controll
 GET           /api/reports/:uuid/response/review                        controllers.ReportConsumerReviewController.getReview(uuid: java.util.UUID)
 GET           /api/reports/:uuid/response/review/exists                 controllers.ReportConsumerReviewController.reviewExists(uuid: java.util.UUID)
 POST          /api/reports/:uuid/company                                controllers.ReportController.updateReportCompany(uuid: java.util.UUID)
+PUT           /api/reports/:uuid/country                                controllers.ReportController.updateReportCountry(uuid: java.util.UUID, countryCode: String)
 POST          /api/reports/:uuid/consumer                               controllers.ReportController.updateReportConsumer(uuid: java.util.UUID)
 POST          /api/reports/:uuid/action                                 controllers.ReportController.createReportAction(uuid: java.util.UUID)
 GET           /api/reports/:uuid/consumer-email-pdf                     controllers.ReportController.generateConsumerReportEmailAsPDF(uuid: java.util.UUID)

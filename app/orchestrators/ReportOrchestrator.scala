@@ -401,6 +401,58 @@ class ReportOrchestrator(
         if (maybeCompany.isDefined) Future.successful(maybeCompany) else searchCompanyOfSocialNetwork(influencer)
     } yield resultingCompany
 
+  def updateReportCountry(reportId: UUID, countryCode: String, userId: UUID): Future[Option[Report]] =
+    for {
+      existingReport <- reportRepository.get(reportId)
+      country = Country.fromCode(countryCode)
+      updateCompanyDate = OffsetDateTime.now()
+
+      reportWithNewData <- existingReport match {
+        case Some(report) =>
+          reportRepository
+            .update(
+              report.id,
+              report.copy(
+                companyId = None,
+                companyName = None,
+                companyAddress = Address(country = Some(country)),
+                companySiret = None,
+                status = Report.initialStatus(
+                  employeeConsumer = report.employeeConsumer,
+                  visibleToPro = report.visibleToPro,
+                  companySiret = None,
+                  companyCountry = Some(country)
+                )
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
+
+      _ <- existingReport match {
+        case Some(report) =>
+          eventRepository
+            .create(
+              Event(
+                UUID.randomUUID(),
+                Some(report.id),
+                None,
+                Some(userId),
+                updateCompanyDate,
+                Constants.EventType.ADMIN,
+                Constants.ActionEvent.REPORT_COUNTRY_CHANGE,
+                stringToDetailsJsValue(
+                  s"Entreprise ou pays précédent : Siret ${report.companySiret
+                      .getOrElse("non renseigné")} - ${Some(report.companyAddress.toString).filter(_ != "").getOrElse("Adresse non renseignée")}. Nouveau pays : ${country.name}"
+                )
+              )
+            )
+            .map(Some(_))
+        case _ => Future(None)
+      }
+      _ <- existingReport.flatMap(_.companyId).map(id => removeAccessToken(id)).getOrElse(Future(()))
+    } yield reportWithNewData
+
   def updateReportCompany(reportId: UUID, reportCompany: ReportCompany, userUUID: UUID): Future[Option[Report]] =
     for {
       existingReport <- reportRepository.get(reportId)
@@ -846,7 +898,7 @@ class ReportOrchestrator(
         addressSupplement = company.flatMap(_.address.addressSupplement),
         postalCode = company.flatMap(_.address.postalCode),
         city = company.flatMap(_.address.city),
-        country = company.flatMap(_.address.country)
+        country = company.flatMap(_.address.country).orElse(report.flatMap(_.companyAddress.country))
       )
       visibleReport <-
         if (Seq(UserRole.DGCCRF, UserRole.Admin).contains(user.userRole))
