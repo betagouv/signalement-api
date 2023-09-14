@@ -81,6 +81,16 @@ class ReportController(
       } yield result
     }
 
+  def updateReportCountry(uuid: UUID, countryCode: String) =
+    SecuredAction(WithPermission(UserPermission.updateReport)).async { implicit request =>
+      reportOrchestrator
+        .updateReportCountry(uuid, countryCode, request.identity.id)
+        .map {
+          case Some(report) => Ok(Json.toJson(report))
+          case None         => NotFound
+        }
+    }
+
   def updateReportConsumer(uuid: UUID): Action[JsValue] =
     SecuredAction(WithPermission(UserPermission.updateReport)).async(parse.json) { implicit request =>
       for {

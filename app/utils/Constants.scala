@@ -98,6 +98,7 @@ object Constants {
         extends ActionEventValue("Email « Nouveau signalement en attente de réponse » envoyé au professionnel")
 
     object REPORT_COMPANY_CHANGE extends ActionEventValue("Modification du commerçant")
+    object REPORT_COUNTRY_CHANGE extends ActionEventValue("Modification du pays")
     object REPORT_CONSUMER_CHANGE extends ActionEventValue("Modification du consommateur")
     object COMMENT extends ActionEventValue("Ajout d'un commentaire")
     object CONSUMER_ATTACHMENTS extends ActionEventValue("Ajout de pièces jointes fournies par le consommateur")
