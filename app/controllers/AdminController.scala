@@ -98,6 +98,7 @@ class AdminController(
     details = List(toDetailInputValue("test")),
     companyId = Some(UUID.randomUUID()),
     companyName = Some("Dummy Inc."),
+    companyBrand = Some("Dummy Inc. Store"),
     companyAddress = Address(Some("3 bis"), Some("Rue des exemples"), None, Some("13006"), Some("Douceville")),
     companySiret = Some(SIRET("12345678912345")),
     companyActivityCode = None,
@@ -142,12 +143,14 @@ class AdminController(
       number = Some("3"),
       street = Some("rue des Champs"),
       postalCode = Some("75015"),
-      city = Some("Paris")
+      city = Some("Paris"),
+      country = None
     ),
     activityCode = None,
     isHeadOffice = true,
     isOpen = true,
-    isPublic = true
+    isPublic = true,
+    brand = Some("une super enseigne")
   )
 
   private def genUser = User(

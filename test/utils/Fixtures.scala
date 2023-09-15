@@ -82,6 +82,7 @@ object Fixtures {
   val genCompany = for {
     _ <- arbitrary[UUID]
     name <- arbString.arbitrary
+    brand <- Gen.option(arbString.arbitrary)
     siret <- genSiret()
     address <- genAddress()
   } yield Company(
@@ -92,7 +93,8 @@ object Fixtures {
     activityCode = None,
     isOpen = true,
     isHeadOffice = false,
-    isPublic = true
+    isPublic = true,
+    brand = brand
   )
 
   val genInfluencer = for {
@@ -125,6 +127,7 @@ object Fixtures {
     details = List(),
     influencer = None,
     companyName = Some(company.name),
+    companyBrand = company.brand,
     companyAddress = Some(company.address),
     companySiret = Some(company.siret),
     companyActivityCode = None,
@@ -172,6 +175,7 @@ object Fixtures {
     companyId = Some(company.id),
     creationDate = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     companyName = Some(company.name),
+    companyBrand = company.brand,
     companyAddress = company.address,
     companySiret = Some(company.siret),
     companyActivityCode = company.activityCode,
@@ -205,9 +209,10 @@ object Fixtures {
 
   def genReportCompany = for {
     name <- arbString.arbitrary
+    brand <- Gen.option(arbString.arbitrary)
     address <- genAddress(postalCode = Some(Gen.choose(10000, 99999).toString))
     siret <- genSiret()
-  } yield ReportCompany(name, address, siret, None, isHeadOffice = true, isOpen = true, isPublic = true)
+  } yield ReportCompany(name, brand, address, siret, None, isHeadOffice = true, isOpen = true, isPublic = true)
 
   def genEventForReport(reportId: UUID, eventType: EventTypeValue, actionEvent: ActionEventValue) = for {
     id <- arbitrary[UUID]

@@ -5,6 +5,7 @@ import models.company.Company
 import repositories.DatabaseTable
 import slick.lifted.TableQuery
 import utils.Constants.Departments
+import utils.Country
 import utils.SIRET
 import repositories.PostgresProfile.api._
 
@@ -25,6 +26,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def isHeadOffice = column[Boolean]("is_headoffice")
   def isOpen = column[Boolean]("is_open")
   def isPublic = column[Boolean]("is_public")
+  def brand = column[Option[String]]("brand")
+  def country = column[Option[String]]("country")
 
   type CompanyTuple = (
       UUID,
@@ -40,7 +43,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Option[String],
       Boolean,
       Boolean,
-      Boolean
+      Boolean,
+      Option[String],
+      Option[String]
   )
 
   def constructCompany: CompanyTuple => Company = {
@@ -58,7 +63,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           activityCode,
           isHeadOffice,
           isOpen,
-          isPublic
+          isPublic,
+          brand,
+          country
         ) =>
       Company(
         id = id,
@@ -70,12 +77,14 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           street = street,
           addressSupplement = addressSupplement,
           postalCode = postalCode,
-          city = city
+          city = city,
+          country = country.map(Country.fromCode)
         ),
         activityCode = activityCode,
         isHeadOffice = isHeadOffice,
         isOpen = isOpen,
-        isPublic = isPublic
+        isPublic = isPublic,
+        brand = brand
       )
   }
 
@@ -89,7 +98,8 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           activityCode,
           isHeadOffice,
           isOpen,
-          isPublic
+          isPublic,
+          brand
         ) =>
       (
         id,
@@ -105,7 +115,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         activityCode,
         isHeadOffice,
         isOpen,
-        isPublic
+        isPublic,
+        brand,
+        address.country.map(_.code)
       )
   }
 
@@ -123,7 +135,9 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
     activityCode,
     isHeadOffice,
     isOpen,
-    isPublic
+    isPublic,
+    brand,
+    country
   ) <> (constructCompany, extractCompany.lift)
 }
 

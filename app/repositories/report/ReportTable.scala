@@ -28,6 +28,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
   def influencerName = column[Option[String]]("influencer_name")
   def companyId = column[Option[UUID]]("company_id")
   def companyName = column[Option[String]]("company_name")
+  def companyBrand = column[Option[String]]("company_brand")
   def companySiret = column[Option[SIRET]]("company_siret")
   def companyStreetNumber = column[Option[String]]("company_street_number")
   def companyStreet = column[Option[String]]("company_street")
@@ -73,6 +74,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         influencerName ::
         companyId ::
         companyName ::
+        companyBrand ::
         companySiret ::
         companyStreetNumber ::
         companyStreet ::
@@ -110,6 +112,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
         details = details.filter(_ != null).map(toDetailInputValue),
         companyId = companyId,
         companyName = companyName,
+        companyBrand = companyBrand,
         companyAddress = Address(
           number = companyStreetNumber,
           street = companyStreet,
@@ -156,6 +159,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       r.influencer.map(_.name) ::
       r.companyId ::
       r.companyName ::
+      r.companyBrand ::
       r.companySiret ::
       r.companyAddress.number ::
       r.companyAddress.street ::
@@ -197,6 +201,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       Option[String] ::
       Option[UUID] ::
       Option[String] ::
+      Option[String] ::
       Option[SIRET] ::
       Option[String] ::
       Option[String] ::
@@ -237,6 +242,7 @@ class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
       influencerName ::
       companyId ::
       companyName ::
+      companyBrand ::
       companySiret ::
       companyStreetNumber ::
       companyStreet ::

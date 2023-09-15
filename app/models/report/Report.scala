@@ -32,6 +32,7 @@ case class Report(
     influencer: Option[Influencer],
     companyId: Option[UUID],
     companyName: Option[String],
+    companyBrand: Option[String],
     companyAddress: Address,
     companySiret: Option[SIRET],
     companyActivityCode: Option[String],
@@ -97,6 +98,7 @@ object Report {
         "influencer" -> report.influencer,
         "companyId" -> report.companyId,
         "companyName" -> report.companyName,
+        "companyBrand" -> report.companyBrand,
         "companyAddress" -> Json.toJson(report.companyAddress),
         "companySiret" -> report.companySiret,
         "creationDate" -> report.creationDate,
@@ -204,6 +206,7 @@ object DeprecatedCompanyWithNbReports {
 
 case class ReportCompany(
     name: String,
+    brand: Option[String],
     address: Address,
     siret: SIRET,
     activityCode: Option[String],
