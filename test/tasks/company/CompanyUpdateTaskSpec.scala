@@ -44,7 +44,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
         name = Some(newName),
-        brand = None,
+        brand = company.brand,
         isHeadOffice = company.isHeadOffice,
         address = company.address,
         activityCode = company.activityCode,
@@ -91,7 +91,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
         name = Some(newName),
-        brand = None,
+        brand = company.brand,
         isHeadOffice = company.isHeadOffice,
         address = company.address,
         activityCode = company.activityCode,
@@ -136,7 +136,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
       val companySearchResult = CompanySearchResult(
         siret = company.siret,
         name = None,
-        brand = None,
+        brand = company.brand,
         isHeadOffice = company.isHeadOffice,
         address = company.address,
         activityCode = company.activityCode,
