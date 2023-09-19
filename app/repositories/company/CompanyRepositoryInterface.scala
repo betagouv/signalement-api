@@ -6,6 +6,7 @@ import models.UserRole
 import models.company.Company
 import models.company.CompanyRegisteredSearch
 import repositories.CRUDRepositoryInterface
+import utils.Country
 import utils.SIREN
 import utils.SIRET
 
@@ -43,6 +44,8 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
       number: Option[String],
       street: Option[String],
       addressSupplement: Option[String],
-      name: String
+      name: String,
+      brand: Option[String],
+      country: Option[Country]
   ): Future[SIRET]
 }

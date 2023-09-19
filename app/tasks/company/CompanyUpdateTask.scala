@@ -109,7 +109,9 @@ class CompanyUpdateTask(
           c.address.number,
           c.address.street,
           c.address.addressSupplement,
-          c.name.getOrElse("")
+          c.name.getOrElse(""),
+          c.brand,
+          c.address.country
         )
         .map(_ => c)
     }.sequence

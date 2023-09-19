@@ -27,7 +27,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
   def isOpen = column[Boolean]("is_open")
   def isPublic = column[Boolean]("is_public")
   def brand = column[Option[String]]("brand")
-  def country = column[Option[String]]("country")
+  def country = column[Option[Country]]("country")
 
   type CompanyTuple = (
       UUID,
@@ -45,7 +45,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
       Boolean,
       Boolean,
       Option[String],
-      Option[String]
+      Option[Country]
   )
 
   def constructCompany: CompanyTuple => Company = {
@@ -78,7 +78,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
           addressSupplement = addressSupplement,
           postalCode = postalCode,
           city = city,
-          country = country.map(Country.fromCode)
+          country = country
         ),
         activityCode = activityCode,
         isHeadOffice = isHeadOffice,
@@ -117,7 +117,7 @@ class CompanyTable(tag: Tag) extends DatabaseTable[Company](tag, "companies") {
         isOpen,
         isPublic,
         brand,
-        address.country.map(_.code)
+        address.country
       )
   }
 

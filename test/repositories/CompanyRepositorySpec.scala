@@ -38,7 +38,9 @@ class CompanyRepositorySpec(implicit ee: ExecutionEnv) extends mutable.Specifica
           expectedCompany.address.number,
           expectedCompany.address.street,
           expectedCompany.address.addressSupplement,
-          expectedCompany.name
+          expectedCompany.name,
+          expectedCompany.brand,
+          expectedCompany.address.country
         )
         after <- repository.get(company.id)
       } yield (before shouldEqual Some(company)) and (after shouldEqual Some(expectedCompany))
