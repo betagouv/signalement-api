@@ -2,6 +2,7 @@ package models.report
 
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
+import play.api.libs.json.OWrites
 
 case class ReportNode(
     name: String,
@@ -14,4 +15,10 @@ case class ReportNode(
 
 object ReportNode {
   implicit val format: OFormat[ReportNode] = Json.format[ReportNode]
+}
+
+case class ReportNodes(fr: List[ReportNode], en: List[ReportNode])
+
+object ReportNodes {
+  implicit val writes: OWrites[ReportNodes] = Json.writes[ReportNodes]
 }
