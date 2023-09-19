@@ -14,6 +14,7 @@ import repositories.companyaccess.CompanyAccessTable
 import repositories.report.ReportTable
 import repositories.user.UserTable
 import slick.jdbc.JdbcProfile
+import utils.Country
 import utils.EmailAddress
 import utils.SIREN
 import utils.SIRET
@@ -148,14 +149,28 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
       number: Option[String],
       street: Option[String],
       addressSupplement: Option[String],
-      name: String
+      name: String,
+      brand: Option[String],
+      country: Option[Country]
   ): Future[SIRET] =
     db
       .run(
         table
           .filter(_.siret === siret)
-          .map(c => (c.isHeadOffice, c.isOpen, c.isPublic, c.streetNumber, c.street, c.addressSupplement, c.name))
-          .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement, name))
+          .map(c =>
+            (
+              c.isHeadOffice,
+              c.isOpen,
+              c.isPublic,
+              c.streetNumber,
+              c.street,
+              c.addressSupplement,
+              c.name,
+              c.brand,
+              c.country
+            )
+          )
+          .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement, name, brand, country))
       )
       .map(_ => siret)
 
