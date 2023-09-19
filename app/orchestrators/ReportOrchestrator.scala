@@ -367,7 +367,8 @@ class ReportOrchestrator(
               logger.error(s"draftReport.companyIsPublic should not be empty, company details (siret:  $siret)")
             }
             draftReport.companyIsPublic.getOrElse(false)
-          }
+          },
+          brand = draftReport.companyBrand
         )
         companyRepository.getOrCreate(siret, company).map { company =>
           logger.debug("Company extracted from report")
@@ -389,7 +390,8 @@ class ReportOrchestrator(
         activityCode = companyToCreate.activityCode,
         isHeadOffice = companyToCreate.isHeadOffice,
         isOpen = companyToCreate.isOpen,
-        isPublic = companyToCreate.isPublic
+        isPublic = companyToCreate.isPublic,
+        brand = companyToCreate.brand
       )
       company <- OptionT.liftF(companyRepository.getOrCreate(companyToCreate.siret, c))
     } yield company).value
@@ -465,7 +467,8 @@ class ReportOrchestrator(
           activityCode = reportCompany.activityCode,
           isHeadOffice = reportCompany.isHeadOffice,
           isOpen = reportCompany.isOpen,
-          isPublic = reportCompany.isPublic
+          isPublic = reportCompany.isPublic,
+          brand = reportCompany.brand
         )
       )
       users <- companiesVisibilityOrchestrator.fetchUsersWithHeadOffices(company.siret)

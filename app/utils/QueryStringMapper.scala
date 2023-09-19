@@ -17,6 +17,8 @@ class QueryStringMapper(q: Map[String, Seq[String]]) {
 
   def string(k: String): Option[String] = q.get(k).flatMap(_.headOption)
 
+  def nonEmptyString(k: String): Option[String] = q.get(k).flatMap(_.headOption).filter(_.nonEmpty)
+
   def UUID(k: String): Option[UUID] = q.get(k).flatMap(_.headOption).map(extractUUID)
 
   def seq(k: String): Seq[String] = q.getOrElse(k, Nil)

@@ -42,7 +42,8 @@ case class Company(
     activityCode: Option[String],
     isHeadOffice: Boolean,
     isOpen: Boolean,
-    isPublic: Boolean
+    isPublic: Boolean,
+    brand: Option[String]
 ) {
   def shortId = this.id.toString.substring(0, 13).toUpperCase
 }
@@ -61,7 +62,7 @@ object CompanyRegisteredSearch {
       departments = mapper.seq("departments"),
       activityCodes = mapper.seq("activityCodes"),
       emailsWithAccess = mapper.string("emailsWithAccess"),
-      identity = mapper.string("identity").map(SearchCompanyIdentity.fromString)
+      identity = mapper.nonEmptyString("identity").map(SearchCompanyIdentity.fromString)
     )
   }
 }
@@ -90,7 +91,8 @@ case class CompanyCreation(
     activityCode: Option[String],
     isHeadOffice: Option[Boolean],
     isOpen: Option[Boolean],
-    isPublic: Option[Boolean]
+    isPublic: Option[Boolean],
+    brand: Option[String]
 ) {
   def toCompany(): Company = Company(
     siret = siret,
@@ -99,7 +101,8 @@ case class CompanyCreation(
     activityCode = activityCode,
     isHeadOffice = isHeadOffice.getOrElse(false),
     isOpen = isOpen.getOrElse(true),
-    isPublic = isPublic.getOrElse(true)
+    isPublic = isPublic.getOrElse(true),
+    brand = brand
   )
 }
 
@@ -113,6 +116,7 @@ case class CompanyWithNbReports(
     siret: SIRET,
     creationDate: OffsetDateTime = OffsetDateTime.now(),
     name: String,
+    brand: Option[String],
     address: Address,
     activityCode: Option[String],
     count: Int,
