@@ -21,6 +21,7 @@ import utils.Constants.Departments
 
 import java.sql.Timestamp
 import java.time._
+import java.util.Locale
 import java.util.UUID
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
@@ -31,14 +32,18 @@ class StatsOrchestrator(
     eventRepository: EventRepositoryInterface,
     reportConsumerReviewRepository: ResponseConsumerReviewRepositoryInterface,
     accessTokenRepository: AccessTokenRepositoryInterface,
-    arborescence: List[ArborescenceNode]
+    arborescenceFr: List[ArborescenceNode],
+    arborescenceEn: List[ArborescenceNode]
 )(implicit val executionContext: ExecutionContext) {
 
-  def reportsCountBySubcategories(filters: ReportsCountBySubcategoriesFilter): Future[List[ReportNode]] = for {
-    reportNodes <- reportRepository
-      .reportsCountBySubcategories(filters)
-      .map(StatsOrchestrator.buildReportNodes(arborescence, _))
-  } yield reportNodes
+  def reportsCountBySubcategories(filters: ReportsCountBySubcategoriesFilter): Future[ReportNodes] = for {
+    reportNodesFr <- reportRepository
+      .reportsCountBySubcategories(filters, Locale.FRENCH)
+      .map(StatsOrchestrator.buildReportNodes(arborescenceFr, _))
+    reportNodesEn <- reportRepository
+      .reportsCountBySubcategories(filters, Locale.ENGLISH)
+      .map(StatsOrchestrator.buildReportNodes(arborescenceEn, _))
+  } yield ReportNodes(reportNodesFr, reportNodesEn)
 
   def countByDepartments(start: Option[LocalDate], end: Option[LocalDate]): Future[Seq[(String, Int)]] =
     for {
@@ -179,9 +184,9 @@ object StatsOrchestrator {
     val tree = ReportNode("", 0, 0, List.empty, List.empty, None)
 
     arbo.foreach { arborescenceNode =>
-      val test = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
-      val count = test.map(_._2).getOrElse(0)
-      val reclamations = test.map(_._3).getOrElse(0)
+      val res = merged.find(_._1 == arborescenceNode.path.map(_._1).toList)
+      val count = res.map(_._2).getOrElse(0)
+      val reclamations = res.map(_._3).getOrElse(0)
       createOrUpdateReportNode(arborescenceNode.path, count, reclamations, tree)
     }
 
