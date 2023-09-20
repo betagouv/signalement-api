@@ -10,6 +10,7 @@ import utils.EmailAddress
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.util.Locale
 import java.util.UUID
 import scala.collection.SortedMap
 import scala.collection.mutable
@@ -68,7 +69,8 @@ class ReportRepositoryMock(database: mutable.Map[UUID, Report] = mutable.Map.emp
   override def cloudWord(companyId: UUID): Future[List[ReportWordOccurrence]] = ???
 
   override def reportsCountBySubcategories(
-      filters: ReportsCountBySubcategoriesFilter
+      filters: ReportsCountBySubcategoriesFilter,
+      lang: Locale
   ): Future[Seq[(String, List[String], Int, Int)]] = ???
 
   override def getForWebsiteWithoutCompany(websiteHost: String): Future[List[UUID]] = ???

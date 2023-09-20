@@ -410,8 +410,18 @@ class SignalConsoComponents(
   // This file can be generated in the website using 'yarn minimized-anomalies'.
   // This is the first iteration of the story, using an copied generated file from the website
   // The second version will be to expose the file in the website and fetch it in the API at runtime.
-  val arborescenceAsJson = context.environment
-    .resourceAsStream("minimized-anomalies.json")
+  val arborescenceFrAsJson = context.environment
+    .resourceAsStream("minimized-anomalies_fr.json")
+    .map(json =>
+      try Json.parse(json)
+      finally json.close()
+    )
+    .map(_.as[JsArray])
+    .map(ArborescenceNode.fromJson)
+    .get
+
+  val arborescenceEnAsJson = context.environment
+    .resourceAsStream("minimized-anomalies_en.json")
     .map(json =>
       try Json.parse(json)
       finally json.close()
@@ -426,7 +436,8 @@ class SignalConsoComponents(
       eventRepository,
       responseConsumerReviewRepository,
       accessTokenRepository,
-      arborescenceAsJson
+      arborescenceFrAsJson,
+      arborescenceEnAsJson
     )
 
   val websitesOrchestrator =

@@ -55,8 +55,11 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
   }
 
   def reportsCountBySubcategories(
-      filters: ReportsCountBySubcategoriesFilter
-  ): Future[Seq[(String, List[String], Int, Int)]] =
+      filters: ReportsCountBySubcategoriesFilter,
+      lang: Locale
+  ): Future[Seq[(String, List[String], Int, Int)]] = {
+    implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+
     db.run(
       table
         .filterOpt(filters.start) { case (table, s) =>
@@ -64,6 +67,12 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         }
         .filterOpt(filters.end) { case (table, e) =>
           table.creationDate < ZonedDateTime.of(e, LocalTime.MAX, ZoneOffset.UTC.normalized()).toOffsetDateTime
+        }
+        .filter { table =>
+          lang match {
+            case Locale.FRENCH => table.lang === Locale.FRENCH || table.lang.isEmpty
+            case _             => table.lang =!= Locale.FRENCH
+          }
         }
         .filterIf(filters.departments.nonEmpty) { case (table) =>
           filters.departments
@@ -89,6 +98,7 @@ class ReportRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impli
         }
         .result
     )
+  }
 
   def findByEmail(email: EmailAddress): Future[Seq[Report]] =
     db.run(table.filter(_.email === email).result)
