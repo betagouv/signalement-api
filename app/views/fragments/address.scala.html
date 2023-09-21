@@ -2,6 +2,7 @@
 @(company: Company, includeSiret: Boolean = false)
 
 <b>@company.name</b> <br/>
+<i>@company.brand</i> <br/>
 @company.address.toArray.map { ligne =>
     <span>@ligne</span> <br/>
 }

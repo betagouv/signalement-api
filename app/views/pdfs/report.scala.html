@@ -133,6 +133,9 @@
                     @report.companyName.map { companyName =>
                         <div>@companyName</div>
                     }
+                    @report.companyBrand.map { companyBrand =>
+                        <div><i>@companyBrand</i></div>
+                    }
                     <div>
                     @views.html.fragments.proAddressForConsumer(maybeCompany)
                     </div>
