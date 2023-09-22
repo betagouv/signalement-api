@@ -81,10 +81,10 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
         case SearchCompanyIdentitySiret(q) => query.filter(_._1.siret === SIRET.fromUnsafe(q))
         case SearchCompanyIdentitySiren(q) => query.filter(_._1.siret.asColumnOf[String] like s"${q}_____")
         case SearchCompanyIdentityName(q) =>
-          query.filter { tuple =>
-            val searchString = tuple._1.brand.map(brand => tuple._1.name ++ " " ++ brand).getOrElse(tuple._1.name)
-            toTsVector(searchString) @@ plainToTsQuery(q)
-          }
+          query.filter(tuple =>
+            (tuple._1.name.toLowerCase like s"%${q.toLowerCase}%") || (tuple._1.brand
+              .map(_.toLowerCase) like s"%${q.toLowerCase}%")
+          )
         case id: SearchCompanyIdentityId => query.filter(_._1.id === id.value)
       }
       .getOrElse(query)
