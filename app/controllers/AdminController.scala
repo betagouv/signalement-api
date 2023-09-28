@@ -45,8 +45,8 @@ import services.Email.InactiveDgccrfAccount
 import services.Email.ProCompanyAccessInvitation
 import services.Email.ProNewCompanyAccess
 import services.Email.ProNewReportNotification
-import services.Email.ProReportReadReminder
-import services.Email.ProReportUnreadReminder
+import services.Email.ProReportsReadReminder
+import services.Email.ProReportsUnreadReminder
 import services.Email.ProResponseAcknowledgment
 import services.Email.ResetPassword
 import services.Email.ValidateEmail
@@ -63,6 +63,7 @@ import utils.silhouette.auth.WithRole
 
 import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.Period
 import java.util.Locale
 import java.util.UUID
 import scala.concurrent.ExecutionContext
@@ -249,18 +250,18 @@ class AdminController(
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
-    "pro.report_transmitted_reminder" -> (recipient =>
-      ProReportReadReminder(
+    "pro.reports_transmitted_reminder" -> (recipient =>
+      ProReportsReadReminder(
         List(recipient),
-        genReport,
-        OffsetDateTime.now().plusDays(10)
+        List(genReport, genReport, genReport.copy(expirationDate = OffsetDateTime.now().plusDays(5))),
+        Period.ofDays(7)
       )
     ),
-    "pro.report_unread_reminder" -> (recipient =>
-      ProReportUnreadReminder(
+    "pro.reports_unread_reminder" -> (recipient =>
+      ProReportsUnreadReminder(
         List(recipient),
-        genReport,
-        OffsetDateTime.now().plusDays(10)
+        List(genReport, genReport, genReport.copy(expirationDate = OffsetDateTime.now().plusDays(5))),
+        Period.ofDays(7)
       )
     ),
     "dgccrf.access_link" ->

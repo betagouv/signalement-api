@@ -22,7 +22,7 @@ import utils.FrontRoute
 
 import java.net.URI
 import java.time.LocalDate
-import java.time.OffsetDateTime
+import java.time.Period
 import java.util.Locale
 
 sealed trait Email {
@@ -36,8 +36,12 @@ sealed trait AdminEmail extends Email
 sealed trait DgccrfEmail extends Email
 
 sealed trait ProEmail extends Email
-sealed trait ProFilteredEmail extends ProEmail {
+sealed trait ProFilteredEmail extends ProEmail
+sealed trait ProFilteredEmailSingleReport extends ProFilteredEmail {
   val report: Report
+}
+sealed trait ProFilteredEmailMultipleReport extends ProFilteredEmail {
+  val reports: List[Report]
 }
 sealed trait ConsumerEmail extends Email
 
@@ -88,7 +92,7 @@ object Email {
   }
 
   final case class ProNewReportNotification(userList: NonEmptyList[EmailAddress], report: Report)
-      extends ProFilteredEmail {
+      extends ProFilteredEmailSingleReport {
     override val subject: String = EmailSubjects.NEW_REPORT
     override val recipients: List[EmailAddress] = userList.toList
 
@@ -96,32 +100,30 @@ object Email {
       (frontRoute, _) => views.html.mails.professional.reportNotification(report)(frontRoute).toString
   }
 
-  final case class ProReportUnreadReminder(
+  final case class ProReportsUnreadReminder(
       recipients: List[EmailAddress],
-      report: Report,
-      reportExpirationDate: OffsetDateTime
-  ) extends ProFilteredEmail {
+      reports: List[Report],
+      period: Period
+  ) extends ProFilteredEmailMultipleReport {
     override val subject: String = EmailSubjects.REPORT_UNREAD_REMINDER
 
     override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional.reportUnreadReminder(report, reportExpirationDate)(frontRoute).toString
+      (frontRoute, _) => views.html.mails.professional.reportsUnreadReminder(reports, period)(frontRoute).toString
   }
 
-  final case class ProReportReadReminder(
+  final case class ProReportsReadReminder(
       recipients: List[EmailAddress],
-      report: Report,
-      reportExpirationDate: OffsetDateTime
-  ) extends ProFilteredEmail {
+      reports: List[Report],
+      period: Period
+  ) extends ProFilteredEmailMultipleReport {
     override val subject: String = EmailSubjects.REPORT_TRANSMITTED_REMINDER
 
     override def getBody: (FrontRoute, EmailAddress) => String =
-      (frontRoute, _) =>
-        views.html.mails.professional.reportTransmittedReminder(report, reportExpirationDate)(frontRoute).toString
+      (frontRoute, _) => views.html.mails.professional.reportsTransmittedReminder(reports, period)(frontRoute).toString
   }
 
   final case class ProResponseAcknowledgment(report: Report, reportResponse: ReportResponse, user: User)
-      extends ProFilteredEmail {
+      extends ProFilteredEmailSingleReport {
     override val recipients: List[EmailAddress] = List(user.email)
     override val subject: String = EmailSubjects.REPORT_ACK_PRO
 

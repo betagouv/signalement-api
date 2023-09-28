@@ -11,8 +11,8 @@ import orchestrators.CompaniesVisibilityOrchestrator
 import play.api.Logger
 import repositories.event.EventRepositoryInterface
 import repositories.report.ReportRepositoryInterface
-import services.Email.ProReportReadReminder
-import services.Email.ProReportUnreadReminder
+import services.Email.ProReportsReadReminder
+import services.Email.ProReportsUnreadReminder
 import services.MailService
 import tasks.getTodayAtStartOfDayParis
 import tasks.scheduleTask
@@ -73,19 +73,26 @@ class ReportRemindersTask(
 
   private def sendReminderEmailsWithErrorHandling(reportsWithUsers: List[(Report, List[User])]): Future[Unit] = {
     logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
+    val reportsPerUsers = reportsWithUsers.groupBy(_._2).view.mapValues(_.map(_._1))
+    val reportsPerCompanyPerUsers = reportsPerUsers.mapValues(_.groupBy(_.companyId)).mapValues(_.values).toMap
+
     for {
-      successesOrFailuresList <- Future.sequence(reportsWithUsers.map { case (report, users) =>
-        logger.infoWithTitle("report_reminders_task_item", s"Closed report ${report.id}")
-        sendReminderEmail(report, users).transform {
-          case Success(_) => Success(Right(report.id))
-          case Failure(err) =>
-            logger.errorWithTitle(
-              "report_reminders_task_item_error",
-              s"Error sending reminder email for report ${report.id} to ${users.length} users",
-              err
-            )
-            Success(Left(report.id))
-        }
+      successesOrFailuresList <- Future.sequence(reportsPerCompanyPerUsers.toList.flatMap {
+        case (users, reportsPerCompany) =>
+          reportsPerCompany.map { reports =>
+            logger.infoWithTitle("report_reminders_task_item", s"Closed reports ${reports.map(_.id)}")
+            sendReminderEmail(reports, users).transform {
+              case Success(_) => Success(Right(reports.map(_.id)))
+              case Failure(err) =>
+                logger.errorWithTitle(
+                  "report_reminders_task_item_error",
+                  s"Error sending reminder email for reports ${reports.map(_.id)} to ${users.length} users",
+                  err
+                )
+                Success(Left(reports.map(_.id)))
+            }
+          }
+
       })
       (failures, successes) = successesOrFailuresList.partitionMap(identity)
       _ = logger.info(s"Successful reminder emails sent for ${successes.length} reports")
@@ -113,27 +120,47 @@ class ReportRemindersTask(
   }
 
   private def sendReminderEmail(
-      report: Report,
+      reports: List[Report],
       users: List[User]
   ): Future[Unit] = {
     val emailAddresses = users.map(_.email)
-    val (email, emailEventAction) =
-      if (report.isReadByPro) (ProReportReadReminder, EMAIL_PRO_REMIND_NO_ACTION)
-      else (ProReportUnreadReminder, EMAIL_PRO_REMIND_NO_READING)
+    val (readByPros, notReadByPros) = reports.partition(_.isReadByPro)
+
     logger.debug(s"Sending reminder email")
     for {
-      _ <- mailService.send(email(emailAddresses, report, report.expirationDate))
-      _ <- eventRepository.create(
-        Event(
-          UUID.randomUUID(),
-          Some(report.id),
-          report.companyId,
-          None,
-          OffsetDateTime.now(),
-          SYSTEM,
-          emailEventAction,
-          stringToDetailsJsValue(s"Relance envoyée à ${emailAddresses.mkString(", ")}")
-        )
+      _ <- mailService.send(ProReportsReadReminder(emailAddresses, readByPros, delayBetweenReminderEmails))
+      _ <- mailService.send(ProReportsUnreadReminder(emailAddresses, notReadByPros, delayBetweenReminderEmails))
+      _ <- Future.sequence(
+        readByPros.map { report =>
+          eventRepository.create(
+            Event(
+              UUID.randomUUID(),
+              Some(report.id),
+              report.companyId,
+              None,
+              OffsetDateTime.now(),
+              SYSTEM,
+              EMAIL_PRO_REMIND_NO_ACTION,
+              stringToDetailsJsValue(s"Relance envoyée à ${emailAddresses.mkString(", ")}")
+            )
+          )
+        }
+      )
+      _ <- Future.sequence(
+        notReadByPros.map { report =>
+          eventRepository.create(
+            Event(
+              UUID.randomUUID(),
+              Some(report.id),
+              report.companyId,
+              None,
+              OffsetDateTime.now(),
+              SYSTEM,
+              EMAIL_PRO_REMIND_NO_READING,
+              stringToDetailsJsValue(s"Relance envoyée à ${emailAddresses.mkString(", ")}")
+            )
+          )
+        }
       )
     } yield ()
   }
