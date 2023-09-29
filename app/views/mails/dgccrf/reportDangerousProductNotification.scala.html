@@ -23,6 +23,15 @@
             padding-top: 20px;
             padding-bottom: 20px"
         >
+
+            <b>Consommateur</b>
+            <br/>
+            @report.gender @report.firstName  @report.lastName
+            Email : @report.email.value
+            @report.phone.map{ phone =>
+                @Html("Télephone : ")@Html(phone)
+            }
+
             <b>Problème</b>
             <br/>
             @ReportCategory.displayValue(report.category)
