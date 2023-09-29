@@ -27,11 +27,13 @@
             <b>Consommateur</b>
             <br/>
             @report.gender @report.firstName  @report.lastName
+            <br/>
             Email : @report.email.value
+            <br/>
             @report.phone.map{ phone =>
                 @Html("Télephone : ")@Html(phone)
             }
-
+            <br/>
             <b>Problème</b>
             <br/>
             @ReportCategory.displayValue(report.category)
