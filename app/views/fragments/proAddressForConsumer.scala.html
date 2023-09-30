@@ -2,6 +2,7 @@
 @(company: Option[Company])
 
 @company.map { c => <b>@c.name</b> <br/> }
+@company.map { c => <i>@c.brand</i> <br/> }
 @company.map { c =>
     @if(c.isPublic) {
         @c.address.toArray.map { ligne =>

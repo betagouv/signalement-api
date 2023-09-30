@@ -53,6 +53,7 @@ object CreateReportFromDomTom extends CreateUpdateReportSpec {
           a dom tom department                                              ${step {
         draftReport = draftReport.copy(
           companyName = Some(company.name),
+          companyBrand = company.brand,
           companySiret = Some(company.siret),
           companyAddress = Some(address),
           companyActivityCode = company.activityCode
@@ -84,6 +85,7 @@ object CreateReportForEmployeeConsumer extends CreateUpdateReportSpec {
           an experimentation department                                   ${step {
         draftReport = draftReport.copy(
           companyName = Some(company.name),
+          companyBrand = company.brand,
           companySiret = Some(company.siret),
           companyAddress = Some(address)
         )
