@@ -26,13 +26,13 @@
 
             <b>Consommateur</b>
             <br/>
-            @report.firstName  @report.lastName
+            @report.gender.getOrElse("") @report.firstName  @report.lastName
             <br/>
             Email : @report.email.value
             <br/>
-            @report.phone.map{ phone =>
-                @Html("Télephone : ")@Html(phone)
-            }
+            @Html("Télephone : ")@report.phone.map { phone =>
+                @Html(phone)
+            }.getOrElse("Non précisé")
             <br/>
             <b>Problème</b>
             <br/>
