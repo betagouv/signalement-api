@@ -26,7 +26,7 @@
 
             <b>Consommateur</b>
             <br/>
-            @report.gender.getOrElse("") @report.firstName  @report.lastName
+            @report.gender.map(_.label).getOrElse("") @report.firstName  @report.lastName
             <br/>
             Email : @report.email.value
             <br/>
