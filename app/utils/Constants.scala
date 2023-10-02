@@ -65,6 +65,9 @@ object Constants {
     object EMAIL_NON_PRISE_EN_COMPTE extends ActionEventValue("Envoi email de non prise en compte")
 
     object POST_ACCOUNT_ACTIVATION_DOC extends ActionEventValue("Envoi du courrier d'activation")
+    object POST_FOLLOW_UP_DOC extends ActionEventValue("Envoi du courrier de relance")
+    object POST_FOLLOW_UP_TOKEN_GEN
+        extends ActionEventValue("Gereration d'un token de relance pour entreprise inactive")
     object ACCOUNT_ACTIVATION extends ActionEventValue("Activation d'un compte")
     object ACTIVATION_DOC_RETURNED extends ActionEventValue("Courrier d'activation retourné")
     object ACTIVATION_DOC_REQUIRED extends ActionEventValue("Courrier d'activation à renvoyer")

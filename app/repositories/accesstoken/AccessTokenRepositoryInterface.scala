@@ -14,6 +14,8 @@ import scala.concurrent.Future
 
 trait AccessTokenRepositoryInterface extends CRUDRepositoryInterface[AccessToken] {
 
+  def fetchFollowUpToken(companyId: UUID): Future[Seq[AccessToken]]
+
   def fetchToken(company: Company, emailedTo: EmailAddress): Future[Option[AccessToken]]
 
   def fetchValidActivationToken(companyId: UUID): Future[Option[AccessToken]]

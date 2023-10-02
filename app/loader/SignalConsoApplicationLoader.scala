@@ -350,7 +350,8 @@ class SignalConsoComponents(
     pdfService,
     taskConfiguration,
     frontRoute,
-    emailConfiguration
+    emailConfiguration,
+    tokenConfiguration
   )
 
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)

@@ -12,6 +12,7 @@ import utils.SIRET
 
 import java.util.UUID
 import scala.concurrent.Future
+
 trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
 
   def searchWithReportsCount(
@@ -48,4 +49,6 @@ trait CompanyRepositoryInterface extends CRUDRepositoryInterface[Company] {
       brand: Option[String],
       country: Option[Country]
   ): Future[SIRET]
+
+  def getInactiveCompanies: Future[List[(Company, Int)]]
 }
