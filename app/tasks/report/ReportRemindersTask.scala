@@ -85,7 +85,7 @@ class ReportRemindersTask(
   ): Future[(List[List[UUID]], List[List[UUID]])] = {
     logger.info(s"Sending reminders for ${reportsWithUsers.length} reports")
     val reportsPerUsers = reportsWithUsers.groupBy(_._2).view.mapValues(_.map(_._1))
-    val reportsPerCompanyPerUsers = reportsPerUsers.mapValues(_.groupBy(_.companyId)).mapValues(_.values).toMap
+    val reportsPerCompanyPerUsers = reportsPerUsers.mapValues(_.groupBy(_.companyId)).mapValues(_.values)
 
     for {
       successesOrFailuresList <- Future.sequence(reportsPerCompanyPerUsers.toList.flatMap {
@@ -94,39 +94,45 @@ class ReportRemindersTask(
             val (readByPros, notReadByPros) = reports.partition(_.isReadByPro)
 
             for {
-              readByProsSent <-
-                if (readByPros.nonEmpty) test(readByPros, users, ProReportsReadReminder, EMAIL_PRO_REMIND_NO_ACTION)
-                else Future.successful(Right(List.empty))
-              notReadByProsSent <-
-                if (notReadByPros.nonEmpty)
-                  test(notReadByPros, users, ProReportsUnreadReminder, EMAIL_PRO_REMIND_NO_READING)
-                else Future.successful(Right(List.empty))
-            } yield List(readByProsSent, notReadByProsSent)
-
+              readByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                readByPros,
+                users,
+                ProReportsReadReminder,
+                EMAIL_PRO_REMIND_NO_ACTION
+              )
+              notReadByProsSent <- sendReminderEmailIfAtLeastOneReport(
+                notReadByPros,
+                users,
+                ProReportsUnreadReminder,
+                EMAIL_PRO_REMIND_NO_READING
+              )
+            } yield List(readByProsSent, notReadByProsSent).flatten
           }
       })
       (failures, successes) = successesOrFailuresList.flatten.partitionMap(identity)
-    } yield (failures.filter(_.nonEmpty), successes.filter(_.nonEmpty))
+    } yield (failures, successes)
   }
 
-  private def test(
+  private def sendReminderEmailIfAtLeastOneReport(
       reports: List[Report],
       users: List[User],
       email: (List[EmailAddress], List[Report], Period) => Email,
       action: ActionEventValue
-  ) = {
-    logger.infoWithTitle("report_reminders_task_item", s"Sending reports ${reports.map(_.id)}")
-    sendReminderEmail(reports, users, email, action).transform {
-      case Success(_) => Success(Right(reports.map(_.id)))
-      case Failure(err) =>
-        logger.errorWithTitle(
-          "report_reminders_task_item_error",
-          s"Error sending reminder email for reports ${reports.map(_.id)} to ${users.length} users",
-          err
-        )
-        Success(Left(reports.map(_.id)))
+  ): Future[Option[Either[List[UUID], List[UUID]]]] =
+    if (reports.nonEmpty) {
+      sendReminderEmail(reports, users, email, action).transform {
+        case Success(_) => Success(Some(Right(reports.map(_.id))))
+        case Failure(err) =>
+          logger.errorWithTitle(
+            "report_reminders_task_item_error",
+            s"Error sending reminder email for reports ${reports.map(_.id)} to ${users.length} users",
+            err
+          )
+          Success(Some(Left(reports.map(_.id))))
+      }
+    } else {
+      Future.successful(None)
     }
-  }
 
   private def shouldSendReminderEmail(
       report: Report,
@@ -155,25 +161,9 @@ class ReportRemindersTask(
   ): Future[Unit] = {
     val emailAddresses = users.map(_.email)
 
-    logger.debug(s"Sending reminder email")
+    logger.infoWithTitle("report_reminders_task_item", s"Sending reports ${reports.map(_.id)}")
     for {
       _ <- mailService.send(email(emailAddresses, reports, delayBetweenReminderEmails))
-      _ <- Future.sequence(
-        reports.map { report =>
-          eventRepository.create(
-            Event(
-              UUID.randomUUID(),
-              Some(report.id),
-              report.companyId,
-              None,
-              OffsetDateTime.now(),
-              SYSTEM,
-              action,
-              stringToDetailsJsValue(s"Relance envoyée à ${emailAddresses.mkString(", ")}")
-            )
-          )
-        }
-      )
       _ <- Future.sequence(
         reports.map { report =>
           eventRepository.create(
