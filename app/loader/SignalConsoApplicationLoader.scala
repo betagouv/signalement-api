@@ -650,11 +650,14 @@ class SignalConsoComponents(
   val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
   val siretExtractorController = new SiretExtractorController(siretExtractorService, silhouette, controllerComponents)
 
-  val importController = new ImportController(
+  val importOrchestrator = new ImportOrchestrator(
     companyRepository,
     companySyncService,
     userOrchestrator,
-    proAccessTokenOrchestrator,
+    proAccessTokenOrchestrator
+  )
+  val importController = new ImportController(
+    importOrchestrator,
     silhouette,
     controllerComponents
   )

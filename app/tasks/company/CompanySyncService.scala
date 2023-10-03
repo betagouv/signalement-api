@@ -11,6 +11,7 @@ import sttp.client3.basicRequest
 import sttp.client3.playJson.asJson
 import sttp.client3.playJson.playJsonBodySerializer
 import sttp.model.Header
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -21,6 +22,7 @@ import scala.concurrent.Future
 trait CompanySyncServiceInterface {
   def syncCompanies(companies: Seq[Company], lastUpdated: OffsetDateTime): Future[List[CompanySearchResult]]
   def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]]
+  def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]]
   def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]]
 }
 
@@ -28,6 +30,9 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
     executionContext: ExecutionContext
 ) extends CompanySyncServiceInterface {
   val logger: Logger = Logger(this.getClass)
+
+  val SearchEndpoint = "/api/companies/search"
+  val SirenSearchEndpoint = "/api/companies/siren/search"
 
   private val backend: SttpBackend[Future, capabilities.WebSockets] = HttpClientFutureBackend()
 
@@ -40,6 +45,7 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
       .post(
         uri"${companyUpdateConfiguration.etablissementApiUrl}"
+          .withWholePath(SearchEndpoint)
           .addParam("lastUpdated", Some(lastUpdated.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)))
       )
       .body(companies.map(_.siret))
@@ -62,7 +68,7 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
   override def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]] = {
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
-      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}".withWholePath(SearchEndpoint))
       .body(List(siret))
       .response(asJson[List[CompanySearchResult]])
 
@@ -84,7 +90,7 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
   override def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]] = {
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
-      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}")
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}".withWholePath(SearchEndpoint))
       .body(sirets)
       .response(asJson[List[CompanySearchResult]])
 
@@ -96,6 +102,25 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
         case Right(companyList) => companyList
         case Left(value) =>
           logger.warn("Error calling companiesBySirets", value)
+          List.empty
+      }
+  }
+
+  override def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]] = {
+    val request = basicRequest
+      .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
+      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}".withWholePath(SirenSearchEndpoint))
+      .body(siren)
+      .response(asJson[List[CompanySearchResult]])
+
+    val response =
+      request.send(backend)
+    response
+      .map(_.body)
+      .map {
+        case Right(companyList) => companyList
+        case Left(value) =>
+          logger.warn("Error calling companyBySiren", value)
           List.empty
       }
   }

@@ -11,6 +11,7 @@ import models.website.Website
 import models.website.WebsiteId
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
+import tasks.company.CompanySearchResult
 import utils.Constants.ActionEvent.ActionEventValue
 import utils.Constants.EventType.EventTypeValue
 
@@ -105,6 +106,25 @@ object Fixtures {
     isHeadOffice = false,
     isPublic = true,
     brand = brand
+  )
+
+  def genCompanySearchResult(siren: Option[SIREN]) = for {
+    siret <- siren
+      .map(s => Gen.choose(0, 99999).map(randInt => SIRET.fromUnsafe(s.value + ("" + randInt takeRight 5))))
+      .getOrElse(genSiret())
+    name <- arbString.arbitrary
+    brand <- Gen.option(arbString.arbitrary)
+    address <- genAddress()
+  } yield CompanySearchResult(
+    siret = siret,
+    name = Some(name),
+    brand = brand,
+    isHeadOffice = false,
+    address = address,
+    activityCode = None,
+    activityLabel = None,
+    isOpen = true,
+    isPublic = true
   )
 
   val genInfluencer = for {
