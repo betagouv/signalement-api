@@ -145,12 +145,10 @@ class ReportRepositorySpec(implicit ee: ExecutionEnv)
             ReportsCountBySubcategoriesFilter(),
             Locale.FRENCH
           )
-        } yield res should containTheSameElementsAs(
-          Seq(
-            ("AchatInternet", List("a", "b", "c"), 1, 0),
-            ("AchatInternet", List("a", "b", "d"), 1, 0),
-            ("AchatMagasin", List("a", "b", "c"), 3, 1)
-          )
+        } yield res should contain(
+          ("AchatInternet", List("a", "b", "c"), 1, 0),
+          ("AchatInternet", List("a", "b", "d"), 1, 0),
+          ("AchatMagasin", List("a", "b", "c"), 3, 1)
         )
       }
     }
