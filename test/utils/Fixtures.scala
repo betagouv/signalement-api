@@ -26,6 +26,16 @@ object Fixtures {
 
   val genGender = Gen.oneOf(Some(Gender.Female), Some(Gender.Male), None)
 
+  val genConsumer = for {
+    id <- arbitrary[UUID]
+    name <- arbString.arbitrary
+    apiKey <- arbString.arbitrary
+  } yield Consumer(
+    id = id,
+    name = name,
+    apiKey = apiKey
+  )
+
   val genUser = for {
     id <- arbitrary[UUID]
     password <- arbString.arbitrary

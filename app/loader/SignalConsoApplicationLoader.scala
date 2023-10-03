@@ -453,13 +453,12 @@ class SignalConsoComponents(
     messagesApi
   )
   val reportReminderTask = new ReportRemindersTask(
-    actorSystem,
     reportRepository,
     eventRepository,
     mailService,
-    companiesVisibilityOrchestrator,
-    taskConfiguration
+    companiesVisibilityOrchestrator
   )
+  reportReminderTask.schedule(actorSystem, taskConfiguration)
 
   def companySyncService: CompanySyncServiceInterface = new CompanySyncService(
     applicationConfiguration.task.companyUpdate
