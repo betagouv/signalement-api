@@ -250,20 +250,27 @@ class AdminController(
       ProResponseAcknowledgment(genReport, genReportResponse, genUser.copy(email = recipient))
     ),
     "pro.report_notification" -> (recipient => ProNewReportNotification(NonEmptyList.of(recipient), genReport)),
-    "pro.reports_transmitted_reminder" -> (recipient =>
+    "pro.reports_transmitted_reminder" -> (recipient => {
+      val report1 = genReport
+      val report2 = genReport.copy(companyId = report1.companyId)
+      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
       ProReportsReadReminder(
         List(recipient),
-        List(genReport, genReport, genReport.copy(expirationDate = OffsetDateTime.now().plusDays(5))),
+        List(report1, report2, report3),
         Period.ofDays(7)
       )
-    ),
-    "pro.reports_unread_reminder" -> (recipient =>
+    }),
+    "pro.reports_unread_reminder" -> (recipient => {
+      val report1 = genReport
+      val report2 = genReport.copy(companyId = report1.companyId)
+      val report3 = genReport.copy(companyId = report1.companyId, expirationDate = OffsetDateTime.now().plusDays(5))
+
       ProReportsUnreadReminder(
         List(recipient),
-        List(genReport, genReport, genReport.copy(expirationDate = OffsetDateTime.now().plusDays(5))),
+        List(report1, report2, report3),
         Period.ofDays(7)
       )
-    ),
+    }),
     "dgccrf.access_link" ->
       (DgccrfAccessLink(_, frontRoute.dashboard.Dgccrf.register(token = "abc"))),
     "dgccrf.validate_email" ->
