@@ -10,8 +10,8 @@ object EmailSubjects {
   val VALIDATE_EMAIL = "Veuillez valider cette adresse email"
   val NEW_REPORT = "Nouveau signalement"
   val REPORT_ACK_PRO = "Votre réponse au signalement"
-  val REPORT_UNREAD_REMINDER = "Nouveau signalement"
-  val REPORT_TRANSMITTED_REMINDER = "Signalement en attente de réponse"
+  val REPORT_UNREAD_REMINDER = "Nouveau(x) signalement(s)"
+  val REPORT_TRANSMITTED_REMINDER = "Signalement(s) en attente de réponse"
   val REPORT_NOTIF_DGCCRF = (cnt: Int, additional: Option[String]) =>
     s"[SignalConso] ${additional.getOrElse("")}${if (cnt > 1) s"${cnt} nouveaux signalements"
       else "Un nouveau signalement"}"

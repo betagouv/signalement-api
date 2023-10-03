@@ -42,8 +42,13 @@ class MailService(
 
   /** Filter pro user recipients that are excluded from notifications and send email
     */
-  private def filterBlockedAndSend(email: ProFilteredEmail): Future[Unit] =
-    email.report.companyId match {
+  private def filterBlockedAndSend(email: ProFilteredEmail): Future[Unit] = {
+    val maybeCompanyId = email match {
+      case email: ProFilteredEmailSingleReport   => email.report.companyId
+      case email: ProFilteredEmailMultipleReport => email.reports.headOption.flatMap(_.companyId)
+    }
+
+    maybeCompanyId match {
       case Some(companyId) =>
         reportNotificationBlocklistRepo
           .filterBlockedEmails(email.recipients, companyId)
@@ -59,6 +64,7 @@ class MailService(
         logger.debug("No company linked to report, not sending emails")
         Future.successful(())
     }
+  }
 
   private def filterEmail(recipients: Seq[EmailAddress]): Seq[EmailAddress] =
     recipients.filter(_.nonEmpty).filter { emailAddress =>
