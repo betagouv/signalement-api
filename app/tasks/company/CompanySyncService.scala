@@ -110,7 +110,7 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
       .post(uri"${companyUpdateConfiguration.etablissementApiUrl}".withWholePath(SirenSearchEndpoint))
-      .body(siren)
+      .body(List(siren))
       .response(asJson[List[CompanySearchResult]])
 
     val response =
