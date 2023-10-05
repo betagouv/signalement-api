@@ -109,7 +109,11 @@ class CompanySyncService(companyUpdateConfiguration: CompanyUpdateTaskConfigurat
   override def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]] = {
     val request = basicRequest
       .headers(Header("X-Api-Key", companyUpdateConfiguration.etablissementApiKey))
-      .post(uri"${companyUpdateConfiguration.etablissementApiUrl}".withWholePath(SirenSearchEndpoint))
+      .post(
+        uri"${companyUpdateConfiguration.etablissementApiUrl}"
+          .withWholePath(SirenSearchEndpoint)
+          .addParam("onlyHeadOffice", Some("false"))
+      )
       .body(List(siren))
       .response(asJson[List[CompanySearchResult]])
 
