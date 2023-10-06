@@ -84,7 +84,7 @@ object Email {
       invitationUrl: URI
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = s"Rejoignez l'entreprise ${siren} sur SignalConso"
+    override val subject: String = EmailSubjects.PRO_COMPANIES_ACCESSES_INVITATIONS(siren)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (_, _) =>
@@ -112,7 +112,7 @@ object Email {
       siren: SIREN
   ) extends ProEmail {
     override val recipients: List[EmailAddress] = List(recipient)
-    override val subject: String = s"Vous avez maintenant accès à l'entreprise ${siren} sur SignalConso"
+    override val subject: String = EmailSubjects.PRO_NEW_COMPANIES_ACCESSES(siren)
 
     override def getBody: (FrontRoute, EmailAddress) => String =
       (frontRoute, _) =>
