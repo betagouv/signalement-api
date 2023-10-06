@@ -17,7 +17,9 @@ import repositories.company.CompanyRepositoryInterface
 import repositories.companyaccess.CompanyAccessRepositoryInterface
 import repositories.event.EventRepositoryInterface
 import repositories.user.UserRepositoryInterface
+import services.Email.ProCompaniesAccessesInvitations
 import services.Email.ProCompanyAccessInvitation
+import services.Email.ProNewCompaniesAccesses
 import services.Email.ProNewCompanyAccess
 import services.MailServiceInterface
 import utils.Constants.ActionEvent
@@ -25,6 +27,7 @@ import utils.Constants.EventType
 import utils.EmailAddress
 import utils.FrontRoute
 import utils.PasswordComplexityHelper
+import utils.SIREN
 import utils.SIRET
 
 import java.time.OffsetDateTime
@@ -32,6 +35,27 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
+trait ProAccessTokenOrchestratorInterface {
+  def listProPendingToken(company: Company, user: User): Future[List[ProAccessToken]]
+  def proFirstActivationCount(ticks: Option[Int]): Future[Seq[CountByDate]]
+  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit]
+  def fetchCompanyUserActivationToken(siret: SIRET, token: String): Future[CompanyUserActivationToken]
+  def addUserOrInvite(
+      company: Company,
+      email: EmailAddress,
+      level: AccessLevel,
+      invitedBy: Option[User]
+  ): Future[Unit]
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
+  def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit]
+  def sendInvitation(company: Company, email: EmailAddress, level: AccessLevel, invitedBy: Option[User]): Future[Unit]
+  def sendInvitations(
+      companies: List[Company],
+      email: EmailAddress,
+      level: AccessLevel
+  ): Future[Unit]
+}
 
 class ProAccessTokenOrchestrator(
     userOrchestrator: UserOrchestratorInterface,
@@ -43,7 +67,8 @@ class ProAccessTokenOrchestrator(
     mailService: MailServiceInterface,
     frontRoute: FrontRoute,
     tokenConfiguration: TokenConfiguration
-)(implicit val executionContext: ExecutionContext) {
+)(implicit val executionContext: ExecutionContext)
+    extends ProAccessTokenOrchestratorInterface {
 
   val logger = Logger(this.getClass)
   implicit val timeout: akka.util.Timeout = 5.seconds
@@ -56,12 +81,12 @@ class ProAccessTokenOrchestrator(
         ProAccessToken(token.id, token.companyLevel, token.emailedTo, token.expirationDate, token.token, user.userRole)
       }
 
-  def proFirstActivationCount(ticks: Option[Int]) =
+  def proFirstActivationCount(ticks: Option[Int]): Future[Seq[CountByDate]] =
     companyAccessRepository
       .proFirstActivationCount(ticks.getOrElse(12))
       .map(StatsOrchestrator.formatStatData(_, ticks.getOrElse(12)))
 
-  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET) = for {
+  def activateProUser(draftUser: DraftUser, token: String, siret: SIRET): Future[Unit] = for {
     _ <- Future(PasswordComplexityHelper.validatePasswordComplexity(draftUser.password))
     token <- fetchCompanyToken(token, siret)
     user <- userOrchestrator.createUser(draftUser, token, UserRole.Professionnel)
@@ -133,11 +158,21 @@ class ProAccessTokenOrchestrator(
         sendInvitation(company, email, level, invitedBy)
     }
 
-  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]) =
+  def addInvitedUserAndNotify(user: User, company: Company, level: AccessLevel, invitedBy: Option[User]): Future[Unit] =
     for {
       _ <- accessTokenRepository.giveCompanyAccess(company, user, level)
       _ <- mailService.send(ProNewCompanyAccess(user.email, company, invitedBy))
       _ = logger.debug(s"User ${user.id} may now access company ${company.id}")
+    } yield ()
+
+  def addInvitedUserAndNotify(user: User, companies: List[Company], level: AccessLevel): Future[Unit] =
+    for {
+      _ <- Future.sequence(companies.map(company => accessTokenRepository.giveCompanyAccess(company, user, level)))
+      _ <- companies match {
+        case Nil    => Future.successful(())
+        case c :: _ => mailService.send(ProNewCompaniesAccesses(user.email, companies, SIREN.fromSIRET(c.siret)))
+      }
+      _ = logger.debug(s"User ${user.id} may now access companies ${companies.map(_.siret)}")
     } yield ()
 
   private def genInvitationToken(
@@ -183,6 +218,34 @@ class ProAccessTokenOrchestrator(
         )
       )
       _ = logger.debug(s"Token sent to ${email} for company ${company.id}")
+    } yield ()
+
+  def sendInvitations(
+      companies: List[Company],
+      email: EmailAddress,
+      level: AccessLevel
+  ): Future[Unit] =
+    for {
+      list <- Future.sequence(
+        companies.map(company =>
+          genInvitationToken(company, level, tokenConfiguration.companyJoinDuration, email).map(token =>
+            token -> company
+          )
+        )
+      )
+      _ <- list match {
+        case Nil => Future.successful(())
+        case (tokenCode, c) :: _ =>
+          mailService.send(
+            ProCompaniesAccessesInvitations(
+              recipient = email,
+              companies = list.map(_._2),
+              siren = SIREN.fromSIRET(c.siret),
+              invitationUrl = frontRoute.dashboard.Pro.register(c.siret, tokenCode)
+            )
+          )
+      }
+      _ = logger.debug(s"Token sent to ${email} for companies ${companies}")
     } yield ()
 
 }

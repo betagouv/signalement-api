@@ -454,4 +454,11 @@ object AppError {
     override val details: String = s"Le mot de passe choisi ne respecte pas les critères demandés"
     override val titleForLogs: String = "pwd_not_complex_enough"
   }
+
+  final case object EmptyEmails extends BadRequestError {
+    override val `type`: String = "SC-0048"
+    override val title: String = ""
+    override val details: String = ""
+    override val titleForLogs: String = ""
+  }
 }

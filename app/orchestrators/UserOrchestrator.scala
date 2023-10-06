@@ -30,6 +30,8 @@ trait UserOrchestratorInterface {
 
   def find(emailAddress: EmailAddress): Future[Option[User]]
 
+  def list(emailAddresses: List[EmailAddress]): Future[Seq[User]]
+
   def edit(userId: UUID, update: UserUpdate): Future[Option[User]]
 
   def softDelete(targetUserId: UUID, currentUserId: UUID): Future[Unit]
@@ -94,4 +96,6 @@ class UserOrchestrator(userRepository: UserRepositoryInterface, eventRepository:
       _ <- userRepository.softDelete(targetUserId).map(_ => ())
     } yield ()
 
+  override def list(emailAddresses: List[EmailAddress]): Future[Seq[User]] =
+    userRepository.findByEmails(emailAddresses)
 }
