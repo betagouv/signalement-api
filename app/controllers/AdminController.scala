@@ -24,6 +24,8 @@ import models.report.WebsiteURL
 import orchestrators.ReportFileOrchestrator
 import play.api.Logger
 import play.api.i18n.Lang
+import play.api.i18n.Messages
+import play.api.i18n.MessagesImpl
 import play.api.libs.json.JsError
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -69,7 +71,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import play.api.i18n.MessagesImpl
 class AdminController(
     val silhouette: Silhouette[AuthEnv],
     reportRepository: ReportRepositoryInterface,
@@ -86,7 +87,7 @@ class AdminController(
     extends BaseController(controllerComponents) {
 
   val logger: Logger = Logger(this.getClass)
-  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
   implicit val timeout: akka.util.Timeout = 5.seconds
 
   val dummyURL = java.net.URI.create("https://lien-test")
@@ -193,7 +194,7 @@ class AdminController(
 
   case class EmailContent(subject: String, body: play.twirl.api.Html)
 
-  implicit val messagesProvider = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
+  implicit val messagesProvider: Messages = MessagesImpl(Lang(Locale.FRENCH), controllerComponents.messagesApi)
   val availablePdfs = Seq[(String, Html)](
     "accountActivation" -> views.html.pdfs.accountActivation(
       genCompany,

@@ -7,11 +7,9 @@ import akka.Done
 import akka.actor.typed._
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
-
 import config.UploadConfiguration
 import models.report.ReportFile
 import play.api.Logger
-
 import repositories.reportfile.ReportFileRepositoryInterface
 import services.S3ServiceInterface
 
@@ -21,11 +19,17 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.sys.process._
 import utils.Logs.RichLogger
+
+import scala.util.Failure
+import scala.util.Success
 object AntivirusScanActor {
   type Message = ScanCommand
   sealed trait ScanCommand
   final case class ScanFromFile(reportFile: ReportFile, file: java.io.File) extends ScanCommand
+  final case object ScanFromFileSuccess extends ScanCommand
+  final case object ScanFromFileFailed extends ScanCommand
   final case class ScanFromBucket(reportFile: ReportFile) extends ScanCommand
+  final case class ScanFromBucketFailed(reportFile: ReportFile) extends ScanCommand
 
   val logger: Logger = Logger(this.getClass)
 
@@ -55,18 +59,25 @@ object AntivirusScanActor {
             s"Rescanning file ${reportFile.id.value} : ${reportFile.storageFilename}"
           )
           val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
-          for {
-            _ <- s3Service.downloadOnCurrentHost(
-              reportFile.storageFilename,
-              filePath
-            )
-            file = new File(filePath)
-          } yield context.self ! ScanFromFile(reportFile, file)
+          context.pipeToSelf(s3Service.downloadOnCurrentHost(reportFile.storageFilename, filePath)) {
+            case Success(_) =>
+              val file = new File(filePath)
+              ScanFromFile(reportFile, file)
+            case Failure(_) =>
+              ScanFromBucketFailed(reportFile)
+          }
+          Behaviors.same
+
+        case ScanFromBucketFailed(reportFile: ReportFile) =>
+          logger.warnWithTitle(
+            "scan_rescanning_file_failed",
+            s"failed to scan from bucket ${reportFile.storageFilename}"
+          )
           Behaviors.same
 
         case ScanFromFile(reportFile: ReportFile, file: java.io.File) =>
           val filePath = s"${uploadConfiguration.downloadDirectory}/${reportFile.filename}"
-          for {
+          val result = for {
             existingFile <- {
               if (file.exists()) {
                 Future.successful(file)
@@ -109,6 +120,19 @@ object AntivirusScanActor {
                 Future.successful(Done)
             }
           } yield Done
+
+          context.pipeToSelf(result) {
+            case Success(_) => ScanFromFileSuccess
+            case Failure(_) => ScanFromFileFailed
+          }
+
+          Behaviors.same
+
+        case ScanFromFileSuccess =>
+          logger.debug("Scan from file succeeded")
+          Behaviors.same
+        case ScanFromFileFailed =>
+          logger.warnWithTitle("scan_from_file_failed", s"Scan from file failed")
           Behaviors.same
       }
     }

@@ -145,8 +145,8 @@ class SignalConsoComponents(
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
-  val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
-  implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
+  val csvStringListReader: ConfigReader[List[String]] = ConfigReader[String].map(_.split(",").toList)
+  implicit val stringListReader: ConfigReader[List[String]] = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
@@ -279,7 +279,7 @@ class SignalConsoComponents(
     actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
 
   val pdfService = new PDFService(signalConsoConfiguration, htmlConverterActor)
-  implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
+  implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
   val mailService = new MailService(

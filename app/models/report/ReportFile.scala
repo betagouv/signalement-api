@@ -12,9 +12,8 @@ object ReportFileOrigin {
   val CONSUMER = ReportFileOrigin("consumer")
   val PROFESSIONAL = ReportFileOrigin("professional")
 
-  implicit def reportFileOriginWrites = new Writes[ReportFileOrigin] {
-    def writes(reportFileOrigin: ReportFileOrigin) = Json.toJson(reportFileOrigin.value)
-  }
+  implicit def reportFileOriginWrites: Writes[ReportFileOrigin] = (reportFileOrigin: ReportFileOrigin) =>
+    Json.toJson(reportFileOrigin.value)
   implicit val reportFileOriginReads: Reads[ReportFileOrigin] = JsPath.read[String].map(ReportFileOrigin(_))
 }
 

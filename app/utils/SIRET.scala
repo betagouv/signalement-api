@@ -3,6 +3,8 @@ package utils
 import controllers.error.AppError.MalformedSIRET
 import play.api.libs.json._
 import repositories.PostgresProfile.api._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 
 case class SIRET private (value: String) extends AnyVal {
   override def toString = value
@@ -26,14 +28,15 @@ object SIRET {
 
   def isValid(siret: String): Boolean = siret.matches(SIRET.pattern)
 
-  implicit val siretColumnType = MappedColumnType.base[SIRET, String](
+  implicit val siretColumnType: JdbcType[SIRET] with BaseTypedType[SIRET] = MappedColumnType.base[SIRET, String](
     _.value,
     SIRET.fromUnsafe
   )
-  implicit val siretListColumnType = MappedColumnType.base[List[SIRET], List[String]](
-    _.map(_.value),
-    _.map(SIRET.fromUnsafe)
-  )
+  implicit val siretListColumnType: JdbcType[List[SIRET]] with BaseTypedType[List[SIRET]] =
+    MappedColumnType.base[List[SIRET], List[String]](
+      _.map(_.value),
+      _.map(SIRET.fromUnsafe)
+    )
   implicit val siretWrites: Writes[SIRET] = Json.valueWrites[SIRET]
   implicit val siretReads: Reads[SIRET] = Reads.StringReads.map(SIRET.fromUnsafe) // To use the apply method
 }

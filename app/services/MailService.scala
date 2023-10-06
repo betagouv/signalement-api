@@ -25,7 +25,7 @@ class MailService(
 
   private[this] val logger = Logger(this.getClass)
   private[this] val mailFrom = emailConfiguration.from
-  implicit private[this] val contactAddress = emailConfiguration.contactAddress
+  implicit private[this] val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
   override def send(
       email: Email

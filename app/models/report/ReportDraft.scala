@@ -9,6 +9,7 @@ import models.report.ReportTag.TranslationReportTagReads
 import models.report.reportfile.ReportFileId
 import models.report.reportmetadata.ReportMetadataDraft
 import play.api.libs.json.OFormat
+import play.api.libs.json.Reads
 import utils.EmailAddress
 import utils.SIRET
 import utils.URL
@@ -117,7 +118,7 @@ object ReportDraft {
   /** Used as workaround to parse values from their translation as signalement-app is pushing transaction instead of
     * entry name Make sure no translated values is passed as ReportTag to remove this reads
     */
-  implicit val reportTagReads = TranslationReportTagReads
+  implicit val reportTagReads: Reads[ReportTag] = TranslationReportTagReads
   @nowarn
   implicit val draftReportReads: OFormat[ReportDraft] = Jsonx.formatCaseClass[ReportDraft]
 

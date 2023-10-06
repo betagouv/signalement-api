@@ -33,7 +33,7 @@ trait PostgresProfile
       with SearchImplicits
       with SearchAssistants {
 
-    implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
+    implicit val strListTypeMapper: DriverJdbcType[List[String]] = new SimpleArrayJdbcType[String]("text").to(_.toList)
 
     val SubstrSQLFunction = SimpleFunction.ternary[String, Int, Int, String]("substr")
 

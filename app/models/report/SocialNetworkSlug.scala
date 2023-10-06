@@ -3,6 +3,8 @@ package models.report
 import enumeratum.EnumEntry
 import enumeratum.PlayEnum
 import repositories.PostgresProfile.api._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 
 sealed trait SocialNetworkSlug extends EnumEntry
 
@@ -18,8 +20,9 @@ object SocialNetworkSlug extends PlayEnum[SocialNetworkSlug] {
   case object Snapchat extends SocialNetworkSlug
   case object Twitch extends SocialNetworkSlug
 
-  implicit val socialNetworkSlugColumnType = MappedColumnType.base[SocialNetworkSlug, String](
-    _.entryName,
-    SocialNetworkSlug.withName
-  )
+  implicit val socialNetworkSlugColumnType: JdbcType[SocialNetworkSlug] with BaseTypedType[SocialNetworkSlug] =
+    MappedColumnType.base[SocialNetworkSlug, String](
+      _.entryName,
+      SocialNetworkSlug.withName
+    )
 }

@@ -41,8 +41,7 @@ class ReportedPhoneController(
               reports
                 .groupBy(report => (report.phone, report.companySiret, report.companyName, report.category))
                 .collect {
-                  case ((Some(phone), siretOpt, companyNameOpt, category), reports)
-                      if q.map(phone.contains(_)).getOrElse(true) =>
+                  case ((Some(phone), siretOpt, companyNameOpt, category), reports) if q.forall(phone.contains(_)) =>
                     ((phone, siretOpt, companyNameOpt, category), reports.length)
                 }
                 .map { case ((phone, siretOpt, companyNameOpt, category), count) =>

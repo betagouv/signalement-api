@@ -32,7 +32,7 @@ class AccountController(
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val contactAddress = emailConfiguration.contactAddress
+  implicit val contactAddress: EmailAddress = emailConfiguration.contactAddress
 
   def fetchUser = SecuredAction.async { implicit request =>
     for {

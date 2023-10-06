@@ -31,7 +31,7 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) {
 
-  implicit val session = SlickSession.forConfig("slick.dbs.default")
+  implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
 
   actorSystem.registerOnTermination(() => session.close())
 

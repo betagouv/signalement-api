@@ -76,10 +76,8 @@ package object tasks {
             logger.errorWithTitle("task_failed", s"$taskName failed", err)
         }
       } else logger.info(s"$taskName not launched, tasks are disabled")
-      ()
     }
     logger.info(s"$taskName scheduled for $startTime (in $initialDelay)")
-    ()
   }
 
   def getTodayAtStartOfDayParis() =

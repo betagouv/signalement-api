@@ -19,13 +19,9 @@ object ReportedPhoneStatus {
   def fromValue(v: String) =
     values.find(_.value == v).head
 
-  implicit val reads = new Reads[ReportedPhoneStatus] {
-    def reads(json: JsValue): JsResult[ReportedPhoneStatus] = json.validate[String].map(fromValue)
-  }
+  implicit val reads: Reads[ReportedPhoneStatus] = (json: JsValue) => json.validate[String].map(fromValue)
 
-  implicit val writes = new Writes[ReportedPhoneStatus] {
-    def writes(status: ReportedPhoneStatus) = Json.toJson(status.value)
-  }
+  implicit val writes: Writes[ReportedPhoneStatus] = (status: ReportedPhoneStatus) => Json.toJson(status.value)
 }
 
 case class ReportedPhoneUpdateCompany(

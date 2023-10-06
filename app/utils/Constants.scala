@@ -12,9 +12,8 @@ object Constants {
     case class EventTypeValue(value: String)
 
     object EventTypeValue {
-      implicit val eventTypeValueWrites = new Writes[EventTypeValue] {
-        def writes(eventTypeValue: EventTypeValue) = Json.toJson(eventTypeValue.value)
-      }
+      implicit val eventTypeValueWrites: Writes[EventTypeValue] = (eventTypeValue: EventTypeValue) =>
+        Json.toJson(eventTypeValue.value)
       implicit val eventTypeValueReads: Reads[EventTypeValue] =
         JsPath.read[String].map(fromValue(_))
     }
@@ -50,7 +49,7 @@ object Constants {
 
     object ActionEventValue {
       implicit val actionEventValueReads: Reads[ActionEventValue] = JsPath.read[String].map(fromValue(_))
-      implicit val actionEventValueWriter = Json.writes[ActionEventValue]
+      implicit val actionEventValueWriter: OWrites[ActionEventValue] = Json.writes[ActionEventValue]
     }
 
     @Deprecated
