@@ -6,6 +6,7 @@ import models.company.SearchCompanyIdentity.SearchCompanyIdentityRCS
 import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiren
 import models.company.SearchCompanyIdentity.SearchCompanyIdentitySiret
 import models._
+import models.company.Address
 import models.company.Company
 import models.company.CompanyRegisteredSearch
 import models.report.ReportStatus.statusWithProResponse
@@ -20,7 +21,12 @@ import utils.SIREN
 import utils.SIRET
 import repositories.CRUDRepository
 import slick.basic.DatabaseConfig
+import utils.Constants.ActionEvent.POST_FOLLOW_UP_DOC
+import utils.Constants.ActionEvent.REPORT_CLOSED_BY_NO_READING
 
+import java.sql.Timestamp
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -176,5 +182,132 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
           .update((isHeadOffice, isOpen, isPublic, number, street, addressSupplement, name, brand, country))
       )
       .map(_ => siret)
+
+  override def getInactiveCompanies: Future[List[(Company, Int)]] = {
+    val query = sql"""
+       WITH ignored_reports_on_period AS (
+             SELECT
+                 reports.company_id,
+                 COUNT(reports.id) AS count_ignored
+             FROM reports
+                  INNER JOIN events ON reports.id = events.report_id
+                  WHERE events.action = ${REPORT_CLOSED_BY_NO_READING.value}
+                    AND reports.creation_date >= NOW() - INTERVAL '3 months'
+             GROUP BY
+                 reports.company_id
+       ),
+           count_reports_on_period AS (
+                   SELECT
+                       company_id,
+                       COUNT(reports.id) AS nb_reports
+                   FROM
+                       reports
+                   WHERE
+                           reports.creation_date >= NOW() - INTERVAL '3 months'
+                   GROUP BY
+                       company_id
+               ),
+            count_follow_up_on_period AS (
+                    SELECT
+                        company_id,
+                        COALESCE(COUNT(events.id), 0) AS nb_follow_up
+                    FROM
+                        events
+                    WHERE
+                      events.creation_date >= NOW() - INTERVAL '3 months'
+                      AND events.action = ${POST_FOLLOW_UP_DOC.value}
+                    GROUP BY
+                        company_id
+                )
+       SELECT
+          c.id, c.siret, c.creation_date, c.name, c.activity_code,
+          c.street_number, c.street, c.address_supplement, c.city, c.postal_code,
+          c.is_headoffice, c.is_open, c.is_public, c.brand,c.country,
+          COALESCE(ir.count_ignored, 0) AS count_ignored
+       FROM
+          companies c
+          LEFT JOIN ignored_reports_on_period ir ON c.id = ir.company_id
+          LEFT JOIN count_reports_on_period ar ON c.id = ar.company_id
+          LEFT OUTER JOIN count_follow_up_on_period cf ON c.id = cf.company_id
+       WHERE
+          EXISTS (
+             SELECT 1
+             FROM
+                company_accesses ca
+                INNER JOIN users u ON ca.user_id = u.id
+                INNER JOIN auth_attempts aa ON u.email = aa.login
+             WHERE
+                c.id = ca.company_id
+                AND aa.is_success = true
+          )
+          AND
+          COALESCE(ir.count_ignored, 0) = COALESCE(ar.nb_reports, 0)
+          AND COALESCE(cf.nb_follow_up, 0) = 0
+          AND c.is_open = true
+          AND COALESCE(ar.nb_reports, 0) > 0;
+    """.as[
+      (
+          String,
+          String,
+          Timestamp,
+          String,
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[String],
+          Option[String],
+          Boolean,
+          Boolean,
+          Boolean,
+          Option[String],
+          Option[String],
+          Int
+      )
+    ]
+
+    db.run(query).map { rows =>
+      rows.map {
+        case (
+              id,
+              siret,
+              creationDate,
+              name,
+              activityCode,
+              streetNumber,
+              street,
+              addressSupplement,
+              city,
+              postalCode,
+              isHeadOffice,
+              isOpen,
+              isPublic,
+              brand,
+              country,
+              countIgnored
+            ) =>
+          val company = Company(
+            id = UUID.fromString(id),
+            siret = SIRET.fromUnsafe(siret),
+            creationDate = OffsetDateTime.ofInstant(creationDate.toInstant, ZoneOffset.UTC),
+            name = name,
+            address = Address(
+              number = streetNumber,
+              street = street,
+              addressSupplement = addressSupplement,
+              postalCode = postalCode,
+              city = city,
+              country = country.map(Country.fromCode)
+            ),
+            activityCode = activityCode,
+            isHeadOffice = isHeadOffice,
+            isOpen = isOpen,
+            isPublic = isPublic,
+            brand = brand
+          )
+          (company, countIgnored)
+      }.toList
+    }
+  }
 
 }

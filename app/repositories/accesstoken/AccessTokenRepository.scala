@@ -5,6 +5,7 @@ import models.company.AccessLevel
 import models.company.Company
 import repositories.PostgresProfile.api._
 import models.token.TokenKind
+import models.token.TokenKind.CompanyFollowUp
 import models.token.TokenKind.CompanyInit
 import models.token.TokenKind.DGCCRFAccount
 import repositories.accesstoken.AccessTokenColumnType._
@@ -17,6 +18,7 @@ import repositories.companyaccess.CompanyAccessRepositoryInterface
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import utils.EmailAddress
+
 import java.sql.Timestamp
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -62,12 +64,21 @@ class AccessTokenRepository(
         .headOption
     )
 
+  override def fetchFollowUpToken(companyId: UUID): Future[Seq[AccessToken]] =
+    db.run(
+      table
+        .filter(_.companyId === companyId)
+        .filter(_.kind === (CompanyFollowUp: TokenKind))
+        .filter(_.level === AccessLevel.ADMIN)
+        .result
+    )
+
   override def findActivationToken(companyId: UUID, token: String): Future[Option[AccessToken]] =
     db.run(
       table
         .filter(_.companyId === companyId)
         .filter(_.token === token)
-        .filter(_.kind === (CompanyInit: TokenKind))
+        .filter(c => c.kind === (CompanyInit: TokenKind) || c.kind === (CompanyFollowUp: TokenKind))
         .filter(_.level === AccessLevel.ADMIN)
         .sortBy(_.creationDate.desc)
         .result

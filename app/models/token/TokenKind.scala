@@ -13,6 +13,7 @@ object TokenKind extends PlayEnum[TokenKind] {
   val values = findValues
 
   case object CompanyInit extends TokenKind
+  case object CompanyFollowUp extends TokenKind
   case object CompanyJoin extends TokenKind
   case object ValidateEmail extends TokenKind
   case object DGCCRFAccount extends AdminOrDgccrfTokenKind

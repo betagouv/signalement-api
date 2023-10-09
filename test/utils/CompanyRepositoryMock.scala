@@ -50,4 +50,6 @@ class CompanyRepositoryMock(database: mutable.Map[UUID, Company] = mutable.Map.e
       brand: Option[String],
       country: Option[Country]
   ): Future[SIRET] = ???
+
+  override def getInactiveCompanies: Future[List[(Company, Int)]] = ???
 }

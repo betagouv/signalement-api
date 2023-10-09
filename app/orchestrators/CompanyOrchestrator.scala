@@ -4,6 +4,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import config.EmailConfiguration
 import config.TaskConfiguration
+import config.TokenConfiguration
 import controllers.CompanyObjects.CompanyList
 import controllers.error.AppError.CompanyNotFound
 import io.scalaland.chimney.dsl.TransformerOps
@@ -11,16 +12,19 @@ import models.UserRole.Professionnel
 import models.company.SearchCompanyIdentity.SearchCompanyIdentityId
 import models.event.Event.stringToDetailsJsValue
 import models._
+import models.company.AccessLevel
 import models.company.Company
 import models.company.CompanyAddressUpdate
 import models.company.CompanyCreation
 import models.company.CompanyRegisteredSearch
 import models.company.CompanyWithNbReports
+import models.company.InactiveCompany
 import models.company.UndeliveredDocument
 import models.event.Event
 import models.report.Report
 import models.report.ReportFilter
 import models.report.ReportStatus
+import models.token.TokenKind.CompanyFollowUp
 import models.website.WebsiteCompanySearchResult
 import models.website.WebsiteHost
 import play.api.Logger
@@ -47,6 +51,10 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Random
+import scala.util.chaining.scalaUtilChainingOps
+
+import cats.syntax.traverse._
 
 class CompanyOrchestrator(
     val companyRepository: CompanyRepositoryInterface,
@@ -58,7 +66,8 @@ class CompanyOrchestrator(
     val pdfService: PDFService,
     val taskConfiguration: TaskConfiguration,
     val frontRoute: FrontRoute,
-    val emailConfiguration: EmailConfiguration
+    val emailConfiguration: EmailConfiguration,
+    val tokenConfiguration: TokenConfiguration
 )(implicit ec: ExecutionContext) {
 
   val logger: Logger = Logger(this.getClass)
@@ -222,6 +231,69 @@ class CompanyOrchestrator(
         )
       }
 
+  def getInactiveCompanies =
+    companyRepository.getInactiveCompanies.map(_.map { case (company, ignoredReportCount) =>
+      InactiveCompany(company, ignoredReportCount)
+    })
+
+  def getFollowUpDocument(companyIds: List[UUID], userId: UUID): Future[Option[Source[ByteString, Unit]]] =
+    for {
+      companies <- companyRepository.fetchCompanies(companyIds)
+      followUpTokens <- companies.traverse(getFollowUpToken(_, userId))
+      tokenMap = followUpTokens.collect { case token @ AccessToken(_, _, _, _, _, Some(companyId), _, _, _) =>
+        (companyId, token)
+      }.toMap
+      htmlDocuments = companies.flatMap(company =>
+        tokenMap
+          .get(company.id)
+          .map(activationKey =>
+            views.html.pdfs.accountFollowUp(
+              company,
+              activationKey.token
+            )(frontRoute = frontRoute, contactAddress = contactAddress)
+          )
+      )
+    } yield
+      if (htmlDocuments.nonEmpty) {
+        Some(pdfService.createPdfSource(htmlDocuments))
+      } else {
+        None
+      }
+
+  private def getFollowUpToken(company: Company, userId: UUID): Future[AccessToken] =
+    for {
+      followUpTokens <- accessTokenRepository.fetchFollowUpToken(company.id)
+      validToken = followUpTokens.find { t =>
+        t.expirationDate.exists(_.isAfter(OffsetDateTime.now())) && t.valid
+      }
+      companyFollowUpToken <- validToken.fold {
+        accessTokenRepository
+          .create(
+            AccessToken.build(
+              kind = CompanyFollowUp,
+              token = f"${Random.nextInt(1000000)}%06d",
+              validity = tokenConfiguration.companyInitDuration,
+              companyId = Some(company.id),
+              level = Some(AccessLevel.ADMIN)
+            )
+          )
+          .tap(_ =>
+            eventRepository.create(
+              Event(
+                UUID.randomUUID(),
+                None,
+                Some(company.id),
+                Some(userId),
+                OffsetDateTime.now(),
+                EventType.PRO,
+                ActionEvent.POST_FOLLOW_UP_TOKEN_GEN
+              )
+            )
+          )
+      }(Future.successful(_))
+
+    } yield companyFollowUpToken
+
   def getActivationDocument(companyIds: List[UUID]): Future[Option[Source[ByteString, Unit]]] =
     for {
       companies <- companyRepository.fetchCompanies(companyIds)
@@ -300,6 +372,22 @@ class CompanyOrchestrator(
             OffsetDateTime.now(),
             EventType.PRO,
             ActionEvent.POST_ACCOUNT_ACTIVATION_DOC
+          )
+        )
+      })
+
+  def confirmFollowUp(companyList: CompanyList, identity: UUID): Future[List[Event]] =
+    Future
+      .sequence(companyList.companyIds.map { companyId =>
+        eventRepository.create(
+          Event(
+            UUID.randomUUID(),
+            None,
+            Some(companyId),
+            Some(identity),
+            OffsetDateTime.now(),
+            EventType.PRO,
+            ActionEvent.POST_FOLLOW_UP_DOC
           )
         )
       })
