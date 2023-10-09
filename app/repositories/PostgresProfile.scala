@@ -40,9 +40,6 @@ trait PostgresProfile
     val DatePartSQLFunction = SimpleFunction.binary[String, OffsetDateTime, Int]("date_part")
 
     val ArrayToStringSQLFunction = SimpleFunction.ternary[List[String], String, String, String]("array_to_string")
-    SimpleFunction.binary[List[ReportTag], Int, Int]("array_length")
-
-    SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
 
     // Declare the name of an aggregate function:
     val CountGroupBy = new SqlAggregateFunction("count")

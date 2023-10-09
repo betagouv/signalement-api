@@ -1,6 +1,7 @@
 package loader
 
 import _root_.controllers._
+import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
 import akka.actor.ActorRef
 import akka.actor.Props
@@ -261,11 +262,9 @@ class SignalConsoComponents(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
     "antivirus-scan-actor"
   )
-  val reportedPhonesExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(
-        new ReportedPhonesExtractActor(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service)
-      ),
+  val reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand] =
+    actorSystem.spawn(
+      ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service),
       "reported-phones-extract-actor"
     )
 

@@ -2,7 +2,8 @@ package controllers
 
 import actors.ReportedPhonesExtractActor
 import actors.ReportedPhonesExtractActor.RawFilters
-import akka.actor.ActorRef
+import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
+import akka.actor.typed
 import com.mohiva.play.silhouette.api.Silhouette
 import models._
 import play.api.Logger
@@ -22,7 +23,7 @@ class ReportedPhoneController(
     val reportRepository: ReportRepositoryInterface,
     val companyRepository: CompanyRepositoryInterface,
     asyncFileRepository: AsyncFileRepositoryInterface,
-    reportedPhonesExtractActor: ActorRef,
+    reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand],
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)

@@ -1,6 +1,7 @@
 package actors
 
 import akka.actor._
+import akka.pattern.pipe
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import spoiwo.model._
@@ -49,6 +50,7 @@ object ReportsExtractActor {
   def props = Props[ReportsExtractActor]()
 
   case class ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId)
+  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User)
 }
 
 class ReportsExtractActor(
@@ -72,17 +74,24 @@ class ReportsExtractActor(
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
     case ExtractRequest(fileId: UUID, requestedBy: User, filters: ReportFilter, zone: ZoneId) =>
-      for {
+      val result = for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
         tmpPath <- genTmpFile(requestedBy, filters, zone)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(fileId, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
-      ()
+      } yield ExtractRequestSuccess(fileId, requestedBy)
+
+      result pipeTo self: Unit
+
+    case ExtractRequestSuccess(fileId: UUID, requestedBy: User) =>
+      logger.debug(s"Built report for User ${requestedBy.id} — async file ${fileId}")
+
+    case Status.Failure(_) =>
+      logger.info(s"Extract failed")
+
     case _ =>
       logger.debug("Could not handle request")
-      ()
   }
 
   // Common layout variables

@@ -23,7 +23,6 @@ import utils.Logs.RichLogger
 import scala.util.Failure
 import scala.util.Success
 object AntivirusScanActor {
-  type Message = ScanCommand
   sealed trait ScanCommand
   final case class ScanFromFile(reportFile: ReportFile, file: java.io.File) extends ScanCommand
   final case object ScanFromFileSuccess extends ScanCommand

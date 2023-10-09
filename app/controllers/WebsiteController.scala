@@ -78,7 +78,7 @@ class WebsiteController(
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
-      websitesExtractActor ? WebsitesExtractActor.ExtractRequest(
+      websitesExtractActor ! WebsitesExtractActor.ExtractRequest(
         request.identity,
         RawFilters(q.filter(_.nonEmpty), start, end)
       )
