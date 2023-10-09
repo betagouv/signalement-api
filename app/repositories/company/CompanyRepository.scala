@@ -9,7 +9,6 @@ import models._
 import models.company.Address
 import models.company.Company
 import models.company.CompanyRegisteredSearch
-import models.report.ReportStatus
 import models.report.ReportStatus.statusWithProResponse
 import repositories.PostgresProfile.api._
 import repositories.companyaccess.CompanyAccessTable
@@ -191,7 +190,8 @@ class CompanyRepository(override val dbConfig: DatabaseConfig[JdbcProfile])(impl
                  reports.company_id,
                  COUNT(reports.id) AS count_ignored
              FROM reports
-                  WHERE reports.status = = ${ReportStatus.NonConsulte.entryName}
+                  INNER JOIN events ON reports.id = events.report_id
+                  WHERE events.action = ${REPORT_CLOSED_BY_NO_READING.value}
                     AND reports.creation_date >= NOW() - INTERVAL '3 months'
              GROUP BY
                  reports.company_id
