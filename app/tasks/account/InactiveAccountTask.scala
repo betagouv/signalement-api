@@ -28,14 +28,13 @@ class InactiveAccountTask(
   val initialDelay: FiniteDuration = computeStartingTime(startTime)
 
   actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.day) { () =>
-    logger.debug(s"initialDelay - ${initialDelay}");
+    logger.debug(s"initialDelay - ${initialDelay}")
     if (taskConfiguration.active) {
       runTask(
         OffsetDateTime.now()
-      )
+      ): Unit
     }
-    ()
-  }
+  }: Unit
 
   def runTask(now: OffsetDateTime): Future[Unit] = {
     logger.info(s"taskDate - ${now}")

@@ -76,7 +76,7 @@ class AuthControllerSpec(implicit ee: ExecutionEnv)
     app.stop()
     ()
   }
-  implicit val authEnv = env
+  implicit val authEnv: Environment[AuthEnv] = env
 
   lazy val userRepository = components.userRepository
 

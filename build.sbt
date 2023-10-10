@@ -5,6 +5,9 @@ version := "1.3.13"
 
 scalaVersion := "2.13.12"
 
+// Required by scalafix to use ExplicitResultTypes
+ThisBuild / scalafixScalaBinaryVersion := "2.13"
+
 lazy val `signalement-api` = (project in file(".")).enablePlugins(PlayScala)
 
 libraryDependencies ++= Seq(

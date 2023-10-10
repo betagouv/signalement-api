@@ -396,7 +396,7 @@ object ReportRepository {
     def regexLike(p: Rep[String]): Rep[Boolean] = {
       val expr = SimpleExpression.binary[String, String, Boolean] { (s, p, qb) =>
         qb.expr(s)
-        qb.sqlBuilder += " ~* "
+        qb.sqlBuilder += " ~* ": Unit
         qb.expr(p)
       }
       expr.apply(s, p)

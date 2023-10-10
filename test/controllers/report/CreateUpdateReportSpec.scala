@@ -249,7 +249,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
 
 trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatchers {
 
-  implicit val ec = ExecutionContext.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
   lazy val reportRepository = components.reportRepository
   lazy val eventRepository = components.eventRepository

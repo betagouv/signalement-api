@@ -3,7 +3,6 @@ package repositories
 import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.agg.PgAggFuncSupport
 import com.github.tminglei.slickpg.trgm.PgTrgmSupport
-import models.report.ReportTag
 import slick.ast.Library.SqlAggregateFunction
 import slick.ast.TypedType
 import slick.lifted.FunctionSymbolExtensionMethods.functionSymbolExtensionMethods

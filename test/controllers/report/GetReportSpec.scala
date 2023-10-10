@@ -172,7 +172,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
   import org.specs2.matcher.MatchersImplicits._
 
-  implicit val ee = ExecutionEnv.fromGlobalExecutionContext
+  implicit val ee: ExecutionEnv = ExecutionEnv.fromGlobalExecutionContext
 
   implicit val timeout: Timeout = 30.seconds
 
@@ -196,7 +196,7 @@ trait GetReportSpec extends Spec with GetReportContext {
     someResult.isDefined mustEqual true and someResult.get.header.status === Status.NOT_FOUND
 
   def reportMustBeRenderedForUserRole(report: Report, userRole: UserRole) = {
-    implicit val someUserRole = Some(userRole)
+    implicit val someUserRole: Option[UserRole] = Some(userRole)
     someResult.isDefined mustEqual true and contentAsJson(Future.successful(someResult.get)) === Json.toJson(
       ReportWithFiles(report, List.empty)
     )
@@ -247,7 +247,7 @@ trait GetReportSpec extends Spec with GetReportContext {
 
 trait GetReportContext extends AppSpec {
 
-  implicit val ec = ExecutionContext.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
   val siretForConcernedPro = Fixtures.genSiret().sample.get
   // TODO Check why not used

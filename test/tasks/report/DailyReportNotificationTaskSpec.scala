@@ -14,6 +14,7 @@ import java.time.OffsetDateTime
 import java.time.Period
 import java.time.temporal.ChronoUnit
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 
 class DailyReportNotification(implicit ee: ExecutionEnv) extends DailyReportNotificationTaskSpec {
@@ -65,7 +66,7 @@ abstract class DailyReportNotificationTaskSpec(implicit ee: ExecutionEnv)
   implicit lazy val frontRoute = components.frontRoute
   implicit lazy val contactAddress = emailConfiguration.contactAddress
 
-  implicit val ec = ee.executionContext
+  implicit val ec: ExecutionContext = ee.executionContext
 
   val runningTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(1)
   val runningDate = runningTime.toLocalDate()

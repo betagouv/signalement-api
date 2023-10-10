@@ -3,7 +3,6 @@ package controllers
 import actors.WebsitesExtractActor
 import actors.WebsitesExtractActor.RawFilters
 import akka.actor.ActorRef
-import akka.pattern.ask
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._

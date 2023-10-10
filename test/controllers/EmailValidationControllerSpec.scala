@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import config.EmailConfiguration
 import controllers.error.AppError.EmailOrCodeIncorrect
@@ -27,6 +28,7 @@ import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -48,7 +50,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  implicit val authEnv = components.authEnv
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   lazy val messagesApi = components.messagesApi
 

@@ -114,6 +114,7 @@ import utils.silhouette.auth.UserService
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import scala.annotation.nowarn
 
 class SignalConsoApplicationLoader() extends ApplicationLoader {
   var components: SignalConsoComponents = _
@@ -147,6 +148,9 @@ class SignalConsoComponents(
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader: ConfigReader[List[String]] = ConfigReader[String].map(_.split(",").toList)
+
+  // To read ["...", "..."] or "...,..." if it fails
+  @nowarn("msg=Implicit resolves to enclosing")
   implicit val stringListReader: ConfigReader[List[String]] = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
@@ -471,7 +475,7 @@ class SignalConsoComponents(
     companySyncService,
     companySyncRepository
   )
-  companyUpdateTask.schedule()
+  companyUpdateTask.schedule(): Unit
 
   logger.debug("Starting App and sending sentry alert")
 

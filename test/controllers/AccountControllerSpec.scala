@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test.FakeEnvironment
@@ -43,7 +44,7 @@ class AccountControllerSpec(implicit ee: ExecutionEnv)
   val companyAccessRepository = components.companyAccessRepository
   val accessTokenRepository = components.accessTokenRepository
 
-  implicit val authEnv = components.authEnv
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   val proUser = Fixtures.genProUser.sample.get
   val company = Fixtures.genCompany.sample.get

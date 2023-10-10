@@ -1,6 +1,7 @@
 package actors
 
 import akka.actor._
+import akka.pattern.pipe
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import spoiwo.model._
@@ -16,10 +17,12 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.S3ServiceInterface
 import utils.DateUtils
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.util.Random
 
@@ -28,6 +31,7 @@ object WebsitesExtractActor {
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
   case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)
+  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User)
 }
 
 class WebsitesExtractActor(
@@ -47,21 +51,25 @@ class WebsitesExtractActor(
     logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
   override def receive = {
     case ExtractRequest(requestedBy, rawFilters) =>
-      for {
+      val result = for {
         // FIXME: We might want to move the random name generation
         // in a common place if we want to reuse it for other async files
         asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
-        tmpPath <- {
-          sender() ! ()
-          genTmpFile(rawFilters)
-        }
+        tmpPath <- genTmpFile(rawFilters)
         remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
         _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built websites for User ${requestedBy.id} — async file ${asyncFile.id}")
-      ()
+      } yield ExtractRequestSuccess(asyncFile.id, requestedBy)
+
+      result pipeTo self: Unit
+
+    case ExtractRequestSuccess(fileId: UUID, requestedBy: User) =>
+      logger.debug(s"Built websites for User ${requestedBy.id} — async file $fileId")
+
+    case Status.Failure(_) =>
+      logger.info(s"Extract failed")
+
     case _ =>
       logger.debug("Could not handle request")
-      ()
   }
 
   // Common layout variables

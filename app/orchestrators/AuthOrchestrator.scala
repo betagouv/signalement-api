@@ -26,10 +26,8 @@ import cats.instances.future.catsStdInstancesForFuture
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Credentials
-import com.mohiva.play.silhouette.api.util.PasswordHasherRegistry
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import config.TokenConfiguration
 import controllers.error.AppError
 import models.auth.AuthAttempt
@@ -189,12 +187,7 @@ class AuthOrchestrator(
       cookie <- silhouette.env.authenticatorService.init(authenticator)
     } yield cookie
 
-  private def authenticate(login: String, password: String) = {
-    val passwordHasherRegistry: PasswordHasherRegistry = PasswordHasherRegistry(
-      new BCryptPasswordHasher()
-    )
-
-    passwordHasherRegistry.current.hash(password)
+  private def authenticate(login: String, password: String) =
     credentialsProvider
       .authenticate(Credentials(login, password))
       .recoverWith {
@@ -204,7 +197,6 @@ class AuthOrchestrator(
         case _: IdentityNotFoundException => Future.failed(UserNotFound(login))
         case err => Future.failed(ServerError("Unexpected error when authenticating user", Some(err)))
       }
-  }
 
   private def validateDGCCRFAccountLastEmailValidation(user: User): Future[User] = user.userRole match {
     case UserRole.DGCCRF if needsEmailRevalidation(user) =>

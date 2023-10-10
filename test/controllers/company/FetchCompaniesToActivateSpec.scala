@@ -1,5 +1,6 @@
 package controllers.company
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -25,10 +26,12 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Random
@@ -39,7 +42,7 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
     with FutureMatchers
     with JsonMatchers {
 
-  implicit val ec = ee.executionContext
+  implicit val ec: ExecutionContext = ee.executionContext
   val logger: Logger = Logger(this.getClass)
 
   lazy val userRepository = components.userRepository
@@ -229,7 +232,8 @@ class BaseFetchCompaniesToActivateSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env = new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
+  implicit val env: Environment[AuthEnv] =
+    new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(
     Some(

@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -16,6 +17,7 @@ import utils.AppSpec
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -227,7 +229,7 @@ abstract class StatisticControllerSpec(implicit ee: ExecutionEnv)
 
   def loginInfo(user: User) = LoginInfo(CredentialsProvider.ID, user.email.value)
 
-  implicit val env: FakeEnvironment[AuthEnv] =
+  implicit val env: Environment[AuthEnv] =
     new FakeEnvironment[AuthEnv](Seq(adminUser).map(user => loginInfo(user) -> user))
 
   val (app, components) = TestApp.buildApp(
