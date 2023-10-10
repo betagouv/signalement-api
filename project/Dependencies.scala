@@ -15,9 +15,9 @@ object Dependencies {
     // Cannot be updated to "5.0.0+" (current is 6.0.2). Compatibility issues with play 2.8.20 (still using akka 2.6.21)
     lazy val alpakkaVersion = "4.0.0"
     lazy val enumeratumVersion = "1.7.3"
-    lazy val sentryVersion = "6.10.0"
+    lazy val sentryVersion = "6.30.0"
     lazy val playSilhouetteVersion = "7.0.0"
-    // Cannot be updated to "4.19.0" compatibility issues with play spec2 2.8.18 (still using 4.8.3)
+    // Cannot be updated to "4.20.2" compatibility issues with play spec2 2.8.20 (still using 4.8.3)
     lazy val specs2MatcherExtraVersion = "4.8.3"
     lazy val scalaCheckVersion = "1.17.0"
     lazy val catsCoreVersion = "2.10.0"
@@ -26,15 +26,15 @@ object Dependencies {
     lazy val awsJavaSdkS3Version = "1.12.565"
     lazy val jacksonModuleScalaVersion = "2.15.2"
     lazy val postgresqlVersion = "42.5.4"
-    lazy val refinedVersion = "0.10.3"
+    lazy val refinedVersion = "0.11.0"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "8.0.1"
     lazy val html2pdfVersion = "5.0.1"
     lazy val chimneyVersion = "0.7.5"
-    lazy val sttp = "3.8.5"
-    lazy val sttpPlayJson = "3.8.15"
-    lazy val flyWayVersion = "9.16.3"
+    lazy val sttp = "3.9.0"
+    lazy val sttpPlayJson = "3.9.0"
+    lazy val flyWayVersion = "9.22.2"
     lazy val janino = "3.1.10"
     lazy val logstashLogbackEncoder = "7.4"
 
