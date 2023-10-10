@@ -5,14 +5,14 @@ import sbt._
 object Dependencies {
   object Versions {
 
-    // Cannot be updated to "5.1.0" compatibility issues with current version of alpakka slick (need to update them first)
+    // Cannot be updated to "5.1.0" compatibility issues with current version of alpakka slick (using slick 3.3.3, next is 3.4.1)
     lazy val playSlickVersion = "5.0.2"
-    // Cannot be updated to "0.21.1" compatibility issues with current version of alpakka slick (need to update them first)
+    // Cannot be updated to "0.21.1" compatibility issues with current version of alpakka slick (using slick 3.3.3, next is 3.4.1)
     lazy val slickPgVersion = "0.20.4"
     lazy val playMailerVersion = "8.0.1"
-    // Cannot be updated to "10.4.0" compatibility issues with play  2.8.18 (still using akka 2.6.20)
+    // Cannot be updated to "10.4.0+" (current is 10.5.2). Compatibility issues with play  2.8.20 (using akka 2.6.21)
     lazy val akkaHttpVersion = "10.2.10"
-    // Cannot be updated to "5.0.0" compatibility issues with play 2.8.18 (still using akka 2.6.20 )
+    // Cannot be updated to "5.0.0+" (current is 6.0.2). Compatibility issues with play 2.8.20 (still using akka 2.6.21)
     lazy val alpakkaVersion = "4.0.0"
     lazy val enumeratumVersion = "1.7.3"
     lazy val sentryVersion = "6.10.0"
@@ -24,13 +24,13 @@ object Dependencies {
     lazy val pureConfigVersion = "0.17.4"
     lazy val playJsonExtensionsVersion = "0.42.0"
     lazy val awsJavaSdkS3Version = "1.12.565"
-    lazy val jacksonModuleScalaVersion = "2.14.2"
+    lazy val jacksonModuleScalaVersion = "2.15.2"
     lazy val postgresqlVersion = "42.5.4"
     lazy val refinedVersion = "0.10.3"
     lazy val ficusVersion = "1.5.2"
     lazy val spoiwoVersion = "2.2.1"
-    lazy val itext7CoreVersion = "7.2.5"
-    lazy val html2pdfVersion = "4.0.5"
+    lazy val itext7CoreVersion = "8.0.1"
+    lazy val html2pdfVersion = "5.0.1"
     lazy val chimneyVersion = "0.7.5"
     lazy val sttp = "3.8.5"
     lazy val sttpPlayJson = "3.8.15"
