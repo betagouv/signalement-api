@@ -66,8 +66,8 @@ abstract class ReportTagFilterNotificationTaskSpec(implicit ee: ExecutionEnv)
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
 
-  implicit lazy val frontRoute = components.frontRoute
-  implicit lazy val contactAddress = emailConfiguration.contactAddress
+  implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
+  implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
   implicit val ec: ExecutionContext = ee.executionContext
 

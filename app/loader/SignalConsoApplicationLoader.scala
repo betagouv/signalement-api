@@ -147,10 +147,9 @@ class SignalConsoComponents(
 
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
-  val csvStringListReader: ConfigReader[List[String]] = ConfigReader[String].map(_.split(",").toList)
-
-  // To read ["...", "..."] or "...,..." if it fails
-  @nowarn("msg=Implicit resolves to enclosing")
+  val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+  @nowarn("msg=Implicit definition should have explicit type")
+  // scalafix:ok
   implicit val stringListReader: ConfigReader[List[String]] = ConfigReader[List[String]].orElse(csvStringListReader)
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]

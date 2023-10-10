@@ -111,7 +111,7 @@ class InactiveAccountTaskSpec(implicit ee: ExecutionEnv)
               _ <- asyncFileRepository.create(AsyncFile.build(activeDGCCRFUser, AsyncFileKind.Reports))
 
               _ <- new InactiveAccountTask(
-                app.actorSystem,
+                this.app.actorSystem,
                 inactiveDgccrfAccountRemoveTask,
                 inactiveDgccrfAccountReminderTask,
                 conf
