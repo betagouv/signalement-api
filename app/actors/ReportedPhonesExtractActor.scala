@@ -47,7 +47,7 @@ object ReportedPhonesExtractActor {
       s3Service: S3ServiceInterface
   )(implicit mat: Materializer): Behavior[ReportedPhonesExtractCommand] =
     Behaviors.setup { context =>
-      implicit val ec: ExecutionContext = context.executionContext
+      import context.executionContext
 
       Behaviors.receiveMessage[ReportedPhonesExtractCommand] {
         case ExtractRequest(fileId, requestedBy, rawFilters) =>
@@ -76,27 +76,31 @@ object ReportedPhonesExtractActor {
     }
 
   // Common layout variables
-  val headerStyle = CellStyle(
+  private val headerStyle = CellStyle(
     fillPattern = CellFill.Solid,
     fillForegroundColor = Color.Gainsborough,
     font = Font(bold = true),
     horizontalAlignment = CellHorizontalAlignment.Center
   )
-  val centerAlignmentStyle = CellStyle(
+  private val centerAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Center,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
-  val leftAlignmentStyle = CellStyle(
+  private val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+  private val leftAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Left,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
+  private val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
 
-  def genTmpFile(config: SignalConsoConfiguration, reportRepository: ReportRepositoryInterface, filters: RawFilters)(
-      implicit ec: ExecutionContext
+  private def genTmpFile(
+      config: SignalConsoConfiguration,
+      reportRepository: ReportRepositoryInterface,
+      filters: RawFilters
+  )(implicit
+      ec: ExecutionContext
   ): Future[Path] = {
 
     val startDate = DateUtils.parseDate(filters.start)
@@ -150,9 +154,9 @@ object ReportedPhonesExtractActor {
               case (Some(startDate), _) =>
                 Some(Row().withCellValues("Période", s"Depuis le ${startDate.format(formatter)}"))
               case (_, Some(endDate)) => Some(Row().withCellValues("Période", s"Jusqu'au ${endDate.format(formatter)}"))
-              case (_)                => None
+              case _                  => None
             }
-          ).filter(_.isDefined).map(_.get)
+          ).flatten
         )
         .withColumns(
           Column(autoSized = true, style = headerStyle),
@@ -166,7 +170,7 @@ object ReportedPhonesExtractActor {
     }
   }
 
-  def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
+  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
       ec: ExecutionContext,
       mat: Materializer
   ): Future[String] = {

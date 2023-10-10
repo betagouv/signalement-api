@@ -15,7 +15,6 @@ import services.S3ServiceInterface
 
 import java.io.File
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.sys.process._
 import utils.Logs.RichLogger
@@ -48,7 +47,7 @@ object AntivirusScanActor {
       s3Service: S3ServiceInterface
   ): Behavior[ScanCommand] =
     Behaviors.setup { context =>
-      implicit val ec: ExecutionContextExecutor =
+      implicit val ec: ExecutionContext =
         context.system.dispatchers.lookup(DispatcherSelector.fromConfig("my-blocking-dispatcher"))
 
       Behaviors.receiveMessage[ScanCommand] {

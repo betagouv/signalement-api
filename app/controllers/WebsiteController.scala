@@ -1,15 +1,12 @@
 package controllers
 
-import actors.WebsitesExtractActor
-import actors.WebsitesExtractActor.RawFilters
-import akka.actor.ActorRef
+import actors.WebsiteExtractActor
+import akka.actor.typed
 import com.mohiva.play.silhouette.api.Silhouette
 import models.PaginatedResult.paginatedResultWrites
 import models._
 import models.company.CompanyCreation
-
 import models.investigation.InvestigationStatus
-
 import models.investigation.WebsiteInvestigationApi
 import models.website._
 import orchestrators.WebsitesOrchestrator
@@ -31,7 +28,7 @@ import scala.concurrent.duration._
 class WebsiteController(
     val websitesOrchestrator: WebsitesOrchestrator,
     val companyRepository: CompanyRepositoryInterface,
-    websitesExtractActor: ActorRef,
+    websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand],
     val silhouette: Silhouette[AuthEnv],
     controllerComponents: ControllerComponents
 )(implicit val ec: ExecutionContext)
@@ -77,9 +74,9 @@ class WebsiteController(
   def extractUnregisteredHost(q: Option[String], start: Option[String], end: Option[String]) =
     SecuredAction(WithRole(UserRole.Admin, UserRole.DGCCRF)).async { implicit request =>
       logger.debug(s"Requesting websites for user ${request.identity.email}")
-      websitesExtractActor ! WebsitesExtractActor.ExtractRequest(
+      websitesExtractActor ! WebsiteExtractActor.ExtractRequest(
         request.identity,
-        RawFilters(q.filter(_.nonEmpty), start, end)
+        WebsiteExtractActor.RawFilters(q.filter(_.nonEmpty), start, end)
       )
       Future.successful(Ok)
     }

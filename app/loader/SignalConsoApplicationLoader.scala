@@ -272,9 +272,9 @@ class SignalConsoComponents(
       "reported-phones-extract-actor"
     )
 
-  val websitesExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(new WebsitesExtractActor(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration)),
+  val websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand] =
+    actorSystem.spawn(
+      WebsiteExtractActor.create(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration),
       "websites-extract-actor"
     )
 
