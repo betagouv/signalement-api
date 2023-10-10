@@ -3,8 +3,6 @@ package loader
 import _root_.controllers._
 import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
-import akka.actor.ActorRef
-import akka.actor.Props
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import com.mohiva.play.silhouette.api.Environment
@@ -394,19 +392,17 @@ class SignalConsoComponents(
     messagesApi
   )
 
-  val reportsExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(
-        new ReportsExtractActor(
-          reportConsumerReviewOrchestrator,
-          reportFileRepository,
-          companyAccessRepository,
-          reportOrchestrator,
-          eventRepository,
-          asyncFileRepository,
-          s3Service,
-          signalConsoConfiguration
-        )
+  val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
+    actorSystem.spawn(
+      ReportsExtractActor.create(
+        reportConsumerReviewOrchestrator,
+        reportFileRepository,
+        companyAccessRepository,
+        reportOrchestrator,
+        eventRepository,
+        asyncFileRepository,
+        s3Service,
+        signalConsoConfiguration
       ),
       "reports-extract-actor"
     )

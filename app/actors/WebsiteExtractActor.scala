@@ -160,7 +160,7 @@ object WebsiteExtractActor {
   private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
       ec: ExecutionContext,
       mat: Materializer
-  ) = {
+  ): Future[String] = {
     val remotePath = s"website-extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }
