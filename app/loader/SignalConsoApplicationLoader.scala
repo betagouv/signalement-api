@@ -149,8 +149,9 @@ class SignalConsoComponents(
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
   @nowarn("msg=Implicit definition should have explicit type")
-  // scalafix:ok
-  implicit val stringListReader: ConfigReader[List[String]] = ConfigReader[List[String]].orElse(csvStringListReader)
+  // scalafix:off
+  implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
+  // scalafix:on
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 

@@ -14,16 +14,16 @@ object Dependencies {
     lazy val akkaHttpVersion = "10.2.10"
     // Cannot be updated to "5.0.0" compatibility issues with play 2.8.18 (still using akka 2.6.20 )
     lazy val alpakkaVersion = "4.0.0"
-    lazy val enumeratumVersion = "1.7.2"
+    lazy val enumeratumVersion = "1.7.3"
     lazy val sentryVersion = "6.10.0"
     lazy val playSilhouetteVersion = "7.0.0"
     // Cannot be updated to "4.19.0" compatibility issues with play spec2 2.8.18 (still using 4.8.3)
     lazy val specs2MatcherExtraVersion = "4.8.3"
     lazy val scalaCheckVersion = "1.17.0"
-    lazy val catsCoreVersion = "2.9.0"
-    lazy val pureConfigVersion = "0.17.2"
+    lazy val catsCoreVersion = "2.10.0"
+    lazy val pureConfigVersion = "0.17.4"
     lazy val playJsonExtensionsVersion = "0.42.0"
-    lazy val awsJavaSdkS3Version = "1.12.447"
+    lazy val awsJavaSdkS3Version = "1.12.565"
     lazy val jacksonModuleScalaVersion = "2.14.2"
     lazy val postgresqlVersion = "42.5.4"
     lazy val refinedVersion = "0.10.3"
@@ -31,10 +31,12 @@ object Dependencies {
     lazy val spoiwoVersion = "2.2.1"
     lazy val itext7CoreVersion = "7.2.5"
     lazy val html2pdfVersion = "4.0.5"
-    lazy val chimneyVersion = "0.7.2"
+    lazy val chimneyVersion = "0.7.5"
     lazy val sttp = "3.8.5"
     lazy val sttpPlayJson = "3.8.15"
     lazy val flyWayVersion = "9.16.3"
+    lazy val janino = "3.1.10"
+    lazy val logstashLogbackEncoder = "7.4"
 
   }
 
@@ -48,9 +50,9 @@ object Dependencies {
 
   object Compile {
     val flyWayVersion = "org.flywaydb" % "flyway-core" % Versions.flyWayVersion
-    val janino = "org.codehaus.janino" % "janino" % "3.1.9" // Needed for the <if> in logback conf
-    val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % "3.1.9" // Needed for janino
-    val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
+    val janino = "org.codehaus.janino" % "janino" % Versions.janino // Needed for the <if> in logback conf
+    val commonsCompiler = "org.codehaus.janino" % "commons-compiler" % Versions.janino // Needed for janino
+    val logstashLogBackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % Versions.logstashLogbackEncoder
     val sttpPlayJson = "com.softwaremill.sttp.client3" %% "play-json" % Versions.sttpPlayJson
     val sttp = "com.softwaremill.sttp.client3" %% "core" % Versions.sttp
     val sentry = "io.sentry" % "sentry-logback" % Versions.sentryVersion
