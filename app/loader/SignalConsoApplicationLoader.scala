@@ -350,7 +350,8 @@ class SignalConsoComponents(
     pdfService,
     taskConfiguration,
     frontRoute,
-    emailConfiguration
+    emailConfiguration,
+    tokenConfiguration
   )
 
   val dataEconomieOrchestrator = new DataEconomieOrchestrator(dataEconomieRepository)
@@ -650,6 +651,18 @@ class SignalConsoComponents(
   val siretExtractorService = new SiretExtractorService(applicationConfiguration.siretExtractor)
   val siretExtractorController = new SiretExtractorController(siretExtractorService, silhouette, controllerComponents)
 
+  val importOrchestrator = new ImportOrchestrator(
+    companyRepository,
+    companySyncService,
+    userOrchestrator,
+    proAccessTokenOrchestrator
+  )
+  val importController = new ImportController(
+    importOrchestrator,
+    silhouette,
+    controllerComponents
+  )
+
   io.sentry.Sentry.captureException(
     new Exception("This is a test Alert, used to check that Sentry alert are still active on each new deployments.")
   )
@@ -685,6 +698,7 @@ class SignalConsoComponents(
       userReportsFiltersController,
       signalConsoReviewController,
       siretExtractorController,
+      importController,
       assets
     )
 

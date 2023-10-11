@@ -133,4 +133,11 @@ class UserRepository(
   override def softDelete(id: UUID): Future[Int] = db.run(
     table.filter(_.id === id).map(_.deletionDate).update(Some(OffsetDateTime.now()))
   )
+
+  override def findByEmails(emails: List[EmailAddress]): Future[Seq[User]] =
+    db.run(
+      table
+        .filter(_.email.inSetBind(emails))
+        .result
+    )
 }

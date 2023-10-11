@@ -1,0 +1,109 @@
+@import utils.EmailAddress
+@import utils.FrontRoute
+@import utils.FrontRoute
+
+@import models.company.Company
+@(
+        company: Company,
+        code: String
+)(implicit frontRoute: FrontRoute, contactAddress: EmailAddress)
+
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="viewport" content="width=device-width" />
+
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Inactivité du compte SignalConso</title>
+
+        <link rel="stylesheet" href="@routes.Assets.versioned("css/pdf.css")">
+
+    </head>
+    <body>
+        <div style="display: block;
+            page-break-after: always">
+            <div class="logo-gouv">
+                <img src='@routes.Assets.versioned("images/gouv.png")'/>
+            </div>
+
+            <div class="code">
+                DGCCRF_SCONSO_01
+            </div>
+
+            <div class="logo-sc">
+                <img src='@routes.Assets.versioned("images/logo-signal-conso.png")'/>
+            </div>
+
+            <div class="sender">
+                <br/>Service SignalConso
+                <br/>DGCCRF-052
+                <br/>59, boulevard Vincent Auriol
+                <br/>75013 Paris Cedex 13
+            </div>
+
+            <div class="recipient">
+            @views.html.fragments.address(company)
+            </div>
+
+            <div class="content mt-3">
+
+                <p class="text-bold">
+                    Objet : Inactivité sur Signal.conso.gouv.fr concernant votre entreprise
+                </p>
+
+                <p class="mt-3">
+                    Madame, Monsieur,
+                </p>
+
+                <p>
+                    La Direction générale de la Concurrence, de la Consommation et de la Répression des fraudes (DGCCRF) gère la plateforme Signal.conso.gouv.fr.
+                    Cette plateforme en ligne permet aux consommateurs de signaler des manquements relatifs au Code de la Consommation et vous permet en tant que professionnel de consulter les signalements vous concernant pour y répondre.
+                </p>
+
+                <p>
+                    Nous vous écrivons car un ou plusieurs signalements ont été reçus sur signal.conso.gouv.fr et ont été ignorés par votre société :
+                </p>
+
+                <p class="text-center text-bold">
+                @views.html.fragments.address(company, includeSiret = true)
+                </p>
+
+                <p class="mt-3">
+                    Si vous avez toujours accès à votre/vos compte(s), n'hésitez pas à vérifier vos signalements, à répondre au consommateur ou à faire part de vos observations si vous estimez que le signalement est infondé.
+                </p>
+
+                <p class="mt-3">
+                    Dans le cas où vous auriez perdu l'accès à votre/vos compte(s), vous pouvez <strong>
+                    créer votre compte sur l'Espace Pro de SignalConso à l'adresse <a href="@frontRoute.dashboard.welcome">@frontRoute.dashboard.welcome</a></strong>
+                    avec le code d'activation suivant :
+                </p>
+
+                <p class="text-center text-bold">
+                    Code d’activation : @code
+                </p>
+
+                <p>
+                    Vous pourrez toujours consulter votre/vos signalement(s) et vous recevrez un e-mail si un consommateur a émis un signalement à l'encontre de votre entreprise.
+                </p>
+
+
+                <p class="text-bold">
+                    Si vous rencontrez des difficultés pour créer votre compte, vous pouvez nous envoyer un email à l’adresse <a href="mailto:@contactAddress">@contactAddress</a>
+                    en précisant <u>obligatoirement</u> le numéro SIRET de l’entreprise concernée : @company.siret.
+                </p>
+
+                <p>
+                    Nous restons à votre disposition pour tout renseignement complémentaire et vous prions d’agréer nos salutations distinguées.
+                </p>
+
+                <p class="text-right mr-5">
+                    Le service SignalConso
+                </p>
+            </div>
+
+            <div class="page-end">
+                ###
+            </div>
+        </div>
+    </body>
+</html>

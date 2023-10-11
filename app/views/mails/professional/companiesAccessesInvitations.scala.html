@@ -1,0 +1,34 @@
+@import java.net.URI
+@import utils.FrontRoute
+@import models.company.Company
+@(invitationUrl: URI, companies: List[Company], siren: String)
+
+@views.html.mails.layout(s"Rejoignez l'entreprise ${siren} sur SignalConso") {
+    <p>
+        Bonjour,
+    </p>
+
+    <p>
+        Vous avez été invité à rejoindre les entreprises suivantes sur SignalConso :
+
+        <ul>
+            @companies.map{ company =>
+                <li>@company.name : @company.siret</li>
+            }
+        </ul>
+    </p>
+
+    <p>
+        Afin de terminer la création de votre compte, veuillez suivre le lien sécurisé ci-dessous.
+    </p>
+
+    <p style="text-align: center;">
+        <a href="@invitationUrl">@invitationUrl</a>
+    </p>
+
+    <p>Cordialement,</p>
+
+    <p>
+        <i>L'équipe SignalConso</i>
+    </p>
+}

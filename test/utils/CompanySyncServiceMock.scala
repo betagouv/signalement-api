@@ -12,4 +12,8 @@ class CompanySyncServiceMock extends CompanySyncServiceInterface {
     Future.successful(List.empty[CompanySearchResult])
 
   override def companyBySiret(siret: SIRET): Future[Option[CompanySearchResult]] = Future.successful(Option.empty)
+
+  override def companiesBySirets(sirets: List[SIRET]): Future[List[CompanySearchResult]] = Future.successful(List.empty)
+
+  override def companyBySiren(siren: SIREN): Future[List[CompanySearchResult]] = Future.successful(List.empty)
 }

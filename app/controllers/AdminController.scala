@@ -171,7 +171,7 @@ class AdminController(
       None,
       None,
       OffsetDateTime.now(),
-      EventType.CONSO,
+      EventType.PRO,
       POST_ACCOUNT_ACTIVATION_DOC
     )
 

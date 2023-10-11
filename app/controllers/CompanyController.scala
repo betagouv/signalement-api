@@ -107,6 +107,12 @@ class CompanyController(
       .map(result => Ok(Json.toJson(result)))
   }
 
+  def inactiveCompanies() = Action.async { _ =>
+    companyOrchestrator.getInactiveCompanies
+      .map(_.sortBy(_.ignoredReportCount)(Ordering.Int.reverse))
+      .map(result => Ok(Json.toJson(result)))
+  }
+
   def visibleCompanies() = SecuredAction(WithRole(UserRole.Professionnel)).async { implicit request =>
     companiesVisibilityOrchestrator
       .fetchVisibleCompanies(request.identity)
@@ -136,6 +142,29 @@ class CompanyController(
         )
   }
 
+  def getFollowUpDocument() = SecuredAction(WithPermission(UserPermission.editDocuments)).async(parse.json) {
+    implicit request =>
+      import CompanyObjects.CompanyList
+      request.body
+        .validate[CompanyList](Json.reads[CompanyList])
+        .fold(
+          errors => Future.successful(BadRequest(JsError.toJson(errors))),
+          results =>
+            companyOrchestrator
+              .getFollowUpDocument(results.companyIds, request.identity.id)
+              .map {
+                case Some(pdfSource) =>
+                  Ok.chunked(
+                    content = pdfSource,
+                    inline = true,
+                    fileName = Some(s"${UUID.randomUUID}_${OffsetDateTime.now().toString}.pdf")
+                  )
+                case None =>
+                  NotFound
+              }
+        )
+  }
+
   def confirmContactByPostOnCompanyList() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) {
     implicit request =>
       import CompanyObjects.CompanyList
@@ -148,6 +177,19 @@ class CompanyController(
               .confirmContactByPostOnCompanyList(companyList, request.identity.id)
               .map(_ => Ok)
         )
+  }
+
+  def confirmFollowUp() = SecuredAction(WithRole(UserRole.Admin)).async(parse.json) { implicit request =>
+    import CompanyObjects.CompanyList
+    request.body
+      .validate[CompanyList](Json.reads[CompanyList])
+      .fold(
+        errors => Future.successful(BadRequest(JsError.toJson(errors))),
+        companyList =>
+          companyOrchestrator
+            .confirmFollowUp(companyList, request.identity.id)
+            .map(_ => Ok)
+      )
   }
 
   def updateCompanyAddress(id: UUID) = SecuredAction(WithPermission(UserPermission.updateCompany)).async(parse.json) {
