@@ -249,7 +249,7 @@ object UpdateReportCompanyAnotherSiret extends CreateUpdateReportSpec {
 
 trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatchers {
 
-  implicit val ec = ExecutionContext.global
+  implicit val ec: ExecutionContext = ExecutionContext.global
 
   lazy val reportRepository = components.reportRepository
   lazy val eventRepository = components.eventRepository
@@ -261,8 +261,8 @@ trait CreateUpdateReportSpec extends Specification with AppSpec with FutureMatch
   lazy val emailValidationRepository = components.emailValidationRepository
   lazy val messagesApi = components.messagesApi
 
-  implicit lazy val frontRoute = components.frontRoute
-  implicit lazy val contactAddress = emailConfiguration.contactAddress
+  implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
+  implicit lazy val contactAddress: utils.EmailAddress = emailConfiguration.contactAddress
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")
 

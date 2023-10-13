@@ -1,6 +1,7 @@
 package actors
 
-import akka.actor._
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import spoiwo.model._
@@ -16,75 +17,89 @@ import repositories.asyncfiles.AsyncFileRepositoryInterface
 import repositories.website.WebsiteRepositoryInterface
 import services.S3ServiceInterface
 import utils.DateUtils
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Random
+import scala.util.Success
 
-object WebsitesExtractActor {
-  def props = Props[WebsitesExtractActor]()
+object WebsiteExtractActor {
+  sealed trait WebsiteExtractCommand
 
   case class RawFilters(query: Option[String], start: Option[String], end: Option[String])
-  case class ExtractRequest(requestedBy: User, rawFilters: RawFilters)
-}
-
-class WebsitesExtractActor(
-    websiteRepository: WebsiteRepositoryInterface,
-    asyncFileRepository: AsyncFileRepositoryInterface,
-    s3Service: S3ServiceInterface,
-    signalConsoConfiguration: SignalConsoConfiguration
-)(implicit val mat: Materializer)
-    extends Actor {
-  import WebsitesExtractActor._
-  implicit val ec: ExecutionContext = context.dispatcher
+  case class ExtractRequest(requestedBy: User, rawFilters: RawFilters) extends WebsiteExtractCommand
+  case class ExtractRequestSuccess(fileId: UUID, requestedBy: User) extends WebsiteExtractCommand
+  case object ExtractRequestFailure extends WebsiteExtractCommand
 
   val logger: Logger = Logger(this.getClass)
-  override def preStart() =
-    logger.debug("Starting")
-  override def preRestart(reason: Throwable, message: Option[Any]): Unit =
-    logger.debug(s"Restarting due to [${reason.getMessage}] when processing [${message.getOrElse("")}]")
-  override def receive = {
-    case ExtractRequest(requestedBy, rawFilters) =>
-      for {
-        // FIXME: We might want to move the random name generation
-        // in a common place if we want to reuse it for other async files
-        asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
-        tmpPath <- {
-          sender() ! ()
-          genTmpFile(rawFilters)
-        }
-        remotePath <- saveRemotely(tmpPath, tmpPath.getFileName.toString)
-        _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
-      } yield logger.debug(s"Built websites for User ${requestedBy.id} — async file ${asyncFile.id}")
-      ()
-    case _ =>
-      logger.debug("Could not handle request")
-      ()
-  }
+
+  def create(
+      websiteRepository: WebsiteRepositoryInterface,
+      asyncFileRepository: AsyncFileRepositoryInterface,
+      s3Service: S3ServiceInterface,
+      signalConsoConfiguration: SignalConsoConfiguration
+  )(implicit mat: Materializer): Behavior[WebsiteExtractCommand] =
+    Behaviors.setup { context =>
+      import context.executionContext
+
+      Behaviors.receiveMessage[WebsiteExtractCommand] {
+        case ExtractRequest(requestedBy, rawFilters) =>
+          val result = for {
+            // FIXME: We might want to move the random name generation
+            // in a common place if we want to reuse it for other async files
+            asyncFile <- asyncFileRepository.create(AsyncFile.build(requestedBy, kind = AsyncFileKind.ReportedWebsites))
+            tmpPath <- genTmpFile(websiteRepository, signalConsoConfiguration, rawFilters)
+            remotePath <- saveRemotely(s3Service, tmpPath, tmpPath.getFileName.toString)
+            _ <- asyncFileRepository.update(asyncFile.id, tmpPath.getFileName.toString, remotePath)
+          } yield ExtractRequestSuccess(asyncFile.id, requestedBy)
+
+          context.pipeToSelf(result) {
+            case Success(success) => success
+            case Failure(_)       => ExtractRequestFailure
+          }
+          Behaviors.same
+
+        case ExtractRequestSuccess(fileId: UUID, requestedBy: User) =>
+          logger.debug(s"Built websites for User ${requestedBy.id} — async file $fileId")
+          Behaviors.same
+
+        case ExtractRequestFailure =>
+          logger.info(s"Extract failed")
+          Behaviors.same
+      }
+    }
 
   // Common layout variables
-  val headerStyle = CellStyle(
+  private val headerStyle = CellStyle(
     fillPattern = CellFill.Solid,
     fillForegroundColor = Color.Gainsborough,
     font = Font(bold = true),
     horizontalAlignment = CellHorizontalAlignment.Center
   )
-  val centerAlignmentStyle = CellStyle(
+  private val centerAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Center,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
-  val leftAlignmentStyle = CellStyle(
+  private val centerAlignmentColumn = Column(autoSized = true, style = centerAlignmentStyle)
+  private val leftAlignmentStyle = CellStyle(
     horizontalAlignment = CellHorizontalAlignment.Left,
     verticalAlignment = CellVerticalAlignment.Center,
     wrapText = true
   )
-  val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
+  private val leftAlignmentColumn = Column(autoSized = true, style = leftAlignmentStyle)
 
-  def genTmpFile(filters: RawFilters) = {
+  private def genTmpFile(
+      websiteRepository: WebsiteRepositoryInterface,
+      signalConsoConfiguration: SignalConsoConfiguration,
+      filters: RawFilters
+  )(implicit ec: ExecutionContext): Future[Path] = {
 
     val startDate = DateUtils.parseDate(filters.start)
     val endDate = DateUtils.parseDate(filters.end)
@@ -142,7 +157,10 @@ class WebsitesExtractActor(
     }
   }
 
-  def saveRemotely(localPath: Path, remoteName: String) = {
+  private def saveRemotely(s3Service: S3ServiceInterface, localPath: Path, remoteName: String)(implicit
+      ec: ExecutionContext,
+      mat: Materializer
+  ): Future[String] = {
     val remotePath = s"website-extracts/${remoteName}"
     s3Service.upload(remotePath).runWith(FileIO.fromPath(localPath)).map(_ => remotePath)
   }

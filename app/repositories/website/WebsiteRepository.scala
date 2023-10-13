@@ -77,8 +77,6 @@ class WebsiteRepository(
         .result
     )
 
-  SimpleFunction.binary[Option[Double], Option[Double], Option[Double]]("least")
-
   private def searchCompaniesByHost(host: String): Future[Seq[(Website, Company)]] =
     db.run(
       table

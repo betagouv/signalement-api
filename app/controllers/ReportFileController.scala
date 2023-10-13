@@ -83,7 +83,7 @@ class ReportFileController(
     val filename = Paths.get(filePart.filename).getFileName
     val tmpFile =
       new java.io.File(s"${signalConsoConfiguration.tmpDirectory}/${UUID.randomUUID}_${filename}")
-    filePart.ref.copyTo(tmpFile)
+    filePart.ref.copyTo(tmpFile): Unit
     tmpFile
   }
 

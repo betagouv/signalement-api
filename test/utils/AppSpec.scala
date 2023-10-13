@@ -32,6 +32,7 @@ import utils.silhouette.auth.AuthEnv
 import java.io.File
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 
 trait AppSpec extends BeforeAfterAll with Mockito {
@@ -42,7 +43,10 @@ trait AppSpec extends BeforeAfterAll with Mockito {
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+  @nowarn("msg=Implicit definition should have explicit type")
+  // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
+  // scalafix:on
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 

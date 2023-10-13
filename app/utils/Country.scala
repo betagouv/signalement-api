@@ -2,6 +2,8 @@ package utils
 
 import play.api.libs.json._
 import repositories.PostgresProfile.api._
+import slick.ast.BaseTypedType
+import slick.jdbc.JdbcType
 
 sealed case class Country(
     code: String,
@@ -497,13 +499,15 @@ object Country {
 
   def fromCode(code: String) = countriesMap(code)
 
-  implicit val reads = Reads.StringReads.map(fromCode)
-  implicit val writes = Json.writes[Country]
+  implicit val reads: Reads[Country] = Reads.StringReads.map(fromCode)
+  implicit val writes: OWrites[Country] = Json.writes[Country]
 
-  implicit val CountryColumnType = MappedColumnType.base[Country, String](_.code, Country.fromCode)
+  implicit val CountryColumnType: JdbcType[Country] with BaseTypedType[Country] =
+    MappedColumnType.base[Country, String](_.code, Country.fromCode)
 
-  implicit val countryListColumnType = MappedColumnType.base[List[Country], List[String]](
-    _.map(_.code),
-    _.map(Country.fromCode)
-  )
+  implicit val countryListColumnType: JdbcType[List[Country]] with BaseTypedType[List[Country]] =
+    MappedColumnType.base[List[Country], List[String]](
+      _.map(_.code),
+      _.map(Country.fromCode)
+    )
 }

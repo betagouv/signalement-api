@@ -4,6 +4,7 @@ import models.report.ReportStatus
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 import play.api.libs.json.JsonConfiguration
+import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.OptionHandlers
 import utils.Country
 
@@ -31,6 +32,6 @@ case class ReportDataEconomie(
 )
 
 object ReportDataEconomie {
-  implicit val config = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
+  implicit val config: Aux[Json.MacroOptions] = JsonConfiguration(optionHandlers = OptionHandlers.WritesNull)
   implicit val ReportDataFormat: Format[ReportDataEconomie] = Json.format[ReportDataEconomie]
 }

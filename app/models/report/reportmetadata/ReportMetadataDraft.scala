@@ -5,6 +5,7 @@ import ai.x.play.json.Jsonx
 
 import java.util.UUID
 import scala.annotation.nowarn
+import play.api.libs.json.OFormat
 
 case class ReportMetadataDraft(
     isMobileApp: Boolean,
@@ -21,6 +22,6 @@ case class ReportMetadataDraft(
 object ReportMetadataDraft {
 
   @nowarn
-  implicit val jsonFormat = Jsonx.formatCaseClass[ReportMetadataDraft]
+  implicit val jsonFormat: OFormat[ReportMetadataDraft] = Jsonx.formatCaseClass[ReportMetadataDraft]
 
 }

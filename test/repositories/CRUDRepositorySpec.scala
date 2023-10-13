@@ -29,7 +29,7 @@ object TestModelTable {
 class CRUDRepositorySpec extends Specification with FutureMatchers with BeforeAfterAll {
 
   val (app, components) = TestApp.buildApp()
-  implicit val ec = components.executionContext
+  implicit val ec: ExecutionContext = components.executionContext
   val db = components.dbConfig.db
 
   val repository = new CRUDRepository[TestModelTable, TestModel]() {

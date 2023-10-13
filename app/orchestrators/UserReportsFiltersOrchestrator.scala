@@ -5,12 +5,9 @@ import play.api.libs.json.JsValue
 import repositories.usersettings.UserReportsFiltersRepositoryInterface
 
 import java.util.UUID
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class UserReportsFiltersOrchestrator(userReportsFiltersRepository: UserReportsFiltersRepositoryInterface)(implicit
-    ec: ExecutionContext
-) {
+class UserReportsFiltersOrchestrator(userReportsFiltersRepository: UserReportsFiltersRepositoryInterface) {
   def save(userId: UUID, name: String, filters: JsValue): Future[UserReportsFilters] =
     userReportsFiltersRepository.createOrUpdate(UserReportsFilters(userId, name, filters))
 

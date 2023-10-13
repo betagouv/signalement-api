@@ -14,6 +14,7 @@ import utils.TestApp
 
 import java.time.Period
 import java.util.UUID
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 class AccessesOrchestratorTest extends Specification with AppSpec {
@@ -25,8 +26,8 @@ class AccessesOrchestratorTest extends Specification with AppSpec {
 
   val (app, components) = TestApp.buildApp()
 
-  implicit val ec = components.executionContext
-  implicit val ee = ExecutionEnv.fromExecutionContext(ec)
+  implicit val ec: ExecutionContext = components.executionContext
+  implicit val ee: ExecutionEnv = ExecutionEnv.fromExecutionContext(ec)
 
   "AccessesOrchestratorTest" should {
 

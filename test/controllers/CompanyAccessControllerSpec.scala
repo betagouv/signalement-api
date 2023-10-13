@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.test._
@@ -46,7 +47,7 @@ class BaseAccessControllerSpec(implicit ee: ExecutionEnv) extends Specification 
     ()
   }
 
-  implicit val authEnv = components.authEnv
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   lazy val userRepository = components.userRepository
   lazy val companyRepository = components.companyRepository

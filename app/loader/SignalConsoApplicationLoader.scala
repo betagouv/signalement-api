@@ -1,9 +1,8 @@
 package loader
 
 import _root_.controllers._
+import actors.ReportedPhonesExtractActor.ReportedPhonesExtractCommand
 import actors._
-import akka.actor.ActorRef
-import akka.actor.Props
 import akka.actor.typed
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import com.mohiva.play.silhouette.api.Environment
@@ -113,6 +112,7 @@ import utils.silhouette.auth.UserService
 
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import scala.annotation.nowarn
 
 class SignalConsoApplicationLoader() extends ApplicationLoader {
   var components: SignalConsoComponents = _
@@ -146,7 +146,10 @@ class SignalConsoComponents(
   implicit val localTimeInstance: ConfigConvert[LocalTime] = localTimeConfigConvert(DateTimeFormatter.ISO_TIME)
   implicit val personReader: ConfigReader[EmailAddress] = deriveReader[EmailAddress]
   val csvStringListReader = ConfigReader[String].map(_.split(",").toList)
+  @nowarn("msg=Implicit definition should have explicit type")
+  // scalafix:off
   implicit val stringListReader = ConfigReader[List[String]].orElse(csvStringListReader)
+  // scalafix:on
 
   val applicationConfiguration: ApplicationConfiguration = ConfigSource.default.loadOrThrow[ApplicationConfiguration]
 
@@ -261,17 +264,15 @@ class SignalConsoComponents(
     AntivirusScanActor.create(uploadConfiguration, reportFileRepository, s3Service),
     "antivirus-scan-actor"
   )
-  val reportedPhonesExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(
-        new ReportedPhonesExtractActor(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service)
-      ),
+  val reportedPhonesExtractActor: typed.ActorRef[ReportedPhonesExtractCommand] =
+    actorSystem.spawn(
+      ReportedPhonesExtractActor.create(signalConsoConfiguration, reportRepository, asyncFileRepository, s3Service),
       "reported-phones-extract-actor"
     )
 
-  val websitesExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(new WebsitesExtractActor(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration)),
+  val websitesExtractActor: typed.ActorRef[WebsiteExtractActor.WebsiteExtractCommand] =
+    actorSystem.spawn(
+      WebsiteExtractActor.create(websiteRepository, asyncFileRepository, s3Service, signalConsoConfiguration),
       "websites-extract-actor"
     )
 
@@ -279,7 +280,7 @@ class SignalConsoComponents(
     actorSystem.spawn(HtmlConverterActor.create(), "html-converter-actor")
 
   val pdfService = new PDFService(signalConsoConfiguration, htmlConverterActor)
-  implicit val frontRoute = new FrontRoute(signalConsoConfiguration)
+  implicit val frontRoute: FrontRoute = new FrontRoute(signalConsoConfiguration)
   val attachmentService = new AttachmentService(environment, pdfService, frontRoute)
   lazy val mailRetriesService = new MailRetriesService(mailerClient, executionContext, actorSystem)
   val mailService = new MailService(
@@ -391,19 +392,17 @@ class SignalConsoComponents(
     messagesApi
   )
 
-  val reportsExtractActor: ActorRef =
-    actorSystem.actorOf(
-      Props(
-        new ReportsExtractActor(
-          reportConsumerReviewOrchestrator,
-          reportFileRepository,
-          companyAccessRepository,
-          reportOrchestrator,
-          eventRepository,
-          asyncFileRepository,
-          s3Service,
-          signalConsoConfiguration
-        )
+  val reportsExtractActor: typed.ActorRef[ReportsExtractActor.ReportsExtractCommand] =
+    actorSystem.spawn(
+      ReportsExtractActor.create(
+        reportConsumerReviewOrchestrator,
+        reportFileRepository,
+        companyAccessRepository,
+        reportOrchestrator,
+        eventRepository,
+        asyncFileRepository,
+        s3Service,
+        signalConsoConfiguration
       ),
       "reports-extract-actor"
     )
@@ -472,7 +471,7 @@ class SignalConsoComponents(
     companySyncService,
     companySyncRepository
   )
-  companyUpdateTask.schedule()
+  companyUpdateTask.schedule(): Unit
 
   logger.debug("Starting App and sending sentry alert")
 

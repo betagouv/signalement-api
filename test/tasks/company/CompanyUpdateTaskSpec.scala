@@ -1,5 +1,6 @@
 package tasks.company
 
+import akka.stream.Materializer
 import models.company.CompanySync
 import org.scalacheck.Gen
 import org.specs2.concurrent.ExecutionEnv
@@ -22,7 +23,7 @@ class CompanyUpdateTaskSpec(implicit ee: ExecutionEnv)
     with FutureMatchers {
 
   val (app, components) = TestApp.buildApp()
-  implicit val mat = app.materializer
+  implicit val mat: Materializer = app.materializer
 
   "CompanyUpdateTask" should {
     sequential

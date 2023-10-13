@@ -1,5 +1,6 @@
 package controllers
 
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import config.EmailConfiguration
 import controllers.error.AppError.EmailOrCodeIncorrect
@@ -27,6 +28,7 @@ import utils.EmailAddress
 import utils.Fixtures
 import utils.TestApp
 import utils.silhouette.auth.AuthEnv
+
 import java.time.temporal.ChronoUnit
 import java.time.OffsetDateTime
 import scala.concurrent.Await
@@ -48,7 +50,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
     ()
   }
 
-  implicit val authEnv = components.authEnv
+  implicit val authEnv: Environment[AuthEnv] = components.authEnv
 
   lazy val messagesApi = components.messagesApi
 
@@ -97,7 +99,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(EmailValidationResult.success)
@@ -109,7 +111,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
         new WithApplication(app(skipValidation = true, emailProviderBlocklist = List("yopmail.com", "trash.com"))) {
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@yopmail.com"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(ErrorPayload(InvalidEmailProvider))
@@ -127,7 +129,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
 
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> "user@dgccrf.gouv.fr"))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(200)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(EmailValidationResult.success)
@@ -141,7 +143,7 @@ class EmailValidationControllerSpec(implicit ee: ExecutionEnv)
           val malformedEmail = "user@dgccrf"
           val request = FakeRequest(POST, routes.EmailValidationController.check().toString)
             .withJsonBody(Json.obj("email" -> malformedEmail))
-          val result = route(app, request).get
+          val result = route(this.app, request).get
           Helpers.status(result) must beEqualTo(400)
           Helpers.contentAsJson(result) must beEqualTo(
             Json.toJson(ErrorPayload(InvalidEmail(malformedEmail)))

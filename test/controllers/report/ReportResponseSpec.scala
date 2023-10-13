@@ -253,7 +253,7 @@ abstract class ReportResponseSpec(implicit ee: ExecutionEnv) extends Specificati
   lazy val AccessTokenRepositoryInterface = components.accessTokenRepository
   lazy val mailRetriesService = components.mailRetriesService
   lazy val attachementService = components.attachmentService
-  implicit lazy val frontRoute = components.frontRoute
+  implicit lazy val frontRoute: utils.FrontRoute = components.frontRoute
   lazy val messagesApi = components.messagesApi
 
   val contactEmail = EmailAddress("contact@signal.conso.gouv.fr")

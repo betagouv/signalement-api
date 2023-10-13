@@ -17,12 +17,8 @@ object AccessLevel {
 
   def fromValue(v: String) =
     List(NONE, MEMBER, ADMIN).find(_.value == v).getOrElse(NONE)
-  implicit val reads = new Reads[AccessLevel] {
-    def reads(json: JsValue): JsResult[AccessLevel] = json.validate[String].map(fromValue)
-  }
-  implicit val writes = new Writes[AccessLevel] {
-    def writes(level: AccessLevel) = Json.toJson(level.value)
-  }
+  implicit val reads: Reads[AccessLevel] = (json: JsValue) => json.validate[String].map(fromValue)
+  implicit val writes: Writes[AccessLevel] = (level: AccessLevel) => Json.toJson(level.value)
 }
 
 case class UserAccess(

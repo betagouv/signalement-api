@@ -1,6 +1,7 @@
 package models.token
 
 import play.api.libs.json.Json
+import play.api.libs.json.OWrites
 import utils.EmailAddress
 import utils.SIRET
 
@@ -24,8 +25,10 @@ final case class CompanyUserActivationToken(
 
 object TokenInfo {
 
-  implicit val DGCCRFUserActivationTokenWrites = Json.writes[DGCCRFUserActivationToken]
-  implicit val CompanyUserActivationTokenWrites = Json.writes[CompanyUserActivationToken]
-  implicit val TokenInfoWrites = Json.writes[TokenInfo]
+  implicit val DGCCRFUserActivationTokenWrites: OWrites[DGCCRFUserActivationToken] =
+    Json.writes[DGCCRFUserActivationToken]
+  implicit val CompanyUserActivationTokenWrites: OWrites[CompanyUserActivationToken] =
+    Json.writes[CompanyUserActivationToken]
+  implicit val TokenInfoWrites: OWrites[TokenInfo] = Json.writes[TokenInfo]
 
 }

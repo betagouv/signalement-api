@@ -40,7 +40,7 @@ class PDFService(
     val pipeSize = 8192 // To match the akka stream chunk size
     val pipedInputStream = new PipedInputStream(pipedOutputStream, pipeSize)
 
-    actor ! HtmlConverterActor.ConvertCommand(htmlStream, pipedOutputStream, converterProperties)
+    actor ! HtmlConverterActor.Convert(htmlStream, pipedOutputStream, converterProperties)
 
     val pdfSource = StreamConverters
       .fromInputStream(() => pipedInputStream)
@@ -53,7 +53,7 @@ class PDFService(
     val converterProperties = new ConverterProperties
     val dfp = new DefaultFontProvider(true, true, true)
     converterProperties.setFontProvider(dfp)
-    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString())
+    converterProperties.setBaseUri(signalConsoConfiguration.apiURL.toString)
 
     val pdfOutputStream = new ByteArrayOutputStream
 

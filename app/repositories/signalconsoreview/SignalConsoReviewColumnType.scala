@@ -14,13 +14,14 @@ object SignalConsoReviewColumnType {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val SignalConsoEvaluationColumnType =
+  implicit val SignalConsoEvaluationColumnType
+      : JdbcType[SignalConsoEvaluation] with BaseTypedType[SignalConsoEvaluation] =
     MappedColumnType.base[SignalConsoEvaluation, Int](
       _.value,
       SignalConsoEvaluation.withValue
     )
 
-  implicit val OsType =
+  implicit val OsType: JdbcType[Os] with BaseTypedType[Os] =
     MappedColumnType.base[Os, String](
       _.entryName,
       Os.namesToValuesMap

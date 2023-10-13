@@ -31,7 +31,7 @@ class CompanyUpdateTask(
     materializer: Materializer
 ) {
 
-  implicit val session = SlickSession.forConfig("slick.dbs.default")
+  implicit val session: SlickSession = SlickSession.forConfig("slick.dbs.default")
 
   actorSystem.registerOnTermination(() => session.close())
 
@@ -46,14 +46,13 @@ class CompanyUpdateTask(
 
     actorSystem.scheduler.scheduleAtFixedRate(initialDelay = initialDelay, interval = 1.days) { () =>
       logger.info("Starting CompanyUpdateTask")
-      runTask()
-      ()
+      runTask(): Unit
     }
   }
 
   // Be carefull on how much stress you can put to the database, database task are queued into 1000 slot queue.
   // If more tasks are pushed than what the database can handle, it could result to RejectionException thus rejecting any call to database
-  def runTask() = for {
+  def runTask(): Future[Unit] = for {
     companySync <- getCompanySync()
     res <- Slick
       .source(CompanyTable.table.result)

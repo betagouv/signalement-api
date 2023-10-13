@@ -13,7 +13,7 @@ object ResponseConsumerReviewColumnType {
 
   val logger: Logger = Logger(this.getClass)
 
-  implicit val ResponseEvaluationColumnType =
+  implicit val ResponseEvaluationColumnType: JdbcType[ResponseEvaluation] with BaseTypedType[ResponseEvaluation] =
     MappedColumnType.base[ResponseEvaluation, String](
       _.entryName,
       ResponseEvaluation.namesToValuesMap

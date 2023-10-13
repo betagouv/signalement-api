@@ -14,11 +14,14 @@ import models.company.Address
 import repositories.DatabaseTable
 import repositories.company.CompanyTable
 import repositories.report.ReportRepository.queryFilter
+import slick.ast.BaseTypedType
 import slick.collection.heterogeneous.HNil
 import slick.collection.heterogeneous.syntax._
+import slick.jdbc.JdbcType
 
 class ReportTable(tag: Tag) extends DatabaseTable[Report](tag, "reports") {
-  implicit val localeColumnType = MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
+  implicit val localeColumnType: JdbcType[Locale] with BaseTypedType[Locale] =
+    MappedColumnType.base[Locale, String](_.toLanguageTag, Locale.forLanguageTag)
 
   def gender = column[Option[Gender]]("gender")
   def category = column[String]("category")
